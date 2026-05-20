@@ -1,5 +1,5 @@
-<!-- From: d:\CatAndMouse\concept\Cats-and-mouse\AGENTS.md -->
-# AGENTS.md — Cats and Mouse
+<!-- From: d:\CatAndMouse\concept\Mousefall\AGENTS.md -->
+# AGENTS.md — Mousefall
 
 > **Вся документация в этом проекте ведётся на русском языке.**
 > Этот файл предназначен для AI-агентов и описывает актуальную структуру, соглашения и правила проекта.
@@ -8,7 +8,7 @@
 
 ## Обзор проекта
 
-**Cats and Mouse** — это 2D пошаговый roguelike на TypeScript, работающий в браузере.
+**Mousefall** — это 2D пошаговый roguelike на TypeScript, работающий в браузере.
 Проект находится в активной разработке: ядро симуляции (simulation layer) реализовано и работает,
 слой Presentation спроектирован, но ещё не реализован. UI — запланирован.
 
@@ -351,7 +351,7 @@ fail-fast с понятным сообщением об ошибке.
 - **Снапшотные сохранения** — полный `GameState` сериализуется в JSON.
 - `SAVE_VERSION = 1` в `src/utils/constants.ts`.
 - Состояние RNG включается в сохранения для детерминизма.
-- Хранение: `localStorage` с префиксом ключей `cats-and-mouse:save:`.
+- Хранение: `localStorage` с префиксом ключей `mousefall:save:`.
 - 3 ручных слота + 1 слот автосохранения (слот 0).
 - **Оркестрация save/load** — ответственность Presentation (запрос состояния у Simulation, вызов serialize/deserialize, передача UI для записи в localStorage).
 

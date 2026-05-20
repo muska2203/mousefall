@@ -1,6 +1,6 @@
 # Data Flow
 
-## Game: Cats and Mouse — 2D Turn-Based Roguelike
+## Game: Mousefall — 2D Turn-Based Roguelike
 
 ---
 
@@ -240,7 +240,7 @@ Presentation (или специализированный SaveManager)
     │
     ▼
 UI Layer (только он имеет доступ к browser API):
-  localStorage.setItem('cats-and-mouse:save:slot', json)
+  localStorage.setItem('mousefall:save:slot', json)
   OR
   download as file
 ```
@@ -252,7 +252,7 @@ UI Layer (только он имеет доступ к browser API):
     │
     ▼
 UI Layer читает из localStorage:
-  localStorage.getItem('cats-and-mouse:save:slot') → JSON string
+  localStorage.getItem('mousefall:save:slot') → JSON string
     │
     ▼
 Presentation:

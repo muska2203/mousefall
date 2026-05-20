@@ -1,4 +1,4 @@
-# Cats and Mouse
+# Mousefall
 
 **2D Turn-Based Roguelike** — TypeScript · React · PixiJS · Zustand · Zod · Vitest
 
@@ -20,7 +20,7 @@
 ## Project Structure
 
 ```
-Cats-and-mouse/
+Mousefall/
 │
 ├── src/
 │   ├── simulation/          # Core game engine (headless, deterministic)

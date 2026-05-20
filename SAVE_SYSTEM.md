@@ -1,6 +1,6 @@
 # Save System
 
-## Game: Cats and Mouse — 2D Turn-Based Roguelike
+## Game: Mousefall — 2D Turn-Based Roguelike
 
 ---
 
@@ -63,7 +63,7 @@
 
 ### LocalStorage (по умолчанию)
 
-- Ключи с префиксом `cats-and-mouse:save:`
+- Ключи с префиксом `mousefall:save:`
 - 3 ручных слота + 1 слот автосохранения (слот 0)
 
 **Поток сохранения:**

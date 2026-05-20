@@ -13,7 +13,7 @@ interface Props {
 export function MainMenuScreen({onNewGame}: Props) {
   return (
     <div className="cm-main-menu">
-      <h1 className="cm-main-menu__title">Cats and Mouse</h1>
+      <h1 className="cm-main-menu__title">Mousefall</h1>
       <button className="cm-btn cm-btn--primary cm-main-menu__cta" type="button" onClick={onNewGame}>
         Новая игра
       </button>

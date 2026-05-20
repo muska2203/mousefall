@@ -61,7 +61,7 @@ export const AUTOSAVE_SLOT = 0;
 export const SAVE_VERSION = 1;
 
 /** Префикс ключей localStorage для слотов сохранения. */
-export const SAVE_KEY_PREFIX = 'cats-and-mouse:save:';
+export const SAVE_KEY_PREFIX = 'mousefall:save:';
 
 // ─────────────────────────────────────────────
 // Идентификаторы сущностей (зарезервированные)
