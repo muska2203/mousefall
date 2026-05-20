@@ -13,8 +13,9 @@
  * - Все мутации GameState только через simulation.dispatch() или фабрики Simulation.
  */
 
-import type {GameState, Simulation, SimulationResult, ActionPreview} from '@simulation/types';
-import type {GameAction} from '@simulation/systems/actions/types';
+import type {GameEvent, GameState, Simulation, SimulationResult, ActionPreview, TurnSide} from '@simulation/types';
+import type {ExecutionNode, GameAction} from '@simulation/systems/actions/types';
+import {tryGetEntity} from '@simulation/content/registry';
 import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@simulation/schemas/contentSchemas';
@@ -30,6 +31,12 @@ export type SessionMode =
   | 'gameOver'
   | 'victory';
 
+export type LogItem = {
+  id: number;
+  text: string;
+  variant?: 'loot' | 'good' | 'bad' | 'info';
+};
+
 export type GameViewModel = {
   /** Текущий режим экрана */
   mode: SessionMode;
@@ -39,6 +46,8 @@ export type GameViewModel = {
   lastResult: SimulationResult | null;
   /** ID портрета выбранного героя (null, если не выбран) */
   portraitId: string | null;
+  /** Журнал событий текущей сессии */
+  logs: LogItem[];
 };
 
 export class GameSession {
@@ -46,6 +55,8 @@ export class GameSession {
   private mode: SessionMode = 'mainMenu';
   private lastResult: SimulationResult | null = null;
   private portraitId: string | null = null;
+  private logs: LogItem[] = [];
+  private nextLogId = 1;
   private listeners = new Set<() => void>();
   private viewModelCache: GameViewModel | null = null;
 
@@ -72,6 +83,7 @@ export class GameSession {
         state: this.simulation?.getState() ?? null,
         lastResult: this.lastResult,
         portraitId: this.portraitId,
+        logs: this.logs,
       };
     }
     return this.viewModelCache;
@@ -88,6 +100,7 @@ export class GameSession {
     this.simulation = null;
     this.lastResult = null;
     this.portraitId = null;
+    this.clearLogs();
     this.notify();
   }
 
@@ -106,6 +119,7 @@ export class GameSession {
     this.mode = 'playing';
     this.lastResult = null;
     this.portraitId = config.portraitId ?? null;
+    this.clearLogs();
     this.notify();
   }
 
@@ -119,6 +133,7 @@ export class GameSession {
     this.simulation = GameSimulation.loadSavedGame(state);
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
+    this.clearLogs();
     this.notify();
   }
 
@@ -133,6 +148,21 @@ export class GameSession {
 
     const result = this.simulation.dispatch(action);
     this.lastResult = result;
+
+    if (result.success && result.stateChanged) {
+      const state = this.simulation.getState();
+      const events = this.extractEvents(result);
+      const newLogs: LogItem[] = [];
+      for (const event of events) {
+        const log = this.gameEventToLog(state, event);
+        if (log) {
+          newLogs.push(log);
+        }
+      }
+      if (newLogs.length > 0) {
+        this.logs = [...this.logs, ...newLogs].slice(-30);
+      }
+    }
 
     // После каждого хода проверяем, не закончилась ли игра
     const state = this.simulation.getState();
@@ -192,6 +222,7 @@ export class GameSession {
     this.mode = 'mainMenu';
     this.lastResult = null;
     this.portraitId = null;
+    this.clearLogs();
     this.notify();
   }
 
@@ -204,5 +235,83 @@ export class GameSession {
       case 'victory':
         return 'victory';
     }
+  }
+
+  private clearLogs(): void {
+    this.logs = [];
+    this.nextLogId = 1;
+  }
+
+  private extractEvents(result: SimulationResult): GameEvent[] {
+    const events: GameEvent[] = [];
+    for (const phase of result.phases) {
+      for (const action of phase.actions) {
+        this.walkExecutionTree(action, events, phase.side);
+      }
+    }
+    return events;
+  }
+
+  private walkExecutionTree(node: ExecutionNode, out: GameEvent[], side: TurnSide): void {
+    if (side === 'PLAYER' || this.isEventRelevantToPlayer(node.event)) {
+      out.push(node.event);
+    }
+    for (const child of node.children) {
+      this.walkExecutionTree(child, out, side);
+    }
+  }
+
+  private isEventRelevantToPlayer(event: GameEvent): boolean {
+    switch (event.type) {
+      case 'ENTITY_DAMAGED':
+        return event.targetId === 'player';
+      case 'PLAYER_DIED':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private gameEventToLog(state: GameState, event: GameEvent): LogItem | null {
+    switch (event.type) {
+      case 'ENTITY_MOVED': {
+        const name = this.getEntityDisplayName(state, event.entityId);
+        return {id: this.nextLogId++, text: `${name} переместился`, variant: 'info'};
+      }
+      case 'ENTITY_ATTACKED': {
+        const name = this.getEntityDisplayName(state, event.attackerId);
+        return {id: this.nextLogId++, text: `${name} атаковал`, variant: 'info'};
+      }
+      case 'ENTITY_DAMAGED': {
+        const name = this.getEntityDisplayName(state, event.targetId);
+        return {
+          id: this.nextLogId++,
+          text: `${name} получил ${event.damage} урона`,
+          variant: event.targetId === 'player' ? 'bad' : 'good',
+        };
+      }
+      case 'ENTITY_DIED': {
+        const name = this.getEntityDisplayName(state, event.entityId);
+        return {id: this.nextLogId++, text: `${name} погиб`, variant: 'bad'};
+      }
+      case 'PLAYER_DIED':
+        return {id: this.nextLogId++, text: 'Герой погиб', variant: 'bad'};
+      default:
+        return null;
+    }
+  }
+
+  private getEntityDisplayName(state: GameState, entityId: string): string {
+    if (entityId === 'player') return 'Герой';
+    const entity = state.entities.get(entityId);
+    if (entity && 'templateId' in entity) {
+      try {
+        const template = tryGetEntity(entity.templateId);
+        if (template?.name) return template.name;
+      } catch {
+        // Реестр не инициализирован — используем fallback
+      }
+    }
+    return 'Враг';
   }
 }

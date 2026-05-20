@@ -198,7 +198,7 @@
 
 /* Game screen: simple fixed right column sizing (5 inventory cells). */
 .cm-app--game .cm-main {
-  grid-template-columns: 260px minmax(320px, 1fr) 300px;
+  grid-template-columns: 260px 1fr 300px;
   max-height: 100vh;
 }
 

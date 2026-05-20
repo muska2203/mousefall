@@ -7,7 +7,7 @@
  * Правая: EquipmentPanel, InventoryPanel, ConsumablesPanel, SkillsPanel.
  */
 
-import {useCallback, useState, useEffect, useRef, useSyncExternalStore} from 'react';
+import {useCallback, useEffect, useSyncExternalStore} from 'react';
 import type {GameSession, SessionMode} from '@presentation/gameSession';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
@@ -17,12 +17,9 @@ import type {EquipSlotData} from '@ui/components/EquipmentPanel';
 import {GameField} from '@ui/components/GameField';
 import {EffectsPanel} from '@ui/components/EffectsPanel';
 import {LogPanel} from '@ui/components/LogPanel';
-import type {LogItem} from '@ui/components/LogPanel';
 import {InventoryPanel} from '@ui/components/InventoryPanel';
 import {ConsumablesPanel} from '@ui/components/ConsumablesPanel';
 import {SkillsPanel} from '@ui/components/SkillsPanel';
-import {StatRowReadonly} from '@ui/components/StatRow';
-import {Panel} from '@ui/components/Panel';
 
 interface Props {
   session: GameSession;
@@ -68,32 +65,21 @@ export function GameScreen({session, onModeChange}: Props) {
     () => getSnapshot(session),
   );
   const state = vm.state;
-  const [log, setLog] = useState<LogItem[]>([]);
-  const nextLogId = useRef(1);
-
-  const addLog = useCallback((message: string) => {
-    setLog((prev) => {
-      const next = [...prev.slice(-19), {id: nextLogId.current++, text: message}];
-      return next;
-    });
-  }, []);
 
   const performMoveOrAttack = useCallback(
     (dx: number, dy: number) => {
       if (session.getMode() !== 'playing') return;
       session.moveOrAttack(dx, dy);
       onModeChange(session.getMode());
-      addLog(`Действие: (${dx}, ${dy})`);
     },
-    [session, onModeChange, addLog],
+    [session, onModeChange],
   );
 
   const handleWait = useCallback(() => {
     if (session.getMode() !== 'playing') return;
     session.dispatch({type: 'WAIT'});
     onModeChange(session.getMode());
-    addLog('Ожидание');
-  }, [session, onModeChange, addLog]);
+  }, [session, onModeChange]);
 
   // Обработка клавиатуры
   useEffect(() => {
@@ -173,18 +159,8 @@ export function GameScreen({session, onModeChange}: Props) {
         maxXp={xpToNext}
         stats={heroStats}
       />
-      <Panel title="Характеристики">
-        <ul className="cm-stats">
-          <StatRowReadonly icon="💪" name="Сила" value="0" />
-          <StatRowReadonly icon="✨" name="Интеллект" value="0" />
-          <StatRowReadonly icon="🐾" name="Ловкость" value="0" />
-          <StatRowReadonly icon="🍀" name="Удача" value="0" />
-          <StatRowReadonly icon="🎯" name="Крит шанс" value="5%" />
-          <StatRowReadonly icon="💥" name="Крит x" value="1.5x" />
-        </ul>
-      </Panel>
       <EffectsPanel />
-      <LogPanel entries={log} />
+      <LogPanel entries={vm.logs} />
     </>
   );
 
