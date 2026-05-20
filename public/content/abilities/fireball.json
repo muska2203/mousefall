@@ -1,0 +1,18 @@
+{
+  "id": "fireball",
+  "name": "Fireball",
+  "description": "Hurl a ball of fire at a distant target. Burns on impact.",
+  "symbol": "*",
+  "spriteId": "fireball",
+  "targetType": "ranged",
+  "range": 5,
+  "aoeRadius": 1,
+  "cooldown": 3,
+  "mpCost": 0,
+  "effect": {
+    "type": "damage",
+    "value": 20,
+    "statusType": "burning",
+    "duration": 3
+  }
+}

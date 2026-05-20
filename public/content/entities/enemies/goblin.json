@@ -1,0 +1,19 @@
+{
+  "id": "goblin",
+  "name": "Goblin",
+  "symbol": "g",
+  "spriteId": "goblin",
+  "health": { "max": 20 },
+  "combat": {
+    "damage": 5,
+    "armor": 0,
+    "attackRange": 1
+  },
+  "ai": {
+    "type": "aggressive",
+    "sightRange": 6,
+    "chaseRange": 10
+  },
+  "lootTable": ["health_potion"],
+  "xpReward": 10
+}

@@ -1,0 +1,19 @@
+{
+  "id": "cat_small",
+  "name": "Котёнок-разбойник",
+  "symbol": "c",
+  "spriteId": "cat_small",
+  "health": { "max": 15 },
+  "combat": {
+    "damage": 4,
+    "armor": 0,
+    "attackRange": 1
+  },
+  "ai": {
+    "type": "aggressive",
+    "sightRange": 5,
+    "chaseRange": 8
+  },
+  "lootTable": ["health_potion"],
+  "xpReward": 8
+}

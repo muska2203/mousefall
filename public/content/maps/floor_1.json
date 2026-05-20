@@ -1,0 +1,13 @@
+{
+  "id": "floor_1",
+  "width": 50,
+  "height": 50,
+  "minRooms": 6,
+  "maxRooms": 10,
+  "minRoomSize": 4,
+  "maxRoomSize": 10,
+  "enemyDensity": 0.6,
+  "itemDensity": 0.3,
+  "enemyPool": ["goblin"],
+  "itemPool": ["health_potion"]
+}

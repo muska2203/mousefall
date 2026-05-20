@@ -1,0 +1,15 @@
+{
+  "id": "leather_armor",
+  "name": "Leather Armor",
+  "description": "Cured hide stitched into a protective vest.",
+  "symbol": "[",
+  "spriteId": "leather_armor",
+  "type": "armor",
+  "stackable": false,
+  "maxStack": 1,
+  "weight": 5,
+  "value": 40,
+  "armor": {
+    "defense": 3
+  }
+}

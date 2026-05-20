@@ -1,0 +1,19 @@
+{
+  "id": "cat_big",
+  "name": "Босс-кот",
+  "symbol": "B",
+  "spriteId": "cat_big",
+  "health": { "max": 60 },
+  "combat": {
+    "damage": 12,
+    "armor": 3,
+    "attackRange": 1
+  },
+  "ai": {
+    "type": "aggressive",
+    "sightRange": 10,
+    "chaseRange": 15
+  },
+  "lootTable": ["health_potion", "short_sword", "leather_armor"],
+  "xpReward": 40
+}

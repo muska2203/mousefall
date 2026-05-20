@@ -1,0 +1,19 @@
+{
+  "id": "cat_mid",
+  "name": "Уличный кот",
+  "symbol": "C",
+  "spriteId": "cat_mid",
+  "health": { "max": 30 },
+  "combat": {
+    "damage": 7,
+    "armor": 1,
+    "attackRange": 1
+  },
+  "ai": {
+    "type": "aggressive",
+    "sightRange": 7,
+    "chaseRange": 10
+  },
+  "lootTable": ["health_potion", "short_sword"],
+  "xpReward": 18
+}

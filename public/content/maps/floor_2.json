@@ -1,0 +1,13 @@
+{
+  "id": "floor_2",
+  "width": 60,
+  "height": 60,
+  "minRooms": 8,
+  "maxRooms": 14,
+  "minRoomSize": 4,
+  "maxRoomSize": 12,
+  "enemyDensity": 0.7,
+  "itemDensity": 0.35,
+  "enemyPool": ["goblin", "orc"],
+  "itemPool": ["health_potion", "short_sword", "leather_armor"]
+}

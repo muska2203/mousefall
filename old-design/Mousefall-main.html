@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<!-- saved from url=(0035)https://cat-and-mouse.dev-mode.art/ -->
+<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mousefall</title>
+    <link rel="stylesheet" href="./Mousefall-main_files/game-screen.css">
+    <link rel="stylesheet" href="./Mousefall-main_files/welcome.css">
+    <link rel="stylesheet" href="./Mousefall-main_files/ending.css">
+    <link rel="stylesheet" href="./Mousefall-main_files/runtime.css">
+  <script async="" src="./Mousefall-main_files/js"></script></head>
+  <body>
+    <div id="app">
+    <div class="cm-app">
+      <div class="cm-main">
+        <aside class="cm-col cm-col--left">
+          <section class="cm-panel cm-panel--fill" aria-labelledby="hero-title">
+            <span class="cm-rivet cm-rivet--tl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--tr" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--bl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--br" aria-hidden="true"></span>
+            <h2 class="cm-panel__title" id="hero-title">Герой</h2>
+            <div class="cm-panel__body">
+              <div class="cm-hero-portrait">
+                <div class="cm-portrait-ring">
+                  <div class="cm-portrait-inner">
+                    <img src="./Mousefall-main_files/witcher-ready.png" width="112" height="112" alt="Белый Хвост">
+                  </div>
+                </div>
+                <div class="cm-level-badge" aria-label="Уровень 1" title="Уровень 1">1</div>
+              </div>
+
+              <div class="cm-bar cm-bar--hp">
+                <div class="cm-bar__row">
+                  <span class="cm-bar__icon-wrap" aria-hidden="true"><img class="cm-bar__icon" src="./Mousefall-main_files/hp.svg" width="22" height="22" alt=""></span>
+                  <div class="cm-bar__content">
+                    <div class="cm-bar__label"><span>HP</span><span>100 / 100</span></div>
+                    <div class="cm-bar__track"><div class="cm-bar__fill" style="width:100%"></div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="cm-bar cm-bar--mana">
+                <div class="cm-bar__row">
+                  <span class="cm-bar__icon-wrap" aria-hidden="true"><img class="cm-bar__icon" src="./Mousefall-main_files/mana.svg" width="22" height="22" alt=""></span>
+                  <div class="cm-bar__content">
+                    <div class="cm-bar__label"><span>Мана</span><span>30 / 30</span></div>
+                    <div class="cm-bar__track"><div class="cm-bar__fill" style="width:100%"></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="cm-welcome-section-title">Распределение очков</div>
+              <div class="cm-welcome-points">Свободно очков: <span class="cm-welcome-points-val">10</span></div>
+              <ul class="cm-stats cm-stats--alloc">
+                
+    <li class="cm-stat-row cm-stat-row--alloc">
+      <span class="cm-stat-icon" aria-hidden="true">💪</span>
+      <span class="cm-stat-name">Сила</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-minus" data-stat="STR" data-preview-screen="welcome" data-preview-stat="STR" data-preview-delta="-1" disabled="">-</button>
+      <span class="cm-stat-value ">0</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-plus" data-stat="STR" data-preview-screen="welcome" data-preview-stat="STR" data-preview-delta="1">+</button>
+    </li>
+  
+                
+    <li class="cm-stat-row cm-stat-row--alloc">
+      <span class="cm-stat-icon" aria-hidden="true">✨</span>
+      <span class="cm-stat-name">Интеллект</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-minus" data-stat="INT" data-preview-screen="welcome" data-preview-stat="INT" data-preview-delta="-1" disabled="">-</button>
+      <span class="cm-stat-value ">0</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-plus" data-stat="INT" data-preview-screen="welcome" data-preview-stat="INT" data-preview-delta="1">+</button>
+    </li>
+  
+                
+    <li class="cm-stat-row cm-stat-row--alloc">
+      <span class="cm-stat-icon" aria-hidden="true">🐾</span>
+      <span class="cm-stat-name">Ловкость</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-minus" data-stat="AGI" data-preview-screen="welcome" data-preview-stat="AGI" data-preview-delta="-1" disabled="">-</button>
+      <span class="cm-stat-value ">0</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-plus" data-stat="AGI" data-preview-screen="welcome" data-preview-stat="AGI" data-preview-delta="1">+</button>
+    </li>
+  
+                
+    <li class="cm-stat-row cm-stat-row--alloc">
+      <span class="cm-stat-icon" aria-hidden="true">🍀</span>
+      <span class="cm-stat-name">Удача</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-minus" data-stat="LUK" data-preview-screen="welcome" data-preview-stat="LUK" data-preview-delta="-1" disabled="">-</button>
+      <span class="cm-stat-value ">0</span>
+      <button type="button" class="cm-stat-btn" data-action="pregame-stat-plus" data-stat="LUK" data-preview-screen="welcome" data-preview-stat="LUK" data-preview-delta="1">+</button>
+    </li>
+  
+                
+    <li class="cm-stat-row cm-stat-row--readonly">
+      <span class="cm-stat-icon" aria-hidden="true">🎯</span>
+      <span class="cm-stat-name">Крит шанс</span>
+      <span class="cm-stat-value ">5%</span>
+    </li>
+  
+                
+    <li class="cm-stat-row cm-stat-row--readonly">
+      <span class="cm-stat-icon" aria-hidden="true">💥</span>
+      <span class="cm-stat-name">Крит x</span>
+      <span class="cm-stat-value ">1.5x</span>
+    </li>
+  
+              </ul>
+            </div>
+          </section>
+        </aside>
+
+        <main class="cm-col cm-col--center">
+          <section class="cm-panel cm-panel--fill" aria-labelledby="portrait-title">
+            <span class="cm-rivet cm-rivet--tl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--tr" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--bl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--br" aria-hidden="true"></span>
+            <h2 class="cm-panel__title" id="portrait-title">Выбор внешности</h2>
+            <div class="cm-panel__body cm-welcome-center">
+              <div class="cm-welcome-preview">
+                <div class="cm-welcome-preview-img-wrap"><img src="./Mousefall-main_files/witcher-ready.png" alt="Предпросмотр"></div>
+                <h3 class="cm-welcome-preview-name">Белый Хвост</h3>
+                <p class="cm-welcome-preview-desc">Охотник на чудовищ и мечник-алхимик.</p>
+              </div>
+
+              <div class="cm-welcome-gallery-wrap cm-scroll-wood">
+                <div class="cm-welcome-gallery">
+                  
+                    <button class="cm-welcome-gallery-item active" type="button" data-action="select-portrait" data-portrait-id="witcher" aria-label="Белый Хвост" title="Белый Хвост">
+                      <img src="./Mousefall-main_files/witcher-ready.png" alt="">
+                    </button>
+                  
+                    <button class="cm-welcome-gallery-item " type="button" data-action="select-portrait" data-portrait-id="halfling-mage" aria-label="Сырный Мерлин" title="Сырный Мерлин">
+                      <img src="./Mousefall-main_files/halfling-mage-ready.png" alt="">
+                    </button>
+                  
+                    <button class="cm-welcome-gallery-item " type="button" data-action="select-portrait" data-portrait-id="paladin" aria-label="Сир Чеддар" title="Сир Чеддар">
+                      <img src="./Mousefall-main_files/paladin-ready.png" alt="">
+                    </button>
+                  
+                    <button class="cm-welcome-gallery-item " type="button" data-action="select-portrait" data-portrait-id="elven-ranger" aria-label="Тонкоух" title="Тонкоух">
+                      <img src="./Mousefall-main_files/elven-ranger-ready.png" alt="">
+                    </button>
+                  
+                    <button class="cm-welcome-gallery-item " type="button" data-action="select-portrait" data-portrait-id="orc-barbarian" aria-label="Клыкохвост" title="Клыкохвост">
+                      <img src="./Mousefall-main_files/orc-barbarian-ready.png" alt="">
+                    </button>
+                  
+                    <button class="cm-welcome-gallery-item " type="button" data-action="select-portrait" data-portrait-id="samurai" aria-label="Усатый Сэнсэй" title="Усатый Сэнсэй">
+                      <img src="./Mousefall-main_files/samurai-ready.png" alt="">
+                    </button>
+                  
+                    <button class="cm-welcome-gallery-item " type="button" data-action="select-portrait" data-portrait-id="necromancer" aria-label="Мышь-Косторез" title="Мышь-Косторез">
+                      <img src="./Mousefall-main_files/necromancer-ready.png" alt="">
+                    </button>
+                  
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <aside class="cm-col cm-col--right">
+          <section class="cm-panel cm-panel--welcome-equip" aria-labelledby="equip-title">
+            <span class="cm-rivet cm-rivet--tl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--tr" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--bl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--br" aria-hidden="true"></span>
+            <h2 class="cm-panel__title" id="equip-title">Стартовая экипировка</h2>
+            <div class="cm-panel__body">
+              
+    <div class="cm-welcome-equip-slot">
+      <div class="cm-welcome-equip-header">
+        <span class="cm-welcome-equip-label">Оружие</span>
+        <span class="cm-welcome-equip-desc">Выбрано: 0</span>
+      </div>
+      <div class="cm-welcome-options">
+        
+            <button class="cm-welcome-item item-rarity-common " type="button" data-action="toggle-starter-item" data-item-id="common_splinter_blade" data-preview-item-screen="welcome" data-preview-item-id="common_splinter_blade" data-inventory-detail-item-id="common_splinter_blade" aria-label="Ржавый сырорез" title="Ржавый сырорез"><span class="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true"><img class="cm-sprite-stack__frame" src="./Mousefall-main_files/loot_frame_common.png" alt="" loading="lazy" decoding="async"><img class="cm-sprite-stack__body" src="./Mousefall-main_files/common_splinter_blade.png" alt="" loading="lazy" decoding="async"><span class="cm-sprite-fallback">🗡</span></span><span class="cm-item-weapon-damage ">4</span></button>
+          
+            <button class="cm-welcome-item item-rarity-common " type="button" data-action="toggle-starter-item" data-item-id="common_school_wand" data-preview-item-screen="welcome" data-preview-item-id="common_school_wand" data-inventory-detail-item-id="common_school_wand" aria-label="Треснувшая спица" title="Треснувшая спица"><span class="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true"><img class="cm-sprite-stack__frame" src="./Mousefall-main_files/loot_frame_common.png" alt="" loading="lazy" decoding="async"><img class="cm-sprite-stack__body" src="./Mousefall-main_files/common_school_wand.png" alt="" loading="lazy" decoding="async"><span class="cm-sprite-fallback">🪄</span></span><span class="cm-item-weapon-damage ">2</span></button>
+          
+      </div>
+    </div>
+  
+              
+    <div class="cm-welcome-equip-slot">
+      <div class="cm-welcome-equip-header">
+        <span class="cm-welcome-equip-label">Броня</span>
+        <span class="cm-welcome-equip-desc">Выбрано: 0</span>
+      </div>
+      <div class="cm-welcome-options">
+        
+            <button class="cm-welcome-item item-rarity-common " type="button" data-action="toggle-starter-item" data-item-id="common_tin_plate" data-preview-item-screen="welcome" data-preview-item-id="common_tin_plate" data-inventory-detail-item-id="common_tin_plate" aria-label="Жестяная кираса" title="Жестяная кираса"><span class="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true"><img class="cm-sprite-stack__frame" src="./Mousefall-main_files/loot_frame_common.png" alt="" loading="lazy" decoding="async"><img class="cm-sprite-stack__body" src="./Mousefall-main_files/common_tin_plate.png" alt="" loading="lazy" decoding="async"><span class="cm-sprite-fallback">🥋</span></span></button>
+          
+            <button class="cm-welcome-item item-rarity-common " type="button" data-action="toggle-starter-item" data-item-id="common_patch_cloak" data-preview-item-screen="welcome" data-preview-item-id="common_patch_cloak" data-inventory-detail-item-id="common_patch_cloak" aria-label="Потёртый плащ пыльника" title="Потёртый плащ пыльника"><span class="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true"><img class="cm-sprite-stack__frame" src="./Mousefall-main_files/loot_frame_common.png" alt="" loading="lazy" decoding="async"><img class="cm-sprite-stack__body" src="./Mousefall-main_files/common_patch_cloak.png" alt="" loading="lazy" decoding="async"><span class="cm-sprite-fallback">👘</span></span></button>
+          
+      </div>
+    </div>
+  
+              
+    <div class="cm-welcome-equip-slot">
+      <div class="cm-welcome-equip-header">
+        <span class="cm-welcome-equip-label">Амулет</span>
+        <span class="cm-welcome-equip-desc">Выбрано: 0</span>
+      </div>
+      <div class="cm-welcome-options">
+        
+            <button class="cm-welcome-item item-rarity-common " type="button" data-action="toggle-starter-item" data-item-id="common_knotted_fang" data-preview-item-screen="welcome" data-preview-item-id="common_knotted_fang" data-inventory-detail-item-id="common_knotted_fang" aria-label="Кривой клык" title="Кривой клык"><span class="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true"><img class="cm-sprite-stack__frame" src="./Mousefall-main_files/loot_frame_common.png" alt="" loading="lazy" decoding="async"><img class="cm-sprite-stack__body" src="./Mousefall-main_files/common_knotted_fang.png" alt="" loading="lazy" decoding="async"><span class="cm-sprite-fallback">🦷</span></span></button>
+          
+            <button class="cm-welcome-item item-rarity-common " type="button" data-action="toggle-starter-item" data-item-id="common_glass_bead" data-preview-item-screen="welcome" data-preview-item-id="common_glass_bead" data-inventory-detail-item-id="common_glass_bead" aria-label="Тусклая бусина" title="Тусклая бусина"><span class="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true"><img class="cm-sprite-stack__frame" src="./Mousefall-main_files/loot_frame_common.png" alt="" loading="lazy" decoding="async"><img class="cm-sprite-stack__body" src="./Mousefall-main_files/common_glass_bead.png" alt="" loading="lazy" decoding="async"><span class="cm-sprite-fallback">🧿</span></span></button>
+          
+      </div>
+    </div>
+  
+            </div>
+          </section>
+
+          <section class="cm-panel" aria-labelledby="info-title">
+            <span class="cm-rivet cm-rivet--tl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--tr" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--bl" aria-hidden="true"></span>
+            <span class="cm-rivet cm-rivet--br" aria-hidden="true"></span>
+            <h2 class="cm-panel__title" id="info-title">Информация</h2>
+            <div class="cm-panel__body cm-welcome-info-body">
+              <button class="cm-btn cm-btn--secondary" type="button" data-action="open-help">Подсказки по игре</button>
+              <button class="cm-btn cm-btn--secondary" type="button" data-action="open-devlog">Devlog</button>
+            </div>
+          </section>
+          <div class="cm-welcome-start-wrap">
+            <button class="cm-btn cm-btn--primary cm-welcome-start" type="button" data-action="start-game" disabled="">Начать забег</button>
+            
+          </div>
+        </aside>
+      </div>
+      
+    <div class="cm-meta-footer" aria-label="Информация о версии и аналитике">
+      <div class="cm-meta-footer__brand">Mousefall</div>
+      <div class="cm-meta-footer__meta">
+        <div class="cm-meta-footer__line">
+          <span class="cm-meta-footer__value">v. 0.5.7-pre-alpha Разработчик: NameCode</span>
+        </div>
+        <p class="cm-meta-footer__note">Данные по забегам собираются для анализа в сервисе аналитики.</p>
+      </div>
+    </div>
+  
+    </div>
+    
+  </div>
+    <script type="module" src="./Mousefall-main_files/main.js.Без названия"></script>
+  
+
+</body></html>

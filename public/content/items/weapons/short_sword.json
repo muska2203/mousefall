@@ -1,0 +1,16 @@
+{
+  "id": "short_sword",
+  "name": "Short Sword",
+  "description": "A simple iron blade. Light and reliable.",
+  "symbol": "/",
+  "spriteId": "short_sword",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "weight": 2,
+  "value": 50,
+  "weapon": {
+    "damage": 8,
+    "range": 1
+  }
+}

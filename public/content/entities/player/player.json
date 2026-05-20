@@ -1,0 +1,14 @@
+{
+  "id": "player",
+  "name": "Player",
+  "symbol": "@",
+  "spriteId": "player",
+  "health": { "max": 100 },
+  "combat": {
+    "damage": 8,
+    "armor": 0,
+    "attackRange": 1
+  },
+  "lootTable": [],
+  "xpReward": 0
+}
