@@ -27,25 +27,37 @@ export class FogRenderer {
   update(state: GameState, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): void {
     const {visible, explored, map} = state;
 
-    const startCol = Math.max(0, Math.floor(cameraX / TILE_SIZE));
-    const startRow = Math.max(0, Math.floor(cameraY / TILE_SIZE));
-    const endCol = Math.min(map.width, Math.ceil((cameraX + viewportWidth) / TILE_SIZE));
-    const endRow = Math.min(map.height, Math.ceil((cameraY + viewportHeight) / TILE_SIZE));
+    // Рисуем туман на всей видимой области, включая пространство за пределами карты
+    const startCol = Math.floor(cameraX / TILE_SIZE);
+    const startRow = Math.floor(cameraY / TILE_SIZE);
+    const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE);
+    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE);
 
     this.graphics.clear();
 
+    // Explored — один batch с полупрозрачной заливкой
     for (let y = startRow; y < endRow; y++) {
       for (let x = startCol; x < endCol; x++) {
-        const isVisible = visible[y]?.[x] ?? false;
-        if (isVisible) continue;
-
-        const isExplored = explored[y]?.[x] ?? false;
-        const alpha = isExplored ? ALPHA_EXPLORED : ALPHA_HIDDEN;
-
-        this.graphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        this.graphics.fill({color: COLOR_EXPLORED, alpha});
+        const inBounds = x >= 0 && x < map.width && y >= 0 && y < map.height;
+        if (inBounds && visible[y]![x]) continue;
+        if (inBounds && explored[y]![x]) {
+          this.graphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
       }
     }
+    this.graphics.fill({color: COLOR_EXPLORED, alpha: ALPHA_EXPLORED});
+
+    // Hidden / out-of-bounds — второй batch с непрозрачной заливкой
+    for (let y = startRow; y < endRow; y++) {
+      for (let x = startCol; x < endCol; x++) {
+        const inBounds = x >= 0 && x < map.width && y >= 0 && y < map.height;
+        if (inBounds && visible[y]![x]) continue;
+        if (!inBounds || !explored[y]![x]) {
+          this.graphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+      }
+    }
+    this.graphics.fill({color: COLOR_EXPLORED, alpha: ALPHA_HIDDEN});
   }
 
   clear(): void {

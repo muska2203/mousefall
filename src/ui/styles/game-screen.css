@@ -817,6 +817,7 @@ body:has(.cm-app--game) #app {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  overflow: hidden;
   background: repeating-linear-gradient(
       90deg,
       transparent,
@@ -828,34 +829,6 @@ body:has(.cm-app--game) #app {
   border: 3px solid var(--bronze);
   border-radius: var(--radius-panel);
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.65);
-}
-
-.cm-field__main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-}
-
-.cm-field__placeholder {
-  text-align: center;
-  padding: calc(var(--cm-pad) * 2);
-  color: var(--text-muted);
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  max-width: 280px;
-  line-height: 1.5;
-}
-
-.cm-field__placeholder span {
-  display: block;
-  margin-top: var(--cm-gap-sub);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  opacity: 0.85;
 }
 
 /* --- Инвентарь: 5 колонок, строки по числу предметов, вертикальный скролл --- */
@@ -1631,18 +1604,16 @@ body:has(.cm-app--game) #app {
   border-radius: 3px;
 }
 
-/* PixiJS canvas контейнер */
-.cm-field__main--pixi {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 352px;
-  background: #0d0a07;
-  border-radius: 6px;
-  overflow: hidden;
+/* PixiJS canvas — заполняет весь .cm-field */
+.cm-field > canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-panel);
 }
 
-.cm-field__main--pixi canvas {
-  display: block;
-  border-radius: 4px;
+.cm-hotbar-wrap--in-field {
+  position: relative;
+  z-index: 1;
 }

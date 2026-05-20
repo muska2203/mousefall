@@ -14,15 +14,16 @@ import {FogRenderer} from './FogRenderer';
 
 export class WorldRenderer {
   public readonly root = new Container();
-  public readonly viewportWidth: number;
-  public readonly viewportHeight: number;
+  public viewportWidth: number;
+  public viewportHeight: number;
 
   private tileRenderer = new TileRenderer();
   private entityRenderer = new EntityRenderer();
   private fogRenderer = new FogRenderer();
 
-  private cameraX = 0;
-  private cameraY = 0;
+  private _scale = 1;
+  private readonly minScale = 0.5;
+  private readonly maxScale = 3;
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.viewportWidth = viewportWidth;
@@ -31,6 +32,12 @@ export class WorldRenderer {
     this.root.addChild(this.tileRenderer.container);
     this.root.addChild(this.entityRenderer.container);
     this.root.addChild(this.fogRenderer.container);
+  }
+
+  /** Обновить размеры viewport'а (например, при ресайзе контейнера). */
+  resize(width: number, height: number): void {
+    this.viewportWidth = width;
+    this.viewportHeight = height;
   }
 
   /**
@@ -43,26 +50,44 @@ export class WorldRenderer {
     const playerScreenX = state.player.x * TILE_SIZE;
     const playerScreenY = state.player.y * TILE_SIZE;
 
-    this.cameraX = playerScreenX - this.viewportWidth / 2 + TILE_SIZE / 2;
-    this.cameraY = playerScreenY - this.viewportHeight / 2 + TILE_SIZE / 2;
+    const s = this._scale;
+    const viewW = this.viewportWidth / s;
+    const viewH = this.viewportHeight / s;
 
-    // Ограничиваем камеру границами карты
-    const maxCamX = state.map.width * TILE_SIZE - this.viewportWidth;
-    const maxCamY = state.map.height * TILE_SIZE - this.viewportHeight;
-    this.cameraX = Math.max(0, Math.min(this.cameraX, maxCamX));
-    this.cameraY = Math.max(0, Math.min(this.cameraY, maxCamY));
+    // Центрируем камеру на центре спрайта игрока.
+    // В PixiJS экранная координата считается как: world * scale + position,
+    // поэтому смещение корневого контейнера должно учитывать масштаб.
+    const cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
+    const cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
 
     // Обновляем слои (параллельно, кроме fog которая зависит от camera)
     await Promise.all([
-      this.tileRenderer.update(state.map, this.cameraX, this.cameraY, this.viewportWidth, this.viewportHeight),
+      this.tileRenderer.update(state.map, cameraX, cameraY, viewW, viewH),
       this.entityRenderer.update(state, playerPortraitId),
     ]);
 
-    this.fogRenderer.update(state, this.cameraX, this.cameraY, this.viewportWidth, this.viewportHeight);
+    this.fogRenderer.update(state, cameraX, cameraY, viewW, viewH);
 
-    // Применяем смещение камеры к корневому контейнеру
-    this.root.x = -this.cameraX;
-    this.root.y = -this.cameraY;
+    // Применяем масштаб и смещение к корневому контейнеру
+    this.root.scale.set(s);
+    this.root.x = -cameraX * s;
+    this.root.y = -cameraY * s;
+  }
+
+  /** Текущий масштаб мира. */
+  get scale(): number {
+    return this._scale;
+  }
+
+  /** Изменить масштаб на заданную дельту (положительная — приближение). */
+  zoom(delta: number): void {
+    const factor = 1 + delta;
+    this._scale = Math.max(this.minScale, Math.min(this.maxScale, this._scale * factor));
+  }
+
+  /** Сбросить масштаб к 1. */
+  resetZoom(): void {
+    this._scale = 1;
   }
 
   destroy(): void {
