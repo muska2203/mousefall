@@ -96,6 +96,7 @@ export function createNewGameState(seed: number): GameState {
     turn: {round: 1, activeSide: 'PLAYER'},
     phase: 'playing',
     floor: 1,
+    floorSnapshots: [],
     rng: createRNG(seed),
     nextEntityCounter: 0,
   };
@@ -139,6 +140,7 @@ export const TARGET_PRIORITY: Record<EntityType, number> = {
   player: 100,
   enemy: 90,
   item: 0,
+  stairs: 0,
 };
 
 export function findFirstAttackableEntityAt(state: GameState, x: number, y: number): (Entity & Attackable) | undefined {
@@ -182,6 +184,16 @@ export function blocksLOS(state: GameState, x: number, y: number): boolean {
  */
 export function playerPos(state: GameState): Position {
   return { x: state.player.x, y: state.player.y };
+}
+
+/**
+ * Возвращает лестницу на заданной клетке или undefined.
+ */
+export function findStairsAt(state: GameState, x: number, y: number, direction?: 'down' | 'up'): import('./types').StairsEntity | undefined {
+  const entities = findAllEntitiesAt(state, x, y);
+  return entities
+    .filter((e): e is import('./types').StairsEntity => e.type === 'stairs' && (!direction || e.direction === direction))
+    [0];
 }
 
 /**

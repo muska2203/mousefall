@@ -1,8 +1,8 @@
-# Renderer Layer
+# Renderer Subsystem
 
 ## Responsibility
 
-Renders the game world to screen using PixiJS. This layer is **read-only** — it reads game state and draws it. It never mutates game state.
+Renders the game world to screen using PixiJS. This subsystem is **read-only** — it receives render data from Presentation and draws it. It never mutates game state.
 
 The renderer handles:
 - Tile sprites (floor, wall, stairs)
@@ -12,28 +12,25 @@ The renderer handles:
 - Tile animations (attack flash, death, pickup)
 
 The renderer does **NOT** handle:
-- HUD, menus, dialogs (that's `ui/`)
-- Input handling (that's `ui/input/`)
+- HUD, menus, dialogs (other `ui/` components)
+- Input handling
 - Game logic (that's `simulation/`)
+
+> **Note:** Renderer is not a separate architectural layer. It is a technical subsystem inside UI Layer, as per `ARCHITECTURE.md`.
 
 ---
 
 ## Module Structure
 
 ```
-renderer/
+src/ui/renderer/
 ├── README.md
 ├── PixiApp.ts        # PixiJS Application setup, canvas mount/unmount
 ├── WorldRenderer.ts  # Main renderer: orchestrates all sub-renderers
 ├── TileRenderer.ts   # Renders map tiles layer
 ├── EntityRenderer.ts # Renders entity sprites layer
 ├── FogRenderer.ts    # Renders fog of war overlay
-├── Camera.ts         # Viewport management, scroll, zoom
-├── SpriteSheet.ts    # Sprite sheet loading and lookup by spriteId
-└── animations/
-    ├── AttackAnimation.ts   # Flash effect on hit
-    ├── DeathAnimation.ts    # Fade-out on death
-    └── PickupAnimation.ts   # Float-up on item pickup
+└── animations/       # Animation executors (planned)
 ```
 
 ---
@@ -104,17 +101,16 @@ Three visual states per tile:
 ## Allowed Dependencies
 
 ```
+renderer/ → presentation/   (RenderInput, AnimationPlan)
 renderer/ → utils/constants.ts  (TILE_SIZE, etc.)
-renderer/ → simulation/types.ts (GameState, GameEvent types — read only)
 ```
 
 ## Forbidden Dependencies
 
 ```
+renderer/ ✗→ simulation/      (no direct Simulation access)
 renderer/ ✗→ simulation/systems/  (no game logic)
-renderer/ ✗→ store/               (reads state passed as argument, not from store)
-renderer/ ✗→ ui/                  (no UI concerns)
-renderer/ ✗→ content/             (sprite IDs come from entity data in state)
+renderer/ ✗→ content/         (sprite IDs come from RenderInput)
 ```
 
 ---

@@ -8,7 +8,7 @@
  */
 
 import {Container, Graphics} from 'pixi.js';
-import type {GameState} from '@simulation/types';
+import type {RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 
 const COLOR_HIDDEN = 0x000000;
@@ -24,14 +24,15 @@ export class FogRenderer {
     this.container.addChild(this.graphics);
   }
 
-  update(state: GameState, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): void {
-    const {visible, explored, map} = state;
+  update(input: RenderInput, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): void {
+    const {visible, explored, map} = input.state;
 
     // Рисуем туман на всей видимой области, включая пространство за пределами карты
-    const startCol = Math.floor(cameraX / TILE_SIZE);
-    const startRow = Math.floor(cameraY / TILE_SIZE);
-    const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE);
-    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE);
+    const overrender = 1;
+    const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
+    const startRow = Math.floor(cameraY / TILE_SIZE) - overrender;
+    const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE) + overrender;
+    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE) + overrender;
 
     this.graphics.clear();
 

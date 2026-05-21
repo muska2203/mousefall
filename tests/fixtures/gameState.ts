@@ -131,6 +131,7 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
     turn: {activeSide: 'PLAYER', round: 0},
     phase: 'playing',
     floor: 1,
+    floorSnapshots: [],
     rng: createRNG(12345),
     nextEntityCounter: 0,
     ...overrides,

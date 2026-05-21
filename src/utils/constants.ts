@@ -74,4 +74,5 @@ export const ENTITY_TYPE = {
     PLAYER: 'player',
     ENEMY: 'enemy',
     ITEM: 'item',
+    STAIRS: 'stairs',
 } as const;

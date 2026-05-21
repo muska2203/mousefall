@@ -6,7 +6,7 @@
  */
 
 import {Container, Sprite, Texture} from 'pixi.js';
-import type {GameMap} from '@simulation/types';
+import type {RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {getTileSprite} from './spriteRegistry';
 import {getTexture} from './TextureCache';
@@ -15,11 +15,13 @@ export class TileRenderer {
   public readonly container = new Container();
   private sprites = new Map<string, Sprite>();
 
-  async update(map: GameMap, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): Promise<void> {
-    const startCol = Math.floor(cameraX / TILE_SIZE);
-    const startRow = Math.floor(cameraY / TILE_SIZE);
-    const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE);
-    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE);
+  async update(input: RenderInput, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): Promise<void> {
+    const map = input.state.map;
+    const overrender = 1;
+    const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
+    const startRow = Math.floor(cameraY / TILE_SIZE) - overrender;
+    const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE) + overrender;
+    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE) + overrender;
 
     const visibleKeys = new Set<string>();
     const texturePaths = new Map<string, string>();

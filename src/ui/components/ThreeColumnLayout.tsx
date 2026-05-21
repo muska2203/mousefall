@@ -37,7 +37,12 @@ export function ThreeColumnLayout({
         ? 'cm-app cm-ending-app'
         : 'cm-app';
 
-  const mainClass = variant === 'ending' ? 'cm-main cm-ending-main' : 'cm-main';
+  const mainClass =
+    variant === 'ending'
+      ? 'cm-main cm-ending-main'
+      : variant === 'game'
+        ? 'cm-main cm-main--game'
+        : 'cm-main';
 
   return (
     <div className={appClass}>

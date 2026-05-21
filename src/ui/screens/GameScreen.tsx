@@ -9,6 +9,7 @@
 
 import {useCallback, useEffect, useSyncExternalStore} from 'react';
 import type {GameSession, SessionMode} from '@presentation/gameSession';
+import {KEY_MAP, INTERACTIVE_TAGS} from '@ui/input/keyboardMap';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -26,30 +27,7 @@ interface Props {
   onModeChange: (mode: SessionMode) => void;
 }
 
-const KEY_MAP: Record<string, [number, number]> = {
-  ArrowUp: [0, -1],
-  w: [0, -1],
-  W: [0, -1],
-  ц: [0, -1],
-  Ц: [0, -1],
-  ArrowDown: [0, 1],
-  s: [0, 1],
-  S: [0, 1],
-  ы: [0, 1],
-  Ы: [0, 1],
-  ArrowLeft: [-1, 0],
-  a: [-1, 0],
-  A: [-1, 0],
-  ф: [-1, 0],
-  Ф: [-1, 0],
-  ArrowRight: [1, 0],
-  d: [1, 0],
-  D: [1, 0],
-  в: [1, 0],
-  В: [1, 0],
-};
 
-const INTERACTIVE_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
 function getSnapshot(session: GameSession) {
   return session.getViewModel();
@@ -64,22 +42,55 @@ export function GameScreen({session, onModeChange}: Props) {
     (cb) => subscribe(session, cb),
     () => getSnapshot(session),
   );
-  const state = vm.state;
+  const renderInput = vm.renderInput;
+
+  const isInputBlocked = renderInput?.phase === 'animating';
 
   const performMoveOrAttack = useCallback(
     (dx: number, dy: number) => {
       if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
       session.moveOrAttack(dx, dy);
       onModeChange(session.getMode());
     },
-    [session, onModeChange],
+    [session, onModeChange, isInputBlocked],
   );
 
   const handleWait = useCallback(() => {
     if (session.getMode() !== 'playing') return;
+    if (isInputBlocked) return;
     session.dispatch({type: 'WAIT'});
     onModeChange(session.getMode());
-  }, [session, onModeChange]);
+  }, [session, onModeChange, isInputBlocked]);
+
+  const handleDescend = useCallback(() => {
+    if (session.getMode() !== 'playing') return;
+    if (isInputBlocked) return;
+    session.dispatch({type: 'DESCEND', entityId: 'player'});
+    onModeChange(session.getMode());
+  }, [session, onModeChange, isInputBlocked]);
+
+  const handleAscend = useCallback(() => {
+    if (session.getMode() !== 'playing') return;
+    if (isInputBlocked) return;
+    session.dispatch({type: 'ASCEND', entityId: 'player'});
+    onModeChange(session.getMode());
+  }, [session, onModeChange, isInputBlocked]);
+
+  const handleZoom = useCallback(
+    (delta: number) => {
+      session.setZoom(delta);
+    },
+    [session],
+  );
+
+  // Синхронизация режима с App.tsx (важно при автоходе и смерти)
+  const currentMode = session.getMode();
+  useEffect(() => {
+    if (currentMode !== 'playing') {
+      onModeChange(currentMode);
+    }
+  }, [currentMode, onModeChange]);
 
   // Обработка клавиатуры
   useEffect(() => {
@@ -88,24 +99,48 @@ export function GameScreen({session, onModeChange}: Props) {
       const target = e.target as HTMLElement | null;
       if (target && INTERACTIVE_TAGS.has(target.tagName)) return;
 
+      // Спуск / подъём по лестнице (ручное управление)
+      if (e.key === '>' || e.key === '.') {
+        e.preventDefault();
+        handleDescend();
+        return;
+      }
+      if (e.key === '<' || e.key === ',') {
+        e.preventDefault();
+        handleAscend();
+        return;
+      }
+
       const delta = KEY_MAP[e.key];
       if (!delta) return;
       e.preventDefault();
+      session.setHeldDirection(delta[0], delta[1]);
       performMoveOrAttack(delta[0], delta[1]);
     };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const delta = KEY_MAP[e.key];
+      if (!delta) return;
+      session.clearHeldDirection();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [performMoveOrAttack]);
 
-  if (!state) {
+  if (!renderInput) {
     return (
       <ThreeColumnLayout variant="game" left={null} center={<div>Загрузка...</div>} right={null} />
     );
   }
 
-  const player = state.player;
-  const portraitImg = vm.portraitId
-    ? `/assets/portraits/${vm.portraitId}-ready.png`
+  const player = renderInput.state.player;
+  const portraitImg = renderInput.portraitId
+    ? `/assets/portraits/${renderInput.portraitId}-ready.png`
     : '/assets/portraits/witcher-ready.png';
 
   // Заглушки для данных, которых пока нет в симуляции
@@ -164,7 +199,15 @@ export function GameScreen({session, onModeChange}: Props) {
     </>
   );
 
-  const centerColumn = <GameField level={level} state={state} portraitId={vm.portraitId} lastResult={vm.lastResult} onWait={handleWait} />;
+  const centerColumn = (
+    <GameField
+      level={level}
+      renderInput={renderInput}
+      onWait={handleWait}
+      onAnimationsComplete={() => session.onAnimationsComplete()}
+      onZoomDelta={handleZoom}
+    />
+  );
 
   const rightColumn = (
     <>

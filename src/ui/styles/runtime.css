@@ -196,31 +196,26 @@
   text-align: center;
 }
 
-/* Game screen: simple fixed right column sizing (5 inventory cells). */
-.cm-app--game .cm-main {
+/* Game screen layout modifier. */
+.cm-main.cm-main--game {
   grid-template-columns: 260px 1fr 300px;
   max-height: 100vh;
 }
 
-.cm-app--game .cm-col--center {
+.cm-main--game .cm-col--center {
   min-height: 0;
 }
 
-.cm-app--game .cm-field {
+.cm-main--game .cm-field {
   min-height: 0;
 }
 
-.cm-app--game .cm-col--right .cm-panel__body {
-  padding-left: 10px;
-  padding-right: 10px;
-}
-
-.cm-app--game .cm-col--right .cm-panel--inventory .cm-panel__body,
-.cm-app--game .cm-col--right .cm-panel--consumables .cm-panel__body {
+.cm-panel--inventory .cm-panel__body,
+.cm-panel--consumables .cm-panel__body {
   align-items: center;
 }
 
-.cm-app--game .cm-col--right .cm-panel--inventory .cm-inv-wrap {
+.cm-panel--inventory .cm-inv-wrap {
   width: 276px;
   max-width: 276px;
   min-height: var(--inv-cell);
@@ -228,18 +223,18 @@
   scrollbar-gutter: auto;
 }
 
-.cm-app--game .cm-panel--consumables .cm-cons-wrap {
+.cm-panel--consumables .cm-cons-wrap {
   width: 276px;
   max-width: 276px;
   padding-right: 0;
 }
 
-.cm-app--game .cm-equip-slot__box--drop-target {
+.cm-equip-slot__box--drop-target {
   border-color: #e8d4a8;
   box-shadow: 0 0 0 2px rgba(232, 212, 168, 0.45), inset 0 0 14px rgba(232, 212, 168, 0.2);
 }
 
-.cm-app--game .cm-skill .cm-skill__btn {
+.cm-skill__btn {
   display: flex;
   align-items: center;
   gap: var(--cm-gap-xs);
@@ -253,16 +248,16 @@
   font: inherit;
 }
 
-.cm-app--game .cm-skill .cm-skill__btn .cm-skill__name {
+.cm-skill__btn .cm-skill__name {
   flex: 1;
   min-width: 0;
 }
 
-.cm-app--game .cm-skill .cm-skill__btn .cm-skill__mana {
+.cm-skill__btn .cm-skill__mana {
   margin-left: auto;
 }
 
-.cm-app--game .cm-skill .cm-skill__btn .cm-skill__cooldown {
+.cm-skill__btn .cm-skill__cooldown {
   margin-left: 6px;
   font-size: 10px;
   color: #ffce8f;
@@ -272,20 +267,16 @@
   line-height: 1.2;
 }
 
-.cm-app--game .cm-skills__divider {
+.cm-skills__divider {
   list-style: none;
   height: 1px;
   margin: 6px 2px;
   background: linear-gradient(90deg, rgba(196, 163, 90, 0), rgba(196, 163, 90, 0.75), rgba(196, 163, 90, 0));
 }
 
-.cm-app--game .cm-col--right .cm-panel--skills .cm-skills-viewport {
-  max-height: none;
-}
-
-.cm-app--game .cm-inv-cell,
-.cm-app--game .cm-hot-slot,
-.cm-app--game .cm-equip-slot__box {
+.cm-inv-cell,
+.cm-hot-slot,
+.cm-equip-slot__box {
   font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", var(--font-ui);
 }
 
@@ -407,7 +398,6 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
 }
 .item-detail-name { font-weight: 700; }
 .item-detail-list { margin: 0; padding-left: 16px; }
@@ -474,7 +464,7 @@
 }
 
 /* Consumables qty: circle at bottom-left. */
-.cm-app--game .cm-panel--consumables .cm-inv-cell__qty {
+.cm-panel--consumables .cm-inv-cell__qty {
   left: 3px;
   right: auto;
   bottom: 3px;

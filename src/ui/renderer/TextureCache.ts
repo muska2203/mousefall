@@ -31,6 +31,10 @@ export function hasTexture(url: string): boolean {
   return cache.has(url);
 }
 
+export function getTextureSync(url: string): Texture | undefined {
+  return cache.get(url);
+}
+
 export function clearTextures(): void {
   for (const texture of cache.values()) {
     texture.destroy(true);

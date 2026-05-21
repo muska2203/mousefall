@@ -8,7 +8,7 @@
  */
 
 import {useState, useCallback} from 'react';
-import type {CharacterConfig, MapParams} from '@presentation/gameSession';
+import type {CharacterConfig} from '@presentation/gameSession';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -19,24 +19,10 @@ import type {StarterSlot} from '@ui/components/StarterEquipmentPanel';
 import {Panel} from '@ui/components/Panel';
 
 interface Props {
-  onStartGame: (config: CharacterConfig, seed: number, mapParams: MapParams) => void;
+  onStartGame: (config: CharacterConfig, seed: number) => void;
 }
 
 const POINTS_BUDGET = 10;
-
-const DEFAULT_MAP_PARAMS: MapParams = {
-  id: 'floor_1',
-  height: 20,
-  width: 20,
-  minRooms: 5,
-  maxRooms: 20,
-  minRoomSize: 3,
-  maxRoomSize: 4,
-  enemyDensity: 1.0,
-  itemDensity: 0.1,
-  enemyPool: ['cat_small', 'cat_mid', 'cat_big'],
-  itemPool: ['health_potion'],
-};
 
 const PORTRAITS: PortraitItem[] = [
   {
@@ -172,7 +158,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
 
     const parsedSeed = parseInt(seedInput, 10);
     const seed = seedInput && !Number.isNaN(parsedSeed) ? parsedSeed : Date.now() & 0xffffffff;
-    onStartGame(config, seed, DEFAULT_MAP_PARAMS);
+    onStartGame(config, seed);
   }, [isValid, portraitId, strength, agility, intelligence, luck, weaponId, armorId, amuletId, seedInput, onStartGame]);
 
   const heroStats: HeroStat[] = [

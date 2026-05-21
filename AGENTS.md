@@ -90,12 +90,13 @@ npm run typecheck
 │   │   ├── simulation.ts                # DefaultTestSimulation — основной класс симуляции
 │   │   ├── serialization.ts             # Полностью закомментирован (в процессе рефактора)
 │   │   ├── systems/
-│   │   │   ├── actions/                 # Обработчики действий (movement, attack, wait)
+│   │   │   ├── actions/                 # Обработчики действий (movement, attack, wait, descend, ascend)
 │   │   │   │   ├── types.ts             # GameAction, ActionHandler, ExecutionBuilder, ExecutionNode
 │   │   │   │   ├── action-utils.ts      # Оркестратор validate → resolve → execute
 │   │   │   │   ├── movement-action.ts
 │   │   │   │   ├── attack-action.ts
-│   │   │   │   └── wait-action.ts
+│   │   │   │   ├── wait-action.ts
+│   │   │   │   └── floor-transition-action.ts # Переходы между этажами (DESCEND / ASCEND)
 │   │   │   ├── intents/                 # Исполнители интентов (move, damage, die)
 │   │   │   │   ├── types.ts
 │   │   │   │   ├── execute-intent.ts    # Диспетчер intent → executor + мировые реакции
@@ -105,7 +106,8 @@ npm run typecheck
 │   │   │   ├── world-reactions/         # Реакции мира на интенты
 │   │   │   │   ├── types.ts
 │   │   │   │   ├── reactions.ts         # ReactionMap, runWorldReactions
-│   │   │   │   └── death-reaction.ts    # Реакция на ENTITY_DAMAGED → DIE
+│   │   │   │   ├── death-reaction.ts    # Реакция на ENTITY_DAMAGED → DIE
+│   │   │   │   └── stairs-reaction.ts   # Реакция на ENTITY_MOVED → обнаружение лестницы (STAIR_EXIT_TRIGGERED)
 │   │   │   ├── combat.ts                # Полностью закомментирован (устаревшая система)
 │   │   │   └── mapgen.ts                # Процедурная генерация подземелий
 │   │   ├── ai/                          # Устаревший слой (не компилируется, ссылается на state.enemies)
@@ -138,6 +140,7 @@ npm run typecheck
 ├── tests/
 │   ├── unit/simulation/
 │   │   ├── move-action.test.ts          # ✅ Проходят
+│   │   ├── floor-transition.test.ts     # ✅ Проходят
 │   │   └── serialization.test.ts        # ❌ 6 из 9 падают (serialization.ts закомментирован)
 │   ├── unit/utils/
 │   │   └── rng.test.ts                  # ✅ Проходят
@@ -381,7 +384,8 @@ fail-fast с понятным сообщением об ошибке.
 - Загрузка и валидация контента (`content/loader.ts`, `content/registry.ts`, `schemas/contentSchemas.ts`)
 - Генератор случайных чисел (`utils/rng.ts`)
 - Математические утилиты (`utils/math.ts`)
-- Юнит-тесты на movement и RNG
+- Юнит-тесты на movement, floor transition и RNG
+- Многоуровневый мир (обнаружение лестницы через WorldReaction, переход через Action DESCEND/ASCEND)
 - ASCII-отладочный рендер в консоль
 
 ### Закомментировано / в рефакторе
@@ -418,6 +422,7 @@ fail-fast с понятным сообщением об ошибке.
 | Добавить тест | `tests/unit/simulation/` или `tests/integration/` |
 | Изучить схемы контента | `src/simulation/schemas/contentSchemas.ts` |
 | Понять поток хода | `src/simulation/simulation.ts` (`DefaultTestSimulation.dispatch`) |
+| Понять переход между этажами | `src/simulation/systems/world-reactions/stairs-reaction.ts` |
 | Понять архитектуру слоёв | `ARCHITECTURE.md` |
 | Понять движение данных | `DATA_FLOW.md` |
 | Понять жизненный цикл событий | `EVENT_FLOW.md` |

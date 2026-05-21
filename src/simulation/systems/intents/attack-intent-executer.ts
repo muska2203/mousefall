@@ -14,7 +14,7 @@ export const executeDamageIntent: IntentExecutor<DamageIntent> = (
         const rawDamage = Math.max(1, intent.damage - target.armor);
         const finalDamage = Math.max(1, rawDamage);
         target.hp -= finalDamage;
-        return builder.addChild(parent, {type: 'ENTITY_DAMAGED', damage: finalDamage, targetId: intent.entityId})
+        return builder.addChild(parent, {type: 'ENTITY_DAMAGED', damage: finalDamage, targetId: intent.entityId, position: {x: target.x, y: target.y}})
     }
     return null;
 }

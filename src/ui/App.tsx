@@ -13,7 +13,7 @@
 
 import {useState, useCallback, useRef, useEffect} from 'react';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
-import type {CharacterConfig, MapParams} from '@presentation/gameSession';
+import type {CharacterConfig} from '@presentation/gameSession';
 import {MainMenuScreen} from './screens/MainMenuScreen';
 import {CharacterCreationScreen} from './screens/CharacterCreationScreen';
 import {GameScreen} from './screens/GameScreen';
@@ -45,8 +45,8 @@ export default function App() {
   }, [session]);
 
   const handleStartGame = useCallback(
-    (config: CharacterConfig, seed: number, mapParams: MapParams) => {
-      session.startNewGame(config, seed, mapParams);
+    (config: CharacterConfig, seed: number) => {
+      session.startNewGame(config, seed);
       setMode(session.getMode());
     },
     [session],
@@ -71,33 +71,37 @@ export default function App() {
     case 'playing':
       return <GameScreen session={session} onModeChange={handleModeChange} />;
 
-    case 'gameOver':
+    case 'gameOver': {
+      const defeatPortraitId = session.getViewModel().renderInput?.portraitId;
       return (
         <EndingScreen
           result="defeat"
           onNewRun={handleNewGame}
           onReturnToMenu={handleReturnToMenu}
           portraitSrc={
-            session.getViewModel().portraitId
-              ? `/assets/portraits/${session.getViewModel().portraitId}-ready.png`
+            defeatPortraitId
+              ? `/assets/portraits/${defeatPortraitId}-ready.png`
               : undefined
           }
         />
       );
+    }
 
-    case 'victory':
+    case 'victory': {
+      const victoryPortraitId = session.getViewModel().renderInput?.portraitId;
       return (
         <EndingScreen
           result="victory"
           onNewRun={handleNewGame}
           onReturnToMenu={handleReturnToMenu}
           portraitSrc={
-            session.getViewModel().portraitId
-              ? `/assets/portraits/${session.getViewModel().portraitId}-ready.png`
+            victoryPortraitId
+              ? `/assets/portraits/${victoryPortraitId}-ready.png`
               : undefined
           }
         />
       );
+    }
 
     default:
       return <div>Неизвестный режим: {mode}</div>;

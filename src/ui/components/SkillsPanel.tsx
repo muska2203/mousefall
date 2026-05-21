@@ -2,6 +2,7 @@
  * Панель скиллов (список с иконками и маной).
  *
  * Используется в GameScreen (правая колонка).
+ * Максимальная высота — 3 строки, далее скролл (аналогично журналу).
  */
 
 import {Panel} from './Panel';
@@ -17,27 +18,31 @@ interface Props {
   title?: string;
   skills?: SkillItem[];
   emptyMessage?: string;
-  fill?: boolean;
 }
 
 export function SkillsPanel({
   title = 'Скиллы',
   skills,
   emptyMessage = 'Нет скиллов',
-  fill = true,
 }: Props) {
+  const titleNode = (
+    <>
+      <img src="/assets/icons/skills.svg" alt="" className="cm-panel__title-icon" aria-hidden="true" />
+      {' '}
+      {title}
+    </>
+  );
+
   return (
-    <Panel title={title} className="cm-panel--skills" fill={fill}>
-      <div className="cm-panel__body--flex-grow">
-        <div className="cm-skills-viewport cm-scroll-wood">
-          <ul className="cm-skills">
-            {skills && skills.length > 0 ? (
-              skills.map((s, i) => <SkillRow key={i} {...s} />)
-            ) : (
-              <SkillRow icon="—" name={emptyMessage} />
-            )}
-          </ul>
-        </div>
+    <Panel title={titleNode} className="cm-panel--skills">
+      <div className="cm-skills-viewport cm-scroll-wood">
+        <ul className="cm-skills">
+          {skills && skills.length > 0 ? (
+            skills.map((s, i) => <SkillRow key={i} {...s} />)
+          ) : (
+            <SkillRow icon="—" name={emptyMessage} />
+          )}
+        </ul>
       </div>
     </Panel>
   );

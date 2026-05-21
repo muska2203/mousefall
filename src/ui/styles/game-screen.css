@@ -384,19 +384,6 @@ body:has(.cm-app--game) #app {
   min-height: 0;
 }
 
-/* Панель «Герой» забирает свободную высоту колонки; тело растягивается под фон «дерева» */
-.cm-col--left > .cm-panel.cm-panel--hero {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.cm-panel--hero .cm-panel__body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
 .cm-col--center {
   min-height: 420px;
 }
@@ -812,6 +799,15 @@ body:has(.cm-app--game) #app {
   display: inline;
 }
 
+.cm-field-wrap {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .cm-field {
   position: relative;
   flex: 1;
@@ -843,35 +839,13 @@ body:has(.cm-app--game) #app {
   padding-bottom: var(--cm-gap-xs);
 }
 
-.cm-col--right .cm-panel--inventory {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.cm-col--right .cm-panel--inventory .cm-panel__body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.cm-col--right .cm-panel--inventory .cm-inv-wrap {
+.cm-panel--inventory .cm-inv-wrap {
   flex: 1;
   min-height: calc(var(--inv-cell) * 2 + var(--inv-gap));
   max-height: none;
 }
 
-.cm-col--right .cm-panel--skills {
-  flex: 0 0 auto;
-}
-
-.cm-col--right .cm-panel--skills .cm-panel__body {
-  flex: 0 0 auto;
-}
-
-.cm-col--right .cm-panel--skills .cm-skills-viewport {
-  flex: 0 0 auto;
-  min-height: 0;
+.cm-panel--skills .cm-skills-viewport {
   max-height: calc(
     var(--skills-visible-default) * var(--skills-row-height) + (var(--skills-visible-default) - 1) * var(--cm-gap-xs)
   );
@@ -915,7 +889,6 @@ body:has(.cm-app--game) #app {
 .cm-sprite-stack__skill {
   position: absolute;
   display: block;
-  image-rendering: pixelated;
 }
 
 .cm-sprite-stack--item .cm-sprite-stack__frame {
@@ -989,7 +962,6 @@ body:has(.cm-app--game) #app {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  flex: 1;
   padding-right: var(--cm-scroll-gutter);
 }
 
@@ -1115,9 +1087,11 @@ body:has(.cm-app--game) #app {
 .cm-hotbar-wrap--in-field {
   flex-shrink: 0;
   margin-top: auto;
-  margin-left: var(--cm-gap-sub);
-  margin-right: var(--cm-gap-sub);
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: var(--cm-gap-sub);
+  align-self: center;
+  width: auto;
 }
 
 /* «Вдавленная» полоса хотбара внутри поля — отличие от ячеек инвентаря */
@@ -1255,37 +1229,20 @@ body:has(.cm-app--game) #app {
   height: 22px;
 }
 
-.cm-center-panel {
+
+
+.cm-panel--fill {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
-.cm-center-panel .cm-panel__body {
+.cm-panel--fill .cm-panel__body {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--cm-pad);
-  min-height: 0;
-}
-
-.cm-col .cm-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.cm-col .cm-panel.cm-panel--fill {
-  flex: 1;
-}
-
-/* Тело панели на всю высоту колонки (скиллы) */
-.cm-panel__body--flex-grow {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 
 /* --- Универсальные тултипы --- */
@@ -1606,7 +1563,6 @@ body:has(.cm-app--game) #app {
 .cm-skill__icon-img {
   width: 24px;
   height: 24px;
-  image-rendering: pixelated;
   border-radius: 3px;
 }
 

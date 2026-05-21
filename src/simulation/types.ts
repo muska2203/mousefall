@@ -66,12 +66,11 @@ export type InventoryItem = {
   quantity: number;
 };
 
-// TODO: Возможно, вынести все сущности в отдельный файл.
-// TODO: Для начальной реализации ещё не хватает объекта — спуск (конец уровня).
 export type Entity =
     | PlayerEntity
     | EnemyEntity
-    | ItemEntity;
+    | ItemEntity
+    | StairsEntity;
 
 
 export type EntityType =
@@ -144,6 +143,12 @@ export interface ItemEntity extends BaseEntity, TemplateIdHolder {
   quantity: number;
 }
 
+/** Лестница — объект перехода между этажами. */
+export interface StairsEntity extends BaseEntity {
+  type: 'stairs';
+  blocksMovement: false;
+  direction: 'down' | 'up';
+}
 
 // ─────────────────────────────────────────────
 // Эффекты статуса
@@ -233,6 +238,10 @@ export type GameState = {
   /** Текущий этаж подземелья (нумерация с 1). */
   floor: number;
 
+  // ── Floor Snapshots ────────────────────────────────────────────────
+  /** Посещённые этажи. Индекс = floor − 1. Текущий этаж не дублируется здесь. */
+  floorSnapshots: FloorSnapshot[];
+
   // ── Randomness ─────────────────────────────────────────────────────
   /**
    * Состояние seeded PRNG. Мутируется системами симуляции.
@@ -275,6 +284,7 @@ export type GameEvent =
     | ItemUsedEvent
     | DoorOpenedEvent
     | DoorClosedEvent
+    | StairExitTriggeredEvent
     | FloorChangedEvent
     | TurnEndedEvent
     | PlayerDiedEvent
@@ -290,7 +300,7 @@ export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from:
 
 export type EntityAttackedEvent = { type: 'ENTITY_ATTACKED'; attackerId: EntityId; dx: number; dy: number };
 
-export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number };
+export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; position: Position };
 
 export type EntityDiedEvent = { type: 'ENTITY_DIED'; entityId: EntityId; position: Position};
 
@@ -305,6 +315,8 @@ export type ItemUsedEvent = { type: 'ITEM_USED'; entityId: EntityId; itemInstanc
 export type DoorOpenedEvent = { type: 'DOOR_OPENED'; position: Position };
 
 export type DoorClosedEvent = { type: 'DOOR_CLOSED'; position: Position };
+
+export type StairExitTriggeredEvent = { type: 'STAIR_EXIT_TRIGGERED'; direction: 'down' | 'up' };
 
 export type FloorChangedEvent = { type: 'FLOOR_CHANGED'; from: number; to: number };
 
@@ -350,6 +362,17 @@ export type ValidationError = {
   code: string;
   description: string;
 }
+
+/** Снапшот этажа для сохранения состояния при переходе между уровнями. */
+export type FloorSnapshot = {
+  floor: number;
+  map: GameMap;
+  /** Сущности этажа без игрока. При десериализации восстанавливается в Map. */
+  entities: Entity[];
+  explored: boolean[][];
+  /** Состояние RNG на момент сохранения этажа. */
+  rngState: number;
+};
 
 export type TurnPhase = {
   side: TurnSide;

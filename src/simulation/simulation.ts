@@ -10,10 +10,12 @@ import {
 } from "@simulation/types.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
-import {generateMap} from "@simulation/systems/mapgen.ts";
+import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
+import {MAX_FLOOR} from "@utils/constants.ts";
 import {findAllAliveAiActors} from "@simulation/state.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
+import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import type {MapParams} from "@simulation/schemas/contentSchemas.ts";
 import {createNewGameState, findFirstAttackableEntityAt} from "@simulation/state.ts";
@@ -181,7 +183,7 @@ export class GameSimulation implements Simulation {
             minRooms: 5,
         };
 
-        const generatedMap = generateMap(mapParams, this.state);
+        const generatedMap = generateMap(mapParams, this.state, this.state.floor, MAX_FLOOR);
 
         this.state.map = generatedMap.map;
 
@@ -204,6 +206,21 @@ export class GameSimulation implements Simulation {
             round: 1,
         };
         generatedMap.enemies.forEach(e => this.state.entities.set(e.id, e));
+        generatedMap.items.forEach(e => this.state.entities.set(e.id, e));
+
+        // Лестницы
+        if (generatedMap.stairsDown && this.state.floor < MAX_FLOOR) {
+            this.state.entities.set(
+                `stairs_down_${this.state.floor}`,
+                createStairs(this.state, 'down', generatedMap.stairsDown.x, generatedMap.stairsDown.y),
+            );
+        }
+        if (generatedMap.stairsUp && this.state.floor > 1) {
+            this.state.entities.set(
+                `stairs_up_${this.state.floor}`,
+                createStairs(this.state, 'up', generatedMap.stairsUp.x, generatedMap.stairsUp.y),
+            );
+        }
 
         // Начальный расчёт поля зрения
         updateFOV(this.state);
@@ -374,6 +391,8 @@ export function defaultActionHandlerRegistry(): ActionHandlerRegistry {
 
     registry.register('MOVE', moveEntity);
     registry.register('ATTACK', attackEntity);
+    registry.register('DESCEND', descendAction);
+    registry.register('ASCEND', ascendAction);
     return registry;
 }
 

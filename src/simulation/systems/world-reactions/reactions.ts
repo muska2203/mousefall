@@ -6,25 +6,24 @@ import {
     EntityDamagedEvent, EntityDiedEvent, EntityMissedEvent,
     EntityMovedEvent, FloorChangedEvent, FogUpdatedEvent,
     GameState, ItemDroppedEvent, ItemPickedUpEvent, ItemUsedEvent, PlayerDiedEvent, PlayerLeveledUpEvent,
+    StairExitTriggeredEvent,
     StatusAppliedEvent, StatusRemovedEvent, StatusTickedEvent, TurnEndedEvent
 } from "@simulation/types.ts";
 import {WorldReaction} from "@simulation/systems/world-reactions/types.ts";
 import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {deathReaction} from "@simulation/systems/world-reactions/death-reaction.ts";
-
-
+import {stairsTransitionReaction} from "@simulation/systems/world-reactions/stairs-reaction.ts";
 
 const worldReactions: ReactionMap = {
-    // TODO: Реализовать реакции на перемещение на предмет / переход на следующий уровень
-
-    // ENTITY_MOVED: [
-    //     updateFOVReaction,
-    //     triggerTrapReaction,
-    // ],
+    ENTITY_MOVED: [
+        stairsTransitionReaction,
+    ],
 
     ENTITY_DAMAGED: [
         deathReaction,
     ],
+
+    STAIR_EXIT_TRIGGERED: [],
 };
 
 export function runWorldReactions(
@@ -60,6 +59,7 @@ type GameEventMap = {
     ITEM_USED: ItemUsedEvent;
     DOOR_OPENED: DoorOpenedEvent;
     DOOR_CLOSED: DoorClosedEvent;
+    STAIR_EXIT_TRIGGERED: StairExitTriggeredEvent;
     FLOOR_CHANGED: FloorChangedEvent;
     TURN_ENDED: TurnEndedEvent;
     PLAYER_DIED: PlayerDiedEvent;

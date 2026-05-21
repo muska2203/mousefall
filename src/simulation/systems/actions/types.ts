@@ -4,8 +4,9 @@ import {Intent} from "@simulation/systems/intents/types.ts";
 export type GameAction =
     | MoveAction
     | AttackAction
-    | WaitAction;
-// TODO: NextLevelAction — проверяет, стоит ли игрок на клетке выхода, и выполняет спуск.
+    | WaitAction
+    | DescendAction
+    | AscendAction;
 
 export type MoveAction = {
     type: 'MOVE';
@@ -25,6 +26,16 @@ export type AttackAction = {
 
 export type WaitAction = {
     type: 'WAIT';
+};
+
+export type DescendAction = {
+    type: 'DESCEND';
+    entityId: EntityId;
+};
+
+export type AscendAction = {
+    type: 'ASCEND';
+    entityId: EntityId;
 };
 
 export type ActionHandler<T extends GameAction> = {

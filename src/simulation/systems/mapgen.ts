@@ -15,7 +15,7 @@
  * - Вся случайность через параметр rng (детерминированно)
  */
 
-import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGState } from '../types';
+import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGState, StairsEntity } from '../types';
 import type { MapParams } from '../schemas/contentSchemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
@@ -27,6 +27,8 @@ import { nextEntityId, createTileGrid } from '../state';
 export type GeneratedMap = {
   map: GameMap;
   playerStart: { x: number; y: number };
+  stairsDown: { x: number; y: number } | null;
+  stairsUp: { x: number; y: number } | null;
   enemies: EnemyEntity[];
   items: ItemEntity[];
 };
@@ -41,7 +43,7 @@ export type GeneratedMap = {
  * Мутирует `state.nextEntityCounter` для детерминированной генерации ID.
  * Вызывающий применяет возвращённую карту и сущности к состоянию.
  */
-export function generateMap(params: MapParams, state: GameState): GeneratedMap {
+export function generateMap(params: MapParams, state: GameState, currentFloor: number, maxFloor: number): GeneratedMap {
   const { width, height } = params;
   const tiles = createTileGrid(width, height);
   const rooms: Room[] = [];
@@ -82,17 +84,22 @@ export function generateMap(params: MapParams, state: GameState): GeneratedMap {
     }
   }
 
-  // Place stairs in last room
-  if (rooms.length > 0) {
-    const lastRoom = rooms[rooms.length - 1]!;
-    const center = roomCenter(lastRoom);
-    // TODO: генерировать спуск нужно при генерации объектов
-    // tiles[center.y]![center.x] = 'stairs_down';
-  }
-
   // Player starts in first room
   const firstRoom = rooms[0] ?? { x: 1, y: 1, width: 3, height: 3 };
   const playerStart = roomCenter(firstRoom);
+
+  // Place stairs
+  let stairsDown: { x: number; y: number } | null = null;
+  let stairsUp: { x: number; y: number } | null = null;
+
+  if (rooms.length > 0) {
+    const lastRoom = rooms[rooms.length - 1]!;
+    stairsDown = roomCenter(lastRoom);
+  }
+
+  if (rooms.length > 0 && currentFloor > 1) {
+    stairsUp = playerStart;
+  }
 
   // Spawn enemies and items
   const enemies: EnemyEntity[] = [];
@@ -119,6 +126,8 @@ export function generateMap(params: MapParams, state: GameState): GeneratedMap {
   return {
     map: { width, height, tiles, rooms },
     playerStart,
+    stairsDown,
+    stairsUp,
     enemies,
     items,
   };
@@ -205,6 +214,17 @@ function createFloorItem(state: GameState, templateId: string, x: number, y: num
     y,
     templateId,
     quantity: 1,
+    blocksMovement: false,
+  };
+}
+
+export function createStairs(state: GameState, direction: 'down' | 'up', x: number, y: number): StairsEntity {
+  return {
+    id: nextEntityId(state, 'stairs'),
+    type: 'stairs',
+    x,
+    y,
+    direction,
     blocksMovement: false,
   };
 }

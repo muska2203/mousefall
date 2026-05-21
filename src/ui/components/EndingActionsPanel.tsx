@@ -14,7 +14,7 @@ interface Props {
 export function EndingActionsPanel({onNewRun, onReturnToMenu}: Props) {
   return (
     <Panel title="Дальше">
-      <div className="cm-panel__body cm-ending-actions">
+      <div className="cm-ending-actions">
         <button className="cm-btn cm-btn--primary" type="button" onClick={onNewRun}>
           Новый забег
         </button>
