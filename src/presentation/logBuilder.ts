@@ -55,9 +55,13 @@ export function gameEventToLog(
       const name = getEntityDisplayName(state, event.entityId);
       return {id: nextLogId.value++, text: `${name} переместился`, variant: 'info'};
     }
-    case 'ENTITY_ATTACKED': {
-      const name = getEntityDisplayName(state, event.attackerId);
-      return {id: nextLogId.value++, text: `${name} атаковал`, variant: 'info'};
+    case 'ACTION_APPLIED': {
+      const action = event.action;
+      if (action.type === 'ATTACK') {
+        const name = getEntityDisplayName(state, action.entityId);
+        return {id: nextLogId.value++, text: `${name} атаковал`, variant: 'info'};
+      }
+      return null;
     }
     case 'ENTITY_DAMAGED': {
       const name = getEntityDisplayName(state, event.targetId);

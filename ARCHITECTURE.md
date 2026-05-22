@@ -133,8 +133,6 @@ UI не знает о существовании Simulation. Content не зна
 - Импортировать из `src/ui/` (UI зависит от Presentation, а не наоборот)
 - Использовать browser API (DOM, localStorage и т.д.) — это ответственность UI
 
-**Примечание:** Слой Store (`src/store/`) упразднён. Его функции (хранение состояния сессии, мост между мирами) полностью перешли к Presentation.
-
 ---
 
 ### UI Layer (`src/ui/`)
@@ -293,7 +291,7 @@ Presentation:
   1. Может вызвать simulation.preview(ATTACK)
      чтобы показать подсказку (сколько урона).
   2. Вызывает simulation.dispatch(ATTACK).
-  3. Получает ExecutionNode с ENTITY_ATTACKED,
+  3. Получает ExecutionNode с ACTION_APPLIED (ATTACK),
      ENTITY_DAMAGED, ENTITY_DIED и т.д.
   4. Формирует анимационный план:
      { type: 'ATTACK_ANIMATION', ... }
@@ -417,17 +415,15 @@ public/content/entities/goblin.json  # Content: lowercase
 - **Action/Intent/Event:** система полностью реализована (`systems/actions/`, `systems/intents/`, `systems/world-reactions/`)
 - **Content:** загрузка и валидация JSON через Zod (`content/loader.ts`, `content/registry.ts`)
 - **Map generation:** процедурная генерация подземелий (`systems/mapgen.ts`)
-- **RNG:** seeded PRNG (`utils/rng.ts`)
-- **Math:** сеточная математика, pathfinding (`utils/math.ts`)
+- **RNG / Math:** seeded PRNG, сеточная математика, pathfinding (`utils/rng.ts`, `utils/math.ts`)
+- **Presentation:** полностью реализован (`gameSession.ts`, `animationPlanner.ts`, `logBuilder.ts`, `types.ts`)
+- **UI Layer:** полностью реализован (`screens/`, `components/`, `input/`, `styles/`)
+- **Renderer (PixiJS):** полностью реализован (`ui/renderer/` — WorldRenderer, TileRenderer, EntityRenderer, FogRenderer и др.)
+- **World Reactions:** динамическая регистрация с приоритетами (`registerReaction`)
 
 ### В рефакторе / закомментировано
-- `src/simulation/turn.ts` — устаревший turn flow
-- `src/simulation/serialization.ts` — полностью закомментирован
-- `src/store/gameStore.ts` — реализация закомментирована, существуют только типы
-- `src/simulation/systems/combat.ts` — заменён системой интентов
+- `src/simulation/serialization.ts` — полностью закомментирован; save/load заблокирован
+- `src/simulation/turn.ts` — устаревший turn flow (не используется, на удаление)
 
 ### Запланировано / не реализовано
-- **Presentation Layer** (`src/presentation/`) — пустая директория, архитектура описана в этом документе
-- **UI Layer** (`src/ui/`) — только README.md
-- **Renderer** (PixiJS) — будет частью UI, пока не реализован
 - **Save/Load UI** — зависит от восстановления `serialization.ts`

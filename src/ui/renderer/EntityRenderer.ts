@@ -199,20 +199,21 @@ export class EntityRenderer {
     return this.activeAnimations.size > 0;
   }
 
-  /** Прервать все текущие анимации. */
+  /** Прервать все текущие анимации и резолвить их Promise'ы. */
   clearAnimations(): void {
     for (const anim of this.activeAnimations.values()) {
       anim.tween.cancel();
+      anim.onComplete();
     }
     this.activeAnimations.clear();
   }
 
   clear(): void {
+    this.clearAnimations();
     for (const sprite of this.sprites.values()) {
       sprite.destroy();
     }
     this.sprites.clear();
-    this.activeAnimations.clear();
     this.container.removeChildren();
   }
 

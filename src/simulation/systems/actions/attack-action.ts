@@ -4,41 +4,65 @@ import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 
-export const attackEntity: ActionHandler<AttackAction> = {
+// ─────────────────────────────────────────────
+// Контекст атаки (устраняет дублирование поиска)
+// ─────────────────────────────────────────────
 
-    validate(state: GameState, action: AttackAction) {
-        const entity = findAttacker(state, action.entityId);
+type AttackContext =
+  | { ok: false; reason: 'attacker_missing' }
+  | { ok: false; reason: 'no_target' }
+  | { ok: true; attacker: NonNullable<ReturnType<typeof findAttacker>>; target: NonNullable<ReturnType<typeof findFirstAttackableEntityAt>> };
 
-        if (!entity) return {ok: false, reasonCode: "entity_not_exists", reasonDescription: 'Entity not exists'};
+function resolveAttackContext(state: GameState, action: AttackAction): AttackContext {
+  const attacker = findAttacker(state, action.entityId);
+  if (!attacker) {
+    return { ok: false, reason: 'attacker_missing' };
+  }
 
+  const targetX = attacker.x + action.dx;
+  const targetY = attacker.y + action.dy;
+  const target = findFirstAttackableEntityAt(state, targetX, targetY);
+  if (!target) {
+    return { ok: false, reason: 'no_target' };
+  }
 
-        const targetX = entity.x + action.dx;
-        const targetY = entity.y + action.dy;
+  return { ok: true, attacker, target };
+}
 
-        const target = findFirstAttackableEntityAt(state, targetX, targetY)
-        if (!target) {
-            return {ok: false, reasonCode: "entity_not_exists", reasonDescription: "Not found enemy on the target tile"};
-        }
-        return {ok: true};
-    },
-    
-    resolve(state: GameState, action: AttackAction) {
-        const entity = findAttacker(state, action.entityId);
-        if (entity) {
-            const targetX = entity.x + action.dx;
-            const targetY = entity.y + action.dy;
-            const target = findFirstAttackableEntityAt(state, targetX, targetY)
-            if (target) {
-                return [{type: 'DAMAGE', entityId: target.id, damage: entity.damage}];
-            }
-        }
-        return [];
-    },
-    
-    execute(state: GameState, action: AttackAction, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
-        const attackNode = executionBuilder.addChild(parentNode, { type: 'ENTITY_ATTACKED', attackerId: action.entityId, dx: action.dx, dy: action.dy });
-        for (const intent of intents) {
-            executeIntent(state, intent, executionBuilder, attackNode);
-        }
+// ─────────────────────────────────────────────
+// Action handler
+// ─────────────────────────────────────────────
+
+export const attackEntity: ActionHandler = {
+
+  validate(state: GameState, action) {
+    if (action.type !== 'ATTACK') {
+      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected ATTACK action' };
     }
+    const ctx = resolveAttackContext(state, action);
+    if (!ctx.ok) {
+      if (ctx.reason === 'attacker_missing') {
+        return { ok: false, reasonCode: 'entity_not_exists', reasonDescription: 'Entity not exists' };
+      }
+      return { ok: false, reasonCode: 'no_target_at_tile', reasonDescription: 'No target at tile' };
+    }
+    return { ok: true };
+  },
+
+  resolve(state: GameState, action) {
+    if (action.type !== 'ATTACK') {
+      return [];
+    }
+    const ctx = resolveAttackContext(state, action);
+    if (!ctx.ok) {
+      return [];
+    }
+    return [{ type: 'DAMAGE', entityId: ctx.target.id, damage: ctx.attacker.damage }];
+  },
+
+  execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
+    for (const intent of intents) {
+      executeIntent(state, intent, executionBuilder, parentNode);
+    }
+  },
 };

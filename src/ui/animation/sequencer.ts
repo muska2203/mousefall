@@ -4,7 +4,7 @@
  * Правила:
  * - Сиблинги (дети одного родителя) запускаются параллельно (Promise.all).
  * - Parent → child: дети стартуют только после завершения родителя.
- * - blockingDone резолвится, когда счётчик активных blocking-узлов падает до 0.
+ * - blockingDone резолвится, когда завершены ВСЕ blocking-узлы во всём дереве.
  * - Если в дереве нет blocking-узлов — blockingDone резолвится мгновенно.
  */
 
@@ -25,9 +25,10 @@ function countBlockingNodes(nodes: AnimationNode[]): number {
 }
 
 export class AnimationSequencer {
-  private blockingCounter = 0;
+  private remainingBlocking = 0;
   private blockingResolve: ((value?: void | PromiseLike<void>) => void) | null = null;
   private blockingPromise: Promise<void> | null = null;
+  private cancelled = false;
 
   constructor(
     private readonly executors: AnimationExecutor[],
@@ -42,19 +43,19 @@ export class AnimationSequencer {
   }
 
   run(nodes: AnimationNode[]): AnimationRunResult {
-    this.blockingCounter = 0;
+    this.cancelled = false;
+    this.remainingBlocking = countBlockingNodes(nodes);
 
     this.blockingPromise = new Promise<void>((resolve) => {
       this.blockingResolve = resolve;
     });
 
-    const totalBlocking = countBlockingNodes(nodes);
-    if (totalBlocking === 0) {
+    if (this.remainingBlocking === 0) {
       this.blockingResolve?.();
     }
 
     const allPromise = Promise.all(nodes.map((node) => this.runNode(node))).then(() => {
-      if (this.blockingCounter === 0 && this.blockingResolve) {
+      if (!this.cancelled && this.remainingBlocking === 0 && this.blockingResolve) {
         (this.blockingResolve as (() => void))();
       }
     });
@@ -65,36 +66,62 @@ export class AnimationSequencer {
     };
   }
 
-  private async runNode(node: AnimationNode): Promise<void> {
-    const step = node.step;
-    const config = ANIMATION_CONFIG[step.type as AnimationConfigKey];
-    const executor = this.executors.find((e) => e.canExecute(step));
+  /** Прервать все активные и будущие анимации в этом прогоне.
+   *  Немедленно разблокирует ввод и останавливает запуск новых узлов. */
+  cancelAll(): void {
+    this.cancelled = true;
+    this.remainingBlocking = 0;
+    this.blockingResolve?.();
+  }
 
-    if (!executor) {
-      console.warn(`[AnimationSequencer] Нет executor для шага "${step.type}"`);
-      // Без executor дети всё равно должны выполниться после "родителя"
+  private async runNode(node: AnimationNode): Promise<void> {
+    if (this.cancelled) return;
+
+    const step = node.step;
+    const configKey = step.type as AnimationConfigKey;
+    const config = ANIMATION_CONFIG[configKey];
+    if (!config) {
+      console.error(`[AnimationSequencer] Нет конфигурации для шага "${step.type}". Добавьте его в ANIMATION_CONFIG.`);
       await Promise.all(node.children.map((child) => this.runNode(child)));
       return;
     }
 
-    const isBlocking = config.blocking;
+    const executor = this.executors.find((e) => e.canExecute(step));
 
-    if (isBlocking) {
-      this.blockingCounter++;
+    const finishBlocking = () => {
+      if (this.cancelled) return;
+      if (config.blocking) {
+        this.remainingBlocking--;
+        if (this.remainingBlocking === 0 && this.blockingResolve) {
+          this.blockingResolve();
+        }
+      }
+    };
+
+    if (!executor) {
+      console.warn(`[AnimationSequencer] Нет executor для шага "${step.type}"`);
+      try {
+        await Promise.all(node.children.map((child) => this.runNode(child)));
+      } finally {
+        finishBlocking();
+      }
+      return;
+    }
+
+    if (this.cancelled) {
+      finishBlocking();
+      return;
     }
 
     try {
       await executor.execute(step, this.context);
     } catch (err) {
       console.error(`[AnimationSequencer] Ошибка в executor для "${step.type}":`, err);
+    } finally {
+      finishBlocking();
     }
 
-    if (isBlocking) {
-      this.blockingCounter--;
-      if (this.blockingCounter === 0 && this.blockingResolve) {
-        this.blockingResolve();
-      }
-    }
+    if (this.cancelled) return;
 
     // После завершения родителя запускаем детей параллельно
     if (node.children.length > 0) {

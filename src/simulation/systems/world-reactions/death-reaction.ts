@@ -1,14 +1,15 @@
 import {WorldReaction} from "@simulation/systems/world-reactions/types.ts";
-import {EntityDamagedEvent} from "@simulation/types.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {findAttackableEntity} from "@simulation/state.ts";
 
-export const deathReaction: WorldReaction<EntityDamagedEvent> = (
+export const deathReaction: WorldReaction = (
     state,
     event,
     builder,
     parent,
 ) => {
+    if (event.type !== 'ENTITY_DAMAGED') return;
+
     const entity = findAttackableEntity(state, event.targetId);
 
     if (!entity) return;

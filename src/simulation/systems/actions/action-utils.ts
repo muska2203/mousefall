@@ -1,19 +1,19 @@
-import {GameState} from "@simulation/types.ts";
+import {GameState, ValidationResult} from "@simulation/types.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
 
 
-export function runActionHandler<T extends GameAction>(
+export function runActionHandler(
   state: GameState,
-  handler: ActionHandler<T>,
-  action: T,
+  handler: ActionHandler,
+  action: GameAction,
   executionBuilder: ExecutionBuilder,
   parentNode: ExecutionNode,
-): void {
+): ValidationResult {
 
   const validation = handler.validate(state, action);
 
   if (!validation.ok) {
-    return;
+    return validation;
   }
 
   const intents = handler.resolve(state, action);
@@ -25,4 +25,6 @@ export function runActionHandler<T extends GameAction>(
     executionBuilder,
     parentNode,
   );
+
+  return { ok: true };
 }

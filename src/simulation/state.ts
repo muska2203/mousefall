@@ -13,6 +13,7 @@
  */
 
 import type {
+  Actor,
   AiActor,
   Attackable,
   Attacker,
@@ -24,6 +25,7 @@ import type {
   Position,
   TileType,
 } from './types';
+import type { MapParams } from './schemas/contentSchemas';
 import {createRNG} from '../utils/rng';
 import {PLAYER_ID} from '../utils/constants';
 
@@ -77,9 +79,9 @@ export function createTileGrid(width: number, height: number): TileType[][] {
  * Создаёт минимально валидный GameState.
  * Используется как база перед тем, как генерация карты заполнит карту и позиции сущностей.
  */
-export function createNewGameState(seed: number): GameState {
-  const mapWidth = 50;
-  const mapHeight = 50;
+export function createNewGameState(seed: number, mapParams: MapParams): GameState {
+  const mapWidth = mapParams.width;
+  const mapHeight = mapParams.height;
   const player = createInitialPlayer();
 
   return {
@@ -89,6 +91,7 @@ export function createNewGameState(seed: number): GameState {
       tiles: createTileGrid(mapWidth, mapHeight),
       rooms: [],
     },
+    mapParams,
     entities: new Map<EntityId, Entity>([[player.id, player]]),
     player: player,
     visible: createBoolGrid(mapWidth, mapHeight, false),
@@ -110,6 +113,10 @@ export function createNewGameState(seed: number): GameState {
 
 export function findEntity(state: GameState, id: EntityId) {
   return state.entities.get(id);
+}
+
+export function isActor(entity: unknown): entity is Actor {
+  return typeof entity === 'object' && entity !== null && 'ap' in entity && 'maxAp' in entity;
 }
 
 export function findAttackableEntity(state: GameState, id: EntityId): (Entity & Attackable) | undefined {

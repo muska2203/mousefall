@@ -27,8 +27,6 @@ export function LogPanel({title = 'Журнал', entries, emptyMessage = 'На�
 
   const titleNode = (
     <>
-      <img src="/assets/icons/log.svg" alt="" className="cm-panel__title-icon" aria-hidden="true" />
-      {' '}
       {title}
     </>
   );

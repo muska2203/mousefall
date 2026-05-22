@@ -19,6 +19,7 @@ import type {
   PlayerEntity,
   TileType
 } from '../../src/simulation/types';
+import type { MapParams } from '../../src/simulation/schemas/contentSchemas';
 import {createRNG} from '../../src/utils/rng';
 import {PLAYER_ID} from '../../src/utils/constants';
 
@@ -116,6 +117,20 @@ export function makeFloorItem(overrides: Partial<ItemEntity> = {}): ItemEntity {
  * Создаёт минимально валидный GameState для тестирования.
  * Игрок в (5,5), без врагов, без предметов, карта 10×10.
  */
+export const defaultTestMapParams: MapParams = {
+  id: 'test',
+  width: 10,
+  height: 10,
+  minRooms: 2,
+  maxRooms: 4,
+  minRoomSize: 3,
+  maxRoomSize: 5,
+  enemyDensity: 0,
+  itemDensity: 0,
+  enemyPool: [],
+  itemPool: [],
+};
+
 export function makeGameState(overrides: Partial<GameState> = {}): GameState {
   const map = makeTestMap();
   const boolGrid = (w: number, h: number, v: boolean) =>
@@ -124,6 +139,7 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
   const player = makePlayer();
   return {
     map,
+    mapParams: defaultTestMapParams,
     player: player,
     entities: new Map<EntityId, Entity>([[player.id, player]]),
     visible: boolGrid(map.width, map.height, false),

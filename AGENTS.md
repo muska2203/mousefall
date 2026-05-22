@@ -1,17 +1,13 @@
-<!-- From: d:\CatAndMouse\concept\Mousefall\AGENTS.md -->
 # AGENTS.md — Mousefall
 
 > **Вся документация в этом проекте ведётся на русском языке.**
-> Этот файл предназначен для AI-агентов и описывает актуальную структуру, соглашения и правила проекта.
+> Этот файл предназначен для AI-агентов и описывает архитектуру, соглашения и правила проекта.
 
 ---
 
 ## Обзор проекта
 
-**Mousefall** — это 2D пошаговый roguelike на TypeScript, работающий в браузере.
-Проект находится в активной разработке: ядро симуляции (simulation layer) реализовано и работает,
-слой Presentation спроектирован, но ещё не реализован. UI — запланирован.
-
+**Mousefall** — 2D пошаговый roguelike на TypeScript, работающий в браузере.
 Архитектура строго слоистая, с безголовым (headless) детерминированным игровым движком в центре.
 Приоритеты: простота, тестируемость, чёткое разделение ответственности.
 
@@ -31,18 +27,11 @@
 |------|------------|
 | Язык | TypeScript 5.5+ (ES2022, strict mode) |
 | Сборка | Vite 5.4+ с плагином `@vitejs/plugin-react` |
-| UI (запланировано) | React 18.3+ |
-| Рендерер мира (запланировано) | PixiJS 8.0+ (входит в UI Layer) |
+| UI | React 18.3+ |
+| Рендерер мира | PixiJS 8.0+ (входит в UI Layer) |
 | Валидация | Zod 3.23+ |
 | Тестирование | Vitest 2.0+ (среда Node.js, без браузера) |
 | Покрытие | `@vitest/coverage-v8` |
-
-**Примечания:**
-- React и PixiJS установлены в `package.json` и настроены в Vite,
-  но в текущем коде **не используются** — точка входа (`main.ts`) работает без них.
-- Слой `src/ui/` содержит только `README.md` и пустые поддиректории.
-- Слой `src/presentation/` существует как пустая директория, ожидает реализации.
-- Слой `src/store/` **упразднён**; его функции перешли к Presentation.
 
 ---
 
@@ -81,78 +70,43 @@ npm run typecheck
 ## Структура проекта
 
 ```
-├── src/
-│   ├── main.ts                          # Точка входа: создаёт тестовую симуляцию, выставляет window.sim
-│   ├── simulation/                      # Ядро игры (headless, детерминированное)
-│   │   ├── types.ts                     # Все core-типы: GameState, Entity, GameEvent, ExecutionNode и т.д.
-│   │   ├── state.ts                     # Фабрика начального состояния, хелперы запросов
-│   │   ├── turn.ts                      # Полностью закомментирован (устаревший turn flow)
-│   │   ├── simulation.ts                # DefaultTestSimulation — основной класс симуляции
-│   │   ├── serialization.ts             # Полностью закомментирован (в процессе рефактора)
-│   │   ├── systems/
-│   │   │   ├── actions/                 # Обработчики действий (movement, attack, wait, descend, ascend)
-│   │   │   │   ├── types.ts             # GameAction, ActionHandler, ExecutionBuilder, ExecutionNode
-│   │   │   │   ├── action-utils.ts      # Оркестратор validate → resolve → execute
-│   │   │   │   ├── movement-action.ts
-│   │   │   │   ├── attack-action.ts
-│   │   │   │   ├── wait-action.ts
-│   │   │   │   └── floor-transition-action.ts # Переходы между этажами (DESCEND / ASCEND)
-│   │   │   ├── intents/                 # Исполнители интентов (move, damage, die)
-│   │   │   │   ├── types.ts
-│   │   │   │   ├── execute-intent.ts    # Диспетчер intent → executor + мировые реакции
-│   │   │   │   ├── move-intent-executer.ts
-│   │   │   │   ├── attack-intent-executer.ts
-│   │   │   │   └── die-intent-executer.ts
-│   │   │   ├── world-reactions/         # Реакции мира на интенты
-│   │   │   │   ├── types.ts
-│   │   │   │   ├── reactions.ts         # ReactionMap, runWorldReactions
-│   │   │   │   ├── death-reaction.ts    # Реакция на ENTITY_DAMAGED → DIE
-│   │   │   │   └── stairs-reaction.ts   # Реакция на ENTITY_MOVED → обнаружение лестницы (STAIR_EXIT_TRIGGERED)
-│   │   │   ├── combat.ts                # Полностью закомментирован (устаревшая система)
-│   │   │   └── mapgen.ts                # Процедурная генерация подземелий
-│   │   ├── ai/                          # Устаревший слой (не компилируется, ссылается на state.enemies)
-│   │   │   ├── index.ts
-│   │   │   ├── aggressive.ts
-│   │   │   └── passive.ts
-│   │   ├── content/
-│   │   │   ├── loader.ts                # Загрузка и валидация JSON-контента (fetch + Zod)
-│   │   │   └── registry.ts              # Singleton-реестр контента
-│   │   └── schemas/
-│   │       ├── contentSchemas.ts        # Zod-схемы контента
-│   │       └── saveSchemas.ts           # Zod-схемы сохранений (рассинхронизированы с types.ts)
-│   ├── presentation/                    # Запланированный слой-оркестратор (пока пустая директория)
-│   ├── ui/                              # Запланирован (только README.md и пустые поддиректории)
-│   ├── store/                           # УПРАЗДНЁН. Функции перешли к Presentation.
-│   │   └── gameStore.ts                 # Закомментированная реализация Zustand-store (исторический артефакт)
-│   └── utils/                           # Чистые утилиты
-│       ├── math.ts                      # Сеточная математика, pathfinding, расстояния
-│       ├── rng.ts                       # Seedable PRNG (Mulberry32)
-│       └── constants.ts                 # TILE_SIZE, SAVE_VERSION и др.
-│
-├── public/
-│   └── content/                         # Игровой контент в JSON (модифицируемый)
-│       ├── entities/enemies/
-│       ├── entities/player/
-│       ├── items/
-│       ├── abilities/
-│       └── maps/
-│
-├── tests/
-│   ├── unit/simulation/
-│   │   ├── move-action.test.ts          # ✅ Проходят
-│   │   ├── floor-transition.test.ts     # ✅ Проходят
-│   │   └── serialization.test.ts        # ❌ 6 из 9 падают (serialization.ts закомментирован)
-│   ├── unit/utils/
-│   │   └── rng.test.ts                  # ✅ Проходят
-│   ├── integration/                     # Запланированы
-│   └── fixtures/
-│       └── gameState.ts                 # Создаёт объекты с устаревшим полем aiState
-│
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── vitest.config.ts
-└── index.html
+src/
+  simulation/          # Ядро игры (headless, детерминированное)
+    systems/           # Игровые системы
+      actions/         # Обработчики действий
+      intents/         # Исполнители интентов
+      world-reactions/ # Реакции мира на события
+    ai/                # (устаревший слой)
+    content/           # Загрузка и валидация JSON-контента
+    schemas/           # Zod-схемы
+  presentation/        # Слой-оркестратор между UI и Simulation
+  ui/                  # React, PixiJS, ввод, отрисовка, анимация
+    animation/
+    components/
+    input/
+    renderer/
+    screens/
+    styles/
+  utils/               # Чистые утилиты
+
+public/
+  assets/              # Графические ассеты (тайлы, спрайты, иконки)
+  content/             # Игровой контент в JSON (модифицируемый)
+    abilities/
+    entities/
+      enemies/
+      player/
+    items/
+    maps/
+
+tests/
+  unit/
+    presentation/
+    simulation/
+    ui/
+    utils/
+  integration/
+  fixtures/
 ```
 
 ---
@@ -177,7 +131,6 @@ utils/        → (ничего — чистые функции)
 - JSON-файлы сущностей, предметов, способностей, карт.
 - Валидация при загрузке через Zod.
 - Модифицируемый без пересборки.
-- **Примечание:** `loadAllContent` в текущей точке входа не вызывается; `DefaultTestSimulation` использует хардкод-параметры генерации.
 
 ### Слой Simulation (`src/simulation/`)
 - **Headless** — без браузерных API, без React, без PixiJS, без DOM.
@@ -194,14 +147,12 @@ utils/        → (ничего — чистые функции)
 - Переводит события UI → команды Simulation (`dispatch`, `preview`).
 - Переводит дерево событий Simulation (`ExecutionNode`) → анимационные планы и combat log для UI.
 - Управляет автопутём и другими UI-специфичными механиками.
-- **Не реализован** (пустая директория), архитектура описана в `ARCHITECTURE.md`.
 
 ### Слой UI (`src/ui/`)
 - **Только отрисовка** — рендеринг игрового мира и интерфейса.
 - **Только ввод** — захват клавиатуры, мыши, тач-событий.
 - **Только анимация** — исполнение анимационных планов, полученных от Presentation.
 - PixiJS (renderer мира) — **не отдельный слой**, а техническая подсистема внутри UI.
-- **Не реализован** (только `README.md`).
 
 ---
 
@@ -274,9 +225,6 @@ Action → validate() → resolve() → Intent[]
 - Каждое успешное действие врага порождает отдельное дерево `ExecutionNode` (корень `ACTION_APPLIED`).
 - Если действие невозможно — ход прерывается.
 
-**Примечание:** AI-стратегии сейчас заданы как stub в `mapgen.ts` (например, `decideAction` всегда возвращает `MOVE` вправо).
-Устаревшие файлы в `src/simulation/ai/` не компилируются корректно и не используются.
-
 ---
 
 ## Тестирование
@@ -316,19 +264,6 @@ npm test movement
 npm test -- -t "moves player to valid adjacent tile"
 ```
 
-### Актуальное состояние тестов
-
-- ✅ `tests/unit/utils/rng.test.ts` — 14 тестов, проходят.
-- ✅ `tests/unit/simulation/move-action.test.ts` — 7 тестов, проходят.
-- ❌ `tests/unit/simulation/serialization.test.ts` — 6 из 9 падают
-  (причина: `serialization.ts` полностью закомментирован, экспортирует пустоту).
-
-### Проблемы фикстур
-
-`tests/fixtures/gameState.ts` создаёт объекты с устаревшим полем `aiState`
-вместо актуального `aiStrategy`. Это не влияет на прохождение movement-тестов,
-но делает фикстуры несовместимыми с типом `EnemyEntity` при строгой проверке.
-
 ---
 
 ## Контент-пайплайн
@@ -341,7 +276,7 @@ npm test -- -t "moves player to valid adjacent tile"
 
 ### Добавление контента
 1. Создайте JSON-файл по существующей схеме.
-2. Добавьте путь в `CONTENT_MANIFEST` в `src/simulation/content/loader.ts`.
+2. Добавьте путь в `public/content/manifest.json`.
 3. Пересборка не требуется.
 
 Контент валидируется при загрузке через Zod. Невалидный контент приводит к
@@ -357,55 +292,6 @@ fail-fast с понятным сообщением об ошибке.
 - Хранение: `localStorage` с префиксом ключей `mousefall:save:`.
 - 3 ручных слота + 1 слот автосохранения (слот 0).
 - **Оркестрация save/load** — ответственность Presentation (запрос состояния у Simulation, вызов serialize/deserialize, передача UI для записи в localStorage).
-
-**Примечание:** Модуль `src/simulation/serialization.ts` сейчас полностью закомментирован.
-Сохранения не работают. Схемы в `src/simulation/schemas/saveSchemas.ts` рассинхронизированы
-с `types.ts` (описывают устаревшую структуру с полем `turn: enum`, `aiState`, без `ap` / `maxAp`).
-
----
-
-## Безопасность
-
-- **Нет сетевых запросов в simulation** — слой симуляции полностью офлайн и детерминирован.
-- **Валидация контента** — весь JSON-контент проверяется Zod перед использованием.
-- **Валидация сохранений** — сохранения проверяются по схемам при загрузке; обнаруживаются несовпадения версий.
-- **Нет eval и динамического выполнения кода** — контент — чистые JSON-данные.
-- **Изоляция localStorage** — ключи сохранений используют проектный префикс.
-- **Нет чувствительных данных** — игра не работает с аутентификацией, платежами или персональными данными.
-
----
-
-## Текущее состояние разработки
-
-### Реализовано и работает
-- Ядро симуляции (`types.ts`, `state.ts`, `simulation.ts`)
-- Система Action/Intent/Event (`systems/actions/`, `systems/intents/`, `systems/world-reactions/`)
-- Генерация карт (`systems/mapgen.ts`)
-- Загрузка и валидация контента (`content/loader.ts`, `content/registry.ts`, `schemas/contentSchemas.ts`)
-- Генератор случайных чисел (`utils/rng.ts`)
-- Математические утилиты (`utils/math.ts`)
-- Юнит-тесты на movement, floor transition и RNG
-- Многоуровневый мир (обнаружение лестницы через WorldReaction, переход через Action DESCEND/ASCEND)
-- ASCII-отладочный рендер в консоль
-
-### Закомментировано / в рефакторе
-- Оркестрация ходов (`turn.ts`) — старая реализация отключена
-- Сериализация (`serialization.ts`) — полностью закомментирована
-- Игровой store (`store/gameStore.ts`) — **упразднён**, оставлен как исторический артефакт
-- Устаревшая система боя (`systems/combat.ts`) — заменена интентами
-
-### Не реализовано (запланировано)
-- **Presentation Layer** (`src/presentation/`) — архитектура описана в `ARCHITECTURE.md`, требуется реализация
-- **UI Layer** (`src/ui/`) — React-компоненты, PixiJS-рендерер, обработка ввода
-- **UI сохранений / загрузки** — управление слотами, диалоги
-- **Визуальные эффекты, анимации, звуки**
-
-### Известные проблемы
-- Файлы в `src/simulation/ai/` ссылаются на несуществующее поле `state.enemies` и устаревшие модули;
-  они не используются в работающем коде. AI-логика сейчас — stub в `mapgen.ts`.
-- `saveSchemas.ts` описывает устаревшую структуру `GameState`.
-- 6 тестов в `serialization.test.ts` падают из-за отсутствия экспортов из `serialization.ts`.
-- Текущая точка входа (`main.ts`) — отладочная; она не запускает полноценный игровой клиент.
 
 ---
 

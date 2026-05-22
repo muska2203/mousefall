@@ -220,6 +220,10 @@ export type GameState = {
   // ── World ──────────────────────────────────────────────────────────
   map: GameMap;
 
+  // ── Map Generation Params ──────────────────────────────────────────
+  /** Параметры генерации карты для текущего и новых этажей. */
+  mapParams: MapParams;
+
   // ── Entities ───────────────────────────────────────────────────────
   entities: Map<EntityId, Entity>;
   player: PlayerEntity;
@@ -274,8 +278,8 @@ export type GameState = {
  */
 export type GameEvent =
     | ActionAppliedEvent
+    | ActionRejectedEvent
     | EntityMovedEvent
-    | EntityAttackedEvent
     | EntityDamagedEvent
     | EntityDiedEvent
     | EntityMissedEvent
@@ -296,9 +300,9 @@ export type GameEvent =
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction }
 
-export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position };
+export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationError[] };
 
-export type EntityAttackedEvent = { type: 'ENTITY_ATTACKED'; attackerId: EntityId; dx: number; dy: number };
+export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position };
 
 export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; position: Position };
 
@@ -347,7 +351,7 @@ export type Simulation = {
 
   getState(): Readonly<GameState>;
 
-  generateMap(params?: MapParams): void;
+  generateMap(params: MapParams): void;
 };
 
 export type ActionPreview = {

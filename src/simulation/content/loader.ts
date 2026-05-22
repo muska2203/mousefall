@@ -20,52 +20,59 @@ import {
   MapParamsSchema,
 } from '../schemas/contentSchemas';
 import { initRegistry } from './registry';
+import { z } from 'zod';
 
 // ─────────────────────────────────────────────
-// Манифест контента
+// Типы
 // ─────────────────────────────────────────────
 
-/**
- * Перечисляет все файлы контента для загрузки.
- * Добавляйте новые файлы контента здесь — они будут загружены и валидированы автоматически.
- */
-const CONTENT_MANIFEST = {
-  entities: [
-    '/content/entities/enemies/goblin.json',
-    '/content/entities/enemies/orc.json',
-    '/content/entities/enemies/cat_small.json',
-    '/content/entities/enemies/cat_mid.json',
-    '/content/entities/enemies/cat_big.json',
-    '/content/entities/player/player.json',
-  ],
-  items: [
-    '/content/items/consumables/health_potion.json',
-    '/content/items/weapons/short_sword.json',
-    '/content/items/armor/leather_armor.json',
-  ],
-  abilities: [
-    '/content/abilities/fireball.json',
-  ],
-  maps: [
-    '/content/maps/floor_1.json',
-    '/content/maps/floor_2.json',
-  ],
-} as const;
+/** Функция загрузки JSON по пути. Независима от среды (браузер / Node / тесты). */
+export type FetchJson = (path: string) => Promise<unknown>;
+
+// ─────────────────────────────────────────────
+// Схема манифеста
+// ─────────────────────────────────────────────
+
+const ManifestSchema = z.object({
+  entities: z.array(z.string()),
+  items: z.array(z.string()),
+  abilities: z.array(z.string()),
+  maps: z.array(z.string()),
+});
+
+type Manifest = z.infer<typeof ManifestSchema>;
+
+// ─────────────────────────────────────────────
+// Браузерная реализация fetchJson
+// ─────────────────────────────────────────────
+
+export async function browserFetchJson(path: string): Promise<unknown> {
+  const response = await fetch(path);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
 
 // ─────────────────────────────────────────────
 // Загрузчик
 // ─────────────────────────────────────────────
 
 /**
- * Загружает весь контент, валидирует и инициализирует реестр.
- * Выбрасывает исключение, если какой-либо файл не удалось загрузить или валидировать.
+ * Загружает манифест контента, затем загружает и валидирует все перечисленные файлы.
+ * Выбрасывает исключение, если манифест или какой-либо файл не удалось загрузить/валидировать.
+ *
+ * @param fetchJson — функция загрузки JSON. В браузере передайте {@link browserFetchJson},
+ *                    в Node / тестах — обёртку над fs.readFile или мок.
  */
-export async function loadAllContent(): Promise<void> {
+export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
+  const manifest = await loadManifest(fetchJson);
+
   const [entities, items, abilities, maps] = await Promise.all([
-    loadCategory(CONTENT_MANIFEST.entities, EntityTemplateSchema),
-    loadCategory(CONTENT_MANIFEST.items, ItemTemplateSchema),
-    loadCategory(CONTENT_MANIFEST.abilities, AbilityTemplateSchema),
-    loadCategory(CONTENT_MANIFEST.maps, MapParamsSchema),
+    loadCategory(manifest.entities, EntityTemplateSchema, fetchJson),
+    loadCategory(manifest.items, ItemTemplateSchema, fetchJson),
+    loadCategory(manifest.abilities, AbilityTemplateSchema, fetchJson),
+    loadCategory(manifest.maps, MapParamsSchema, fetchJson),
   ]);
 
   const content: LoadedContent = {
@@ -82,30 +89,45 @@ export async function loadAllContent(): Promise<void> {
 // Вспомогательные функции
 // ─────────────────────────────────────────────
 
-import { z } from 'zod';
+async function loadManifest(fetchJson: FetchJson): Promise<Manifest> {
+  let json: unknown;
+  try {
+    json = await fetchJson('/content/manifest.json');
+  } catch (err) {
+    throw new Error(`Failed to load content manifest: ${String(err)}`);
+  }
+
+  const result = ManifestSchema.safeParse(json);
+  if (!result.success) {
+    const errors = result.error.errors
+      .map((e: z.ZodIssue) => `  ${e.path.join('.')}: ${e.message}`)
+      .join('\n');
+    throw new Error(`Content manifest validation failed:\n${errors}`);
+  }
+
+  return result.data;
+}
 
 // Используем ZodSchema (не ZodType), чтобы TypeScript корректно разрешил выходной тип
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadCategory<S extends z.ZodSchema<any>>(
   paths: readonly string[],
   schema: S,
+  fetchJson: FetchJson,
 ): Promise<z.output<S>[]> {
-  return Promise.all(paths.map(path => loadAndValidate(path, schema)));
+  return Promise.all(paths.map(path => loadAndValidate(path, schema, fetchJson)));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadAndValidate<S extends z.ZodSchema<any>>(
   path: string,
   schema: S,
+  fetchJson: FetchJson,
 ): Promise<z.output<S>> {
   let json: unknown;
 
   try {
-    const response = await fetch(path);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    json = await response.json();
+    json = await fetchJson(path);
   } catch (err) {
     throw new Error(`Failed to load content file "${path}": ${String(err)}`);
   }

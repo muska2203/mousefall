@@ -40,6 +40,7 @@ const AISchema = z.object({
 
 export const EntityTemplateSchema = z.object({
   id:       z.string().min(1).describe('Уникальный идентификатор сущности (совпадает с именем файла)'),
+  aiStrategyId: z.string().min(1).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
   name:     z.string().min(1).describe('Отображаемое имя'),
   symbol:   z.string().length(1).describe('Символ ASCII для текстового рендера'),
   spriteId: z.string().optional().describe('Ключ спрайта PixiJS'),
@@ -124,7 +125,7 @@ export const MapParamsSchema = z.object({
   height:      z.number().int().min(20).max(100).describe('Высота карты в клетках'),
   minRooms:    z.number().int().positive().describe('Минимальное количество комнат'),
   maxRooms:    z.number().int().positive().describe('Максимальное количество комнат'),
-  minRoomSize: z.number().int().min(3).describe('Минимальный размер комнаты'),
+  minRoomSize: z.number().int().min(2).describe('Минимальный размер комнаты'),
   maxRoomSize: z.number().int().max(20).describe('Максимальный размер комнаты'),
   enemyDensity: z.number().min(0).max(1).describe('Плотность спавна врагов (0.0–1.0)'),
   itemDensity:  z.number().min(0).max(1).describe('Плотность спавна предметов (0.0–1.0)'),

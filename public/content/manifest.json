@@ -1,0 +1,23 @@
+{
+  "entities": [
+    "/content/entities/enemies/goblin.json",
+    "/content/entities/enemies/orc.json",
+    "/content/entities/enemies/cat_small.json",
+    "/content/entities/enemies/cat_mid.json",
+    "/content/entities/enemies/cat_big.json",
+    "/content/entities/player/player.json"
+  ],
+  "items": [
+    "/content/items/consumables/health_potion.json",
+    "/content/items/weapons/short_sword.json",
+    "/content/items/armor/leather_armor.json"
+  ],
+  "abilities": [
+    "/content/abilities/fireball.json"
+  ],
+  "maps": [
+    "/content/maps/default.json",
+    "/content/maps/floor_1.json",
+    "/content/maps/floor_2.json"
+  ]
+}

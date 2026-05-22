@@ -8,7 +8,7 @@ import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity} from
 import {PLAYER_ID} from "@utils/constants.ts";
 
 function makeBuilder() {
-    return new ExecutionBuilder({type: 'ACTION_APPLIED', action: {type: 'WAIT'}});
+    return new ExecutionBuilder({type: 'ACTION_APPLIED', action: {type: 'WAIT', entityId: 'any'}});
 }
 
 // =========================================================

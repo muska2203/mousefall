@@ -14,7 +14,7 @@ import {EntityRenderer} from './EntityRenderer';
 import {FogRenderer} from './FogRenderer';
 import {FloatingTextRenderer} from './FloatingTextRenderer';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-import {Vec2Tween} from '@utils/tween';
+import {Vec2Tween, type TickerLike} from '@utils/tween';
 
 type CameraAnimation = {
   tween: Vec2Tween;
@@ -63,7 +63,7 @@ export class WorldRenderer {
    * Обновить отрисовку на основе текущего состояния игры.
    * Если идёт камера-анимация, root-позиция будет переопределена в ticker.
    */
-  async render(input: RenderInput): Promise<void> {
+  render(input: RenderInput): void {
     this.lastInput = input;
     const playerScreenX = input.state.player.x * TILE_SIZE;
     const playerScreenY = input.state.player.y * TILE_SIZE;
@@ -75,11 +75,8 @@ export class WorldRenderer {
     const cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
     const cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
 
-    await Promise.all([
-      this.tileRenderer.update(input, cameraX, cameraY, viewW, viewH),
-      this.entityRenderer.update(input),
-    ]);
-
+    this.tileRenderer.update(input, cameraX, cameraY, viewW, viewH);
+    this.entityRenderer.update(input);
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);
 
     this.root.scale.set(scale);
@@ -115,6 +112,15 @@ export class WorldRenderer {
   /** Показать всплывающий текст в мировых координатах. */
   showFloatingText(text: string, worldX: number, worldY: number, color: string, duration: number): void {
     this.floatingTextRenderer.show(text, worldX, worldY, color, duration);
+  }
+
+  /** Анимировать открытие тайлов тумана войны. */
+  animateFogReveal(
+    positions: Position[],
+    config: AnimationConfigEntry,
+    ticker: TickerLike,
+  ): Promise<void> {
+    return this.fogRenderer.animateReveal(positions, config.duration, config.easing, ticker);
   }
 
   /** Анимировать движение камеры между двумя тайлами. */

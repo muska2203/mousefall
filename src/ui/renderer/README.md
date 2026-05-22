@@ -63,8 +63,10 @@ Animations are triggered by game events (from `store.pendingEvents`), not by sta
 function playEvents(events: GameEvent[]): void {
   for (const event of events) {
     switch (event.type) {
-      case 'ENTITY_ATTACKED':
-        AttackAnimation.play(event.targetId);
+      case 'ACTION_APPLIED':
+        if (event.action.type === 'ATTACK') {
+          AttackAnimation.play(event.action.entityId);
+        }
         break;
       case 'ENTITY_DIED':
         DeathAnimation.play(event.entityId, event.position);

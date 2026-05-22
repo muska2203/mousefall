@@ -3,7 +3,7 @@
  */
 
 import {describe, expect, it, vi} from 'vitest';
-import {lerp, clamp01, Easing, Tween, ScalarTween, Vec2Tween, runTweenPromise} from '../../../src/utils/tween';
+import {lerp, clamp01, Easing, Tween, ScalarTween, Vec2Tween, runTickerTween} from '../../../src/utils/tween';
 
 describe('lerp', () => {
   it('returns start at t=0', () => {
@@ -112,11 +112,63 @@ describe('Vec2Tween', () => {
   });
 });
 
-describe('runTweenPromise', () => {
-  it('resolves after duration', async () => {
+describe('runTickerTween', () => {
+  it('resolves after duration via ticker', async () => {
+    const callbacks: Array<() => void> = [];
+    const mockTicker = {
+      add: vi.fn((fn: () => void) => callbacks.push(fn)),
+      remove: vi.fn((fn: () => void) => {
+        const idx = callbacks.indexOf(fn);
+        if (idx !== -1) callbacks.splice(idx, 1);
+      }),
+    };
+
     const onUpdate = vi.fn();
-    const p = runTweenPromise({ duration: 10, easing: Easing.linear, onUpdate });
-    await p;
-    expect(onUpdate).toHaveBeenCalled();
+    const onComplete = vi.fn();
+
+    const cancel = runTickerTween(
+      { duration: 100, easing: Easing.linear, onUpdate, onComplete },
+      mockTicker as any
+    );
+
+    expect(mockTicker.add).toHaveBeenCalledOnce();
+
+    // Симулируем прохождение времени через ticker
+    callbacks[0]!();
+    const firstValue = onUpdate.mock.calls[onUpdate.mock.calls.length - 1]![0];
+    expect(firstValue).toBeGreaterThanOrEqual(0);
+    expect(firstValue).toBeLessThan(1);
+    expect(onComplete).not.toHaveBeenCalled();
+
+    // Прогоняем до завершения
+    while (!onComplete.mock.calls.length) {
+      callbacks[0]!();
+    }
+
+    expect(onComplete).toHaveBeenCalledOnce();
+    expect(mockTicker.remove).toHaveBeenCalled();
+
+    cancel(); // Не должно упасть
+  });
+
+  it('can be cancelled', () => {
+    const callbacks: Array<() => void> = [];
+    const mockTicker = {
+      add: vi.fn((fn: () => void) => callbacks.push(fn)),
+      remove: vi.fn((fn: () => void) => {
+        const idx = callbacks.indexOf(fn);
+        if (idx !== -1) callbacks.splice(idx, 1);
+      }),
+    };
+
+    const onComplete = vi.fn();
+    const cancel = runTickerTween(
+      { duration: 1000, easing: Easing.linear, onUpdate: () => {} },
+      mockTicker as any
+    );
+
+    cancel();
+    expect(mockTicker.remove).toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
   });
 });

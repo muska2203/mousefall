@@ -26,8 +26,8 @@ describe('buildAnimationTree', () => {
     expect(tree[0]!.children).toHaveLength(0);
   });
 
-  it('converts ENTITY_ATTACKED to ATTACK step', () => {
-    const node = makeExecNode({ type: 'ENTITY_ATTACKED', attackerId: 'player', dx: 1, dy: 0 });
+  it('converts ACTION_APPLIED (ATTACK) to ATTACK step', () => {
+    const node = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 } });
     const result = makeResult([node]);
     const tree = buildAnimationTree(result);
 

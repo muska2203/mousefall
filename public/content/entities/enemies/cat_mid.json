@@ -1,5 +1,6 @@
 {
   "id": "cat_mid",
+  "aiStrategyId": "stub_right",
   "name": "Уличный кот",
   "symbol": "C",
   "spriteId": "cat_mid",

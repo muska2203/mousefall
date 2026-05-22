@@ -20,6 +20,7 @@ function makeNode(step: AnimationStep, children: AnimationNode[] = []): Animatio
 
 const mockContext: AnimationContext = {
   worldRenderer: {} as any,
+  ticker: {} as any,
   playerId: 'player',
   zoom: 1,
   worldToScreen: (pos) => ({ x: pos.x * 32, y: pos.y * 32 }),
@@ -97,4 +98,30 @@ describe('AnimationSequencer', () => {
     await result.blockingDone;
     expect(Date.now() - start).toBeGreaterThanOrEqual(20);
   });
+
+  it('cancelAll resolves blockingDone immediately and skips children', async () => {
+    const order: string[] = [];
+    const parentExec = makeMockExecutor('ATTACK', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      order.push('parent');
+    });
+    const childExec = makeMockExecutor('DEATH', async () => { order.push('child'); });
+    const sequencer = new AnimationSequencer([parentExec, childExec], mockContext);
+
+    const child = makeNode({ type: 'DEATH', entityId: 'e1' });
+    const parent = makeNode({ type: 'ATTACK', attackerId: 'p1', dx: 1, dy: 0 }, [child]);
+
+    const result = sequencer.run([parent]);
+    sequencer.cancelAll();
+
+    // blockingDone должно резолвиться мгновенно
+    await result.blockingDone;
+
+    // allDone дождётся завершения уже запущенного parent, но child не запустится
+    await result.allDone;
+
+    expect(order).toEqual(['parent']);
+    expect(childExec.execute).not.toHaveBeenCalled();
+  });
+
 });

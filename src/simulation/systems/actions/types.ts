@@ -26,6 +26,7 @@ export type AttackAction = {
 
 export type WaitAction = {
     type: 'WAIT';
+    entityId: EntityId;
 };
 
 export type DescendAction = {
@@ -38,12 +39,17 @@ export type AscendAction = {
     entityId: EntityId;
 };
 
-export type ActionHandler<T extends GameAction> = {
-    validate(state: GameState, action: T): ValidationResult;
+/** Обработчик игрового действия.
+ *
+ * Хендлер получает `action: GameAction` и должен сам выполнить narrowing
+ * через проверку `action.type`, если ему нужен конкретный подтип.
+ */
+export type ActionHandler = {
+    validate(state: GameState, action: GameAction): ValidationResult;
 
-    resolve(state: GameState, action: T): Intent[];
+    resolve(state: GameState, action: GameAction): Intent[];
 
-    execute(state: GameState, action: T, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode): void;
+    execute(state: GameState, action: GameAction, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode): void;
 }
 
 export type ExecutionNode = {

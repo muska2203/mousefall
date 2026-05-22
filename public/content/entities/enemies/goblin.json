@@ -1,5 +1,6 @@
 {
   "id": "goblin",
+  "aiStrategyId": "stub_right",
   "name": "Goblin",
   "symbol": "g",
   "spriteId": "goblin",

@@ -18,7 +18,7 @@ export type AnimationConfigEntry = {
 export const ANIMATION_CONFIG = {
   MOVE: { duration: 200, blocking: true, easing: Easing.linear },
   ATTACK: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
-  DAMAGE: { duration: 400, blocking: false, easing: Easing.linear },
+  DAMAGE: { duration: 400, blocking: true, easing: Easing.linear },
   DEATH: { duration: 300, blocking: true, easing: Easing.easeInQuad },
   FOG_UPDATE: { duration: 150, blocking: false, easing: Easing.linear },
   PARTICLE_BURST: { duration: 300, blocking: false, easing: Easing.easeOutQuad },

@@ -6,6 +6,7 @@
  * - Sequencer отвечает за оркестрацию: параллельность сиблингов, последовательность parent→child.
  */
 
+import type { Ticker } from 'pixi.js';
 import type { WorldRenderer } from '@ui/renderer/WorldRenderer';
 import type { AnimationStep, Position } from '@presentation/types';
 
@@ -22,6 +23,8 @@ export interface AnimationExecutor {
 export type AnimationContext = {
   /** Главный рендерер мира (PixiJS). */
   worldRenderer: WorldRenderer;
+  /** PixiJS Ticker — единый источник времени для всех анимаций. */
+  ticker: Ticker;
   /** ID игрока для определения followCamera. */
   playerId: string;
   /** Текущий масштаб камеры (zoom). */

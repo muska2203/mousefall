@@ -58,7 +58,7 @@
 │                                         │
 │  Обходит дерево ExecutionNode:          │
 │  - ENTITY_MOVED    → анимация ходьбы    │
-│  - ENTITY_ATTACKED → анимация атаки     │
+│  - ACTION_APPLIED (ATTACK) → анимация атаки │
 │  - ENTITY_DAMAGED  → всплывающий урон   │
 │  - ENTITY_DIED     → анимация смерти    │
 │  - ITEM_PICKED_UP  → звук + строка лога │
@@ -130,10 +130,9 @@ Action (GameAction)
 
 Итоговое дерево:
 ```
-ACTION_APPLIED (attack)
-└── ENTITY_ATTACKED (attacker → target)
-    └── ENTITY_DAMAGED (target, damage)
-        └── ENTITY_DIED (target)
+ACTION_APPLIED (ATTACK)
+└── ENTITY_DAMAGED (target, damage)
+    └── ENTITY_DIED (target)
 ```
 
 ---
@@ -187,9 +186,8 @@ Presentation → simulation.dispatch(ATTACK)
     ▼
 Simulation:
   ┌─ ACTION_APPLIED (ATTACK)
-  │  └─ ENTITY_ATTACKED (player → goblin)
-  │     └─ ENTITY_DAMAGED (goblin, damage: 8)
-  │        └─ ENTITY_DIED (goblin)  ← deathReaction
+  │  └─ ENTITY_DAMAGED (goblin, damage: 8)
+  │     └─ ENTITY_DIED (goblin)  ← deathReaction
     │
     ▼
 Simulation обнаруживает: player.ap <= 0

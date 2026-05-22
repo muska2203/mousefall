@@ -26,14 +26,10 @@ export function EffectsPanel({title = 'Активные эффекты', effects
         <ul className="cm-effects" role="list" aria-label={title}>
           {effects && effects.length > 0 ? (
             effects.map((e, i) => (
-              <li key={`effect-${e.name}-${i}`} role="listitem">
-                <EffectCard {...e} />
-              </li>
+              <EffectCard key={`effect-${e.name}-${i}`} {...e} />
             ))
           ) : (
-            <li role="listitem">
-              <EffectCard icon="—" name="Эффекты" desc="Нет активных эффектов." turns={0} />
-            </li>
+            <EffectCard icon="—" name="Эффекты" desc="Нет активных эффектов." turns={0} />
           )}
         </ul>
       </div>

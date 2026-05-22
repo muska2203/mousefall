@@ -8,8 +8,9 @@
  */
 
 import {Container, Graphics} from 'pixi.js';
-import type {RenderInput} from '@presentation/types';
+import type {RenderInput, Position} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
+import {runTickerTween, lerp, type TickerLike, type EasingFn} from '@utils/tween';
 
 const COLOR_HIDDEN = 0x000000;
 const COLOR_EXPLORED = 0x000000;
@@ -59,6 +60,41 @@ export class FogRenderer {
       }
     }
     this.graphics.fill({color: COLOR_EXPLORED, alpha: ALPHA_HIDDEN});
+  }
+
+  /** Анимировать открытие тайлов: временный оверлей fade-out от explored к прозрачному. */
+  animateReveal(
+    positions: Position[],
+    duration: number,
+    easing: EasingFn,
+    ticker: TickerLike,
+  ): Promise<void> {
+    if (positions.length === 0) return Promise.resolve();
+
+    const overlay = new Graphics();
+    for (const pos of positions) {
+      overlay.rect(pos.x * TILE_SIZE, pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    }
+    overlay.fill({color: COLOR_EXPLORED, alpha: ALPHA_EXPLORED});
+    overlay.alpha = ALPHA_EXPLORED;
+    this.container.addChild(overlay);
+
+    return new Promise<void>((resolve) => {
+      runTickerTween(
+        {
+          duration,
+          easing,
+          onUpdate: (p) => {
+            overlay.alpha = lerp(ALPHA_EXPLORED, 0, p);
+          },
+          onComplete: () => {
+            overlay.destroy();
+            resolve();
+          },
+        },
+        ticker,
+      );
+    });
   }
 
   clear(): void {

@@ -9,13 +9,13 @@ import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {getTileSprite} from './spriteRegistry';
-import {getTexture} from './TextureCache';
+import {getTexture, getTextureSync} from './TextureCache';
 
 export class TileRenderer {
   public readonly container = new Container();
   private sprites = new Map<string, Sprite>();
 
-  async update(input: RenderInput, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): Promise<void> {
+  update(input: RenderInput, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): void {
     const map = input.state.map;
     const overrender = 1;
     const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
@@ -26,7 +26,7 @@ export class TileRenderer {
     const visibleKeys = new Set<string>();
     const texturePaths = new Map<string, string>();
 
-    // Собираем все уникальные пути текстур для параллельной загрузки
+    // Собираем все уникальные пути текстур
     for (let y = Math.max(0, startRow); y < Math.min(map.height, endRow); y++) {
       for (let x = Math.max(0, startCol); x < Math.min(map.width, endCol); x++) {
         const tile = map.tiles[y]?.[x];
@@ -38,15 +38,7 @@ export class TileRenderer {
       }
     }
 
-    // Параллельно загружаем все нужные текстуры
-    const textureMap = new Map<string, Texture>();
-    await Promise.all(
-      Array.from(texturePaths.keys()).map(async (path) => {
-        textureMap.set(path, await getTexture(path));
-      }),
-    );
-
-    // Обновляем спрайты
+    // Обновляем спрайты синхронно (Texture.EMPTY как fallback)
     for (const key of visibleKeys) {
       const [sx, sy] = key.split(',');
       const x = parseInt(sx!, 10);
@@ -54,14 +46,14 @@ export class TileRenderer {
       const tile = map.tiles[y]?.[x];
       if (!tile) continue;
       const path = getTileSprite(tile);
-      const texture = textureMap.get(path)!;
+      const texture = getTextureSync(path) ?? Texture.EMPTY;
 
       let sprite = this.sprites.get(key);
       if (!sprite) {
         sprite = new Sprite(texture);
         this.sprites.set(key, sprite);
         this.container.addChild(sprite);
-      } else if (sprite.texture !== texture) {
+      } else if (texture !== Texture.EMPTY && sprite.texture !== texture) {
         sprite.texture = texture;
       }
 
@@ -70,6 +62,16 @@ export class TileRenderer {
       sprite.width = TILE_SIZE;
       sprite.height = TILE_SIZE;
       sprite.visible = true;
+
+      // Фоновая подгрузка текстуры, если её ещё нет в кеше
+      if (!getTextureSync(path)) {
+        getTexture(path)
+          .then((loaded) => {
+            const s = this.sprites.get(key);
+            if (s) s.texture = loaded;
+          })
+          .catch(() => {});
+      }
     }
 
     // Скрываем спрайты вне камеры

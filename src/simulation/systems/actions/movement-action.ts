@@ -12,12 +12,16 @@
 import type {GameState} from '../../types.ts';
 import {findEntity, isBlocked} from '../../state.ts';
 import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
-import {ActionHandler, ExecutionBuilder, ExecutionNode, MoveAction} from "@simulation/systems/actions/types.ts";
+import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 
-export const moveEntity: ActionHandler<MoveAction> = {
+export const moveEntity: ActionHandler = {
 
-    validate(state: GameState, action: MoveAction) {
+    validate(state: GameState, action) {
+        if (action.type !== 'MOVE') {
+            return {ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected MOVE action'};
+        }
+
         const entity = findEntity(state, action.entityId);
 
         if (!entity) return {ok: false, reasonCode: "entity_not_exists", reasonDescription: 'Entity not exists'};
@@ -29,12 +33,15 @@ export const moveEntity: ActionHandler<MoveAction> = {
         }
         return {ok: true};
     },
-    
-    resolve(state: GameState, action: MoveAction) {
+
+    resolve(state: GameState, action) {
+        if (action.type !== 'MOVE') {
+            return [];
+        }
         return [{type: 'MOVE', entityId: action.entityId, dx: action.dx, dy: action.dy}];
     },
-    
-    execute(state: GameState, action: MoveAction, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
+
+    execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
         for (const intent of intents) {
             executeIntent(state, intent, executionBuilder, parentNode);
         }

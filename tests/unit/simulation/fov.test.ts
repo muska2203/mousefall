@@ -3,6 +3,21 @@ import { createNewGameState } from '@simulation/state';
 import { updateFOV, computeFOV } from '@simulation/systems/fov';
 import { GameSimulation, defaultActionHandlerRegistry } from '@simulation/simulation';
 import type { TileType, GameMap } from '@simulation/types';
+import type { MapParams } from '@simulation/schemas/contentSchemas';
+
+const testMapParams: MapParams = {
+  id: 'test',
+  width: 50,
+  height: 50,
+  minRooms: 2,
+  maxRooms: 4,
+  minRoomSize: 3,
+  maxRoomSize: 5,
+  enemyDensity: 0,
+  itemDensity: 0,
+  enemyPool: [],
+  itemPool: [],
+};
 
 function makeFloorGrid(w: number, h: number): TileType[][] {
   return Array.from({ length: h }, () => Array(w).fill('floor'));
@@ -23,7 +38,7 @@ function makeMap(width: number, height: number, tiles: TileType[][]): GameMap {
 
 describe('computeFOV', () => {
   it('возвращает видимые позиции из заданной точки', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
 
     const visible = computeFOV(state, 2, 2, 8);
@@ -37,7 +52,7 @@ describe('computeFOV', () => {
   });
 
   it('не включает клетки за стеной', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(5, 3, [
       ['wall', 'wall', 'wall', 'wall', 'wall'],
       ['wall', 'floor', 'wall', 'floor', 'wall'],
@@ -53,7 +68,7 @@ describe('computeFOV', () => {
   });
 
   it('учитывает радиус', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(7, 7, makeWalledGrid(7, 7));
 
     const visible = computeFOV(state, 3, 3, 1);
@@ -73,7 +88,7 @@ describe('computeFOV', () => {
 
 describe('updateFOV', () => {
   it('видит все клетки в пустой комнате в пределах радиуса', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
     state.player.x = 2;
     state.player.y = 2;
@@ -90,7 +105,7 @@ describe('updateFOV', () => {
   });
 
   it('стена блокирует обзор за собой', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(5, 3, [
       ['wall', 'wall', 'wall', 'wall', 'wall'],
       ['wall', 'floor', 'wall', 'floor', 'wall'],
@@ -109,7 +124,7 @@ describe('updateFOV', () => {
   });
 
   it('видит соседние стены вплотную, включая по диагонали', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(3, 3, [
       ['wall', 'wall', 'wall'],
       ['wall', 'floor', 'wall'],
@@ -134,7 +149,7 @@ describe('updateFOV', () => {
   });
 
   it('добавляет клетки в explored при первом видении', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(3, 3, makeWalledGrid(3, 3));
     state.player.x = 1;
     state.player.y = 1;
@@ -152,7 +167,7 @@ describe('updateFOV', () => {
   });
 
   it('сбрасывает visible, но не explored при обновлении', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(3, 3, makeWalledGrid(3, 3));
     state.player.x = 1;
     state.player.y = 1;
@@ -172,7 +187,7 @@ describe('updateFOV', () => {
 
 describe('FOV в GameSimulation.dispatch', () => {
   it('порождает FOG_UPDATED в дереве событий при успешном ходе игрока', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
     state.player.x = 2;
     state.player.y = 2;
@@ -192,7 +207,7 @@ describe('FOV в GameSimulation.dispatch', () => {
   });
 
   it('не порождает FOG_UPDATED при неуспешном ходе', () => {
-    const state = createNewGameState(123);
+    const state = createNewGameState(123, testMapParams);
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
     state.player.x = 2;
     state.player.y = 2;

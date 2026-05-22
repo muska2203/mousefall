@@ -158,24 +158,30 @@ export class Vec2Tween implements Animatable {
   }
 }
 
-/** Запустить Tween в изолированном цикле кадров и вернуть Promise.
- *  Используется для анимаций, не привязанных к PixiJS Ticker (например, DOM-оверлеи).
- *  В Node.js падает back на setTimeout. */
-export function runTweenPromise(opts: Omit<TweenOptions, 'onComplete'>): Promise<void> {
-  return new Promise((resolve) => {
-    const tween = new Tween({ ...opts, onComplete: resolve });
-    tween.start(performance.now());
+/** Минимальный интерфейс тикера, совместимый с PixiJS Ticker.
+ *  Позволяет runTickerTween не зависеть от PixiJS напрямую. */
+export interface TickerLike {
+  add<T>(fn: (this: T, ...args: any[]) => void, context?: T): void;
+  remove<T>(fn: (this: T, ...args: any[]) => void, context?: T): void;
+}
 
-    const schedule = typeof requestAnimationFrame !== 'undefined'
-      ? requestAnimationFrame
-      : (cb: () => void) => setTimeout(cb, 16);
+/** Запустить Tween через внешний тикер (например, PixiJS Ticker).
+ *  Возвращает функцию отмены. */
+export function runTickerTween(opts: TweenOptions, ticker: TickerLike): () => void {
+  const tween = new Tween(opts);
+  tween.start(performance.now());
 
-    const tick = () => {
-      const finished = tween.update(performance.now());
-      if (!finished) {
-        schedule(tick);
-      }
-    };
-    schedule(tick);
-  });
+  const tick = () => {
+    const finished = tween.update(performance.now());
+    if (finished) {
+      ticker.remove(tick);
+    }
+  };
+
+  ticker.add(tick);
+
+  return () => {
+    ticker.remove(tick);
+    tween.cancel();
+  };
 }

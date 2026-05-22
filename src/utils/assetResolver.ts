@@ -1,0 +1,20 @@
+/**
+ * Чистые функции для разрешения путей к игровым ассетам.
+ *
+ * Централизуют конвенции именования файлов и папок в public/assets/.
+ * При изменении структуры ассетов править нужно только здесь.
+ */
+
+/**
+ * Возвращает путь к рамке редкости предмета.
+ */
+export function resolveItemFrame(rarity: string): string {
+  return `/assets/items/loot_frame_${rarity}.png`;
+}
+
+/**
+ * Возвращает путь к иконке предмета по spriteId.
+ */
+export function resolveItemIcon(spriteId: string): string {
+  return `/assets/items/${spriteId}.png`;
+}

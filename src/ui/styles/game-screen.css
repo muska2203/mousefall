@@ -617,6 +617,8 @@ body:has(.cm-app--game) #app {
 }
 
 .cm-effects {
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: var(--cm-gap-sub);
@@ -966,7 +968,6 @@ body:has(.cm-app--game) #app {
 }
 
 .cm-skills {
-  list-style: none;
   margin: 0;
   padding: 0;
   display: flex;

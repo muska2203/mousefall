@@ -19,7 +19,7 @@ import {PixiFloatingTextExecutor} from '@ui/animation/pixiFloatingTextExecutor';
 import type {AnimationContext} from '@ui/animation/types';
 
 interface Props {
-  level: number;
+  floor: number;
   renderInput: RenderInput | null;
   onWait: () => void;
   onAnimationsComplete: () => void;
@@ -28,7 +28,7 @@ interface Props {
 }
 
 export function GameField({
-  level,
+  floor,
   renderInput,
   onWait,
   onAnimationsComplete,
@@ -80,6 +80,7 @@ export function GameField({
       ];
       const context: AnimationContext = {
         worldRenderer: renderer,
+        ticker: pixi.app.ticker,
         playerId: inputRef.current?.state.player.id ?? 'player',
         zoom: inputRef.current?.zoom ?? 1,
         worldToScreen: (pos) => renderer.worldToScreen(pos),
@@ -99,7 +100,7 @@ export function GameField({
         renderer.resize(nw, nh);
         const currentInput = inputRef.current;
         if (currentInput && rendererRef.current) {
-          void rendererRef.current.render(currentInput);
+          rendererRef.current.render(currentInput);
         }
       });
       ro.observe(container);
@@ -107,7 +108,7 @@ export function GameField({
       // Первый рендер, если input уже есть
       const currentInput = inputRef.current;
       if (currentInput) {
-        await renderer.render(currentInput);
+        renderer.render(currentInput);
       }
     }
 
@@ -116,6 +117,7 @@ export function GameField({
     return () => {
       cancelled = true;
       ro?.disconnect();
+      sequencerRef.current?.cancelAll();
       if (rendererRef.current && pixiRef.current) {
         rendererRef.current.removeTicker(pixiRef.current.app.ticker);
       }
@@ -132,7 +134,7 @@ export function GameField({
   // Сначала рендерим состояние, затем запускаем анимации через sequencer.
   useEffect(() => {
     if (renderInput && rendererRef.current) {
-      void rendererRef.current.render(renderInput);
+      rendererRef.current.render(renderInput);
 
       if (renderInput.animations && renderInput.animations.length > 0 && sequencerRef.current) {
         // Обновляем mutable context перед запуском
@@ -140,6 +142,7 @@ export function GameField({
           playerId: renderInput.state.player.id,
           zoom: renderInput.zoom,
           worldToScreen: (pos) => rendererRef.current!.worldToScreen(pos),
+          ticker: pixiRef.current!.app.ticker,
         });
 
         const result = sequencerRef.current.run(renderInput.animations);
@@ -173,7 +176,7 @@ export function GameField({
   }, [onZoomDelta]);
 
   return (
-    <Panel title={`Уровень ${level}`} fill>
+    <Panel title={`Уровень ${floor}`} fill>
       {/* Оверлей кнопки пропуска хода — вне canvas-контейнера, чтобы не конфликтовать с PixiJS */}
       <div className="cm-field-wrap">
         <button

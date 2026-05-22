@@ -27,8 +27,6 @@ export function SkillsPanel({
 }: Props) {
   const titleNode = (
     <>
-      <img src="/assets/icons/skills.svg" alt="" className="cm-panel__title-icon" aria-hidden="true" />
-      {' '}
       {title}
     </>
   );

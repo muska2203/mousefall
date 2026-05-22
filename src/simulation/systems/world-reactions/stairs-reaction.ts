@@ -10,16 +10,17 @@
  */
 
 import {WorldReaction} from './types';
-import {EntityMovedEvent} from '@simulation/types';
 import {findStairsAt} from '@simulation/state';
 import {MAX_FLOOR} from '@utils/constants';
 
-export const stairsTransitionReaction: WorldReaction<EntityMovedEvent> = (
+export const stairsTransitionReaction: WorldReaction = (
     state,
     event,
     builder,
     parent,
 ) => {
+    if (event.type !== 'ENTITY_MOVED') return;
+
     // Реагируем только на перемещение игрока
     if (event.entityId !== 'player') return;
 

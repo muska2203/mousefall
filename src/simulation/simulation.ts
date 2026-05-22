@@ -6,13 +6,14 @@ import {
     Simulation,
     SimulationResult,
     TurnPhase,
-    ValidationError
+    ValidationError,
+    ValidationResult
 } from "@simulation/types.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
-import {findAllAliveAiActors} from "@simulation/state.ts";
+import {findAllAliveAiActors, isActor} from "@simulation/state.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
@@ -44,7 +45,7 @@ export class GameSimulation implements Simulation {
         config: CharacterConfig,
         mapParams: MapParams,
     ): GameSimulation {
-        const state = createNewGameState(seed);
+        const state = createNewGameState(seed, mapParams);
         applyCharacterConfig(state.player, config);
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
         simulation.generateMap(mapParams);
@@ -168,22 +169,8 @@ export class GameSimulation implements Simulation {
         };
     }
 
-    generateMap(params?: MapParams): void {
-        const mapParams: MapParams = params ?? {
-            id: 'default',
-            height: 20,
-            width: 20,
-            itemDensity: 0,
-            enemyDensity: 1,
-            enemyPool: ['cat_small', 'cat_mid', 'cat_big'],
-            itemPool: [],
-            maxRooms: 20,
-            maxRoomSize: 4,
-            minRoomSize: 2,
-            minRooms: 5,
-        };
-
-        const generatedMap = generateMap(mapParams, this.state, this.state.floor, MAX_FLOOR);
+    generateMap(params: MapParams): void {
+        const generatedMap = generateMap(params, this.state, this.state.floor, MAX_FLOOR);
 
         this.state.map = generatedMap.map;
 
@@ -238,6 +225,10 @@ export class GameSimulation implements Simulation {
     ): boolean {
 
         if (!this.canActorAct(actor)) {
+            executionBuilder.addChild(parentNode, {
+                type: 'ACTION_REJECTED',
+                errors: [{ code: 'actor_cannot_act', description: 'Actor cannot act now' }],
+            });
             return false;
         }
 
@@ -245,6 +236,10 @@ export class GameSimulation implements Simulation {
             this.apCostResolver.getCost(action);
 
         if (actor.ap < actionCost) {
+            executionBuilder.addChild(parentNode, {
+                type: 'ACTION_REJECTED',
+                errors: [{ code: 'not_enough_ap', description: 'Not enough action points' }],
+            });
             return false;
         }
 
@@ -252,16 +247,28 @@ export class GameSimulation implements Simulation {
             this.actionHandlerRegistry.get(action.type);
 
         if (!handler) {
+            executionBuilder.addChild(parentNode, {
+                type: 'ACTION_REJECTED',
+                errors: [{ code: 'handler_not_found', description: `Game action ${action.type} not handled.` }],
+            });
             return false;
         }
 
-        runActionHandler(
+        const validation: ValidationResult = runActionHandler(
             this.state,
-            handler as never,
-            action as never,
+            handler,
+            action,
             executionBuilder,
             parentNode,
         );
+
+        if (!validation.ok) {
+            executionBuilder.addChild(parentNode, {
+                type: 'ACTION_REJECTED',
+                errors: [{ code: validation.reasonCode, description: validation.reasonDescription }],
+            });
+            return false;
+        }
 
         actor.ap -= actionCost;
 
@@ -353,35 +360,36 @@ export class GameSimulation implements Simulation {
     private resolveActionActor(
         action: GameAction,
     ): Actor | null {
-
-        // ВАЖНО:
-        // здесь лучше позже перейти
-        // на action.actorId
-
-        if (this.state.turn.activeSide === 'PLAYER') {
-            return this.state.player;
+        const entityId = (action as { entityId?: string }).entityId;
+        if (!entityId) {
+            return null;
         }
 
-        return null;
+        const entity = this.state.entities.get(entityId);
+        if (!entity || !isActor(entity)) {
+            return null;
+        }
+
+        return entity;
     }
 }
 
 export class ActionHandlerRegistry {
     private readonly handlers = new Map<
         GameAction['type'],
-        ActionHandler<any>
+        ActionHandler
     >();
 
-    register<T extends GameAction>(
-        type: T['type'],
-        handler: ActionHandler<T>,
+    register(
+        type: GameAction['type'],
+        handler: ActionHandler,
     ): void {
         this.handlers.set(type, handler);
     }
 
-    get<T extends GameAction['type']>(
-        type: T,
-    ): ActionHandler<Extract<GameAction, { type: T }>> | undefined {
+    get(
+        type: GameAction['type'],
+    ): ActionHandler | undefined {
         return this.handlers.get(type);
     }
 }

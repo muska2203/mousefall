@@ -59,7 +59,7 @@ export function GameScreen({session, onModeChange}: Props) {
   const handleWait = useCallback(() => {
     if (session.getMode() !== 'playing') return;
     if (isInputBlocked) return;
-    session.dispatch({type: 'WAIT'});
+    session.dispatch({type: 'WAIT', entityId: 'player'});
     onModeChange(session.getMode());
   }, [session, onModeChange, isInputBlocked]);
 
@@ -201,7 +201,7 @@ export function GameScreen({session, onModeChange}: Props) {
 
   const centerColumn = (
     <GameField
-      level={level}
+      floor={renderInput.state.floor}
       renderInput={renderInput}
       onWait={handleWait}
       onAnimationsComplete={() => session.onAnimationsComplete()}

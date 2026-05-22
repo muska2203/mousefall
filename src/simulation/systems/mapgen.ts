@@ -19,6 +19,7 @@ import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGSt
 import type { MapParams } from '../schemas/contentSchemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
+import { getEntity } from '../content/registry';
 
 // ─────────────────────────────────────────────
 // Тип выходных данных
@@ -187,22 +188,24 @@ function randomPosInRoom(rng: RNGState, room: Room): { x: number; y: number } {
 // ─────────────────────────────────────────────
 
 function createEnemy(state: GameState, templateId: string, x: number, y: number): EnemyEntity {
+  const template = getEntity(templateId);
+
   return {
     id: nextEntityId(state, 'enemy'),
     type: 'enemy',
     x,
     y,
-    hp: 20,       // TODO: читать из реестра контента
-    maxHp: 20,
-    damage: 5,    // TODO: читать из реестра контента
-    armor: 0,
+    hp: template.health.max,
+    maxHp: template.health.max,
+    damage: template.combat?.damage ?? 0,
+    armor: template.combat?.armor ?? 0,
     templateId,
     statusEffects: [],
     blocksMovement: true,
     maxAp: 1,
     ap: 1,
     isAlive: true,
-    aiStrategyId: 'stub_right',
+    aiStrategyId: template.aiStrategyId!, // враги из enemyPool всегда имеют aiStrategyId
   };
 }
 

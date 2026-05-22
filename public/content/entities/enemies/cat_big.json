@@ -1,5 +1,6 @@
 {
   "id": "cat_big",
+  "aiStrategyId": "stub_right",
   "name": "Босс-кот",
   "symbol": "B",
   "spriteId": "cat_big",

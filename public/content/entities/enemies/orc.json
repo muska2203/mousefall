@@ -1,5 +1,6 @@
 {
   "id": "orc",
+  "aiStrategyId": "stub_right",
   "name": "Orc",
   "symbol": "o",
   "spriteId": "orc",

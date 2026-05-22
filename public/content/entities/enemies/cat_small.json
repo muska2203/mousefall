@@ -1,5 +1,6 @@
 {
   "id": "cat_small",
+  "aiStrategyId": "stub_right",
   "name": "Котёнок-разбойник",
   "symbol": "c",
   "spriteId": "cat_small",

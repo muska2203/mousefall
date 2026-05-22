@@ -13,14 +13,17 @@ import { generateMap, createStairs } from '@simulation/systems/mapgen';
 import { updateFOV } from '@simulation/systems/fov';
 import { MAX_FLOOR } from '@utils/constants';
 import type { MapParams } from '@simulation/schemas/contentSchemas';
-import type { DescendAction, AscendAction } from './types';
+
 
 // ─────────────────────────────────────────────
 // Action handlers
 // ─────────────────────────────────────────────
 
-export const descendAction: ActionHandler<DescendAction> = {
-  validate(state: GameState, action: DescendAction): ValidationResult {
+export const descendAction: ActionHandler = {
+  validate(state: GameState, action): ValidationResult {
+    if (action.type !== 'DESCEND') {
+      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected DESCEND action' };
+    }
     const entity = state.entities.get(action.entityId);
     if (!entity || entity.id !== 'player') {
       return { ok: false, reasonCode: 'entity_not_player', reasonDescription: 'Только игрок может спускаться' };
@@ -44,7 +47,7 @@ export const descendAction: ActionHandler<DescendAction> = {
 
   execute(
     state: GameState,
-    _action: DescendAction,
+    _action,
     _intents: [],
     executionBuilder: ExecutionBuilder,
     parentNode: ExecutionNode,
@@ -62,8 +65,11 @@ export const descendAction: ActionHandler<DescendAction> = {
   },
 };
 
-export const ascendAction: ActionHandler<AscendAction> = {
-  validate(state: GameState, action: AscendAction): ValidationResult {
+export const ascendAction: ActionHandler = {
+  validate(state: GameState, action): ValidationResult {
+    if (action.type !== 'ASCEND') {
+      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected ASCEND action' };
+    }
     const entity = state.entities.get(action.entityId);
     if (!entity || entity.id !== 'player') {
       return { ok: false, reasonCode: 'entity_not_player', reasonDescription: 'Только игрок может подниматься' };
@@ -87,7 +93,7 @@ export const ascendAction: ActionHandler<AscendAction> = {
 
   execute(
     state: GameState,
-    _action: AscendAction,
+    _action,
     _intents: [],
     executionBuilder: ExecutionBuilder,
     parentNode: ExecutionNode,
@@ -118,7 +124,6 @@ export const ascendAction: ActionHandler<AscendAction> = {
 export function performFloorTransition(
   state: GameState,
   direction: 'down' | 'up',
-  mapParams?: MapParams,
 ): { from: number; to: number; fovEvents: GameEvent[] } {
   // 1. Сохраняем текущий этаж
   const currentFloorEntities = Array.from(state.entities.values()).filter(e => e.id !== 'player');
@@ -142,7 +147,7 @@ export function performFloorTransition(
   if (savedSnapshot) {
     restoreFloorFromSnapshot(state, savedSnapshot);
   } else {
-    generateNewFloor(state, targetFloor, mapParams);
+    generateNewFloor(state, targetFloor);
   }
 
   // 4. Позиционирование игрока
@@ -185,22 +190,8 @@ function restoreFloorFromSnapshot(state: GameState, snapshot: typeof state.floor
   state.entities = new Map(snapshot.entities.map(e => [e.id, e]));
 }
 
-function generateNewFloor(state: GameState, targetFloor: number, mapParams?: MapParams): void {
-  const params: MapParams = mapParams ?? {
-    id: 'default',
-    height: 20,
-    width: 20,
-    itemDensity: 0,
-    enemyDensity: 1,
-    enemyPool: ['cat_small', 'cat_mid', 'cat_big'],
-    itemPool: [],
-    maxRooms: 20,
-    maxRoomSize: 4,
-    minRoomSize: 2,
-    minRooms: 5,
-  };
-
-  const generated = generateMap(params, state, targetFloor, MAX_FLOOR);
+function generateNewFloor(state: GameState, targetFloor: number): void {
+  const generated = generateMap(state.mapParams, state, targetFloor, MAX_FLOOR);
 
   state.map = generated.map;
   state.entities = new Map();

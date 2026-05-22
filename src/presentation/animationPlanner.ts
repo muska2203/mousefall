@@ -37,14 +37,18 @@ registerAnimationBuilder('ENTITY_MOVED', (event) => {
   };
 });
 
-registerAnimationBuilder('ENTITY_ATTACKED', (event) => {
-  if (event.type !== 'ENTITY_ATTACKED') return null;
-  return {
-    type: 'ATTACK',
-    attackerId: event.attackerId,
-    dx: event.dx,
-    dy: event.dy,
-  };
+registerAnimationBuilder('ACTION_APPLIED', (event) => {
+  if (event.type !== 'ACTION_APPLIED') return null;
+  const action = event.action;
+  if (action.type === 'ATTACK') {
+    return {
+      type: 'ATTACK',
+      attackerId: action.entityId,
+      dx: action.dx,
+      dy: action.dy,
+    };
+  }
+  return null;
 });
 
 registerAnimationBuilder('ENTITY_DAMAGED', (event) => {
