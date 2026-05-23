@@ -3,6 +3,7 @@ import {GameState} from "@simulation/types.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
+import { getEffectiveDamage } from "@simulation/systems/stats/effective-stats.ts";
 
 // ─────────────────────────────────────────────
 // Контекст атаки (устраняет дублирование поиска)
@@ -57,7 +58,7 @@ export const attackEntity: ActionHandler = {
     if (!ctx.ok) {
       return [];
     }
-    return [{ type: 'DAMAGE', entityId: ctx.target.id, damage: ctx.attacker.damage }];
+    return [{ type: 'DAMAGE', entityId: ctx.target.id, damage: getEffectiveDamage(ctx.attacker) }];
   },
 
   execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {

@@ -15,6 +15,7 @@ import { resolveItemIcon } from '@utils/assetResolver';
 const TYPE_LABELS: Record<string, string> = {
   weapon: 'Оружие',
   armor: 'Броня',
+  amulet: 'Амулет',
   consumable: 'Расходуемое',
   key: 'Ключ',
   gold: 'Золото',
@@ -68,7 +69,8 @@ export function mapItemTemplateToDetail(
       kind: 'stat-list',
       title: 'Боевые параметры',
       stats: [
-        { label: 'Базовый урон', value: template.weapon.damage },
+        { label: 'Базовый урон', value: template.weapon.baseDamage },
+        { label: 'Формула', value: template.weapon.damageFormulaId },
         { label: 'Дальность', value: template.weapon.range },
       ],
     });
@@ -79,7 +81,7 @@ export function mapItemTemplateToDetail(
       kind: 'stat-list',
       title: 'Защита',
       stats: [
-        { label: 'Показатель брони', value: template.armor.defense },
+        { label: 'Показатель брони', value: template.armor.baseArmor },
       ],
     });
   }

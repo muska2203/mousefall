@@ -10,6 +10,7 @@
   "weight": 5,
   "value": 40,
   "armor": {
-    "defense": 3
+    "baseArmor": 3,
+    "grantedAbilities": []
   }
 }

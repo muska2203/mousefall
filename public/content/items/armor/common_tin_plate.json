@@ -1,0 +1,17 @@
+{
+  "id": "common_tin_plate",
+  "name": "Жестяная кираса",
+  "description": "Гремит при ходьбе, но лучше чем ничего.",
+  "symbol": "]",
+  "spriteId": "common_tin_plate",
+  "type": "armor",
+  "stackable": false,
+  "maxStack": 1,
+  "weight": 5,
+  "value": 10,
+  "armor": {
+    "baseArmor": 2,
+    "grantedAbilities": []
+  },
+  "equipModifiers": []
+}

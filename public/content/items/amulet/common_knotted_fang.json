@@ -1,0 +1,13 @@
+{
+  "id": "common_knotted_fang",
+  "name": "Кривой клык",
+  "description": "Кто-то носил его на шее. Теперь — вы.",
+  "symbol": "*",
+  "spriteId": "common_knotted_fang",
+  "type": "amulet",
+  "stackable": false,
+  "maxStack": 1,
+  "weight": 0,
+  "value": 5,
+  "equipModifiers": []
+}

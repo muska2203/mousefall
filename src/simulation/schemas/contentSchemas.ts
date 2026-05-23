@@ -58,12 +58,15 @@ export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
 // ─────────────────────────────────────────────
 
 const WeaponStatsSchema = z.object({
-  damage: z.number().int().positive().describe('Бонусный урон при экипировке'),
+  baseDamage: z.number().int().nonnegative().describe('Базовый урон оружия'),
+  damageFormulaId: z.string().min(1).describe('ID формулы урона в коде (например, club, staff)'),
   range:  z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
+  grantedAbilities: z.array(z.string()).default([]).describe('ID способностей, доступных при экипировке'),
 }).describe('Характеристики оружия');
 
 const ArmorStatsSchema = z.object({
-  defense: z.number().int().nonnegative().describe('Плоское снижение урона при экипировке'),
+  baseArmor: z.number().int().nonnegative().describe('Плоское снижение урона при экипировке'),
+  grantedAbilities: z.array(z.string()).default([]).describe('ID способностей, доступных при экипировке'),
 }).describe('Характеристики брони');
 
 const ConsumableEffectSchema = z.object({
@@ -78,7 +81,7 @@ export const ItemTemplateSchema = z.object({
   description: z.string().describe('Описание, показываемое в инвентаре'),
   symbol:      z.string().length(1).describe('Символ ASCII для текстового рендера'),
   spriteId:    z.string().optional().describe('Ключ спрайта PixiJS'),
-  type:        z.enum(['weapon', 'armor', 'consumable', 'key', 'gold']).describe('Категория предмета'),
+  type:        z.enum(['weapon', 'armor', 'amulet', 'consumable', 'key', 'gold']).describe('Категория предмета'),
   stackable:   z.boolean().default(false).describe('Можно ли складывать несколько в одну ячейку инвентаря'),
   maxStack:    z.number().int().positive().default(1).describe('Максимальный размер стопки'),
   weight:      z.number().nonnegative().default(1).describe('Вес предмета (для будущей системы перегруза)'),
@@ -86,6 +89,11 @@ export const ItemTemplateSchema = z.object({
   weapon:      WeaponStatsSchema.optional(),
   armor:       ArmorStatsSchema.optional(),
   consumable:  ConsumableEffectSchema.optional(),
+  equipModifiers: z.array(z.object({
+    stat: z.enum(['damage', 'armor', 'maxHp', 'maxMp', 'dodgeChance', 'accuracy', 'critChance', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
+    value: z.number(),
+    op: z.enum(['add', 'multiply']),
+  })).default([]).describe('Модификаторы, применяемые при экипировке'),
 }).describe('Шаблон предмета');
 
 export type ItemTemplate = z.output<typeof ItemTemplateSchema>;

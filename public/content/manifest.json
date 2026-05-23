@@ -10,7 +10,13 @@
   "items": [
     "/content/items/consumables/health_potion.json",
     "/content/items/weapons/short_sword.json",
-    "/content/items/armor/leather_armor.json"
+    "/content/items/weapons/common_splinter_blade.json",
+    "/content/items/weapons/common_school_wand.json",
+    "/content/items/armor/leather_armor.json",
+    "/content/items/armor/common_tin_plate.json",
+    "/content/items/armor/common_patch_cloak.json",
+    "/content/items/amulet/common_knotted_fang.json",
+    "/content/items/amulet/common_glass_bead.json"
   ],
   "abilities": [
     "/content/abilities/fireball.json"

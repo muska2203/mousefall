@@ -1,0 +1,13 @@
+{
+  "id": "common_glass_bead",
+  "name": "Тусклая бусина",
+  "description": "Кажется, в ней когда-то был свет.",
+  "symbol": "*",
+  "spriteId": "common_glass_bead",
+  "type": "amulet",
+  "stackable": false,
+  "maxStack": 1,
+  "weight": 0,
+  "value": 5,
+  "equipModifiers": []
+}

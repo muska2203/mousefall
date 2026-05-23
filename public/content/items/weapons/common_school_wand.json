@@ -1,0 +1,19 @@
+{
+  "id": "common_school_wand",
+  "name": "Треснувшая спица",
+  "description": "Почти палочка. Почти волшебная.",
+  "symbol": "i",
+  "spriteId": "common_school_wand",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "weight": 1,
+  "value": 10,
+  "weapon": {
+    "baseDamage": 2,
+    "damageFormulaId": "staff",
+    "range": 1,
+    "grantedAbilities": []
+  },
+  "equipModifiers": []
+}

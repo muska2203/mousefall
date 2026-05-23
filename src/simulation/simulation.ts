@@ -334,6 +334,10 @@ export class GameSimulation implements Simulation {
 
         this.state.player.ap =
             this.state.player.maxAp;
+
+        // Восстановление маны: 5% от максимума, минимум 1
+        const mpRecovery = Math.max(1, Math.floor(this.state.player.maxMp * 0.05));
+        this.state.player.mp = Math.min(this.state.player.mp + mpRecovery, this.state.player.maxMp);
     }
 
     // =========================================================

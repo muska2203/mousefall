@@ -10,7 +10,9 @@
   "weight": 2,
   "value": 50,
   "weapon": {
-    "damage": 8,
-    "range": 1
+    "baseDamage": 8,
+    "damageFormulaId": "sword",
+    "range": 1,
+    "grantedAbilities": []
   }
 }

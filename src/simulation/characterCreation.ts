@@ -11,6 +11,9 @@
  */
 
 import type {PlayerEntity} from './types';
+import { getItem } from './content/registry.ts';
+import { recalculatePlayerBaseStats } from './systems/stats/recalculate.ts';
+import { addModifier } from './systems/stats/modifier-engine.ts';
 
 export type CharacterAttributes = {
   strength: number;
@@ -50,29 +53,38 @@ export function applyCharacterConfig(
   player.inventory = [];
   player.equippedWeaponId = null;
   player.equippedArmorId = null;
-  // TODO: добавить equippedAmuletId в PlayerEntity, когда появится система амулетов
-  // player.equippedAmuletId = null;
+  player.equippedAmuletId = null;
+  player.statModifiers = [];
 
-  // Применение распределённых очков характеристик.
-  // TODO: при наличии системы атрибутов (сила → урон, живучесть → HP)
-  // здесь будет пересчёт maxHp, damage и прочего.
-  void config.attributes;
+  // Применение распределённых очков характеристик
+  player.baseStats = {
+    str: config.attributes.strength,
+    dex: config.attributes.agility,
+    vit: config.attributes.vitality,
+    int: config.attributes.intelligence,
+  };
 
-  // Экипировка начального снаряжения.
-  // В будущем: создавать InventoryItem через nextEntityId(state) и класть в inventory,
-  // затем экипировать. Пока сохраняем только ссылки на шаблоны.
+  // Экипировка начального снаряжения и применение equipModifiers
   for (const templateId of config.startingEquipment) {
     const lower = templateId.toLowerCase();
 
-    if (lower.includes('sword') || lower.includes('weapon') || lower.includes('dagger') || lower.includes('axe') || lower.includes('wand') || lower.includes('blade')) {
+    if (lower.includes('sword') || lower.includes('weapon') || lower.includes('dagger') || lower.includes('axe') || lower.includes('wand') || lower.includes('blade') || lower.includes('club') || lower.includes('staff')) {
       player.equippedWeaponId = templateId;
     } else if (lower.includes('armor') || lower.includes('vest') || lower.includes('mail') || lower.includes('plate') || lower.includes('cloak')) {
       player.equippedArmorId = templateId;
-    } else if (lower.includes('amulet') || lower.includes('fang') || lower.includes('bead') || lower.includes('tooth')) {
-      // TODO: добавить equippedAmuletId в PlayerEntity, когда появится система амулетов
-      // player.equippedAmuletId = templateId;
+    } else if (lower.includes('amulet') || lower.includes('fang') || lower.includes('bead') || lower.includes('tooth') || lower.includes('ring') || lower.includes('necklace')) {
+      player.equippedAmuletId = templateId;
+    }
+
+    // Применяем equipModifiers от предмета
+    const item = getItem(templateId);
+    for (const mod of item.equipModifiers ?? []) {
+      addModifier(player, { ...mod, source: `item_${templateId}` });
     }
   }
+
+  // Пересчёт итоговых характеристик (maxHp, maxMp, damage, armor)
+  recalculatePlayerBaseStats(player);
 
   // TODO: читать базовые статы класса из ContentRegistry по config.classId
   void config.classId;

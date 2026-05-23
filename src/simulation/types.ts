@@ -84,6 +84,23 @@ export interface BaseEntity {
   blocksMovement: boolean;
 }
 
+export interface BaseStats {
+  str: number;
+  dex: number;
+  int: number;
+  vit: number;
+}
+
+export type StatModifierOp = 'add' | 'multiply';
+
+export type StatModifier = {
+  stat: 'damage' | 'armor' | 'maxHp' | 'maxMp' | 'dodgeChance' | 'accuracy' | 'critChance' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
+  value: number;
+  op: StatModifierOp;
+  source: string;
+  charges?: number;
+};
+
 export interface Attacker {
   damage: number;
 }
@@ -112,7 +129,11 @@ export interface AiActor extends Actor {
   aiStrategyId: string;
 }
 
-/** Сущность игрока. Всегда присутствует в GameState. */
+/** Сущность игрока. Всегда присутствует в GameState.
+ *
+ * Важно: поля damage, armor, maxHp, maxMp являются derived-кэшем.
+ * Их нельзя менять напрямую — только через recalculatePlayerBaseStats().
+ */
 export interface PlayerEntity extends Actor, StatusEffectHolder {
   id: 'player';
   type: 'player';
@@ -126,6 +147,16 @@ export interface PlayerEntity extends Actor, StatusEffectHolder {
   equippedWeaponId: string | null;
   /** ID экипированного шаблона брони или null. */
   equippedArmorId: string | null;
+  /** ID экипированного амулета или null. */
+  equippedAmuletId: string | null;
+  /** Текущая мана. */
+  mp: number;
+  /** Максимальная мана (базовая, без модификаторов). */
+  maxMp: number;
+  /** Базовые характеристики. */
+  baseStats: BaseStats;
+  /** Активные модификаторы (баффы, дебаффы, эффекты экипировки). */
+  statModifiers: StatModifier[];
 }
 
 /** Сущность врага на карте. */
@@ -167,6 +198,7 @@ export type StatusEffect = {
   duration: number;
   /** Величина эффекта (урон в ход, лечение в ход и т.д.). */
   value: number;
+  statModifiers?: StatModifier[];
 };
 
 // ─────────────────────────────────────────────

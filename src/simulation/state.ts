@@ -55,9 +55,14 @@ export function createInitialPlayer(): PlayerEntity {
     inventory: [],
     equippedWeaponId: null,
     equippedArmorId: null,
+    equippedAmuletId: null,
     isAlive: true,
     ap: 1,
-    maxAp: 1
+    maxAp: 1,
+    mp: 0,
+    maxMp: 0,
+    baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+    statModifiers: [],
   };
 }
 
