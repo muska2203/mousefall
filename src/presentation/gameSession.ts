@@ -13,7 +13,7 @@
  * - Все мутации GameState только через simulation.dispatch() или фабрики Simulation.
  */
 
-import type {GameState, Simulation, SimulationResult, ActionPreview, GameEvent} from '@simulation/types';
+import type {GameState, Simulation, SimulationResult, ActionPreview, GameEvent, PlayerStatsSnapshot} from '@simulation/types';
 import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
@@ -28,6 +28,7 @@ export type {CharacterConfig} from '@simulation/characterCreation';
 export type {MapParams} from '@simulation/schemas/contentSchemas';
 export type {AnimationNode, RenderInput} from './types';
 export type {RenderState} from './types';
+export type {PlayerStatsSnapshot} from '@simulation/types';
 
 export type SessionMode =
   | 'mainMenu'
@@ -106,6 +107,7 @@ export class GameSession {
       animations: this.lastResult ? buildAnimationTree(this.lastResult) : null,
       phase: this.renderPhase,
       zoom: this.cameraZoom,
+      playerStats: this.simulation!.getPlayerStats(),
     };
   }
 
@@ -125,6 +127,16 @@ export class GameSession {
   /** Текущий режим экрана */
   getMode(): SessionMode {
     return this.mode;
+  }
+
+  /**
+   * Предпросмотр характеристик персонажа при создании.
+   * Не требует активной симуляции.
+   */
+  static previewCharacterStats(
+    config: Omit<CharacterConfig, 'portraitId'>,
+  ): PlayerStatsSnapshot {
+    return GameSimulation.previewCharacterStats(config);
   }
 
   /** Переход в экран создания персонажа */

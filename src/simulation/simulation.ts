@@ -19,9 +19,16 @@ import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import type {MapParams} from "@simulation/schemas/contentSchemas.ts";
-import {createNewGameState, findFirstAttackableEntityAt} from "@simulation/state.ts";
+import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {updateFOV} from "@simulation/systems/fov.ts";
+import {
+  getEffectiveDodgeChance,
+  getEffectiveAccuracy,
+  getEffectiveCritChance,
+  getEffectiveCritMultiplier,
+} from "@simulation/systems/stats/effective-stats.ts";
+import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
 
 export {findFirstAttackableEntityAt};
 
@@ -58,6 +65,37 @@ export class GameSimulation implements Simulation {
      */
     static loadSavedGame(state: GameState): GameSimulation {
         return new GameSimulation(state, defaultActionHandlerRegistry());
+    }
+
+    /**
+     * Предпросмотр характеристик персонажа на основе конфига создания.
+     * Создаёт временного игрока, применяет конфиг и возвращает snapshot.
+     * Не создаёт полноценную симуляцию и не мутирует глобальное состояние.
+     */
+    static previewCharacterStats(
+        config: Omit<CharacterConfig, 'portraitId'>,
+    ): import("@simulation/types.ts").PlayerStatsSnapshot {
+        const player = createInitialPlayer();
+        applyCharacterConfig(player, { ...config, portraitId: '' });
+        const effective = getEffectiveBaseStats(player);
+        return {
+            level: player.level,
+            xp: player.xp,
+            hp: player.hp,
+            maxHp: player.maxHp,
+            mp: player.mp,
+            maxMp: player.maxMp,
+            ap: player.ap,
+            maxAp: player.maxAp,
+            baseStats: player.baseStats,
+            effectiveStats: effective,
+            damage: player.damage,
+            armor: player.armor,
+            dodgeChance: player.dodgeChance,
+            accuracy: player.accuracy,
+            critChance: player.critChance,
+            critMultiplier: player.critMultiplier,
+        };
     }
 
     dispatch(action: GameAction): SimulationResult {
@@ -375,6 +413,29 @@ export class GameSimulation implements Simulation {
         }
 
         return entity;
+    }
+
+    getPlayerStats() {
+        const p = this.state.player;
+        const effective = getEffectiveBaseStats(p);
+        return {
+            level: p.level,
+            xp: p.xp,
+            hp: p.hp,
+            maxHp: p.maxHp,
+            mp: p.mp,
+            maxMp: p.maxMp,
+            ap: p.ap,
+            maxAp: p.maxAp,
+            baseStats: p.baseStats,
+            effectiveStats: effective,
+            damage: p.damage,
+            armor: p.armor,
+            dodgeChance: p.dodgeChance,
+            accuracy: p.accuracy,
+            critChance: p.critChance,
+            critMultiplier: p.critMultiplier,
+        };
     }
 }
 

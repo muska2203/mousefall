@@ -30,6 +30,10 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     maxMp: 0,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     statModifiers: [],
+    dodgeChance: 0,
+    accuracy: 0,
+    critChance: 0,
+    critMultiplier: 1.5,
     statusEffects: [],
     ...playerOverrides,
   };
@@ -66,6 +70,24 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     animations: null,
     phase: 'idle' as const,
     zoom: 1,
+    playerStats: {
+      level: player.level,
+      xp: player.xp,
+      hp: player.hp,
+      maxHp: player.maxHp,
+      mp: player.mp,
+      maxMp: player.maxMp,
+      ap: player.ap,
+      maxAp: player.maxAp,
+      baseStats: player.baseStats,
+      effectiveStats: player.baseStats,
+      damage: player.damage,
+      armor: player.armor,
+      dodgeChance: player.dodgeChance,
+      accuracy: player.accuracy,
+      critChance: player.critChance,
+      critMultiplier: player.critMultiplier,
+    },
   };
 }
 

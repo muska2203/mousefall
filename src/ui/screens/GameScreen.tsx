@@ -139,24 +139,22 @@ export function GameScreen({session, onModeChange}: Props) {
   }
 
   const player = renderInput.state.player;
+  const ps = renderInput.playerStats;
   const portraitImg = renderInput.portraitId
     ? `/assets/portraits/${renderInput.portraitId}-ready.png`
     : '/assets/portraits/witcher-ready.png';
 
-  // Заглушки для данных, которых пока нет в симуляции
-  const xp = (player as unknown as Record<string, number>).xp ?? 0;
-  const xpToNext = 25;
-  const level = (player as unknown as Record<string, number>).level ?? 1;
-  const mana = (player as unknown as Record<string, number>).mana ?? 30;
-  const maxMana = (player as unknown as Record<string, number>).maxMana ?? 30;
-
   const heroStats: HeroStat[] = [
-    {type: 'readonly', icon: '💪', name: 'Сила', value: '0'},
-    {type: 'readonly', icon: '✨', name: 'Интеллект', value: '0'},
-    {type: 'readonly', icon: '🐾', name: 'Ловкость', value: '0'},
-    {type: 'readonly', icon: '🍀', name: 'Удача', value: '0'},
-    {type: 'readonly', icon: '🎯', name: 'Крит шанс', value: '5%'},
-    {type: 'readonly', icon: '💥', name: 'Крит x', value: '1.5x'},
+    {type: 'readonly', icon: '💪', name: 'Сила', value: String(ps.effectiveStats.str)},
+    {type: 'readonly', icon: '✨', name: 'Интеллект', value: String(ps.effectiveStats.int)},
+    {type: 'readonly', icon: '🐾', name: 'Ловкость', value: String(ps.effectiveStats.dex)},
+    {type: 'readonly', icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
+    {type: 'readonly', icon: '🗡️', name: 'Урон', value: String(ps.damage)},
+    {type: 'readonly', icon: '🛡️', name: 'Броня', value: String(ps.armor)},
+    {type: 'readonly', icon: '🏃', name: 'Уклонение', value: `${Math.round(ps.dodgeChance * 100)}%`},
+    {type: 'readonly', icon: '🎯', name: 'Точность', value: `${Math.round(ps.accuracy * 100)}%`},
+    {type: 'readonly', icon: '💀', name: 'Крит шанс', value: `${Math.round(ps.critChance * 100)}%`},
+    {type: 'readonly', icon: '💥', name: 'Крит x', value: `${ps.critMultiplier}x`},
   ];
 
   const equipSlots: EquipSlotData[] = [
@@ -185,13 +183,12 @@ export function GameScreen({session, onModeChange}: Props) {
     <>
       <HeroPanel
         portraitSrc={portraitImg}
-        level={level}
-        hp={player.hp}
-        maxHp={player.maxHp}
-        mana={mana}
-        maxMana={maxMana}
-        xp={xp}
-        maxXp={xpToNext}
+        level={ps.level}
+        hp={ps.hp}
+        maxHp={ps.maxHp}
+        mana={ps.mp}
+        maxMana={ps.maxMp}
+        xp={ps.xp}
         stats={heroStats}
       />
       <EffectsPanel />

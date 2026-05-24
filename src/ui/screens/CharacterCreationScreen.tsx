@@ -7,8 +7,9 @@
  * Правая: StarterEquipmentPanel, информация, кнопка старта.
  */
 
-import {useState, useCallback} from 'react';
+import {useState, useCallback, useMemo} from 'react';
 import type {CharacterConfig} from '@presentation/gameSession';
+import {GameSession} from '@presentation/gameSession';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -132,26 +133,37 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   const [strength, setStrength] = useState(0);
   const [intelligence, setIntelligence] = useState(0);
   const [agility, setAgility] = useState(0);
-  const [luck, setLuck] = useState(0);
+  const [vitality, setVitality] = useState(0);
   const [weaponId, setWeaponId] = useState('common_splinter_blade');
   const [armorId, setArmorId] = useState('common_tin_plate');
   const [amuletId, setAmuletId] = useState('common_knotted_fang');
   const [seedInput, setSeedInput] = useState('');
 
-  const spent = strength + intelligence + agility + luck;
+  const spent = strength + intelligence + agility + vitality;
   const remaining = POINTS_BUDGET - spent;
-  // Все стартовые слоты имеют дефолтные значения, поэтому проверка на непустость избыточна
   const isValid = remaining === 0;
 
   const selectedPortrait = PORTRAITS.find((p) => p.id === portraitId) ?? FIRST_PORTRAIT;
+
+  const previewStats = useMemo(() => {
+    try {
+      return GameSession.previewCharacterStats({
+        classId: portraitId,
+        attributes: {strength, agility, vitality, intelligence, luck: 0},
+        startingEquipment: [weaponId, armorId, amuletId],
+      });
+    } catch {
+      // Fallback если registry ещё не инициализирован (не должно произойти в браузере)
+      return null;
+    }
+  }, [portraitId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId]);
 
   const handleStart = useCallback(() => {
     if (!isValid) return;
 
     const config: CharacterConfig = {
       classId: portraitId,
-      // TODO: добавить распределение очков vitality в UI
-      attributes: {strength, agility, vitality: 0, intelligence, luck},
+      attributes: {strength, agility, vitality, intelligence, luck: 0},
       startingEquipment: [weaponId, armorId, amuletId],
       portraitId,
     };
@@ -159,15 +171,19 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     const parsedSeed = parseInt(seedInput, 10);
     const seed = seedInput && !Number.isNaN(parsedSeed) ? parsedSeed : Date.now() & 0xffffffff;
     onStartGame(config, seed);
-  }, [isValid, portraitId, strength, agility, intelligence, luck, weaponId, armorId, amuletId, seedInput, onStartGame]);
+  }, [isValid, portraitId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, seedInput, onStartGame]);
 
   const heroStats: HeroStat[] = [
     {type: 'alloc', icon: '💪', name: 'Сила', value: strength, onChange: setStrength, canIncrease: remaining > 0},
     {type: 'alloc', icon: '✨', name: 'Интеллект', value: intelligence, onChange: setIntelligence, canIncrease: remaining > 0},
     {type: 'alloc', icon: '🐾', name: 'Ловкость', value: agility, onChange: setAgility, canIncrease: remaining > 0},
-    {type: 'alloc', icon: '🍀', name: 'Удача', value: luck, onChange: setLuck, canIncrease: remaining > 0},
-    {type: 'readonly', icon: '🎯', name: 'Крит шанс', value: '5%'},
-    {type: 'readonly', icon: '💥', name: 'Крит x', value: '1.5x'},
+    {type: 'alloc', icon: '❤️', name: 'Выносливость', value: vitality, onChange: setVitality, canIncrease: remaining > 0},
+    {type: 'readonly', icon: '🗡️', name: 'Урон', value: String(previewStats?.damage ?? 0)},
+    {type: 'readonly', icon: '🛡️', name: 'Броня', value: String(previewStats?.armor ?? 0)},
+    {type: 'readonly', icon: '🏃', name: 'Уклонение', value: previewStats ? `${Math.round(previewStats.dodgeChance * 100)}%` : '0%'},
+    {type: 'readonly', icon: '🎯', name: 'Точность', value: previewStats ? `${Math.round(previewStats.accuracy * 100)}%` : '0%'},
+    {type: 'readonly', icon: '💀', name: 'Крит шанс', value: previewStats ? `${Math.round(previewStats.critChance * 100)}%` : '0%'},
+    {type: 'readonly', icon: '💥', name: 'Крит x', value: `${previewStats?.critMultiplier ?? 1.5}x`},
   ];
 
   const statAllocHeader = (
@@ -189,11 +205,11 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     <HeroPanel
       portraitSrc={selectedPortrait.img}
       portraitAlt={selectedPortrait.name}
-      level={1}
-      hp={100}
-      maxHp={100}
-      mana={30}
-      maxMana={30}
+      level={previewStats?.level ?? 1}
+      hp={previewStats?.hp ?? 100}
+      maxHp={previewStats?.maxHp ?? 100}
+      mana={previewStats?.mp ?? 30}
+      maxMana={previewStats?.maxMp ?? 30}
       stats={heroStats}
     >
       {statAllocHeader}

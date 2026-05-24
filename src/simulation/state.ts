@@ -63,6 +63,10 @@ export function createInitialPlayer(): PlayerEntity {
     maxMp: 0,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     statModifiers: [],
+    dodgeChance: 0,
+    accuracy: 0,
+    critChance: 0,
+    critMultiplier: 1.5,
   };
 }
 

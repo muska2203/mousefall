@@ -157,6 +157,14 @@ export interface PlayerEntity extends Actor, StatusEffectHolder {
   baseStats: BaseStats;
   /** Активные модификаторы (баффы, дебаффы, эффекты экипировки). */
   statModifiers: StatModifier[];
+  /** Шанс уклонения (derived-кэш). */
+  dodgeChance: number;
+  /** Точность (derived-кэш). */
+  accuracy: number;
+  /** Шанс критического удара (derived-кэш). */
+  critChance: number;
+  /** Множитель критического урона (derived-кэш). */
+  critMultiplier: number;
 }
 
 /** Сущность врага на карте. */
@@ -376,6 +384,25 @@ export type ValidationResult =
   | { ok: false; reasonCode: string; reasonDescription: string };
 
 
+export type PlayerStatsSnapshot = {
+  level: number;
+  xp: number;
+  hp: number;
+  maxHp: number;
+  mp: number;
+  maxMp: number;
+  ap: number;
+  maxAp: number;
+  baseStats: BaseStats;
+  effectiveStats: { str: number; dex: number; int: number; vit: number };
+  damage: number;
+  armor: number;
+  dodgeChance: number;
+  accuracy: number;
+  critChance: number;
+  critMultiplier: number;
+};
+
 export type Simulation = {
   dispatch(action: GameAction): SimulationResult;
 
@@ -384,6 +411,8 @@ export type Simulation = {
   getState(): Readonly<GameState>;
 
   generateMap(params: MapParams): void;
+
+  getPlayerStats(): Readonly<PlayerStatsSnapshot>;
 };
 
 export type ActionPreview = {

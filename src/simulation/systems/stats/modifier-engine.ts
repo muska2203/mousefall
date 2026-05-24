@@ -12,6 +12,7 @@
  */
 
 import type { PlayerEntity, StatModifier } from '@simulation/types.ts';
+import { recalculatePlayerBaseStats } from './recalculate.ts';
 
 export type ModifierBreakdownEntry = {
   source: string;
@@ -71,6 +72,8 @@ export function addModifier(player: PlayerEntity, modifier: StatModifier): void 
   } else {
     player.statModifiers.push({ ...modifier });
   }
+
+  recalculatePlayerBaseStats(player);
 }
 
 /**
@@ -78,6 +81,7 @@ export function addModifier(player: PlayerEntity, modifier: StatModifier): void 
  */
 export function removeModifiersBySource(player: PlayerEntity, source: string): void {
   player.statModifiers = player.statModifiers.filter((m) => m.source !== source);
+  recalculatePlayerBaseStats(player);
 }
 
 /**
@@ -99,6 +103,7 @@ export function consumeCharge(
   const mod = player.statModifiers[index]!;
   if ((mod.charges ?? 0) <= 1) {
     player.statModifiers.splice(index, 1);
+    recalculatePlayerBaseStats(player);
   } else {
     mod.charges!--;
   }

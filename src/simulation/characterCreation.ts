@@ -86,6 +86,10 @@ export function applyCharacterConfig(
   // Пересчёт итоговых характеристик (maxHp, maxMp, damage, armor)
   recalculatePlayerBaseStats(player);
 
+  // Восстанавливаем текущие ресурсы до новых максимумов после пересчёта
+  player.hp = player.maxHp;
+  player.mp = player.maxMp;
+
   // TODO: читать базовые статы класса из ContentRegistry по config.classId
   void config.classId;
 }

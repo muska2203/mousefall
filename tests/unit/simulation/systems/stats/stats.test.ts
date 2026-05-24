@@ -295,5 +295,50 @@ describe('stats system', () => {
       // effective str = 8, so maxHp = 50 + vit*10 = 50, damage = 1 + 8*1.0 = 9
       expect(player.damage).toBe(9);
     });
+
+    it('updates secondary derived stats (dodge, accuracy, crit)', () => {
+      const player = makePlayer({
+        baseStats: { str: 0, dex: 10, int: 0, vit: 0 },
+      });
+      recalculatePlayerBaseStats(player);
+      expect(player.dodgeChance).toBeCloseTo(0.2);
+      expect(player.accuracy).toBeCloseTo(0.15);
+      expect(player.critChance).toBeCloseTo(0.1);
+      expect(player.critMultiplier).toBe(1.5);
+    });
+
+    it('includes modifiers in secondary stats after recalculate', () => {
+      const player = makePlayer({
+        baseStats: { str: 0, dex: 10, int: 0, vit: 0 },
+        statModifiers: [{ stat: 'critChance', value: 0.05, op: 'add', source: 'buff' }],
+      });
+      recalculatePlayerBaseStats(player);
+      expect(player.critChance).toBeCloseTo(0.15); // 0.1 + 0.05
+    });
+  });
+
+  describe('auto-recalculate on modifier changes', () => {
+    it('addModifier triggers recalculate', () => {
+      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
+      addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
+      // effective dex = 20 -> dodgeChance = 0.4
+      expect(player.dodgeChance).toBeCloseTo(0.4);
+    });
+
+    it('removeModifiersBySource triggers recalculate', () => {
+      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
+      addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
+      expect(player.dodgeChance).toBeCloseTo(0.4);
+      removeModifiersBySource(player, 'buff');
+      expect(player.dodgeChance).toBeCloseTo(0.2);
+    });
+
+    it('consumeCharge removes modifier and triggers recalculate', () => {
+      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
+      addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'temp', charges: 1 });
+      expect(player.dodgeChance).toBeCloseTo(0.4);
+      consumeCharge(player, 'dex');
+      expect(player.dodgeChance).toBeCloseTo(0.2);
+    });
   });
 });

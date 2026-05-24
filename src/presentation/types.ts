@@ -8,7 +8,7 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState } from '@simulation/types';
+import type { GameState, PlayerStatsSnapshot } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
@@ -86,4 +86,6 @@ export type RenderInput = {
   phase: 'idle' | 'animating' | 'gameOver';
   /** Масштаб камеры (1 = 100%). */
   zoom: number;
+  /** Рассчитанные характеристики игрока для отображения. */
+  playerStats: PlayerStatsSnapshot;
 };

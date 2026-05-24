@@ -18,13 +18,24 @@ import {
   getBaseDamage,
   getBaseArmor,
 } from './base-resolver.ts';
+import {
+  getEffectiveDodgeChance,
+  getEffectiveAccuracy,
+  getEffectiveCritChance,
+  getEffectiveCritMultiplier,
+} from './effective-stats.ts';
 
 export function recalculatePlayerBaseStats(player: PlayerEntity): void {
   // Обновляем derived-кэш: эти поля НЕЛЬЗЯ менять напрямую вне этого вызова.
   player.maxHp = getBaseMaxHp(player);
   player.maxMp = getBaseMaxMp(player);
-  player.damage = getBaseDamage(player);
-  player.armor = getBaseArmor(player);
+  player.damage = Math.round(getBaseDamage(player));
+  player.armor = Math.round(getBaseArmor(player));
+
+  player.dodgeChance = getEffectiveDodgeChance(player);
+  player.accuracy = getEffectiveAccuracy(player);
+  player.critChance = getEffectiveCritChance(player);
+  player.critMultiplier = getEffectiveCritMultiplier(player);
 
   player.hp = Math.min(player.hp, player.maxHp);
   player.mp = Math.min(player.mp, player.maxMp);

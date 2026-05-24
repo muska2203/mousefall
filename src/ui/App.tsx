@@ -13,7 +13,7 @@
 
 import {useState, useCallback, useRef, useEffect} from 'react';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
-import type {CharacterConfig} from '@presentation/gameSession';
+import type {CharacterConfig, PlayerStatsSnapshot} from '@presentation/gameSession';
 import {MainMenuScreen} from './screens/MainMenuScreen';
 import {CharacterCreationScreen} from './screens/CharacterCreationScreen';
 import {GameScreen} from './screens/GameScreen';
@@ -73,6 +73,7 @@ export default function App() {
 
     case 'gameOver': {
       const defeatPortraitId = session.getViewModel().renderInput?.portraitId;
+      const defeatStats = session.getViewModel().renderInput?.playerStats;
       return (
         <EndingScreen
           result="defeat"
@@ -83,12 +84,14 @@ export default function App() {
               ? `/assets/portraits/${defeatPortraitId}-ready.png`
               : undefined
           }
+          playerStats={defeatStats}
         />
       );
     }
 
     case 'victory': {
       const victoryPortraitId = session.getViewModel().renderInput?.portraitId;
+      const victoryStats = session.getViewModel().renderInput?.playerStats;
       return (
         <EndingScreen
           result="victory"
@@ -99,6 +102,7 @@ export default function App() {
               ? `/assets/portraits/${victoryPortraitId}-ready.png`
               : undefined
           }
+          playerStats={victoryStats}
         />
       );
     }
