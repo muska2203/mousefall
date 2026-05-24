@@ -16,7 +16,7 @@ import {EndingMetricsPanel} from '@ui/components/EndingMetricsPanel';
 import type {MetricItem} from '@ui/components/EndingMetricsPanel';
 import {BossListPanel} from '@ui/components/BossListPanel';
 import {EndingActionsPanel} from '@ui/components/EndingActionsPanel';
-import type {PlayerStatsSnapshot} from '@presentation/gameSession';
+import type {PlayerStatsSnapshot, EquipmentSnapshot} from '@presentation/gameSession';
 
 interface Props {
   result: 'defeat' | 'victory';
@@ -24,6 +24,7 @@ interface Props {
   onReturnToMenu?: () => void;
   portraitSrc?: string;
   playerStats?: PlayerStatsSnapshot;
+  equipment?: EquipmentSnapshot;
 }
 
 const DEFEAT_BOSSES = [
@@ -33,7 +34,7 @@ const DEFEAT_BOSSES = [
   '👑 Кот-хозяин кладовки',
 ];
 
-export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, playerStats}: Props) {
+export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, playerStats, equipment}: Props) {
   const isVictory = result === 'victory';
   const ps = playerStats;
 
@@ -51,11 +52,17 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
         {type: 'readonly', icon: '❤️', name: 'Выносливость', value: '0'},
       ];
 
-  const equipSlots: EquipSlotData[] = [
-    {label: 'Оружие', fallback: '⚔'},
-    {label: 'Броня', fallback: '🛡'},
-    {label: 'Амулет', fallback: '📿'},
-  ];
+  const equipSlots: EquipSlotData[] = equipment
+    ? [
+        {label: 'Оружие', icon: equipment.weaponId ? `/assets/items/${equipment.weaponId}.png` : undefined, fallback: '⚔', damage: equipment.weaponDamage},
+        {label: 'Броня', icon: equipment.armorId ? `/assets/items/${equipment.armorId}.png` : undefined, fallback: '🛡'},
+        {label: 'Амулет', icon: equipment.amuletId ? `/assets/items/${equipment.amuletId}.png` : undefined, fallback: '📿'},
+      ]
+    : [
+        {label: 'Оружие', fallback: '⚔'},
+        {label: 'Броня', fallback: '🛡'},
+        {label: 'Амулет', fallback: '📿'},
+      ];
 
   const metrics: MetricItem[] = [
     {label: 'Длительность', value: '00:00'},

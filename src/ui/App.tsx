@@ -72,8 +72,10 @@ export default function App() {
       return <GameScreen session={session} onModeChange={handleModeChange} />;
 
     case 'gameOver': {
-      const defeatPortraitId = session.getViewModel().renderInput?.portraitId;
-      const defeatStats = session.getViewModel().renderInput?.playerStats;
+      const defeatRenderInput = session.getViewModel().renderInput;
+      const defeatPortraitId = defeatRenderInput?.portraitId;
+      const defeatStats = defeatRenderInput?.playerStats;
+      const defeatEquipment = defeatRenderInput?.equipment;
       return (
         <EndingScreen
           result="defeat"
@@ -85,13 +87,16 @@ export default function App() {
               : undefined
           }
           playerStats={defeatStats}
+          equipment={defeatEquipment}
         />
       );
     }
 
     case 'victory': {
-      const victoryPortraitId = session.getViewModel().renderInput?.portraitId;
-      const victoryStats = session.getViewModel().renderInput?.playerStats;
+      const victoryRenderInput = session.getViewModel().renderInput;
+      const victoryPortraitId = victoryRenderInput?.portraitId;
+      const victoryStats = victoryRenderInput?.playerStats;
+      const victoryEquipment = victoryRenderInput?.equipment;
       return (
         <EndingScreen
           result="victory"
@@ -103,6 +108,7 @@ export default function App() {
               : undefined
           }
           playerStats={victoryStats}
+          equipment={victoryEquipment}
         />
       );
     }

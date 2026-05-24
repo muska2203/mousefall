@@ -79,14 +79,12 @@ const STARTER_SLOTS: Omit<StarterSlot, 'selectedId' | 'onSelect'>[] = [
         name: 'Ржавый сырорез',
         icon: '/assets/items/common_splinter_blade.png',
         fallback: '🗡',
-        damage: 4,
       },
       {
         id: 'common_school_wand',
         name: 'Треснувшая спица',
         icon: '/assets/items/common_school_wand.png',
         fallback: '🪄',
-        damage: 2,
       },
     ],
   },
@@ -189,8 +187,29 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     </>
   );
 
+  const weaponItemsWithDamage = useMemo(() => {
+    const weaponSlot = STARTER_SLOTS.find((s) => s.label === 'Оружие');
+    return weaponSlot?.items.map((item) => {
+      try {
+        const stats = GameSession.previewCharacterStats({
+          classId: portraitId,
+          attributes: {strength, agility, vitality, intelligence, luck: 0},
+          startingEquipment: [item.id, armorId, amuletId],
+        });
+        return {...item, damage: stats.damage};
+      } catch {
+        return item;
+      }
+    }) ?? [];
+  }, [portraitId, strength, agility, vitality, intelligence, armorId, amuletId]);
+
   const starterSlots: StarterSlot[] = [
-    {...STARTER_SLOTS[0] as StarterSlot, selectedId: weaponId, onSelect: setWeaponId},
+    {
+      ...(STARTER_SLOTS[0] as StarterSlot),
+      selectedId: weaponId,
+      onSelect: setWeaponId,
+      items: weaponItemsWithDamage,
+    },
     {...STARTER_SLOTS[1] as StarterSlot, selectedId: armorId, onSelect: setArmorId},
     {...STARTER_SLOTS[2] as StarterSlot, selectedId: amuletId, onSelect: setAmuletId},
   ];

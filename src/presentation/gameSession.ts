@@ -19,14 +19,14 @@ import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@simulation/schemas/contentSchemas';
-import type {AnimationNode, RenderInput} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot} from './types';
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
 
 // Реэкспорт типов для UI-слоя, чтобы UI не импортировал из simulation/ напрямую
 export type {CharacterConfig} from '@simulation/characterCreation';
 export type {MapParams} from '@simulation/schemas/contentSchemas';
-export type {AnimationNode, RenderInput} from './types';
+export type {AnimationNode, RenderInput, EquipmentSnapshot} from './types';
 export type {RenderState} from './types';
 export type {PlayerStatsSnapshot} from '@simulation/types';
 
@@ -100,6 +100,13 @@ export class GameSession {
   }
 
   private buildRenderInput(state: Readonly<GameState>): RenderInput {
+    const player = state.player;
+    const equipment: EquipmentSnapshot = {
+      weaponId: player.equippedWeaponId,
+      armorId: player.equippedArmorId,
+      amuletId: player.equippedAmuletId,
+      weaponDamage: player.equippedWeaponId ? player.damage : null,
+    };
     return {
       state,
       portraitId: this.portraitId,
@@ -108,6 +115,7 @@ export class GameSession {
       phase: this.renderPhase,
       zoom: this.cameraZoom,
       playerStats: this.simulation!.getPlayerStats(),
+      equipment,
     };
   }
 

@@ -72,6 +72,14 @@ export type AnimationNode = {
 /** Readonly псевдоним GameState для renderer и UI. */
 export type RenderState = Readonly<GameState>;
 
+/** Снапшот экипировки для отображения в UI. */
+export type EquipmentSnapshot = {
+  weaponId: string | null;
+  armorId: string | null;
+  amuletId: string | null;
+  weaponDamage: number | null;
+};
+
 /** Полный вход renderer'а: состояние + анимации + метаданные. */
 export type RenderInput = {
   /** Readonly снимок игрового состояния от Simulation. */
@@ -88,4 +96,6 @@ export type RenderInput = {
   zoom: number;
   /** Рассчитанные характеристики игрока для отображения. */
   playerStats: PlayerStatsSnapshot;
+  /** Экипировка игрока для отображения слотов. */
+  equipment: EquipmentSnapshot;
 };

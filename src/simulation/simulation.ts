@@ -29,6 +29,7 @@ import {
   getEffectiveCritMultiplier,
 } from "@simulation/systems/stats/effective-stats.ts";
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
+import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
 
 export {findFirstAttackableEntityAt};
 
@@ -77,6 +78,7 @@ export class GameSimulation implements Simulation {
     ): import("@simulation/types.ts").PlayerStatsSnapshot {
         const player = createInitialPlayer();
         applyCharacterConfig(player, { ...config, portraitId: '' });
+        recalculatePlayerBaseStats(player);
         const effective = getEffectiveBaseStats(player);
         return {
             level: player.level,

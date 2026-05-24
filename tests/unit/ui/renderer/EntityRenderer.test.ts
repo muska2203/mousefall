@@ -88,6 +88,12 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       critChance: player.critChance,
       critMultiplier: player.critMultiplier,
     },
+    equipment: {
+      weaponId: null,
+      armorId: null,
+      amuletId: null,
+      weaponDamage: null,
+    },
   };
 }
 

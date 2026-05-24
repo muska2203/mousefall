@@ -138,7 +138,6 @@ export function GameScreen({session, onModeChange}: Props) {
     );
   }
 
-  const player = renderInput.state.player;
   const ps = renderInput.playerStats;
   const portraitImg = renderInput.portraitId
     ? `/assets/portraits/${renderInput.portraitId}-ready.png`
@@ -151,24 +150,22 @@ export function GameScreen({session, onModeChange}: Props) {
     {type: 'readonly', icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
   ];
 
+  const eq = renderInput.equipment;
   const equipSlots: EquipSlotData[] = [
     {
       label: 'Оружие',
-      icon: player.equippedWeaponId
-        ? `/assets/items/${player.equippedWeaponId}.png`
-        : undefined,
+      icon: eq.weaponId ? `/assets/items/${eq.weaponId}.png` : undefined,
       fallback: '⚔',
-      damage: player.equippedWeaponId ? 6 : null,
+      damage: eq.weaponDamage,
     },
     {
       label: 'Броня',
-      icon: player.equippedArmorId
-        ? `/assets/items/${player.equippedArmorId}.png`
-        : undefined,
+      icon: eq.armorId ? `/assets/items/${eq.armorId}.png` : undefined,
       fallback: '🛡',
     },
     {
       label: 'Амулет',
+      icon: eq.amuletId ? `/assets/items/${eq.amuletId}.png` : undefined,
       fallback: '📿',
     },
   ];
