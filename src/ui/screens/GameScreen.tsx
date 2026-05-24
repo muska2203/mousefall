@@ -149,12 +149,6 @@ export function GameScreen({session, onModeChange}: Props) {
     {type: 'readonly', icon: '✨', name: 'Интеллект', value: String(ps.effectiveStats.int)},
     {type: 'readonly', icon: '🐾', name: 'Ловкость', value: String(ps.effectiveStats.dex)},
     {type: 'readonly', icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
-    {type: 'readonly', icon: '🗡️', name: 'Урон', value: String(ps.damage)},
-    {type: 'readonly', icon: '🛡️', name: 'Броня', value: String(ps.armor)},
-    {type: 'readonly', icon: '🏃', name: 'Уклонение', value: `${Math.round(ps.dodgeChance * 100)}%`},
-    {type: 'readonly', icon: '🎯', name: 'Точность', value: `${Math.round(ps.accuracy * 100)}%`},
-    {type: 'readonly', icon: '💀', name: 'Крит шанс', value: `${Math.round(ps.critChance * 100)}%`},
-    {type: 'readonly', icon: '💥', name: 'Крит x', value: `${ps.critMultiplier}x`},
   ];
 
   const equipSlots: EquipSlotData[] = [

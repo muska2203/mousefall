@@ -178,12 +178,6 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     {type: 'alloc', icon: '✨', name: 'Интеллект', value: intelligence, onChange: setIntelligence, canIncrease: remaining > 0},
     {type: 'alloc', icon: '🐾', name: 'Ловкость', value: agility, onChange: setAgility, canIncrease: remaining > 0},
     {type: 'alloc', icon: '❤️', name: 'Выносливость', value: vitality, onChange: setVitality, canIncrease: remaining > 0},
-    {type: 'readonly', icon: '🗡️', name: 'Урон', value: String(previewStats?.damage ?? 0)},
-    {type: 'readonly', icon: '🛡️', name: 'Броня', value: String(previewStats?.armor ?? 0)},
-    {type: 'readonly', icon: '🏃', name: 'Уклонение', value: previewStats ? `${Math.round(previewStats.dodgeChance * 100)}%` : '0%'},
-    {type: 'readonly', icon: '🎯', name: 'Точность', value: previewStats ? `${Math.round(previewStats.accuracy * 100)}%` : '0%'},
-    {type: 'readonly', icon: '💀', name: 'Крит шанс', value: previewStats ? `${Math.round(previewStats.critChance * 100)}%` : '0%'},
-    {type: 'readonly', icon: '💥', name: 'Крит x', value: `${previewStats?.critMultiplier ?? 1.5}x`},
   ];
 
   const statAllocHeader = (
