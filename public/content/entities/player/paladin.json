@@ -1,0 +1,10 @@
+{
+  "id": "paladin",
+  "name": "Сир Чеддар",
+  "description": "Благородный рыцарь Сырного Ордена.",
+  "symbol": "@",
+  "portraitImg": "/assets/portraits/paladin-ready.png",
+  "spriteId": "paladin",
+  "renderScale": 1.0,
+  "abilities": ["fireball", "magic_slap"]
+}

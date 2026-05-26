@@ -5,7 +5,7 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import {GameSimulation} from '../../../src/simulation/simulation';
 import {initRegistry, resetRegistry} from '../../../src/simulation/content/registry';
-import type {ItemTemplate} from '../../../src/simulation/schemas/contentSchemas';
+import type {ItemTemplate, PlayerTemplate} from '../../../src/simulation/schemas/contentSchemas';
 
 function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
   return {
@@ -22,11 +22,28 @@ function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
   } as ItemTemplate;
 }
 
+function mockPlayerTemplate(id: string, template: Partial<PlayerTemplate> = {}): PlayerTemplate {
+  return {
+    id,
+    name: id,
+    description: '',
+    symbol: '@',
+    portraitImg: `/assets/portraits/${id}-ready.png`,
+    spriteId: id,
+    renderScale: 1.5,
+    abilities: ['fireball', 'magic_slap'],
+    ...template,
+  } as PlayerTemplate;
+}
+
 describe('GameSimulation.getPlayerStats', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
+      players: new Map([
+        ['warrior', mockPlayerTemplate('warrior')],
+      ]),
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',
@@ -51,10 +68,9 @@ describe('GameSimulation.getPlayerStats', () => {
     const sim = GameSimulation.createNewGame(
       12345,
       {
-        classId: 'warrior',
+        templateId: 'warrior',
         attributes: {strength: 2, agility: 3, vitality: 1, intelligence: 1, luck: 0},
         startingEquipment: ['test_sword', 'test_armor'],
-        portraitId: 'test',
       },
       {
         id: 'floor_1',

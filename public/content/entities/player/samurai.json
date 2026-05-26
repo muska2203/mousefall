@@ -1,0 +1,10 @@
+{
+  "id": "samurai",
+  "name": "Усатый Сэнсэй",
+  "description": "Мастер сырного клинка.",
+  "symbol": "@",
+  "portraitImg": "/assets/portraits/samurai-ready.png",
+  "spriteId": "samurai",
+  "renderScale": 1.0,
+  "abilities": ["fireball", "magic_slap"]
+}

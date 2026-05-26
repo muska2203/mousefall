@@ -16,5 +16,6 @@
     "chaseRange": 15
   },
   "lootTable": ["health_potion", "short_sword", "leather_armor"],
-  "xpReward": 40
+  "xpReward": 40,
+  "renderScale": 1.3
 }

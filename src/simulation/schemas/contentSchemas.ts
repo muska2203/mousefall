@@ -82,6 +82,8 @@ export const ItemTemplateSchema = z.object({
   description: z.string().describe('Описание, показываемое в инвентаре'),
   symbol:      z.string().length(1).describe('Символ ASCII для текстового рендера'),
   spriteId:    z.string().optional().describe('Ключ спрайта PixiJS'),
+  icon:        z.string().optional().describe('Путь к иконке предмета для UI'),
+  fallback:    z.string().optional().describe('Emoji-запасной вариант для отображения в UI'),
   type:        z.enum(['weapon', 'armor', 'amulet', 'consumable', 'key', 'gold']).describe('Категория предмета'),
   stackable:   z.boolean().default(false).describe('Можно ли складывать несколько в одну ячейку инвентаря'),
   maxStack:    z.number().int().positive().default(1).describe('Максимальный размер стопки'),
@@ -160,12 +162,30 @@ export const StairsTemplateSchema = z.object({
 export type StairsTemplate = z.output<typeof StairsTemplateSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон игрока
+// ─────────────────────────────────────────────
+
+export const PlayerTemplateSchema = z.object({
+  id:          z.string().min(1).describe('Уникальный идентификатор шаблона игрока (совпадает с именем файла)'),
+  name:        z.string().min(1).describe('Отображаемое имя'),
+  description: z.string().describe('Описание, показываемое в UI'),
+  symbol:      z.string().length(1).describe('Символ ASCII для текстового рендера'),
+  portraitImg: z.string().describe('Путь к изображению портрета'),
+  spriteId:    z.string().describe('Ключ спрайта PixiJS'),
+  renderScale: z.number().min(0).optional().default(1.5).describe('Масштаб спрайта относительно размера тайла'),
+  abilities:   z.array(z.string()).default([]).describe('ID начальных способностей'),
+}).describe('Шаблон класса/внешности игрока');
+
+export type PlayerTemplate = z.output<typeof PlayerTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Форма реестра контента
 // ─────────────────────────────────────────────
 
 /** Полностью загруженный и валидированный контент, готовый к использованию симуляцией. */
 export type LoadedContent = {
   entities:  Map<string, EntityTemplate>;
+  players:   Map<string, PlayerTemplate>;
   items:     Map<string, ItemTemplate>;
   abilities: Map<string, AbilityTemplate>;
   maps:      Map<string, MapParams>;

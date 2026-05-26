@@ -82,10 +82,10 @@ export class GameSimulation implements Simulation {
      * Не создаёт полноценную симуляцию и не мутирует глобальное состояние.
      */
     static previewCharacterStats(
-        config: Omit<CharacterConfig, 'portraitId'>,
+        config: CharacterConfig,
     ): import("@simulation/types.ts").PlayerStatsSnapshot {
         const player = createInitialPlayer();
-        applyCharacterConfig(player, { ...config, portraitId: '' });
+        applyCharacterConfig(player, config);
         recalculatePlayerBaseStats(player);
         const effective = getEffectiveBaseStats(player);
         return {

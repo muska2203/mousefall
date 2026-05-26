@@ -21,6 +21,7 @@ import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulatio
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@simulation/schemas/contentSchemas';
 import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview} from './types';
+import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@simulation/content/registry';
 
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
@@ -58,7 +59,6 @@ export class GameSession {
   private simulation: Simulation | null = null;
   private mode: SessionMode = 'mainMenu';
   private lastResult: SimulationResult | null = null;
-  private portraitId: string | null = null;
   private camera = new CameraState();
   private logs = new LogBuffer();
   private animation = new AnimationState();
@@ -153,7 +153,6 @@ export class GameSession {
 
     return {
       state,
-      portraitId: this.portraitId,
       highlightedPath: null,
       animations: this.lastResult ? buildAnimationTree(this.lastResult, state) : null,
       animationBatchId: this.animationBatchId,
@@ -210,10 +209,31 @@ export class GameSession {
    * Предпросмотр характеристик персонажа при создании.
    * Не требует активной симуляции.
    */
-  static previewCharacterStats(
-    config: Omit<CharacterConfig, 'portraitId'>,
-  ): PlayerStatsSnapshot {
+  static previewCharacterStats(config: CharacterConfig): PlayerStatsSnapshot {
     return GameSimulation.previewCharacterStats(config);
+  }
+
+  /**
+   * Возвращает все доступные шаблоны игрока из Content Registry.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAvailablePlayerTemplates() {
+    return getAllPlayerTemplates();
+  }
+
+  /**
+   * Возвращает информацию о предмете по ID для отображения в UI.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getItemInfo(id: string): {name: string; icon?: string; fallback?: string; type: string} | null {
+    const template = tryGetItem(id);
+    if (!template) return null;
+    return {
+      name: template.name,
+      icon: template.icon,
+      fallback: template.fallback,
+      type: template.type,
+    };
   }
 
   /** Переход в экран создания персонажа */
@@ -221,7 +241,6 @@ export class GameSession {
     this.mode = 'characterCreation';
     this.simulation = null;
     this.lastResult = null;
-    this.portraitId = null;
     this.animation.phase = 'idle';
     this.clearLogs();
     this.notify();
@@ -254,7 +273,6 @@ export class GameSession {
     this.simulation = GameSimulation.createNewGame(seed, config, defaultMapParams);
     this.mode = 'playing';
     this.lastResult = null;
-    this.portraitId = config.portraitId ?? null;
     this.animation.phase = 'idle';
     this.clearLogs();
     this.notify();
@@ -483,7 +501,6 @@ export class GameSession {
     this.simulation = null;
     this.mode = 'mainMenu';
     this.lastResult = null;
-    this.portraitId = null;
     this.animation.phase = 'idle';
     this.clearLogs();
     this.notify();

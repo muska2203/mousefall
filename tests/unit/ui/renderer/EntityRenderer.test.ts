@@ -116,7 +116,6 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       rng: {seed: 1, state: 1},
       nextEntityCounter: 0,
     },
-    portraitId: null,
     highlightedPath: null,
     animations: null,
     phase: 'idle' as const,
@@ -157,6 +156,7 @@ describe('EntityRenderer', () => {
   beforeEach(() => {
     initRegistry({
       entities: new Map(),
+      players: new Map(),
       items: new Map(),
       abilities: new Map(),
       maps: new Map(),

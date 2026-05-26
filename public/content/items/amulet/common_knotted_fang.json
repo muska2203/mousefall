@@ -4,6 +4,8 @@
   "description": "Кто-то носил его на шее. Теперь — вы.",
   "symbol": "*",
   "spriteId": "common_knotted_fang",
+  "icon": "/assets/items/common_knotted_fang.png",
+  "fallback": "🦷",
   "type": "amulet",
   "stackable": false,
   "maxStack": 1,

@@ -4,6 +4,8 @@
   "description": "Пахнет пылью и тайнами.",
   "symbol": ")",
   "spriteId": "common_patch_cloak",
+  "icon": "/assets/items/common_patch_cloak.png",
+  "fallback": "👘",
   "type": "armor",
   "stackable": false,
   "maxStack": 1,

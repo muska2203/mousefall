@@ -32,6 +32,7 @@ describe('fireballSkill', () => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
+      players: new Map(),
       items: new Map(),
       abilities: new Map([
         ['fireball', mockAbility('fireball', { mpCost: 10, cooldown: 3 })],

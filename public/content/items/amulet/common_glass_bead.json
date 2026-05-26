@@ -4,6 +4,8 @@
   "description": "Кажется, в ней когда-то был свет.",
   "symbol": "*",
   "spriteId": "common_glass_bead",
+  "icon": "/assets/items/common_glass_bead.png",
+  "fallback": "🧿",
   "type": "amulet",
   "stackable": false,
   "maxStack": 1,

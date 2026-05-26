@@ -181,8 +181,6 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
 export type RenderInput = {
   /** Readonly снимок игрового состояния от Simulation. */
   state: RenderState;
-  /** ID портрета игрока для выбора спрайта. */
-  portraitId: string | null;
   /** Подсвеченный автопуть (если есть). */
   highlightedPath: Position[] | null;
   /** Очередь анимаций в виде массива фаз. Каждая фаза — массив деревьев,

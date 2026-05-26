@@ -14,6 +14,7 @@
 import {useState, useCallback, useRef, useEffect} from 'react';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
 import type {CharacterConfig, PlayerStatsSnapshot} from '@presentation/gameSession';
+import {tryGetPlayerTemplate} from '@simulation/content/registry';
 import {MainMenuScreen} from './screens/MainMenuScreen';
 import {CharacterCreationScreen} from './screens/CharacterCreationScreen';
 import {GameScreen} from './screens/GameScreen';
@@ -73,7 +74,8 @@ export default function App() {
 
     case 'gameOver': {
       const defeatRenderInput = session.getViewModel().renderInput;
-      const defeatPortraitId = defeatRenderInput?.portraitId;
+      const defeatTemplateId = defeatRenderInput?.state.player.templateId;
+      const defeatPortraitSrc = tryGetPlayerTemplate(defeatTemplateId ?? '')?.portraitImg;
       const defeatStats = defeatRenderInput?.playerStats;
       const defeatEquipment = defeatRenderInput?.equipment;
       return (
@@ -81,11 +83,7 @@ export default function App() {
           result="defeat"
           onNewRun={handleNewGame}
           onReturnToMenu={handleReturnToMenu}
-          portraitSrc={
-            defeatPortraitId
-              ? `/assets/portraits/${defeatPortraitId}-ready.png`
-              : undefined
-          }
+          portraitSrc={defeatPortraitSrc}
           playerStats={defeatStats}
           equipment={defeatEquipment}
         />
@@ -94,7 +92,8 @@ export default function App() {
 
     case 'victory': {
       const victoryRenderInput = session.getViewModel().renderInput;
-      const victoryPortraitId = victoryRenderInput?.portraitId;
+      const victoryTemplateId = victoryRenderInput?.state.player.templateId;
+      const victoryPortraitSrc = tryGetPlayerTemplate(victoryTemplateId ?? '')?.portraitImg;
       const victoryStats = victoryRenderInput?.playerStats;
       const victoryEquipment = victoryRenderInput?.equipment;
       return (
@@ -102,11 +101,7 @@ export default function App() {
           result="victory"
           onNewRun={handleNewGame}
           onReturnToMenu={handleReturnToMenu}
-          portraitSrc={
-            victoryPortraitId
-              ? `/assets/portraits/${victoryPortraitId}-ready.png`
-              : undefined
-          }
+          portraitSrc={victoryPortraitSrc}
           playerStats={victoryStats}
           equipment={victoryEquipment}
         />

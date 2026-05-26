@@ -8,7 +8,7 @@
  *   - Не-акторы (предметы, лестницы): 1.0
  */
 
-import { tryGetEntity, tryGetStairs, tryGetItem } from '@simulation/content/registry';
+import { tryGetEntity, tryGetStairs, tryGetItem, tryGetPlayerTemplate } from '@simulation/content/registry';
 
 /** Масштаб по умолчанию для не-акторов. */
 export const DEFAULT_RENDER_SCALE = 1.0;
@@ -33,6 +33,10 @@ export function getRenderScale(templateId: string, isActor: boolean): number {
   const fromItem = tryGetItem(templateId);
   if (fromItem && 'renderScale' in fromItem) {
     return (fromItem as any).renderScale ?? DEFAULT_RENDER_SCALE;
+  }
+  const fromPlayer = tryGetPlayerTemplate(templateId);
+  if (fromPlayer) {
+    return fromPlayer.renderScale;
   }
   return isActor ? ACTOR_DEFAULT_RENDER_SCALE : DEFAULT_RENDER_SCALE;
 }

@@ -1,0 +1,10 @@
+{
+  "id": "witcher",
+  "name": "Белый Хвост",
+  "description": "Охотник на чудовищ и мечник-алхимик.",
+  "symbol": "@",
+  "portraitImg": "/assets/portraits/witcher-ready.png",
+  "spriteId": "witcher",
+  "renderScale": 1.0,
+  "abilities": ["fireball", "magic_slap"]
+}

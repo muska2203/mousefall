@@ -21,10 +21,9 @@ export function getEnemySprite(templateId: string): string {
   return `/assets/enemies/${templateId}.png`;
 }
 
-/** Путь к спрайту игрока по portraitId. */
-export function getPlayerSprite(portraitId: string | null): string {
-  const id = portraitId ?? 'witcher';
-  return `/assets/actors/player_${id}.png`;
+/** Путь к спрайту игрока по templateId. */
+export function getPlayerSprite(templateId: string): string {
+  return `/assets/actors/player_${templateId}.png`;
 }
 
 /** Путь к спрайту лестницы по templateId. */

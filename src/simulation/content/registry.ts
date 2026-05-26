@@ -17,7 +17,7 @@
  * - Решение: синглтон с initRegistry() для инжекции в тестах — золотая середина
  */
 
-import type { LoadedContent, EntityTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate } from '../schemas/contentSchemas';
+import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate } from '../schemas/contentSchemas';
 
 // ─────────────────────────────────────────────
 // Состояние реестра
@@ -67,6 +67,30 @@ export function getEntity(id: string): EntityTemplate {
   const template = getRegistry().entities.get(id);
   if (!template) throw new Error(`Entity template not found: "${id}"`);
   return template;
+}
+
+/**
+ * Получить шаблон игрока по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getPlayerTemplate(id: string): PlayerTemplate {
+  const template = getRegistry().players.get(id);
+  if (!template) throw new Error(`Player template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон игрока. Возвращает undefined, если не найден.
+ */
+export function tryGetPlayerTemplate(id: string): PlayerTemplate | undefined {
+  return getRegistry().players.get(id);
+}
+
+/**
+ * Получить все шаблоны игрока.
+ */
+export function getAllPlayerTemplates(): PlayerTemplate[] {
+  return Array.from(getRegistry().players.values());
 }
 
 /**

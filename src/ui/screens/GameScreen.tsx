@@ -9,6 +9,7 @@
 
 import {useCallback, useEffect, useSyncExternalStore, useState} from 'react';
 import type {GameSession, SessionMode} from '@presentation/gameSession';
+import {tryGetPlayerTemplate} from '@simulation/content/registry';
 import {KEY_MAP, INTERACTIVE_TAGS} from '@ui/input/keyboardMap';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
@@ -171,9 +172,7 @@ export function GameScreen({session, onModeChange}: Props) {
   }
 
   const ps = renderInput.playerStats;
-  const portraitImg = renderInput.portraitId
-    ? `/assets/portraits/${renderInput.portraitId}-ready.png`
-    : '/assets/portraits/witcher-ready.png';
+  const portraitImg = tryGetPlayerTemplate(renderInput.state.player.templateId)?.portraitImg ?? '/assets/portraits/witcher-ready.png';
 
 
 

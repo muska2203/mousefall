@@ -16,5 +16,6 @@
     "chaseRange": 10
   },
   "lootTable": ["health_potion", "short_sword"],
-  "xpReward": 18
+  "xpReward": 18,
+  "renderScale": 1.5
 }

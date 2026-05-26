@@ -15,6 +15,7 @@
 import type { LoadedContent } from '../schemas/contentSchemas';
 import {
   EntityTemplateSchema,
+  PlayerTemplateSchema,
   ItemTemplateSchema,
   AbilityTemplateSchema,
   MapParamsSchema,
@@ -36,6 +37,7 @@ export type FetchJson = (path: string) => Promise<unknown>;
 
 const ManifestSchema = z.object({
   entities: z.array(z.string()),
+  players: z.array(z.string()),
   items: z.array(z.string()),
   abilities: z.array(z.string()),
   maps: z.array(z.string()),
@@ -70,8 +72,9 @@ export async function browserFetchJson(path: string): Promise<unknown> {
 export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
   const manifest = await loadManifest(fetchJson);
 
-  const [entities, items, abilities, maps, stairs] = await Promise.all([
+  const [entities, players, items, abilities, maps, stairs] = await Promise.all([
     loadCategory(manifest.entities, EntityTemplateSchema, fetchJson),
+    loadCategory(manifest.players, PlayerTemplateSchema, fetchJson),
     loadCategory(manifest.items, ItemTemplateSchema, fetchJson),
     loadCategory(manifest.abilities, AbilityTemplateSchema, fetchJson),
     loadCategory(manifest.maps, MapParamsSchema, fetchJson),
@@ -80,6 +83,7 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
 
   const content: LoadedContent = {
     entities:  new Map(entities.map(e => [e.id, e])),
+    players:   new Map(players.map(p => [p.id, p])),
     items:     new Map(items.map(i => [i.id, i])),
     abilities: new Map(abilities.map(a => [a.id, a])),
     maps:      new Map(maps.map(m => [m.id, m])),

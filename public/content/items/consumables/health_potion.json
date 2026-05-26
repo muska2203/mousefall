@@ -4,6 +4,8 @@
   "description": "A small vial of red liquid. Restores 30 HP.",
   "symbol": "!",
   "spriteId": "health_potion",
+  "icon": "/assets/items/health_potion.png",
+  "fallback": "🧪",
   "type": "consumable",
   "stackable": true,
   "maxStack": 10,

@@ -4,6 +4,8 @@
   "description": "Небольшой тупой клинок, от которого пахнет сыром.",
   "symbol": "t",
   "spriteId": "common_splinter_blade",
+  "icon": "/assets/items/common_splinter_blade.png",
+  "fallback": "🗡",
   "type": "weapon",
   "stackable": false,
   "maxStack": 1,

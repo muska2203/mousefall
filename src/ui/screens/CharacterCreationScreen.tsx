@@ -25,109 +25,43 @@ interface Props {
 
 const POINTS_BUDGET = 10;
 
-const PORTRAITS: PortraitItem[] = [
-  {
-    id: 'witcher',
-    name: 'Белый Хвост',
-    desc: 'Охотник на чудовищ и мечник-алхимик.',
-    img: '/assets/portraits/witcher-ready.png',
-  },
-  {
-    id: 'halfling-mage',
-    name: 'Сырный Мерлин',
-    desc: 'Хитрый заклинатель, обращающий сыр в ману.',
-    img: '/assets/portraits/halfling-mage-ready.png',
-  },
-  {
-    id: 'paladin',
-    name: 'Сир Чеддар',
-    desc: 'Благородный рыцарь Сырного Ордена.',
-    img: '/assets/portraits/paladin-ready.png',
-  },
-  {
-    id: 'elven-ranger',
-    name: 'Тонкоух',
-    desc: 'Лучник из глубин Сырных Лесов.',
-    img: '/assets/portraits/elven-ranger-ready.png',
-  },
-  {
-    id: 'orc-barbarian',
-    name: 'Клыкохвост',
-    desc: 'Яростный воин с сырными клыками.',
-    img: '/assets/portraits/orc-barbarian-ready.png',
-  },
-  {
-    id: 'samurai',
-    name: 'Усатый Сэнсэй',
-    desc: 'Мастер сырного клинка.',
-    img: '/assets/portraits/samurai-ready.png',
-  },
-  {
-    id: 'necromancer',
-    name: 'Мышь-Косторез',
-    desc: 'Тёмный некромант, повелитель плесени.',
-    img: '/assets/portraits/necromancer-ready.png',
-  },
-];
+const STARTER_WEAPON_IDS = ['common_splinter_blade', 'common_school_wand'];
+const STARTER_ARMOR_IDS = ['common_tin_plate', 'common_patch_cloak'];
+const STARTER_AMULET_IDS = ['common_knotted_fang', 'common_glass_bead'];
 
-const STARTER_SLOTS: Omit<StarterSlot, 'selectedId' | 'onSelect'>[] = [
-  {
-    label: 'Оружие',
-    items: [
-      {
-        id: 'common_splinter_blade',
-        name: 'Ржавый сырорез',
-        icon: '/assets/items/common_splinter_blade.png',
-        fallback: '🗡',
-      },
-      {
-        id: 'common_school_wand',
-        name: 'Треснувшая спица',
-        icon: '/assets/items/common_school_wand.png',
-        fallback: '🪄',
-      },
-    ],
-  },
-  {
-    label: 'Броня',
-    items: [
-      {
-        id: 'common_tin_plate',
-        name: 'Жестяная кираса',
-        icon: '/assets/items/common_tin_plate.png',
-        fallback: '🥋',
-      },
-      {
-        id: 'common_patch_cloak',
-        name: 'Потёртый плащ пыльника',
-        icon: '/assets/items/common_patch_cloak.png',
-        fallback: '👘',
-      },
-    ],
-  },
-  {
-    label: 'Амулет',
-    items: [
-      {
-        id: 'common_knotted_fang',
-        name: 'Кривой клык',
-        icon: '/assets/items/common_knotted_fang.png',
-        fallback: '🦷',
-      },
-      {
-        id: 'common_glass_bead',
-        name: 'Тусклая бусина',
-        icon: '/assets/items/common_glass_bead.png',
-        fallback: '🧿',
-      },
-    ],
-  },
-];
-
-const FIRST_PORTRAIT = PORTRAITS[0] ?? {id: 'witcher', name: 'Белый Хвост', desc: '', img: '/assets/portraits/witcher-ready.png'};
+function getStarterItemInfo(id: string) {
+  const info = GameSession.getItemInfo(id);
+  return {
+    id,
+    name: info?.name ?? id,
+    icon: info?.icon ?? `/assets/items/${id}.png`,
+    fallback: info?.fallback ?? '?',
+  };
+}
 
 export function CharacterCreationScreen({onStartGame}: Props) {
-  const [portraitId, setPortraitId] = useState('witcher');
+  const templates = useMemo(() => {
+    try {
+      return GameSession.getAvailablePlayerTemplates();
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const portraits: PortraitItem[] = useMemo(
+    () =>
+      templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        desc: t.description,
+        img: t.portraitImg,
+      })),
+    [templates],
+  );
+
+  const firstTemplateId = templates[0]?.id ?? 'witcher';
+
+  const [selectedTemplateId, setSelectedTemplateId] = useState(firstTemplateId);
   const [strength, setStrength] = useState(0);
   const [intelligence, setIntelligence] = useState(0);
   const [agility, setAgility] = useState(0);
@@ -141,35 +75,33 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   const remaining = POINTS_BUDGET - spent;
   const isValid = remaining === 0;
 
-  const selectedPortrait = PORTRAITS.find((p) => p.id === portraitId) ?? FIRST_PORTRAIT;
+  const selectedPortrait = portraits.find((p) => p.id === selectedTemplateId) ?? portraits[0];
 
   const previewStats = useMemo(() => {
     try {
       return GameSession.previewCharacterStats({
-        classId: portraitId,
+        templateId: selectedTemplateId,
         attributes: {strength, agility, vitality, intelligence, luck: 0},
         startingEquipment: [weaponId, armorId, amuletId],
       });
     } catch {
-      // Fallback если registry ещё не инициализирован (не должно произойти в браузере)
       return null;
     }
-  }, [portraitId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId]);
+  }, [selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId]);
 
   const handleStart = useCallback(() => {
     if (!isValid) return;
 
     const config: CharacterConfig = {
-      classId: portraitId,
+      templateId: selectedTemplateId,
       attributes: {strength, agility, vitality, intelligence, luck: 0},
       startingEquipment: [weaponId, armorId, amuletId],
-      portraitId,
     };
 
     const parsedSeed = parseInt(seedInput, 10);
     const seed = seedInput && !Number.isNaN(parsedSeed) ? parsedSeed : Date.now() & 0xffffffff;
     onStartGame(config, seed);
-  }, [isValid, portraitId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, seedInput, onStartGame]);
+  }, [isValid, selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, seedInput, onStartGame]);
 
   const heroStats: HeroStat[] = [
     {type: 'alloc', icon: '💪', name: 'Сила', value: strength, onChange: setStrength, canIncrease: remaining > 0},
@@ -188,36 +120,46 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   );
 
   const weaponItemsWithDamage = useMemo(() => {
-    const weaponSlot = STARTER_SLOTS.find((s) => s.label === 'Оружие');
-    return weaponSlot?.items.map((item) => {
+    return STARTER_WEAPON_IDS.map((id) => {
+      const base = getStarterItemInfo(id);
       try {
         const stats = GameSession.previewCharacterStats({
-          classId: portraitId,
+          templateId: selectedTemplateId,
           attributes: {strength, agility, vitality, intelligence, luck: 0},
-          startingEquipment: [item.id, armorId, amuletId],
+          startingEquipment: [id, armorId, amuletId],
         });
-        return {...item, damage: stats.damage};
+        return {...base, damage: stats.damage};
       } catch {
-        return item;
+        return base;
       }
-    }) ?? [];
-  }, [portraitId, strength, agility, vitality, intelligence, armorId, amuletId]);
+    });
+  }, [selectedTemplateId, strength, agility, vitality, intelligence, armorId, amuletId]);
 
   const starterSlots: StarterSlot[] = [
     {
-      ...(STARTER_SLOTS[0] as StarterSlot),
+      label: 'Оружие',
       selectedId: weaponId,
       onSelect: setWeaponId,
       items: weaponItemsWithDamage,
     },
-    {...STARTER_SLOTS[1] as StarterSlot, selectedId: armorId, onSelect: setArmorId},
-    {...STARTER_SLOTS[2] as StarterSlot, selectedId: amuletId, onSelect: setAmuletId},
+    {
+      label: 'Броня',
+      selectedId: armorId,
+      onSelect: setArmorId,
+      items: STARTER_ARMOR_IDS.map(getStarterItemInfo),
+    },
+    {
+      label: 'Амулет',
+      selectedId: amuletId,
+      onSelect: setAmuletId,
+      items: STARTER_AMULET_IDS.map(getStarterItemInfo),
+    },
   ];
 
   const leftColumn = (
     <HeroPanel
-      portraitSrc={selectedPortrait.img}
-      portraitAlt={selectedPortrait.name}
+      portraitSrc={selectedPortrait?.img ?? '/assets/portraits/witcher-ready.png'}
+      portraitAlt={selectedPortrait?.name ?? 'Герой'}
       level={previewStats?.level ?? 1}
       hp={previewStats?.hp ?? 100}
       maxHp={previewStats?.maxHp ?? 100}
@@ -231,7 +173,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
 
   const centerColumn = (
     <Panel title="Выбор внешности" titleId="portrait-title" fill>
-      <PortraitGallery portraits={PORTRAITS} selectedId={portraitId} onSelect={setPortraitId} />
+      <PortraitGallery portraits={portraits} selectedId={selectedTemplateId} onSelect={setSelectedTemplateId} />
     </Panel>
   );
 

@@ -46,6 +46,7 @@ describe('stats system', () => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
+      players: new Map(),
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',

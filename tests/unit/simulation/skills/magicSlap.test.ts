@@ -26,6 +26,7 @@ describe('magicSlapSkill', () => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
+      players: new Map(),
       items: new Map(),
       abilities: new Map([
         ['magic_slap', mockAbility('magic_slap', { mpCost: 8, cooldown: 2 })],

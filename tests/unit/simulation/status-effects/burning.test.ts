@@ -55,7 +55,7 @@ describe('burning status effect', () => {
     const enemy = makeEnemy({ x: 6, y: 5, hp: 5, maxHp: 100, statusEffects: [{ type: 'burning', duration: 3, value: 10, statModifiers: null }] });
     state.entities.set(enemy.id, enemy);
 
-    initRegistry({ entities: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map() });
+    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map() });
     const sim = GameSimulation.loadSavedGame(state);
 
     // Тикаем через beginNextPlayerTurn (вызывается после исчерпания AP игрока)

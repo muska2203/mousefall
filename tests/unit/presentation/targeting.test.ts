@@ -27,6 +27,7 @@ describe('GameSession targeting', () => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
+      players: new Map(),
       items: new Map(),
       abilities: new Map([
         ['fireball', mockAbility('fireball', { range: 5, aoeRadius: 1 })],

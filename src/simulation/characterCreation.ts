@@ -10,8 +10,8 @@
  * - Не содержит логики ходов, боя или отображения.
  */
 
-import type {PlayerEntity} from './types';
-import { getItem } from './content/registry.ts';
+import type {PlayerEntity, RuntimeAbility} from './types';
+import { getItem, getPlayerTemplate } from './content/registry.ts';
 import { recalculatePlayerBaseStats } from './systems/stats/recalculate.ts';
 import { addModifier } from './systems/stats/modifier-engine.ts';
 
@@ -24,14 +24,12 @@ export type CharacterAttributes = {
 };
 
 export type CharacterConfig = {
-  /** Идентификатор класса/предустановки (для будущей интеграции с ContentRegistry) */
-  classId: string;
+  /** ID выбранного шаблона игрока */
+  templateId: string;
   /** Распределение базовых очков характеристик */
   attributes: CharacterAttributes;
   /** ID шаблонов начального снаряжения (оружие, броня, амулет и т.д.) */
   startingEquipment: string[];
-  /** ID выбранного портрета/внешности */
-  portraitId: string;
 };
 
 /**
@@ -55,7 +53,7 @@ export function applyCharacterConfig(
   player.equippedArmorId = null;
   player.equippedAmuletId = null;
   player.statModifiers = [];
-  player.templateId = config.portraitId;
+  player.templateId = config.templateId;
 
   // Применение распределённых очков характеристик
   player.baseStats = {
@@ -91,12 +89,12 @@ export function applyCharacterConfig(
   player.hp = player.maxHp;
   player.mp = player.maxMp;
 
-  // Начальные способности (временно: все классы получают fireball и magic_slap)
-  player.abilities = [
-    { templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 },
-    { templateId: 'magic_slap', source: 'innate', level: 1, currentCooldown: 0 },
-  ];
-
-  // TODO: читать базовые статы класса из ContentRegistry по config.classId
-  void config.classId;
+  // Начальные способности из шаблона игрока
+  const template = getPlayerTemplate(config.templateId);
+  player.abilities = template.abilities.map((id): RuntimeAbility => ({
+    templateId: id,
+    source: 'innate',
+    level: 1,
+    currentCooldown: 0,
+  }));
 }

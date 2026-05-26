@@ -52,7 +52,7 @@ export class EntityRenderer {
       }
     }
 
-    const playerPath = getPlayerSprite(input.portraitId);
+    const playerPath = getPlayerSprite(input.state.player.templateId);
     texturePaths.set(playerPath, playerPath);
 
     // Игрок всегда виден себе

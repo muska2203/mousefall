@@ -7,6 +7,15 @@
     "/content/entities/enemies/cat_big.json",
     "/content/entities/player/player.json"
   ],
+  "players": [
+    "/content/entities/player/witcher.json",
+    "/content/entities/player/halfling-mage.json",
+    "/content/entities/player/paladin.json",
+    "/content/entities/player/elven-ranger.json",
+    "/content/entities/player/orc-barbarian.json",
+    "/content/entities/player/samurai.json",
+    "/content/entities/player/necromancer.json"
+  ],
   "items": [
     "/content/items/consumables/health_potion.json",
     "/content/items/weapons/short_sword.json",

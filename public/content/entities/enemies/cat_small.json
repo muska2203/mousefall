@@ -16,5 +16,6 @@
     "chaseRange": 8
   },
   "lootTable": ["health_potion"],
-  "xpReward": 8
+  "xpReward": 8,
+  "renderScale": 1.1
 }

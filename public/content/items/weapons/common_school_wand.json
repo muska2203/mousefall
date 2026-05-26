@@ -4,6 +4,8 @@
   "description": "Почти палочка. Почти волшебная.",
   "symbol": "i",
   "spriteId": "common_school_wand",
+  "icon": "/assets/items/common_school_wand.png",
+  "fallback": "🪄",
   "type": "weapon",
   "stackable": false,
   "maxStack": 1,
