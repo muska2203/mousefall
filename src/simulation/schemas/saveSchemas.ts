@@ -52,6 +52,8 @@ const PlayerEntitySchema = z.object({
 
   id: z.literal('player'),
 
+  templateId: z.string(),
+
   x: z.number().int(),
   y: z.number().int(),
 
@@ -136,6 +138,23 @@ const ItemEntitySchema = z.object({
 });
 
 // ─────────────────────────────────────────────
+// Лестница
+// ─────────────────────────────────────────────
+
+const StairsEntitySchema = z.object({
+  type: z.literal('stairs'),
+
+  id: z.string(),
+
+  x: z.number().int(),
+  y: z.number().int(),
+
+  templateId: z.string(),
+
+  blocksMovement: z.literal(false)
+});
+
+// ─────────────────────────────────────────────
 // Унифицированная схема сущности
 // ─────────────────────────────────────────────
 
@@ -143,6 +162,7 @@ export const EntitySchema = z.discriminatedUnion('type', [
   PlayerEntitySchema,
   EnemyEntitySchema,
   ItemEntitySchema,
+  StairsEntitySchema,
 ]);
 
 // ─────────────────────────────────────────────

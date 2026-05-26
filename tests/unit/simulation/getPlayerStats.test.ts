@@ -39,6 +39,7 @@ describe('GameSimulation.getPlayerStats', () => {
       ]),
       abilities: new Map(),
       maps: new Map(),
+      stairs: new Map(),
     });
   });
 

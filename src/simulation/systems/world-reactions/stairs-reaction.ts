@@ -27,14 +27,16 @@ export const stairsTransitionReaction: WorldReaction = (
     const stairs = findStairsAt(state, event.to.x, event.to.y);
     if (!stairs) return [];
 
+    const direction = stairs.templateId === 'stairs_down' ? 'down' : 'up';
+
     // Проверяем границы подземелья
-    if (stairs.direction === 'down' && state.floor >= MAX_FLOOR) return [];
-    if (stairs.direction === 'up' && state.floor <= 1) return [];
+    if (direction === 'down' && state.floor >= MAX_FLOOR) return [];
+    if (direction === 'up' && state.floor <= 1) return [];
 
     // Порождаем событие-запрос; сам переход делает Action handler
     builder.addChild(parent, {
         type: 'STAIR_EXIT_TRIGGERED',
-        direction: stairs.direction,
+        direction,
     });
 
     return [];

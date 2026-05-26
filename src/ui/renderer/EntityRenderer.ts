@@ -8,6 +8,7 @@
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
+import {getRenderScale} from '@utils/renderScales';
 import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite} from './spriteRegistry';
 import {getTextureSync, getTexture} from './TextureCache';
 import {Tween, Vec2Tween, lerp} from '@utils/tween';
@@ -56,7 +57,8 @@ export class EntityRenderer {
 
     // Игрок всегда виден себе
     const playerTexture = getTextureSync(playerPath);
-    this.renderEntitySync(state.player.id, state.player.x, state.player.y, playerTexture, playerPath, animatedIds, true);
+    const playerScale = getRenderScale(state.player.templateId, true);
+    this.renderEntitySync(state.player.id, state.player.x, state.player.y, playerTexture, playerPath, animatedIds, true, playerScale);
     const playerSprite = this.sprites.get(state.player.id);
     if (playerSprite) playerSprite.visible = true;
     existingIds.add(state.player.id);
@@ -66,7 +68,8 @@ export class EntityRenderer {
         const path = getEnemySprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, true);
+        const scale = getRenderScale(entity.templateId, true);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, true, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = isCellVisible(state, entity.x, entity.y);
@@ -74,10 +77,11 @@ export class EntityRenderer {
         existingIds.add(entity.id);
       }
       if (entity.type === 'stairs') {
-        const path = getStairsSprite(entity.direction);
+        const path = getStairsSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false);
+        const scale = getRenderScale(entity.templateId, false);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
@@ -88,7 +92,8 @@ export class EntityRenderer {
         const path = getItemSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false);
+        const scale = getRenderScale(entity.templateId, false);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
@@ -325,6 +330,7 @@ export class EntityRenderer {
     path: string,
     animatedIds: Set<string>,
     isActor: boolean = false,
+    renderScale: number = 1.0,
   ): void {
     let sprite = this.sprites.get(id);
     if (!sprite) {
@@ -333,20 +339,17 @@ export class EntityRenderer {
       this.container.addChild(sprite);
       if (isActor) {
         sprite.anchor.set(ACTOR_ANCHOR_X, ACTOR_ANCHOR_Y);
-        if (texture && texture !== Texture.EMPTY) {
-          sprite.width = TILE_SIZE * 1.5;
-          sprite.height = TILE_SIZE * 1.5;
-        }
-      } else {
-        sprite.width = TILE_SIZE;
-        sprite.height = TILE_SIZE;
+      }
+      const size = TILE_SIZE * renderScale;
+      if (texture && texture !== Texture.EMPTY) {
+        sprite.width = size;
+        sprite.height = size;
       }
     } else if (texture && sprite.texture !== texture) {
       sprite.texture = texture;
-      if (isActor) {
-        sprite.width = TILE_SIZE * 1.5;
-        sprite.height = TILE_SIZE * 1.5;
-      }
+      const size = TILE_SIZE * renderScale;
+      sprite.width = size;
+      sprite.height = size;
     }
 
     if (!texture) {
@@ -356,10 +359,9 @@ export class EntityRenderer {
           const s = this.sprites.get(id);
           if (s) {
             s.texture = loaded;
-            if (isActor) {
-              s.width = TILE_SIZE * 1.5;
-              s.height = TILE_SIZE * 1.5;
-            }
+            const size = TILE_SIZE * renderScale;
+            s.width = size;
+            s.height = size;
           }
         })
         .catch(() => {});

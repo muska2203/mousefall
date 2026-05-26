@@ -49,6 +49,7 @@ export const EntityTemplateSchema = z.object({
   ai:       AISchema.optional(),
   lootTable:  z.array(z.string()).default([]).describe('ID шаблонов предметов, которые могут выпасть при смерти'),
   xpReward:   z.number().int().nonnegative().default(0).describe('Опыт, выдаваемый игроку за убийство'),
+  renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
 }).describe('Шаблон врага или NPC');
 
 export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
@@ -145,6 +146,20 @@ export const MapParamsSchema = z.object({
 export type MapParams = z.infer<typeof MapParamsSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон лестницы
+// ─────────────────────────────────────────────
+
+export const StairsTemplateSchema = z.object({
+  id:          z.string().min(1).describe('Уникальный идентификатор лестницы'),
+  name:        z.string().min(1).describe('Отображаемое имя'),
+  symbol:      z.string().length(1).describe('Символ ASCII для текстового рендера'),
+  spriteId:    z.string().optional().describe('Ключ спрайта PixiJS'),
+  renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+}).describe('Шаблон лестницы');
+
+export type StairsTemplate = z.output<typeof StairsTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Форма реестра контента
 // ─────────────────────────────────────────────
 
@@ -154,4 +169,5 @@ export type LoadedContent = {
   items:     Map<string, ItemTemplate>;
   abilities: Map<string, AbilityTemplate>;
   maps:      Map<string, MapParams>;
+  stairs:    Map<string, StairsTemplate>;
 };

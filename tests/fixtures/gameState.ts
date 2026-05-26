@@ -56,6 +56,7 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     id: PLAYER_ID,
     type: 'player',
     displayName: 'Герой',
+    templateId: 'player',
     x: 5,
     y: 5,
     hp: 100,

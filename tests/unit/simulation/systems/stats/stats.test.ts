@@ -58,6 +58,7 @@ describe('stats system', () => {
       ]),
       abilities: new Map(),
       maps: new Map(),
+      stairs: new Map(),
     });
   });
 

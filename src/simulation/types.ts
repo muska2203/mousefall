@@ -127,7 +127,7 @@ export type RuntimeAbility = {
   currentCooldown: number;
 };
 
-export interface PlayerEntity extends Actor, StatusEffectHolder {
+export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolder {
   id: 'player';
   type: 'player';
   blocksMovement: true;
@@ -180,10 +180,9 @@ export interface ItemEntity extends BaseEntity, TemplateIdHolder {
 }
 
 /** Лестница — объект перехода между этажами. */
-export interface StairsEntity extends BaseEntity {
+export interface StairsEntity extends BaseEntity, TemplateIdHolder {
   type: 'stairs';
   blocksMovement: false;
-  direction: 'down' | 'up';
 }
 
 // ─────────────────────────────────────────────

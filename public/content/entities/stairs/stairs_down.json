@@ -1,0 +1,7 @@
+{
+  "id": "stairs_down",
+  "name": "Лестница вниз",
+  "symbol": ">",
+  "spriteId": "stairs_down",
+  "renderScale": 1.0
+}

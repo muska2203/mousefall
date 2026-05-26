@@ -26,5 +26,9 @@
     "/content/maps/default.json",
     "/content/maps/floor_1.json",
     "/content/maps/floor_2.json"
+  ],
+  "stairs": [
+    "/content/entities/stairs/stairs_down.json",
+    "/content/entities/stairs/stairs_up.json"
   ]
 }

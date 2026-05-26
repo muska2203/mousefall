@@ -2,7 +2,8 @@
  * Unit tests for EntityRenderer.
  */
 
-import {describe, expect, it, vi} from 'vitest';
+import {describe, expect, it, vi, beforeEach, afterEach} from 'vitest';
+import {initRegistry, resetRegistry} from '../../../../src/simulation/content/registry';
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -59,6 +60,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     id: 'player' as const,
     type: 'player' as const,
     displayName: 'Герой',
+    templateId: 'player',
     x: 0,
     y: 0,
     blocksMovement: true as const,
@@ -152,6 +154,20 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
 }
 
 describe('EntityRenderer', () => {
+  beforeEach(() => {
+    initRegistry({
+      entities: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      stairs: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
   it('animateMove returns a Promise<void>', async () => {
     const renderer = new EntityRenderer();
     const input = makeRenderInput();

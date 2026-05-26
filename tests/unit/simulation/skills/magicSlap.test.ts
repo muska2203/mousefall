@@ -31,6 +31,7 @@ describe('magicSlapSkill', () => {
         ['magic_slap', mockAbility('magic_slap', { mpCost: 8, cooldown: 2 })],
       ]),
       maps: new Map(),
+      stairs: new Map(),
     });
   });
 

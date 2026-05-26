@@ -18,6 +18,7 @@ import {
   ItemTemplateSchema,
   AbilityTemplateSchema,
   MapParamsSchema,
+  StairsTemplateSchema,
 } from '../schemas/contentSchemas';
 import { initRegistry } from './registry';
 import { z } from 'zod';
@@ -38,6 +39,7 @@ const ManifestSchema = z.object({
   items: z.array(z.string()),
   abilities: z.array(z.string()),
   maps: z.array(z.string()),
+  stairs: z.array(z.string()),
 });
 
 type Manifest = z.infer<typeof ManifestSchema>;
@@ -68,11 +70,12 @@ export async function browserFetchJson(path: string): Promise<unknown> {
 export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
   const manifest = await loadManifest(fetchJson);
 
-  const [entities, items, abilities, maps] = await Promise.all([
+  const [entities, items, abilities, maps, stairs] = await Promise.all([
     loadCategory(manifest.entities, EntityTemplateSchema, fetchJson),
     loadCategory(manifest.items, ItemTemplateSchema, fetchJson),
     loadCategory(manifest.abilities, AbilityTemplateSchema, fetchJson),
     loadCategory(manifest.maps, MapParamsSchema, fetchJson),
+    loadCategory(manifest.stairs, StairsTemplateSchema, fetchJson),
   ]);
 
   const content: LoadedContent = {
@@ -80,6 +83,7 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
     items:     new Map(items.map(i => [i.id, i])),
     abilities: new Map(abilities.map(a => [a.id, a])),
     maps:      new Map(maps.map(m => [m.id, m])),
+    stairs:    new Map(stairs.map(s => [s.id, s])),
   };
 
   initRegistry(content);

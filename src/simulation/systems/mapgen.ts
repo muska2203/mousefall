@@ -225,14 +225,14 @@ function createFloorItem(state: GameState, templateId: string, x: number, y: num
   };
 }
 
-export function createStairs(state: GameState, direction: 'down' | 'up', x: number, y: number): StairsEntity {
+export function createStairs(state: GameState, templateId: 'stairs_down' | 'stairs_up', x: number, y: number): StairsEntity {
   return {
     id: nextEntityId(state, 'stairs'),
     type: 'stairs',
     x,
     y,
-    displayName: direction === 'down' ? 'Лестница вниз' : 'Лестница вверх',
-    direction,
+    displayName: templateId === 'stairs_down' ? 'Лестница вниз' : 'Лестница вверх',
+    templateId,
     blocksMovement: false,
   };
 }

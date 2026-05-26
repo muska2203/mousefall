@@ -26,7 +26,7 @@ export const descendAction: ActionHandler = {
       return { ok: false, reasonCode: 'entity_not_player', reasonDescription: 'Только игрок может спускаться' };
     }
 
-    const stairs = findStairsAt(state, entity.x, entity.y, 'down');
+    const stairs = findStairsAt(state, entity.x, entity.y, 'stairs_down');
     if (!stairs) {
       return { ok: false, reasonCode: 'no_stairs_down', reasonDescription: 'Здесь нет спуска вниз' };
     }
@@ -65,7 +65,7 @@ export const ascendAction: ActionHandler = {
       return { ok: false, reasonCode: 'entity_not_player', reasonDescription: 'Только игрок может подниматься' };
     }
 
-    const stairs = findStairsAt(state, entity.x, entity.y, 'up');
+    const stairs = findStairsAt(state, entity.x, entity.y, 'stairs_up');
     if (!stairs) {
       return { ok: false, reasonCode: 'no_stairs_up', reasonDescription: 'Здесь нет подъёма вверх' };
     }

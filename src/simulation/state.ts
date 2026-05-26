@@ -45,6 +45,7 @@ export function createInitialPlayer(): PlayerEntity {
     type: 'player',
     blocksMovement: true,
     displayName: 'Герой',
+    templateId: 'player',
     x: 0,
     y: 0,
     hp: 100,
@@ -208,10 +209,10 @@ export function playerPos(state: GameState): Position {
 /**
  * Возвращает лестницу на заданной клетке или undefined.
  */
-export function findStairsAt(state: GameState, x: number, y: number, direction?: 'down' | 'up'): import('./types').StairsEntity | undefined {
+export function findStairsAt(state: GameState, x: number, y: number, templateId?: string): import('./types').StairsEntity | undefined {
   const entities = findAllEntitiesAt(state, x, y);
   return entities
-    .filter((e): e is import('./types').StairsEntity => e.type === 'stairs' && (!direction || e.direction === direction))
+    .filter((e): e is import('./types').StairsEntity => e.type === 'stairs' && (!templateId || e.templateId === templateId))
     [0];
 }
 

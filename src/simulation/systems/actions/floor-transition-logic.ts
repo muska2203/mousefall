@@ -47,8 +47,8 @@ export function performFloorTransition(
   }
 
   // 4. Позиционирование игрока
-  const targetStairsDir: 'up' | 'down' = direction === 'down' ? 'up' : 'down';
-  const stairs = findStairsInState(state, targetStairsDir);
+  const targetStairsTemplateId = direction === 'down' ? 'stairs_up' : 'stairs_down';
+  const stairs = findStairsInState(state, targetStairsTemplateId);
   if (stairs) {
     state.player.x = stairs.x;
     state.player.y = stairs.y;
@@ -94,18 +94,18 @@ function generateNewFloor(state: GameState, targetFloor: number): void {
 
   // Лестницы
   if (generated.stairsDown && targetFloor < MAX_FLOOR) {
-    state.entities.set(`stairs_down_${targetFloor}`, createStairs(state, 'down', generated.stairsDown.x, generated.stairsDown.y));
+    state.entities.set(`stairs_down_${targetFloor}`, createStairs(state, 'stairs_down', generated.stairsDown.x, generated.stairsDown.y));
   }
   if (generated.stairsUp && targetFloor > 1) {
-    state.entities.set(`stairs_up_${targetFloor}`, createStairs(state, 'up', generated.stairsUp.x, generated.stairsUp.y));
+    state.entities.set(`stairs_up_${targetFloor}`, createStairs(state, 'stairs_up', generated.stairsUp.x, generated.stairsUp.y));
   }
 
   // explored начинается чистой
   state.explored = createBoolGrid(state.map.width, state.map.height, false);
 }
 
-function findStairsInState(state: GameState, direction: 'down' | 'up'): StairsEntity | undefined {
+function findStairsInState(state: GameState, templateId: string): StairsEntity | undefined {
   return Array.from(state.entities.values()).find(
-    (e): e is StairsEntity => e.type === 'stairs' && e.direction === direction,
+    (e): e is StairsEntity => e.type === 'stairs' && e.templateId === templateId,
   );
 }

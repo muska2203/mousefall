@@ -252,13 +252,13 @@ export class GameSimulation implements Simulation {
         if (generatedMap.stairsDown && this.state.floor < MAX_FLOOR) {
             this.state.entities.set(
                 `stairs_down_${this.state.floor}`,
-                createStairs(this.state, 'down', generatedMap.stairsDown.x, generatedMap.stairsDown.y),
+                createStairs(this.state, 'stairs_down', generatedMap.stairsDown.x, generatedMap.stairsDown.y),
             );
         }
         if (generatedMap.stairsUp && this.state.floor > 1) {
             this.state.entities.set(
                 `stairs_up_${this.state.floor}`,
-                createStairs(this.state, 'up', generatedMap.stairsUp.x, generatedMap.stairsUp.y),
+                createStairs(this.state, 'stairs_up', generatedMap.stairsUp.x, generatedMap.stairsUp.y),
             );
         }
 

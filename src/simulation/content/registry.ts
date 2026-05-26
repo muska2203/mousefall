@@ -17,7 +17,7 @@
  * - Решение: синглтон с initRegistry() для инжекции в тестах — золотая середина
  */
 
-import type { LoadedContent, EntityTemplate, ItemTemplate, AbilityTemplate, MapParams } from '../schemas/contentSchemas';
+import type { LoadedContent, EntityTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate } from '../schemas/contentSchemas';
 
 // ─────────────────────────────────────────────
 // Состояние реестра
@@ -118,4 +118,21 @@ export function tryGetItem(id: string): ItemTemplate | undefined {
  */
 export function tryGetAbility(id: string): AbilityTemplate | undefined {
   return getRegistry().abilities.get(id);
+}
+
+/**
+ * Получить шаблон лестницы по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getStairs(id: string): StairsTemplate {
+  const template = getRegistry().stairs.get(id);
+  if (!template) throw new Error(`Stairs template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон лестницы. Возвращает undefined, если не найден.
+ */
+export function tryGetStairs(id: string): StairsTemplate | undefined {
+  return getRegistry().stairs.get(id);
 }

@@ -9,9 +9,9 @@ import {ExecutionBuilder} from "@simulation/systems/actions/types";
 /**
  * Хелпер: создаёт сущность-лестницу.
  */
-function makeStairs(overrides: Partial<StairsEntity> & { direction: 'down' | 'up'; x: number; y: number }): StairsEntity {
+function makeStairs(overrides: Partial<StairsEntity> & { templateId: 'stairs_down' | 'stairs_up'; x: number; y: number }): StairsEntity {
   return {
-    id: `stairs_${overrides.direction}_${overrides.x}_${overrides.y}`,
+    id: `stairs_${overrides.templateId}_${overrides.x}_${overrides.y}`,
     type: 'stairs',
     blocksMovement: false,
     displayName: 'Лестница',
@@ -30,7 +30,7 @@ function addEntity(state: GameState, entity: import('@simulation/types').Entity)
 describe('stairsTransitionReaction — обнаружение лестницы', () => {
   it('порождает STAIR_EXIT_TRIGGERED при наступании на stairs_down', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const stairs = makeStairs({ direction: 'down', x: 5, y: 5 });
+    const stairs = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
     const state = addEntity(makeGameState({ player, floor: 1 }), stairs);
 
     const builder = new ExecutionBuilder({
@@ -77,7 +77,7 @@ describe('stairsTransitionReaction — обнаружение лестницы',
   });
 
   it('не срабатывает на перемещение врага', () => {
-    const stairs = makeStairs({ direction: 'down', x: 3, y: 3 });
+    const stairs = makeStairs({ templateId: 'stairs_down', x: 3, y: 3 });
     const state = addEntity(makeGameState({ floor: 1 }), stairs);
 
     const builder = new ExecutionBuilder({
@@ -99,7 +99,7 @@ describe('stairsTransitionReaction — обнаружение лестницы',
 
   it('не срабатывает на stairs_up на первом этаже', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const stairs = makeStairs({ direction: 'up', x: 5, y: 5 });
+    const stairs = makeStairs({ templateId: 'stairs_up', x: 5, y: 5 });
     const state = addEntity(makeGameState({ player, floor: 1 }), stairs);
 
     const builder = new ExecutionBuilder({
@@ -123,7 +123,7 @@ describe('stairsTransitionReaction — обнаружение лестницы',
 describe('descendAction / ascendAction — валидация', () => {
   it('descend: разрешает спуск на лестнице вниз', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const stairs = makeStairs({ direction: 'down', x: 5, y: 5 });
+    const stairs = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
     const state = addEntity(makeGameState({ player, floor: 1 }), stairs);
 
     const result = descendAction.validate(state, { type: 'DESCEND', entityId: player.id });
@@ -140,7 +140,7 @@ describe('descendAction / ascendAction — валидация', () => {
 
   it('ascend: разрешает подъём на лестнице вверх', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const stairs = makeStairs({ direction: 'up', x: 5, y: 5 });
+    const stairs = makeStairs({ templateId: 'stairs_up', x: 5, y: 5 });
     const state = addEntity(makeGameState({ player, floor: 2 }), stairs);
 
     const result = ascendAction.validate(state, { type: 'ASCEND', entityId: player.id });
@@ -149,7 +149,7 @@ describe('descendAction / ascendAction — валидация', () => {
 
   it('ascend: отказывает на первом этаже', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const stairs = makeStairs({ direction: 'up', x: 5, y: 5 });
+    const stairs = makeStairs({ templateId: 'stairs_up', x: 5, y: 5 });
     const state = addEntity(makeGameState({ player, floor: 1 }), stairs);
 
     const result = ascendAction.validate(state, { type: 'ASCEND', entityId: player.id });
@@ -202,12 +202,12 @@ describe('performFloorTransition — спуск и подъём', () => {
 
   it('позиционирует игрока у лестницы при переходе', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const stairsDown = makeStairs({ direction: 'down', x: 5, y: 5 });
+    const stairsDown = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
     const state = addEntity(makeGameState({ player, floor: 1 }), stairsDown);
 
     performFloorTransition(state, 'down');
     const floor2StairsUp = Array.from(state.entities.values()).find(
-      (e): e is StairsEntity => e.type === 'stairs' && e.direction === 'up',
+      (e): e is StairsEntity => e.type === 'stairs' && e.templateId === 'stairs_up',
     );
     expect(floor2StairsUp).toBeDefined();
     expect(state.player.x).toBe(floor2StairsUp!.x);
@@ -215,7 +215,7 @@ describe('performFloorTransition — спуск и подъём', () => {
 
     performFloorTransition(state, 'up');
     const floor1StairsDown = Array.from(state.entities.values()).find(
-      (e): e is StairsEntity => e.type === 'stairs' && e.direction === 'down',
+      (e): e is StairsEntity => e.type === 'stairs' && e.templateId === 'stairs_down',
     );
     expect(floor1StairsDown).toBeDefined();
     expect(state.player.x).toBe(floor1StairsDown!.x);

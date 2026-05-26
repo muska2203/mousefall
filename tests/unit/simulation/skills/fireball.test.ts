@@ -37,6 +37,7 @@ describe('fireballSkill', () => {
         ['fireball', mockAbility('fireball', { mpCost: 10, cooldown: 3 })],
       ]),
       maps: new Map(),
+      stairs: new Map(),
     });
   });
 

@@ -55,6 +55,7 @@ export function applyCharacterConfig(
   player.equippedArmorId = null;
   player.equippedAmuletId = null;
   player.statModifiers = [];
+  player.templateId = config.portraitId;
 
   // Применение распределённых очков характеристик
   player.baseStats = {

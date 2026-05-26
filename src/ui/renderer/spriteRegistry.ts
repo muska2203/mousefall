@@ -27,9 +27,9 @@ export function getPlayerSprite(portraitId: string | null): string {
   return `/assets/actors/player_${id}.png`;
 }
 
-/** Путь к спрайту лестницы. */
-export function getStairsSprite(direction: 'down' | 'up'): string {
-  return `/assets/objects/stairs_${direction}.png`;
+/** Путь к спрайту лестницы по templateId. */
+export function getStairsSprite(templateId: string): string {
+  return `/assets/objects/${templateId}.png`;
 }
 
 /** Путь к спрайту предмета на полу по templateId. */
