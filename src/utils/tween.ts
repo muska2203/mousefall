@@ -124,7 +124,7 @@ export interface Vec2TweenOptions {
   to: { x: number; y: number };
   duration: number;
   easing?: EasingFn;
-  onUpdate: (x: number, y: number) => void;
+  onUpdate: (x: number, y: number, progress: number) => void;
   onComplete?: () => void;
 }
 
@@ -138,7 +138,8 @@ export class Vec2Tween implements Animatable {
       onUpdate: (p) => {
         opts.onUpdate(
           lerp(opts.from.x, opts.to.x, p),
-          lerp(opts.from.y, opts.to.y, p)
+          lerp(opts.from.y, opts.to.y, p),
+          p
         );
       },
       onComplete: opts.onComplete,

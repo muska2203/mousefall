@@ -8,11 +8,15 @@
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
-import {getPlayerSprite, getEnemySprite, getStairsSprite} from './spriteRegistry';
+import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite} from './spriteRegistry';
 import {getTextureSync, getTexture} from './TextureCache';
 import {Tween, Vec2Tween, lerp} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
+
+const ACTOR_ANCHOR_X = 0.5;
+const ACTOR_ANCHOR_Y = 1;
+const ACTOR_OFFSET_Y_FACTOR = 0.85; // низ спрайта на 15% выше низа тайла
 
 type ActiveAnimation = {
   tween: Animatable;
@@ -23,6 +27,10 @@ export class EntityRenderer {
   public readonly container = new Container();
   private sprites = new Map<string, Sprite>();
   private activeAnimations = new Map<string, ActiveAnimation>();
+
+  constructor() {
+    this.container.sortableChildren = true;
+  }
 
   /** Синхронное обновление спрайтов на основе текущего состояния.
    *  Текстуры подгружаются фоново, если их ещё нет в кеше. */
@@ -48,7 +56,7 @@ export class EntityRenderer {
 
     // Игрок всегда виден себе
     const playerTexture = getTextureSync(playerPath);
-    this.renderEntitySync(state.player.id, state.player.x, state.player.y, playerTexture, playerPath, animatedIds);
+    this.renderEntitySync(state.player.id, state.player.x, state.player.y, playerTexture, playerPath, animatedIds, true);
     const playerSprite = this.sprites.get(state.player.id);
     if (playerSprite) playerSprite.visible = true;
     existingIds.add(state.player.id);
@@ -58,7 +66,7 @@ export class EntityRenderer {
         const path = getEnemySprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, true);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = isCellVisible(state, entity.x, entity.y);
@@ -69,7 +77,18 @@ export class EntityRenderer {
         const path = getStairsSprite(entity.direction);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false);
+        const sprite = this.sprites.get(entity.id);
+        if (sprite && !this.activeAnimations.has(entity.id)) {
+          sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
+        }
+        existingIds.add(entity.id);
+      }
+      if (entity.type === 'item') {
+        const path = getItemSprite(entity.templateId);
+        texturePaths.set(path, path);
+        const texture = getTextureSync(path);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
@@ -99,20 +118,34 @@ export class EntityRenderer {
 
       this.cancelAnimationFor(entityId);
 
+      const isActor = sprite.anchor.x === ACTOR_ANCHOR_X && sprite.anchor.y === ACTOR_ANCHOR_Y;
+      const offsetX = isActor ? TILE_SIZE / 2 : 0;
+      const offsetY = isActor ? TILE_SIZE * ACTOR_OFFSET_Y_FACTOR : 0;
+
       sprite.visible = true;
-      sprite.x = from.x * TILE_SIZE;
-      sprite.y = from.y * TILE_SIZE;
+      sprite.x = from.x * TILE_SIZE + offsetX;
+      sprite.y = from.y * TILE_SIZE + offsetY;
+
+      const swayCycles = 1;
+      const swayAmplitude = 0.08;
 
       const tween = new Vec2Tween({
-        from: { x: from.x * TILE_SIZE, y: from.y * TILE_SIZE },
-        to: { x: to.x * TILE_SIZE, y: to.y * TILE_SIZE },
+        from: { x: from.x * TILE_SIZE + offsetX, y: from.y * TILE_SIZE + offsetY },
+        to: { x: to.x * TILE_SIZE + offsetX, y: to.y * TILE_SIZE + offsetY },
         duration: config.duration,
         easing: config.easing,
-        onUpdate: (x, y) => {
+        onUpdate: (x, y, progress) => {
           sprite.x = x;
           sprite.y = y;
+          sprite.zIndex = y;
+          if (isActor) {
+            sprite.rotation = Math.sin(progress * Math.PI * 2 * swayCycles) * swayAmplitude;
+          }
         },
         onComplete: () => {
+          if (isActor) {
+            sprite.rotation = 0;
+          }
           this.activeAnimations.delete(entityId);
           resolve();
         },
@@ -149,6 +182,7 @@ export class EntityRenderer {
           const t = p < 0.5 ? p * 2 : (1 - p) * 2;
           sprite.x = startX + offsetX * t;
           sprite.y = startY + offsetY * t;
+          sprite.zIndex = sprite.y;
         },
         onComplete: () => {
           sprite.x = startX;
@@ -283,16 +317,36 @@ export class EntityRenderer {
     }
   }
 
-  private renderEntitySync(id: string, x: number, y: number, texture: Texture | undefined, path: string, animatedIds: Set<string>): void {
+  private renderEntitySync(
+    id: string,
+    x: number,
+    y: number,
+    texture: Texture | undefined,
+    path: string,
+    animatedIds: Set<string>,
+    isActor: boolean = false,
+  ): void {
     let sprite = this.sprites.get(id);
     if (!sprite) {
       sprite = new Sprite(texture ?? Texture.EMPTY);
       this.sprites.set(id, sprite);
       this.container.addChild(sprite);
-      sprite.width = TILE_SIZE;
-      sprite.height = TILE_SIZE;
+      if (isActor) {
+        sprite.anchor.set(ACTOR_ANCHOR_X, ACTOR_ANCHOR_Y);
+        if (texture && texture !== Texture.EMPTY) {
+          sprite.width = TILE_SIZE * 1.5;
+          sprite.height = TILE_SIZE * 1.5;
+        }
+      } else {
+        sprite.width = TILE_SIZE;
+        sprite.height = TILE_SIZE;
+      }
     } else if (texture && sprite.texture !== texture) {
       sprite.texture = texture;
+      if (isActor) {
+        sprite.width = TILE_SIZE * 1.5;
+        sprite.height = TILE_SIZE * 1.5;
+      }
     }
 
     if (!texture) {
@@ -300,15 +354,27 @@ export class EntityRenderer {
       getTexture(path)
         .then((loaded) => {
           const s = this.sprites.get(id);
-          if (s) s.texture = loaded;
+          if (s) {
+            s.texture = loaded;
+            if (isActor) {
+              s.width = TILE_SIZE * 1.5;
+              s.height = TILE_SIZE * 1.5;
+            }
+          }
         })
         .catch(() => {});
     }
 
     // Не трогаем позицию, если идёт активная анимация или запланирована новая
     if (!this.activeAnimations.has(id) && !animatedIds.has(id)) {
-      sprite.x = x * TILE_SIZE;
-      sprite.y = y * TILE_SIZE;
+      if (isActor) {
+        sprite.x = x * TILE_SIZE + TILE_SIZE / 2;
+        sprite.y = y * TILE_SIZE + TILE_SIZE * ACTOR_OFFSET_Y_FACTOR;
+      } else {
+        sprite.x = x * TILE_SIZE;
+        sprite.y = y * TILE_SIZE;
+      }
+      sprite.zIndex = sprite.y;
     }
   }
 }

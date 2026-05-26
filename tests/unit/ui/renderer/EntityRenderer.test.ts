@@ -17,12 +17,28 @@ vi.mock('pixi.js', () => {
     width = 0;
     height = 0;
     texture = MockTexture.EMPTY;
-    anchor = { set: () => {} };
+    anchor = {
+      x: 0,
+      y: 0,
+      set(x: number, y?: number) {
+        (this as any).x = x;
+        (this as any).y = y ?? x;
+      },
+    };
+    scale = {
+      x: 1,
+      y: 1,
+      set(x: number, y?: number) {
+        (this as any).x = x;
+        (this as any).y = y ?? x;
+      },
+    };
     destroy() {}
     static from() { return new MockSprite(); }
   }
   class MockContainer {
     children: any[] = [];
+    sortableChildren = false;
     addChild(c: any) { this.children.push(c); }
     removeChildren() { this.children = []; }
     destroy() {}
@@ -183,8 +199,8 @@ describe('EntityRenderer', () => {
     await secondPromise;
 
     const sprite = (renderer as any).sprites.get('player');
-    expect(sprite.x).toBe(2 * 32); // TILE_SIZE = 32
-    expect(sprite.y).toBe(0);
+    expect(sprite.x).toBe(2 * 32 + 32 / 2); // TILE_SIZE = 32, акторы центрируются по X
+    expect(sprite.y).toBe(32 * 0.85); // акторы смещены вверх на 15% от низа тайла
   });
 
   it('keeps sprite alive during update if DEATH animation is scheduled', () => {
@@ -282,8 +298,8 @@ describe('EntityRenderer', () => {
 
     renderer.update(input);
     const sprite = (renderer as any).sprites.get('enemy1');
-    expect(sprite.x).toBe(1 * 32);
-    expect(sprite.y).toBe(1 * 32);
+    expect(sprite.x).toBe(1 * 32 + 32 / 2);
+    expect(sprite.y).toBe(1 * 32 + 32 * 0.85);
 
     // Симуляция переместила врага, но анимация ещё не запущена
     input.state.entities.set('enemy1', {
@@ -302,7 +318,7 @@ describe('EntityRenderer', () => {
 
     renderer.update(input);
     // Спрайт должен остаться на старой позиции, а не "прыгнуть" на новую
-    expect(sprite.x).toBe(1 * 32);
-    expect(sprite.y).toBe(1 * 32);
+    expect(sprite.x).toBe(1 * 32 + 32 / 2);
+    expect(sprite.y).toBe(1 * 32 + 32 * 0.85);
   });
 });

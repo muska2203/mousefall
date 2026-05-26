@@ -31,3 +31,8 @@ export function getPlayerSprite(portraitId: string | null): string {
 export function getStairsSprite(direction: 'down' | 'up'): string {
   return `/assets/objects/stairs_${direction}.png`;
 }
+
+/** Путь к спрайту предмета на полу по templateId. */
+export function getItemSprite(templateId: string): string {
+  return `/assets/items/${templateId}.png`;
+}
