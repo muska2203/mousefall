@@ -122,4 +122,27 @@ describe('GameSession targeting', () => {
     expect(preview.intents.length).toBeGreaterThanOrEqual(0);
   });
 
+  it('previewTarget returns empty result for invalid tile', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('fireball');
+    // (9,9) is outside ability range, so it should not be a valid target
+    const preview = session.previewTarget({ x: 9, y: 9 });
+
+    expect(preview.valid).toBe(false);
+    expect(preview.intents).toHaveLength(0);
+    expect(preview.affectedPositions).toHaveLength(0);
+  });
+
 });

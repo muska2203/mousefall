@@ -74,6 +74,13 @@ export class TargetingController {
     const targetMode = simulation.getAbilityTargetMode(this.state.abilityId);
     if (!targetMode) return { valid: false, intents: [], affectedPositions: [] };
 
+    const isValid = this.state.validTargets.some(
+      (p: Position) => p.x === hoveredPosition.x && p.y === hoveredPosition.y,
+    );
+    if (!isValid) {
+      return { valid: false, intents: [], affectedPositions: [] };
+    }
+
     const intents = simulation.getAbilityPreview(
       this.state.abilityId,
       this.state.selectedTargets,

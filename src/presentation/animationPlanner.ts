@@ -11,7 +11,7 @@
  * - Неанимированные события пропускаются; их дети поднимаются как сиблинги к ближайшему анимированному предку.
  */
 
-import type { SimulationResult, GameEvent, GameState } from '@simulation/types';
+import type { SimulationResult, GameEvent, GameState, TurnPhase } from '@simulation/types';
 import type { ExecutionNode } from '@simulation/systems/actions/types';
 import type { AnimationStep, AnimationNode } from './types';
 import { filterByFOV } from './fogFilter';
@@ -128,16 +128,43 @@ registerAnimationBuilder('ABILITY_USED', (event, children) => {
 export function buildAnimationTree(result: SimulationResult, state: GameState): AnimationNode[][] {
   const filtered = filterByFOV(result, state);
   const phases: AnimationNode[][] = [];
-  for (const phase of filtered.phases) {
+
+  let i = 0;
+  while (i < filtered.phases.length) {
+    const phase = filtered.phases[i]!;
     const phaseNodes: AnimationNode[] = [];
     for (const action of phase.actions) {
       phaseNodes.push(...convertExecutionNode(action));
     }
+
+    // Если первый экшн игрока — MOVE, анимации окружения идут параллельно
+    if (
+      phase.side === 'PLAYER' &&
+      isFirstActionMove(phase) &&
+      i + 1 < filtered.phases.length &&
+      filtered.phases[i + 1]!.side === 'ENVIRONMENT'
+    ) {
+      for (const action of filtered.phases[i + 1]!.actions) {
+        phaseNodes.push(...convertExecutionNode(action));
+      }
+      i += 2;
+    } else {
+      i += 1;
+    }
+
     if (phaseNodes.length > 0) {
       phases.push(phaseNodes);
     }
   }
+
   return phases;
+}
+
+function isFirstActionMove(phase: TurnPhase): boolean {
+  const firstAction = phase.actions[0];
+  if (!firstAction) return false;
+  const event = firstAction.event;
+  return event.type === 'ACTION_APPLIED' && event.action.type === 'MOVE';
 }
 
 /** Рекурсивно конвертирует ExecutionNode в AnimationNode[].

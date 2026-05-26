@@ -15,17 +15,17 @@ import type {RenderInput, Position, PresentationIntent} from '@presentation/type
 import {TILE_SIZE} from '@utils/constants';
 
 const COLORS = {
-  valid: 0x44ff44,
+  valid: 0xffffff,
   selected: 0x4488ff,
   hover: 0xffff44,
   affected: 0xff4444,
 };
 
 const ALPHAS = {
-  valid: 0.25,
-  selected: 0.35,
-  hover: 0.35,
-  affected: 0.30,
+  valid: 0.15,
+  selected: 0.15,
+  hover: 0.15,
+  affected: 0.15,
 };
 
 export class TargetingRenderer {
@@ -53,20 +53,18 @@ export class TargetingRenderer {
     if (!overlay) return;
 
     // Оверлеи клеток
-    const drawn = new Set<string>();
-
-    // Сначала affected (красный), потом valid (зелёный), потом selected (синий), потом hover (жёлтый)
-    for (const pos of overlay.affected) {
-      this.drawOverlay(pos, COLORS.affected, ALPHAS.affected, drawn);
-    }
+    // Порядок наложения: valid → affected → selected → hover
     for (const pos of overlay.valid) {
-      this.drawOverlay(pos, COLORS.valid, ALPHAS.valid, drawn);
+      this.drawOverlay(pos, COLORS.valid, ALPHAS.valid);
+    }
+    for (const pos of overlay.affected) {
+      this.drawOverlay(pos, COLORS.affected, ALPHAS.affected);
     }
     for (const pos of overlay.selected) {
-      this.drawOverlay(pos, COLORS.selected, ALPHAS.selected, drawn);
+      this.drawOverlay(pos, COLORS.selected, ALPHAS.selected);
     }
     if (overlay.hover) {
-      this.drawOverlay(overlay.hover, COLORS.hover, ALPHAS.hover, drawn);
+      this.drawOverlay(overlay.hover, COLORS.hover, ALPHAS.hover);
     }
 
     // Агрегируем и рисуем preview-интенты
@@ -120,14 +118,11 @@ export class TargetingRenderer {
     }
   }
 
-  private drawOverlay(pos: Position, color: number, alpha: number, drawn: Set<string>): void {
-    const key = `${pos.x},${pos.y}`;
-    if (drawn.has(key)) return;
-    drawn.add(key);
-
+  private drawOverlay(pos: Position, color: number, alpha: number): void {
     const g = new Graphics();
     g.rect(pos.x * TILE_SIZE, pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     g.fill({ color, alpha });
+    g.stroke({ width: 1, color, alpha: 0.2 });
     this.overlayContainer.addChild(g);
   }
 

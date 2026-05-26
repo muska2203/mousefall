@@ -15,6 +15,10 @@ function makeResult(actions: ExecutionNode[]): SimulationResult {
   return { success: true, stateChanged: true, phases: [{ side: 'PLAYER', actions }] };
 }
 
+function makeResultWithPhases(phases: { side: 'PLAYER' | 'ENVIRONMENT' | 'STATUS_TICK'; actions: ExecutionNode[] }[]): SimulationResult {
+  return { success: true, stateChanged: true, phases: phases as any };
+}
+
 /** Минимальный mock state, где все клетки видимы (чтобы FOV-фильтр не влиял на тесты). */
 function makeMockState(): GameState {
   const width = 10;
@@ -133,5 +137,57 @@ describe('buildAnimationTree', () => {
     expect(tree).toHaveLength(1);
     expect(tree[0]!).toHaveLength(1);
     expect(tree[0]![0]!.step.type).toBe('UI_FLOATING_TEXT');
+  });
+
+  it('merges PLAYER and ENVIRONMENT phases when first player action is MOVE', () => {
+    const playerMove = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } }, [
+      makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
+    ]);
+    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const result = makeResultWithPhases([
+      { side: 'PLAYER', actions: [playerMove] },
+      { side: 'ENVIRONMENT', actions: [enemyMove] },
+    ]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!).toHaveLength(2);
+    expect(tree[0]![0]!.step.type).toBe('MOVE');
+    expect(tree[0]![1]!.step.type).toBe('MOVE');
+  });
+
+  it('keeps PLAYER and ENVIRONMENT sequential when first player action is ATTACK', () => {
+    const playerAttack = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 } });
+    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const result = makeResultWithPhases([
+      { side: 'PLAYER', actions: [playerAttack] },
+      { side: 'ENVIRONMENT', actions: [enemyMove] },
+    ]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(2);
+    expect(tree[0]!).toHaveLength(1);
+    expect(tree[0]![0]!.step.type).toBe('ATTACK');
+    expect(tree[1]!).toHaveLength(1);
+    expect(tree[1]![0]!.step.type).toBe('MOVE');
+  });
+
+  it('keeps STATUS_TICK as separate phase after merged PLAYER+ENVIRONMENT', () => {
+    const playerMove = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } }, [
+      makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
+    ]);
+    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const tick = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'player', damage: 1, position: { x: 0, y: 0 } });
+    const result = makeResultWithPhases([
+      { side: 'PLAYER', actions: [playerMove] },
+      { side: 'ENVIRONMENT', actions: [enemyMove] },
+      { side: 'STATUS_TICK', actions: [tick] },
+    ]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(2);
+    expect(tree[0]!).toHaveLength(2); // PLAYER + ENVIRONMENT merged
+    expect(tree[1]!).toHaveLength(1); // STATUS_TICK separate
+    expect(tree[1]![0]!.step.type).toBe('DAMAGE');
   });
 });
