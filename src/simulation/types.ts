@@ -8,57 +8,56 @@
  * - У каждой сущности есть стабильный строковый ID (используется для детерминированной сортировки)
  */
 
-// ─────────────────────────────────────────────
-// Примитивы
-// ─────────────────────────────────────────────
-
 import {ENTITY_TYPE} from "@utils/constants.ts";
 import type {MapParams} from "./schemas/contentSchemas";
-import {ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
-import {Intent} from "@simulation/systems/intents/types.ts";
+import {
+  Position,
+  EntityId,
+  ItemInstanceId,
+  TileType,
+  Room,
+  GameMap,
+  BaseStats,
+  StatModifierOp,
+  StatModifier,
+  StatusEffectType,
+  StatusEffect,
+  ValidationResult,
+  ValidationError,
+  ExecutionNode,
+  GameAction,
+  Intent,
+  GameEvent,
+} from "@simulation/core-types.ts";
 
-/** Координата сетки. x = столбец (слева направо), y = строка (сверху вниз). */
-export type Position = {
-  readonly x: number;
-  readonly y: number;
-};
-
-/** Уникальный идентификатор сущности. Стабилен между ходами. */
-export type EntityId = string;
-
-/** Уникальный идентификатор экземпляра предмета. */
-export type ItemInstanceId = string;
-
-// ─────────────────────────────────────────────
-// Карта / Мир
-// ─────────────────────────────────────────────
-
-export type TileType =
-  | 'floor'
-  | 'wall';
-
-export type Room = {
-  /** Левый верхний угол */
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-export type GameMap = {
-  width: number;
-  height: number;
-  /** Плотный двумерный массив. Доступ как tiles[y][x]. */
-  tiles: TileType[][];
-  /** Метаданные комнат из генератора карты (используются для размещения врагов/предметов). */
-  rooms: Room[];
-};
+// Реэкспорт базовых типов из core-types для обратной совместимости потребителей
+export type {
+  Position,
+  EntityId,
+  ItemInstanceId,
+  TileType,
+  Room,
+  GameMap,
+  BaseStats,
+  StatModifierOp,
+  StatModifier,
+  StatusEffectType,
+  StatusEffect,
+  ValidationResult,
+  ValidationError,
+  ExecutionNode,
+  GameAction,
+  Intent,
+  GameEvent,
+  EntityMovedEvent,
+} from "@simulation/core-types.ts";
+export { ExecutionBuilder } from "@simulation/core-types.ts";
 
 // ─────────────────────────────────────────────
 // Сущности
 // ─────────────────────────────────────────────
 
-/** Экземпляр предмета, находящийся в инвентаре сущности. */
+/** Экземпляр предмета, находящегося в инвентаре сущности. */
 export type InventoryItem = {
   instanceId: ItemInstanceId;
   /** Ссылается на шаблон в реестре контента. */
@@ -82,24 +81,8 @@ export interface BaseEntity {
   x: number;
   y: number;
   blocksMovement: boolean;
+  displayName: string;
 }
-
-export interface BaseStats {
-  str: number;
-  dex: number;
-  int: number;
-  vit: number;
-}
-
-export type StatModifierOp = 'add' | 'multiply';
-
-export type StatModifier = {
-  stat: 'damage' | 'armor' | 'maxHp' | 'maxMp' | 'dodgeChance' | 'accuracy' | 'critChance' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
-  value: number;
-  op: StatModifierOp;
-  source: string;
-  charges?: number;
-};
 
 export interface Attacker {
   damage: number;
@@ -134,6 +117,16 @@ export interface AiActor extends Actor {
  * Важно: поля damage, armor, maxHp, maxMp являются derived-кэшем.
  * Их нельзя менять напрямую — только через recalculatePlayerBaseStats().
  */
+export type RuntimeAbility = {
+  templateId: string;
+  /** Откуда скилл получен */
+  source: 'innate' | 'levelup' | 'equipment';
+  /** Уровень скилла (влияет на формулу) */
+  level: number;
+  /** Оставшихся ходов до отката. 0 = готов. */
+  currentCooldown: number;
+};
+
 export interface PlayerEntity extends Actor, StatusEffectHolder {
   id: 'player';
   type: 'player';
@@ -165,6 +158,8 @@ export interface PlayerEntity extends Actor, StatusEffectHolder {
   critChance: number;
   /** Множитель критического урона (derived-кэш). */
   critMultiplier: number;
+  /** Активные способности персонажа. */
+  abilities: RuntimeAbility[];
 }
 
 /** Сущность врага на карте. */
@@ -173,6 +168,8 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   /** Состояние ИИ в рантайме (сохраняется для памяти патруля/погони). */
   type: 'enemy';
   blocksMovement: true;
+  /** Активные способности врага (задел на AI-скиллы). */
+  abilities: RuntimeAbility[];
 }
 
 /** Предмет, лежащий на полу карты. */
@@ -188,26 +185,6 @@ export interface StairsEntity extends BaseEntity {
   blocksMovement: false;
   direction: 'down' | 'up';
 }
-
-// ─────────────────────────────────────────────
-// Эффекты статуса
-// ─────────────────────────────────────────────
-
-export type StatusEffectType =
-  | 'poisoned'
-  | 'burning'
-  | 'frozen'
-  | 'stunned'
-  | 'regenerating';
-
-export type StatusEffect = {
-  type: StatusEffectType;
-  /** Оставшиеся ходы. */
-  duration: number;
-  /** Величина эффекта (урон в ход, лечение в ход и т.д.). */
-  value: number;
-  statModifiers?: StatModifier[];
-};
 
 // ─────────────────────────────────────────────
 // Состояние ИИ в рантайме
@@ -232,7 +209,7 @@ export type RNGState = {
 // Система ходов
 // ─────────────────────────────────────────────
 
-export type TurnSide = 'PLAYER' | 'ENVIRONMENT';
+export type TurnSide = 'PLAYER' | 'ENVIRONMENT' | 'STATUS_TICK';
 
 type TurnState = {
   activeSide: TurnSide;
@@ -305,84 +282,11 @@ export type GameState = {
 // Доменные события
 // ─────────────────────────────────────────────
 
-/**
- * Доменные события возвращаются функциями симуляции вместе с мутациями состояния.
- * Они описывают, что произошло, — используются UI только для визуальной обратной связи.
- *
- * Правила:
- * - События — plain-данные (без функций, без колбэков)
- * - События порождаются симуляцией и потребляются UI
- * - События эфемерны — не сохраняются, не воспроизводятся
- * - UI может игнорировать любое событие
- * - Симуляция никогда не читает события
- */
-export type GameEvent =
-    | ActionAppliedEvent
-    | ActionRejectedEvent
-    | EntityMovedEvent
-    | EntityDamagedEvent
-    | EntityDiedEvent
-    | EntityMissedEvent
-    | ItemPickedUpEvent
-    | ItemDroppedEvent
-    | ItemUsedEvent
-    | DoorOpenedEvent
-    | DoorClosedEvent
-    | StairExitTriggeredEvent
-    | FloorChangedEvent
-    | TurnEndedEvent
-    | PlayerDiedEvent
-    | PlayerLeveledUpEvent
-    | FogUpdatedEvent
-    | StatusAppliedEvent
-    | StatusRemovedEvent
-    | StatusTickedEvent;
+// GameEvent и все подтипы переехали в core-types.ts
 
-export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction }
-
-export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationError[] };
-
-export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position };
-
-export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; position: Position };
-
-export type EntityDiedEvent = { type: 'ENTITY_DIED'; entityId: EntityId; position: Position};
-
-export type EntityMissedEvent = { type: 'ENTITY_MISSED'; attackerId: EntityId; targetId: EntityId };
-
-export type ItemPickedUpEvent = { type: 'ITEM_PICKED_UP'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
-
-export type ItemDroppedEvent = { type: 'ITEM_DROPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; position: Position };
-
-export type ItemUsedEvent = { type: 'ITEM_USED'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
-
-export type DoorOpenedEvent = { type: 'DOOR_OPENED'; position: Position };
-
-export type DoorClosedEvent = { type: 'DOOR_CLOSED'; position: Position };
-
-export type StairExitTriggeredEvent = { type: 'STAIR_EXIT_TRIGGERED'; direction: 'down' | 'up' };
-
-export type FloorChangedEvent = { type: 'FLOOR_CHANGED'; from: number; to: number };
-
-export type TurnEndedEvent = { type: 'TURN_ENDED'; turnNumber: number };
-
-export type PlayerDiedEvent = { type: 'PLAYER_DIED' };
-
-export type PlayerLeveledUpEvent = { type: 'PLAYER_LEVELED_UP'; newLevel: number };
-
-export type FogUpdatedEvent = { type: 'FOG_UPDATED'; newlyVisible: Position[] };
-
-export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; effect: StatusEffect };
-
-export type StatusRemovedEvent = { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
-
-export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId; effectType: StatusEffectType; value: number };
-
-
-export type ValidationResult =
-  | { ok: true }
-  | { ok: false; reasonCode: string; reasonDescription: string };
-
+// ─────────────────────────────────────────────
+// Публичный API симуляции
+// ─────────────────────────────────────────────
 
 export type PlayerStatsSnapshot = {
   level: number;
@@ -413,6 +317,29 @@ export type Simulation = {
   generateMap(params: MapParams): void;
 
   getPlayerStats(): Readonly<PlayerStatsSnapshot>;
+
+  /** Возвращает режим таргетинга для способности, или null если способность не найдена. */
+  getAbilityTargetMode(abilityId: string): import("@simulation/core-types.ts").TargetMode | null;
+
+  /** Возвращает доступные клетки для выбора целей способности. */
+  getAbilityValidTargets(abilityId: string): import("@simulation/core-types.ts").Position[];
+
+  /** Возвращает превью интентов при наведении на клетку во время таргетинга. */
+  getAbilityPreview(
+    abilityId: string,
+    selectedTargets: import("@simulation/core-types.ts").Position[],
+    hoveredTarget: import("@simulation/core-types.ts").Position | null,
+  ): import("@simulation/core-types.ts").Intent[];
+
+  /** Возвращает все клетки, попадающие в зону действия способности. */
+  getAbilityAffectedPositions(
+    abilityId: string,
+    selectedTargets: import("@simulation/core-types.ts").Position[],
+    hoveredTarget: import("@simulation/core-types.ts").Position | null,
+  ): import("@simulation/core-types.ts").Position[];
+
+  /** Возвращает базовую информацию о способности для отображения в UI. */
+  getAbilityInfo(abilityId: string): { name: string; spriteId: string | undefined; mpCost: number; cooldown: number } | null;
 };
 
 export type ActionPreview = {
@@ -422,11 +349,6 @@ export type ActionPreview = {
 
   errors?: ValidationError[];
 };
-
-export type ValidationError = {
-  code: string;
-  description: string;
-}
 
 /** Снапшот этажа для сохранения состояния при переходе между уровнями. */
 export type FloorSnapshot = {
@@ -463,9 +385,11 @@ export class DefaultActionPointCostResolver
 
   getCost(action: GameAction): number {
     switch (action.type) {
+      case 'USE_ABILITY':
+        // TODO: брать стоимость AP из шаблона способности
+        return 1;
       default:
         return 1;
     }
   }
 }
-

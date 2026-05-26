@@ -2,7 +2,38 @@
  * Unit tests for EntityRenderer.
  */
 
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
+
+vi.mock('pixi.js', () => {
+  class MockTexture {
+    static EMPTY = new MockTexture();
+    static from() { return new MockTexture(); }
+  }
+  class MockSprite {
+    x = 0;
+    y = 0;
+    alpha = 1;
+    visible = true;
+    width = 0;
+    height = 0;
+    texture = MockTexture.EMPTY;
+    anchor = { set: () => {} };
+    destroy() {}
+    static from() { return new MockSprite(); }
+  }
+  class MockContainer {
+    children: any[] = [];
+    addChild(c: any) { this.children.push(c); }
+    removeChildren() { this.children = []; }
+    destroy() {}
+  }
+  return {
+    Container: MockContainer,
+    Sprite: MockSprite,
+    Texture: MockTexture,
+  };
+});
+
 import {EntityRenderer} from '../../../../src/ui/renderer/EntityRenderer';
 import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
 import type {RenderInput} from '../../../../src/presentation/types';
@@ -11,6 +42,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
   const player = {
     id: 'player' as const,
     type: 'player' as const,
+    displayName: 'Герой',
     x: 0,
     y: 0,
     blocksMovement: true as const,
@@ -35,6 +67,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     critChance: 0,
     critMultiplier: 1.5,
     statusEffects: [],
+    abilities: [],
     ...playerOverrides,
   };
 
@@ -94,6 +127,11 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       amuletId: null,
       weaponDamage: null,
     },
+    targetingOverlay: null,
+    animationBatchId: 0,
+    playerSkills: [],
+    heroStats: [],
+    equipSlots: [],
   };
 }
 
@@ -147,5 +185,124 @@ describe('EntityRenderer', () => {
     const sprite = (renderer as any).sprites.get('player');
     expect(sprite.x).toBe(2 * 32); // TILE_SIZE = 32
     expect(sprite.y).toBe(0);
+  });
+
+  it('keeps sprite alive during update if DEATH animation is scheduled', () => {
+    const renderer = new EntityRenderer();
+    const input = makeRenderInput();
+
+    // Добавляем врага в состояние
+    input.state.entities.set('enemy1', {
+      id: 'enemy1',
+      type: 'enemy',
+      x: 1,
+      y: 1,
+      blocksMovement: true,
+      hp: 0,
+      maxHp: 5,
+      armor: 0,
+      damage: 1,
+      maxAp: 1,
+      ap: 0,
+      templateId: 'cat_small',
+      aiStrategyId: 'melee',
+      statusEffects: [],
+      abilities: [],
+    } as any);
+
+    renderer.update(input);
+    expect((renderer as any).sprites.has('enemy1')).toBe(true);
+
+    // Удаляем врага из состояния (симуляция его убила)
+    input.state.entities.delete('enemy1');
+
+    // Без анимации смерти спрайт должен быть удалён
+    renderer.update(input);
+    expect((renderer as any).sprites.has('enemy1')).toBe(false);
+
+    // Добавляем врага снова
+    input.state.entities.set('enemy1', {
+      id: 'enemy1',
+      type: 'enemy',
+      x: 1,
+      y: 1,
+      blocksMovement: true,
+      hp: 0,
+      maxHp: 5,
+      armor: 0,
+      damage: 1,
+      maxAp: 1,
+      ap: 0,
+      templateId: 'cat_small',
+      aiStrategyId: 'melee',
+      statusEffects: [],
+      abilities: [],
+    } as any);
+    renderer.update(input);
+    expect((renderer as any).sprites.has('enemy1')).toBe(true);
+
+    // Удаляем врага, но запланируем анимацию смерти
+    input.state.entities.delete('enemy1');
+    input.animations = [
+      [
+        {
+          step: {type: 'DEATH', entityId: 'enemy1'},
+          children: [],
+        },
+      ],
+    ];
+
+    renderer.update(input);
+    // Спрайт должен остаться, чтобы отыграть анимацию смерти
+    expect((renderer as any).sprites.has('enemy1')).toBe(true);
+  });
+
+  it('does not snap sprite to new position before MOVE animation starts', () => {
+    const renderer = new EntityRenderer();
+    const input = makeRenderInput();
+
+    // Добавляем врага в начальную позицию
+    input.state.entities.set('enemy1', {
+      id: 'enemy1',
+      type: 'enemy',
+      x: 1,
+      y: 1,
+      blocksMovement: true,
+      hp: 5,
+      maxHp: 5,
+      armor: 0,
+      damage: 1,
+      maxAp: 1,
+      ap: 1,
+      templateId: 'cat_small',
+      aiStrategyId: 'melee',
+      statusEffects: [],
+      abilities: [],
+    } as any);
+
+    renderer.update(input);
+    const sprite = (renderer as any).sprites.get('enemy1');
+    expect(sprite.x).toBe(1 * 32);
+    expect(sprite.y).toBe(1 * 32);
+
+    // Симуляция переместила врага, но анимация ещё не запущена
+    input.state.entities.set('enemy1', {
+      ...(input.state.entities.get('enemy1') as any),
+      x: 3,
+      y: 3,
+    });
+    input.animations = [
+      [
+        {
+          step: {type: 'MOVE', entityId: 'enemy1', from: {x: 1, y: 1}, to: {x: 3, y: 3}},
+          children: [],
+        },
+      ],
+    ];
+
+    renderer.update(input);
+    // Спрайт должен остаться на старой позиции, а не "прыгнуть" на новую
+    expect(sprite.x).toBe(1 * 32);
+    expect(sprite.y).toBe(1 * 32);
   });
 });

@@ -13,7 +13,7 @@ export const executeDamageIntent: IntentExecutor<DamageIntent> = (
     const target = findAttackableEntity(state, intent.entityId);
     if (target) {
         const armor = getEffectiveArmor(target);
-        const rawDamage = Math.max(1, intent.damage - armor);
+        const rawDamage = Math.max(1, Math.round(intent.damage - armor));
         const finalDamage = Math.max(1, rawDamage);
         target.hp -= finalDamage;
         return builder.addChild(parent, {type: 'ENTITY_DAMAGED', damage: finalDamage, targetId: intent.entityId, position: {x: target.x, y: target.y}})

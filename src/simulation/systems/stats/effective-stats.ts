@@ -35,7 +35,7 @@ function isPlayer(entity: Entity): entity is PlayerEntity {
 export function getEffectiveDamage(entity: Entity): number {
   if (isPlayer(entity)) {
     const base = getBaseDamage(entity);
-    return applyModifiers(entity, 'damage', base).total;
+    return Math.round(applyModifiers(entity, 'damage', base).total);
   }
   // Враги и прочие — плоское значение
   return (entity as Actor).damage;
@@ -44,7 +44,7 @@ export function getEffectiveDamage(entity: Entity): number {
 export function getEffectiveArmor(entity: Entity): number {
   if (isPlayer(entity)) {
     const base = getBaseArmor(entity);
-    return applyModifiers(entity, 'armor', base).total;
+    return Math.round(applyModifiers(entity, 'armor', base).total);
   }
   return (entity as Actor).armor;
 }

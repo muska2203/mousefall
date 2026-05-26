@@ -30,7 +30,7 @@ const RARITY_LABELS: Record<string, string> = {
 export type ItemDetailSection =
   | { kind: 'stat-list'; title: string; stats: Array<{ label: string; value: string | number }> }
   | { kind: 'description'; text: string }
-  | { kind: 'custom'; title: string; content: React.ReactNode };
+  | { kind: 'custom'; title: string; content: unknown };
 
 export interface ItemDetailViewModel {
   name: string;

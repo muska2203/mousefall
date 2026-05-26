@@ -113,6 +113,7 @@ export const AbilityTemplateSchema = z.object({
   aoeRadius:   z.number().int().nonnegative().default(0).describe('Радиус области действия (0 = одиночная цель)'),
   cooldown:    z.number().int().nonnegative().default(0).describe('Ходов до повторного использования'),
   mpCost:      z.number().int().nonnegative().default(0).describe('Стоимость MP (0 = бесплатно)'),
+  apCost:      z.number().int().nonnegative().default(1).describe('Стоимость AP (0 = бесплатное действие)'),
   effect: z.object({
     type:     z.enum(['damage', 'heal', 'status', 'teleport', 'summon']),
     value:    z.number().optional(),

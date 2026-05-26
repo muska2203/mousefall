@@ -19,21 +19,23 @@ export const stairsTransitionReaction: WorldReaction = (
     builder,
     parent,
 ) => {
-    if (event.type !== 'ENTITY_MOVED') return;
+    if (event.type !== 'ENTITY_MOVED') return [];
 
     // Реагируем только на перемещение игрока
-    if (event.entityId !== 'player') return;
+    if (event.entityId !== 'player') return [];
 
     const stairs = findStairsAt(state, event.to.x, event.to.y);
-    if (!stairs) return;
+    if (!stairs) return [];
 
     // Проверяем границы подземелья
-    if (stairs.direction === 'down' && state.floor >= MAX_FLOOR) return;
-    if (stairs.direction === 'up' && state.floor <= 1) return;
+    if (stairs.direction === 'down' && state.floor >= MAX_FLOOR) return [];
+    if (stairs.direction === 'up' && state.floor <= 1) return [];
 
     // Порождаем событие-запрос; сам переход делает Action handler
     builder.addChild(parent, {
         type: 'STAIR_EXIT_TRIGGERED',
         direction: stairs.direction,
     });
+
+    return [];
 };

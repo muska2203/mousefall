@@ -30,6 +30,7 @@ export class PixiApp {
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
     });
+    await document.fonts.ready;
     container.appendChild(this.app.canvas);
     this.mounted = true;
   }

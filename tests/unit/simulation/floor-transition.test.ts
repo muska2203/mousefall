@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {makeGameState, makePlayer} from "../../fixtures/gameState.ts";
-import {performFloorTransition, descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action";
+import {performFloorTransition} from "@simulation/systems/actions/floor-transition-logic";
+import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action";
 import {stairsTransitionReaction} from "@simulation/systems/world-reactions/stairs-reaction";
 import type {GameState, StairsEntity, EntityMovedEvent} from "@simulation/types.ts";
 import {ExecutionBuilder} from "@simulation/systems/actions/types";
@@ -13,6 +14,7 @@ function makeStairs(overrides: Partial<StairsEntity> & { direction: 'down' | 'up
     id: `stairs_${overrides.direction}_${overrides.x}_${overrides.y}`,
     type: 'stairs',
     blocksMovement: false,
+    displayName: 'Лестница',
     ...overrides,
   };
 }

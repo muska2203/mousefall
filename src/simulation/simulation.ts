@@ -3,6 +3,7 @@ import {
     Actor,
     DefaultActionPointCostResolver,
     GameState,
+    Position,
     Simulation,
     SimulationResult,
     TurnPhase,
@@ -10,6 +11,7 @@ import {
     ValidationResult
 } from "@simulation/types.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
+import { getSkillExecutor } from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
@@ -17,6 +19,8 @@ import {findAllAliveAiActors, isActor} from "@simulation/state.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
+import {waitEntity} from "@simulation/systems/actions/wait-action.ts";
+import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import type {MapParams} from "@simulation/schemas/contentSchemas.ts";
 import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
@@ -30,6 +34,10 @@ import {
 } from "@simulation/systems/stats/effective-stats.ts";
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
 import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
+import { initSkillRegistry } from "@simulation/skills/index.ts";
+import { tryGetAbility } from "@simulation/content/registry";
+import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
+import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
 
 export {findFirstAttackableEntityAt};
 
@@ -152,6 +160,11 @@ export class GameSimulation implements Simulation {
             phases.push({ side: 'ENVIRONMENT', actions: envActions });
 
             this.beginNextPlayerTurn();
+
+            const tickNodes = this.runStatusTicks();
+            if (tickNodes.length > 0) {
+                phases.push({ side: 'STATUS_TICK', actions: tickNodes });
+            }
         }
 
         return {
@@ -310,7 +323,7 @@ export class GameSimulation implements Simulation {
             return false;
         }
 
-        actor.ap -= actionCost;
+        executeIntent(this.state, { type: 'CONSUME_AP', entityId: actor.id, amount: actionCost }, executionBuilder, parentNode);
 
         return true;
     }
@@ -331,6 +344,14 @@ export class GameSimulation implements Simulation {
         for (const enemy of enemies) {
 
             enemy.ap = enemy.maxAp;
+
+            // Уменьшение cooldown скиллов врага
+            const enemyWithAbilities = enemy as import('@simulation/types').EnemyEntity;
+            for (const ability of enemyWithAbilities.abilities) {
+                if (ability.currentCooldown > 0) {
+                    ability.currentCooldown -= 1;
+                }
+            }
 
             while (enemy.ap > 0) {
 
@@ -378,6 +399,29 @@ export class GameSimulation implements Simulation {
         // Восстановление маны: 5% от максимума, минимум 1
         const mpRecovery = Math.max(1, Math.floor(this.state.player.maxMp * 0.05));
         this.state.player.mp = Math.min(this.state.player.mp + mpRecovery, this.state.player.maxMp);
+
+        // Уменьшение cooldown скиллов игрока
+        for (const ability of this.state.player.abilities) {
+            if (ability.currentCooldown > 0) {
+                ability.currentCooldown -= 1;
+            }
+        }
+    }
+
+    private runStatusTicks(): ExecutionNode[] {
+        const nodes: ExecutionNode[] = [];
+        const tickResults = tickAllStatusEffects(this.state);
+        for (const { entity, intents } of tickResults) {
+            for (const intent of intents) {
+                const builder = new ExecutionBuilder({
+                    type: 'STATUS_TICKED',
+                    entityId: entity.id,
+                });
+                executeIntent(this.state, intent, builder, builder.root);
+                nodes.push(builder.root);
+            }
+        }
+        return nodes;
     }
 
     // =========================================================
@@ -439,6 +483,53 @@ export class GameSimulation implements Simulation {
             critMultiplier: p.critMultiplier,
         };
     }
+
+    getAbilityTargetMode(abilityId: string) {
+        const executor = getSkillExecutor(abilityId);
+        if (!executor) return null;
+        return executor.getTargetMode(this.state, this.state.player);
+    }
+
+    getAbilityValidTargets(abilityId: string) {
+        const executor = getSkillExecutor(abilityId);
+        if (!executor) return [];
+        return executor.getValidTargets(this.state, this.state.player);
+    }
+
+    getAbilityPreview(
+        abilityId: string,
+        selectedTargets: Position[],
+        hoveredTarget: Position | null,
+    ) {
+        const executor = getSkillExecutor(abilityId);
+        if (!executor) return [];
+        return executor.preview(this.state, this.state.player, selectedTargets, hoveredTarget);
+    }
+
+    getAbilityAffectedPositions(
+        abilityId: string,
+        selectedTargets: Position[],
+        hoveredTarget: Position | null,
+    ) {
+        const executor = getSkillExecutor(abilityId);
+        if (!executor) return [];
+        return executor.getAffectedPositions(this.state, this.state.player, selectedTargets, hoveredTarget);
+    }
+
+    getAbilityInfo(abilityId: string) {
+        try {
+            const template = tryGetAbility(abilityId);
+            if (!template) return null;
+            return {
+                name: template.name,
+                spriteId: template.spriteId,
+                mpCost: template.mpCost,
+                cooldown: template.cooldown,
+            };
+        } catch {
+            return null;
+        }
+    }
 }
 
 export class ActionHandlerRegistry {
@@ -462,12 +553,15 @@ export class ActionHandlerRegistry {
 }
 
 export function defaultActionHandlerRegistry(): ActionHandlerRegistry {
+    initSkillRegistry();
     const registry = new ActionHandlerRegistry();
 
     registry.register('MOVE', moveEntity);
     registry.register('ATTACK', attackEntity);
+    registry.register('WAIT', waitEntity);
     registry.register('DESCEND', descendAction);
     registry.register('ASCEND', ascendAction);
+    registry.register('USE_ABILITY', useAbilityAction);
     return registry;
 }
 

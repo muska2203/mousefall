@@ -1,6 +1,6 @@
 import {GameEvent, GameState} from "@simulation/types.ts";
 import {WorldReaction} from "@simulation/systems/world-reactions/types.ts";
-import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {ExecutionBuilder, ExecutionNode, Intent} from "@simulation/core-types.ts";
 import {deathReaction} from "@simulation/systems/world-reactions/death-reaction.ts";
 import {stairsTransitionReaction} from "@simulation/systems/world-reactions/stairs-reaction.ts";
 
@@ -43,12 +43,16 @@ export function runWorldReactions(
   state: GameState,
   builder: ExecutionBuilder,
   executedNode: ExecutionNode,
-) {
+): Intent[] {
   const entries = worldReactions.get(executedNode.event.type) ?? [];
+  const intents: Intent[] = [];
 
   for (const entry of entries) {
-    entry.handler(state, executedNode.event, builder, executedNode);
+    const result = entry.handler(state, executedNode.event, builder, executedNode);
+    intents.push(...result);
   }
+
+  return intents;
 }
 
 // ─────────────────────────────────────────────

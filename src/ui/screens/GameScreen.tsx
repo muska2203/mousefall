@@ -7,14 +7,12 @@
  * Правая: EquipmentPanel, InventoryPanel, ConsumablesPanel, SkillsPanel.
  */
 
-import {useCallback, useEffect, useSyncExternalStore} from 'react';
+import {useCallback, useEffect, useSyncExternalStore, useState} from 'react';
 import type {GameSession, SessionMode} from '@presentation/gameSession';
 import {KEY_MAP, INTERACTIVE_TAGS} from '@ui/input/keyboardMap';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
-import type {HeroStat} from '@ui/components/HeroPanel';
 import {EquipmentPanel} from '@ui/components/EquipmentPanel';
-import type {EquipSlotData} from '@ui/components/EquipmentPanel';
 import {GameField} from '@ui/components/GameField';
 import {EffectsPanel} from '@ui/components/EffectsPanel';
 import {LogPanel} from '@ui/components/LogPanel';
@@ -84,6 +82,33 @@ export function GameScreen({session, onModeChange}: Props) {
     [session],
   );
 
+  const handleSkillClick = useCallback(
+    (abilityId: string) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.beginTargeting(abilityId);
+    },
+    [session, isInputBlocked],
+  );
+
+  const handleMouseMove = useCallback(
+    (pos: {x: number; y: number}) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.previewTarget(pos);
+    },
+    [session, isInputBlocked],
+  );
+
+  const handleMouseClick = useCallback(
+    (pos: {x: number; y: number}) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.submitTarget(pos);
+    },
+    [session, isInputBlocked],
+  );
+
   // Синхронизация режима с App.tsx (важно при автоходе и смерти)
   const currentMode = session.getMode();
   useEffect(() => {
@@ -98,6 +123,13 @@ export function GameScreen({session, onModeChange}: Props) {
       if (e.repeat) return;
       const target = e.target as HTMLElement | null;
       if (target && INTERACTIVE_TAGS.has(target.tagName)) return;
+
+      // Отмена таргетинга
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        session.cancelTargeting();
+        return;
+      }
 
       // Спуск / подъём по лестнице (ручное управление)
       if (e.key === '>' || e.key === '.') {
@@ -143,32 +175,7 @@ export function GameScreen({session, onModeChange}: Props) {
     ? `/assets/portraits/${renderInput.portraitId}-ready.png`
     : '/assets/portraits/witcher-ready.png';
 
-  const heroStats: HeroStat[] = [
-    {type: 'readonly', icon: '💪', name: 'Сила', value: String(ps.effectiveStats.str)},
-    {type: 'readonly', icon: '✨', name: 'Интеллект', value: String(ps.effectiveStats.int)},
-    {type: 'readonly', icon: '🐾', name: 'Ловкость', value: String(ps.effectiveStats.dex)},
-    {type: 'readonly', icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
-  ];
 
-  const eq = renderInput.equipment;
-  const equipSlots: EquipSlotData[] = [
-    {
-      label: 'Оружие',
-      icon: eq.weaponId ? `/assets/items/${eq.weaponId}.png` : undefined,
-      fallback: '⚔',
-      damage: eq.weaponDamage,
-    },
-    {
-      label: 'Броня',
-      icon: eq.armorId ? `/assets/items/${eq.armorId}.png` : undefined,
-      fallback: '🛡',
-    },
-    {
-      label: 'Амулет',
-      icon: eq.amuletId ? `/assets/items/${eq.amuletId}.png` : undefined,
-      fallback: '📿',
-    },
-  ];
 
   const leftColumn = (
     <>
@@ -180,7 +187,7 @@ export function GameScreen({session, onModeChange}: Props) {
         mana={ps.mp}
         maxMana={ps.maxMp}
         xp={ps.xp}
-        stats={heroStats}
+        stats={renderInput.heroStats}
       />
       <EffectsPanel />
       <LogPanel entries={vm.logs} />
@@ -194,28 +201,21 @@ export function GameScreen({session, onModeChange}: Props) {
       onWait={handleWait}
       onAnimationsComplete={() => session.onAnimationsComplete()}
       onZoomDelta={handleZoom}
+      onMouseMove={handleMouseMove}
+      onMouseClick={handleMouseClick}
     />
   );
 
   const rightColumn = (
     <>
-      <EquipmentPanel slots={equipSlots} />
+      <EquipmentPanel slots={renderInput.equipSlots} />
       <InventoryPanel />
       <ConsumablesPanel />
       <SkillsPanel
-        skills={[
-          {icon: '/assets/skills/lunge.png', name: 'Выпад', mana: 8},
-          {icon: '/assets/skills/cleave.png', name: 'Рассекающий удар', mana: 12},
-          {icon: '/assets/skills/whirlwind.png', name: 'Вихрь', mana: 15},
-          {icon: '/assets/skills/steel_stance.png', name: 'Стальная стойка', mana: 10},
-          {icon: '/assets/skills/fireball.png', name: 'Огненный шар', mana: 14},
-          {icon: '/assets/skills/ice_spike.png', name: 'Ледяной шип', mana: 12},
-          {icon: '/assets/skills/chain_lightning.png', name: 'Цепная молния', mana: 18},
-          {icon: '/assets/skills/shock_wave.png', name: 'Ударная волна', mana: 10},
-          {icon: '/assets/skills/magic_slap.png', name: 'Волшебный хлёст', mana: 6},
-          {icon: '/assets/skills/stone_wall.png', name: 'Каменная стена', mana: 16},
-          {icon: '/assets/skills/supremacy.png', name: 'Верховенство', mana: 20},
-        ]}
+        skills={renderInput.playerSkills}
+        onSkillClick={(abilityId) => {
+          session.beginTargeting(abilityId);
+        }}
       />
     </>
   );

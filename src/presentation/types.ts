@@ -8,7 +8,7 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot } from '@simulation/types';
+import type { GameState, PlayerStatsSnapshot, Intent } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
@@ -59,6 +59,23 @@ export type AnimationStep =
       x: number;
       y: number;
       styleKey: string;
+    }
+  | {
+      type: 'ABILITY_CAST';
+      entityId: string;
+      abilityId: string;
+      targets: Position[];
+      from: Position;
+    }
+  | {
+      type: 'PROJECTILE';
+      from: Position;
+      to: Position;
+    }
+  | {
+      type: 'EXPLOSION';
+      center: Position;
+      radius: number;
     };
 
 /** Узел дерева анимаций.
@@ -80,6 +97,86 @@ export type EquipmentSnapshot = {
   weaponDamage: number | null;
 };
 
+export type PlayerSkillViewModel = {
+  abilityId: string;
+  name: string;
+  icon: string | null;
+  mpCost: number;
+  cooldown: number;
+  maxCooldown: number;
+  isAvailable: boolean;
+};
+
+export type HeroStatViewModel = {
+  type: 'readonly';
+  icon: string;
+  name: string;
+  value: string;
+};
+
+export type EquipSlotViewModel = {
+  label: string;
+  icon?: string;
+  fallback: string;
+  damage?: number | null;
+};
+
+/** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */
+export type PresentationIntent =
+  | { type: 'MOVE'; entityId: string; dx: number; dy: number; from: Position; to: Position }
+  | { type: 'DAMAGE'; entityId: string; damage: number; position: Position }
+  | { type: 'DIE'; entityId: string; position: Position }
+  | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
+  | { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' }
+  | { type: 'CONSUME_MP'; entityId: string; amount: number }
+  | { type: 'SET_COOLDOWN'; entityId: string; abilityId: string; turns: number }
+  | { type: 'CONSUME_AP'; entityId: string; amount: number }
+  | { type: 'TICK_STATUS_EFFECTS'; entityId: string };
+
+/** Превью действия в терминах Presentation. */
+export type PresentationActionPreview = {
+  valid: boolean;
+  intents: PresentationIntent[];
+  affectedPositions: Position[];
+  errors?: { code: string; description: string }[];
+};
+
+/** Маппит Simulation Intent в PresentationIntent. */
+export function toPresentationIntent(intent: Intent, state: GameState): PresentationIntent | null {
+  switch (intent.type) {
+    case 'MOVE': {
+      const entity = state.entities.get(intent.entityId);
+      if (!entity) return null;
+      return { type: 'MOVE', entityId: intent.entityId, dx: intent.dx, dy: intent.dy, from: { x: entity.x, y: entity.y }, to: { x: entity.x + intent.dx, y: entity.y + intent.dy } };
+    }
+    case 'DAMAGE': {
+      const entity = state.entities.get(intent.entityId);
+      if (!entity) return null;
+      return { type: 'DAMAGE', entityId: intent.entityId, damage: intent.damage, position: { x: entity.x, y: entity.y } };
+    }
+    case 'DIE': {
+      const entity = state.entities.get(intent.entityId);
+      if (!entity) return null;
+      return { type: 'DIE', entityId: intent.entityId, position: { x: entity.x, y: entity.y } };
+    }
+    case 'APPLY_STATUS': {
+      const entity = state.entities.get(intent.entityId);
+      if (!entity) return null;
+      return { type: 'APPLY_STATUS', entityId: intent.entityId, statusType: intent.status.type, duration: intent.status.duration, value: intent.status.value, position: { x: entity.x, y: entity.y } };
+    }
+    case 'CHANGE_FLOOR':
+      return { type: 'CHANGE_FLOOR', direction: intent.direction };
+    case 'CONSUME_MP':
+      return { type: 'CONSUME_MP', entityId: intent.entityId, amount: intent.amount };
+    case 'SET_COOLDOWN':
+      return { type: 'SET_COOLDOWN', entityId: intent.entityId, abilityId: intent.abilityId, turns: intent.turns };
+    case 'CONSUME_AP':
+      return { type: 'CONSUME_AP', entityId: intent.entityId, amount: intent.amount };
+    case 'TICK_STATUS_EFFECTS':
+      return { type: 'TICK_STATUS_EFFECTS', entityId: intent.entityId };
+  }
+}
+
 /** Полный вход renderer'а: состояние + анимации + метаданные. */
 export type RenderInput = {
   /** Readonly снимок игрового состояния от Simulation. */
@@ -88,8 +185,11 @@ export type RenderInput = {
   portraitId: string | null;
   /** Подсвеченный автопуть (если есть). */
   highlightedPath: Position[] | null;
-  /** Очередь анимаций в виде дерева. null = нет новых анимаций. */
-  animations: AnimationNode[] | null;
+  /** Очередь анимаций в виде массива фаз. Каждая фаза — массив деревьев,
+   *  запускаемых параллельно; фазы между собой выполняются последовательно. */
+  animations: AnimationNode[][] | null;
+  /** Идентификатор текущей партии анимаций. Инкрементируется при каждом dispatch с анимациями. */
+  animationBatchId: number;
   /** Фаза отрисовки: idle — можно вводить, animating — идут анимации. */
   phase: 'idle' | 'animating' | 'gameOver';
   /** Масштаб камеры (1 = 100%). */
@@ -98,4 +198,18 @@ export type RenderInput = {
   playerStats: PlayerStatsSnapshot;
   /** Экипировка игрока для отображения слотов. */
   equipment: EquipmentSnapshot;
+  /** Оверлеи таргетинга: валидные клетки, hover, AoE, выбранные и превью интентов. */
+  targetingOverlay: {
+    valid: Position[];
+    hover: Position | null;
+    affected: Position[];
+    selected: Position[];
+    previewIntents: PresentationIntent[];
+  } | null;
+  /** Скиллы игрока для отображения в панели. */
+  playerSkills: PlayerSkillViewModel[];
+  /** Характеристики героя для HeroPanel. */
+  heroStats: HeroStatViewModel[];
+  /** Слоты экипировки для EquipmentPanel. */
+  equipSlots: EquipSlotViewModel[];
 };

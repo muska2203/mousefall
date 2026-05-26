@@ -90,6 +90,12 @@ export function applyCharacterConfig(
   player.hp = player.maxHp;
   player.mp = player.maxMp;
 
+  // Начальные способности (временно: все классы получают fireball и magic_slap)
+  player.abilities = [
+    { templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 },
+    { templateId: 'magic_slap', source: 'innate', level: 1, currentCooldown: 0 },
+  ];
+
   // TODO: читать базовые статы класса из ContentRegistry по config.classId
   void config.classId;
 }

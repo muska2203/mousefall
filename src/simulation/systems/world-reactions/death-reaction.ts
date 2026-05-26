@@ -1,30 +1,26 @@
-import {WorldReaction} from "@simulation/systems/world-reactions/types.ts";
-import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
-import {findAttackableEntity} from "@simulation/state.ts";
+import {WorldReaction} from './types';
+import {findAttackableEntity} from '@simulation/state';
 
 export const deathReaction: WorldReaction = (
     state,
     event,
-    builder,
-    parent,
+    _builder,
+    _parent,
 ) => {
-    if (event.type !== 'ENTITY_DAMAGED') return;
+    if (event.type !== 'ENTITY_DAMAGED') return [];
 
     const entity = findAttackableEntity(state, event.targetId);
 
-    if (!entity) return;
+    if (!entity) return [];
 
-    if (entity.hp > 0) return;
+    if (entity.hp > 0) return [];
 
     const deathPos = { x: entity.x, y: entity.y };
-    executeIntent(
-        state,
+    return [
         {
             type: 'DIE',
             entityId: entity.id,
-            position: deathPos
+            position: deathPos,
         },
-        builder,
-        parent,
-    );
+    ];
 };

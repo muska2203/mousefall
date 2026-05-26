@@ -111,7 +111,7 @@ export function ItemDetailPopover({ item, visible, x, y }: Props) {
           return (
             <div className="item-detail-section" key={index}>
               <h4 className="item-detail-section-title">{section.title}</h4>
-              {section.content}
+              {section.content as React.ReactNode}
             </div>
           );
         })}

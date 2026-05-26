@@ -16,7 +16,11 @@ import {AnimationSequencer} from '@ui/animation/sequencer';
 import {SpriteAnimationExecutor} from '@ui/animation/spriteExecutor';
 import {FogAnimationExecutor} from '@ui/animation/fogExecutor';
 import {PixiFloatingTextExecutor} from '@ui/animation/pixiFloatingTextExecutor';
+import {SkillAnimationExecutor} from '@ui/animation/skillExecutor';
+import {ProjectileAnimationExecutor} from '@ui/animation/projectileExecutor';
+import {ExplosionAnimationExecutor} from '@ui/animation/explosionExecutor';
 import type {AnimationContext} from '@ui/animation/types';
+import {TILE_SIZE} from '@utils/constants';
 
 interface Props {
   floor: number;
@@ -24,6 +28,8 @@ interface Props {
   onWait: () => void;
   onAnimationsComplete: () => void;
   onZoomDelta: (delta: number) => void;
+  onMouseMove?: (pos: {x: number; y: number}) => void;
+  onMouseClick?: (pos: {x: number; y: number}) => void;
   hotbarSize?: number;
 }
 
@@ -33,6 +39,8 @@ export function GameField({
   onWait,
   onAnimationsComplete,
   onZoomDelta,
+  onMouseMove,
+  onMouseClick,
   hotbarSize = 8,
 }: Props) {
   const isInputBlocked = renderInput?.phase === 'animating';
@@ -71,12 +79,16 @@ export function GameField({
       const renderer = new WorldRenderer(w, h);
       renderer.setTicker(pixi.app.ticker);
       pixi.app.stage.addChild(renderer.root);
+      pixi.app.stage.addChild(renderer.textLayer);
 
       // Создаём AnimationSequencer
       const executors = [
         new SpriteAnimationExecutor(),
         new FogAnimationExecutor(),
         new PixiFloatingTextExecutor(),
+        new SkillAnimationExecutor(),
+        new ProjectileAnimationExecutor(),
+        new ExplosionAnimationExecutor(),
       ];
       const context: AnimationContext = {
         worldRenderer: renderer,
@@ -132,11 +144,18 @@ export function GameField({
 
   // Обновление при изменении renderInput.
   // Сначала рендерим состояние, затем запускаем анимации через sequencer.
+  // Анимации запускаются только при новой партии (animationBatchId изменился) —
+  // чтобы не перезапускать их при обновлениях hover/таргетинга во время проигрывания.
+  const lastBatchIdRef = useRef(0);
   useEffect(() => {
     if (renderInput && rendererRef.current) {
       rendererRef.current.render(renderInput);
 
-      if (renderInput.animations && renderInput.animations.length > 0 && sequencerRef.current) {
+      const animations = renderInput.animations;
+      const hasNewAnimations = animations && animations.length > 0 && renderInput.animationBatchId !== lastBatchIdRef.current;
+      lastBatchIdRef.current = renderInput.animationBatchId;
+
+      if (hasNewAnimations && sequencerRef.current && animations) {
         // Обновляем mutable context перед запуском
         sequencerRef.current.updateContext({
           playerId: renderInput.state.player.id,
@@ -145,7 +164,7 @@ export function GameField({
           ticker: pixiRef.current!.app.ticker,
         });
 
-        const result = sequencerRef.current.run(renderInput.animations);
+        const result = sequencerRef.current.run(animations);
         result.blockingDone.then(() => {
           onCompleteRef.current();
         });
@@ -174,6 +193,39 @@ export function GameField({
       container.removeEventListener('wheel', handleWheel);
     };
   }, [onZoomDelta]);
+
+  // Mouse input для таргетинга
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!rendererRef.current) return;
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const { x: tileX, y: tileY } = rendererRef.current.screenToWorld(mouseX, mouseY);
+      onMouseMove?.({ x: tileX, y: tileY });
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      if (isInputBlockedRef.current) return;
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      if (!rendererRef.current) return;
+      const { x: tileX, y: tileY } = rendererRef.current.screenToWorld(mouseX, mouseY);
+      onMouseClick?.({ x: tileX, y: tileY });
+    };
+
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('click', handleClick);
+    return () => {
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('click', handleClick);
+    };
+  }, [onMouseMove, onMouseClick]);
 
   return (
     <Panel title={`Уровень ${floor}`} fill>

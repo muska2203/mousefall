@@ -19,7 +19,7 @@ import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGSt
 import type { MapParams } from '../schemas/contentSchemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
-import { getEntity } from '../content/registry';
+import { getEntity, getItem } from '../content/registry';
 
 // ─────────────────────────────────────────────
 // Тип выходных данных
@@ -195,6 +195,7 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
     type: 'enemy',
     x,
     y,
+    displayName: template.name,
     hp: template.health.max,
     maxHp: template.health.max,
     damage: template.combat?.damage ?? 0,
@@ -206,15 +207,18 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
     ap: 1,
     isAlive: true,
     aiStrategyId: template.aiStrategyId!, // враги из enemyPool всегда имеют aiStrategyId
+    abilities: [],
   };
 }
 
 function createFloorItem(state: GameState, templateId: string, x: number, y: number): ItemEntity {
+  const template = getItem(templateId);
   return {
     id: nextEntityId(state, 'item'),
     type: 'item',
     x,
     y,
+    displayName: template.name,
     templateId,
     quantity: 1,
     blocksMovement: false,
@@ -227,6 +231,7 @@ export function createStairs(state: GameState, direction: 'down' | 'up', x: numb
     type: 'stairs',
     x,
     y,
+    displayName: direction === 'down' ? 'Лестница вниз' : 'Лестница вверх',
     direction,
     blocksMovement: false,
   };

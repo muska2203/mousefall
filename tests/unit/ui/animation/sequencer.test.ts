@@ -32,7 +32,7 @@ describe('AnimationSequencer', () => {
     const sequencer = new AnimationSequencer([exec], mockContext);
 
     const node = makeNode({ type: 'MOVE', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
-    const result = sequencer.run([node]);
+    const result = sequencer.run([[node]]);
 
     await result.blockingDone;
     expect(exec.execute).toHaveBeenCalledOnce();
@@ -47,7 +47,7 @@ describe('AnimationSequencer', () => {
     const child = makeNode({ type: 'DEATH', entityId: 'e1' });
     const parent = makeNode({ type: 'ATTACK', attackerId: 'p1', dx: 1, dy: 0 }, [child]);
 
-    const result = sequencer.run([parent]);
+    const result = sequencer.run([[parent]]);
     await result.allDone;
 
     expect(order).toEqual(['parent', 'child']);
@@ -61,7 +61,7 @@ describe('AnimationSequencer', () => {
     const nodeA = makeNode({ type: 'ATTACK', attackerId: 'p1', dx: 1, dy: 0 });
     const nodeB = makeNode({ type: 'MOVE', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
 
-    const result = sequencer.run([nodeA, nodeB]);
+    const result = sequencer.run([[nodeA, nodeB]]);
     await result.allDone;
 
     expect(execA.execute).toHaveBeenCalledOnce();
@@ -73,7 +73,7 @@ describe('AnimationSequencer', () => {
     const sequencer = new AnimationSequencer([exec], mockContext);
 
     const node = makeNode({ type: 'FOG_UPDATE', newlyVisible: [] });
-    const result = sequencer.run([node]);
+    const result = sequencer.run([[node]]);
 
     // blockingDone должно резолвиться мгновенно, т.к. FOG_UPDATE non-blocking
     const start = Date.now();
@@ -92,7 +92,7 @@ describe('AnimationSequencer', () => {
     const sequencer = new AnimationSequencer([exec], mockContext);
 
     const node = makeNode({ type: 'MOVE', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
-    const result = sequencer.run([node]);
+    const result = sequencer.run([[node]]);
 
     const start = Date.now();
     await result.blockingDone;
@@ -111,7 +111,7 @@ describe('AnimationSequencer', () => {
     const child = makeNode({ type: 'DEATH', entityId: 'e1' });
     const parent = makeNode({ type: 'ATTACK', attackerId: 'p1', dx: 1, dy: 0 }, [child]);
 
-    const result = sequencer.run([parent]);
+    const result = sequencer.run([[parent]]);
     sequencer.cancelAll();
 
     // blockingDone должно резолвиться мгновенно

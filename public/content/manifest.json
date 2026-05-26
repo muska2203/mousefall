@@ -19,7 +19,8 @@
     "/content/items/amulet/common_glass_bead.json"
   ],
   "abilities": [
-    "/content/abilities/fireball.json"
+    "/content/abilities/fireball.json",
+    "/content/abilities/magic_slap.json"
   ],
   "maps": [
     "/content/maps/default.json",

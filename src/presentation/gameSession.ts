@@ -13,15 +13,21 @@
  * - Все мутации GameState только через simulation.dispatch() или фабрики Simulation.
  */
 
-import type {GameState, Simulation, SimulationResult, ActionPreview, GameEvent, PlayerStatsSnapshot} from '@simulation/types';
+import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnapshot, Position, ActionPreview} from '@simulation/types';
+
 import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@simulation/schemas/contentSchemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview} from './types';
+
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
+import {CameraState} from './cameraState';
+import {LogBuffer, type LogItem} from './logBuffer';
+import {AnimationState} from './animationState';
+import {TargetingController} from './targetingController';
 
 // Реэкспорт типов для UI-слоя, чтобы UI не импортировал из simulation/ напрямую
 export type {CharacterConfig} from '@simulation/characterCreation';
@@ -37,11 +43,7 @@ export type SessionMode =
   | 'gameOver'
   | 'victory';
 
-export type LogItem = {
-  id: number;
-  text: string;
-  variant?: 'loot' | 'good' | 'bad' | 'info';
-};
+export type {LogItem} from './logBuffer';
 
 export type GameViewModel = {
   /** Текущий режим экрана */
@@ -57,19 +59,18 @@ export class GameSession {
   private mode: SessionMode = 'mainMenu';
   private lastResult: SimulationResult | null = null;
   private portraitId: string | null = null;
-  private logs: LogItem[] = [];
-  private nextLogId = {value: 1};
+  private camera = new CameraState();
+  private logs = new LogBuffer();
+  private animation = new AnimationState();
+  private targeting = new TargetingController();
   private listeners = new Set<() => void>();
   private viewModelCache: GameViewModel | null = null;
-  /** Фаза отрисовки: idle — можно вводить, animating — идут анимации. */
-  private renderPhase: 'idle' | 'animating' | 'gameOver' = 'idle';
-  private cameraZoom = 1;
-  private readonly minZoom = 0.5;
-  private readonly maxZoom = 3;
+  /** Монотонный счётчик партий анимаций. Инкрементируется при каждом dispatch, порождающем анимации. */
+  private animationBatchId = 0;
+  /** Клетка под мышью в режиме таргетинга. */
+  private targetingHover: Position | null = null;
   /** Удерживаемое направление движения (для автохода при зажатой клавише). */
   private heldDirection: {dx: number; dy: number} | null = null;
-  /** Ожидающий автоматический переход по лестнице (после завершения анимаций). */
-  private pendingAutoTransition: {direction: 'down' | 'up'} | null = null;
 
   /** Подписаться на изменения сессии. Вызывается после любого mutate-метода. */
   subscribe(callback: () => void): () => void {
@@ -93,7 +94,7 @@ export class GameSession {
       this.viewModelCache = {
         mode: this.mode,
         renderInput: state ? this.buildRenderInput(state) : null,
-        logs: this.logs,
+        logs: this.logs.logs,
       };
     }
     return this.viewModelCache;
@@ -107,28 +108,96 @@ export class GameSession {
       amuletId: player.equippedAmuletId,
       weaponDamage: player.equippedWeaponId ? player.damage : null,
     };
+
+    const playerSkills: PlayerSkillViewModel[] = player.abilities.map(ability => {
+      const template = this.getAbilityTemplate(ability.templateId);
+      return {
+        abilityId: ability.templateId,
+        name: template?.name ?? ability.templateId,
+        icon: template?.spriteId ? `/assets/skills/${template.spriteId}.png` : null,
+        mpCost: template?.mpCost ?? 0,
+        cooldown: ability.currentCooldown,
+        maxCooldown: template?.cooldown ?? 0,
+        isAvailable: ability.currentCooldown === 0 && player.mp >= (template?.mpCost ?? 0),
+      };
+    });
+
+    const ps = this.simulation!.getPlayerStats();
+    const eq = equipment;
+
+    const heroStats = [
+      {type: 'readonly' as const, icon: '💪', name: 'Сила', value: String(ps.effectiveStats.str)},
+      {type: 'readonly' as const, icon: '✨', name: 'Интеллект', value: String(ps.effectiveStats.int)},
+      {type: 'readonly' as const, icon: '🐾', name: 'Ловкость', value: String(ps.effectiveStats.dex)},
+      {type: 'readonly' as const, icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
+    ];
+
+    const equipSlots = [
+      {
+        label: 'Оружие',
+        icon: eq.weaponId ? `/assets/items/${eq.weaponId}.png` : undefined,
+        fallback: '⚔',
+        damage: eq.weaponDamage,
+      },
+      {
+        label: 'Броня',
+        icon: eq.armorId ? `/assets/items/${eq.armorId}.png` : undefined,
+        fallback: '🛡',
+      },
+      {
+        label: 'Амулет',
+        icon: eq.amuletId ? `/assets/items/${eq.amuletId}.png` : undefined,
+        fallback: '📿',
+      },
+    ];
+
     return {
       state,
       portraitId: this.portraitId,
       highlightedPath: null,
-      animations: this.lastResult ? buildAnimationTree(this.lastResult) : null,
-      phase: this.renderPhase,
-      zoom: this.cameraZoom,
-      playerStats: this.simulation!.getPlayerStats(),
+      animations: this.lastResult ? buildAnimationTree(this.lastResult, state) : null,
+      animationBatchId: this.animationBatchId,
+      phase: this.animation.phase,
+      zoom: this.camera.zoom,
+      playerStats: ps,
       equipment,
+      targetingOverlay: this.buildTargetingOverlay(state),
+      playerSkills,
+      heroStats,
+      equipSlots,
+    };
+  }
+
+  private getAbilityTemplate(abilityId: string) {
+    return this.simulation!.getAbilityInfo(abilityId);
+  }
+
+  private buildTargetingOverlay(state: Readonly<GameState>): RenderInput['targetingOverlay'] {
+    if (!this.targeting.state) return null;
+
+    const preview = this.targetingHover
+      ? this.targeting.previewTarget(this.targetingHover, this.simulation!, state)
+      : null;
+
+    return {
+      valid: this.targeting.state.validTargets,
+      hover: this.targetingHover,
+      affected: preview?.affectedPositions ?? [],
+      selected: this.targeting.state.selectedTargets,
+      previewIntents: preview?.intents ?? [],
     };
   }
 
   /** Изменить масштаб камеры на дельту. */
   setZoom(delta: number): void {
     const factor = 1 + delta;
-    this.cameraZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.cameraZoom * factor));
+    this.camera.multiplyZoom(factor);
     this.notify();
   }
 
   /** Сбросить масштаб к 1. */
   resetZoom(): void {
-    this.cameraZoom = 1;
+    this.camera.resetZoom();
     this.notify();
   }
 
@@ -153,7 +222,7 @@ export class GameSession {
     this.simulation = null;
     this.lastResult = null;
     this.portraitId = null;
-    this.renderPhase = 'idle';
+    this.animation.phase = 'idle';
     this.clearLogs();
     this.notify();
   }
@@ -186,7 +255,7 @@ export class GameSession {
     this.mode = 'playing';
     this.lastResult = null;
     this.portraitId = config.portraitId ?? null;
-    this.renderPhase = 'idle';
+    this.animation.phase = 'idle';
     this.clearLogs();
     this.notify();
   }
@@ -201,9 +270,63 @@ export class GameSession {
     this.simulation = GameSimulation.loadSavedGame(state);
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
-    this.renderPhase = this.mode === 'playing' ? 'idle' : 'gameOver';
+    this.animation.phase = this.mode === 'playing' ? 'idle' : 'gameOver';
     this.clearLogs();
     this.notify();
+  }
+
+  /** Начать выбор цели для способности. */
+  beginTargeting(abilityId: string): void {
+    if (!this.simulation) return;
+    const ok = this.targeting.beginTargeting(abilityId, this.simulation);
+    if (!ok) return;
+    this.targetingHover = null;
+    this.notify();
+  }
+
+  /** Отменить выбор цели. */
+  cancelTargeting(): void {
+    this.targeting.cancelTargeting();
+    this.targetingHover = null;
+    this.notify();
+  }
+
+  /** Подтвердить выбор клетки цели. */
+  submitTarget(position: Position): void {
+    if (!this.simulation) return;
+
+    const ok = this.targeting.submitTarget(position);
+    if (!ok) return;
+
+    const remaining = this.targeting.getRemainingSelections(this.simulation);
+    if (remaining <= 0) {
+      const state = this.targeting.state!;
+      const action: GameAction = {
+        type: 'USE_ABILITY',
+        entityId: 'player',
+        abilityId: state.abilityId,
+        targets: state.selectedTargets,
+      };
+      this.targeting.cancelTargeting();
+      this.targetingHover = null;
+      this.dispatch(action);
+      return;
+    }
+
+    this.targetingHover = null;
+    this.notify();
+  }
+
+  /** Превью при наведении на клетку в режиме таргетинга. */
+  previewTarget(hoveredPosition: Position | null): PresentationActionPreview {
+    const prevHover = this.targetingHover;
+    this.targetingHover = hoveredPosition;
+    const state = this.simulation!.getState();
+    const result = this.targeting.previewTarget(hoveredPosition, this.simulation!, state);
+    if (hoveredPosition?.x !== prevHover?.x || hoveredPosition?.y !== prevHover?.y) {
+      this.notify();
+    }
+    return result;
   }
 
   /** Выполнить игровое действие */
@@ -214,9 +337,13 @@ export class GameSession {
     if (this.mode !== 'playing') {
       throw new Error(`Cannot dispatch in mode: ${this.mode}`);
     }
-    if (this.renderPhase === 'animating') {
-      // Игнорируем ввод, пока идут анимации
+    if (this.animation.phase === 'animating') {
       return;
+    }
+
+    // Любое действие отменяет подготовку скилла
+    if (this.targeting.phase === 'targeting') {
+      this.cancelTargeting();
     }
 
     const result = this.simulation.dispatch(action);
@@ -225,31 +352,24 @@ export class GameSession {
     if (result.success && result.stateChanged) {
       const state = this.simulation.getState();
       const events = extractEvents(result);
-      const newLogs: LogItem[] = [];
-      for (const event of events) {
-        const log = gameEventToLog(state, event, this.nextLogId);
-        if (log) {
-          newLogs.push(log);
-        }
-      }
-      if (newLogs.length > 0) {
-        this.logs = [...this.logs, ...newLogs].slice(-30);
-      }
+      this.logs.append(state, events);
+      this.logs.logs = this.logs.logs.slice(-30);
 
       // Проверяем, не обнаружена ли лестница — нужен ли авто-переход
       const stairTrigger = this.findStairExitTriggered(result);
       if (stairTrigger) {
-        this.pendingAutoTransition = stairTrigger;
+        this.animation.pendingAutoTransition = stairTrigger;
       }
 
       // Строим дерево анимаций из дерева событий
-      const animations = buildAnimationTree(result);
+      const animations = buildAnimationTree(result, state);
       if (animations.length > 0) {
-        this.renderPhase = 'animating';
-      } else if (this.pendingAutoTransition) {
+        this.animation.phase = 'animating';
+        this.animationBatchId++;
+      } else if (this.animation.pendingAutoTransition) {
         // Анимаций нет — можно сразу выполнить transition
-        const pending = this.pendingAutoTransition;
-        this.pendingAutoTransition = null;
+        const pending = this.animation.pendingAutoTransition;
+        this.animation.pendingAutoTransition = null;
         const transitionAction: GameAction =
           pending.direction === 'down'
             ? {type: 'DESCEND', entityId: 'player'}
@@ -266,10 +386,10 @@ export class GameSession {
     const state = this.simulation.getState();
     if (state.phase === 'dead') {
       this.mode = 'gameOver';
-      this.renderPhase = 'gameOver';
+      this.animation.phase = 'gameOver';
     } else if (state.phase === 'victory') {
       this.mode = 'victory';
-      this.renderPhase = 'gameOver';
+      this.animation.phase = 'gameOver';
     }
     this.notify();
   }
@@ -302,6 +422,11 @@ export class GameSession {
       return;
     }
 
+    // Движение/атака отменяет подготовку скилла
+    if (this.targeting.phase === 'targeting') {
+      this.cancelTargeting();
+    }
+
     const state = this.simulation.getState();
     const targetX = state.player.x + dx;
     const targetY = state.player.y + dy;
@@ -319,9 +444,6 @@ export class GameSession {
   /** Задать удерживаемое направление движения. */
   setHeldDirection(dx: number, dy: number): void {
     this.heldDirection = {dx, dy};
-    if (this.renderPhase === 'idle' && this.mode === 'playing') {
-      this.moveOrAttack(dx, dy);
-    }
   }
 
   /** Сбросить удерживаемое направление. */
@@ -331,16 +453,16 @@ export class GameSession {
 
   /** Сигнал от UI: все анимации завершены. Разрешаем следующий ввод. */
   onAnimationsComplete(): void {
-    const hadAnimations = this.renderPhase === 'animating';
+    const hadAnimations = this.animation.phase === 'animating';
     if (hadAnimations) {
-      this.renderPhase = 'idle';
+      this.animation.phase = 'idle';
       this.lastResult = null; // сбрасываем анимации, чтобы не воспроизводить повторно
     }
 
     // Автоматический переход по лестнице после завершения анимаций
-    if (this.pendingAutoTransition && this.renderPhase === 'idle' && this.mode === 'playing') {
-      const pending = this.pendingAutoTransition;
-      this.pendingAutoTransition = null;
+    if (this.animation.pendingAutoTransition && this.animation.phase === 'idle' && this.mode === 'playing') {
+      const pending = this.animation.pendingAutoTransition;
+      this.animation.pendingAutoTransition = null;
       const transitionAction: GameAction =
         pending.direction === 'down'
           ? {type: 'DESCEND', entityId: 'player'}
@@ -349,7 +471,7 @@ export class GameSession {
       return;
     }
 
-    if (this.heldDirection && this.renderPhase === 'idle' && this.mode === 'playing') {
+    if (this.heldDirection && this.animation.phase === 'idle' && this.mode === 'playing') {
       this.moveOrAttack(this.heldDirection.dx, this.heldDirection.dy);
     } else if (hadAnimations) {
       this.notify();
@@ -362,7 +484,7 @@ export class GameSession {
     this.mode = 'mainMenu';
     this.lastResult = null;
     this.portraitId = null;
-    this.renderPhase = 'idle';
+    this.animation.phase = 'idle';
     this.clearLogs();
     this.notify();
   }
@@ -379,8 +501,7 @@ export class GameSession {
   }
 
   private clearLogs(): void {
-    this.logs = [];
-    this.nextLogId.value = 1;
+    this.logs.clear();
   }
 
   /**

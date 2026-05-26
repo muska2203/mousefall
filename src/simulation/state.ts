@@ -22,6 +22,7 @@ import type {
   EntityType,
   GameState,
   PlayerEntity,
+  EnemyEntity,
   Position,
   TileType,
 } from './types';
@@ -43,6 +44,7 @@ export function createInitialPlayer(): PlayerEntity {
     id: PLAYER_ID,
     type: 'player',
     blocksMovement: true,
+    displayName: 'Герой',
     x: 0,
     y: 0,
     hp: 100,
@@ -67,6 +69,7 @@ export function createInitialPlayer(): PlayerEntity {
     accuracy: 0,
     critChance: 0,
     critMultiplier: 1.5,
+    abilities: [],
   };
 }
 
@@ -219,4 +222,12 @@ export function findStairsAt(state: GameState, x: number, y: number, direction?:
 export function nextEntityId(state: GameState, prefix: string): EntityId {
   const counter = ++state.nextEntityCounter;
   return `${prefix}_${counter}`;
+}
+
+/**
+ * Type guard: проверяет, что сущность — игрок или враг (CombatEntity).
+ * Используется в skill executors перед вызовом damageFormulas.
+ */
+export function isCombatEntity(e: Entity): e is PlayerEntity | EnemyEntity {
+  return e.type === 'player' || e.type === 'enemy';
 }

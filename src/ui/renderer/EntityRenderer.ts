@@ -6,7 +6,7 @@
  */
 
 import {Container, Sprite, Texture} from 'pixi.js';
-import type {RenderInput, Position} from '@presentation/types';
+import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {getPlayerSprite, getEnemySprite, getStairsSprite} from './spriteRegistry';
 import {getTextureSync, getTexture} from './TextureCache';
@@ -28,45 +28,59 @@ export class EntityRenderer {
    *  Текстуры подгружаются фоново, если их ещё нет в кеше. */
   update(input: RenderInput): void {
     const state = input.state;
-    const visibleIds = new Set<string>();
+    const existingIds = new Set<string>();
     const texturePaths = new Map<string, string>();
 
-    const playerPath = getPlayerSprite(input.portraitId);
-    texturePaths.set(playerPath, playerPath);
-    visibleIds.add(state.player.id);
-
-    for (const entity of state.entities.values()) {
-      if (entity.type === 'enemy') {
-        const path = getEnemySprite(entity.templateId);
-        texturePaths.set(path, path);
-        visibleIds.add(entity.id);
-      }
-      if (entity.type === 'stairs') {
-        const path = getStairsSprite(entity.direction);
-        texturePaths.set(path, path);
-        visibleIds.add(entity.id);
+    // Собираем ID сущностей, для которых запланированы анимации.
+    // Не обновляем их позицию и не удаляем спрайт до завершения анимации,
+    // чтобы избежать мигания в конечной позиции или преждевременного исчезновения.
+    const animatedIds = new Set<string>();
+    if (input.animations) {
+      for (const phase of input.animations) {
+        for (const node of phase) {
+          collectAnimatedEntityIds(node, animatedIds);
+        }
       }
     }
 
+    const playerPath = getPlayerSprite(input.portraitId);
+    texturePaths.set(playerPath, playerPath);
+
+    // Игрок всегда виден себе
     const playerTexture = getTextureSync(playerPath);
-    this.renderEntitySync(state.player.id, state.player.x, state.player.y, playerTexture, playerPath);
+    this.renderEntitySync(state.player.id, state.player.x, state.player.y, playerTexture, playerPath, animatedIds);
+    const playerSprite = this.sprites.get(state.player.id);
+    if (playerSprite) playerSprite.visible = true;
+    existingIds.add(state.player.id);
 
     for (const entity of state.entities.values()) {
       if (entity.type === 'enemy') {
         const path = getEnemySprite(entity.templateId);
+        texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds);
+        const sprite = this.sprites.get(entity.id);
+        if (sprite && !this.activeAnimations.has(entity.id)) {
+          sprite.visible = isCellVisible(state, entity.x, entity.y);
+        }
+        existingIds.add(entity.id);
       }
       if (entity.type === 'stairs') {
         const path = getStairsSprite(entity.direction);
+        texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds);
+        const sprite = this.sprites.get(entity.id);
+        if (sprite && !this.activeAnimations.has(entity.id)) {
+          sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
+        }
+        existingIds.add(entity.id);
       }
     }
 
     // Удаляем спрайты для исчезнувших сущностей
     for (const [id, sprite] of this.sprites) {
-      if (!visibleIds.has(id)) {
+      if (!existingIds.has(id) && !animatedIds.has(id)) {
         sprite.destroy();
         this.sprites.delete(id);
         this.activeAnimations.delete(id);
@@ -85,6 +99,7 @@ export class EntityRenderer {
 
       this.cancelAnimationFor(entityId);
 
+      sprite.visible = true;
       sprite.x = from.x * TILE_SIZE;
       sprite.y = from.y * TILE_SIZE;
 
@@ -125,6 +140,8 @@ export class EntityRenderer {
 
       this.cancelAnimationFor(entityId);
 
+      sprite.visible = true;
+
       const tween = new Tween({
         duration: config.duration,
         easing: config.easing,
@@ -147,6 +164,44 @@ export class EntityRenderer {
     });
   }
 
+  /** Анимация каста способности: пульсация спрайта (scale up → down). */
+  animateCast(entityId: string, config: AnimationConfigEntry): Promise<void> {
+    return new Promise((resolve) => {
+      const sprite = this.sprites.get(entityId);
+      if (!sprite) {
+        resolve();
+        return;
+      }
+
+      this.cancelAnimationFor(entityId);
+
+      sprite.visible = true;
+
+      const startScale = sprite.scale.x;
+      const peakScale = startScale * 1.3;
+
+      const tween = new Tween({
+        duration: config.duration,
+        easing: config.easing,
+        onUpdate: (p) => {
+          // Подъём до 0.5, затем спуск
+          const t = p < 0.5 ? p * 2 : (1 - p) * 2;
+          const s = lerp(startScale, peakScale, t);
+          sprite.scale.set(s);
+        },
+        onComplete: () => {
+          sprite.scale.set(startScale);
+          this.activeAnimations.delete(entityId);
+          resolve();
+        },
+      });
+
+      const anim: ActiveAnimation = { tween, onComplete: resolve };
+      this.activeAnimations.set(entityId, anim);
+      tween.start(performance.now());
+    });
+  }
+
   /** Анимация смерти: fade-out + scale-down. Удаляет спрайт по завершении. */
   animateDeath(entityId: string, config: AnimationConfigEntry): Promise<void> {
     return new Promise((resolve) => {
@@ -157,6 +212,8 @@ export class EntityRenderer {
       }
 
       this.cancelAnimationFor(entityId);
+
+      sprite.visible = true;
 
       const startAlpha = sprite.alpha;
       const startScale = sprite.scale.x;
@@ -226,7 +283,7 @@ export class EntityRenderer {
     }
   }
 
-  private renderEntitySync(id: string, x: number, y: number, texture: Texture | undefined, path: string): void {
+  private renderEntitySync(id: string, x: number, y: number, texture: Texture | undefined, path: string, animatedIds: Set<string>): void {
     let sprite = this.sprites.get(id);
     if (!sprite) {
       sprite = new Sprite(texture ?? Texture.EMPTY);
@@ -248,11 +305,39 @@ export class EntityRenderer {
         .catch(() => {});
     }
 
-    // Не трогаем позицию, если идёт анимация
-    if (!this.activeAnimations.has(id)) {
+    // Не трогаем позицию, если идёт активная анимация или запланирована новая
+    if (!this.activeAnimations.has(id) && !animatedIds.has(id)) {
       sprite.x = x * TILE_SIZE;
       sprite.y = y * TILE_SIZE;
     }
-    sprite.visible = true;
+  }
+}
+
+function isCellVisible(state: RenderInput['state'], x: number, y: number): boolean {
+  return state.visible[y]?.[x] ?? false;
+}
+
+function isCellExploredOrVisible(state: RenderInput['state'], x: number, y: number): boolean {
+  return (state.visible[y]?.[x] ?? false) || (state.explored[y]?.[x] ?? false);
+}
+
+/** Рекурсивно собирает entityId из деревьев анимаций, для которых запланированы анимации спрайтов. */
+function collectAnimatedEntityIds(node: AnimationNode, out: Set<string>): void {
+  switch (node.step.type) {
+    case 'MOVE':
+      out.add(node.step.entityId);
+      break;
+    case 'ATTACK':
+      out.add(node.step.attackerId);
+      break;
+    case 'DEATH':
+      out.add(node.step.entityId);
+      break;
+    case 'ABILITY_CAST':
+      out.add(node.step.entityId);
+      break;
+  }
+  for (const child of node.children) {
+    collectAnimatedEntityIds(child, out);
   }
 }

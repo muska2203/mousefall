@@ -12,8 +12,8 @@
 
 import type {GameEvent, GameState, SimulationResult, TurnSide} from '@simulation/types';
 import type {ExecutionNode} from '@simulation/systems/actions/types';
-import {tryGetEntity} from '@simulation/content/registry';
-import type {LogItem} from './gameSession';
+
+
 
 export function extractEvents(result: SimulationResult): GameEvent[] {
   const events: GameEvent[] = [];
@@ -26,7 +26,7 @@ export function extractEvents(result: SimulationResult): GameEvent[] {
 }
 
 function walkExecutionTree(node: ExecutionNode, out: GameEvent[], side: TurnSide): void {
-  if (side === 'PLAYER' || isEventRelevantToPlayer(node.event)) {
+  if (side === 'PLAYER' || side === 'STATUS_TICK' || isEventRelevantToPlayer(node.event)) {
     out.push(node.event);
   }
   for (const child of node.children) {
@@ -48,50 +48,39 @@ function isEventRelevantToPlayer(event: GameEvent): boolean {
 export function gameEventToLog(
   state: GameState,
   event: GameEvent,
-  nextLogId: {value: number},
-): LogItem | null {
+): { text: string; variant?: 'loot' | 'good' | 'bad' | 'info' } | null {
   switch (event.type) {
     case 'ENTITY_MOVED': {
       const name = getEntityDisplayName(state, event.entityId);
-      return {id: nextLogId.value++, text: `${name} переместился`, variant: 'info'};
+      return { text: `${name} переместился`, variant: 'info' };
     }
     case 'ACTION_APPLIED': {
       const action = event.action;
       if (action.type === 'ATTACK') {
         const name = getEntityDisplayName(state, action.entityId);
-        return {id: nextLogId.value++, text: `${name} атаковал`, variant: 'info'};
+        return { text: `${name} атаковал`, variant: 'info' };
       }
       return null;
     }
     case 'ENTITY_DAMAGED': {
       const name = getEntityDisplayName(state, event.targetId);
       return {
-        id: nextLogId.value++,
         text: `${name} получил ${event.damage} урона`,
         variant: event.targetId === 'player' ? 'bad' : 'good',
       };
     }
     case 'ENTITY_DIED': {
       const name = getEntityDisplayName(state, event.entityId);
-      return {id: nextLogId.value++, text: `${name} погиб`, variant: 'bad'};
+      return { text: `${name} погиб`, variant: 'bad' };
     }
     case 'PLAYER_DIED':
-      return {id: nextLogId.value++, text: 'Герой погиб', variant: 'bad'};
+      return { text: 'Герой погиб', variant: 'bad' };
     default:
       return null;
   }
 }
 
 function getEntityDisplayName(state: GameState, entityId: string): string {
-  if (entityId === 'player') return 'Герой';
   const entity = state.entities.get(entityId);
-  if (entity && 'templateId' in entity) {
-    try {
-      const template = tryGetEntity(entity.templateId);
-      if (template?.name) return template.name;
-    } catch {
-      // Реестр не инициализирован — используем fallback
-    }
-  }
-  return 'Враг';
+  return entity?.displayName ?? (entityId === 'player' ? 'Герой' : 'Враг');
 }

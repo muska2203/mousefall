@@ -11,6 +11,7 @@
  */
 
 import {Container, Text, TextStyle} from 'pixi.js';
+import { FONT_PANEL_TITLE } from './fonts';
 import {Tween, Easing} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 
@@ -21,24 +22,29 @@ type ActiveFloatingText = {
 
 export class FloatingTextRenderer {
   public readonly container = new Container();
+  /** Мировые координаты текстовых элементов (для syncTextLayer в WorldRenderer). */
+  public readonly textWorldCoords = new WeakMap<any, { worldX: number; worldY: number }>();
   private activeTexts: ActiveFloatingText[] = [];
 
   /** Показать всплывающий текст в мировых координатах.
    *  worldX/worldY — мировые пиксели (не тайлы). */
-  show(text: string, worldX: number, worldY: number, color: string, duration: number): void {
+  show(text: string, worldX: number, worldY: number, color: string, duration: number, zoom: number): void {
     const textObj = new Text({
       text,
       style: new TextStyle({
-        fontSize: 14,
+        fontFamily: FONT_PANEL_TITLE,
+        fontSize: Math.round(14 * zoom),
         fill: color,
         fontWeight: 'bold',
       }),
+      resolution: window.devicePixelRatio || 1,
     });
+    textObj.roundPixels = true;
 
     // Центр по X, низ по Y: текст "растёт" вверх от точки (worldX, worldY)
     textObj.anchor.set(0.5, 1);
-    textObj.x = worldX;
-    textObj.y = worldY;
+    // Позиция будет установлена syncTextLayer() через textWorldCoords
+    this.textWorldCoords.set(textObj, { worldX, worldY });
 
     this.container.addChild(textObj);
 
@@ -46,7 +52,7 @@ export class FloatingTextRenderer {
       duration,
       easing: Easing.easeOutQuad,
       onUpdate: (p) => {
-        textObj.y = worldY - 24 * p;
+        this.textWorldCoords.set(textObj, { worldX, worldY: worldY - 24 * p });
         textObj.alpha = 1 - p;
       },
       onComplete: () => {

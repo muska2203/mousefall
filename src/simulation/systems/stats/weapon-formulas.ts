@@ -50,7 +50,7 @@ export function getWeaponDamage(owner: PlayerEntity, weapon: ItemTemplate | null
   const formulaId = weapon?.weapon?.damageFormulaId ?? 'unarmed';
   const formula = weaponFormulas[formulaId] ?? weaponFormulas.unarmed;
   if (!formula) return 0;
-  return Math.max(0, formula(owner, weapon));
+  return Math.max(0, Math.round(formula(owner, weapon)));
 }
 
 /**

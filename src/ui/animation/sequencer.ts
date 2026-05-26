@@ -42,9 +42,14 @@ export class AnimationSequencer {
     Object.assign(this.context, partial);
   }
 
-  run(nodes: AnimationNode[]): AnimationRunResult {
+  run(phases: AnimationNode[][]): AnimationRunResult {
     this.cancelled = false;
-    this.remainingBlocking = countBlockingNodes(nodes);
+
+    let totalBlocking = 0;
+    for (const phase of phases) {
+      totalBlocking += countBlockingNodes(phase);
+    }
+    this.remainingBlocking = totalBlocking;
 
     this.blockingPromise = new Promise<void>((resolve) => {
       this.blockingResolve = resolve;
@@ -54,11 +59,15 @@ export class AnimationSequencer {
       this.blockingResolve?.();
     }
 
-    const allPromise = Promise.all(nodes.map((node) => this.runNode(node))).then(() => {
+    const allPromise = (async () => {
+      for (const phase of phases) {
+        if (this.cancelled) break;
+        await Promise.all(phase.map((node) => this.runNode(node)));
+      }
       if (!this.cancelled && this.remainingBlocking === 0 && this.blockingResolve) {
         (this.blockingResolve as (() => void))();
       }
-    });
+    })();
 
     return {
       blockingDone: this.blockingPromise,

@@ -18,11 +18,14 @@ export type AnimationConfigEntry = {
 export const ANIMATION_CONFIG = {
   MOVE: { duration: 200, blocking: true, easing: Easing.linear },
   ATTACK: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
-  DAMAGE: { duration: 400, blocking: true, easing: Easing.linear },
+  DAMAGE: { duration: 800, blocking: true, easing: Easing.linear },
   DEATH: { duration: 300, blocking: true, easing: Easing.easeInQuad },
   FOG_UPDATE: { duration: 150, blocking: false, easing: Easing.linear },
   PARTICLE_BURST: { duration: 300, blocking: false, easing: Easing.easeOutQuad },
   UI_FLOATING_TEXT: { duration: 600, blocking: false, easing: Easing.linear },
+  ABILITY_CAST: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
+  PROJECTILE: { duration: 300, blocking: true, easing: Easing.easeOutQuad },
+  EXPLOSION: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
 } as const satisfies Record<string, AnimationConfigEntry>;
 
 export type AnimationConfigKey = keyof typeof ANIMATION_CONFIG;

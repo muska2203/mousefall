@@ -9,8 +9,8 @@
  * - Возвращает события, описывающие произошедшее
  */
 
-import type {GameState} from '../../types.ts';
-import {findEntity, isBlocked} from '../../state.ts';
+import type {GameState} from '@simulation/types.ts';
+import {findEntity, isBlocked} from '@simulation/state.ts';
 import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";

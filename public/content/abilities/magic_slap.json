@@ -1,0 +1,17 @@
+{
+  "id": "magic_slap",
+  "name": "Магический шлёпок",
+  "description": "Три быстрых удара магией по выбранным целям.",
+  "symbol": "!",
+  "spriteId": "magic_slap",
+  "targetType": "ranged",
+  "range": 5,
+  "aoeRadius": 0,
+  "cooldown": 2,
+  "mpCost": 8,
+  "apCost": 1,
+  "effect": {
+    "type": "damage",
+    "value": 12
+  }
+}

@@ -11,98 +11,149 @@
  * - Неанимированные события пропускаются; их дети поднимаются как сиблинги к ближайшему анимированному предку.
  */
 
-import type { SimulationResult, GameEvent } from '@simulation/types';
+import type { SimulationResult, GameEvent, GameState } from '@simulation/types';
 import type { ExecutionNode } from '@simulation/systems/actions/types';
 import type { AnimationStep, AnimationNode } from './types';
+import { filterByFOV } from './fogFilter';
 
-type StepBuilder = (event: GameEvent) => AnimationStep | null;
+type AnimationBuilder = (event: GameEvent, childNodes: AnimationNode[]) => AnimationNode[] | null;
 
-const builders = new Map<string, StepBuilder>();
+const builders = new Map<string, AnimationBuilder>();
 
 /** Зарегистрировать builder для конкретного типа GameEvent.
  *  Используется для расширения системы новыми анимациями без правки ядра. */
-export function registerAnimationBuilder(eventType: string, builder: StepBuilder): void {
+export function registerAnimationBuilder(eventType: string, builder: AnimationBuilder): void {
   builders.set(eventType, builder);
 }
 
 // ── Стандартные builders ───────────────────────────────────────────
 
-registerAnimationBuilder('ENTITY_MOVED', (event) => {
+registerAnimationBuilder('ENTITY_MOVED', (event, children) => {
   if (event.type !== 'ENTITY_MOVED') return null;
-  return {
-    type: 'MOVE',
-    entityId: event.entityId,
-    from: event.from,
-    to: event.to,
-  };
+  return [{
+    step: {
+      type: 'MOVE',
+      entityId: event.entityId,
+      from: event.from,
+      to: event.to,
+    },
+    children,
+  }];
 });
 
-registerAnimationBuilder('ACTION_APPLIED', (event) => {
+registerAnimationBuilder('ACTION_APPLIED', (event, children) => {
   if (event.type !== 'ACTION_APPLIED') return null;
   const action = event.action;
   if (action.type === 'ATTACK') {
-    return {
-      type: 'ATTACK',
-      attackerId: action.entityId,
-      dx: action.dx,
-      dy: action.dy,
-    };
+    return [{
+      step: {
+        type: 'ATTACK',
+        attackerId: action.entityId,
+        dx: action.dx,
+        dy: action.dy,
+      },
+      children,
+    }];
   }
   return null;
 });
 
-registerAnimationBuilder('ENTITY_DAMAGED', (event) => {
+registerAnimationBuilder('ENTITY_DAMAGED', (event, children) => {
   if (event.type !== 'ENTITY_DAMAGED') return null;
-  return {
-    type: 'DAMAGE',
-    targetId: event.targetId,
-    amount: event.damage,
-    position: event.position,
-  };
+  return [{
+    step: {
+      type: 'DAMAGE',
+      targetId: event.targetId,
+      amount: event.damage,
+      position: event.position,
+    },
+    children,
+  }];
 });
 
-registerAnimationBuilder('ENTITY_DIED', (event) => {
+registerAnimationBuilder('ENTITY_DIED', (event, children) => {
   if (event.type !== 'ENTITY_DIED') return null;
-  return {
-    type: 'DEATH',
-    entityId: event.entityId,
-  };
+  return [{
+    step: {
+      type: 'DEATH',
+      entityId: event.entityId,
+    },
+    children,
+  }];
 });
 
-registerAnimationBuilder('FOG_UPDATED', (event) => {
+registerAnimationBuilder('FOG_UPDATED', (event, children) => {
   if (event.type !== 'FOG_UPDATED') return null;
-  return {
-    type: 'FOG_UPDATE',
-    newlyVisible: event.newlyVisible,
+  return [{
+    step: {
+      type: 'FOG_UPDATE',
+      newlyVisible: event.newlyVisible,
+    },
+    children,
+  }];
+});
+
+registerAnimationBuilder('ABILITY_USED', (event, children) => {
+  if (event.type !== 'ABILITY_USED') return null;
+
+  const castStep: AnimationStep = {
+    type: 'ABILITY_CAST',
+    entityId: event.entityId,
+    abilityId: event.abilityId,
+    targets: event.targets,
+    from: event.from,
   };
+
+  if (event.abilityId === 'fireball') {
+    const target = event.targets[0];
+    if (target) {
+      return [{
+        step: castStep,
+        children: [{
+          step: { type: 'PROJECTILE', from: event.from, to: target },
+          children: [{
+            step: { type: 'EXPLOSION', center: target, radius: 1 },
+            children,
+          }],
+        }],
+      }];
+    }
+  }
+
+  return [{ step: castStep, children }];
 });
 
 // ── Построение дерева ──────────────────────────────────────────────
 
-export function buildAnimationTree(result: SimulationResult): AnimationNode[] {
-  const roots: AnimationNode[] = [];
-  for (const phase of result.phases) {
+export function buildAnimationTree(result: SimulationResult, state: GameState): AnimationNode[][] {
+  const filtered = filterByFOV(result, state);
+  const phases: AnimationNode[][] = [];
+  for (const phase of filtered.phases) {
+    const phaseNodes: AnimationNode[] = [];
     for (const action of phase.actions) {
-      roots.push(...convertExecutionNode(action));
+      phaseNodes.push(...convertExecutionNode(action));
+    }
+    if (phaseNodes.length > 0) {
+      phases.push(phaseNodes);
     }
   }
-  return roots;
+  return phases;
 }
 
 /** Рекурсивно конвертирует ExecutionNode в AnimationNode[].
  *  Если текущее событие не маппится в шаг — узел "растворяется",
- *  а его дети поднимаются как сиблинги к родителю (flatten up). */
+ *  а его дети поднимаются как сиблинги к ближайшему анимированному предку. */
 function convertExecutionNode(node: ExecutionNode): AnimationNode[] {
   const builder = builders.get(node.event.type);
-  const step = builder ? builder(node.event) : null;
 
   const childNodes: AnimationNode[] = [];
   for (const child of node.children) {
     childNodes.push(...convertExecutionNode(child));
   }
 
-  if (step) {
-    return [{ step, children: childNodes }];
+  if (builder) {
+    const nodes = builder(node.event, childNodes);
+    if (nodes) return nodes;
   }
 
   return childNodes;

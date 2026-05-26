@@ -112,3 +112,10 @@ export function tryGetEntity(id: string): EntityTemplate | undefined {
 export function tryGetItem(id: string): ItemTemplate | undefined {
   return getRegistry().items.get(id);
 }
+
+/**
+ * Попытаться получить шаблон способности. Возвращает undefined, если не найден.
+ */
+export function tryGetAbility(id: string): AbilityTemplate | undefined {
+  return getRegistry().abilities.get(id);
+}

@@ -55,6 +55,7 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
   return {
     id: PLAYER_ID,
     type: 'player',
+    displayName: 'Герой',
     x: 5,
     y: 5,
     hp: 100,
@@ -80,6 +81,7 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     maxAp: 1,
     ap: 1,
     isAlive: true,
+    abilities: [],
     ...overrides,
   };
 }
@@ -88,6 +90,7 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
   return {
     id: 'enemy_test_1',
     type: 'enemy',
+    displayName: 'Тестовый враг',
     x: 3,
     y: 3,
     hp: 20,
@@ -101,6 +104,7 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     maxAp: 1,
     ap: 1,
     isAlive: true,
+    abilities: [],
     ...overrides,
   };
 }
@@ -109,6 +113,7 @@ export function makeFloorItem(overrides: Partial<ItemEntity> = {}): ItemEntity {
   return {
     id: 'item_test_1',
     type: 'item',
+    displayName: 'Зелье здоровья',
     x: 4,
     y: 4,
     templateId: 'health_potion',

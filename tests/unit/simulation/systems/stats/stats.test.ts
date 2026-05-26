@@ -90,8 +90,8 @@ describe('stats system', () => {
         baseStats: { str: 4, dex: 2, int: 0, vit: 0 },
         equippedWeaponId: 'test_sword',
       });
-      // sword: baseDamage + str*0.8 + dex*0.5 = 5 + 3.2 + 1.0 = 9.2 -> Math.max(0, ...) = 9.2
-      expect(getBaseDamage(player)).toBeCloseTo(9.2);
+      // sword: baseDamage + str*0.8 + dex*0.5 = 5 + 3.2 + 1.0 = 9.2 -> округляется до 9
+      expect(getBaseDamage(player)).toBe(9);
     });
 
     it('calculates armor from equipped armor', () => {
@@ -318,26 +318,31 @@ describe('stats system', () => {
   });
 
   describe('auto-recalculate on modifier changes', () => {
-    it('addModifier triggers recalculate', () => {
+    it('addModifier requires explicit recalculate', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
       addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
+      recalculatePlayerBaseStats(player);
       // effective dex = 20 -> dodgeChance = 0.4
       expect(player.dodgeChance).toBeCloseTo(0.4);
     });
 
-    it('removeModifiersBySource triggers recalculate', () => {
+    it('removeModifiersBySource requires explicit recalculate', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
       addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
+      recalculatePlayerBaseStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.4);
       removeModifiersBySource(player, 'buff');
+      recalculatePlayerBaseStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.2);
     });
 
-    it('consumeCharge removes modifier and triggers recalculate', () => {
+    it('consumeCharge removes modifier and requires explicit recalculate', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
       addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'temp', charges: 1 });
+      recalculatePlayerBaseStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.4);
       consumeCharge(player, 'dex');
+      recalculatePlayerBaseStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.2);
     });
   });

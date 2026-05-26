@@ -21,13 +21,10 @@ describe('moveEntity — player movement', () => {
         expect(intents.length).toBe(1);
         expect(intents[0]).toBeDefined();
         const intent = intents[0];
-        if (intent !== undefined) {
-            expect(intent.type).toEqual('MOVE');
+        if (intent !== undefined && intent.type === 'MOVE') {
             expect(intent.entityId).toEqual(player.id);
-            if (intent.type === 'MOVE') {
-                expect(intent.dx).toEqual(1);
-                expect(intent.dy).toEqual(1);
-            }
+            expect(intent.dx).toEqual(1);
+            expect(intent.dy).toEqual(1);
         }
     });
 
@@ -83,13 +80,10 @@ describe('moveEntity — enemy movement', () => {
         expect(intents.length).toBe(1);
         expect(intents[0]).toBeDefined();
         const intent = intents[0];
-        if (intent !== undefined) {
-            expect(intent.type).toEqual('MOVE');
+        if (intent !== undefined && intent.type === 'MOVE') {
             expect(intent.entityId).toEqual(entity.id);
-            if (intent.type === 'MOVE') {
-                expect(intent.dx).toEqual(1);
-                expect(intent.dy).toEqual(0);
-            }
+            expect(intent.dx).toEqual(1);
+            expect(intent.dy).toEqual(0);
         }
     });
 
