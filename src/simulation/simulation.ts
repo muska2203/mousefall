@@ -61,7 +61,7 @@ export class GameSimulation implements Simulation {
         config: CharacterConfig,
         mapParams: MapParams,
     ): GameSimulation {
-        const state = createNewGameState(seed, mapParams);
+        const state = createNewGameState(seed, mapParams, config.templateId);
         applyCharacterConfig(state.player, config);
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
         simulation.generateMap(mapParams);
@@ -84,7 +84,7 @@ export class GameSimulation implements Simulation {
     static previewCharacterStats(
         config: CharacterConfig,
     ): import("@simulation/types.ts").PlayerStatsSnapshot {
-        const player = createInitialPlayer();
+        const player = createInitialPlayer(config.templateId);
         applyCharacterConfig(player, config);
         recalculatePlayerBaseStats(player);
         const effective = getEffectiveBaseStats(player);

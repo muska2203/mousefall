@@ -38,17 +38,16 @@ This means:
 public/content/
 ├── entities/
 │   ├── enemies/
-│   │   ├── goblin.json
-│   │   ├── orc.json
-│   │   └── skeleton.json
+│   │   ├── cat_small.json
+│   │   ├── cat_mid.json
+│   │   └── cat_big.json
 │   └── player/
-│       └── player.json
+│       └── witcher.json
 ├── items/
 │   ├── weapons/
 │   │   ├── sword.json
 │   │   └── dagger.json
 │   ├── armor/
-│   │   └── leather_armor.json
 │   └── consumables/
 │       ├── health_potion.json
 │       └── scroll_of_fireball.json
@@ -82,7 +81,7 @@ public/content/
 
 Все схемы используют Zod для runtime-валидации.
 
-**Примеры JSON-контента:** см. `public/content/entities/enemies/goblin.json`, `public/content/items/consumables/health_potion.json`, `public/content/maps/dungeon_params.json`.
+**Примеры JSON-контента:** см. `public/content/entities/enemies/cat_small.json`, `public/content/items/consumables/health_potion.json`, `public/content/maps/default.json`.
 
 ---
 
@@ -115,7 +114,7 @@ Presentation Layer вызывает loadContent()
 Game initializes (content is available)
     │
     ▼
-Simulation uses getEntityTemplate('goblin') etc.
+Simulation uses getEntityTemplate('cat_small') etc.
 ```
 
 **Fail fast:** If any content file is invalid, the game refuses to start and shows a clear error. This prevents silent content bugs.

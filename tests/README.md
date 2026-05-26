@@ -36,7 +36,7 @@ tests/
 └── fixtures/
     ├── states.ts     # Pre-built GameState objects for testing
     ├── maps.ts       # Pre-built map grids (open, walled, maze)
-    └── entities.ts   # Pre-built entity objects (player, goblin, etc.)
+    └── entities.ts   # Pre-built entity objects (player, cat_small, etc.)
 ```
 
 ---

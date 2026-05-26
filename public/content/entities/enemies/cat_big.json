@@ -15,7 +15,7 @@
     "sightRange": 10,
     "chaseRange": 15
   },
-  "lootTable": ["health_potion", "short_sword", "leather_armor"],
+  "lootTable": ["health_potion", "common_splinter_blade", "common_tin_plate"],
   "xpReward": 40,
   "renderScale": 1.3
 }

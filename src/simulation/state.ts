@@ -39,13 +39,13 @@ import {PLAYER_ID} from '../utils/constants';
  * Генерация карты здесь НЕ выполняется — вызовите generateMap() отдельно
  * и передайте результат в createStateForFloor().
  */
-export function createInitialPlayer(): PlayerEntity {
+export function createInitialPlayer(templateId: string): PlayerEntity {
   return {
     id: PLAYER_ID,
     type: 'player',
     blocksMovement: true,
     displayName: 'Герой',
-    templateId: 'player',
+    templateId,
     x: 0,
     y: 0,
     hp: 100,
@@ -92,10 +92,10 @@ export function createTileGrid(width: number, height: number): TileType[][] {
  * Создаёт минимально валидный GameState.
  * Используется как база перед тем, как генерация карты заполнит карту и позиции сущностей.
  */
-export function createNewGameState(seed: number, mapParams: MapParams): GameState {
+export function createNewGameState(seed: number, mapParams: MapParams, playerTemplateId: string): GameState {
   const mapWidth = mapParams.width;
   const mapHeight = mapParams.height;
-  const player = createInitialPlayer();
+  const player = createInitialPlayer(playerTemplateId);
 
   return {
     map: {

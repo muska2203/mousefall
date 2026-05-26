@@ -15,7 +15,7 @@
     "sightRange": 7,
     "chaseRange": 10
   },
-  "lootTable": ["health_potion", "short_sword"],
+  "lootTable": ["health_potion", "common_splinter_blade"],
   "xpReward": 18,
   "renderScale": 1.5
 }

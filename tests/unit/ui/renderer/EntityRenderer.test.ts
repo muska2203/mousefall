@@ -60,7 +60,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     id: 'player' as const,
     type: 'player' as const,
     displayName: 'Герой',
-    templateId: 'player',
+    templateId: 'witcher',
     x: 0,
     y: 0,
     blocksMovement: true as const,

@@ -63,7 +63,7 @@ Load sequence:
 Content errors are **fatal** — the game will not start with invalid content:
 
 ```
-ContentLoadError: Invalid entity in public/content/entities/enemies/goblin.json
+ContentLoadError: Invalid entity in public/content/entities/enemies/cat_small.json
   health.max: Expected number, received string
 ```
 
@@ -78,7 +78,7 @@ For unit tests, use `initRegistryFromData()` to inject mock content without fetc
 ```typescript
 // In test setup
 initRegistryFromData({
-  entities: new Map([['goblin', mockGoblinTemplate]]),
+  entities: new Map([['cat_small', mockCatSmallTemplate]]),
   items: new Map([['health_potion', mockPotionTemplate]]),
   abilities: new Map(),
   maps: new Map([['dungeon_floor', mockMapParams]]),

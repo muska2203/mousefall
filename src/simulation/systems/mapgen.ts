@@ -111,7 +111,7 @@ export function generateMap(params: MapParams, state: GameState, currentFloor: n
 
     // Враги
     if (rngChance(rng, params.enemyDensity * 100)) {
-      const templateId = params.enemyPool[rngInt(rng, 0, params.enemyPool.length - 1)] ?? 'goblin';
+      const templateId = params.enemyPool[rngInt(rng, 0, params.enemyPool.length - 1)] ?? 'cat_small';
       const pos = randomPosInRoom(rng, room);
       enemies.push(createEnemy(state, templateId, pos.x, pos.y));
     }

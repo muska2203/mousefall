@@ -16,13 +16,11 @@ public/content/
 │
 ├── entities/
 │   ├── enemies/
-│   │   ├── goblin.json        # Weak melee enemy, aggressive AI
-│   │   ├── orc.json           # Tough melee enemy, aggressive AI
-│   │   ├── skeleton.json      # Undead ranged enemy, aggressive AI
-│   │   ├── troll.json         # Boss-tier enemy, aggressive AI
-│   │   └── rat.json           # Weak passive enemy, passive AI
+│   │   ├── cat_small.json     # Weak melee enemy, aggressive AI
+│   │   ├── cat_mid.json       # Medium melee enemy, aggressive AI
+│   │   └── cat_big.json       # Boss-tier enemy, aggressive AI
 │   └── player/
-│       └── player.json        # Player base stats
+│       └── witcher.json       # Witcher player template
 │
 ├── items/
 │   ├── weapons/
@@ -31,7 +29,6 @@ public/content/
 │   │   ├── axe.json           # Slow, high damage
 │   │   └── staff.json         # Magic weapon
 │   ├── armor/
-│   │   ├── leather_armor.json # Light armor, low defense
 │   │   ├── chain_mail.json    # Medium armor
 │   │   └── plate_armor.json   # Heavy armor, high defense
 │   └── consumables/
@@ -55,7 +52,7 @@ public/content/
 ## File Format Rules
 
 1. **One entity per file** — easier to diff, easier to mod
-2. **Filename = entity ID** — `goblin.json` has `"id": "goblin"`
+2. **Filename = entity ID** — `cat_small.json` has `"id": "cat_small"`
 3. **IDs must be unique** across all content types
 4. **All fields validated** by Zod schemas at load time
 5. **No comments in JSON** — use `description` field for notes
@@ -66,23 +63,23 @@ public/content/
 
 ```json
 {
-  "id": "goblin",
-  "name": "Goblin",
-  "symbol": "g",
-  "spriteId": "enemy_goblin",
+  "id": "cat_small",
+  "name": "Котёнок-разбойник",
+  "symbol": "c",
+  "spriteId": "cat_small",
   "health": { "max": 15 },
   "combat": {
-    "damage": 3,
+    "damage": 4,
     "armor": 0,
     "attackRange": 1
   },
   "ai": {
     "type": "aggressive",
-    "sightRange": 6,
-    "chaseRange": 10
+    "sightRange": 5,
+    "chaseRange": 8
   },
-  "lootTable": ["gold_small", "health_potion"],
-  "xpReward": 10
+  "lootTable": ["health_potion"],
+  "xpReward": 8
 }
 ```
 
@@ -122,7 +119,7 @@ public/content/
   "maxRoomSize": 10,
   "enemyDensity": 0.3,
   "itemDensity": 0.1,
-  "enemyPool": ["goblin", "orc", "skeleton"],
+  "enemyPool": ["cat_small", "cat_mid", "cat_big"],
   "itemPool": ["health_potion", "sword", "gold_small"]
 }
 ```

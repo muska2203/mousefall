@@ -38,7 +38,7 @@ function makeMap(width: number, height: number, tiles: TileType[][]): GameMap {
 
 describe('computeFOV', () => {
   it('возвращает видимые позиции из заданной точки', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
 
     const visible = computeFOV(state, 2, 2, 8);
@@ -52,7 +52,7 @@ describe('computeFOV', () => {
   });
 
   it('не включает клетки за стеной', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(5, 3, [
       ['wall', 'wall', 'wall', 'wall', 'wall'],
       ['wall', 'floor', 'wall', 'floor', 'wall'],
@@ -68,7 +68,7 @@ describe('computeFOV', () => {
   });
 
   it('учитывает радиус', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(7, 7, makeWalledGrid(7, 7));
 
     const visible = computeFOV(state, 3, 3, 1);
@@ -88,7 +88,7 @@ describe('computeFOV', () => {
 
 describe('updateFOV', () => {
   it('видит все клетки в пустой комнате в пределах радиуса', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
     state.player.x = 2;
     state.player.y = 2;
@@ -105,7 +105,7 @@ describe('updateFOV', () => {
   });
 
   it('стена блокирует обзор за собой', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(5, 3, [
       ['wall', 'wall', 'wall', 'wall', 'wall'],
       ['wall', 'floor', 'wall', 'floor', 'wall'],
@@ -124,7 +124,7 @@ describe('updateFOV', () => {
   });
 
   it('видит соседние стены вплотную, включая по диагонали', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(3, 3, [
       ['wall', 'wall', 'wall'],
       ['wall', 'floor', 'wall'],
@@ -149,7 +149,7 @@ describe('updateFOV', () => {
   });
 
   it('добавляет клетки в explored при первом видении', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(3, 3, makeWalledGrid(3, 3));
     state.player.x = 1;
     state.player.y = 1;
@@ -167,7 +167,7 @@ describe('updateFOV', () => {
   });
 
   it('сбрасывает visible, но не explored при обновлении', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(3, 3, makeWalledGrid(3, 3));
     state.player.x = 1;
     state.player.y = 1;
@@ -187,7 +187,7 @@ describe('updateFOV', () => {
 
 describe('FOV в GameSimulation.dispatch', () => {
   it('порождает FOG_UPDATED в дереве событий при успешном ходе игрока', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
     state.player.x = 2;
     state.player.y = 2;
@@ -207,7 +207,7 @@ describe('FOV в GameSimulation.dispatch', () => {
   });
 
   it('не порождает FOG_UPDATED при неуспешном ходе', () => {
-    const state = createNewGameState(123, testMapParams);
+    const state = createNewGameState(123, testMapParams, 'witcher');
     state.map = makeMap(5, 5, makeWalledGrid(5, 5));
     state.player.x = 2;
     state.player.y = 2;

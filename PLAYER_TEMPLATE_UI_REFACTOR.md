@@ -9,7 +9,7 @@
   - Установки `player.templateId = config.portraitId` (после недавнего рефакторинга).
   - `GameSession.portraitId` — для отображения портрета в HeroPanel и EndingScreen.
 - **`src/ui/renderer/spriteRegistry.ts`** хардкодит путь к спрайту игрока: `/assets/actors/player_${portraitId}.png`.
-- **JSON-шаблон** `public/content/entities/player/player.json` существует, но он generic и не содержит данные о конкретных внешностях.
+- **JSON-шаблон** `public/content/entities/player/player.json` удалён. Все шаблоны игрока теперь полноценные классовые файлы в `public/content/entities/player/`.
 
 Проблемы:
 1. Добавление новой внешности требует правки **исходного кода** (`PORTRAITS` + `spriteRegistry.ts`).

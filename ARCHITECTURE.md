@@ -379,7 +379,7 @@ src/simulation/types.ts              # Types: lowercase
 src/presentation/gameSession.ts      # Presentation: PascalCase для классов
 src/ui/components/Grid.tsx           # React components: PascalCase
 src/ui/renderer/WorldRenderer.ts     # Renderer classes: PascalCase
-public/content/entities/goblin.json  # Content: lowercase
+public/content/entities/cat_small.json  # Content: lowercase
 ```
 
 ---

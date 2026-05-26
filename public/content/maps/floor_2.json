@@ -8,6 +8,6 @@
   "maxRoomSize": 12,
   "enemyDensity": 0.7,
   "itemDensity": 0.35,
-  "enemyPool": ["goblin", "orc"],
-  "itemPool": ["health_potion", "short_sword", "leather_armor"]
+  "enemyPool": ["cat_small", "cat_mid"],
+  "itemPool": ["health_potion", "common_splinter_blade", "common_tin_plate"]
 }

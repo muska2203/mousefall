@@ -186,8 +186,8 @@ Presentation → simulation.dispatch(ATTACK)
     ▼
 Simulation:
   ┌─ ACTION_APPLIED (ATTACK)
-  │  └─ ENTITY_DAMAGED (goblin, damage: 8)
-  │     └─ ENTITY_DIED (goblin)  ← deathReaction
+  │  └─ ENTITY_DAMAGED (cat_small, damage: 8)
+  │     └─ ENTITY_DIED (cat_small)  ← deathReaction
     │
     ▼
 Simulation обнаруживает: player.ap <= 0
@@ -196,7 +196,7 @@ Simulation обнаруживает: player.ap <= 0
 Simulation → runEnvironmentTurn
   ┌─ Для каждого живого AI:
   │  └─ AI решает действие (например, MOVE)
-  │     └─ ENTITY_MOVED (orc_1, (3,3) → (4,4))
+  │     └─ ENTITY_MOVED (cat_mid_1, (3,3) → (4,4))
     │
     ▼
 Simulation → beginNextPlayerTurn
