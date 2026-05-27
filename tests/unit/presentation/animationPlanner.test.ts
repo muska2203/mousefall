@@ -96,6 +96,28 @@ describe('buildAnimationTree', () => {
     expect(tree[0]![0]!.step.type).toBe('MOVE');
   });
 
+  it('converts ITEM_DROPPED to ITEM_DROP step with from and position', () => {
+    const node = makeExecNode({
+      type: 'ITEM_DROPPED',
+      dropperEntityId: 'enemy1',
+      itemInstanceId: 'item_1',
+      templateId: 'health_potion',
+      position: { x: 3, y: 3 },
+      from: { x: 2, y: 2 },
+    });
+    const result = makeResult([node]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!).toHaveLength(1);
+    const step = tree[0]![0]!.step as any;
+    expect(step.type).toBe('ITEM_DROP');
+    expect(step.itemId).toBe('item_1');
+    expect(step.position).toEqual({ x: 3, y: 3 });
+    expect(step.from).toEqual({ x: 2, y: 2 });
+    expect(step.templateId).toBe('health_potion');
+  });
+
   it('converts ABILITY_USED to ABILITY_CAST step', () => {
     const node = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'magic_slap', targets: [{ x: 3, y: 3 }], from: { x: 1, y: 1 } });
     const result = makeResult([node]);

@@ -41,6 +41,7 @@ UI не знает о существовании Simulation. Content не зна
 │  Переводит события UI → команды Simulation.             │
 │  Переводит результат Simulation → язык UI.              │
 │  ↓ вызывает API Simulation                              │
+│  ↓ читает контент (read-only)                           │
 │  ↑ отдаёт ViewModel + анимационные планы в UI           │
 └─────────────────────┬───────────────────────────────────┘
                       │
@@ -55,9 +56,10 @@ UI не знает о существовании Simulation. Content не зна
                       │
 ┌─────────────────────▼───────────────────────────────────┐
 │                  Content Layer                           │
-│  public/content/                                        │
-│  JSON-данные: сущности, карты, способности, предметы    │
-│  Чистые данные, без логики                              │
+│  src/content/  +  public/content/                       │
+│  Code: Zod-схемы, загрузчик, in-memory реестр           │
+│  Data: JSON-шаблоны сущностей, карт, способностей       │
+│  Чистые данные и read-only код                          │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -65,21 +67,21 @@ UI не знает о существовании Simulation. Content не зна
 
 ## Layer Responsibilities
 
-### Content Layer (`public/content/`)
+### Content Layer (`src/content/` + `public/content/`)
 
 **Ответственность:**
-- Шаблоны сущностей (враги, предметы, способности)
-- Параметры карт и генерации
-- Игровые баланс-значения
-- Чистые данные, не код
+- **Data:** `public/content/` — JSON-шаблоны сущностей, предметов, способностей, карт.
+- **Code:** `src/content/` — Zod-схемы валидации, async-загрузчик, in-memory реестр для read-only доступа.
+- Игровые баланс-значения.
 
-**Разрешено:**
-- Не зависеть ни от чего (pure data)
+**Разрешено зависеть от:**
+- Ничего (только Zod для валидации схем).
 
 **Запрещено:**
-- Импортировать код
-- Содержать логику
-- Ссылаться на runtime-состояние
+- Импортировать `simulation/`, `presentation/`, `ui/`.
+- Содержать игровую логику.
+- Ссылаться на runtime-состояние.
+- Мутироваться после инициализации.
 
 ---
 
@@ -97,7 +99,7 @@ UI не знает о существовании Simulation. Content не зна
 Методы: `dispatch`, `preview`, `getState`, `generateMap`.
 
 **Разрешено зависеть от:**
-- `src/simulation/content/` (реестр контента)
+- `src/content/` (реестр контента)
 - `src/utils/` (математика, RNG, константы)
 
 **Запрещено:**
@@ -125,6 +127,7 @@ UI не знает о существовании Simulation. Content не зна
 
 **Разрешено зависеть от:**
 - `src/simulation/` (только через публичный API: `dispatch`, `preview`, `getState`)
+- `src/content/` (read-only доступ к шаблонам для подготовки ViewModel)
 - `src/utils/` (математические утилиты, константы)
 
 **Запрещено:**
@@ -170,7 +173,7 @@ src/ui/
 
 ```
 ui/           → presentation/, utils/constants.ts
-presentation/ → simulation/ (только публичный API), utils/
+presentation/ → simulation/ (только публичный API), content/, utils/
 simulation/   → content/, utils/
 content/      → (nothing)
 utils/        → (nothing)

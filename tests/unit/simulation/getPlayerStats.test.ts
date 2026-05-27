@@ -4,8 +4,8 @@
 
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import {GameSimulation} from '../../../src/simulation/simulation';
-import {initRegistry, resetRegistry} from '../../../src/simulation/content/registry';
-import type {ItemTemplate, PlayerTemplate} from '../../../src/simulation/schemas/contentSchemas';
+import {initRegistry, resetRegistry} from '../../../src/content/registry';
+import type {ItemTemplate, PlayerTemplate} from '../../../src/content/schemas';
 
 function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
   return {

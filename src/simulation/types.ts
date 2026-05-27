@@ -9,7 +9,7 @@
  */
 
 import {ENTITY_TYPE} from "@utils/constants.ts";
-import type {MapParams} from "./schemas/contentSchemas";
+import type {MapParams} from "@content/schemas";
 import {
   Position,
   EntityId,
@@ -92,7 +92,7 @@ export interface Attackable {
   hp: number;
   maxHp: number;
   armor: number;
-  isAlive?: boolean;
+  isAlive: boolean;
 }
 
 export interface StatusEffectHolder {
@@ -167,7 +167,7 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   /** Активные эффекты статуса. */
   /** Состояние ИИ в рантайме (сохраняется для памяти патруля/погони). */
   type: 'enemy';
-  blocksMovement: true;
+  blocksMovement: boolean;
   /** Активные способности врага (задел на AI-скиллы). */
   abilities: RuntimeAbility[];
 }

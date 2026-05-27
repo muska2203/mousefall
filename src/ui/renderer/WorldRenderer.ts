@@ -120,6 +120,11 @@ export class WorldRenderer {
     return this.entityRenderer.animateDeath(entityId, config);
   }
 
+  /** Анимировать появление предмета (перелёт от from к to + fade-in + scale-up). */
+  animateItemDrop(entityId: string, from: Position, to: Position, config: AnimationConfigEntry): Promise<void> {
+    return this.entityRenderer.animateItemDrop(entityId, from, to, config);
+  }
+
   /** Анимировать каст способности (пульсация спрайта кастера). */
   animateAbilityCast(entityId: string, config: AnimationConfigEntry): Promise<void> {
     return this.entityRenderer.animateCast(entityId, config);

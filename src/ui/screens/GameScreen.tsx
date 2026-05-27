@@ -8,8 +8,8 @@
  */
 
 import {useCallback, useEffect, useSyncExternalStore, useState} from 'react';
-import type {GameSession, SessionMode} from '@presentation/gameSession';
-import {tryGetPlayerTemplate} from '@simulation/content/registry';
+import {GameSession, type SessionMode} from '@presentation/gameSession';
+
 import {KEY_MAP, INTERACTIVE_TAGS} from '@ui/input/keyboardMap';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
@@ -73,6 +73,13 @@ export function GameScreen({session, onModeChange}: Props) {
     if (session.getMode() !== 'playing') return;
     if (isInputBlocked) return;
     session.dispatch({type: 'ASCEND', entityId: 'player'});
+    onModeChange(session.getMode());
+  }, [session, onModeChange, isInputBlocked]);
+
+  const handlePickup = useCallback(() => {
+    if (session.getMode() !== 'playing') return;
+    if (isInputBlocked) return;
+    session.dispatch({type: 'PICKUP', entityId: 'player'});
     onModeChange(session.getMode());
   }, [session, onModeChange, isInputBlocked]);
 
@@ -144,6 +151,12 @@ export function GameScreen({session, onModeChange}: Props) {
         return;
       }
 
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        handlePickup();
+        return;
+      }
+
       const delta = KEY_MAP[e.key];
       if (!delta) return;
       e.preventDefault();
@@ -163,7 +176,7 @@ export function GameScreen({session, onModeChange}: Props) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [performMoveOrAttack]);
+  }, [performMoveOrAttack, handlePickup, handleDescend, handleAscend, session]);
 
   if (!renderInput) {
     return (
@@ -172,7 +185,7 @@ export function GameScreen({session, onModeChange}: Props) {
   }
 
   const ps = renderInput.playerStats;
-  const portraitImg = tryGetPlayerTemplate(renderInput.state.player.templateId)?.portraitImg ?? '/assets/portraits/witcher-ready.png';
+  const portraitImg = GameSession.getPlayerPortraitSrc(renderInput.state.player.templateId) ?? '/assets/portraits/witcher-ready.png';
 
 
 

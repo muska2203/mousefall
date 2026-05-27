@@ -10,7 +10,7 @@ export default defineConfig({
       '@utils':      resolve(__dirname, 'src/utils'),
       '@store':      resolve(__dirname, 'src/store'),
       '@ui':         resolve(__dirname, 'src/ui'),
-      '@content':    resolve(__dirname, 'src/simulation/content'),
+      '@content':    resolve(__dirname, 'src/content'),
       '@presentation': resolve(__dirname, 'src/presentation'),
     },
   },

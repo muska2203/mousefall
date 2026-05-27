@@ -1,6 +1,6 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
-import { initRegistry, resetRegistry } from '@simulation/content/registry.ts';
-import type { ItemTemplate } from '@simulation/schemas/contentSchemas.ts';
+import { initRegistry, resetRegistry } from '@content/registry.ts';
+import type { ItemTemplate } from '@content/schemas';
 import { makePlayer } from '../../../../fixtures/gameState.ts';
 import {
   getBaseMaxHp,

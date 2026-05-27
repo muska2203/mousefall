@@ -3,7 +3,7 @@ import { createNewGameState } from '@simulation/state';
 import { updateFOV, computeFOV } from '@simulation/systems/fov';
 import { GameSimulation, defaultActionHandlerRegistry } from '@simulation/simulation';
 import type { TileType, GameMap } from '@simulation/types';
-import type { MapParams } from '@simulation/schemas/contentSchemas';
+import type { MapParams } from '@content/schemas';
 
 const testMapParams: MapParams = {
   id: 'test',

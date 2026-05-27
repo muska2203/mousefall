@@ -6,7 +6,7 @@
  */
 
 import type { PlayerEntity } from '@simulation/types.ts';
-import type { ItemTemplate } from '@simulation/schemas/contentSchemas.ts';
+import type { ItemTemplate } from '@content/schemas';
 import { getEffectiveBaseStats } from './base-resolver.ts';
 
 export type WeaponFormula = (owner: PlayerEntity, weapon: ItemTemplate | null) => number;

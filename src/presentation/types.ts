@@ -76,6 +76,13 @@ export type AnimationStep =
       type: 'EXPLOSION';
       center: Position;
       radius: number;
+    }
+  | {
+      type: 'ITEM_DROP';
+      itemId: string;
+      position: Position;
+      from: Position;
+      templateId: string;
     };
 
 /** Узел дерева анимаций.
@@ -174,6 +181,12 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
       return { type: 'CONSUME_AP', entityId: intent.entityId, amount: intent.amount };
     case 'TICK_STATUS_EFFECTS':
       return { type: 'TICK_STATUS_EFFECTS', entityId: intent.entityId };
+    case 'SPAWN_ITEM':
+      return null;
+    case 'PICK_UP':
+      return null;
+    default:
+      return null;
   }
 }
 
@@ -210,4 +223,6 @@ export type RenderInput = {
   heroStats: HeroStatViewModel[];
   /** Слоты экипировки для EquipmentPanel. */
   equipSlots: EquipSlotViewModel[];
+  /** Предметы на полу для отображения на карте. */
+  itemsOnFloor: Array<{ id: string; x: number; y: number; templateId: string }>;
 };

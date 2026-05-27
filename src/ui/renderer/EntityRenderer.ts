@@ -8,7 +8,7 @@
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
-import {getRenderScale} from '@utils/renderScales';
+import {getRenderScale} from '@presentation/renderScaleResolver';
 import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite} from './spriteRegistry';
 import {getTextureSync, getTexture} from './TextureCache';
 import {Tween, Vec2Tween, lerp} from '@utils/tween';
@@ -44,10 +44,12 @@ export class EntityRenderer {
     // Не обновляем их позицию и не удаляем спрайт до завершения анимации,
     // чтобы избежать мигания в конечной позиции или преждевременного исчезновения.
     const animatedIds = new Set<string>();
+    const itemDropIds = new Set<string>();
     if (input.animations) {
       for (const phase of input.animations) {
         for (const node of phase) {
           collectAnimatedEntityIds(node, animatedIds);
+          collectItemDropIds(node, itemDropIds);
         }
       }
     }
@@ -96,7 +98,13 @@ export class EntityRenderer {
         this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
+          // Если для предмета запланирована анимация появления — скрываем спрайт
+          // до её начала. animateItemDrop сам установит visible = true.
+          if (itemDropIds.has(entity.id)) {
+            sprite.visible = false;
+          } else {
+            sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
+          }
         }
         existingIds.add(entity.id);
       }
@@ -230,6 +238,60 @@ export class EntityRenderer {
         },
         onComplete: () => {
           sprite.scale.set(startScale);
+          this.activeAnimations.delete(entityId);
+          resolve();
+        },
+      });
+
+      const anim: ActiveAnimation = { tween, onComplete: resolve };
+      this.activeAnimations.set(entityId, anim);
+      tween.start(performance.now());
+    });
+  }
+
+  /** Анимация появления предмета: перелёт от from к to + fade-in + scale-up. */
+  animateItemDrop(entityId: string, from: Position, to: Position, config: AnimationConfigEntry): Promise<void> {
+    return new Promise((resolve) => {
+      const sprite = this.sprites.get(entityId);
+      if (!sprite) {
+        resolve();
+        return;
+      }
+
+      this.cancelAnimationFor(entityId);
+
+      sprite.visible = true;
+
+      const startAlpha = 0;
+      const endAlpha = 1;
+      const startScale = sprite.scale.x * 0.5;
+      const endScale = sprite.scale.x;
+
+      const fromX = from.x * TILE_SIZE;
+      const fromY = from.y * TILE_SIZE;
+      const toX = to.x * TILE_SIZE;
+      const toY = to.y * TILE_SIZE;
+
+      sprite.x = fromX;
+      sprite.y = fromY;
+      sprite.alpha = startAlpha;
+      sprite.scale.set(startScale);
+
+      const tween = new Tween({
+        duration: config.duration,
+        easing: config.easing,
+        onUpdate: (p) => {
+          sprite.x = lerp(fromX, toX, p);
+          sprite.y = lerp(fromY, toY, p);
+          sprite.alpha = lerp(startAlpha, endAlpha, p);
+          const s = lerp(startScale, endScale, p);
+          sprite.scale.set(s);
+        },
+        onComplete: () => {
+          sprite.x = toX;
+          sprite.y = toY;
+          sprite.alpha = endAlpha;
+          sprite.scale.set(endScale);
           this.activeAnimations.delete(entityId);
           resolve();
         },
@@ -404,8 +466,21 @@ function collectAnimatedEntityIds(node: AnimationNode, out: Set<string>): void {
     case 'ABILITY_CAST':
       out.add(node.step.entityId);
       break;
+    case 'ITEM_DROP':
+      out.add(node.step.itemId);
+      break;
   }
   for (const child of node.children) {
     collectAnimatedEntityIds(child, out);
+  }
+}
+
+/** Рекурсивно собирает ID предметов с запланированной анимацией ITEM_DROP. */
+function collectItemDropIds(node: AnimationNode, out: Set<string>): void {
+  if (node.step.type === 'ITEM_DROP') {
+    out.add(node.step.itemId);
+  }
+  for (const child of node.children) {
+    collectItemDropIds(child, out);
   }
 }

@@ -2,7 +2,7 @@
   "entities": [
         "/content/entities/enemies/cat_small.json",
     "/content/entities/enemies/cat_mid.json",
-    "/content/entities/enemies/cat_big.json",
+    "/content/entities/enemies/cat_big.json"
   ],
   "players": [
     "/content/entities/player/witcher.json",

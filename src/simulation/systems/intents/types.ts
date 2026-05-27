@@ -13,6 +13,8 @@ export type {
   SetCooldownIntent,
   ConsumeApIntent,
   TickStatusEffectsIntent,
+  SpawnItemIntent,
+  PickUpIntent,
 } from "@simulation/core-types.ts";
 
 export type IntentExecutor<T extends Intent> = (

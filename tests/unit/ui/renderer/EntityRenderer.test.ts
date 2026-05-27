@@ -3,7 +3,7 @@
  */
 
 import {describe, expect, it, vi, beforeEach, afterEach} from 'vitest';
-import {initRegistry, resetRegistry} from '../../../../src/simulation/content/registry';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -55,7 +55,7 @@ import {EntityRenderer} from '../../../../src/ui/renderer/EntityRenderer';
 import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
 import type {RenderInput} from '../../../../src/presentation/types';
 
-function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player']>): RenderInput {
+function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player']>, visible?: boolean[][]): RenderInput {
   const player = {
     id: 'player' as const,
     type: 'player' as const,
@@ -64,6 +64,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     x: 0,
     y: 0,
     blocksMovement: true as const,
+    isAlive: true,
     hp: 10,
     maxHp: 10,
     armor: 0,
@@ -107,8 +108,8 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       },
       entities: new Map(),
       player,
-      visible: [],
-      explored: [],
+      visible: visible ?? [],
+      explored: visible ?? [],
       turn: {activeSide: 'PLAYER' as const, round: 1},
       phase: 'playing' as const,
       floor: 1,
@@ -149,6 +150,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     playerSkills: [],
     heroStats: [],
     equipSlots: [],
+    itemsOnFloor: [],
   };
 }
 
@@ -336,5 +338,84 @@ describe('EntityRenderer', () => {
     // Спрайт должен остаться на старой позиции, а не "прыгнуть" на новую
     expect(sprite.x).toBe(1 * 32 + 32 / 2);
     expect(sprite.y).toBe(1 * 32 + 32 * 0.85);
+  });
+
+  it('hides item sprite during update when ITEM_DROP animation is scheduled', () => {
+    const renderer = new EntityRenderer();
+    // Сделаем клетку (3,3) видимой
+    const visible = Array.from({ length: 10 }, () => Array(10).fill(false));
+    visible[3]![3] = true;
+    const input = makeRenderInput(undefined, visible);
+
+    input.state.entities.set('item1', {
+      id: 'item1',
+      type: 'item',
+      x: 3,
+      y: 3,
+      templateId: 'health_potion',
+      blocksMovement: false,
+      displayName: 'Зелье',
+      quantity: 1,
+    } as any);
+
+    renderer.update(input);
+    const sprite = (renderer as any).sprites.get('item1');
+    expect(sprite.visible).toBe(true);
+
+    // Запланируем анимацию появления
+    input.animations = [
+      [
+        {
+          step: {type: 'ITEM_DROP', itemId: 'item1', position: {x: 3, y: 3}, from: {x: 2, y: 2}, templateId: 'health_potion'},
+          children: [],
+        },
+      ],
+    ];
+
+    renderer.update(input);
+    // Спрайт должен быть скрыт до начала анимации
+    expect(sprite.visible).toBe(false);
+  });
+
+  it('animateItemDrop moves sprite from death tile to target tile with fade-in', async () => {
+    const renderer = new EntityRenderer();
+    const input = makeRenderInput();
+
+    input.state.entities.set('item1', {
+      id: 'item1',
+      type: 'item',
+      x: 3,
+      y: 3,
+      templateId: 'health_potion',
+      blocksMovement: false,
+      displayName: 'Зелье',
+      quantity: 1,
+    } as any);
+
+    renderer.update(input);
+    const sprite = (renderer as any).sprites.get('item1');
+
+    const p = renderer.animateItemDrop(
+      'item1',
+      {x: 2, y: 2},
+      {x: 3, y: 3},
+      ANIMATION_CONFIG.ITEM_DROP
+    );
+
+    expect(p).toBeInstanceOf(Promise);
+    // Сразу после старта спрайт должен быть на from и невидим
+    expect(sprite.x).toBe(2 * 32);
+    expect(sprite.y).toBe(2 * 32);
+    expect(sprite.visible).toBe(true);
+    expect(sprite.alpha).toBe(0);
+
+    // Завершаем анимацию вручную
+    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.ITEM_DROP.duration + 10);
+    await p;
+
+    // По завершении спрайт должен быть на to
+    expect(sprite.x).toBe(3 * 32);
+    expect(sprite.y).toBe(3 * 32);
+    expect(sprite.alpha).toBe(1);
   });
 });

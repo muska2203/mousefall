@@ -93,6 +93,20 @@ registerAnimationBuilder('FOG_UPDATED', (event, children) => {
   }];
 });
 
+registerAnimationBuilder('ITEM_DROPPED', (event, children) => {
+  if (event.type !== 'ITEM_DROPPED') return null;
+  return [{
+    step: {
+      type: 'ITEM_DROP',
+      itemId: event.itemInstanceId,
+      position: event.position,
+      from: event.from,
+      templateId: event.templateId,
+    },
+    children,
+  }];
+});
+
 registerAnimationBuilder('ABILITY_USED', (event, children) => {
   if (event.type !== 'ABILITY_USED') return null;
 

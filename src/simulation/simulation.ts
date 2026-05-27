@@ -15,14 +15,15 @@ import { getSkillExecutor } from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
-import {findAllAliveAiActors, isActor} from "@simulation/state.ts";
+import {findAllAliveAiActors, isActor, cleanupDeadEntities} from "@simulation/state.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
 import {waitEntity} from "@simulation/systems/actions/wait-action.ts";
 import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
+import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
-import type {MapParams} from "@simulation/schemas/contentSchemas.ts";
+import type {MapParams} from "@content/schemas";
 import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {updateFOV} from "@simulation/systems/fov.ts";
@@ -35,7 +36,7 @@ import {
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
 import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
 import { initSkillRegistry } from "@simulation/skills/index.ts";
-import { tryGetAbility } from "@simulation/content/registry";
+import { tryGetAbility } from "@content/registry";
 import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
 
@@ -388,6 +389,8 @@ export class GameSimulation implements Simulation {
 
     private beginNextPlayerTurn(): void {
 
+        cleanupDeadEntities(this.state);
+
         this.state.turn.activeSide =
             'PLAYER';
 
@@ -562,6 +565,7 @@ export function defaultActionHandlerRegistry(): ActionHandlerRegistry {
     registry.register('DESCEND', descendAction);
     registry.register('ASCEND', ascendAction);
     registry.register('USE_ABILITY', useAbilityAction);
+    registry.register('PICKUP', pickupEntity);
     return registry;
 }
 

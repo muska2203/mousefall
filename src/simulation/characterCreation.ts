@@ -11,7 +11,7 @@
  */
 
 import type {PlayerEntity, RuntimeAbility} from './types';
-import { getItem, getPlayerTemplate } from './content/registry.ts';
+import { getItem, getPlayerTemplate } from '@content/registry';
 import { recalculatePlayerBaseStats } from './systems/stats/recalculate.ts';
 import { addModifier } from './systems/stats/modifier-engine.ts';
 

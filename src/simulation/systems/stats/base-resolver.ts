@@ -12,7 +12,7 @@
  */
 
 import type { PlayerEntity } from '@simulation/types.ts';
-import { getItem } from '@simulation/content/registry.ts';
+import { getItem } from '@content/registry';
 import { getWeaponDamage } from './weapon-formulas.ts';
 import { applyModifiers } from './modifier-engine.ts';
 

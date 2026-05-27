@@ -11,7 +11,7 @@ import type { AnimationConfigKey } from '@utils/animationConfig';
 
 export class SpriteAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {
-    return step.type === 'MOVE' || step.type === 'ATTACK' || step.type === 'DEATH';
+    return step.type === 'MOVE' || step.type === 'ATTACK' || step.type === 'DEATH' || step.type === 'ITEM_DROP';
   }
 
   async execute(step: AnimationStep, ctx: AnimationContext): Promise<void> {
@@ -30,6 +30,10 @@ export class SpriteAnimationExecutor implements AnimationExecutor {
       }
       case 'DEATH': {
         await wr.animateDeath(step.entityId, config);
+        break;
+      }
+      case 'ITEM_DROP': {
+        await wr.animateItemDrop(step.itemId, step.from, step.position, config);
         break;
       }
       default:

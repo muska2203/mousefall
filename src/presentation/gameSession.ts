@@ -19,9 +19,9 @@ import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
 import type {CharacterConfig} from '@simulation/characterCreation';
-import type {MapParams} from '@simulation/schemas/contentSchemas';
+import type {MapParams} from '@content/schemas';
 import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview} from './types';
-import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@simulation/content/registry';
+import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@content/registry';
 
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
@@ -32,7 +32,7 @@ import {TargetingController} from './targetingController';
 
 // Реэкспорт типов для UI-слоя, чтобы UI не импортировал из simulation/ напрямую
 export type {CharacterConfig} from '@simulation/characterCreation';
-export type {MapParams} from '@simulation/schemas/contentSchemas';
+export type {MapParams} from '@content/schemas';
 export type {AnimationNode, RenderInput, EquipmentSnapshot} from './types';
 export type {RenderState} from './types';
 export type {PlayerStatsSnapshot} from '@simulation/types';
@@ -151,6 +151,15 @@ export class GameSession {
       },
     ];
 
+    const itemsOnFloor = Array.from(state.entities.values())
+      .filter(e => e.type === 'item')
+      .map(e => ({
+        id: e.id,
+        x: e.x,
+        y: e.y,
+        templateId: e.templateId,
+      }));
+
     return {
       state,
       highlightedPath: null,
@@ -164,6 +173,7 @@ export class GameSession {
       playerSkills,
       heroStats,
       equipSlots,
+      itemsOnFloor,
     };
   }
 
@@ -219,6 +229,14 @@ export class GameSession {
    */
   static getAvailablePlayerTemplates() {
     return getAllPlayerTemplates();
+  }
+
+  /**
+   * Возвращает путь к портрету игрока по templateId.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getPlayerPortraitSrc(templateId: string): string | undefined {
+    return tryGetPlayerTemplate(templateId)?.portraitImg;
   }
 
   /**

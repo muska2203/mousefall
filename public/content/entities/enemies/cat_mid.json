@@ -15,7 +15,12 @@
     "sightRange": 7,
     "chaseRange": 10
   },
-  "lootTable": ["health_potion", "common_splinter_blade"],
+  "lootTable": [
+    { "templateId": "health_potion", "weight": 4 },
+    { "templateId": "common_splinter_blade", "weight": 2 },
+    { "templateId": "common_tin_plate", "weight": 1 }
+  ],
+  "lootDropCount": { "min": 1, "max": 2 },
   "xpReward": 18,
   "renderScale": 1.5
 }

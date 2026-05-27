@@ -15,6 +15,8 @@ export const deathReaction: WorldReaction = (
 
     if (entity.hp > 0) return [];
 
+    if (entity.isAlive === false) return [];
+
     const deathPos = { x: entity.x, y: entity.y };
     return [
         {

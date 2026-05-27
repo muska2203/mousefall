@@ -26,7 +26,7 @@ import type {
   Position,
   TileType,
 } from './types';
-import type { MapParams } from './schemas/contentSchemas';
+import type { MapParams } from '@content/schemas';
 import {createRNG} from '../utils/rng';
 import {PLAYER_ID} from '../utils/constants';
 
@@ -134,10 +134,23 @@ export function isActor(entity: unknown): entity is Actor {
 
 export function findAttackableEntity(state: GameState, id: EntityId): (Entity & Attackable) | undefined {
   const foundEntity = state.entities.get(id);
-  if (foundEntity && 'hp' in foundEntity) {
+  if (foundEntity && 'hp' in foundEntity && foundEntity.isAlive !== false) {
     return foundEntity as Entity & Attackable;
   }
   return undefined;
+}
+
+/**
+ * Физически удаляет всех мёртвых сущностей из state.entities.
+ * Вызывается в конце хода окружения, перед началом хода игрока.
+ */
+export function cleanupDeadEntities(state: GameState): void {
+  for (const [id, entity] of state.entities) {
+    if (id === PLAYER_ID) continue;
+    if ('isAlive' in entity && entity.isAlive === false) {
+      state.entities.delete(id);
+    }
+  }
 }
 
 
@@ -165,7 +178,7 @@ export const TARGET_PRIORITY: Record<EntityType, number> = {
 
 export function findFirstAttackableEntityAt(state: GameState, x: number, y: number): (Entity & Attackable) | undefined {
   return findAllEntitiesAt(state, x, y)
-      .filter(e => 'hp' in e)
+      .filter(e => 'hp' in e && (e as Entity & Attackable).isAlive !== false)
       .map(e => e as Entity & Attackable)
       .sort((a, b) => TARGET_PRIORITY[b.type] - TARGET_PRIORITY[a.type])[0];
 }
@@ -173,10 +186,6 @@ export function findFirstAttackableEntityAt(state: GameState, x: number, y: numb
 export function findAllEntitiesAt(state: GameState, x: number, y: number): Entity[] {
   return Array.from(state.entities.values())
       .filter(e => e.x === x && e.y === y);
-}
-
-export function removeEnemy(state: GameState, id: EntityId): boolean {
-  return state.entities.delete(id);
 }
 
 /**

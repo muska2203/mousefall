@@ -16,10 +16,10 @@
  */
 
 import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGState, StairsEntity } from '../types';
-import type { MapParams } from '../schemas/contentSchemas';
+import type { MapParams } from '@content/schemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
-import { getEntity, getItem } from '../content/registry';
+import { getEntity, getItem } from '@content/registry';
 
 // ─────────────────────────────────────────────
 // Тип выходных данных

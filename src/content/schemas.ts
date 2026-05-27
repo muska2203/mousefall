@@ -34,6 +34,16 @@ const AISchema = z.object({
   chaseRange:  z.number().int().positive().default(10).describe('Макс. клеток, на которые враг преследует игрока'),
 }).describe('Конфигурация ИИ');
 
+const LootEntrySchema = z.object({
+  templateId: z.string().min(1).describe('ID шаблона предмета'),
+  weight: z.number().int().nonnegative().describe('Вес выпадения'),
+});
+
+const LootDropCountSchema = z.object({
+  min: z.number().int().nonnegative().describe('Минимум предметов за раз'),
+  max: z.number().int().nonnegative().describe('Максимум предметов за раз'),
+});
+
 // ─────────────────────────────────────────────
 // Шаблон сущности
 // ─────────────────────────────────────────────
@@ -47,7 +57,8 @@ export const EntityTemplateSchema = z.object({
   health:   HealthSchema,
   combat:   CombatSchema.optional(),
   ai:       AISchema.optional(),
-  lootTable:  z.array(z.string()).default([]).describe('ID шаблонов предметов, которые могут выпасть при смерти'),
+  lootTable:  z.array(LootEntrySchema).default([]).describe('Таблица выпадения предметов при смерти'),
+  lootDropCount: LootDropCountSchema.default({ min: 1, max: 1 }).describe('Количество предметов, выпадающих за раз'),
   xpReward:   z.number().int().nonnegative().default(0).describe('Опыт, выдаваемый игроку за убийство'),
   renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
 }).describe('Шаблон врага или NPC');

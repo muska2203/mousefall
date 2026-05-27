@@ -12,7 +12,7 @@
  * - Тесты используют мок-контент напрямую через initRegistry()
  */
 
-import type { LoadedContent } from '../schemas/contentSchemas';
+import type { LoadedContent } from './schemas';
 import {
   EntityTemplateSchema,
   PlayerTemplateSchema,
@@ -20,7 +20,7 @@ import {
   AbilityTemplateSchema,
   MapParamsSchema,
   StairsTemplateSchema,
-} from '../schemas/contentSchemas';
+} from './schemas';
 import { initRegistry } from './registry';
 import { z } from 'zod';
 

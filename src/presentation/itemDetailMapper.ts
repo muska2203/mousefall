@@ -9,7 +9,7 @@
  * UI получает готовый ViewModel и не знает о существовании ItemTemplate.
  */
 
-import type { ItemTemplate } from '@simulation/schemas/contentSchemas';
+import type { ItemTemplate } from '@content/schemas';
 import { resolveItemIcon } from '@utils/assetResolver';
 
 const TYPE_LABELS: Record<string, string> = {

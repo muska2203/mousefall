@@ -19,7 +19,7 @@ import type {
   PlayerEntity,
   TileType
 } from '../../src/simulation/types';
-import type { MapParams } from '../../src/simulation/schemas/contentSchemas';
+import type { MapParams } from '../../src/content/schemas';
 import {createRNG} from '../../src/utils/rng';
 import {PLAYER_ID} from '../../src/utils/constants';
 

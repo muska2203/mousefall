@@ -149,7 +149,8 @@ export type GameAction =
   | WaitAction
   | DescendAction
   | AscendAction
-  | UseAbilityAction;
+  | UseAbilityAction
+  | PickUpAction;
 
 export type MoveAction = {
   type: 'MOVE';
@@ -187,6 +188,11 @@ export type UseAbilityAction = {
   targets: Position[];
 };
 
+export type PickUpAction = {
+  type: 'PICKUP';
+  entityId: EntityId;
+};
+
 export type TargetMode =
   | { type: 'self' }
   | { type: 'single'; range: number }
@@ -206,7 +212,9 @@ export type Intent =
   | ConsumeMpIntent
   | SetCooldownIntent
   | ConsumeApIntent
-  | TickStatusEffectsIntent;
+  | TickStatusEffectsIntent
+  | SpawnItemIntent
+  | PickUpIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; damage: number };
@@ -217,6 +225,8 @@ export type ConsumeMpIntent = { type: 'CONSUME_MP'; entityId: EntityId; amount: 
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };
 export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId };
+export type SpawnItemIntent = { type: 'SPAWN_ITEM'; templateId: string; position: Position; sourceEntityId: EntityId };
+export type PickUpIntent = { type: 'PICK_UP'; entityId: EntityId; itemId: EntityId; templateId: string };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -261,7 +271,7 @@ export type EntityMissedEvent = { type: 'ENTITY_MISSED'; attackerId: EntityId; t
 
 export type ItemPickedUpEvent = { type: 'ITEM_PICKED_UP'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 
-export type ItemDroppedEvent = { type: 'ITEM_DROPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; position: Position };
+export type ItemDroppedEvent = { type: 'ITEM_DROPPED'; dropperEntityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string; position: Position; from: Position };
 
 export type ItemUsedEvent = { type: 'ITEM_USED'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 

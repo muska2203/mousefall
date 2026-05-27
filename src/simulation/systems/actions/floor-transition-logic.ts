@@ -9,7 +9,7 @@ import { findStairsAt, createBoolGrid } from '@simulation/state';
 import { generateMap, createStairs } from '@simulation/systems/mapgen';
 import { updateFOV } from '@simulation/systems/fov';
 import { MAX_FLOOR } from '@utils/constants';
-import type { MapParams } from '@simulation/schemas/contentSchemas';
+import type { MapParams } from '@content/schemas';
 
 /**
  * Выполняет атомарный переход на другой этаж.

@@ -1,8 +1,8 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { GameSession } from '../../../src/presentation/gameSession';
 import { makeGameState, makePlayer } from '../../fixtures/gameState';
-import { initRegistry, resetRegistry } from '../../../src/simulation/content/registry';
-import type { AbilityTemplate } from '../../../src/simulation/schemas/contentSchemas';
+import { initRegistry, resetRegistry } from '../../../src/content/registry';
+import type { AbilityTemplate } from '../../../src/content/schemas';
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {

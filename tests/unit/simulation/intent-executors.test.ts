@@ -1,15 +1,26 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, beforeEach, afterEach} from "vitest";
 import {ExecutionBuilder} from "@simulation/systems/actions/types.ts";
 import {executeMoveIntent} from "@simulation/systems/intents/move-intent-executer.ts";
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
+import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
-import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity} from "../../fixtures/gameState.ts";
+import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity, makeFloorItem} from "../../fixtures/gameState.ts";
 import {PLAYER_ID} from "@utils/constants.ts";
+import {initRegistry, resetRegistry} from "../../../src/content/registry";
 
 function makeBuilder() {
     return new ExecutionBuilder({type: 'ACTION_APPLIED', action: {type: 'WAIT', entityId: 'any'}});
 }
+
+beforeEach(() => {
+    resetRegistry();
+    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map() });
+});
+
+afterEach(() => {
+    resetRegistry();
+});
 
 // =========================================================
 // executeMoveIntent
@@ -118,7 +129,9 @@ describe('executeDieIntent', () => {
 
         const node = executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: 3, y: 4}}, builder, builder.root);
 
-        expect(state.entities.has(enemy.id)).toBe(false);
+        expect(state.entities.has(enemy.id)).toBe(true);
+        expect(enemy.isAlive).toBe(false);
+        expect(enemy.blocksMovement).toBe(false);
         expect(node).not.toBeNull();
         expect(node!.event.type).toBe('ENTITY_DIED');
         expect(node!.event).toMatchObject({entityId: enemy.id, position: {x: 3, y: 4}});
@@ -168,7 +181,9 @@ describe('executeIntent с мировыми реакциями', () => {
 
         // Проверяем состояние
         expect(enemy.hp).toBe(0);
-        expect(state.entities.has(enemy.id)).toBe(false);
+        expect(state.entities.has(enemy.id)).toBe(true);
+        expect(enemy.isAlive).toBe(false);
+        expect(enemy.blocksMovement).toBe(false);
     });
 
     it('урон, не убивающий врага, не порождает ENTITY_DIED', () => {
@@ -197,5 +212,67 @@ describe('executeIntent с мировыми реакциями', () => {
         const moveNode = builder.root.children[0]!;
         expect(moveNode.event.type).toBe('ENTITY_MOVED');
         expect(moveNode.children.length).toBe(0);
+    });
+});
+
+// =========================================================
+// executePickUpIntent
+// =========================================================
+describe('executePickUpIntent', () => {
+    it('добавляет предмет в инвентарь игрока и удаляет с пола', () => {
+        const player = makePlayer({x: 5, y: 5});
+        const item = makeFloorItem({x: 5, y: 5, id: 'potion_1', templateId: 'health_potion'});
+        const state = makeStateWithPlayerAndEntity(player, item);
+        const builder = makeBuilder();
+
+        const node = executePickUpIntent(state, {
+            type: 'PICK_UP',
+            entityId: player.id,
+            itemId: item.id,
+            templateId: item.templateId,
+        }, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        expect(node!.event.type).toBe('ITEM_PICKED_UP');
+        expect(player.inventory.length).toBe(1);
+        expect(player.inventory[0]).toMatchObject({
+            instanceId: item.id,
+            templateId: item.templateId,
+            quantity: 1,
+        });
+        expect(state.entities.has(item.id)).toBe(false);
+    });
+
+    it('возвращает null, если предмет отсутствует', () => {
+        const player = makePlayer({x: 5, y: 5});
+        const state = makeStateWithPlayerAndEntity(player, makeEnemy({x: 8, y: 8}));
+        const builder = makeBuilder();
+
+        const node = executePickUpIntent(state, {
+            type: 'PICK_UP',
+            entityId: player.id,
+            itemId: 'missing_item',
+            templateId: 'health_potion',
+        }, builder, builder.root);
+
+        expect(node).toBeNull();
+    });
+
+    it('возвращает null, если актёр не является игроком', () => {
+        const enemy = makeEnemy({x: 5, y: 5});
+        const item = makeFloorItem({x: 5, y: 5, id: 'potion_1', templateId: 'health_potion'});
+        const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
+        state.entities.set(item.id, item);
+        const builder = makeBuilder();
+
+        const node = executePickUpIntent(state, {
+            type: 'PICK_UP',
+            entityId: enemy.id,
+            itemId: item.id,
+            templateId: item.templateId,
+        }, builder, builder.root);
+
+        expect(node).toBeNull();
+        expect(state.entities.has(item.id)).toBe(true);
     });
 });

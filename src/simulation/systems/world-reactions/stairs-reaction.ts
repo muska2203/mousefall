@@ -27,7 +27,10 @@ export const stairsTransitionReaction: WorldReaction = (
     const stairs = findStairsAt(state, event.to.x, event.to.y);
     if (!stairs) return [];
 
-    const direction = stairs.templateId === 'stairs_down' ? 'down' : 'up';
+    const direction = stairs.templateId === 'stairs_down' ? 'down'
+                    : stairs.templateId === 'stairs_up' ? 'up'
+                    : null;
+    if (!direction) return [];
 
     // Проверяем границы подземелья
     if (direction === 'down' && state.floor >= MAX_FLOOR) return [];

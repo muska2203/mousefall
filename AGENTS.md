@@ -71,14 +71,16 @@ npm run typecheck
 
 ```
 src/
+  content/             # Реестр контента: Zod-схемы, загрузчик, read-only доступ
+    schemas.ts         # Zod-схемы и типы шаблонов
+    registry.ts        # In-memory реестр загруженного контента
+    loader.ts          # Async fetch + валидация JSON-контента
   simulation/          # Ядро игры (headless, детерминированное)
     systems/           # Игровые системы
       actions/         # Обработчики действий
       intents/         # Исполнители интентов
       world-reactions/ # Реакции мира на события
     ai/                # (устаревший слой)
-    content/           # Загрузка и валидация JSON-контента
-    schemas/           # Zod-схемы
   presentation/        # Слой-оркестратор между UI и Simulation
   ui/                  # React, PixiJS, ввод, отрисовка, анимация
     animation/
@@ -117,9 +119,9 @@ tests/
 
 ```
 ui/           → presentation/, utils/constants.ts
-presentation/ → simulation/ (только публичный API), utils/
+presentation/ → simulation/ (только публичный API), content/, utils/
 simulation/   → content/, utils/
-content/      → (ничего — чистые данные)
+content/      → (ничего — чистые функции и типы)
 utils/        → (ничего — чистые функции)
 ```
 
@@ -127,10 +129,11 @@ utils/        → (ничего — чистые функции)
 > **Presentation — единственный слой, имеющий право вызывать API Simulation.**
 > UI не знает о существовании Simulation. Content не знает ни о ком.
 
-### Слой Content (`public/content/`)
-- JSON-файлы сущностей, предметов, способностей, карт.
-- Валидация при загрузке через Zod.
-- Модифицируемый без пересборки.
+### Слой Content (`src/content/` + `public/content/`)
+- **Data:** `public/content/` — JSON-файлы сущностей, предметов, способностей, карт. Модифицируемый без пересборки.
+- **Code:** `src/content/` — Zod-схемы, загрузчик (`loader.ts`), in-memory реестр (`registry.ts`).
+- Read-only после инициализации.
+- Доступен для чтения из `simulation/` и `presentation/`.
 
 ### Слой Simulation (`src/simulation/`)
 - **Headless** — без браузерных API, без React, без PixiJS, без DOM.
@@ -303,10 +306,10 @@ fail-fast с понятным сообщением об ошибке.
 | Добавить новую игровую систему | `src/simulation/systems/` + `src/simulation/types.ts` |
 | Добавить новый тип действия | `src/simulation/systems/actions/types.ts` |
 | Добавить новый тип события | `src/simulation/types.ts` (union `GameEvent`) |
-| Добавить контент (враг, предмет, карта) | `public/content/` + `src/simulation/content/loader.ts` |
+| Добавить контент (враг, предмет, карта) | `public/content/` + `src/content/loader.ts` |
 | Изменить генерацию карт | `src/simulation/systems/mapgen.ts` |
 | Добавить тест | `tests/unit/simulation/` или `tests/integration/` |
-| Изучить схемы контента | `src/simulation/schemas/contentSchemas.ts` |
+| Изучить схемы контента | `src/content/schemas.ts` |
 | Понять поток хода | `src/simulation/simulation.ts` (`DefaultTestSimulation.dispatch`) |
 | Понять переход между этажами | `src/simulation/systems/world-reactions/stairs-reaction.ts` |
 | Понять архитектуру слоёв | `ARCHITECTURE.md` |

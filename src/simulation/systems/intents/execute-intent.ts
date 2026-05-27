@@ -11,6 +11,8 @@ import {executeConsumeMpIntent} from "@simulation/systems/intents/consume-mp-int
 import {executeSetCooldownIntent} from "@simulation/systems/intents/set-cooldown-intent-executer.ts";
 import {executeConsumeApIntent} from "@simulation/systems/intents/consume-ap-intent-executer.ts";
 import {executeTickStatusEffectsIntent} from "@simulation/systems/intents/tick-status-effects-intent-executer.ts";
+import {executeSpawnItemIntent} from "@simulation/systems/intents/spawn-item-intent-executor.ts";
+import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
 
 
 const intentExecutors = {
@@ -23,6 +25,8 @@ const intentExecutors = {
   SET_COOLDOWN: executeSetCooldownIntent,
   CONSUME_AP: executeConsumeApIntent,
   TICK_STATUS_EFFECTS: executeTickStatusEffectsIntent,
+  SPAWN_ITEM: executeSpawnItemIntent,
+  PICK_UP: executePickUpIntent,
 };
 
 export function executeIntent(

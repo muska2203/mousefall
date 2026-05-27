@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './ui/App';
-import { loadAllContent, browserFetchJson } from './simulation/content/loader';
+import { loadAllContent, browserFetchJson } from '@content/loader';
 
 import './ui/styles/game-screen.css';
 import './ui/styles/welcome.css';

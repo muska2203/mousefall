@@ -24,7 +24,7 @@
       "@utils/*":      ["src/utils/*"],
       "@store/*":      ["src/store/*"],
       "@ui/*":         ["src/ui/*"],
-      "@content/*":    ["src/simulation/content/*"],
+      "@content/*":    ["src/content/*"],
       "@presentation/*": ["src/presentation/*"]
     }
   },

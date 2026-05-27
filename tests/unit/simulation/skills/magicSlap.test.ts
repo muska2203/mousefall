@@ -1,8 +1,8 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
 import { magicSlapSkill } from '../../../../src/simulation/skills/executors/magicSlapSkill';
-import { initRegistry, resetRegistry } from '../../../../src/simulation/content/registry';
-import type { AbilityTemplate } from '../../../../src/simulation/schemas/contentSchemas';
+import { initRegistry, resetRegistry } from '../../../../src/content/registry';
+import type { AbilityTemplate } from '../../../../src/content/schemas';
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {

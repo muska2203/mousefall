@@ -3,7 +3,7 @@ import { ActionHandler, ExecutionBuilder, ExecutionNode, UseAbilityAction } from
 import { Intent } from '@simulation/systems/intents/types';
 import { executeIntent } from '@simulation/systems/intents/execute-intent';
 import { getSkillExecutor } from '@simulation/skills/skillExecutor';
-import { getAbility } from '@simulation/content/registry';
+import { getAbility } from '@content/registry';
 
 export const useAbilityAction: ActionHandler = {
   validate(state: GameState, action: UseAbilityAction): ValidationResult {

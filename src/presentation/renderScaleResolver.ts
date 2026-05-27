@@ -1,20 +1,17 @@
 /**
- * Конфигурация масштабов отрисовки сущностей относительно TILE_SIZE.
+ * Разрешение масштаба отрисовки сущностей из Content Registry.
  *
- * Правила:
- * - Масштаб читается из загруженного контента (шаблон сущности/лестницы/предмета).
- * - Если шаблон не найден — используется fallback:
- *   - Акторы (игрок, враги): 1.5
- *   - Не-акторы (предметы, лестницы): 1.0
+ * Ответственность Presentation Layer: перевод templateId → renderScale.
+ * UI вызывает эту функцию, не обращаясь к реестру напрямую.
  */
 
-import { tryGetEntity, tryGetStairs, tryGetItem, tryGetPlayerTemplate } from '@simulation/content/registry';
+import { tryGetEntity, tryGetStairs, tryGetPlayerTemplate } from '@content/registry';
 
 /** Масштаб по умолчанию для не-акторов. */
-export const DEFAULT_RENDER_SCALE = 1.0;
+const DEFAULT_RENDER_SCALE = 1.0;
 
 /** Масштаб по умолчанию для акторов (игрок, враги). */
-export const ACTOR_DEFAULT_RENDER_SCALE = 1.5;
+const ACTOR_DEFAULT_RENDER_SCALE = 1.5;
 
 /**
  * Вернуть масштаб отрисовки для сущности по её templateId.
@@ -29,10 +26,6 @@ export function getRenderScale(templateId: string, isActor: boolean): number {
   const fromStairs = tryGetStairs(templateId);
   if (fromStairs) {
     return fromStairs.renderScale;
-  }
-  const fromItem = tryGetItem(templateId);
-  if (fromItem && 'renderScale' in fromItem) {
-    return (fromItem as any).renderScale ?? DEFAULT_RENDER_SCALE;
   }
   const fromPlayer = tryGetPlayerTemplate(templateId);
   if (fromPlayer) {

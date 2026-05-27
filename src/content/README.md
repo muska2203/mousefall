@@ -1,27 +1,40 @@
-# Simulation Content Registry
+# Content Layer
 
 ## Responsibility
 
-Loads JSON content files from `public/content/`, validates them with Zod schemas, and exposes a typed lookup interface to the simulation layer.
+Loads JSON content files from `public/content/`, validates them with Zod schemas, and exposes a typed lookup interface to all layers.
 
-This module is the **only** place in the simulation that touches async I/O (at startup). After loading, all access is synchronous.
+This module is the **only** place that touches async I/O (at startup). After loading, all access is synchronous and read-only.
 
 ---
 
 ## Module Structure
 
 ```
-simulation/content/
-├── README.md
-├── registry.ts   # In-memory content store + typed getters
-└── loader.ts     # Async fetch + Zod validation for each content type
+src/content/
+├── README.md      # This file
+├── schemas.ts     # Zod schemas + TypeScript types for all content
+├── registry.ts    # In-memory content store + typed getters
+└── loader.ts      # Async fetch + Zod validation for each content type
 ```
+
+---
+
+## `schemas.ts`
+
+Zod schemas and inferred TypeScript types for:
+- `EntityTemplate` — enemy/NPC definitions
+- `PlayerTemplate` — player class/appearance definitions
+- `ItemTemplate` — weapon, armor, consumable, etc.
+- `AbilityTemplate` — active skills
+- `MapParams` — procedural generation parameters
+- `StairsTemplate` — stairway transitions
 
 ---
 
 ## `registry.ts`
 
-Holds all loaded content in memory. Provides typed getters used by simulation systems.
+Holds all loaded content in memory. Provides typed getters used by simulation systems and presentation layer.
 
 ```typescript
 // The registry is module-level state — initialized once at startup
@@ -36,7 +49,7 @@ export function getMapParams(id: string): MapParams
 export function initRegistry(data: LoadedContent): void
 
 // For testing: inject mock content without fetching files
-export function initRegistryFromData(data: LoadedContent): void
+export function resetRegistry(): void
 ```
 
 ---
@@ -47,7 +60,7 @@ Fetches all JSON files and validates them. Called once at app startup.
 
 ```typescript
 // Main entry point — called from App.tsx before game starts
-export async function loadAllContent(): Promise<void>
+export async function loadAllContent(fetchJson: FetchJson): Promise<void>
 ```
 
 Load sequence:
@@ -73,15 +86,17 @@ This is intentional. Silent content bugs are worse than startup failures.
 
 ## Testing
 
-For unit tests, use `initRegistryFromData()` to inject mock content without fetching files:
+For unit tests, use `initRegistry()` to inject mock content without fetching files:
 
 ```typescript
 // In test setup
-initRegistryFromData({
+initRegistry({
   entities: new Map([['cat_small', mockCatSmallTemplate]]),
   items: new Map([['health_potion', mockPotionTemplate]]),
   abilities: new Map(),
   maps: new Map([['dungeon_floor', mockMapParams]]),
+  stairs: new Map(),
+  players: new Map(),
 });
 ```
 
@@ -90,9 +105,9 @@ initRegistryFromData({
 ## Dependency Rules
 
 ```
-content/registry.ts → simulation/schemas/  (Zod schemas)
-content/loader.ts   → content/registry.ts
-content/loader.ts   → simulation/schemas/  (validation)
+content/schemas.ts  → (nothing — pure types + Zod)
+content/registry.ts → content/schemas.ts
+content/loader.ts   → content/registry.ts, content/schemas.ts
 ```
 
 ```

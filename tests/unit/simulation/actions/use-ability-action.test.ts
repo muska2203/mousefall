@@ -1,8 +1,8 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { makeGameState, makePlayer } from '../../../fixtures/gameState';
 import { useAbilityAction } from '../../../../src/simulation/systems/actions/use-ability-action';
-import { initRegistry, resetRegistry } from '../../../../src/simulation/content/registry';
-import type { AbilityTemplate } from '../../../../src/simulation/schemas/contentSchemas';
+import { initRegistry, resetRegistry } from '../../../../src/content/registry';
+import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 

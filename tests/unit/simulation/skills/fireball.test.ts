@@ -1,8 +1,8 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
 import { fireballSkill } from '../../../../src/simulation/skills/executors/fireballSkill';
-import { initRegistry, resetRegistry } from '../../../../src/simulation/content/registry';
-import type { AbilityTemplate } from '../../../../src/simulation/schemas/contentSchemas';
+import { initRegistry, resetRegistry } from '../../../../src/content/registry';
+import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 

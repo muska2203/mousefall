@@ -8,7 +8,7 @@
  * Правила:
  * - Реестр — синглтон на уровне модуля (просто, практично для соло-разработки)
  * - Весь контент валидируется через Zod-схемы перед регистрацией
- * - Системы симуляции читают из реестра через getEntity(), getItem() и т.д.
+ * - Системы симуляции, презентации и UI читают из реестра через getEntity(), getItem() и т.д.
  * - Тесты инжектируют мок-контент через initRegistry()
  *
  * Компромисс: синглтон модуля vs. внедрение зависимостей
@@ -17,7 +17,7 @@
  * - Решение: синглтон с initRegistry() для инжекции в тестах — золотая середина
  */
 
-import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate } from '../schemas/contentSchemas';
+import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate } from './schemas';
 
 // ─────────────────────────────────────────────
 // Состояние реестра

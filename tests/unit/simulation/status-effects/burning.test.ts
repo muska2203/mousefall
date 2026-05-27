@@ -4,7 +4,7 @@ import { tickEntityStatusEffects } from '../../../../src/simulation/systems/stat
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
 import { GameSimulation } from '../../../../src/simulation/simulation';
-import { initRegistry, resetRegistry } from '../../../../src/simulation/content/registry';
+import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 
 describe('burning status effect', () => {
   it('returns TICK_STATUS_EFFECTS intent', () => {
@@ -61,9 +61,10 @@ describe('burning status effect', () => {
     // Тикаем через beginNextPlayerTurn (вызывается после исчерпания AP игрока)
     sim.dispatch({ type: 'WAIT', entityId: 'player' });
 
-    // Enemy должен быть мёртв
+    // Enemy должен быть мёртв (isAlive = false), но ещё не удалён из entities
     const updatedEnemy = sim.getState().entities.get(enemy.id);
-    expect(updatedEnemy).toBeUndefined();
+    expect(updatedEnemy).toBeDefined();
+    expect('isAlive' in updatedEnemy! && updatedEnemy.isAlive).toBe(false);
     resetRegistry();
   });
 });
