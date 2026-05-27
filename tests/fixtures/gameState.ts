@@ -165,6 +165,12 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
     floorSnapshots: [],
     rng: createRNG(12345),
     nextEntityCounter: 0,
+    runStats: {
+      startTime: Date.now(),
+      enemiesKilled: 0,
+      chestsOpened: 0,
+      itemsPickedUp: 0,
+    },
     ...overrides,
   };
 }

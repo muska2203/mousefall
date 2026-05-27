@@ -42,7 +42,6 @@ export const fireballSkill: SkillExecutor = {
     const affectedEntities = getEntitiesInRadius(state, center, 1);
 
     for (const entity of affectedEntities) {
-      if (entity.id === caster.id) continue;
       if (entity.type === 'item' || entity.type === 'stairs') continue;
       const isCenter = entity.x === center.x && entity.y === center.y;
       const formulaId = isCenter ? 'fireball_center' : 'fireball_aoe';

@@ -133,10 +133,10 @@ export function GameField({
       if (rendererRef.current && pixiRef.current) {
         rendererRef.current.removeTicker(pixiRef.current.app.ticker);
       }
-      pixiRef.current?.unmount();
-      pixiRef.current = null;
       rendererRef.current?.destroy();
       rendererRef.current = null;
+      pixiRef.current?.unmount();
+      pixiRef.current = null;
       sequencerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

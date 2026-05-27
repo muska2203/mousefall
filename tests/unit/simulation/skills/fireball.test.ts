@@ -48,9 +48,9 @@ describe('fireballSkill', () => {
 
   it('resolves no intents when cast on empty tile', () => {
     const state = makeGameState();
-    state.visible[5]![5] = true;
+    state.visible[3]![3] = true;
     state.visible[6]![6] = true;
-    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const player = makePlayer({ x: 3, y: 3, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
     state.entities.set(player.id, player);
 
@@ -60,9 +60,9 @@ describe('fireballSkill', () => {
 
   it('deals center damage + burning to enemy in center', () => {
     const state = makeGameState();
-    state.visible[5]![5] = true;
+    state.visible[8]![8] = true;
     state.visible[6]![6] = true;
-    const player = makePlayer({ x: 5, y: 5, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
     state.player = player;
     state.entities.set(player.id, player);
@@ -74,6 +74,7 @@ describe('fireballSkill', () => {
 
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.damage).toBeGreaterThan(0);
+    expect(damageIntents[0]!.entityId).toBe(enemy.id);
     expect(statusIntents).toHaveLength(1);
     expect(statusIntents[0]!.status.type).toBe('burning');
     expect(statusIntents[0]!.status.duration).toBe(3);
@@ -81,10 +82,10 @@ describe('fireballSkill', () => {
 
   it('deals aoe damage + burning to enemy near center', () => {
     const state = makeGameState();
-    state.visible[5]![5] = true;
+    state.visible[8]![8] = true;
     state.visible[6]![6] = true;
     state.visible[7]![6] = true;
-    const player = makePlayer({ x: 5, y: 5, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     const enemy = makeEnemy({ x: 7, y: 6, hp: 100, maxHp: 100 });
     state.player = player;
     state.entities.set(player.id, player);
@@ -98,11 +99,11 @@ describe('fireballSkill', () => {
 
   it('hits multiple enemies in aoe', () => {
     const state = makeGameState();
-    state.visible[5]![5] = true;
+    state.visible[8]![8] = true;
     state.visible[6]![6] = true;
     state.visible[7]![6] = true;
     state.visible[6]![7] = true;
-    const player = makePlayer({ x: 5, y: 5, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     const enemy1 = makeEnemy({ id: 'enemy_1', x: 6, y: 6, hp: 100, maxHp: 100 });
     const enemy2 = makeEnemy({ id: 'enemy_2', x: 7, y: 6, hp: 100, maxHp: 100 });
     state.player = player;
@@ -113,6 +114,28 @@ describe('fireballSkill', () => {
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
     expect(damageIntents).toHaveLength(2);
+  });
+
+  it('damages caster when caster is inside aoe radius', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[6]![6] = true;
+    const player = makePlayer({ x: 5, y: 5, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(enemy.id, enemy);
+
+    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
+    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    const statusIntents = intents.filter(i => i.type === 'APPLY_STATUS');
+
+    expect(damageIntents).toHaveLength(2);
+    expect(damageIntents.some(i => i.entityId === player.id)).toBe(true);
+    expect(damageIntents.some(i => i.entityId === enemy.id)).toBe(true);
+    expect(statusIntents).toHaveLength(2);
+    expect(statusIntents.some(i => i.entityId === player.id && i.status.type === 'burning')).toBe(true);
+    expect(statusIntents.some(i => i.entityId === enemy.id && i.status.type === 'burning')).toBe(true);
   });
 
   it('is registered in skill registry', () => {

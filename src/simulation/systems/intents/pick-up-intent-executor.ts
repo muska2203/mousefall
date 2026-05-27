@@ -36,6 +36,7 @@ export const executePickUpIntent: IntentExecutor<PickUpIntent> = (
     });
 
     state.entities.delete(itemEntity.id);
+    state.runStats.itemsPickedUp += itemEntity.quantity;
 
     return builder.addChild(parent, {
         type: 'ITEM_PICKED_UP' as const,

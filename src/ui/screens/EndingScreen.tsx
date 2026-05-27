@@ -17,6 +17,7 @@ import type {MetricItem} from '@ui/components/EndingMetricsPanel';
 import {BossListPanel} from '@ui/components/BossListPanel';
 import {EndingActionsPanel} from '@ui/components/EndingActionsPanel';
 import type {PlayerStatsSnapshot, EquipmentSnapshot} from '@presentation/gameSession';
+import type {RunStats} from '@simulation/types';
 
 interface Props {
   result: 'defeat' | 'victory';
@@ -25,6 +26,9 @@ interface Props {
   portraitSrc?: string;
   playerStats?: PlayerStatsSnapshot;
   equipment?: EquipmentSnapshot;
+  runStats?: RunStats;
+  floor?: number;
+  turnRound?: number;
 }
 
 const DEFEAT_BOSSES = [
@@ -34,7 +38,14 @@ const DEFEAT_BOSSES = [
   '👑 Кот-хозяин кладовки',
 ];
 
-export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, playerStats, equipment}: Props) {
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, playerStats, equipment, runStats, floor, turnRound}: Props) {
   const isVictory = result === 'victory';
   const ps = playerStats;
 
@@ -64,13 +75,15 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
         {label: 'Амулет', fallback: '📿'},
       ];
 
+  const duration = runStats ? formatDuration(Date.now() - runStats.startTime) : '00:00';
+
   const metrics: MetricItem[] = [
-    {label: 'Длительность', value: '00:00'},
-    {label: 'Ходов', value: '0'},
-    {label: 'Убито противников', value: '0'},
-    {label: 'Достигнут уровень лабиринта', value: '1'},
-    {label: 'Открыто сундуков', value: '0'},
-    {label: 'Подобрано предметов', value: '0'},
+    {label: 'Длительность', value: duration},
+    {label: 'Ходов', value: String(turnRound ?? 0)},
+    {label: 'Убито противников', value: String(runStats?.enemiesKilled ?? 0)},
+    {label: 'Достигнут уровень лабиринта', value: String(floor ?? 1)},
+    {label: 'Открыто сундуков', value: String(runStats?.chestsOpened ?? 0)},
+    {label: 'Подобрано предметов', value: String(runStats?.itemsPickedUp ?? 0)},
   ];
 
   const leftColumn = (

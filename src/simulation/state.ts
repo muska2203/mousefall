@@ -115,6 +115,12 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
     floorSnapshots: [],
     rng: createRNG(seed),
     nextEntityCounter: 0,
+    runStats: {
+      startTime: Date.now(),
+      enemiesKilled: 0,
+      chestsOpened: 0,
+      itemsPickedUp: 0,
+    },
   };
 }
 

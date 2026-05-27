@@ -21,6 +21,7 @@ export const executeDieIntent: IntentExecutor<DieIntent> = (
         if ('isAlive' in entity) {
             entity.isAlive = false;
             entity.blocksMovement = false;
+            state.runStats.enemiesKilled++;
             return builder.addChild(parent, {
                 type: 'ENTITY_DIED',
                 entityId: intent.entityId,

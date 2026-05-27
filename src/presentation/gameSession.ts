@@ -213,6 +213,7 @@ export class GameSession {
       equipSlots,
       itemsOnFloor,
       inventory,
+      runStats: state.runStats,
     };
   }
 

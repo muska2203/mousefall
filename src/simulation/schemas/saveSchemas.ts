@@ -207,6 +207,13 @@ const GameMapSchema = z.object({
 // Полная схема GameState
 // ─────────────────────────────────────────────
 
+const RunStatsSchema = z.object({
+  startTime: z.number().int(),
+  enemiesKilled: z.number().int().nonnegative(),
+  chestsOpened: z.number().int().nonnegative(),
+  itemsPickedUp: z.number().int().nonnegative(),
+});
+
 export const GameStateSchema = z.object({
   map: GameMapSchema,
 
@@ -242,6 +249,8 @@ export const GameStateSchema = z.object({
       .positive(),
 
   rng: RNGStateSchema,
+
+  runStats: RunStatsSchema,
 });
 
 // ─────────────────────────────────────────────

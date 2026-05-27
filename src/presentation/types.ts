@@ -8,7 +8,7 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot, Intent } from '@simulation/types';
+import type { GameState, PlayerStatsSnapshot, Intent, RunStats } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { ItemDetailViewModel } from './itemDetailMapper';
 
@@ -237,4 +237,6 @@ export type RenderInput = {
   itemsOnFloor: Array<{ id: string; x: number; y: number; templateId: string }>;
   /** Инвентарь игрока. */
   inventory: InventoryItemViewModel[];
+  /** Статистика текущего забега. */
+  runStats: RunStats;
 };

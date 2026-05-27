@@ -78,6 +78,9 @@ export default function App() {
       const defeatPortraitSrc = GameSession.getPlayerPortraitSrc(defeatTemplateId ?? '');
       const defeatStats = defeatRenderInput?.playerStats;
       const defeatEquipment = defeatRenderInput?.equipment;
+      const defeatRunStats = defeatRenderInput?.runStats;
+      const defeatFloor = defeatRenderInput?.state.floor;
+      const defeatTurnRound = defeatRenderInput?.state.turn.round;
       return (
         <EndingScreen
           result="defeat"
@@ -86,6 +89,9 @@ export default function App() {
           portraitSrc={defeatPortraitSrc}
           playerStats={defeatStats}
           equipment={defeatEquipment}
+          runStats={defeatRunStats}
+          floor={defeatFloor}
+          turnRound={defeatTurnRound}
         />
       );
     }
@@ -96,6 +102,9 @@ export default function App() {
       const victoryPortraitSrc = GameSession.getPlayerPortraitSrc(victoryTemplateId ?? '');
       const victoryStats = victoryRenderInput?.playerStats;
       const victoryEquipment = victoryRenderInput?.equipment;
+      const victoryRunStats = victoryRenderInput?.runStats;
+      const victoryFloor = victoryRenderInput?.state.floor;
+      const victoryTurnRound = victoryRenderInput?.state.turn.round;
       return (
         <EndingScreen
           result="victory"
@@ -104,6 +113,9 @@ export default function App() {
           portraitSrc={victoryPortraitSrc}
           playerStats={victoryStats}
           equipment={victoryEquipment}
+          runStats={victoryRunStats}
+          floor={victoryFloor}
+          turnRound={victoryTurnRound}
         />
       );
     }
