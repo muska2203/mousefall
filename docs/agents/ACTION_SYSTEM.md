@@ -1,0 +1,86 @@
+# ACTION_SYSTEM — Action / Intent / Event
+
+> Симуляция использует трёхфазную систему. Не путай Action (намерение) с Event (запись о произошедшем).
+
+---
+
+## Три фазы
+
+```
+Action → validate() → resolve() → Intent[]
+  → execute() → Events → World Reactions → дополнительные Intents / Events
+```
+
+1. **Action (`GameAction`)** — высокоуровневое намерение игрока/врага (MOVE, ATTACK, WAIT).
+2. **Intent (`Intent`)** — низкоуровневые операции после разрешения (MOVE, DAMAGE, DIE).
+3. **Event (`GameEvent`)** — неизменяемая запись о произошедшем, возвращается через дерево `ExecutionNode`.
+
+---
+
+## ExecutionBuilder и ExecutionNode
+
+События организованы в дерево `ExecutionNode` (см. `src/simulation/systems/actions/types.ts`).
+
+`ExecutionBuilder` создаёт корневое событие (`ACTION_APPLIED`) и позволяет присоединять дочерние узлы при порождении интентов и реакций.
+
+---
+
+## ActionHandler<T>
+
+Каждый обработчик действия реализует:
+- `validate(state, action): ValidationResult`
+- `resolve(state, action): Intent[]`
+- `execute(state, action, intents, builder, parentNode): void`
+
+Оркестратор `runActionHandler` (`systems/actions/action-utils.ts`) вызывает их последовательно.
+
+---
+
+## IntentExecutor<T>
+
+Исполнители интентов (`systems/intents/`) мутируют состояние и создают узлы событий:
+- **MOVE** — обновляет `entity.x / entity.y`, порождает `ENTITY_MOVED`
+- **DAMAGE** — обновляет `target.hp`, порождает `ENTITY_DAMAGED`
+- **DIE** — удаляет врага или переводит игрока в `phase: 'dead'`, порождает `ENTITY_DIED` / `PLAYER_DIED`
+
+---
+
+## Мировые реакции (`WorldReaction`)
+
+После выполнения интента `runWorldReactions` проверяет зарегистрированные реакции.
+
+Сейчас реализована только `deathReaction`: при `ENTITY_DAMAGED`, если `hp <= 0`, порождается интент `DIE`.
+
+---
+
+## Пример: ATTACK с убийством
+
+1. **Action:** `ATTACK` (entityId, dx, dy)
+2. **Validation:** проверка, что цель в зоне поражения
+3. **Resolution:** порождает Intent `DAMAGE`
+4. **Execution:** `executeDamageIntent` уменьшает HP и создаёт `ENTITY_DAMAGED`
+5. **World Reactions:** `deathReaction` видит `hp <= 0`, порождает Intent `DIE`
+6. **Execution DIE:** `executeDieIntent` удаляет сущность, создаёт `ENTITY_DIED`
+
+Итоговое дерево:
+```
+ACTION_APPLIED (ATTACK)
+└── ENTITY_DAMAGED (target, damage)
+    └── ENTITY_DIED (target)
+```
+
+---
+
+## Чеклист: добавление нового Action
+
+- [ ] Тип добавлен в `GameAction` (`src/simulation/types.ts`)
+- [ ] Handler создан в `src/simulation/systems/actions/handlers/`
+- [ ] Handler зарегистрирован в `action-registry.ts`
+- [ ] Тесты добавлены в `tests/unit/simulation/actions/`
+
+## Чеклист: добавление нового Event
+
+- [ ] Тип добавлен в union `GameEvent` (`src/simulation/types.ts`)
+- [ ] Эмиссия добавлена в соответствующий `IntentExecutor` (`src/simulation/systems/intents/`)
+- [ ] Обработка добавлена в Presentation (перевод в анимацию / combat log)
+- [ ] Визуализация добавлена в UI (если требуется новый тип анимации)
