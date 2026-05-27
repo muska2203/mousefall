@@ -151,6 +151,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     heroStats: [],
     equipSlots: [],
     itemsOnFloor: [],
+    inventory: [],
   };
 }
 

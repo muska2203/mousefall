@@ -221,7 +221,12 @@ export function GameScreen({session, onModeChange}: Props) {
   const rightColumn = (
     <>
       <EquipmentPanel slots={renderInput.equipSlots} />
-      <InventoryPanel />
+      <InventoryPanel
+        items={renderInput.inventory}
+        onItemClick={(instanceId, templateId) => {
+          console.log('Inventory item clicked:', instanceId, templateId);
+        }}
+      />
       <ConsumablesPanel />
       <SkillsPanel
         skills={renderInput.playerSkills}

@@ -4,8 +4,11 @@
  * Используется в GameScreen и EndingScreen.
  */
 
+import {useState} from 'react';
+import type {ItemDetailViewModel} from '@presentation/itemDetailMapper';
 import {Panel} from './Panel';
 import {EquipSlot} from './EquipSlot';
+import {ItemDetailPopover} from './ItemDetailPopover';
 
 export type EquipSlotData = {
   label: string;
@@ -13,6 +16,7 @@ export type EquipSlotData = {
   fallback?: string;
   rarity?: string;
   damage?: number | null;
+  detail?: ItemDetailViewModel;
 };
 
 interface Props {
@@ -21,13 +25,33 @@ interface Props {
 }
 
 export function EquipmentPanel({title = 'Экипировка', slots}: Props) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [mousePos, setMousePos] = useState<{x: number; y: number}>({x: 0, y: 0});
+
+  const hoveredSlot = hoveredIndex !== null ? slots[hoveredIndex] : null;
+
   return (
     <Panel title={title}>
       <div className="cm-equip-slots">
         {slots.map((slot, i) => (
-          <EquipSlot key={`${slot.label}-${i}`} {...slot} />
+          <div
+            key={`${slot.label}-${i}`}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseMove={(e) => setMousePos({x: e.clientX, y: e.clientY})}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            <EquipSlot {...slot} />
+          </div>
         ))}
       </div>
+      {hoveredSlot?.detail && (
+        <ItemDetailPopover
+          item={hoveredSlot.detail}
+          visible={true}
+          x={mousePos.x}
+          y={mousePos.y}
+        />
+      )}
     </Panel>
   );
 }

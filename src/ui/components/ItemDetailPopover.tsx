@@ -16,6 +16,7 @@
  * />
  */
 
+import { useLayoutEffect, useRef } from 'react';
 import type { ItemDetailViewModel } from '@presentation/itemDetailMapper';
 import { resolveItemFrame } from '@utils/assetResolver';
 
@@ -24,27 +25,55 @@ interface Props {
   item: ItemDetailViewModel;
   /** Управляет видимостью тултипа. */
   visible: boolean;
-  /** Координата X для фиксированного позиционирования (viewport). */
+  /** Координата X курсора в viewport (используется как опорная точка). */
   x?: number;
-  /** Координата Y для фиксированного позиционирования (viewport). */
+  /** Координата Y курсора в viewport (используется как опорная точка). */
   y?: number;
 }
 
+const POPOVER_OFFSET = 16;
+const VIEWPORT_PADDING = 8;
+
 export function ItemDetailPopover({ item, visible, x, y }: Props) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || x === undefined || y === undefined) return;
+
+    const rect = el.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = x + POPOVER_OFFSET;
+    let top = y + POPOVER_OFFSET;
+
+    // Если карточка не влезает справа — отображаем слева от курсора
+    if (left + rect.width > viewportWidth - VIEWPORT_PADDING) {
+      left = x - rect.width - POPOVER_OFFSET;
+    }
+    // Если карточка не влезает снизу — отображаем сверху от курсора
+    if (top + rect.height > viewportHeight - VIEWPORT_PADDING) {
+      top = y - rect.height - POPOVER_OFFSET;
+    }
+
+    // Не даём уйти за левый/верхний край viewport
+    left = Math.max(VIEWPORT_PADDING, left);
+    top = Math.max(VIEWPORT_PADDING, top);
+
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+  }, [x, y, visible, item]);
+
   if (!visible) {
     return null;
   }
 
-  const positionStyle =
-    x !== undefined && y !== undefined
-      ? { left: x, top: y }
-      : undefined;
-
   return (
     <div
+      ref={ref}
       className="inventory-item-detail-popover"
       role="tooltip"
-      style={positionStyle}
     >
       <div className={`item-detail-card item-detail-rarity-${item.rarity}`}>
         <header className="item-detail-head">

@@ -25,6 +25,7 @@ import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@content/
 
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
+import {mapItemTemplateToDetail} from './itemDetailMapper';
 import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
@@ -132,22 +133,36 @@ export class GameSession {
       {type: 'readonly' as const, icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
     ];
 
+    const weaponTemplate = eq.weaponId ? tryGetItem(eq.weaponId) : null;
+    const armorTemplate = eq.armorId ? tryGetItem(eq.armorId) : null;
+    const amuletTemplate = eq.amuletId ? tryGetItem(eq.amuletId) : null;
+
+    const weaponDetail = weaponTemplate ? mapItemTemplateToDetail(weaponTemplate) : undefined;
+    const armorDetail = armorTemplate ? mapItemTemplateToDetail(armorTemplate) : undefined;
+    const amuletDetail = amuletTemplate ? mapItemTemplateToDetail(amuletTemplate) : undefined;
+
     const equipSlots = [
       {
         label: 'Оружие',
         icon: eq.weaponId ? `/assets/items/${eq.weaponId}.png` : undefined,
         fallback: '⚔',
         damage: eq.weaponDamage,
+        rarity: weaponDetail?.rarity ?? 'common',
+        detail: weaponDetail,
       },
       {
         label: 'Броня',
         icon: eq.armorId ? `/assets/items/${eq.armorId}.png` : undefined,
         fallback: '🛡',
+        rarity: armorDetail?.rarity ?? 'common',
+        detail: armorDetail,
       },
       {
         label: 'Амулет',
         icon: eq.amuletId ? `/assets/items/${eq.amuletId}.png` : undefined,
         fallback: '📿',
+        rarity: amuletDetail?.rarity ?? 'common',
+        detail: amuletDetail,
       },
     ];
 
@@ -159,6 +174,29 @@ export class GameSession {
         y: e.y,
         templateId: e.templateId,
       }));
+
+    const inventory = state.player.inventory.map(invItem => {
+      const template = tryGetItem(invItem.templateId);
+      const detail = template
+        ? mapItemTemplateToDetail(template, {stackCount: invItem.quantity})
+        : {
+            name: invItem.templateId,
+            description: '',
+            rarity: 'common' as const,
+            rarityLabel: 'Обычный',
+            typeLabel: 'Неизвестно',
+            icon: '',
+            fallbackIcon: '?',
+            stackCount: invItem.quantity,
+            sections: [],
+          };
+      return {
+        instanceId: invItem.instanceId,
+        templateId: invItem.templateId,
+        quantity: invItem.quantity,
+        detail,
+      };
+    });
 
     return {
       state,
@@ -174,6 +212,7 @@ export class GameSession {
       heroStats,
       equipSlots,
       itemsOnFloor,
+      inventory,
     };
   }
 

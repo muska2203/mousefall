@@ -10,6 +10,7 @@
 
 import type { GameState, PlayerStatsSnapshot, Intent } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
+import type { ItemDetailViewModel } from './itemDetailMapper';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
 export type { TileType } from '@simulation/types';
@@ -126,6 +127,15 @@ export type EquipSlotViewModel = {
   icon?: string;
   fallback: string;
   damage?: number | null;
+  rarity?: string;
+  detail?: ItemDetailViewModel;
+};
+
+export type InventoryItemViewModel = {
+  instanceId: string;
+  templateId: string;
+  quantity: number;
+  detail: ItemDetailViewModel;
 };
 
 /** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */
@@ -225,4 +235,6 @@ export type RenderInput = {
   equipSlots: EquipSlotViewModel[];
   /** Предметы на полу для отображения на карте. */
   itemsOnFloor: Array<{ id: string; x: number; y: number; templateId: string }>;
+  /** Инвентарь игрока. */
+  inventory: InventoryItemViewModel[];
 };
