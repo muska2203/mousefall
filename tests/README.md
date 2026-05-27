@@ -4,7 +4,7 @@
 
 All automated tests for the simulation layer. Tests run in Node.js — no browser required.
 
-See `TESTING_STRATEGY.md` in the project root for the full testing philosophy and examples.
+See `docs/architecture/TESTING_STRATEGY.md` for the full testing philosophy and examples.
 
 ---
 

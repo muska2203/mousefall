@@ -115,6 +115,19 @@ tests/
 
 ---
 
+## Соглашения об именовании файлов
+
+```
+src/simulation/systems/movement.ts      # System files: lowercase
+src/simulation/types.ts                 # Types: lowercase
+src/presentation/gameSession.ts         # Presentation: PascalCase для классов
+src/ui/components/Grid.tsx              # React components: PascalCase
+src/ui/renderer/WorldRenderer.ts        # Renderer classes: PascalCase
+public/content/entities/cat_small.json  # Content: lowercase
+```
+
+---
+
 ## Дальше
 
 - **Правила слоёв и зависимостей** → [`LAYERS.md`](./LAYERS.md)

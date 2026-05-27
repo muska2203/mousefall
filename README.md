@@ -8,12 +8,12 @@
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Layer responsibilities, dependency rules, key decisions |
-| [DATA_FLOW.md](./DATA_FLOW.md) | How data moves from input to screen |
-| [EVENT_FLOW.md](./EVENT_FLOW.md) | Domain events: production, consumption, lifecycle |
-| [SAVE_SYSTEM.md](./SAVE_SYSTEM.md) | Snapshot saves, serialization, version migration |
-| [CONTENT_PIPELINE.md](./CONTENT_PIPELINE.md) | JSON content, Zod schemas, modding |
-| [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) | What to test, how to test, test fixtures |
+| [docs/architecture/OVERVIEW.md](./docs/architecture/OVERVIEW.md) | Layer responsibilities, dependency rules, key decisions |
+| [docs/architecture/DATA_FLOW.md](./docs/architecture/DATA_FLOW.md) | How data moves from input to screen |
+| [docs/architecture/EVENT_FLOW.md](./docs/architecture/EVENT_FLOW.md) | Domain events: production, consumption, lifecycle |
+| [docs/architecture/SAVE_SYSTEM.md](./docs/architecture/SAVE_SYSTEM.md) | Snapshot saves, serialization, version migration |
+| [docs/architecture/CONTENT_PIPELINE.md](./docs/architecture/CONTENT_PIPELINE.md) | JSON content, Zod schemas, modding |
+| [docs/architecture/TESTING_STRATEGY.md](./docs/architecture/TESTING_STRATEGY.md) | What to test, how to test, test fixtures |
 
 ---
 
@@ -124,7 +124,7 @@ npm run build
 
 ## Adding Content
 
-See [CONTENT_PIPELINE.md](./CONTENT_PIPELINE.md) for full details.
+See [docs/architecture/CONTENT_PIPELINE.md](./docs/architecture/CONTENT_PIPELINE.md) for full details.
 
 **Quick start:** Add a JSON file to `public/content/entities/enemies/` following the existing format. No code changes required.
 
@@ -132,7 +132,7 @@ See [CONTENT_PIPELINE.md](./CONTENT_PIPELINE.md) for full details.
 
 ## Adding Game Systems
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for full details.
+See [docs/architecture/OVERVIEW.md](./docs/architecture/OVERVIEW.md) for full details.
 
 **Quick start:**
 1. Add system file to `src/simulation/systems/`

@@ -16,7 +16,7 @@ The renderer does **NOT** handle:
 - Input handling
 - Game logic (that's `simulation/`)
 
-> **Note:** Renderer is not a separate architectural layer. It is a technical subsystem inside UI Layer, as per `ARCHITECTURE.md`.
+> **Note:** Renderer is not a separate architectural layer. It is a technical subsystem inside UI Layer, as per `docs/architecture/OVERVIEW.md`.
 
 ---
 
