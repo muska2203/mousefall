@@ -20,7 +20,7 @@ import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel} from './types';
 import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@content/registry';
 
 import {buildAnimationTree} from './animationPlanner';
@@ -55,6 +55,50 @@ export type GameViewModel = {
   /** Журнал событий текущей сессии */
   logs: LogItem[];
 };
+
+/** Порядок слотов экипировки для сортировки инвентаря. */
+const SLOT_ORDER: Record<string, number> = {
+  weapon: 0,
+  armor: 1,
+  amulet: 2,
+};
+
+/** Порядок редкости для сортировки инвентаря (по убыванию). */
+const RARITY_ORDER: Record<string, number> = {
+  common: 0,
+  rare: 1,
+  unique: 2,
+};
+
+/**
+ * Компаратор для сортировки инвентаря.
+ *
+ * Приоритет:
+ * 1. Не-расходуемые предметы первыми.
+ * 2. По слоту: оружие → броня → амулет.
+ * 3. По подтипу (если задан).
+ * 4. По редкости (уникальные → редкие → обычные).
+ * 5. По instanceId для стабильного порядка.
+ */
+function compareInventoryItems(a: InventoryItemViewModel, b: InventoryItemViewModel): number {
+  // 1. Расходуемые идут в конец.
+  const aConsumable = a.detail.type === 'consumable' ? 1 : 0;
+  const bConsumable = b.detail.type === 'consumable' ? 1 : 0;
+  if (aConsumable !== bConsumable) return aConsumable - bConsumable;
+
+  // 2. Слоты экипировки: оружие → броня → амулет.
+  const aSlot = SLOT_ORDER[a.detail.type] ?? 3;
+  const bSlot = SLOT_ORDER[b.detail.type] ?? 3;
+  if (aSlot !== bSlot) return aSlot - bSlot;
+
+  // 3. Редкость: уникальные → редкие → обычные.
+  const aRarity = RARITY_ORDER[a.detail.rarity] ?? 0;
+  const bRarity = RARITY_ORDER[b.detail.rarity] ?? 0;
+  if (aRarity !== bRarity) return bRarity - aRarity;
+
+  // 5. Стабильный порядок по instanceId.
+  return a.instanceId.localeCompare(b.instanceId);
+}
 
 export class GameSession {
   private simulation: Simulation | null = null;
@@ -107,6 +151,9 @@ export class GameSession {
       weaponId: player.equippedWeaponId,
       armorId: player.equippedArmorId,
       amuletId: player.equippedAmuletId,
+      weaponInstanceId: player.equippedWeaponInstanceId,
+      armorInstanceId: player.equippedArmorInstanceId,
+      amuletInstanceId: player.equippedAmuletInstanceId,
       weaponDamage: player.equippedWeaponId ? player.damage : null,
     };
 
@@ -120,6 +167,7 @@ export class GameSession {
         cooldown: ability.currentCooldown,
         maxCooldown: template?.cooldown ?? 0,
         isAvailable: ability.currentCooldown === 0 && player.mp >= (template?.mpCost ?? 0),
+        source: ability.source,
       };
     });
 
@@ -141,28 +189,86 @@ export class GameSession {
     const armorDetail = armorTemplate ? mapItemTemplateToDetail(armorTemplate) : undefined;
     const amuletDetail = amuletTemplate ? mapItemTemplateToDetail(amuletTemplate) : undefined;
 
+    const equippedIds = new Set([
+      player.equippedWeaponInstanceId,
+      player.equippedArmorInstanceId,
+      player.equippedAmuletInstanceId,
+    ].filter(Boolean) as string[]);
+
+    const buildItemDetail = (invItem: typeof player.inventory[0]) => {
+      const template = tryGetItem(invItem.templateId);
+      const detail = template
+        ? mapItemTemplateToDetail(template, {
+            stackCount: invItem.quantity,
+            rarity: template.rarity,
+          })
+        : {
+            name: invItem.templateId,
+            description: '',
+            rarity: 'common' as const,
+            rarityLabel: 'Обычный',
+            typeLabel: 'Неизвестно',
+            type: 'unknown',
+            icon: '',
+            fallbackIcon: '?',
+            stackCount: invItem.quantity,
+            sections: [],
+          };
+      const abilityTemplate = invItem.grantedAbility
+        ? this.getAbilityTemplate(invItem.grantedAbility.templateId)
+        : null;
+      return {
+        ...detail,
+        grantedAbility: invItem.grantedAbility
+          ? {
+              templateId: invItem.grantedAbility.templateId,
+              name: abilityTemplate?.name ?? invItem.grantedAbility.templateId,
+              level: invItem.grantedAbility.level,
+              icon: abilityTemplate?.spriteId ? `/assets/skills/${abilityTemplate.spriteId}.png` : null,
+            }
+          : null,
+      };
+    };
+
+    const findEquippedItem = (instanceId: string | null) =>
+      instanceId ? player.inventory.find(i => i.instanceId === instanceId) ?? null : null;
+
+    const weaponItem = findEquippedItem(player.equippedWeaponInstanceId);
+    const armorItem = findEquippedItem(player.equippedArmorInstanceId);
+    const amuletItem = findEquippedItem(player.equippedAmuletInstanceId);
+
+    const weaponDetailVm = weaponItem ? buildItemDetail(weaponItem) : null;
+    const armorDetailVm = armorItem ? buildItemDetail(armorItem) : null;
+    const amuletDetailVm = amuletItem ? buildItemDetail(amuletItem) : null;
+
     const equipSlots = [
       {
         label: 'Оружие',
-        icon: eq.weaponId ? `/assets/items/${eq.weaponId}.png` : undefined,
+        icon: weaponItem ? `/assets/items/${weaponItem.templateId}.png` : undefined,
         fallback: '⚔',
-        damage: eq.weaponDamage,
-        rarity: weaponDetail?.rarity ?? 'common',
-        detail: weaponDetail,
+        damage: player.equippedWeaponId ? player.damage : null,
+        rarity: weaponDetailVm?.rarity ?? 'common',
+        detail: weaponDetailVm ?? undefined,
+        slotType: 'weapon' as const,
+        instanceId: player.equippedWeaponInstanceId,
       },
       {
         label: 'Броня',
-        icon: eq.armorId ? `/assets/items/${eq.armorId}.png` : undefined,
+        icon: armorItem ? `/assets/items/${armorItem.templateId}.png` : undefined,
         fallback: '🛡',
-        rarity: armorDetail?.rarity ?? 'common',
-        detail: armorDetail,
+        rarity: armorDetailVm?.rarity ?? 'common',
+        detail: armorDetailVm ?? undefined,
+        slotType: 'armor' as const,
+        instanceId: player.equippedArmorInstanceId,
       },
       {
         label: 'Амулет',
-        icon: eq.amuletId ? `/assets/items/${eq.amuletId}.png` : undefined,
+        icon: amuletItem ? `/assets/items/${amuletItem.templateId}.png` : undefined,
         fallback: '📿',
-        rarity: amuletDetail?.rarity ?? 'common',
-        detail: amuletDetail,
+        rarity: amuletDetailVm?.rarity ?? 'common',
+        detail: amuletDetailVm ?? undefined,
+        slotType: 'amulet' as const,
+        instanceId: player.equippedAmuletInstanceId,
       },
     ];
 
@@ -175,28 +281,26 @@ export class GameSession {
         templateId: e.templateId,
       }));
 
-    const inventory = state.player.inventory.map(invItem => {
-      const template = tryGetItem(invItem.templateId);
-      const detail = template
-        ? mapItemTemplateToDetail(template, {stackCount: invItem.quantity})
-        : {
-            name: invItem.templateId,
-            description: '',
-            rarity: 'common' as const,
-            rarityLabel: 'Обычный',
-            typeLabel: 'Неизвестно',
-            icon: '',
-            fallbackIcon: '?',
-            stackCount: invItem.quantity,
-            sections: [],
-          };
-      return {
-        instanceId: invItem.instanceId,
-        templateId: invItem.templateId,
-        quantity: invItem.quantity,
-        detail,
-      };
-    });
+    const inventory = state.player.inventory
+      .filter(invItem => !equippedIds.has(invItem.instanceId))
+      .map(invItem => {
+        const detail = buildItemDetail(invItem);
+        const grantedAbility = invItem.grantedAbility
+          ? {
+              templateId: invItem.grantedAbility.templateId,
+              name: detail.grantedAbility?.name ?? invItem.grantedAbility.templateId,
+              level: invItem.grantedAbility.level,
+            }
+          : null;
+        return {
+          instanceId: invItem.instanceId,
+          templateId: invItem.templateId,
+          quantity: invItem.quantity,
+          detail,
+          grantedAbility,
+        };
+      })
+      .sort(compareInventoryItems);
 
     return {
       state,

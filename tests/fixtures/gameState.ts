@@ -69,6 +69,9 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     equippedWeaponId: null,
     equippedArmorId: null,
     equippedAmuletId: null,
+    equippedWeaponInstanceId: null,
+    equippedArmorInstanceId: null,
+    equippedAmuletInstanceId: null,
     mp: 0,
     maxMp: 0,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
@@ -119,6 +122,7 @@ export function makeFloorItem(overrides: Partial<ItemEntity> = {}): ItemEntity {
     y: 4,
     templateId: 'health_potion',
     quantity: 1,
+    grantedAbility: null,
     blocksMovement: false,
     ...overrides,
   };

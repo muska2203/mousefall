@@ -65,14 +65,14 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
 
   const equipSlots: EquipSlotData[] = equipment
     ? [
-        {label: 'Оружие', icon: equipment.weaponId ? `/assets/items/${equipment.weaponId}.png` : undefined, fallback: '⚔', damage: equipment.weaponDamage},
-        {label: 'Броня', icon: equipment.armorId ? `/assets/items/${equipment.armorId}.png` : undefined, fallback: '🛡'},
-        {label: 'Амулет', icon: equipment.amuletId ? `/assets/items/${equipment.amuletId}.png` : undefined, fallback: '📿'},
+        {label: 'Оружие', icon: equipment.weaponId ? `/assets/items/${equipment.weaponId}.png` : undefined, fallback: '⚔', damage: equipment.weaponDamage, slotType: 'weapon', instanceId: equipment.weaponInstanceId},
+        {label: 'Броня', icon: equipment.armorId ? `/assets/items/${equipment.armorId}.png` : undefined, fallback: '🛡', slotType: 'armor', instanceId: equipment.armorInstanceId},
+        {label: 'Амулет', icon: equipment.amuletId ? `/assets/items/${equipment.amuletId}.png` : undefined, fallback: '📿', slotType: 'amulet', instanceId: equipment.amuletInstanceId},
       ]
     : [
-        {label: 'Оружие', fallback: '⚔'},
-        {label: 'Броня', fallback: '🛡'},
-        {label: 'Амулет', fallback: '📿'},
+        {label: 'Оружие', fallback: '⚔', slotType: 'weapon', instanceId: null},
+        {label: 'Броня', fallback: '🛡', slotType: 'armor', instanceId: null},
+        {label: 'Амулет', fallback: '📿', slotType: 'amulet', instanceId: null},
       ];
 
   const duration = runStats ? formatDuration(Date.now() - runStats.startTime) : '00:00';

@@ -83,6 +83,26 @@ export function GameScreen({session, onModeChange}: Props) {
     onModeChange(session.getMode());
   }, [session, onModeChange, isInputBlocked]);
 
+  const handleEquipItem = useCallback(
+    (itemInstanceId: string) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.dispatch({type: 'EQUIP', entityId: 'player', itemInstanceId});
+      onModeChange(session.getMode());
+    },
+    [session, onModeChange, isInputBlocked],
+  );
+
+  const handleUnequip = useCallback(
+    (slot: 'weapon' | 'armor' | 'amulet') => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.dispatch({type: 'UNEQUIP', entityId: 'player', slot});
+      onModeChange(session.getMode());
+    },
+    [session, onModeChange, isInputBlocked],
+  );
+
   const handleZoom = useCallback(
     (delta: number) => {
       session.setZoom(delta);
@@ -220,11 +240,18 @@ export function GameScreen({session, onModeChange}: Props) {
 
   const rightColumn = (
     <>
-      <EquipmentPanel slots={renderInput.equipSlots} />
+      <EquipmentPanel
+        slots={renderInput.equipSlots}
+        onUnequip={handleUnequip}
+      />
       <InventoryPanel
         items={renderInput.inventory}
-        onItemClick={(instanceId, templateId) => {
-          console.log('Inventory item clicked:', instanceId, templateId);
+        onItemClick={(instanceId) => {
+          const item = renderInput.inventory.find(i => i.instanceId === instanceId);
+          const type = item?.detail.type;
+          if (type === 'weapon' || type === 'armor' || type === 'amulet') {
+            handleEquipItem(instanceId);
+          }
         }}
       />
       <ConsumablesPanel />

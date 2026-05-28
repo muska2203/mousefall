@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { ItemTemplate } from '../../../src/content/schemas';
 import { executeSpawnItemIntent } from '../../../src/simulation/systems/intents/spawn-item-intent-executor';
 import { makeGameState, makePlayer, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
 import { ExecutionBuilder } from '../../../src/simulation/core-types';
@@ -8,18 +9,20 @@ function makeBuilder() {
     return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'WAIT', entityId: 'any' } });
 }
 
-function makeTestItemTemplate(id: string) {
+function makeTestItemTemplate(id: string): ItemTemplate {
     return {
         id,
         name: 'Тестовый предмет',
         description: 'Для тестов',
         symbol: 'i',
-        type: 'consumable' as const,
+        type: 'consumable',
         stackable: false,
         maxStack: 1,
         weight: 1,
         value: 0,
+        rarity: 'common',
         equipModifiers: [],
+        abilityPool: [],
     };
 }
 

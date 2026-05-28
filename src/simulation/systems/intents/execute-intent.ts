@@ -13,7 +13,10 @@ import {executeConsumeApIntent} from "@simulation/systems/intents/consume-ap-int
 import {executeTickStatusEffectsIntent} from "@simulation/systems/intents/tick-status-effects-intent-executer.ts";
 import {executeSpawnItemIntent} from "@simulation/systems/intents/spawn-item-intent-executor.ts";
 import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
-
+import {executeEquipItemIntent} from "@simulation/systems/intents/equip-item-intent-executor.ts";
+import {executeUnequipItemIntent} from "@simulation/systems/intents/unequip-item-intent-executor.ts";
+import {executeGrantAbilityIntent} from "@simulation/systems/intents/grant-ability-intent-executor.ts";
+import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-ability-intent-executor.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
@@ -27,6 +30,10 @@ const intentExecutors = {
   TICK_STATUS_EFFECTS: executeTickStatusEffectsIntent,
   SPAWN_ITEM: executeSpawnItemIntent,
   PICK_UP: executePickUpIntent,
+  EQUIP_ITEM: executeEquipItemIntent,
+  UNEQUIP_ITEM: executeUnequipItemIntent,
+  GRANT_ABILITY: executeGrantAbilityIntent,
+  REVOKE_ABILITY: executeRevokeAbilityIntent,
 };
 
 export function executeIntent(

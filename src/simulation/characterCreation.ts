@@ -10,10 +10,8 @@
  * - Не содержит логики ходов, боя или отображения.
  */
 
-import type {PlayerEntity, RuntimeAbility} from './types';
-import { getItem, getPlayerTemplate } from '@content/registry';
+import type {PlayerEntity} from './types';
 import { recalculatePlayerBaseStats } from './systems/stats/recalculate.ts';
-import { addModifier } from './systems/stats/modifier-engine.ts';
 
 export type CharacterAttributes = {
   strength: number;
@@ -63,38 +61,13 @@ export function applyCharacterConfig(
     int: config.attributes.intelligence,
   };
 
-  // Экипировка начального снаряжения и применение equipModifiers
-  for (const templateId of config.startingEquipment) {
-    const lower = templateId.toLowerCase();
-
-    if (lower.includes('sword') || lower.includes('weapon') || lower.includes('dagger') || lower.includes('axe') || lower.includes('wand') || lower.includes('blade') || lower.includes('club') || lower.includes('staff')) {
-      player.equippedWeaponId = templateId;
-    } else if (lower.includes('armor') || lower.includes('vest') || lower.includes('mail') || lower.includes('plate') || lower.includes('cloak')) {
-      player.equippedArmorId = templateId;
-    } else if (lower.includes('amulet') || lower.includes('fang') || lower.includes('bead') || lower.includes('tooth') || lower.includes('ring') || lower.includes('necklace')) {
-      player.equippedAmuletId = templateId;
-    }
-
-    // Применяем equipModifiers от предмета
-    const item = getItem(templateId);
-    for (const mod of item.equipModifiers ?? []) {
-      addModifier(player, { ...mod, source: `item_${templateId}` });
-    }
-  }
-
-  // Пересчёт итоговых характеристик (maxHp, maxMp, damage, armor)
+  // Пересчёт базовых характеристик (без учёта стартовой экипировки — она применяется позже)
   recalculatePlayerBaseStats(player);
 
   // Восстанавливаем текущие ресурсы до новых максимумов после пересчёта
   player.hp = player.maxHp;
   player.mp = player.maxMp;
 
-  // Начальные способности из шаблона игрока
-  const template = getPlayerTemplate(config.templateId);
-  player.abilities = template.abilities.map((id): RuntimeAbility => ({
-    templateId: id,
-    source: 'innate',
-    level: 1,
-    currentCooldown: 0,
-  }));
+  // Начальные способности (пока пустой массив, будут заполняться из экипировки)
+  player.abilities = [];
 }

@@ -20,6 +20,7 @@ import type { MapParams } from '@content/schemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
 import { getEntity, getItem } from '@content/registry';
+import { rollItemAbility } from './item-ability-roll';
 
 // ─────────────────────────────────────────────
 // Тип выходных данных
@@ -221,6 +222,7 @@ function createFloorItem(state: GameState, templateId: string, x: number, y: num
     displayName: template.name,
     templateId,
     quantity: 1,
+    grantedAbility: rollItemAbility(template, state.rng),
     blocksMovement: false,
   };
 }

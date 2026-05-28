@@ -33,6 +33,7 @@ export const executePickUpIntent: IntentExecutor<PickUpIntent> = (
         instanceId: itemEntity.id,
         templateId: itemEntity.templateId,
         quantity: itemEntity.quantity,
+        grantedAbility: itemEntity.grantedAbility,
     });
 
     state.entities.delete(itemEntity.id);

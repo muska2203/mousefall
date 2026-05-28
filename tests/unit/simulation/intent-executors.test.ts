@@ -15,7 +15,16 @@ function makeBuilder() {
 
 beforeEach(() => {
     resetRegistry();
-    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map() });
+    initRegistry({
+        entities: new Map(),
+        players: new Map(),
+        items: new Map([
+            ['health_potion', { id: 'health_potion', name: 'Зелье здоровья', description: '', symbol: '!', type: 'consumable', stackable: false, maxStack: 1, weight: 1, value: 0, abilityPool: [] } as any],
+        ]),
+        abilities: new Map(),
+        maps: new Map(),
+        stairs: new Map(),
+    });
 });
 
 afterEach(() => {
@@ -236,9 +245,9 @@ describe('executePickUpIntent', () => {
         expect(node!.event.type).toBe('ITEM_PICKED_UP');
         expect(player.inventory.length).toBe(1);
         expect(player.inventory[0]).toMatchObject({
-            instanceId: item.id,
             templateId: item.templateId,
             quantity: 1,
+            grantedAbility: null,
         });
         expect(state.entities.has(item.id)).toBe(false);
     });

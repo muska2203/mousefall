@@ -90,6 +90,18 @@ export type StatusEffect = {
   statModifiers: StatModifier[] | null;
 };
 
+export type RuntimeAbility = {
+  templateId: string;
+  /** Откуда скилл получен */
+  source: 'innate' | 'levelup' | 'equipment';
+  /** ID экземпляра предмета, который дал этот скилл. Заполняется при source === 'equipment'. */
+  sourceItemInstanceId?: string;
+  /** Уровень скилла (влияет на формулу) */
+  level: number;
+  /** Оставшихся ходов до отката. 0 = готов. */
+  currentCooldown: number;
+};
+
 // ─────────────────────────────────────────────
 // Валидация
 // ─────────────────────────────────────────────
@@ -150,7 +162,9 @@ export type GameAction =
   | DescendAction
   | AscendAction
   | UseAbilityAction
-  | PickUpAction;
+  | PickUpAction
+  | EquipAction
+  | UnequipAction;
 
 export type MoveAction = {
   type: 'MOVE';
@@ -193,6 +207,18 @@ export type PickUpAction = {
   entityId: EntityId;
 };
 
+export type EquipAction = {
+  type: 'EQUIP';
+  entityId: EntityId;
+  itemInstanceId: ItemInstanceId;
+};
+
+export type UnequipAction = {
+  type: 'UNEQUIP';
+  entityId: EntityId;
+  slot: 'weapon' | 'armor' | 'amulet';
+};
+
 export type TargetMode =
   | { type: 'self' }
   | { type: 'single'; range: number }
@@ -214,7 +240,11 @@ export type Intent =
   | ConsumeApIntent
   | TickStatusEffectsIntent
   | SpawnItemIntent
-  | PickUpIntent;
+  | PickUpIntent
+  | EquipItemIntent
+  | UnequipItemIntent
+  | GrantAbilityIntent
+  | RevokeAbilityIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; damage: number };
@@ -227,6 +257,10 @@ export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: 
 export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId };
 export type SpawnItemIntent = { type: 'SPAWN_ITEM'; templateId: string; position: Position; sourceEntityId: EntityId };
 export type PickUpIntent = { type: 'PICK_UP'; entityId: EntityId; itemId: EntityId; templateId: string };
+export type EquipItemIntent = { type: 'EQUIP_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
+export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot: 'weapon' | 'armor' | 'amulet' };
+export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
+export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -255,7 +289,11 @@ export type GameEvent =
   | AbilityUsedEvent
   | ResourceConsumedEvent
   | StatusTickedEvent
-  | CooldownSetEvent;
+  | CooldownSetEvent
+  | ItemEquippedEvent
+  | ItemUnequippedEvent
+  | AbilityGrantedEvent
+  | AbilityRevokedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -302,3 +340,8 @@ export type AbilityUsedEvent = { type: 'ABILITY_USED'; entityId: EntityId; abili
 export type ResourceConsumedEvent = { type: 'RESOURCE_CONSUMED'; entityId: EntityId; resource: 'mp' | 'ap'; amount: number; remaining: number };
 
 export type CooldownSetEvent = { type: 'COOLDOWN_SET'; entityId: EntityId; abilityId: string; turns: number };
+
+export type ItemEquippedEvent = { type: 'ITEM_EQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
+export type ItemUnequippedEvent = { type: 'ITEM_UNEQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
+export type AbilityGrantedEvent = { type: 'ABILITY_GRANTED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
+export type AbilityRevokedEvent = { type: 'ABILITY_REVOKED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };

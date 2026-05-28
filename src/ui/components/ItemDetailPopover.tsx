@@ -69,6 +69,8 @@ export function ItemDetailPopover({ item, visible, x, y }: Props) {
     return null;
   }
 
+  const ga = item.grantedAbility;
+
   return (
     <div
       ref={ref}
@@ -111,6 +113,25 @@ export function ItemDetailPopover({ item, visible, x, y }: Props) {
           </span>
           <span className="item-detail-name">{item.name}</span>
         </div>
+
+        {ga && (
+          <div className="item-detail-section">
+            <h4 className="item-detail-section-title">Скилл предмета</h4>
+            <div className="item-detail-ability">
+              {ga.icon && (
+                <img
+                  className="item-detail-ability__icon"
+                  src={ga.icon}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <span className="item-detail-ability__name">{ga.name}</span>
+              <span className="item-detail-ability__level">ур. {ga.level}</span>
+            </div>
+          </div>
+        )}
 
         {item.sections.map((section, index) => {
           if (section.kind === 'stat-list') {

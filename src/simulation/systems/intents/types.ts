@@ -15,6 +15,10 @@ export type {
   TickStatusEffectsIntent,
   SpawnItemIntent,
   PickUpIntent,
+  EquipItemIntent,
+  UnequipItemIntent,
+  GrantAbilityIntent,
+  RevokeAbilityIntent,
 } from "@simulation/core-types.ts";
 
 export type IntentExecutor<T extends Intent> = (

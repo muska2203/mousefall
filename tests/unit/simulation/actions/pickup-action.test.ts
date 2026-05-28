@@ -1,11 +1,30 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import {pickupEntity} from '../../../../src/simulation/systems/actions/pickup-action';
 import {makeGameState, makePlayer, makeEnemy, makeStateWithPlayerAndEntity, makeFloorItem} from '../../../fixtures/gameState';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 
 function makeBuilder() {
     return new ExecutionBuilder({type: 'ACTION_APPLIED', action: {type: 'WAIT', entityId: 'any'}});
 }
+
+beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+        entities: new Map(),
+        players: new Map(),
+        items: new Map([
+            ['health_potion', { id: 'health_potion', name: 'Зелье здоровья', description: '', symbol: '!', type: 'consumable', stackable: false, maxStack: 1, weight: 1, value: 0, abilityPool: [] } as any],
+        ]),
+        abilities: new Map(),
+        maps: new Map(),
+        stairs: new Map(),
+    });
+});
+
+afterEach(() => {
+    resetRegistry();
+});
 
 describe('pickupEntity', () => {
     it('успешно поднимает предмет, если он находится на клетке актёра', () => {

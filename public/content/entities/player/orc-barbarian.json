@@ -5,6 +5,5 @@
   "symbol": "@",
   "portraitImg": "/assets/portraits/orc-barbarian-ready.png",
   "spriteId": "orc-barbarian",
-  "renderScale": 1.0,
-  "abilities": ["fireball", "magic_slap"]
+  "renderScale": 1.0
 }

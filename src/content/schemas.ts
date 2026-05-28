@@ -73,12 +73,10 @@ const WeaponStatsSchema = z.object({
   baseDamage: z.number().int().nonnegative().describe('Базовый урон оружия'),
   damageFormulaId: z.string().min(1).describe('ID формулы урона в коде (например, club, staff)'),
   range:  z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
-  grantedAbilities: z.array(z.string()).default([]).describe('ID способностей, доступных при экипировке'),
 }).describe('Характеристики оружия');
 
 const ArmorStatsSchema = z.object({
   baseArmor: z.number().int().nonnegative().describe('Плоское снижение урона при экипировке'),
-  grantedAbilities: z.array(z.string()).default([]).describe('ID способностей, доступных при экипировке'),
 }).describe('Характеристики брони');
 
 const ConsumableEffectSchema = z.object({
@@ -96,6 +94,7 @@ export const ItemTemplateSchema = z.object({
   icon:        z.string().optional().describe('Путь к иконке предмета для UI'),
   fallback:    z.string().optional().describe('Emoji-запасной вариант для отображения в UI'),
   type:        z.enum(['weapon', 'armor', 'amulet', 'consumable', 'key', 'gold']).describe('Категория предмета'),
+  rarity:      z.enum(['common', 'rare', 'unique']).default('common').describe('Редкость предмета'),
   stackable:   z.boolean().default(false).describe('Можно ли складывать несколько в одну ячейку инвентаря'),
   maxStack:    z.number().int().positive().default(1).describe('Максимальный размер стопки'),
   weight:      z.number().nonnegative().default(1).describe('Вес предмета (для будущей системы перегруза)'),
@@ -108,6 +107,12 @@ export const ItemTemplateSchema = z.object({
     value: z.number(),
     op: z.enum(['add', 'multiply']),
   })).default([]).describe('Модификаторы, применяемые при экипировке'),
+  abilityPool: z.array(
+    z.object({
+      abilityId: z.string().min(1).describe('ID способности из пула'),
+      weight: z.number().positive().default(1).describe('Вес для вероятности выпадения'),
+    })
+  ).default([]).describe('Пул скиллов, из которого роллится одна способность при создании экземпляра'),
 }).describe('Шаблон предмета');
 
 export type ItemTemplate = z.output<typeof ItemTemplateSchema>;
@@ -184,7 +189,6 @@ export const PlayerTemplateSchema = z.object({
   portraitImg: z.string().describe('Путь к изображению портрета'),
   spriteId:    z.string().describe('Ключ спрайта PixiJS'),
   renderScale: z.number().min(0).optional().default(1.5).describe('Масштаб спрайта относительно размера тайла'),
-  abilities:   z.array(z.string()).default([]).describe('ID начальных способностей'),
 }).describe('Шаблон класса/внешности игрока');
 
 export type PlayerTemplate = z.output<typeof PlayerTemplateSchema>;

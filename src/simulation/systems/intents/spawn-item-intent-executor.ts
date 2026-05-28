@@ -12,6 +12,7 @@ import { nextEntityId } from "@simulation/state.ts";
 import { findFreeTileNear } from "@simulation/systems/loot-spawn.ts";
 import { tryGetItem } from "@content/registry";
 import type { ItemEntity } from "@simulation/types.ts";
+import { rollItemAbility } from "@simulation/systems/item-ability-roll.ts";
 
 export const executeSpawnItemIntent: IntentExecutor<SpawnItemIntent> = (
     state: GameState,
@@ -33,6 +34,7 @@ export const executeSpawnItemIntent: IntentExecutor<SpawnItemIntent> = (
         blocksMovement: false,
         displayName: template.name,
         quantity: 1,
+        grantedAbility: rollItemAbility(template, state.rng),
     };
 
     state.entities.set(item.id, item);

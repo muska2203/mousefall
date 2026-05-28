@@ -1,5 +1,7 @@
 /**
  * Слот экипировки (оружие, броня, амулет).
+ *
+ * Клик по занятому слоту снимает предмет.
  */
 
 interface Props {
@@ -8,11 +10,31 @@ interface Props {
   fallback?: string;
   rarity?: string;
   damage?: number | null;
+  instanceId?: string | null;
+  onClick?: () => void;
 }
 
-export function EquipSlot({label, icon, fallback = '—', rarity = 'common', damage}: Props) {
+export function EquipSlot({
+  label,
+  icon,
+  fallback = '—',
+  rarity = 'common',
+  damage,
+  instanceId,
+  onClick,
+}: Props) {
+  const isOccupied = !!instanceId;
+
   return (
-    <div className="cm-equip-slot">
+    <div
+      className={`cm-equip-slot ${isOccupied ? 'cm-equip-slot--occupied' : ''}`}
+      onClick={() => {
+        if (isOccupied) {
+          onClick?.();
+        }
+      }}
+      style={{ cursor: isOccupied ? 'pointer' : 'default' }}
+    >
       <span className="cm-equip-slot__label">{label}</span>
       <div className={`cm-equip-slot__box item-rarity-${rarity}`}>
         <span className="cm-equip-slot__icon">

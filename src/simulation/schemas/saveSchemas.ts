@@ -41,6 +41,10 @@ const InventoryItemSchema = z.object({
   instanceId: z.string(),
   templateId: z.string(),
   quantity: z.number().int().positive(),
+  grantedAbility: z.object({
+    templateId: z.string(),
+    level: z.number().int().positive(),
+  }).nullable(),
 });
 
 // ─────────────────────────────────────────────
@@ -70,6 +74,10 @@ const PlayerEntitySchema = z.object({
 
   equippedWeaponId: z.string().nullable(),
   equippedArmorId: z.string().nullable(),
+  equippedAmuletId: z.string().nullable().optional(),
+  equippedWeaponInstanceId: z.string().nullable().optional(),
+  equippedArmorInstanceId: z.string().nullable().optional(),
+  equippedAmuletInstanceId: z.string().nullable().optional(),
 
   statusEffects: z.array(StatusEffectSchema),
 
@@ -133,6 +141,11 @@ const ItemEntitySchema = z.object({
   templateId: z.string(),
 
   quantity: z.number().int().positive(),
+
+  grantedAbility: z.object({
+    templateId: z.string(),
+    level: z.number().int().positive(),
+  }).nullable(),
 
   blocksMovement: z.literal(false)
 });

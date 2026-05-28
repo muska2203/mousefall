@@ -405,6 +405,20 @@
 .item-detail-desc { margin: 0; color: var(--text-muted); }
 .item-detail-muted { color: var(--text-muted); font-size: 11px; }
 
+.item-detail-ability {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.item-detail-ability__icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
 /* Rarity visuals for real item cells (Variant 1: Magic Glow). */
 .item-rarity-common {
   border-color: #7a6855 !important;

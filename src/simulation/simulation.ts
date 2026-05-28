@@ -22,10 +22,13 @@ import {descendAction, ascendAction} from "@simulation/systems/actions/floor-tra
 import {waitEntity} from "@simulation/systems/actions/wait-action.ts";
 import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
 import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
+import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
+import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import type {MapParams} from "@content/schemas";
 import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
+import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
 import {updateFOV} from "@simulation/systems/fov.ts";
 import {
   getEffectiveDodgeChance,
@@ -64,6 +67,7 @@ export class GameSimulation implements Simulation {
     ): GameSimulation {
         const state = createNewGameState(seed, mapParams, config.templateId);
         applyCharacterConfig(state.player, config);
+        createStartingEquipment(state, state.player, config.startingEquipment);
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
         simulation.generateMap(mapParams);
         return simulation;
@@ -566,6 +570,8 @@ export function defaultActionHandlerRegistry(): ActionHandlerRegistry {
     registry.register('ASCEND', ascendAction);
     registry.register('USE_ABILITY', useAbilityAction);
     registry.register('PICKUP', pickupEntity);
+    registry.register('EQUIP', equipEntity);
+    registry.register('UNEQUIP', unequipEntity);
     return registry;
 }
 

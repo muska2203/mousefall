@@ -31,7 +31,6 @@ function mockPlayerTemplate(id: string, template: Partial<PlayerTemplate> = {}):
     portraitImg: `/assets/portraits/${id}-ready.png`,
     spriteId: id,
     renderScale: 1.5,
-    abilities: ['fireball', 'magic_slap'],
     ...template,
   } as PlayerTemplate;
 }
@@ -47,11 +46,11 @@ describe('GameSimulation.getPlayerStats', () => {
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',
-          weapon: {baseDamage: 5, damageFormulaId: 'sword', range: 1, grantedAbilities: []},
+          weapon: {baseDamage: 5, damageFormulaId: 'sword', range: 1},
         })],
         ['test_armor', mockItem('test_armor', {
           type: 'armor',
-          armor: {baseArmor: 4, grantedAbilities: []},
+          armor: {baseArmor: 4},
         })],
       ]),
       abilities: new Map(),

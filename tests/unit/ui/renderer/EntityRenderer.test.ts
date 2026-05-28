@@ -77,6 +77,9 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     equippedWeaponId: null,
     equippedArmorId: null,
     equippedAmuletId: null,
+    equippedWeaponInstanceId: null,
+    equippedArmorInstanceId: null,
+    equippedAmuletInstanceId: null,
     mp: 0,
     maxMp: 0,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
@@ -116,6 +119,12 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       floorSnapshots: [],
       rng: {seed: 1, state: 1},
       nextEntityCounter: 0,
+      runStats: {
+        startTime: Date.now(),
+        enemiesKilled: 0,
+        chestsOpened: 0,
+        itemsPickedUp: 0,
+      },
     },
     highlightedPath: null,
     animations: null,
@@ -143,6 +152,9 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       weaponId: null,
       armorId: null,
       amuletId: null,
+      weaponInstanceId: null,
+      armorInstanceId: null,
+      amuletInstanceId: null,
       weaponDamage: null,
     },
     targetingOverlay: null,
@@ -152,6 +164,12 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     equipSlots: [],
     itemsOnFloor: [],
     inventory: [],
+    runStats: {
+      startTime: Date.now(),
+      enemiesKilled: 0,
+      chestsOpened: 0,
+      itemsPickedUp: 0,
+    },
   };
 }
 

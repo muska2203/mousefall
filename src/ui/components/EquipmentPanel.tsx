@@ -17,14 +17,17 @@ export type EquipSlotData = {
   rarity?: string;
   damage?: number | null;
   detail?: ItemDetailViewModel;
+  slotType: 'weapon' | 'armor' | 'amulet';
+  instanceId: string | null;
 };
 
 interface Props {
   title?: string;
   slots: EquipSlotData[];
+  onUnequip?: (slot: 'weapon' | 'armor' | 'amulet') => void;
 }
 
-export function EquipmentPanel({title = 'Экипировка', slots}: Props) {
+export function EquipmentPanel({title = 'Экипировка', slots, onUnequip}: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{x: number; y: number}>({x: 0, y: 0});
 
@@ -40,7 +43,10 @@ export function EquipmentPanel({title = 'Экипировка', slots}: Props) {
             onMouseMove={(e) => setMousePos({x: e.clientX, y: e.clientY})}
             onMouseLeave={() => setHoveredIndex(null)}
           >
-            <EquipSlot {...slot} />
+            <EquipSlot
+              {...slot}
+              onClick={() => onUnequip?.(slot.slotType)}
+            />
           </div>
         ))}
       </div>

@@ -28,6 +28,7 @@ import {
   GameAction,
   Intent,
   GameEvent,
+  RuntimeAbility,
 } from "@simulation/core-types.ts";
 
 // Реэкспорт базовых типов из core-types для обратной совместимости потребителей
@@ -50,6 +51,7 @@ export type {
   Intent,
   GameEvent,
   EntityMovedEvent,
+  RuntimeAbility,
 } from "@simulation/core-types.ts";
 export { ExecutionBuilder } from "@simulation/core-types.ts";
 
@@ -63,6 +65,8 @@ export type InventoryItem = {
   /** Ссылается на шаблон в реестре контента. */
   templateId: string;
   quantity: number;
+  /** Ролленный скилл из пула снаряжения. Создаётся один раз при генерации экземпляра. */
+  grantedAbility: { templateId: string; level: number } | null;
 };
 
 export type Entity =
@@ -117,16 +121,6 @@ export interface AiActor extends Actor {
  * Важно: поля damage, armor, maxHp, maxMp являются derived-кэшем.
  * Их нельзя менять напрямую — только через recalculatePlayerBaseStats().
  */
-export type RuntimeAbility = {
-  templateId: string;
-  /** Откуда скилл получен */
-  source: 'innate' | 'levelup' | 'equipment';
-  /** Уровень скилла (влияет на формулу) */
-  level: number;
-  /** Оставшихся ходов до отката. 0 = готов. */
-  currentCooldown: number;
-};
-
 export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolder {
   id: 'player';
   type: 'player';
@@ -142,6 +136,12 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
   equippedArmorId: string | null;
   /** ID экипированного амулета или null. */
   equippedAmuletId: string | null;
+  /** ID экземпляра equipped weapon (ссылка на InventoryItem) */
+  equippedWeaponInstanceId: ItemInstanceId | null;
+  /** ID экземпляра equipped armor (ссылка на InventoryItem) */
+  equippedArmorInstanceId: ItemInstanceId | null;
+  /** ID экземпляра equipped amulet (ссылка на InventoryItem) */
+  equippedAmuletInstanceId: ItemInstanceId | null;
   /** Текущая мана. */
   mp: number;
   /** Максимальная мана (базовая, без модификаторов). */
@@ -177,6 +177,8 @@ export interface ItemEntity extends BaseEntity, TemplateIdHolder {
   type: 'item';
   blocksMovement: false;
   quantity: number;
+  /** Ролленный скилл экземпляра предмета (если есть). Создаётся при спавне. */
+  grantedAbility: { templateId: string; level: number } | null;
 }
 
 /** Лестница — объект перехода между этажами. */
@@ -406,6 +408,9 @@ export class DefaultActionPointCostResolver
       case 'USE_ABILITY':
         // TODO: брать стоимость AP из шаблона способности
         return 1;
+      case 'EQUIP':
+      case 'UNEQUIP':
+        return 0;
       default:
         return 1;
     }

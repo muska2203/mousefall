@@ -102,6 +102,9 @@ export type EquipmentSnapshot = {
   weaponId: string | null;
   armorId: string | null;
   amuletId: string | null;
+  weaponInstanceId: string | null;
+  armorInstanceId: string | null;
+  amuletInstanceId: string | null;
   weaponDamage: number | null;
 };
 
@@ -113,6 +116,8 @@ export type PlayerSkillViewModel = {
   cooldown: number;
   maxCooldown: number;
   isAvailable: boolean;
+  /** Откуда скилл: innate / levelup / equipment */
+  source: 'innate' | 'levelup' | 'equipment';
 };
 
 export type HeroStatViewModel = {
@@ -129,6 +134,12 @@ export type EquipSlotViewModel = {
   damage?: number | null;
   rarity?: string;
   detail?: ItemDetailViewModel;
+  /** Тип слота для отправки UNEQUIP action */
+  slotType: 'weapon' | 'armor' | 'amulet';
+  /** instanceId надетого предмета (null если слот пуст) */
+  instanceId: string | null;
+  /** Название скилла, который даёт надетый предмет */
+  grantedAbilityName?: string | null;
 };
 
 export type InventoryItemViewModel = {
@@ -136,6 +147,7 @@ export type InventoryItemViewModel = {
   templateId: string;
   quantity: number;
   detail: ItemDetailViewModel;
+  grantedAbility: { templateId: string; name: string; level: number } | null;
 };
 
 /** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */

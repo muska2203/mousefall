@@ -11,11 +11,14 @@
   "maxStack": 1,
   "weight": 1,
   "value": 10,
+  "abilityPool": [
+    { "abilityId": "fireball", "weight": 1 },
+    { "abilityId": "magic_slap", "weight": 1 }
+  ],
   "weapon": {
     "baseDamage": 2,
     "damageFormulaId": "staff",
-    "range": 1,
-    "grantedAbilities": []
+    "range": 1
   },
   "equipModifiers": []
 }

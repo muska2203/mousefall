@@ -34,7 +34,9 @@ function makeItemTemplate(partial: Partial<ItemTemplate> = {}): ItemTemplate {
     maxStack: 1,
     weight: 1,
     value: 0,
+    rarity: 'common',
     equipModifiers: [],
+    abilityPool: [],
     ...partial,
   };
 }
@@ -306,6 +308,7 @@ describe('Интеграция: цикл выпадения лута', () => {
       blocksMovement: false,
       displayName: 'Тестовое зелье',
       quantity: 1,
+      grantedAbility: null as { templateId: string; level: number } | null,
     };
     state.entities.set(item.id, item as any);
 
@@ -320,9 +323,9 @@ describe('Интеграция: цикл выпадения лута', () => {
     expect(currentState.entities.has('floor_potion')).toBe(false);
     expect(currentState.player.inventory.length).toBe(1);
     expect(currentState.player.inventory[0]).toMatchObject({
-      instanceId: 'floor_potion',
       templateId: 'test_potion',
       quantity: 1,
+      grantedAbility: null,
     });
   });
 });

@@ -38,10 +38,19 @@ export interface ItemDetailViewModel {
   rarity: 'common' | 'rare' | 'unique';
   rarityLabel: string;
   typeLabel: string;
+  /** Тип предмета: weapon, armor, amulet, consumable, key, gold */
+  type: string;
   icon: string;
   fallbackIcon?: string;
   stackCount?: number;
   sections: ItemDetailSection[];
+  /** Ролленный скилл экземпляра предмета (если есть) */
+  grantedAbility?: {
+    templateId: string;
+    name: string;
+    level: number;
+    icon: string | null;
+  } | null;
 }
 
 export interface MapItemDetailOptions {
@@ -107,6 +116,7 @@ export function mapItemTemplateToDetail(
     rarity,
     rarityLabel: RARITY_LABELS[rarity] ?? rarity,
     typeLabel: TYPE_LABELS[template.type] ?? template.type,
+    type: template.type,
     icon: resolveItemIcon(template.spriteId ?? template.id),
     fallbackIcon: opts?.fallbackIcon,
     stackCount: opts?.stackCount,
