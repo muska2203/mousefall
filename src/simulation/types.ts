@@ -29,6 +29,7 @@ import {
   Intent,
   GameEvent,
   RuntimeAbility,
+  ActiveCast,
 } from "@simulation/core-types.ts";
 
 // Реэкспорт базовых типов из core-types для обратной совместимости потребителей
@@ -52,6 +53,7 @@ export type {
   GameEvent,
   EntityMovedEvent,
   RuntimeAbility,
+  ActiveCast,
 } from "@simulation/core-types.ts";
 export { ExecutionBuilder } from "@simulation/core-types.ts";
 
@@ -160,6 +162,8 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
   critMultiplier: number;
   /** Активные способности персонажа. */
   abilities: RuntimeAbility[];
+  /** Текущая подготовка способности (каст) или null. */
+  activeCast: ActiveCast | null;
 }
 
 /** Сущность врага на карте. */
@@ -170,6 +174,8 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   blocksMovement: boolean;
   /** Активные способности врага (задел на AI-скиллы). */
   abilities: RuntimeAbility[];
+  /** Текущая подготовка способности (каст) или null. */
+  activeCast: ActiveCast | null;
 }
 
 /** Предмет, лежащий на полу карты. */

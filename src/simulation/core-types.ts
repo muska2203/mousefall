@@ -102,6 +102,13 @@ export type RuntimeAbility = {
   currentCooldown: number;
 };
 
+/** Активный каст (подготовка способности) у сущности-актора. */
+export type ActiveCast = {
+  abilityId: string;
+  fixedTargets: Position[];
+  remainingTurns: number;
+};
+
 // ─────────────────────────────────────────────
 // Валидация
 // ─────────────────────────────────────────────
@@ -164,7 +171,8 @@ export type GameAction =
   | UseAbilityAction
   | PickUpAction
   | EquipAction
-  | UnequipAction;
+  | UnequipAction
+;
 
 export type MoveAction = {
   type: 'MOVE';
@@ -244,7 +252,8 @@ export type Intent =
   | EquipItemIntent
   | UnequipItemIntent
   | GrantAbilityIntent
-  | RevokeAbilityIntent;
+  | RevokeAbilityIntent
+  | BeginCastIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; damage: number };
@@ -261,6 +270,7 @@ export type EquipItemIntent = { type: 'EQUIP_ITEM'; entityId: EntityId; itemInst
 export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot: 'weapon' | 'armor' | 'amulet' };
 export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
 export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
+export type BeginCastIntent = { type: 'BEGIN_CAST'; entityId: EntityId; abilityId: string; targets: Position[]; turns: number };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -293,7 +303,10 @@ export type GameEvent =
   | ItemEquippedEvent
   | ItemUnequippedEvent
   | AbilityGrantedEvent
-  | AbilityRevokedEvent;
+  | AbilityRevokedEvent
+  | CastStartedEvent
+  | CastResolvedEvent
+  | CastCancelledEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -345,3 +358,6 @@ export type ItemEquippedEvent = { type: 'ITEM_EQUIPPED'; entityId: EntityId; ite
 export type ItemUnequippedEvent = { type: 'ITEM_UNEQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
 export type AbilityGrantedEvent = { type: 'ABILITY_GRANTED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
 export type AbilityRevokedEvent = { type: 'ABILITY_REVOKED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
+export type CastStartedEvent = { type: 'CAST_STARTED'; entityId: EntityId; abilityId: string; turns: number; targets: Position[]; from: Position };
+export type CastResolvedEvent = { type: 'CAST_RESOLVED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
+export type CastCancelledEvent = { type: 'CAST_CANCELLED'; entityId: EntityId; abilityId: string; from: Position };

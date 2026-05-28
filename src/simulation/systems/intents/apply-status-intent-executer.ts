@@ -25,6 +25,18 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
     holder.statusEffects.push(intent.status);
   }
 
+  // Прерывание каста при стане
+  if (intent.status.type === 'stunned' && 'activeCast' in target && target.activeCast) {
+    const abilityId = target.activeCast.abilityId;
+    target.activeCast = null;
+    builder.addChild(parent, {
+      type: 'CAST_CANCELLED',
+      entityId: intent.entityId,
+      abilityId,
+      from: { x: target.x, y: target.y },
+    });
+  }
+
   return builder.addChild(parent, {
     type: 'STATUS_APPLIED',
     entityId: intent.entityId,

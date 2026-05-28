@@ -18,6 +18,7 @@ function mockAbility(id: string): AbilityTemplate {
     cooldown: 3,
     mpCost: 10,
     apCost: 1,
+    castTime: 0,
     effect: { type: 'damage', value: 20 },
   };
 }

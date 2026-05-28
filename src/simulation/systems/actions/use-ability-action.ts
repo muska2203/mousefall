@@ -30,6 +30,11 @@ export const useAbilityAction: ActionHandler = {
       return { ok: false, reasonCode: 'not_enough_mp', reasonDescription: 'Not enough MP' };
     }
 
+    const abilityTemplate = getAbility(action.abilityId);
+    if (abilityTemplate.castTime > 0 && 'activeCast' in actor && actor.activeCast !== null) {
+      return { ok: false, reasonCode: 'already_casting', reasonDescription: 'Actor is already casting an ability' };
+    }
+
     const executor = getSkillExecutor(action.abilityId);
     if (!executor) {
       return { ok: false, reasonCode: 'executor_not_found', reasonDescription: 'Skill executor not found' };
@@ -59,6 +64,23 @@ export const useAbilityAction: ActionHandler = {
     const executor = getSkillExecutor(action.abilityId);
     if (!executor) return [];
     const template = getAbility(action.abilityId);
+
+    // Скилл с подготовкой: не применяем эффект сразу, а запускаем каст
+    if (template.castTime > 0) {
+      const intents: Intent[] = [];
+      if (template.mpCost > 0 && 'mp' in actor) {
+        intents.push({ type: 'CONSUME_MP', entityId: action.entityId, amount: template.mpCost });
+      }
+      intents.push({
+        type: 'BEGIN_CAST',
+        entityId: action.entityId,
+        abilityId: action.abilityId,
+        targets: action.targets,
+        turns: template.castTime,
+      });
+      return intents;
+    }
+
     const intents = executor.resolve(state, actor, action.targets);
 
     if (template.mpCost > 0 && 'mp' in actor) {
@@ -81,19 +103,28 @@ export const useAbilityAction: ActionHandler = {
     const actor = state.entities.get(action.entityId);
     if (!actor || !('abilities' in actor)) return;
 
-    // Порождаем событие использования способности
-    const abilityNode = executionBuilder.addChild(parentNode, {
-      type: 'ABILITY_USED',
-      entityId: action.entityId,
-      abilityId: action.abilityId,
-      targets: action.targets,
-      from: { x: actor.x, y: actor.y },
-    });
+    const template = getAbility(action.abilityId);
+    const isCasting = template.castTime > 0;
+
+    // Для способностей с подготовкой не порождаем ABILITY_USED здесь —
+    // полная анимация (в том числе fireball) будет привязана к CAST_RESOLVED
+    // при автоматическом резолве каста. Исполняем интенты (BEGIN_CAST и т.п.)
+    // напрямую под parentNode.
+    let node = parentNode;
+    if (!isCasting) {
+      node = executionBuilder.addChild(parentNode, {
+        type: 'ABILITY_USED',
+        entityId: action.entityId,
+        abilityId: action.abilityId,
+        targets: action.targets,
+        from: { x: actor.x, y: actor.y },
+      });
+    }
 
     // Исполняем интенты как детей события способности,
     // чтобы анимации каста шли до анимаций урона/смерти.
     for (const intent of intents) {
-      executeIntent(state, intent, executionBuilder, abilityNode);
+      executeIntent(state, intent, executionBuilder, node);
     }
   },
 };

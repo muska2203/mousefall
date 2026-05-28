@@ -133,6 +133,7 @@ export const AbilityTemplateSchema = z.object({
   cooldown:    z.number().int().nonnegative().default(0).describe('Ходов до повторного использования'),
   mpCost:      z.number().int().nonnegative().default(0).describe('Стоимость MP (0 = бесплатно)'),
   apCost:      z.number().int().nonnegative().default(1).describe('Стоимость AP (0 = бесплатное действие)'),
+  castTime:    z.number().int().nonnegative().default(0).describe('Ходов подготовки (0 = мгновенно)'),
   effect: z.object({
     type:     z.enum(['damage', 'heal', 'status', 'teleport', 'summon']),
     value:    z.number().optional(),

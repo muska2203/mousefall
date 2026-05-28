@@ -209,6 +209,7 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
     isAlive: true,
     aiStrategyId: template.aiStrategyId!, // враги из enemyPool всегда имеют aiStrategyId
     abilities: [],
+    activeCast: null,
   };
 }
 

@@ -107,6 +107,50 @@ registerAnimationBuilder('ITEM_DROPPED', (event, children) => {
   }];
 });
 
+registerAnimationBuilder('CAST_RESOLVED', (event, children) => {
+  if (event.type !== 'CAST_RESOLVED') return null;
+
+  const castStep: AnimationStep = {
+    type: 'ABILITY_CAST',
+    entityId: event.entityId,
+    abilityId: event.abilityId,
+    targets: event.targets,
+    from: event.from,
+  };
+
+  if (event.abilityId === 'fireball') {
+    const target = event.targets[0];
+    if (target) {
+      return [{
+        step: castStep,
+        children: [{
+          step: { type: 'PROJECTILE', from: event.from, to: target },
+          children: [{
+            step: { type: 'EXPLOSION', center: target, radius: 1 },
+            children,
+          }],
+        }],
+      }];
+    }
+  }
+
+  return [{ step: castStep, children }];
+});
+
+registerAnimationBuilder('CAST_CANCELLED', (event) => {
+  if (event.type !== 'CAST_CANCELLED') return null;
+  return [{
+    step: {
+      type: 'UI_FLOATING_TEXT',
+      text: 'Каст прерван',
+      x: event.from.x,
+      y: event.from.y,
+      styleKey: 'cast_cancel',
+    },
+    children: [],
+  }];
+});
+
 registerAnimationBuilder('ABILITY_USED', (event, children) => {
   if (event.type !== 'ABILITY_USED') return null;
 

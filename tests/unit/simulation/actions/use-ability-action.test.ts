@@ -132,6 +132,72 @@ describe('useAbilityAction', () => {
     expect(ability?.currentCooldown).toBe(3);
   });
 
+  it('blocks usage when already casting', () => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map([
+        ['fireball', mockAbility('fireball', { castTime: 2 })],
+      ]),
+      maps: new Map(),
+      stairs: new Map(),
+    });
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      mp: 20,
+      maxMp: 20,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+      activeCast: { abilityId: 'fireball', fixedTargets: [{ x: 6, y: 5 }], remainingTurns: 1 },
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
+    const result = useAbilityAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('already_casting');
+    }
+  });
+
+  it('does not set cooldown for castTime > 0 on resolve, uses BEGIN_CAST instead', () => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map([
+        ['fireball', mockAbility('fireball', { castTime: 2 })],
+      ]),
+      maps: new Map(),
+      stairs: new Map(),
+    });
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      mp: 20,
+      maxMp: 20,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
+    const intents = useAbilityAction.resolve(state, action);
+
+    expect(intents.some(i => i.type === 'SET_COOLDOWN')).toBe(false);
+    expect(intents.some(i => i.type === 'BEGIN_CAST')).toBe(true);
+  });
+
   it('places intents as children of ABILITY_USED event in execution tree', () => {
     const state = makeGameState();
     state.visible[5]![5] = true;

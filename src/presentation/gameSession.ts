@@ -159,6 +159,7 @@ export class GameSession {
 
     const playerSkills: PlayerSkillViewModel[] = player.abilities.map(ability => {
       const template = this.getAbilityTemplate(ability.templateId);
+      const isCasting = player.activeCast?.abilityId === ability.templateId;
       return {
         abilityId: ability.templateId,
         name: template?.name ?? ability.templateId,
@@ -166,8 +167,10 @@ export class GameSession {
         mpCost: template?.mpCost ?? 0,
         cooldown: ability.currentCooldown,
         maxCooldown: template?.cooldown ?? 0,
-        isAvailable: ability.currentCooldown === 0 && player.mp >= (template?.mpCost ?? 0),
+        isAvailable: ability.currentCooldown === 0 && player.mp >= (template?.mpCost ?? 0) && !isCasting,
         source: ability.source,
+        isCasting,
+        remainingCastTurns: isCasting ? player.activeCast!.remainingTurns : 0,
       };
     });
 
@@ -572,6 +575,9 @@ export class GameSession {
       this.animation.phase = 'gameOver';
     }
     this.notify();
+
+    // Автопропуск хода, если игрок кастует и нет активных анимаций
+    if (this.autoSkipTurnIfCasting()) return;
   }
 
   /** Превью действия (для подсветки пути, подсказок урона и т.д.) */
@@ -651,11 +657,27 @@ export class GameSession {
       return;
     }
 
+    // Автопропуск хода, если игрок кастует
+    if (this.autoSkipTurnIfCasting()) return;
+
     if (this.heldDirection && this.animation.phase === 'idle' && this.mode === 'playing') {
       this.moveOrAttack(this.heldDirection.dx, this.heldDirection.dy);
     } else if (hadAnimations) {
       this.notify();
     }
+  }
+
+  private autoSkipTurnIfCasting(): boolean {
+    if (!this.simulation || this.mode !== 'playing') return false;
+    if (this.animation.phase === 'animating') return false;
+    if (this.animation.pendingAutoTransition) return false;
+
+    const state = this.simulation.getState();
+    if (state.player.activeCast && state.player.ap > 0) {
+      this.dispatch({ type: 'WAIT', entityId: 'player' });
+      return true;
+    }
+    return false;
   }
 
   /** Возврат в главное меню. Уничтожает текущую симуляцию. */

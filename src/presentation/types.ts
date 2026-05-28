@@ -118,6 +118,10 @@ export type PlayerSkillViewModel = {
   isAvailable: boolean;
   /** Откуда скилл: innate / levelup / equipment */
   source: 'innate' | 'levelup' | 'equipment';
+  /** true, если этот скилл сейчас кастуется */
+  isCasting: boolean;
+  /** Оставшиеся ходов подготовки (если isCasting) */
+  remainingCastTurns: number;
 };
 
 export type HeroStatViewModel = {

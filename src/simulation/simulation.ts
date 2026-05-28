@@ -25,6 +25,7 @@ import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
+import "@simulation/ai/aggressive-strategy.ts";
 import type {MapParams} from "@content/schemas";
 import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
@@ -39,7 +40,7 @@ import {
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
 import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
 import { initSkillRegistry } from "@simulation/skills/index.ts";
-import { tryGetAbility } from "@content/registry";
+import { tryGetAbility, getAbility } from "@content/registry";
 import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
 
@@ -164,7 +165,10 @@ export class GameSimulation implements Simulation {
             this.runEnvironmentTurn(envActions);
             phases.push({ side: 'ENVIRONMENT', actions: envActions });
 
-            this.beginNextPlayerTurn();
+            const playerCastNode = this.beginNextPlayerTurn();
+            if (playerCastNode) {
+                phases.push({ side: 'PLAYER', actions: [playerCastNode] });
+            }
 
             const tickNodes = this.runStatusTicks();
             if (tickNodes.length > 0) {
@@ -282,7 +286,7 @@ export class GameSimulation implements Simulation {
         parentNode: ExecutionNode,
     ): boolean {
 
-        if (!this.canActorAct(actor)) {
+        if (!this.canActorAct(actor, action)) {
             executionBuilder.addChild(parentNode, {
                 type: 'ACTION_REJECTED',
                 errors: [{ code: 'actor_cannot_act', description: 'Actor cannot act now' }],
@@ -358,6 +362,20 @@ export class GameSimulation implements Simulation {
                 }
             }
 
+            // Авто-резолв или тик каста врага
+            if (enemyWithAbilities.activeCast) {
+                if (enemyWithAbilities.activeCast.remainingTurns === 0) {
+                    const castBuilder = new ExecutionBuilder({
+                        type: 'ACTION_APPLIED',
+                        action: { type: 'WAIT', entityId: enemy.id },
+                    });
+                    this.resolveActiveCast(enemy, castBuilder, castBuilder.root);
+                    actions.push(castBuilder.root);
+                } else {
+                    enemyWithAbilities.activeCast.remainingTurns--;
+                }
+            }
+
             while (enemy.ap > 0) {
 
                 const strategy = getStrategy(enemy.aiStrategyId);
@@ -391,7 +409,7 @@ export class GameSimulation implements Simulation {
         }
     }
 
-    private beginNextPlayerTurn(): void {
+    private beginNextPlayerTurn(): ExecutionNode | null {
 
         cleanupDeadEntities(this.state);
 
@@ -399,6 +417,21 @@ export class GameSimulation implements Simulation {
             'PLAYER';
 
         this.state.turn.round += 1;
+
+        // Авто-резолв или тик каста игрока
+        let castNode: ExecutionNode | null = null;
+        if (this.state.player.activeCast) {
+            if (this.state.player.activeCast.remainingTurns === 0) {
+                const castBuilder = new ExecutionBuilder({
+                    type: 'ACTION_APPLIED',
+                    action: { type: 'WAIT', entityId: this.state.player.id },
+                });
+                this.resolveActiveCast(this.state.player, castBuilder, castBuilder.root);
+                castNode = castBuilder.root;
+            } else {
+                this.state.player.activeCast.remainingTurns--;
+            }
+        }
 
         this.state.player.ap =
             this.state.player.maxAp;
@@ -413,6 +446,8 @@ export class GameSimulation implements Simulation {
                 ability.currentCooldown -= 1;
             }
         }
+
+        return castNode;
     }
 
     private runStatusTicks(): ExecutionNode[] {
@@ -435,9 +470,55 @@ export class GameSimulation implements Simulation {
     // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // =========================================================
 
-    private canActorAct(actor: Actor): boolean {
+    private resolveActiveCast(
+        actor: Actor,
+        executionBuilder: ExecutionBuilder,
+        parentNode: ExecutionNode,
+    ): void {
+        if (!('activeCast' in actor)) return;
+        const cast = (actor as unknown as { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null }).activeCast;
+        if (!cast) return;
+
+        const executor = getSkillExecutor(cast.abilityId);
+        const template = getAbility(cast.abilityId);
+
+        if (!executor) {
+            (actor as unknown as { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null }).activeCast = null;
+            return;
+        }
+
+        const intents = executor.resolve(this.state, actor as import('@simulation/types').Entity, cast.fixedTargets);
+
+        if (template.cooldown > 0) {
+            intents.push({ type: 'SET_COOLDOWN', entityId: actor.id, abilityId: cast.abilityId, turns: template.cooldown });
+        }
+
+        const castNode = executionBuilder.addChild(parentNode, {
+            type: 'CAST_RESOLVED',
+            entityId: actor.id,
+            abilityId: cast.abilityId,
+            targets: cast.fixedTargets,
+            from: { x: actor.x, y: actor.y },
+        });
+
+        for (const intent of intents) {
+            executeIntent(this.state, intent, executionBuilder, castNode);
+        }
+
+        (actor as unknown as { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null }).activeCast = null;
+    }
+
+    private canActorAct(actor: Actor, action: GameAction): boolean {
 
         if (actor.ap <= 0) {
+            return false;
+        }
+
+        if ('activeCast' in actor && actor.activeCast !== null) {
+            // Во время каста разрешены только ожидание и отмена каста
+            if (action.type === 'WAIT') {
+                return true;
+            }
             return false;
         }
 

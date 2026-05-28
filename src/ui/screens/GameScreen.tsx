@@ -261,6 +261,7 @@ export function GameScreen({session, onModeChange}: Props) {
           session.beginTargeting(abilityId);
         }}
       />
+
     </>
   );
 
