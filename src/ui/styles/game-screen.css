@@ -18,8 +18,6 @@
   --text-muted: #b9a48c;
   --hp: #c42b2b;
   --hp-track: #3a1818;
-  --mana: #2b6fc4;
-  --mana-track: #152a45;
   --xp: #7b3fc9;
   --xp-track: #2a1845;
   --log-loot: #e8c84a;
@@ -515,13 +513,6 @@ body:has(.cm-app--game) #app {
 }
 .cm-bar--hp .cm-bar__fill {
   background: linear-gradient(180deg, #ff6b6b, var(--hp));
-}
-
-.cm-bar--mana .cm-bar__track {
-  background: var(--mana-track);
-}
-.cm-bar--mana .cm-bar__fill {
-  background: linear-gradient(180deg, #6ab0ff, var(--mana));
 }
 
 .cm-bar--xp .cm-bar__track {

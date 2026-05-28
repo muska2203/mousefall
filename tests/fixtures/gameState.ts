@@ -72,8 +72,6 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     equippedWeaponInstanceId: null,
     equippedArmorInstanceId: null,
     equippedAmuletInstanceId: null,
-    mp: 0,
-    maxMp: 0,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     statModifiers: [],
     dodgeChance: 0,

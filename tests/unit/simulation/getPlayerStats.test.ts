@@ -92,8 +92,6 @@ describe('GameSimulation.getPlayerStats', () => {
     expect(stats.xp).toBe(0);
     expect(stats.hp).toBeGreaterThan(0);
     expect(stats.maxHp).toBeGreaterThan(0);
-    expect(stats.mp).toBeGreaterThanOrEqual(0);
-    expect(stats.maxMp).toBeGreaterThanOrEqual(0);
     expect(stats.baseStats).toEqual({str: 2, dex: 3, int: 1, vit: 1});
     expect(stats.effectiveStats.dex).toBe(3);
     expect(stats.damage).toBeGreaterThan(0);

@@ -10,6 +10,8 @@
 import {useState, useCallback, useMemo} from 'react';
 import type {CharacterConfig} from '@presentation/gameSession';
 import {GameSession} from '@presentation/gameSession';
+import {mapItemTemplateToDetail} from '@presentation/itemDetailMapper';
+import {tryGetItem} from '@content/registry';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -31,11 +33,13 @@ const STARTER_AMULET_IDS = ['common_knotted_fang', 'common_glass_bead'];
 
 function getStarterItemInfo(id: string) {
   const info = GameSession.getItemInfo(id);
+  const template = tryGetItem(id);
   return {
     id,
     name: info?.name ?? id,
     icon: info?.icon ?? `/assets/items/${id}.png`,
     fallback: info?.fallback ?? '?',
+    detail: template ? mapItemTemplateToDetail(template) : undefined,
   };
 }
 
@@ -163,8 +167,6 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       level={previewStats?.level ?? 1}
       hp={previewStats?.hp ?? 100}
       maxHp={previewStats?.maxHp ?? 100}
-      mana={previewStats?.mp ?? 30}
-      maxMana={previewStats?.maxMp ?? 30}
       stats={heroStats}
     >
       {statAllocHeader}

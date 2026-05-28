@@ -112,7 +112,6 @@ export type PlayerSkillViewModel = {
   abilityId: string;
   name: string;
   icon: string | null;
-  mpCost: number;
   cooldown: number;
   maxCooldown: number;
   isAvailable: boolean;
@@ -152,6 +151,16 @@ export type InventoryItemViewModel = {
   quantity: number;
   detail: ItemDetailViewModel;
   grantedAbility: { templateId: string; name: string; level: number } | null;
+  /** Итоговый урон оружия с учётом формулы и текущих характеристик игрока (null для не-оружия) */
+  damage?: number | null;
+};
+
+/** Активный статус-эффект для отображения в панели эффектов. */
+export type ActiveEffectViewModel = {
+  icon: string;
+  name: string;
+  desc: string;
+  turns: number;
 };
 
 /** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */
@@ -161,7 +170,6 @@ export type PresentationIntent =
   | { type: 'DIE'; entityId: string; position: Position }
   | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
   | { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' }
-  | { type: 'CONSUME_MP'; entityId: string; amount: number }
   | { type: 'SET_COOLDOWN'; entityId: string; abilityId: string; turns: number }
   | { type: 'CONSUME_AP'; entityId: string; amount: number }
   | { type: 'TICK_STATUS_EFFECTS'; entityId: string };
@@ -199,8 +207,6 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
     }
     case 'CHANGE_FLOOR':
       return { type: 'CHANGE_FLOOR', direction: intent.direction };
-    case 'CONSUME_MP':
-      return { type: 'CONSUME_MP', entityId: intent.entityId, amount: intent.amount };
     case 'SET_COOLDOWN':
       return { type: 'SET_COOLDOWN', entityId: intent.entityId, abilityId: intent.abilityId, turns: intent.turns };
     case 'CONSUME_AP':
@@ -253,6 +259,8 @@ export type RenderInput = {
   itemsOnFloor: Array<{ id: string; x: number; y: number; templateId: string }>;
   /** Инвентарь игрока. */
   inventory: InventoryItemViewModel[];
+  /** Активные статус-эффекты игрока. */
+  activeEffects: ActiveEffectViewModel[];
   /** Статистика текущего забега. */
   runStats: RunStats;
 };

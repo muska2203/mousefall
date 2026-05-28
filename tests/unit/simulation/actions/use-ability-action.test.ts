@@ -21,7 +21,6 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     range: 5,
     aoeRadius: 0,
     cooldown: 3,
-    mpCost: 10,
     effect: { type: 'damage', value: 20 },
     ...overrides,
   } as AbilityTemplate;
@@ -35,7 +34,7 @@ describe('useAbilityAction', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['fireball', mockAbility('fireball', { mpCost: 10, cooldown: 3 })],
+        ['fireball', mockAbility('fireball', { cooldown: 3 })],
       ]),
       maps: new Map(),
       stairs: new Map(),
@@ -62,32 +61,12 @@ describe('useAbilityAction', () => {
     }
   });
 
-  it('blocks usage when not enough MP', () => {
-    const state = makeGameState();
-    const player = makePlayer({
-      mp: 5,
-      maxMp: 5,
-      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
-    });
-    state.player = player;
-    state.entities.set(player.id, player);
-
-    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
-    const result = useAbilityAction.validate(state, action);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reasonCode).toBe('not_enough_mp');
-    }
-  });
-
   it('blocks usage for invalid target', () => {
     const state = makeGameState();
     state.visible[5]![5] = true;
     const player = makePlayer({
       x: 5,
       y: 5,
-      mp: 20,
-      maxMp: 20,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;
@@ -109,8 +88,6 @@ describe('useAbilityAction', () => {
     const player = makePlayer({
       x: 5,
       y: 5,
-      mp: 20,
-      maxMp: 20,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;
@@ -127,7 +104,6 @@ describe('useAbilityAction', () => {
     const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action });
     useAbilityAction.execute(state, action, intents, builder, builder.root);
 
-    expect(player.mp).toBe(10);
     const ability = player.abilities.find(a => a.templateId === 'fireball');
     expect(ability?.currentCooldown).toBe(3);
   });
@@ -150,8 +126,6 @@ describe('useAbilityAction', () => {
     const player = makePlayer({
       x: 5,
       y: 5,
-      mp: 20,
-      maxMp: 20,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
       activeCast: { abilityId: 'fireball', fixedTargets: [{ x: 6, y: 5 }], remainingTurns: 1 },
     });
@@ -184,8 +158,6 @@ describe('useAbilityAction', () => {
     const player = makePlayer({
       x: 5,
       y: 5,
-      mp: 20,
-      maxMp: 20,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;
@@ -205,8 +177,6 @@ describe('useAbilityAction', () => {
     const player = makePlayer({
       x: 5,
       y: 5,
-      mp: 20,
-      maxMp: 20,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;
@@ -227,7 +197,6 @@ describe('useAbilityAction', () => {
     const abilityNode = builder.root.children[0]!;
     expect(abilityNode.children.length).toBeGreaterThan(0);
     const intentEventTypes = abilityNode.children.map(c => c.event.type);
-    expect(intentEventTypes).toContain('RESOURCE_CONSUMED'); // MP
     // У корня только один ребёнок — ABILITY_USED
     expect(builder.root.children).toHaveLength(1);
   });

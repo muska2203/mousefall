@@ -63,7 +63,7 @@ export interface BaseStats {
 export type StatModifierOp = 'add' | 'multiply';
 
 export type StatModifier = {
-  stat: 'damage' | 'armor' | 'maxHp' | 'maxMp' | 'dodgeChance' | 'accuracy' | 'critChance' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
+  stat: 'damage' | 'armor' | 'maxHp' | 'dodgeChance' | 'accuracy' | 'critChance' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
   value: number;
   op: StatModifierOp;
   source: string;
@@ -243,7 +243,6 @@ export type Intent =
   | DieIntent
   | ApplyStatusIntent
   | ChangeFloorIntent
-  | ConsumeMpIntent
   | SetCooldownIntent
   | ConsumeApIntent
   | TickStatusEffectsIntent
@@ -260,7 +259,6 @@ export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; damage: number 
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect };
 export type ChangeFloorIntent = { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' };
-export type ConsumeMpIntent = { type: 'CONSUME_MP'; entityId: EntityId; amount: number };
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };
 export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId };
@@ -350,7 +348,7 @@ export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId };
 
 export type AbilityUsedEvent = { type: 'ABILITY_USED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 
-export type ResourceConsumedEvent = { type: 'RESOURCE_CONSUMED'; entityId: EntityId; resource: 'mp' | 'ap'; amount: number; remaining: number };
+export type ResourceConsumedEvent = { type: 'RESOURCE_CONSUMED'; entityId: EntityId; resource: 'ap'; amount: number; remaining: number };
 
 export type CooldownSetEvent = { type: 'COOLDOWN_SET'; entityId: EntityId; abilityId: string; turns: number };
 

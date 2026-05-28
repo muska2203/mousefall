@@ -37,17 +37,12 @@ export function getEffectiveBaseStats(player: PlayerEntity): EffectiveBaseStats 
 }
 
 // ─────────────────────────────────────────────
-// Жизнь и мана
+// Жизнь
 // ─────────────────────────────────────────────
 
 export function getBaseMaxHp(player: PlayerEntity): number {
   const s = getEffectiveBaseStats(player);
   return 50 + s.vit * 10;
-}
-
-export function getBaseMaxMp(player: PlayerEntity): number {
-  const s = getEffectiveBaseStats(player);
-  return 20 + s.int * 5;
 }
 
 // ─────────────────────────────────────────────

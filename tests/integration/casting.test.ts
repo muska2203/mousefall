@@ -22,7 +22,6 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     range: 5,
     aoeRadius: 0,
     cooldown: 3,
-    mpCost: 10,
     effect: { type: 'damage', value: 20 },
     ...overrides,
   } as AbilityTemplate;
@@ -54,8 +53,6 @@ describe('Интеграция: кастинг способностей', () => 
     const player = makePlayer({
       x: 5,
       y: 5,
-      mp: 20,
-      maxMp: 20,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100, aiStrategyId: 'aggressive' });
@@ -72,7 +69,6 @@ describe('Интеграция: кастинг способностей', () => 
     expect(r1.success).toBe(true);
     expect(player.activeCast).not.toBeNull();
     expect(player.activeCast!.remainingTurns).toBe(1);
-    expect(player.mp).toBe(11); // 20 - 10 + 1 восстановление
 
     // Шаг 2: ждём — ход окружения + beginNextPlayerTurn уменьшает remainingTurns с 1 до 0
     const r2 = sim.dispatch({ type: 'WAIT', entityId: 'player' });
@@ -100,8 +96,6 @@ describe('Интеграция: кастинг способностей', () => 
     const player = makePlayer({
       x: 5,
       y: 5,
-      mp: 20,
-      maxMp: 20,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;
@@ -129,8 +123,6 @@ describe('Интеграция: кастинг способностей', () => 
       y: 5,
       aiStrategyId: 'aggressive',
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
-      mp: 20,
-      maxMp: 20,
     });
     state.player = player;
     state.entities.set(player.id, player);

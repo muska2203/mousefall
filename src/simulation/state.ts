@@ -65,8 +65,6 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     isAlive: true,
     ap: 1,
     maxAp: 1,
-    mp: 0,
-    maxMp: 0,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     statModifiers: [],
     dodgeChance: 0,

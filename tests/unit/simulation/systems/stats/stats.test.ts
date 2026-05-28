@@ -4,7 +4,6 @@ import type { ItemTemplate } from '@content/schemas';
 import { makePlayer } from '../../../../fixtures/gameState.ts';
 import {
   getBaseMaxHp,
-  getBaseMaxMp,
   getBaseDamage,
   getBaseArmor,
   getBaseDodgeChance,
@@ -22,7 +21,6 @@ import {
   getEffectiveDamage,
   getEffectiveArmor,
   getEffectiveMaxHp,
-  getEffectiveMaxMp,
 } from '@simulation/systems/stats/effective-stats.ts';
 import { recalculatePlayerBaseStats } from '@simulation/systems/stats/recalculate.ts';
 
@@ -75,11 +73,6 @@ describe('stats system', () => {
     it('calculates maxHp from vit', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 0, vit: 5 } });
       expect(getBaseMaxHp(player)).toBe(50 + 5 * 10); // 100
-    });
-
-    it('calculates maxMp from int', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 4, vit: 0 } });
-      expect(getBaseMaxMp(player)).toBe(20 + 4 * 5); // 40
     });
 
     it('calculates unarmed damage from str', () => {
@@ -251,12 +244,6 @@ describe('stats system', () => {
       expect(getEffectiveMaxHp(player)).toBe(120);
     });
 
-    it('effective maxMp includes modifiers', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 4, vit: 0 } });
-      // base = 40
-      player.statModifiers = [{ stat: 'maxMp', value: 1.0, op: 'multiply', source: 'buff' }];
-      expect(getEffectiveMaxMp(player)).toBe(80); // 40 * (1 + 1.0)
-    });
   });
 
   // ─────────────────────────────────────────────
@@ -264,7 +251,7 @@ describe('stats system', () => {
   // ─────────────────────────────────────────────
 
   describe('recalculatePlayerBaseStats', () => {
-    it('updates maxHp, maxMp, damage, armor', () => {
+    it('updates maxHp, damage, armor', () => {
       const player = makePlayer({
         baseStats: { str: 2, dex: 0, int: 2, vit: 3 },
         equippedWeaponId: null,
@@ -272,20 +259,17 @@ describe('stats system', () => {
       });
       recalculatePlayerBaseStats(player);
       expect(player.maxHp).toBe(50 + 3 * 10); // 80
-      expect(player.maxMp).toBe(20 + 2 * 5);  // 30
       expect(player.damage).toBe(1 + 2 * 1.0); // 3 (unarmed)
       expect(player.armor).toBe(0);
     });
 
-    it('clamps hp and mp to new maximums', () => {
+    it('clamps hp to new maximum', () => {
       const player = makePlayer({
         hp: 200,
-        mp: 100,
         baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
       });
       recalculatePlayerBaseStats(player);
       expect(player.hp).toBe(50); // clamped to maxHp (50 + 0*10)
-      expect(player.mp).toBe(20);  // clamped to maxMp (20 + 0*5)
     });
 
     it('applies equipModifiers from items to baseStats', () => {

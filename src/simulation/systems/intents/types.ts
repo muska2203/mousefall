@@ -9,7 +9,6 @@ export type {
   DieIntent,
   ApplyStatusIntent,
   ChangeFloorIntent,
-  ConsumeMpIntent,
   SetCooldownIntent,
   ConsumeApIntent,
   TickStatusEffectsIntent,

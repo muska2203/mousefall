@@ -15,7 +15,6 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     range: 5,
     aoeRadius: 0,
     cooldown: 2,
-    mpCost: 8,
     effect: { type: 'damage', value: 12 },
     ...overrides,
   } as AbilityTemplate;
@@ -29,7 +28,7 @@ describe('magicSlapSkill', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['magic_slap', mockAbility('magic_slap', { mpCost: 8, cooldown: 2 })],
+        ['magic_slap', mockAbility('magic_slap', { cooldown: 2 })],
       ]),
       maps: new Map(),
       stairs: new Map(),

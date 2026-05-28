@@ -81,11 +81,6 @@ export function SkillsPanel({
                       </span>
                     )}
                   </span>
-                  {s.mpCost != null && (
-                    <span className="cm-skill__mana">
-                      <span>{s.mpCost}</span>
-                    </span>
-                  )}
                   {s.cooldown != null && s.cooldown > 0 && (
                     <span className="cm-skill__cooldown">{s.cooldown}</span>
                   )}

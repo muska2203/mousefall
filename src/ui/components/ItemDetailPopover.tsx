@@ -133,6 +133,33 @@ export function ItemDetailPopover({ item, visible, x, y }: Props) {
           </div>
         )}
 
+        {item.abilityPool && item.abilityPool.length > 0 && (
+          <div className="item-detail-section">
+            <h4 className="item-detail-section-title">Возможные скиллы</h4>
+            <ul className="item-detail-list item-detail-list-plain">
+              {item.abilityPool.map((ability) => (
+                <li key={ability.abilityId} className="item-detail-ability item-detail-ability--pool">
+                  {ability.icon && (
+                    <img
+                      className="item-detail-ability__icon"
+                      src={ability.icon}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                  <div className="item-detail-ability__info">
+                    <span className="item-detail-ability__name">{ability.name}</span>
+                    {ability.description && (
+                      <span className="item-detail-ability__desc">{ability.description}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {item.sections.map((section, index) => {
           if (section.kind === 'stat-list') {
             return (

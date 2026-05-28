@@ -21,7 +21,6 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     range: 5,
     aoeRadius: 1,
     cooldown: 3,
-    mpCost: 10,
     effect: { type: 'damage', value: 20, statusType: 'burning', duration: 3 },
     ...overrides,
   } as AbilityTemplate;
@@ -35,7 +34,7 @@ describe('fireballSkill', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['fireball', mockAbility('fireball', { mpCost: 10, cooldown: 3 })],
+        ['fireball', mockAbility('fireball', { cooldown: 3 })],
       ]),
       maps: new Map(),
       stairs: new Map(),

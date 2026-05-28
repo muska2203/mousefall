@@ -66,7 +66,6 @@ export function applyCharacterConfig(
 
   // Восстанавливаем текущие ресурсы до новых максимумов после пересчёта
   player.hp = player.maxHp;
-  player.mp = player.maxMp;
 
   // Начальные способности (пока пустой массив, будут заполняться из экипировки)
   player.abilities = [];

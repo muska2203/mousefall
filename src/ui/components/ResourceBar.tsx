@@ -3,7 +3,7 @@
  */
 
 interface Props {
-  type: 'hp' | 'mana' | 'xp';
+  type: 'hp' | 'xp';
   icon: string;
   label: string;
   current: number;

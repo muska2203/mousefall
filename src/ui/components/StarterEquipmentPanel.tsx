@@ -4,8 +4,11 @@
  * Используется в CharacterCreationScreen.
  */
 
+import {useState} from 'react';
+import type {ItemDetailViewModel} from '@presentation/itemDetailMapper';
 import {Panel} from './Panel';
 import {ItemButton} from './ItemButton';
+import {ItemDetailPopover} from './ItemDetailPopover';
 
 export type StarterItem = {
   id: string;
@@ -13,6 +16,7 @@ export type StarterItem = {
   icon: string;
   fallback: string;
   damage?: number;
+  detail?: ItemDetailViewModel;
 };
 
 export type StarterSlot = {
@@ -28,6 +32,18 @@ interface Props {
 }
 
 export function StarterEquipmentPanel({title = 'Стартовая экипировка', slots}: Props) {
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState<{x: number; y: number}>({x: 0, y: 0});
+
+  let hoveredItem: StarterItem | null = null;
+  for (const slot of slots) {
+    const item = slot.items.find((i) => i.id === hoveredItemId);
+    if (item) {
+      hoveredItem = item;
+      break;
+    }
+  }
+
   return (
     <Panel title={title} titleId="equip-title" fill className="cm-panel--welcome-equip">
       {slots.map((slot) => (
@@ -48,11 +64,23 @@ export function StarterEquipmentPanel({title = 'Стартовая экипир�
                 selected={slot.selectedId === item.id}
                 onClick={() => slot.onSelect(item.id)}
                 damage={item.damage ?? null}
+                onMouseEnter={() => setHoveredItemId(item.id)}
+                onMouseMove={(e) => setMousePos({x: e.clientX, y: e.clientY})}
+                onMouseLeave={() => setHoveredItemId(null)}
               />
             ))}
           </div>
         </div>
       ))}
+
+      {hoveredItem?.detail && (
+        <ItemDetailPopover
+          item={hoveredItem.detail}
+          visible={true}
+          x={mousePos.x}
+          y={mousePos.y}
+        />
+      )}
     </Panel>
   );
 }

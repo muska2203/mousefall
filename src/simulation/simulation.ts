@@ -99,8 +99,6 @@ export class GameSimulation implements Simulation {
             xp: player.xp,
             hp: player.hp,
             maxHp: player.maxHp,
-            mp: player.mp,
-            maxMp: player.maxMp,
             ap: player.ap,
             maxAp: player.maxAp,
             baseStats: player.baseStats,
@@ -436,10 +434,6 @@ export class GameSimulation implements Simulation {
         this.state.player.ap =
             this.state.player.maxAp;
 
-        // Восстановление маны: 5% от максимума, минимум 1
-        const mpRecovery = Math.max(1, Math.floor(this.state.player.maxMp * 0.05));
-        this.state.player.mp = Math.min(this.state.player.mp + mpRecovery, this.state.player.maxMp);
-
         // Уменьшение cooldown скиллов игрока
         for (const ability of this.state.player.abilities) {
             if (ability.currentCooldown > 0) {
@@ -557,8 +551,6 @@ export class GameSimulation implements Simulation {
             xp: p.xp,
             hp: p.hp,
             maxHp: p.maxHp,
-            mp: p.mp,
-            maxMp: p.maxMp,
             ap: p.ap,
             maxAp: p.maxAp,
             baseStats: p.baseStats,
@@ -611,7 +603,6 @@ export class GameSimulation implements Simulation {
             return {
                 name: template.name,
                 spriteId: template.spriteId,
-                mpCost: template.mpCost,
                 cooldown: template.cooldown,
             };
         } catch {

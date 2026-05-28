@@ -16,7 +16,6 @@ function mockAbility(id: string): AbilityTemplate {
     range: 5,
     aoeRadius: 0,
     cooldown: 3,
-    mpCost: 10,
     apCost: 1,
     castTime: 0,
     effect: { type: 'damage', value: 20 },

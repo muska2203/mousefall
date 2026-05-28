@@ -34,8 +34,6 @@ interface Props {
   level: number;
   hp: number;
   maxHp: number;
-  mana: number;
-  maxMana: number;
   xp?: number;
   maxXp?: number;
   stats: HeroStat[];
@@ -50,8 +48,6 @@ export function HeroPanel({
   level,
   hp,
   maxHp,
-  mana,
-  maxMana,
   xp,
   maxXp,
   stats,
@@ -64,7 +60,6 @@ export function HeroPanel({
     <Panel title={title} titleId="hero-title" fill={fill} className="cm-panel--hero">
       <Portrait src={portraitSrc} alt={portraitAlt} level={level} size={112} />
       <ResourceBar type="hp" icon="/assets/icons/hp.svg" label="HP" current={hp} max={maxHp} />
-      <ResourceBar type="mana" icon="/assets/icons/mana.svg" label="Мана" current={mana} max={maxMana} />
       {xp != null && maxXp != null && (
         <ResourceBar type="xp" icon="/assets/icons/xp.svg" label="Опыт" current={xp} max={maxXp} />
       )}

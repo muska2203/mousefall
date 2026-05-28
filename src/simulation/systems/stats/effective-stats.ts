@@ -10,7 +10,6 @@
 import type { Actor, Entity, PlayerEntity } from '@simulation/types.ts';
 import {
   getBaseMaxHp,
-  getBaseMaxMp,
   getBaseDamage,
   getBaseArmor,
   getBaseDodgeChance,
@@ -50,17 +49,12 @@ export function getEffectiveArmor(entity: Entity): number {
 }
 
 // ─────────────────────────────────────────────
-// Жизнь и мана (только игрок)
+// Жизнь (только игрок)
 // ─────────────────────────────────────────────
 
 export function getEffectiveMaxHp(player: PlayerEntity): number {
   const base = getBaseMaxHp(player);
   return applyModifiers(player, 'maxHp', base).total;
-}
-
-export function getEffectiveMaxMp(player: PlayerEntity): number {
-  const base = getBaseMaxMp(player);
-  return applyModifiers(player, 'maxMp', base).total;
 }
 
 // ─────────────────────────────────────────────

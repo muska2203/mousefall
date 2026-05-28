@@ -103,7 +103,7 @@ export const ItemTemplateSchema = z.object({
   armor:       ArmorStatsSchema.optional(),
   consumable:  ConsumableEffectSchema.optional(),
   equipModifiers: z.array(z.object({
-    stat: z.enum(['damage', 'armor', 'maxHp', 'maxMp', 'dodgeChance', 'accuracy', 'critChance', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
+    stat: z.enum(['damage', 'armor', 'maxHp', 'dodgeChance', 'accuracy', 'critChance', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
     value: z.number(),
     op: z.enum(['add', 'multiply']),
   })).default([]).describe('Модификаторы, применяемые при экипировке'),
@@ -131,7 +131,6 @@ export const AbilityTemplateSchema = z.object({
   range:       z.number().int().nonnegative().default(1).describe('Дальность в клетках (0 = только на себя)'),
   aoeRadius:   z.number().int().nonnegative().default(0).describe('Радиус области действия (0 = одиночная цель)'),
   cooldown:    z.number().int().nonnegative().default(0).describe('Ходов до повторного использования'),
-  mpCost:      z.number().int().nonnegative().default(0).describe('Стоимость MP (0 = бесплатно)'),
   apCost:      z.number().int().nonnegative().default(1).describe('Стоимость AP (0 = бесплатное действие)'),
   castTime:    z.number().int().nonnegative().default(0).describe('Ходов подготовки (0 = мгновенно)'),
   effect: z.object({

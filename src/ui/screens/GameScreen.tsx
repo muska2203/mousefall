@@ -216,12 +216,10 @@ export function GameScreen({session, onModeChange}: Props) {
         level={ps.level}
         hp={ps.hp}
         maxHp={ps.maxHp}
-        mana={ps.mp}
-        maxMana={ps.maxMp}
         xp={ps.xp}
         stats={renderInput.heroStats}
       />
-      <EffectsPanel />
+      <EffectsPanel effects={renderInput.activeEffects} />
       <LogPanel entries={vm.logs} />
     </>
   );

@@ -93,8 +93,6 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
       level={ps?.level ?? 1}
       hp={ps?.hp ?? 0}
       maxHp={ps?.maxHp ?? 100}
-      mana={ps?.mp ?? 30}
-      maxMana={ps?.maxMp ?? 30}
       xp={ps?.xp ?? 0}
       stats={heroStats}
     />

@@ -25,11 +25,6 @@ export const useAbilityAction: ActionHandler = {
       return { ok: false, reasonCode: 'ability_on_cooldown', reasonDescription: 'Ability is on cooldown' };
     }
 
-    const template = getAbility(action.abilityId);
-    if (template.mpCost > 0 && 'mp' in actor && actor.mp < template.mpCost) {
-      return { ok: false, reasonCode: 'not_enough_mp', reasonDescription: 'Not enough MP' };
-    }
-
     const abilityTemplate = getAbility(action.abilityId);
     if (abilityTemplate.castTime > 0 && 'activeCast' in actor && actor.activeCast !== null) {
       return { ok: false, reasonCode: 'already_casting', reasonDescription: 'Actor is already casting an ability' };
@@ -68,9 +63,6 @@ export const useAbilityAction: ActionHandler = {
     // Скилл с подготовкой: не применяем эффект сразу, а запускаем каст
     if (template.castTime > 0) {
       const intents: Intent[] = [];
-      if (template.mpCost > 0 && 'mp' in actor) {
-        intents.push({ type: 'CONSUME_MP', entityId: action.entityId, amount: template.mpCost });
-      }
       intents.push({
         type: 'BEGIN_CAST',
         entityId: action.entityId,
@@ -83,9 +75,6 @@ export const useAbilityAction: ActionHandler = {
 
     const intents = executor.resolve(state, actor, action.targets);
 
-    if (template.mpCost > 0 && 'mp' in actor) {
-      intents.push({ type: 'CONSUME_MP', entityId: action.entityId, amount: template.mpCost });
-    }
     if (template.cooldown > 0) {
       intents.push({ type: 'SET_COOLDOWN', entityId: action.entityId, abilityId: action.abilityId, turns: template.cooldown });
     }

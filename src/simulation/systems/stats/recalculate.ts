@@ -7,14 +7,13 @@
  * - Левел-апе
  * - Наложении/снятии статус-эффектов (если они меняют baseStats)
  *
- * Обновляет maxHp, maxMp, damage, armor в PlayerEntity.
+ * Обновляет maxHp, damage, armor в PlayerEntity.
  * Текущие hp/mp не превышают новые максимумы (clamp).
  */
 
 import type { PlayerEntity } from '@simulation/types.ts';
 import {
   getBaseMaxHp,
-  getBaseMaxMp,
   getBaseDamage,
   getBaseArmor,
 } from './base-resolver.ts';
@@ -28,7 +27,6 @@ import {
 export function recalculatePlayerBaseStats(player: PlayerEntity): void {
   // Обновляем derived-кэш: эти поля НЕЛЬЗЯ менять напрямую вне этого вызова.
   player.maxHp = getBaseMaxHp(player);
-  player.maxMp = getBaseMaxMp(player);
   player.damage = Math.round(getBaseDamage(player));
   player.armor = Math.round(getBaseArmor(player));
 
@@ -38,5 +36,4 @@ export function recalculatePlayerBaseStats(player: PlayerEntity): void {
   player.critMultiplier = getEffectiveCritMultiplier(player);
 
   player.hp = Math.min(player.hp, player.maxHp);
-  player.mp = Math.min(player.mp, player.maxMp);
 }

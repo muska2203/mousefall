@@ -8,7 +8,6 @@
   "range": 5,
   "aoeRadius": 1,
   "cooldown": 3,
-  "mpCost": 10,
   "apCost": 1,
   "castTime": 2,
   "effect": {

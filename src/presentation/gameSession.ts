@@ -20,12 +20,13 @@ import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel} from './types';
 import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@content/registry';
 
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
 import {mapItemTemplateToDetail} from './itemDetailMapper';
+import {getWeaponDamage} from '@simulation/systems/stats/weapon-formulas.ts';
 import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
@@ -164,10 +165,9 @@ export class GameSession {
         abilityId: ability.templateId,
         name: template?.name ?? ability.templateId,
         icon: template?.spriteId ? `/assets/skills/${template.spriteId}.png` : null,
-        mpCost: template?.mpCost ?? 0,
         cooldown: ability.currentCooldown,
         maxCooldown: template?.cooldown ?? 0,
-        isAvailable: ability.currentCooldown === 0 && player.mp >= (template?.mpCost ?? 0) && !isCasting,
+        isAvailable: ability.currentCooldown === 0 && !isCasting,
         source: ability.source,
         isCasting,
         remainingCastTurns: isCasting ? player.activeCast!.remainingTurns : 0,
@@ -295,15 +295,38 @@ export class GameSession {
               level: invItem.grantedAbility.level,
             }
           : null;
+        const template = tryGetItem(invItem.templateId);
+        const damage = template?.type === 'weapon' && template.weapon
+          ? getWeaponDamage(state.player, template)
+          : null;
+
         return {
           instanceId: invItem.instanceId,
           templateId: invItem.templateId,
           quantity: invItem.quantity,
           detail,
           grantedAbility,
+          damage,
         };
       })
       .sort(compareInventoryItems);
+
+    const activeEffects: ActiveEffectViewModel[] = state.player.statusEffects.map(effect => {
+      switch (effect.type) {
+        case 'poisoned':
+          return {icon: '🧪', name: 'Отравление', desc: `Урон ${effect.value} в ход`, turns: effect.duration};
+        case 'burning':
+          return {icon: '🔥', name: 'Горение', desc: `Урон ${effect.value} в ход`, turns: effect.duration};
+        case 'frozen':
+          return {icon: '❄️', name: 'Заморозка', desc: 'Скорость снижена', turns: effect.duration};
+        case 'stunned':
+          return {icon: '💫', name: 'Оглушение', desc: 'Пропуск хода', turns: effect.duration};
+        case 'regenerating':
+          return {icon: '✨', name: 'Регенерация', desc: `Восстановление ${effect.value} ХП в ход`, turns: effect.duration};
+        default:
+          return {icon: '❓', name: 'Неизвестный эффект', desc: '', turns: effect.duration};
+      }
+    });
 
     return {
       state,
@@ -320,6 +343,7 @@ export class GameSession {
       equipSlots,
       itemsOnFloor,
       inventory,
+      activeEffects,
       runStats: state.runStats,
     };
   }

@@ -15,7 +15,6 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     range: 5,
     aoeRadius: 0,
     cooldown: 0,
-    mpCost: 0,
     apCost: 1,
     effect: { type: 'damage', value: 10 },
     ...overrides,

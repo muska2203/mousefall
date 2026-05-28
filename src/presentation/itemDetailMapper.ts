@@ -10,6 +10,7 @@
  */
 
 import type { ItemTemplate } from '@content/schemas';
+import { tryGetAbility } from '@content/registry';
 import { resolveItemIcon } from '@utils/assetResolver';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -51,6 +52,14 @@ export interface ItemDetailViewModel {
     level: number;
     icon: string | null;
   } | null;
+  /** Пул скиллов, из которого роллится способность при создании экземпляра */
+  abilityPool?: Array<{
+    abilityId: string;
+    name: string;
+    description: string;
+    icon: string | null;
+    weight: number;
+  }> | null;
 }
 
 export interface MapItemDetailOptions {
@@ -110,6 +119,20 @@ export function mapItemTemplateToDetail(
 
   sections.push({ kind: 'description', text: template.description });
 
+  const abilityPool =
+    template.abilityPool && template.abilityPool.length > 0
+      ? template.abilityPool.map((entry) => {
+          const ability = tryGetAbility(entry.abilityId);
+          return {
+            abilityId: entry.abilityId,
+            name: ability?.name ?? entry.abilityId,
+            description: ability?.description ?? '',
+            icon: ability?.spriteId ? `/assets/skills/${ability.spriteId}.png` : null,
+            weight: entry.weight,
+          };
+        })
+      : null;
+
   return {
     name: template.name,
     description: template.description,
@@ -121,5 +144,6 @@ export function mapItemTemplateToDetail(
     fallbackIcon: opts?.fallbackIcon,
     stackCount: opts?.stackCount,
     sections,
+    abilityPool,
   };
 }

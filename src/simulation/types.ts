@@ -120,7 +120,7 @@ export interface AiActor extends Actor {
 
 /** Сущность игрока. Всегда присутствует в GameState.
  *
- * Важно: поля damage, armor, maxHp, maxMp являются derived-кэшем.
+ * Важно: поля damage, armor, maxHp являются derived-кэшем.
  * Их нельзя менять напрямую — только через recalculatePlayerBaseStats().
  */
 export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolder {
@@ -144,10 +144,6 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
   equippedArmorInstanceId: ItemInstanceId | null;
   /** ID экземпляра equipped amulet (ссылка на InventoryItem) */
   equippedAmuletInstanceId: ItemInstanceId | null;
-  /** Текущая мана. */
-  mp: number;
-  /** Максимальная мана (базовая, без модификаторов). */
-  maxMp: number;
   /** Базовые характеристики. */
   baseStats: BaseStats;
   /** Активные модификаторы (баффы, дебаффы, эффекты экипировки). */
@@ -319,8 +315,6 @@ export type PlayerStatsSnapshot = {
   xp: number;
   hp: number;
   maxHp: number;
-  mp: number;
-  maxMp: number;
   ap: number;
   maxAp: number;
   baseStats: BaseStats;
@@ -365,7 +359,7 @@ export type Simulation = {
   ): import("@simulation/core-types.ts").Position[];
 
   /** Возвращает базовую информацию о способности для отображения в UI. */
-  getAbilityInfo(abilityId: string): { name: string; spriteId: string | undefined; mpCost: number; cooldown: number } | null;
+  getAbilityInfo(abilityId: string): { name: string; spriteId: string | undefined; cooldown: number } | null;
 };
 
 export type ActionPreview = {
