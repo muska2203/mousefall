@@ -40,7 +40,8 @@ import {
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
 import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
 import { initSkillRegistry } from "@simulation/skills/index.ts";
-import { tryGetAbility, getAbility } from "@content/registry";
+import { tryGetAbility, getAbility, getItem } from "@content/registry";
+import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
 import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
 
@@ -92,6 +93,22 @@ export class GameSimulation implements Simulation {
     ): import("@simulation/types.ts").PlayerStatsSnapshot {
         const player = createInitialPlayer(config.templateId);
         applyCharacterConfig(player, config);
+
+        // Применяем стартовую экипировку для корректного превью характеристик
+        for (const templateId of config.startingEquipment) {
+            const template = getItem(templateId);
+            if (template.type === 'weapon') {
+                player.equippedWeaponId = templateId;
+            } else if (template.type === 'armor') {
+                player.equippedArmorId = templateId;
+            } else if (template.type === 'amulet') {
+                player.equippedAmuletId = templateId;
+            }
+            for (const mod of template.equipModifiers ?? []) {
+                addModifier(player, { ...mod, source: `preview_${templateId}` });
+            }
+        }
+
         recalculatePlayerBaseStats(player);
         const effective = getEffectiveBaseStats(player);
         return {

@@ -63,6 +63,30 @@ describe('GameSimulation.getPlayerStats', () => {
     resetRegistry();
   });
 
+  it('previewCharacterStats counts damage with starting equipment', () => {
+    const stats = GameSimulation.previewCharacterStats({
+      templateId: 'warrior',
+      attributes: {strength: 2, agility: 3, vitality: 1, intelligence: 1, luck: 0},
+      startingEquipment: ['test_sword', 'test_armor'],
+    });
+
+    // Урон меча: baseDamage 5 + str*0.8 + dex*0.5 = 5 + 1.6 + 1.5 = 8.1 → 8
+    expect(stats.damage).toBe(8);
+    expect(stats.armor).toBe(4);
+    expect(stats.baseStats).toEqual({str: 2, dex: 3, int: 1, vit: 1});
+  });
+
+  it('previewCharacterStats counts unarmed damage without weapon', () => {
+    const stats = GameSimulation.previewCharacterStats({
+      templateId: 'warrior',
+      attributes: {strength: 2, agility: 0, vitality: 0, intelligence: 0, luck: 0},
+      startingEquipment: [],
+    });
+
+    // Без оружия: 1 + str*1.0 = 3
+    expect(stats.damage).toBe(3);
+  });
+
   it('returns current player stats snapshot', () => {
     const sim = GameSimulation.createNewGame(
       12345,
