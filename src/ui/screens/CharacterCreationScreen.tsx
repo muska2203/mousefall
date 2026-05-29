@@ -108,10 +108,62 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   }, [isValid, selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, seedInput, onStartGame]);
 
   const heroStats: HeroStat[] = [
-    {type: 'alloc', icon: '💪', name: 'Сила', value: strength, onChange: setStrength, canIncrease: remaining > 0},
-    {type: 'alloc', icon: '✨', name: 'Интеллект', value: intelligence, onChange: setIntelligence, canIncrease: remaining > 0},
-    {type: 'alloc', icon: '🐾', name: 'Ловкость', value: agility, onChange: setAgility, canIncrease: remaining > 0},
-    {type: 'alloc', icon: '❤️', name: 'Выносливость', value: vitality, onChange: setVitality, canIncrease: remaining > 0},
+    {
+      type: 'alloc',
+      icon: '💪',
+      name: 'Сила',
+      value: strength,
+      onChange: setStrength,
+      canIncrease: remaining > 0,
+      flavorText: 'Грубая сила — лучший аргумент в споре.',
+      detailLines: [
+        'Увеличивает физический урон от оружия.',
+        'Влияет на шанс пробить броню врага.',
+        'Немного увеличивает максимальный переносимый вес.',
+      ],
+    },
+    {
+      type: 'alloc',
+      icon: '✨',
+      name: 'Интеллект',
+      value: intelligence,
+      onChange: setIntelligence,
+      canIncrease: remaining > 0,
+      flavorText: 'Знания — сила, но молния из пальцев тоже ничего.',
+      detailLines: [
+        'Усиливает магические способности и заклинания.',
+        'Увеличивает максимальный запас маны.',
+        'Повышает шанс критического удара умениями.',
+      ],
+    },
+    {
+      type: 'alloc',
+      icon: '🐾',
+      name: 'Ловкость',
+      value: agility,
+      onChange: setAgility,
+      canIncrease: remaining > 0,
+      flavorText: 'Быстрее ветра, тише тени, злее бабушки с тапком.',
+      detailLines: [
+        'Повышает шанс уклонения от атак.',
+        'Увеличивает точность и шанс критического попадания.',
+        'Влияет на скорость передвижения по полю боя.',
+      ],
+    },
+    {
+      type: 'alloc',
+      icon: '❤️',
+      name: 'Выносливость',
+      value: vitality,
+      onChange: setVitality,
+      canIncrease: remaining > 0,
+      flavorText: 'Жить — значит терпеть. И есть побольше.',
+      detailLines: [
+        'Увеличивает максимальное здоровье (HP).',
+        'Повышает сопротивление отрицательным эффектам.',
+        'Улучшает восстановление здоровья между боями.',
+      ],
+    },
   ];
 
   const statAllocHeader = (

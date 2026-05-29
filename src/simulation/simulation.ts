@@ -24,6 +24,7 @@ import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.t
 import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
+import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import "@simulation/ai/aggressive-strategy.ts";
 import type {MapParams} from "@content/schemas";
@@ -661,6 +662,7 @@ export function defaultActionHandlerRegistry(): ActionHandlerRegistry {
     registry.register('PICKUP', pickupEntity);
     registry.register('EQUIP', equipEntity);
     registry.register('UNEQUIP', unequipEntity);
+    registry.register('USE_ITEM', useItemAction);
     return registry;
 }
 

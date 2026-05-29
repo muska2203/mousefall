@@ -17,6 +17,7 @@
  */
 
 import { useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { ItemDetailViewModel } from '@presentation/itemDetailMapper';
 import { resolveItemFrame } from '@utils/assetResolver';
 
@@ -71,7 +72,7 @@ export function ItemDetailPopover({ item, visible, x, y }: Props) {
 
   const ga = item.grantedAbility;
 
-  return (
+  return createPortal(
     <div
       ref={ref}
       className="inventory-item-detail-popover"
@@ -193,6 +194,7 @@ export function ItemDetailPopover({ item, visible, x, y }: Props) {
           );
         })}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

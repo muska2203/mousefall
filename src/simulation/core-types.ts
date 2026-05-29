@@ -172,6 +172,7 @@ export type GameAction =
   | PickUpAction
   | EquipAction
   | UnequipAction
+  | UseItemAction
 ;
 
 export type MoveAction = {
@@ -227,6 +228,12 @@ export type UnequipAction = {
   slot: 'weapon' | 'armor' | 'amulet';
 };
 
+export type UseItemAction = {
+  type: 'USE_ITEM';
+  entityId: EntityId;
+  itemInstanceId: ItemInstanceId;
+};
+
 export type TargetMode =
   | { type: 'self' }
   | { type: 'single'; range: number }
@@ -252,7 +259,9 @@ export type Intent =
   | UnequipItemIntent
   | GrantAbilityIntent
   | RevokeAbilityIntent
-  | BeginCastIntent;
+  | BeginCastIntent
+  | HealIntent
+  | RemoveItemIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; damage: number };
@@ -269,6 +278,8 @@ export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot
 export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
 export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
 export type BeginCastIntent = { type: 'BEGIN_CAST'; entityId: EntityId; abilityId: string; targets: Position[]; turns: number };
+export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
+export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -304,7 +315,8 @@ export type GameEvent =
   | AbilityRevokedEvent
   | CastStartedEvent
   | CastResolvedEvent
-  | CastCancelledEvent;
+  | CastCancelledEvent
+  | EntityHealedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -359,3 +371,11 @@ export type AbilityRevokedEvent = { type: 'ABILITY_REVOKED'; entityId: EntityId;
 export type CastStartedEvent = { type: 'CAST_STARTED'; entityId: EntityId; abilityId: string; turns: number; targets: Position[]; from: Position };
 export type CastResolvedEvent = { type: 'CAST_RESOLVED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 export type CastCancelledEvent = { type: 'CAST_CANCELLED'; entityId: EntityId; abilityId: string; from: Position };
+
+export type EntityHealedEvent = {
+  type: 'ENTITY_HEALED';
+  entityId: EntityId;
+  amount: number;
+  newHp: number;
+  position: Position;
+};

@@ -17,6 +17,8 @@ import {executeUnequipItemIntent} from "@simulation/systems/intents/unequip-item
 import {executeGrantAbilityIntent} from "@simulation/systems/intents/grant-ability-intent-executor.ts";
 import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-ability-intent-executor.ts";
 import {executeBeginCastIntent} from "@simulation/systems/intents/begin-cast-intent-executor.ts";
+import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
+import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
@@ -34,6 +36,8 @@ const intentExecutors = {
   GRANT_ABILITY: executeGrantAbilityIntent,
   REVOKE_ABILITY: executeRevokeAbilityIntent,
   BEGIN_CAST: executeBeginCastIntent,
+  HEAL: executeHealIntent,
+  REMOVE_ITEM: executeRemoveItemIntent,
 };
 
 export function executeIntent(

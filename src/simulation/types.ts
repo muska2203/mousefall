@@ -406,7 +406,8 @@ export class DefaultActionPointCostResolver
   getCost(action: GameAction): number {
     switch (action.type) {
       case 'USE_ABILITY':
-        // TODO: брать стоимость AP из шаблона способности
+      case 'USE_ITEM':
+        // TODO: брать стоимость AP из шаблона способности / предмета
         return 1;
       case 'EQUIP':
       case 'UNEQUIP':

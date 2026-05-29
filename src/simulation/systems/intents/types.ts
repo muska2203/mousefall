@@ -19,6 +19,8 @@ export type {
   GrantAbilityIntent,
   RevokeAbilityIntent,
   BeginCastIntent,
+  HealIntent,
+  RemoveItemIntent,
 } from "@simulation/core-types.ts";
 
 export type IntentExecutor<T extends Intent> = (

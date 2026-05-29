@@ -4,7 +4,7 @@
  * Состоит из трёх колонок через ThreeColumnLayout.
  * Левая: HeroPanel, EffectsPanel, LogPanel.
  * Центральная: GameField.
- * Правая: EquipmentPanel, InventoryPanel, ConsumablesPanel, SkillsPanel.
+ * Правая: EquipmentPanel, InventoryPanel, SkillsPanel.
  */
 
 import {useCallback, useEffect, useSyncExternalStore, useState} from 'react';
@@ -18,7 +18,6 @@ import {GameField} from '@ui/components/GameField';
 import {EffectsPanel} from '@ui/components/EffectsPanel';
 import {LogPanel} from '@ui/components/LogPanel';
 import {InventoryPanel} from '@ui/components/InventoryPanel';
-import {ConsumablesPanel} from '@ui/components/ConsumablesPanel';
 import {SkillsPanel} from '@ui/components/SkillsPanel';
 
 interface Props {
@@ -98,6 +97,16 @@ export function GameScreen({session, onModeChange}: Props) {
       if (session.getMode() !== 'playing') return;
       if (isInputBlocked) return;
       session.dispatch({type: 'UNEQUIP', entityId: 'player', slot});
+      onModeChange(session.getMode());
+    },
+    [session, onModeChange, isInputBlocked],
+  );
+
+  const handleUseItem = useCallback(
+    (itemInstanceId: string) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.dispatch({type: 'USE_ITEM', entityId: 'player', itemInstanceId});
       onModeChange(session.getMode());
     },
     [session, onModeChange, isInputBlocked],
@@ -249,10 +258,11 @@ export function GameScreen({session, onModeChange}: Props) {
           const type = item?.detail.type;
           if (type === 'weapon' || type === 'armor' || type === 'amulet') {
             handleEquipItem(instanceId);
+          } else if (type === 'consumable') {
+            handleUseItem(instanceId);
           }
         }}
       />
-      <ConsumablesPanel />
       <SkillsPanel
         skills={renderInput.playerSkills}
         onSkillClick={(abilityId) => {

@@ -19,12 +19,20 @@ export type HeroStat =
       value: number;
       onChange: (v: number) => void;
       canIncrease: boolean;
+      /** Краткое шуточное описание для тултипа. */
+      flavorText?: string;
+      /** Строки с подробным описанием влияния для тултипа. */
+      detailLines?: string[];
     }
   | {
       type: 'readonly';
       icon: string;
       name: string;
       value: string;
+      /** Краткое шуточное описание для тултипа. */
+      flavorText?: string;
+      /** Строки с подробным описанием влияния для тултипа. */
+      detailLines?: string[];
     };
 
 interface Props {
@@ -74,6 +82,8 @@ export function HeroPanel({
               value={stat.value}
               onChange={stat.onChange}
               canIncrease={stat.canIncrease}
+              flavorText={stat.flavorText}
+              detailLines={stat.detailLines}
             />
           ) : (
             <StatRowReadonly
@@ -81,6 +91,8 @@ export function HeroPanel({
               icon={stat.icon}
               name={stat.name}
               value={stat.value}
+              flavorText={stat.flavorText}
+              detailLines={stat.detailLines}
             />
           ),
         )}

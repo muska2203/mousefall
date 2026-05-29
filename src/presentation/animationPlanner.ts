@@ -137,6 +137,20 @@ registerAnimationBuilder('CAST_RESOLVED', (event, children) => {
   return [{ step: castStep, children }];
 });
 
+registerAnimationBuilder('ENTITY_HEALED', (event) => {
+  if (event.type !== 'ENTITY_HEALED') return null;
+  return [{
+    step: {
+      type: 'UI_FLOATING_TEXT',
+      text: `+${event.amount}`,
+      x: event.position.x,
+      y: event.position.y,
+      styleKey: 'heal',
+    },
+    children: [],
+  }];
+});
+
 registerAnimationBuilder('CAST_CANCELLED', (event) => {
   if (event.type !== 'CAST_CANCELLED') return null;
   return [{

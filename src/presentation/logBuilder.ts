@@ -12,6 +12,7 @@
 
 import type {GameEvent, GameState, SimulationResult, TurnSide} from '@simulation/types';
 import type {ExecutionNode} from '@simulation/systems/actions/types';
+import { getItem } from '@content/registry';
 
 
 
@@ -75,6 +76,15 @@ export function gameEventToLog(
     }
     case 'PLAYER_DIED':
       return { text: 'Герой погиб', variant: 'bad' };
+    case 'ENTITY_HEALED': {
+      const name = getEntityDisplayName(state, event.entityId);
+      return { text: `${name} восстановил ${event.amount} HP`, variant: 'good' };
+    }
+    case 'ITEM_USED': {
+      const template = getItem(event.templateId);
+      const itemName = template?.name ?? 'предмет';
+      return { text: `Герой использовал ${itemName}`, variant: 'info' };
+    }
     default:
       return null;
   }
