@@ -18,3 +18,24 @@ export function resolveItemFrame(rarity: string): string {
 export function resolveItemIcon(spriteId: string): string {
   return `/assets/items/${spriteId}.png`;
 }
+
+/**
+ * Возвращает путь к спрайту врага по templateId.
+ */
+export function resolveEnemySprite(templateId: string): string {
+  return `/assets/enemies/${templateId}.png`;
+}
+
+/**
+ * Возвращает путь к спрайту лестницы по templateId.
+ */
+export function resolveStairsSprite(templateId: string): string {
+  return `/assets/objects/${templateId}.png`;
+}
+
+/**
+ * Возвращает путь к иконке способности по spriteId.
+ */
+export function resolveAbilityIcon(spriteId: string): string {
+  return `/assets/skills/${spriteId}.png`;
+}

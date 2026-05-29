@@ -14,12 +14,20 @@ export function createInventoryItem(
   templateId: string,
 ): InventoryItem {
   const template = getItem(templateId);
-  const grantedAbility = rollItemAbility(template, state.rng);
+  const grantedAbilities = (template.grantedAbilities ?? []).map((id) => ({
+    templateId: id,
+    level: 1,
+  }));
+
+  const rolled = rollItemAbility(template, state.rng);
+  if (rolled) {
+    grantedAbilities.push(rolled);
+  }
 
   return {
     instanceId: nextEntityId(state, 'item'),
     templateId,
     quantity: 1,
-    grantedAbility,
+    grantedAbilities,
   };
 }

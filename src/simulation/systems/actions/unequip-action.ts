@@ -45,7 +45,7 @@ export const unequipEntity: ActionHandler = {
       { type: 'UNEQUIP_ITEM', entityId: action.entityId, slot: action.slot },
     ];
 
-    if (item?.grantedAbility) {
+    if (item && item.grantedAbilities.length > 0) {
       intents.push({ type: 'REVOKE_ABILITY', entityId: action.entityId, sourceItemInstanceId: equippedId! });
     }
 

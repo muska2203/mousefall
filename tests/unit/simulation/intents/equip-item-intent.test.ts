@@ -10,15 +10,14 @@ function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTe
     id,
     name: id,
     description: '',
-    symbol: '/',
     type,
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     rarity: 'common',
     abilityPool: [],
     equipModifiers,
+    grantedAbilities: [],
   };
 }
 
@@ -49,7 +48,7 @@ afterEach(() => {
 describe('executeEquipItemIntent', () => {
   it('обновляет equippedWeaponId и equippedWeaponInstanceId для слота weapon', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []}],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();
@@ -74,7 +73,7 @@ describe('executeEquipItemIntent', () => {
 
   it('обновляет equippedArmorId и equippedArmorInstanceId для слота armor', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbilities: []}],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();
@@ -92,7 +91,7 @@ describe('executeEquipItemIntent', () => {
 
   it('обновляет equippedAmuletId и equippedAmuletInstanceId для слота amulet', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'amulet_1', templateId: 'test_amulet', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'amulet_1', templateId: 'test_amulet', quantity: 1, grantedAbilities: []}],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();
@@ -126,7 +125,7 @@ describe('executeEquipItemIntent', () => {
 
   it('применяет equipModifiers и пересчитывает статы', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []}],
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });

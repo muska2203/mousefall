@@ -19,6 +19,7 @@ import {EffectsPanel} from '@ui/components/EffectsPanel';
 import {LogPanel} from '@ui/components/LogPanel';
 import {InventoryPanel} from '@ui/components/InventoryPanel';
 import {SkillsPanel} from '@ui/components/SkillsPanel';
+import {FieldObjectPopover} from '@ui/components/FieldObjectPopover';
 
 interface Props {
   session: GameSession;
@@ -43,6 +44,7 @@ export function GameScreen({session, onModeChange}: Props) {
   const renderInput = vm.renderInput;
 
   const isInputBlocked = renderInput?.phase === 'animating';
+  const [fieldHoverPos, setFieldHoverPos] = useState<{x: number; y: number} | null>(null);
 
   const performMoveOrAttack = useCallback(
     (dx: number, dy: number) => {
@@ -133,9 +135,25 @@ export function GameScreen({session, onModeChange}: Props) {
       if (session.getMode() !== 'playing') return;
       if (isInputBlocked) return;
       session.previewTarget(pos);
+      session.setFieldHover(pos);
     },
     [session, isInputBlocked],
   );
+
+  const handleMouseMoveScreen = useCallback(
+    (pos: {screenX: number; screenY: number}) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      if (session.isTargeting()) return;
+      setFieldHoverPos({x: pos.screenX, y: pos.screenY});
+    },
+    [session, isInputBlocked],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    session.setFieldHover(null);
+    setFieldHoverPos(null);
+  }, [session]);
 
   const handleMouseClick = useCallback(
     (pos: {x: number; y: number}) => {
@@ -234,15 +252,27 @@ export function GameScreen({session, onModeChange}: Props) {
   );
 
   const centerColumn = (
-    <GameField
-      floor={renderInput.state.floor}
-      renderInput={renderInput}
-      onWait={handleWait}
-      onAnimationsComplete={() => session.onAnimationsComplete()}
-      onZoomDelta={handleZoom}
-      onMouseMove={handleMouseMove}
-      onMouseClick={handleMouseClick}
-    />
+    <>
+      <GameField
+        floor={renderInput.state.floor}
+        renderInput={renderInput}
+        onWait={handleWait}
+        onAnimationsComplete={() => session.onAnimationsComplete()}
+        onZoomDelta={handleZoom}
+        onMouseMove={handleMouseMove}
+        onMouseClick={handleMouseClick}
+        onMouseMoveScreen={handleMouseMoveScreen}
+        onMouseLeave={handleMouseLeave}
+      />
+      {renderInput.fieldObjectPopover && fieldHoverPos && (
+        <FieldObjectPopover
+          popover={renderInput.fieldObjectPopover}
+          visible={true}
+          x={fieldHoverPos.x + 16}
+          y={fieldHoverPos.y + 16}
+        />
+      )}
+    </>
   );
 
   const rightColumn = (

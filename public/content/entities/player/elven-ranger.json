@@ -2,8 +2,6 @@
   "id": "elven-ranger",
   "name": "Тонкоух",
   "description": "Лучник из глубин Сырных Лесов.",
-  "symbol": "@",
   "portraitImg": "/assets/portraits/elven-ranger-ready.png",
-  "spriteId": "elven-ranger",
   "renderScale": 1.0
 }

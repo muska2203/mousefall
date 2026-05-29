@@ -11,12 +11,10 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
   return {
     id: 'test_enemy',
     name: 'Тестовый враг',
-    symbol: 'E',
     health: { max: 1 },
-    combat: { damage: 1, armor: 0, attackRange: 1 },
-    ai: { type: 'aggressive', sightRange: 6, chaseRange: 10 },
+    combat: { damage: 1, armor: 0 },
     lootTable: [],
-    lootDropCount: { min: 1, max: 1 },
+    lootDropTable: [{ count: 1, weight: 1 }],
     xpReward: 0,
     renderScale: 1,
     ...partial,
@@ -28,15 +26,14 @@ function makeItemTemplate(partial: Partial<ItemTemplate> = {}): ItemTemplate {
     id: 'test_potion',
     name: 'Тестовое зелье',
     description: 'Для тестов',
-    symbol: 'p',
     type: 'consumable',
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     rarity: 'common',
     equipModifiers: [],
     abilityPool: [],
+    grantedAbilities: [],
     ...partial,
   };
 }
@@ -118,7 +115,7 @@ describe('Интеграция: цикл выпадения лута', () => {
         ['test_enemy', makeEntityTemplate({
           id: 'test_enemy',
           lootTable: [{ templateId: 'test_potion', weight: 1 }],
-          lootDropCount: { min: 1, max: 1 },
+          lootDropTable: [{ count: 1, weight: 1 }],
         })],
       ]),
       players: new Map(),
@@ -261,7 +258,7 @@ describe('Интеграция: цикл выпадения лута', () => {
         ['test_enemy', makeEntityTemplate({
           id: 'test_enemy',
           lootTable: [{ templateId: 'test_potion', weight: 1 }],
-          lootDropCount: { min: 2, max: 2 },
+          lootDropTable: [{ count: 2, weight: 1 }],
         })],
       ]),
       players: new Map(),
@@ -299,18 +296,22 @@ describe('Интеграция: цикл выпадения лута', () => {
   it('игрок поднимает предмет с пола по нажатию PICKUP', () => {
     const state = makeLootGameState();
     // Добавим предмет прямо под игроком
-    const item = {
+    const item: ItemEntity = {
       id: 'floor_potion',
-      type: 'item' as const,
+      type: 'item',
       templateId: 'test_potion',
       x: 1,
       y: 1,
       blocksMovement: false,
       displayName: 'Тестовое зелье',
-      quantity: 1,
-      grantedAbility: null as { templateId: string; level: number } | null,
+      item: {
+        instanceId: 'floor_potion',
+        templateId: 'test_potion',
+        quantity: 1,
+        grantedAbilities: [],
+      },
     };
-    state.entities.set(item.id, item as any);
+    state.entities.set(item.id, item);
 
     const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
 
@@ -325,7 +326,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     expect(currentState.player.inventory[0]).toMatchObject({
       templateId: 'test_potion',
       quantity: 1,
-      grantedAbility: null,
+      grantedAbilities: [],
     });
   });
 });

@@ -141,8 +141,8 @@ export type EquipSlotViewModel = {
   slotType: 'weapon' | 'armor' | 'amulet';
   /** instanceId надетого предмета (null если слот пуст) */
   instanceId: string | null;
-  /** Название скилла, который даёт надетый предмет */
-  grantedAbilityName?: string | null;
+  /** Названия скиллов, которые даёт надетый предмет */
+  grantedAbilityNames?: string[];
 };
 
 export type InventoryItemViewModel = {
@@ -150,7 +150,6 @@ export type InventoryItemViewModel = {
   templateId: string;
   quantity: number;
   detail: ItemDetailViewModel;
-  grantedAbility: { templateId: string; name: string; level: number } | null;
   /** Итоговый урон оружия с учётом формулы и текущих характеристик игрока (null для не-оружия) */
   damage?: number | null;
 };
@@ -162,6 +161,28 @@ export type ActiveEffectViewModel = {
   desc: string;
   turns: number;
 };
+
+export type EnemyPopoverViewModel = {
+  name: string;
+  sprite: string;
+  flavorText: string;
+  damage: number;
+  hp: number;
+  maxHp: number;
+  skills: Array<{ name: string; icon: string | null; cooldown: number; maxCooldown: number }>;
+  loot: Array<{ name: string; icon: string }>;
+};
+
+export type StairsPopoverViewModel = {
+  name: string;
+  sprite: string;
+  flavorText: string;
+};
+
+export type FieldObjectPopoverViewModel =
+  | { kind: 'enemy'; data: EnemyPopoverViewModel }
+  | { kind: 'item'; data: ItemDetailViewModel }
+  | { kind: 'stairs'; data: StairsPopoverViewModel };
 
 /** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */
 export type PresentationIntent =
@@ -263,4 +284,6 @@ export type RenderInput = {
   activeEffects: ActiveEffectViewModel[];
   /** Статистика текущего забега. */
   runStats: RunStats;
+  /** Popover объекта под курсором на игровом поле (только в фазе хода игрока). */
+  fieldObjectPopover: FieldObjectPopoverViewModel | null;
 };

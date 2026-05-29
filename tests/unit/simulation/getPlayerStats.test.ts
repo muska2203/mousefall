@@ -12,11 +12,9 @@ function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
     id,
     name: id,
     description: '',
-    symbol: '?',
     type: 'consumable',
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     ...template,
   } as ItemTemplate;
@@ -27,9 +25,7 @@ function mockPlayerTemplate(id: string, template: Partial<PlayerTemplate> = {}):
     id,
     name: id,
     description: '',
-    symbol: '@',
     portraitImg: `/assets/portraits/${id}-ready.png`,
-    spriteId: id,
     renderScale: 1.5,
     ...template,
   } as PlayerTemplate;

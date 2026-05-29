@@ -2,20 +2,18 @@
   "id": "common_splinter_blade",
   "name": "Ржавый сырорез",
   "description": "Небольшой тупой клинок, от которого пахнет сыром.",
-  "symbol": "t",
   "spriteId": "common_splinter_blade",
   "icon": "/assets/items/common_splinter_blade.png",
   "fallback": "🗡",
   "type": "weapon",
   "stackable": false,
   "maxStack": 1,
-  "weight": 2,
   "value": 10,
   "weapon": {
     "baseDamage": 4,
     "damageFormulaId": "sword",
-    "range": 1,
-    "grantedAbilities": []
+    "range": 1
   },
+  "grantedAbilities": [],
   "equipModifiers": []
 }

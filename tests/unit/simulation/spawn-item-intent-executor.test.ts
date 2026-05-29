@@ -14,15 +14,14 @@ function makeTestItemTemplate(id: string): ItemTemplate {
         id,
         name: 'Тестовый предмет',
         description: 'Для тестов',
-        symbol: 'i',
         type: 'consumable',
         stackable: false,
         maxStack: 1,
-        weight: 1,
         value: 0,
         rarity: 'common',
         equipModifiers: [],
         abilityPool: [],
+        grantedAbilities: [],
     };
 }
 
@@ -64,7 +63,7 @@ describe('executeSpawnItemIntent', () => {
         expect(item.type).toBe('item');
         expect(item.templateId).toBe('test_item');
         expect(item.displayName).toBe('Тестовый предмет');
-        expect((item as import('../../../src/simulation/types').ItemEntity).quantity).toBe(1);
+        expect((item as import('../../../src/simulation/types').ItemEntity).item.quantity).toBe(1);
     });
 
     it('использует findFreeTileNear для занятой клетки', () => {
@@ -140,7 +139,12 @@ describe('executeSpawnItemIntent', () => {
             y: 7,
             blocksMovement: false,
             displayName: 'Существующий',
-            quantity: 1,
+            item: {
+                instanceId: 'existing_item',
+                templateId: 'test_item',
+                quantity: 1,
+                grantedAbilities: [],
+            },
         };
         state.entities.set(existingItem.id, existingItem as any);
 

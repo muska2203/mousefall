@@ -10,7 +10,7 @@ function makeBuilder() {
 describe('executeRemoveItemIntent', () => {
   it('уменьшает quantity на 1', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 3, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 3, grantedAbilities: []}],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();
@@ -30,7 +30,7 @@ describe('executeRemoveItemIntent', () => {
 
   it('удаляет предмет из инвентаря, если quantity была 1', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbilities: []}],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();

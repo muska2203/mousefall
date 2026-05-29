@@ -9,11 +9,9 @@ function mockItem(id: string, overrides: Partial<ItemTemplate> & Record<string, 
     id,
     name: 'Тестовый предмет',
     description: 'Описание',
-    symbol: '!',
     type: 'consumable',
     stackable: true,
     maxStack: 10,
-    weight: 1,
     value: 0,
     ...overrides,
   } as ItemTemplate;
@@ -41,7 +39,7 @@ describe('Inventory ViewModel', () => {
   it('maps player inventory to InventoryItemViewModel', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'item_inst_1', templateId: 'health_potion', quantity: 3, grantedAbility: null },
+        { instanceId: 'item_inst_1', templateId: 'health_potion', quantity: 3, grantedAbilities: []},
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -62,7 +60,7 @@ describe('Inventory ViewModel', () => {
   it('uses fallback for missing item template', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'item_inst_2', templateId: 'unknown_item', quantity: 1, grantedAbility: null },
+        { instanceId: 'item_inst_2', templateId: 'unknown_item', quantity: 1, grantedAbilities: []},
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -107,13 +105,13 @@ describe('Inventory sorting', () => {
   it('sorts by: consumable last, then slot, then rarity desc, then id', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'inst_potion_b', templateId: 'potion_b', quantity: 1, grantedAbility: null },
-        { instanceId: 'inst_key_a', templateId: 'key_a', quantity: 1, grantedAbility: null },
-        { instanceId: 'inst_amulet_a', templateId: 'amulet_a', quantity: 1, grantedAbility: null },
-        { instanceId: 'inst_potion_a', templateId: 'potion_a', quantity: 1, grantedAbility: null },
-        { instanceId: 'inst_sword_b', templateId: 'sword_b', quantity: 1, grantedAbility: null },
-        { instanceId: 'inst_armor_a', templateId: 'armor_a', quantity: 1, grantedAbility: null },
-        { instanceId: 'inst_sword_a', templateId: 'sword_a', quantity: 1, grantedAbility: null },
+        { instanceId: 'inst_potion_b', templateId: 'potion_b', quantity: 1, grantedAbilities: []},
+        { instanceId: 'inst_key_a', templateId: 'key_a', quantity: 1, grantedAbilities: []},
+        { instanceId: 'inst_amulet_a', templateId: 'amulet_a', quantity: 1, grantedAbilities: []},
+        { instanceId: 'inst_potion_a', templateId: 'potion_a', quantity: 1, grantedAbilities: []},
+        { instanceId: 'inst_sword_b', templateId: 'sword_b', quantity: 1, grantedAbilities: []},
+        { instanceId: 'inst_armor_a', templateId: 'armor_a', quantity: 1, grantedAbilities: []},
+        { instanceId: 'inst_sword_a', templateId: 'sword_a', quantity: 1, grantedAbilities: []},
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -145,8 +143,8 @@ describe('Inventory sorting', () => {
   it('sorts unknown items by id after all typed items', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'inst_z', templateId: 'unknown_z', quantity: 1, grantedAbility: null },
-        { instanceId: 'inst_a', templateId: 'unknown_a', quantity: 1, grantedAbility: null },
+        { instanceId: 'inst_z', templateId: 'unknown_z', quantity: 1, grantedAbilities: []},
+        { instanceId: 'inst_a', templateId: 'unknown_a', quantity: 1, grantedAbilities: []},
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });

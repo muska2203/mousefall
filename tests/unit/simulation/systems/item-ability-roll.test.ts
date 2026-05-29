@@ -8,15 +8,14 @@ function mockItemTemplate(abilityPool: ItemTemplate['abilityPool']): ItemTemplat
     id: 'test_item',
     name: 'Тестовый предмет',
     description: '',
-    symbol: '/',
     type: 'weapon',
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     rarity: 'common',
     abilityPool,
     equipModifiers: [],
+    grantedAbilities: [],
   };
 }
 

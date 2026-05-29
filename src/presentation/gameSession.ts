@@ -26,6 +26,9 @@ import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@content/
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
 import {mapItemTemplateToDetail} from './itemDetailMapper';
+import {mapEnemyToPopover} from './enemyDetailMapper';
+import {mapStairsToPopover} from './stairsDetailMapper';
+import {resolveAbilityIcon, resolveItemIcon} from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
@@ -115,6 +118,8 @@ export class GameSession {
   private animationBatchId = 0;
   /** Клетка под мышью в режиме таргетинга. */
   private targetingHover: Position | null = null;
+  /** Клетка под мышью в обычном режиме (для popover объекта на поле). */
+  private fieldHover: Position | null = null;
   /** Удерживаемое направление движения (для автохода при зажатой клавише). */
   private heldDirection: {dx: number; dy: number} | null = null;
 
@@ -213,23 +218,23 @@ export class GameSession {
             typeLabel: 'Неизвестно',
             type: 'unknown',
             icon: '',
+            frameUrl: '',
             fallbackIcon: '?',
             stackCount: invItem.quantity,
             sections: [],
           };
-      const abilityTemplate = invItem.grantedAbility
-        ? this.getAbilityTemplate(invItem.grantedAbility.templateId)
-        : null;
+      const grantedAbilities = invItem.grantedAbilities.map((ability) => {
+        const abilityTemplate = this.getAbilityTemplate(ability.templateId);
+        return {
+          templateId: ability.templateId,
+          name: abilityTemplate?.name ?? ability.templateId,
+          level: ability.level,
+          icon: abilityTemplate?.spriteId ? resolveAbilityIcon(abilityTemplate.spriteId) : null,
+        };
+      });
       return {
         ...detail,
-        grantedAbility: invItem.grantedAbility
-          ? {
-              templateId: invItem.grantedAbility.templateId,
-              name: abilityTemplate?.name ?? invItem.grantedAbility.templateId,
-              level: invItem.grantedAbility.level,
-              icon: abilityTemplate?.spriteId ? `/assets/skills/${abilityTemplate.spriteId}.png` : null,
-            }
-          : null,
+        grantedAbilities: grantedAbilities.length > 0 ? grantedAbilities : null,
       };
     };
 
@@ -247,31 +252,34 @@ export class GameSession {
     const equipSlots = [
       {
         label: 'Оружие',
-        icon: weaponItem ? `/assets/items/${weaponItem.templateId}.png` : undefined,
+        icon: weaponItem ? resolveItemIcon(weaponItem.templateId) : undefined,
         fallback: '⚔',
         damage: player.equippedWeaponId ? player.damage : null,
         rarity: weaponDetailVm?.rarity ?? 'common',
         detail: weaponDetailVm ?? undefined,
         slotType: 'weapon' as const,
         instanceId: player.equippedWeaponInstanceId,
+        grantedAbilityNames: weaponDetailVm?.grantedAbilities?.map(a => a.name) ?? [],
       },
       {
         label: 'Броня',
-        icon: armorItem ? `/assets/items/${armorItem.templateId}.png` : undefined,
+        icon: armorItem ? resolveItemIcon(armorItem.templateId) : undefined,
         fallback: '🛡',
         rarity: armorDetailVm?.rarity ?? 'common',
         detail: armorDetailVm ?? undefined,
         slotType: 'armor' as const,
         instanceId: player.equippedArmorInstanceId,
+        grantedAbilityNames: armorDetailVm?.grantedAbilities?.map(a => a.name) ?? [],
       },
       {
         label: 'Амулет',
-        icon: amuletItem ? `/assets/items/${amuletItem.templateId}.png` : undefined,
+        icon: amuletItem ? resolveItemIcon(amuletItem.templateId) : undefined,
         fallback: '📿',
         rarity: amuletDetailVm?.rarity ?? 'common',
         detail: amuletDetailVm ?? undefined,
         slotType: 'amulet' as const,
         instanceId: player.equippedAmuletInstanceId,
+        grantedAbilityNames: amuletDetailVm?.grantedAbilities?.map(a => a.name) ?? [],
       },
     ];
 
@@ -288,13 +296,6 @@ export class GameSession {
       .filter(invItem => !equippedIds.has(invItem.instanceId))
       .map(invItem => {
         const detail = buildItemDetail(invItem);
-        const grantedAbility = invItem.grantedAbility
-          ? {
-              templateId: invItem.grantedAbility.templateId,
-              name: detail.grantedAbility?.name ?? invItem.grantedAbility.templateId,
-              level: invItem.grantedAbility.level,
-            }
-          : null;
         const template = tryGetItem(invItem.templateId);
         const damage = template?.type === 'weapon' && template.weapon
           ? this.simulation!.getWeaponDamage(state.player, template)
@@ -305,7 +306,6 @@ export class GameSession {
           templateId: invItem.templateId,
           quantity: invItem.quantity,
           detail,
-          grantedAbility,
           damage,
         };
       })
@@ -328,6 +328,8 @@ export class GameSession {
       }
     });
 
+    const fieldObjectPopover = this.buildFieldObjectPopover(state);
+
     return {
       state,
       highlightedPath: null,
@@ -345,6 +347,7 @@ export class GameSession {
       inventory,
       activeEffects,
       runStats: state.runStats,
+      fieldObjectPopover,
     };
   }
 
@@ -366,6 +369,52 @@ export class GameSession {
       selected: this.targeting.state.selectedTargets,
       previewIntents: preview?.intents ?? [],
     };
+  }
+
+  private buildFieldObjectPopover(state: Readonly<GameState>): RenderInput['fieldObjectPopover'] {
+    if (!this.fieldHover) return null;
+
+    const { x, y } = this.fieldHover;
+
+    // Ищем объект на клетке, исключая игрока
+    let enemy = null;
+    let item = null;
+    let stairs = null;
+
+    for (const entity of state.entities.values()) {
+      if (entity.x !== x || entity.y !== y) continue;
+      if (entity.type === 'enemy') {
+        enemy = entity;
+        break; // приоритет врагам
+      }
+      if (entity.type === 'item') {
+        item = entity;
+      }
+      if (entity.type === 'stairs' && !stairs) {
+        stairs = entity;
+      }
+    }
+
+    if (enemy) {
+      return { kind: 'enemy', data: mapEnemyToPopover(enemy) };
+    }
+
+    if (item) {
+      const template = tryGetItem(item.item.templateId);
+      if (template) {
+        const detail = mapItemTemplateToDetail(template, {
+          stackCount: item.item.quantity,
+          rarity: template.rarity,
+        });
+        return { kind: 'item', data: detail };
+      }
+    }
+
+    if (stairs) {
+      return { kind: 'stairs', data: mapStairsToPopover(stairs) };
+    }
+
+    return null;
   }
 
   /** Изменить масштаб камеры на дельту. */
@@ -506,6 +555,7 @@ export class GameSession {
     const ok = this.targeting.beginTargeting(abilityId, this.simulation);
     if (!ok) return;
     this.targetingHover = null;
+    this.fieldHover = null;
     this.notify();
   }
 
@@ -540,6 +590,24 @@ export class GameSession {
 
     this.targetingHover = null;
     this.notify();
+  }
+
+  /** Находимся ли сейчас в режиме таргетинга. */
+  isTargeting(): boolean {
+    return this.targeting.phase === 'targeting';
+  }
+
+  /** Установить клетку под мышью в обычном режиме (для popover объекта на поле). */
+  setFieldHover(hoveredPosition: Position | null): void {
+    const prevHover = this.fieldHover;
+    const canShow =
+      this.mode === 'playing' &&
+      this.animation.phase !== 'animating' &&
+      this.targeting.phase !== 'targeting';
+    this.fieldHover = canShow ? hoveredPosition : null;
+    if (this.fieldHover?.x !== prevHover?.x || this.fieldHover?.y !== prevHover?.y) {
+      this.notify();
+    }
   }
 
   /** Превью при наведении на клетку в режиме таргетинга. */

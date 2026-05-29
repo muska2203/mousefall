@@ -2,25 +2,21 @@
   "id": "cat_mid",
   "aiStrategyId": "stub_right",
   "name": "Уличный кот",
-  "symbol": "C",
-  "spriteId": "cat_mid",
   "health": { "max": 30 },
   "combat": {
     "damage": 7,
-    "armor": 1,
-    "attackRange": 1
-  },
-  "ai": {
-    "type": "aggressive",
-    "sightRange": 7,
-    "chaseRange": 10
+    "armor": 0
   },
   "lootTable": [
     { "templateId": "health_potion", "weight": 4 },
     { "templateId": "common_splinter_blade", "weight": 2 },
     { "templateId": "common_tin_plate", "weight": 1 }
   ],
-  "lootDropCount": { "min": 1, "max": 2 },
+  "lootDropTable": [
+    { "count": 0, "weight": 2 },
+    { "count": 1, "weight": 1 }
+  ],
   "xpReward": 18,
-  "renderScale": 1.5
+  "renderScale": 1.5,
+  "flavorText": "Средний бизнес-кот. Нанимает котят и не платит налоги."
 }

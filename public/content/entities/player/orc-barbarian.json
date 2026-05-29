@@ -2,8 +2,6 @@
   "id": "orc-barbarian",
   "name": "Клыкохвост",
   "description": "Яростный воин с сырными клыками.",
-  "symbol": "@",
   "portraitImg": "/assets/portraits/orc-barbarian-ready.png",
-  "spriteId": "orc-barbarian",
   "renderScale": 1.0
 }

@@ -14,7 +14,7 @@ beforeEach(() => {
         entities: new Map(),
         players: new Map(),
         items: new Map([
-            ['health_potion', { id: 'health_potion', name: 'Зелье здоровья', description: '', symbol: '!', type: 'consumable', stackable: false, maxStack: 1, weight: 1, value: 0, abilityPool: [] } as any],
+            ['health_potion', { id: 'health_potion', name: 'Зелье здоровья', description: '', type: 'consumable', stackable: false, maxStack: 1, value: 0, abilityPool: [], grantedAbilities: [] } as any],
         ]),
         abilities: new Map(),
         maps: new Map(),

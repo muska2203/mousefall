@@ -30,6 +30,8 @@ interface Props {
   onZoomDelta: (delta: number) => void;
   onMouseMove?: (pos: {x: number; y: number}) => void;
   onMouseClick?: (pos: {x: number; y: number}) => void;
+  onMouseMoveScreen?: (pos: {screenX: number; screenY: number}) => void;
+  onMouseLeave?: () => void;
   hotbarSize?: number;
 }
 
@@ -41,6 +43,8 @@ export function GameField({
   onZoomDelta,
   onMouseMove,
   onMouseClick,
+  onMouseMoveScreen,
+  onMouseLeave,
   hotbarSize = 8,
 }: Props) {
   const isInputBlocked = renderInput?.phase === 'animating';
@@ -206,6 +210,11 @@ export function GameField({
 
       const { x: tileX, y: tileY } = rendererRef.current.screenToWorld(mouseX, mouseY);
       onMouseMove?.({ x: tileX, y: tileY });
+      onMouseMoveScreen?.({ screenX: e.clientX, screenY: e.clientY });
+    };
+
+    const handleMouseLeave = () => {
+      onMouseLeave?.();
     };
 
     const handleClick = (e: MouseEvent) => {
@@ -221,9 +230,11 @@ export function GameField({
 
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('click', handleClick);
+    container.addEventListener('mouseleave', handleMouseLeave);
     return () => {
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('click', handleClick);
+      container.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [onMouseMove, onMouseClick]);
 

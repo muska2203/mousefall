@@ -10,6 +10,35 @@ import type { RNGState } from './rng';
 import { rngFloat } from './rng';
 
 /**
+ * Взвешенный случайный выбор количества предметов из таблицы дропа.
+ *
+ * @param lootDropTable — таблица возможных количеств с весами
+ * @param rng — seeded RNG (мутируется)
+ * @returns выбранное количество предметов
+ */
+export function rollLootDropCount(
+  lootDropTable: Array<{ count: number; weight: number }>,
+  rng: RNGState,
+): number {
+  if (lootDropTable.length === 0) return 0;
+
+  const totalWeight = lootDropTable.reduce((sum, entry) => sum + Math.max(0, entry.weight), 0);
+  if (totalWeight <= 0) return 0;
+
+  let roll = rngFloat(rng) * totalWeight;
+  for (const entry of lootDropTable) {
+    if (entry.weight <= 0) continue;
+    roll -= entry.weight;
+    if (roll <= 0) {
+      return entry.count;
+    }
+  }
+
+  // Fallback на последний элемент (защита от floating-point погрешности)
+  return lootDropTable[lootDropTable.length - 1]!.count;
+}
+
+/**
  * Взвешенный случайный выбор предметов из таблицы лута.
  *
  * @param lootTable — таблица выпадения с весами

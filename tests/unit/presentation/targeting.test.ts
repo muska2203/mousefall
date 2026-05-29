@@ -9,14 +9,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     id,
     name: id,
     description: 'test',
-    symbol: '*',
-    spriteId: id,
-    targetType: 'ranged',
-    range: 5,
-    aoeRadius: 0,
     cooldown: 0,
-    apCost: 1,
-    effect: { type: 'damage', value: 10 },
     ...overrides,
   } as AbilityTemplate;
 }
@@ -29,8 +22,8 @@ describe('GameSession targeting', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['fireball', mockAbility('fireball', { range: 5, aoeRadius: 1 })],
-        ['magic_slap', mockAbility('magic_slap', { range: 5 })],
+        ['fireball', mockAbility('fireball')],
+        ['magic_slap', mockAbility('magic_slap')],
       ]),
       maps: new Map(),
       stairs: new Map(),

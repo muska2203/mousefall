@@ -8,8 +8,7 @@
 import { WorldReaction } from './types';
 import { findEntity } from '@simulation/state';
 import { tryGetEntity } from '@content/registry';
-import { calculateLootDrops } from '@utils/loot';
-import { rngInt } from '@utils/rng';
+import { calculateLootDrops, rollLootDropCount } from '@utils/loot';
 
 export const postDeathLootReaction: WorldReaction = (
     state,
@@ -28,8 +27,7 @@ export const postDeathLootReaction: WorldReaction = (
     const lootTable = template.lootTable;
     if (!lootTable || lootTable.length === 0) return [];
 
-    const dropCount = template.lootDropCount ?? { min: 1, max: 1 };
-    const count = rngInt(state.rng, dropCount.min, dropCount.max);
+    const count = rollLootDropCount(template.lootDropTable ?? [], state.rng);
 
     const drops = calculateLootDrops(lootTable, count, state.rng);
 

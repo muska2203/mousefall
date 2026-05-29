@@ -9,12 +9,10 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
     return {
         id: 'test_enemy',
         name: 'Тестовый враг',
-        symbol: 'E',
         health: { max: 10 },
-        combat: { damage: 1, armor: 0, attackRange: 1 },
-        ai: { type: 'aggressive', sightRange: 6, chaseRange: 10 },
+        combat: { damage: 1, armor: 0 },
         lootTable: [],
-        lootDropCount: { min: 1, max: 1 },
+        lootDropTable: [{ count: 1, weight: 1 }],
         xpReward: 0,
         renderScale: 1,
         ...partial,
@@ -96,7 +94,7 @@ describe('postDeathLootReaction', () => {
         expect(result).toEqual([]);
     });
 
-    it('рендомит count в диапазоне lootDropCount', () => {
+    it('рендомит count по весам из lootDropTable', () => {
         initRegistry({
             entities: new Map([[
                 'multi_loot_enemy',
@@ -106,7 +104,10 @@ describe('postDeathLootReaction', () => {
                         { templateId: 'potion', weight: 1 },
                         { templateId: 'sword', weight: 1 },
                     ],
-                    lootDropCount: { min: 2, max: 3 },
+                    lootDropTable: [
+                        { count: 2, weight: 1 },
+                        { count: 3, weight: 1 },
+                    ],
                 }),
             ]]),
             players: new Map(),

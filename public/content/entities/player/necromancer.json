@@ -2,8 +2,6 @@
   "id": "necromancer",
   "name": "Мышь-Косторез",
   "description": "Тёмный некромант, повелитель плесени.",
-  "symbol": "@",
   "portraitImg": "/assets/portraits/necromancer-ready.png",
-  "spriteId": "necromancer",
   "renderScale": 1.0
 }

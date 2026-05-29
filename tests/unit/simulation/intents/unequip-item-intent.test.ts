@@ -10,15 +10,14 @@ function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTe
     id,
     name: id,
     description: '',
-    symbol: '/',
     type,
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     rarity: 'common',
     abilityPool: [],
     equipModifiers,
+    grantedAbilities: [],
   };
 }
 

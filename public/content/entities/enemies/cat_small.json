@@ -2,24 +2,20 @@
   "id": "cat_small",
   "aiStrategyId": "stub_right",
   "name": "Котёнок-разбойник",
-  "symbol": "c",
-  "spriteId": "cat_small",
   "health": { "max": 15 },
   "combat": {
     "damage": 4,
-    "armor": 0,
-    "attackRange": 1
-  },
-  "ai": {
-    "type": "aggressive",
-    "sightRange": 5,
-    "chaseRange": 8
+    "armor": 0
   },
   "lootTable": [
     { "templateId": "health_potion", "weight": 3 },
     { "templateId": "common_splinter_blade", "weight": 1 }
   ],
-  "lootDropCount": { "min": 0, "max": 1 },
+  "lootDropTable": [
+    { "count": 0, "weight": 5 },
+    { "count": 1, "weight": 1 }
+  ],
   "xpReward": 8,
-  "renderScale": 1.1
+  "renderScale": 1.1,
+  "flavorText": "Ещё вчера он мяукал под окном. Сегодня — грабит караваны."
 }

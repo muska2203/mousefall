@@ -15,13 +15,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     id,
     name: id,
     description: 'test',
-    symbol: '*',
-    spriteId: id,
-    targetType: 'ranged',
-    range: 5,
-    aoeRadius: 0,
     cooldown: 3,
-    effect: { type: 'damage', value: 20 },
     ...overrides,
   } as AbilityTemplate;
 }

@@ -121,9 +121,13 @@ export function makeFloorItem(overrides: Partial<ItemEntity> = {}): ItemEntity {
     x: 4,
     y: 4,
     templateId: 'health_potion',
-    quantity: 1,
-    grantedAbility: null,
     blocksMovement: false,
+    item: {
+      instanceId: 'item_test_1',
+      templateId: 'health_potion',
+      quantity: 1,
+      grantedAbilities: [],
+    },
     ...overrides,
   };
 }

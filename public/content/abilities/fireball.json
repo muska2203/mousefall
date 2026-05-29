@@ -2,18 +2,7 @@
   "id": "fireball",
   "name": "Огненный шар",
   "description": "Взрыв огня в радиусе 1 клетки. Поджигает цели.",
-  "symbol": "*",
   "spriteId": "fireball",
-  "targetType": "ranged",
-  "range": 5,
-  "aoeRadius": 1,
   "cooldown": 3,
-  "apCost": 1,
-  "castTime": 2,
-  "effect": {
-    "type": "damage",
-    "value": 20,
-    "statusType": "burning",
-    "duration": 3
-  }
+  "castTime": 2
 }

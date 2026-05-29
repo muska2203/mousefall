@@ -10,15 +10,14 @@ function mockItem(id: string, type: ItemTemplate['type'], abilityPool: ItemTempl
     id,
     name: id,
     description: '',
-    symbol: '/',
     type,
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     rarity: 'common',
     abilityPool,
     equipModifiers: [],
+    grantedAbilities: [],
   };
 }
 
@@ -51,7 +50,7 @@ describe('equipEntity.validate', () => {
   it('успех, если предмет в инвентаре и слот свободен', () => {
     const state = makeGameState();
     const player = makePlayer({
-      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -78,7 +77,7 @@ describe('equipEntity.validate', () => {
   it('ошибка, если тип предмета нельзя экипировать', () => {
     const state = makeGameState();
     const player = makePlayer({
-      inventory: [{ instanceId: 'potion_1', templateId: 'test_potion', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'test_potion', quantity: 1, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -95,8 +94,8 @@ describe('equipEntity.validate', () => {
     const state = makeGameState();
     const player = makePlayer({
       inventory: [
-        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbility: null },
-        { instanceId: 'staff_2', templateId: 'test_staff', quantity: 1, grantedAbility: null },
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []},
+        { instanceId: 'staff_2', templateId: 'test_staff', quantity: 1, grantedAbilities: []},
       ],
       equippedWeaponId: 'test_staff',
       equippedWeaponInstanceId: 'staff_1',
@@ -115,7 +114,7 @@ describe('equipEntity.resolve', () => {
     const state = makeGameState();
     const player = makePlayer({
       inventory: [
-        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbility: { templateId: 'fireball', level: 1 } },
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [{ templateId: 'fireball', level: 1 }]},
       ],
     });
     state.player = player;
@@ -138,7 +137,7 @@ describe('equipEntity.resolve', () => {
     const state = makeGameState();
     const player = makePlayer({
       inventory: [
-        { instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbility: null },
+        { instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbilities: []},
       ],
     });
     state.player = player;
@@ -155,8 +154,8 @@ describe('equipEntity.resolve', () => {
     const state = makeGameState();
     const player = makePlayer({
       inventory: [
-        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbility: null },
-        { instanceId: 'staff_2', templateId: 'test_staff', quantity: 1, grantedAbility: null },
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []},
+        { instanceId: 'staff_2', templateId: 'test_staff', quantity: 1, grantedAbilities: []},
       ],
       equippedWeaponId: 'test_staff',
       equippedWeaponInstanceId: 'staff_1',
@@ -185,7 +184,7 @@ describe('equipEntity.execute', () => {
     const state = makeGameState();
     const player = makePlayer({
       inventory: [
-        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbility: { templateId: 'fireball', level: 1 } },
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [{ templateId: 'fireball', level: 1 }]},
       ],
     });
     state.player = player;

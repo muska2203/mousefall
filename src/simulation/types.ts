@@ -67,8 +67,9 @@ export type InventoryItem = {
   /** Ссылается на шаблон в реестре контента. */
   templateId: string;
   quantity: number;
-  /** Ролленный скилл из пула снаряжения. Создаётся один раз при генерации экземпляра. */
-  grantedAbility: { templateId: string; level: number } | null;
+  /** Все способности предмета (фиксированные из шаблона + ролленная из abilityPool).
+   *  Создаются один раз при генерации экземпляра. */
+  grantedAbilities: Array<{ templateId: string; level: number }>;
 };
 
 export type Entity =
@@ -178,9 +179,9 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
 export interface ItemEntity extends BaseEntity, TemplateIdHolder {
   type: 'item';
   blocksMovement: false;
-  quantity: number;
-  /** Ролленный скилл экземпляра предмета (если есть). Создаётся при спавне. */
-  grantedAbility: { templateId: string; level: number } | null;
+  displayName: string;
+  /** Готовый экземпляр предмета. Создаётся один раз при спавне. */
+  item: InventoryItem;
 }
 
 /** Лестница — объект перехода между этажами. */

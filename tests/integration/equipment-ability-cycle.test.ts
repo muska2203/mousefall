@@ -10,15 +10,8 @@ function mockAbility(id: string): AbilityTemplate {
     id,
     name: 'Огненный шар',
     description: 'Тестовая способность',
-    symbol: '*',
-    spriteId: id,
-    targetType: 'ranged',
-    range: 5,
-    aoeRadius: 0,
     cooldown: 3,
-    apCost: 1,
     castTime: 0,
-    effect: { type: 'damage', value: 20 },
   };
 }
 
@@ -27,15 +20,14 @@ function mockItem(id: string): ItemTemplate {
     id,
     name: 'Тестовый посох',
     description: 'Тест',
-    symbol: '/',
     type: 'weapon',
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     rarity: 'common',
     abilityPool: [{ abilityId: 'fireball', weight: 1 }],
     equipModifiers: [],
+    grantedAbilities: [],
     weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2 },
   };
 }
@@ -45,8 +37,6 @@ function mockPlayerTemplate(id: string): PlayerTemplate {
     id,
     name: 'Тестовый герой',
     description: '',
-    symbol: '@',
-    spriteId: id,
     portraitImg: '',
     renderScale: 1,
   };
@@ -86,10 +76,10 @@ describe('Полный цикл экипировки и скилла', () => {
     const simulation = GameSimulation.createNewGame(42, config, defaultTestMapParams);
     const state = simulation.getState();
 
-    // 1. Проверить: player.inventory[0].grantedAbility !== null
+    // 1. Проверить: player.inventory[0].grantedAbilities не пуст
     expect(state.player.inventory.length).toBeGreaterThan(0);
-    expect(state.player.inventory[0]!.grantedAbility).not.toBeNull();
-    expect(state.player.inventory[0]!.grantedAbility!.templateId).toBe('fireball');
+    expect(state.player.inventory[0]!.grantedAbilities.length).toBeGreaterThan(0);
+    expect(state.player.inventory[0]!.grantedAbilities[0]!.templateId).toBe('fireball');
 
     // 2. Проверить: player.abilities содержит скилл с source === 'equipment'
     expect(state.player.abilities.some(a => a.source === 'equipment')).toBe(true);

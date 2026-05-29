@@ -41,10 +41,12 @@ const InventoryItemSchema = z.object({
   instanceId: z.string(),
   templateId: z.string(),
   quantity: z.number().int().positive(),
-  grantedAbility: z.object({
-    templateId: z.string(),
-    level: z.number().int().positive(),
-  }).nullable(),
+  grantedAbilities: z.array(
+    z.object({
+      templateId: z.string(),
+      level: z.number().int().positive(),
+    })
+  ).default([]),
 });
 
 // ─────────────────────────────────────────────
@@ -140,12 +142,9 @@ const ItemEntitySchema = z.object({
 
   templateId: z.string(),
 
-  quantity: z.number().int().positive(),
+  displayName: z.string(),
 
-  grantedAbility: z.object({
-    templateId: z.string(),
-    level: z.number().int().positive(),
-  }).nullable(),
+  item: InventoryItemSchema,
 
   blocksMovement: z.literal(false)
 });

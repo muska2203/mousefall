@@ -3,6 +3,7 @@ import { getItem } from '@content/registry';
 import { createInventoryItem } from './inventory-factory';
 import { addModifier } from './stats/modifier-engine';
 import { recalculatePlayerBaseStats } from './stats/recalculate';
+import { getItemAbilityEntries } from './ability-grant';
 
 /**
  * Создаёт стартовое снаряжение игрока и помещает его в инвентарь.
@@ -41,14 +42,16 @@ export function createStartingEquipment(
       addModifier(player, { ...mod, source: `item_${item.instanceId}` });
     }
 
-    if (slot && item.grantedAbility) {
-      player.abilities.push({
-        templateId: item.grantedAbility.templateId,
-        source: 'equipment',
-        sourceItemInstanceId: item.instanceId,
-        level: item.grantedAbility.level,
-        currentCooldown: 0,
-      });
+    if (slot) {
+      for (const entry of getItemAbilityEntries(item)) {
+        player.abilities.push({
+          templateId: entry.templateId,
+          source: 'equipment',
+          sourceItemInstanceId: entry.sourceItemInstanceId,
+          level: entry.level,
+          currentCooldown: 0,
+        });
+      }
     }
   }
 

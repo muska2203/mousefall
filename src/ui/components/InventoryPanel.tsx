@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import type { InventoryItemViewModel } from '@presentation/types';
 import { ItemDetailPopover } from './ItemDetailPopover';
-import { resolveItemFrame } from '@utils/assetResolver';
+
 import { Panel } from './Panel';
 
 interface Props {
@@ -38,7 +38,7 @@ export function InventoryPanel({ items, onItemClick }: Props) {
               <span className="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true">
                 <img
                   className="cm-sprite-stack__frame"
-                  src={resolveItemFrame(item.detail.rarity)}
+                  src={item.detail.frameUrl}
                   alt=""
                   loading="lazy"
                   decoding="async"

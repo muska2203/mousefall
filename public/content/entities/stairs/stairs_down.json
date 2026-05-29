@@ -1,7 +1,6 @@
 {
   "id": "stairs_down",
   "name": "Лестница вниз",
-  "symbol": ">",
-  "spriteId": "stairs_down",
-  "renderScale": 1.0
+  "renderScale": 1.0,
+  "flavorText": "Ведёт в ещё более противную вонь."
 }

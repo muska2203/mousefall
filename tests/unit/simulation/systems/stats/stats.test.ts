@@ -29,11 +29,9 @@ function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
     id,
     name: id,
     description: '',
-    symbol: '?',
     type: 'consumable',
     stackable: false,
     maxStack: 1,
-    weight: 1,
     value: 0,
     ...template,
   } as ItemTemplate;

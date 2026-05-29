@@ -11,7 +11,7 @@
 
 import type { ItemTemplate } from '@content/schemas';
 import { tryGetAbility } from '@content/registry';
-import { resolveItemIcon } from '@utils/assetResolver';
+import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
 
 const TYPE_LABELS: Record<string, string> = {
   weapon: 'Оружие',
@@ -30,8 +30,7 @@ const RARITY_LABELS: Record<string, string> = {
 
 export type ItemDetailSection =
   | { kind: 'stat-list'; title: string; stats: Array<{ label: string; value: string | number }> }
-  | { kind: 'description'; text: string }
-  | { kind: 'custom'; title: string; content: unknown };
+  | { kind: 'description'; text: string };
 
 export interface ItemDetailViewModel {
   name: string;
@@ -42,16 +41,17 @@ export interface ItemDetailViewModel {
   /** Тип предмета: weapon, armor, amulet, consumable, key, gold */
   type: string;
   icon: string;
+  frameUrl: string;
   fallbackIcon?: string;
   stackCount?: number;
   sections: ItemDetailSection[];
-  /** Ролленный скилл экземпляра предмета (если есть) */
-  grantedAbility?: {
+  /** Все способности экземпляра предмета (фиксированные + ролленные) */
+  grantedAbilities?: Array<{
     templateId: string;
     name: string;
     level: number;
     icon: string | null;
-  } | null;
+  }> | null;
   /** Пул скиллов, из которого роллится способность при создании экземпляра */
   abilityPool?: Array<{
     abilityId: string;
@@ -127,7 +127,7 @@ export function mapItemTemplateToDetail(
             abilityId: entry.abilityId,
             name: ability?.name ?? entry.abilityId,
             description: ability?.description ?? '',
-            icon: ability?.spriteId ? `/assets/skills/${ability.spriteId}.png` : null,
+            icon: ability?.spriteId ? resolveAbilityIcon(ability.spriteId) : null,
             weight: entry.weight,
           };
         })
@@ -141,6 +141,7 @@ export function mapItemTemplateToDetail(
     typeLabel: TYPE_LABELS[template.type] ?? template.type,
     type: template.type,
     icon: resolveItemIcon(template.spriteId ?? template.id),
+    frameUrl: resolveItemFrame(rarity),
     fallbackIcon: opts?.fallbackIcon,
     stackCount: opts?.stackCount,
     sections,

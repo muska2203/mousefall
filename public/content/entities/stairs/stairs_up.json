@@ -1,7 +1,6 @@
 {
   "id": "stairs_up",
   "name": "Лестница вверх",
-  "symbol": "<",
-  "spriteId": "stairs_up",
-  "renderScale": 1.0
+  "renderScale": 1.0,
+  "flavorText": "Обратно к солнечному свету и неоплаченным счетам."
 }

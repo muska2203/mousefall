@@ -13,6 +13,7 @@ import { getItem } from "@content/registry";
 import { ActionHandler, ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
 import { Intent } from "@simulation/systems/intents/types.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
+import { getItemAbilityEntries } from "@simulation/systems/ability-grant.ts";
 
 export const equipEntity: ActionHandler = {
 
@@ -69,15 +70,15 @@ export const equipEntity: ActionHandler = {
       { type: 'EQUIP_ITEM', entityId: action.entityId, itemInstanceId: action.itemInstanceId, slot },
     );
 
-    if (item.grantedAbility) {
+    for (const entry of getItemAbilityEntries(item)) {
       intents.push({
         type: 'GRANT_ABILITY',
         entityId: action.entityId,
         ability: {
-          templateId: item.grantedAbility.templateId,
+          templateId: entry.templateId,
           source: 'equipment',
-          sourceItemInstanceId: item.instanceId,
-          level: item.grantedAbility.level,
+          sourceItemInstanceId: entry.sourceItemInstanceId,
+          level: entry.level,
           currentCooldown: 0,
         },
       });

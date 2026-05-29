@@ -29,15 +29,10 @@ export const executePickUpIntent: IntentExecutor<PickUpIntent> = (
     const player = actor as PlayerEntity;
     const itemEntity = item as ItemEntity;
 
-    player.inventory.push({
-        instanceId: itemEntity.id,
-        templateId: itemEntity.templateId,
-        quantity: itemEntity.quantity,
-        grantedAbility: itemEntity.grantedAbility,
-    });
+    player.inventory.push(itemEntity.item);
 
     state.entities.delete(itemEntity.id);
-    state.runStats.itemsPickedUp += itemEntity.quantity;
+    state.runStats.itemsPickedUp += itemEntity.item.quantity;
 
     return builder.addChild(parent, {
         type: 'ITEM_PICKED_UP' as const,

@@ -20,7 +20,7 @@ import type { MapParams } from '@content/schemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
 import { getEntity, getItem } from '@content/registry';
-import { rollItemAbility } from './item-ability-roll';
+import { createItemEntity } from './item-entity-factory';
 
 // ─────────────────────────────────────────────
 // Тип выходных данных
@@ -214,18 +214,7 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
 }
 
 function createFloorItem(state: GameState, templateId: string, x: number, y: number): ItemEntity {
-  const template = getItem(templateId);
-  return {
-    id: nextEntityId(state, 'item'),
-    type: 'item',
-    x,
-    y,
-    displayName: template.name,
-    templateId,
-    quantity: 1,
-    grantedAbility: rollItemAbility(template, state.rng),
-    blocksMovement: false,
-  };
+  return createItemEntity(state, templateId, x, y);
 }
 
 export function createStairs(state: GameState, templateId: 'stairs_down' | 'stairs_up', x: number, y: number): StairsEntity {

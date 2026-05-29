@@ -168,6 +168,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       chestsOpened: 0,
       itemsPickedUp: 0,
     },
+    fieldObjectPopover: null,
   };
 }
 
@@ -375,7 +376,12 @@ describe('EntityRenderer', () => {
       templateId: 'health_potion',
       blocksMovement: false,
       displayName: 'Зелье',
-      quantity: 1,
+      item: {
+        instanceId: 'item1',
+        templateId: 'health_potion',
+        quantity: 1,
+        grantedAbilities: [],
+      },
     } as any);
 
     renderer.update(input);
@@ -409,7 +415,12 @@ describe('EntityRenderer', () => {
       templateId: 'health_potion',
       blocksMovement: false,
       displayName: 'Зелье',
-      quantity: 1,
+      item: {
+        instanceId: 'item1',
+        templateId: 'health_potion',
+        quantity: 1,
+        grantedAbilities: [],
+      },
     } as any);
 
     renderer.update(input);

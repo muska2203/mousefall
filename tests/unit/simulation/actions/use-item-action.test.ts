@@ -9,22 +9,20 @@ function mockConsumable(
   id: string,
   effect: NonNullable<ItemTemplate['consumable']>['effect'],
   value?: number,
-  duration?: number,
 ): ItemTemplate {
   return {
     id,
     name: id,
     description: '',
-    symbol: '!',
     type: 'consumable',
     stackable: true,
     maxStack: 10,
-    weight: 1,
     value: 0,
     rarity: 'common',
     abilityPool: [],
     equipModifiers: [],
-    consumable: { effect, value, duration },
+    grantedAbilities: [],
+    consumable: { effect, value },
   };
 }
 
@@ -39,16 +37,14 @@ beforeEach(() => {
     players: new Map(),
     items: new Map([
       ['heal_potion', mockConsumable('heal_potion', 'heal', 30)],
-      ['buff_potion', mockConsumable('buff_potion', 'buff', 5, 3)],
+      ['buff_potion', mockConsumable('buff_potion', 'buff', 5)],
       ['test_weapon', {
         id: 'test_weapon',
         name: 'test_weapon',
         description: '',
-        symbol: '/',
         type: 'weapon',
         stackable: false,
         maxStack: 1,
-        weight: 1,
         value: 0,
         rarity: 'common',
         abilityPool: [],
@@ -69,7 +65,7 @@ describe('useItemAction.validate', () => {
   it('успех, если предмет — consumable в инвентаре', () => {
     const state = makeGameState();
     const player = makePlayer({
-      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -96,7 +92,7 @@ describe('useItemAction.validate', () => {
   it('ошибка, если предмет не consumable', () => {
     const state = makeGameState();
     const player = makePlayer({
-      inventory: [{ instanceId: 'weapon_1', templateId: 'test_weapon', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'weapon_1', templateId: 'test_weapon', quantity: 1, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -114,7 +110,7 @@ describe('useItemAction.resolve', () => {
   it('для heal возвращает HEAL + CONSUME_AP + REMOVE_ITEM', () => {
     const state = makeGameState();
     const player = makePlayer({
-      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 2, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 2, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -131,7 +127,7 @@ describe('useItemAction.resolve', () => {
   it('для buff возвращает APPLY_STATUS + CONSUME_AP + REMOVE_ITEM', () => {
     const state = makeGameState();
     const player = makePlayer({
-      inventory: [{ instanceId: 'potion_1', templateId: 'buff_potion', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'buff_potion', quantity: 1, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -152,7 +148,7 @@ describe('useItemAction.execute', () => {
     const player = makePlayer({
       hp: 50,
       maxHp: 100,
-      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 2, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 2, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -171,7 +167,7 @@ describe('useItemAction.execute', () => {
     const player = makePlayer({
       hp: 90,
       maxHp: 100,
-      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
@@ -189,7 +185,7 @@ describe('useItemAction.execute', () => {
     const player = makePlayer({
       hp: 50,
       maxHp: 100,
-      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbility: null }],
+      inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 1, grantedAbilities: []}],
     });
     state.player = player;
     state.entities.set(player.id, player);
