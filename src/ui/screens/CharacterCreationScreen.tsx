@@ -10,8 +10,6 @@
 import {useState, useCallback, useMemo} from 'react';
 import type {CharacterConfig} from '@presentation/gameSession';
 import {GameSession} from '@presentation/gameSession';
-import {mapItemTemplateToDetail} from '@presentation/itemDetailMapper';
-import {tryGetItem} from '@content/registry';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -32,15 +30,7 @@ const STARTER_ARMOR_IDS = ['common_tin_plate', 'common_patch_cloak'];
 const STARTER_AMULET_IDS = ['common_knotted_fang', 'common_glass_bead'];
 
 function getStarterItemInfo(id: string) {
-  const info = GameSession.getItemInfo(id);
-  const template = tryGetItem(id);
-  return {
-    id,
-    name: info?.name ?? id,
-    icon: info?.icon ?? `/assets/items/${id}.png`,
-    fallback: info?.fallback ?? '?',
-    detail: template ? mapItemTemplateToDetail(template) : undefined,
-  };
+  return GameSession.getStarterItemInfo(id);
 }
 
 export function CharacterCreationScreen({onStartGame}: Props) {

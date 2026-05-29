@@ -9,7 +9,7 @@
  */
 
 import {ENTITY_TYPE} from "@utils/constants.ts";
-import type {MapParams} from "@content/schemas";
+import type {ItemTemplate, MapParams} from "@content/schemas";
 import {
   Position,
   EntityId,
@@ -360,6 +360,9 @@ export type Simulation = {
 
   /** Возвращает базовую информацию о способности для отображения в UI. */
   getAbilityInfo(abilityId: string): { name: string; spriteId: string | undefined; cooldown: number } | null;
+
+  /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
+  getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number;
 };
 
 export type ActionPreview = {

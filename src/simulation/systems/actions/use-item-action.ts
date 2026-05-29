@@ -33,6 +33,11 @@ export const useItemAction: ActionHandler = {
       return { ok: false, reasonCode: 'not_consumable', reasonDescription: 'Предмет нельзя использовать' };
     }
 
+    const supportedEffects = ['heal', 'buff'];
+    if (!supportedEffects.includes(template.consumable.effect)) {
+      return { ok: false, reasonCode: 'unsupported_effect', reasonDescription: `Эффект предмета "${template.consumable.effect}" не поддерживается` };
+    }
+
     return { ok: true };
   },
 
@@ -42,7 +47,10 @@ export const useItemAction: ActionHandler = {
     }
 
     const player = state.player;
-    const item = player.inventory.find(i => i.instanceId === action.itemInstanceId)!;
+    const item = player.inventory.find(i => i.instanceId === action.itemInstanceId);
+    if (!item) {
+      return [];
+    }
     const template = getItem(item.templateId);
     const effect = template.consumable!;
 

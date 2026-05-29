@@ -26,7 +26,7 @@ import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@content/
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
 import {mapItemTemplateToDetail} from './itemDetailMapper';
-import {getWeaponDamage} from '@simulation/systems/stats/weapon-formulas.ts';
+
 import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
@@ -297,7 +297,7 @@ export class GameSession {
           : null;
         const template = tryGetItem(invItem.templateId);
         const damage = template?.type === 'weapon' && template.weapon
-          ? getWeaponDamage(state.player, template)
+          ? this.simulation!.getWeaponDamage(state.player, template)
           : null;
 
         return {
@@ -422,6 +422,24 @@ export class GameSession {
       icon: template.icon,
       fallback: template.fallback,
       type: template.type,
+    };
+  }
+
+  static getStarterItemInfo(id: string): {
+    id: string;
+    name: string;
+    icon: string;
+    fallback: string;
+    detail: import('./itemDetailMapper').ItemDetailViewModel | undefined;
+  } {
+    const info = GameSession.getItemInfo(id);
+    const template = tryGetItem(id);
+    return {
+      id,
+      name: info?.name ?? id,
+      icon: info?.icon ?? `/assets/items/${id}.png`,
+      fallback: info?.fallback ?? '?',
+      detail: template ? mapItemTemplateToDetail(template) : undefined,
     };
   }
 

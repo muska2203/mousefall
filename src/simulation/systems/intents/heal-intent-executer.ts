@@ -8,7 +8,7 @@
 import { GameState } from "@simulation/types.ts";
 import { HealIntent, IntentExecutor } from "@simulation/systems/intents/types.ts";
 import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { findEntity } from "@simulation/state.ts";
+import { findAttackableEntity } from "@simulation/state.ts";
 
 export const executeHealIntent: IntentExecutor<HealIntent> = (
   state: GameState,
@@ -16,8 +16,8 @@ export const executeHealIntent: IntentExecutor<HealIntent> = (
   builder: ExecutionBuilder,
   parent: ExecutionNode,
 ) => {
-  const target = findEntity(state, intent.entityId);
-  if (!target || !('hp' in target) || !('maxHp' in target)) return null;
+  const target = findAttackableEntity(state, intent.entityId);
+  if (!target) return null;
 
   const before = target.hp;
   target.hp = Math.min(target.maxHp, target.hp + intent.amount);

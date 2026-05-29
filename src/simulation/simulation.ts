@@ -3,6 +3,7 @@ import {
     Actor,
     DefaultActionPointCostResolver,
     GameState,
+    PlayerEntity,
     Position,
     Simulation,
     SimulationResult,
@@ -27,7 +28,7 @@ import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import "@simulation/ai/aggressive-strategy.ts";
-import type {MapParams} from "@content/schemas";
+import type {ItemTemplate, MapParams} from "@content/schemas";
 import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
@@ -40,6 +41,7 @@ import {
 } from "@simulation/systems/stats/effective-stats.ts";
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
 import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
+import { getWeaponDamage as calcWeaponDamage } from "@simulation/systems/stats/weapon-formulas.ts";
 import { initSkillRegistry } from "@simulation/skills/index.ts";
 import { tryGetAbility, getAbility, getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
@@ -95,7 +97,9 @@ export class GameSimulation implements Simulation {
         const player = createInitialPlayer(config.templateId);
         applyCharacterConfig(player, config);
 
-        // Применяем стартовую экипировку для корректного превью характеристик
+        // Применяем стартовую экипировку для корректного превью характеристик.
+        // Клонируем массив модификаторов, чтобы не мутировать shared-референс от createInitialPlayer.
+        player.statModifiers = [...player.statModifiers];
         for (const templateId of config.startingEquipment) {
             const template = getItem(templateId);
             if (template.type === 'weapon') {
@@ -626,6 +630,10 @@ export class GameSimulation implements Simulation {
         } catch {
             return null;
         }
+    }
+
+    getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number {
+        return calcWeaponDamage(player, weapon);
     }
 }
 
