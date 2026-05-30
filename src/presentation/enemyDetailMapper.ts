@@ -6,9 +6,20 @@
  */
 
 import type { EnemyEntity } from '@simulation/types';
+import type { DamageType } from '@simulation/core-types';
 import { tryGetEntity, tryGetItem, tryGetAbility } from '@content/registry';
 import { resolveEnemySprite, resolveItemIcon, resolveAbilityIcon } from '@utils/assetResolver';
 import type { EnemyPopoverViewModel } from './types';
+
+const DAMAGE_TYPE_LABELS: Record<DamageType, string> = {
+  piercing: 'Колющий',
+  slashing: 'Рубящий',
+  blunt: 'Тупой',
+  fire: 'Огненный',
+  electric: 'Электрический',
+  poison: 'Ядовитый',
+  frost: 'Морозный',
+};
 
 export function mapEnemyToPopover(enemy: EnemyEntity): EnemyPopoverViewModel {
   const template = tryGetEntity(enemy.templateId);
@@ -36,6 +47,8 @@ export function mapEnemyToPopover(enemy: EnemyEntity): EnemyPopoverViewModel {
     sprite: resolveEnemySprite(enemy.templateId),
     flavorText: template?.flavorText ?? '',
     damage: enemy.damage,
+    damageType: enemy.damageType,
+    damageTypeLabel: DAMAGE_TYPE_LABELS[enemy.damageType],
     hp: enemy.hp,
     maxHp: enemy.maxHp,
     skills,

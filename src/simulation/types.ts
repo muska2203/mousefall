@@ -30,6 +30,7 @@ import {
   GameEvent,
   RuntimeAbility,
   ActiveCast,
+  DamageType,
 } from "@simulation/core-types.ts";
 
 // Реэкспорт базовых типов из core-types для обратной совместимости потребителей
@@ -54,6 +55,7 @@ export type {
   EntityMovedEvent,
   RuntimeAbility,
   ActiveCast,
+  DamageType,
 } from "@simulation/core-types.ts";
 export { ExecutionBuilder } from "@simulation/core-types.ts";
 
@@ -169,6 +171,8 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   /** Состояние ИИ в рантайме (сохраняется для памяти патруля/погони). */
   type: 'enemy';
   blocksMovement: boolean;
+  /** Тип урона врага. */
+  damageType: DamageType;
   /** Активные способности врага (задел на AI-скиллы). */
   abilities: RuntimeAbility[];
   /** Текущая подготовка способности (каст) или null. */
@@ -364,6 +368,9 @@ export type Simulation = {
 
   /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
   getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number;
+
+  /** Возвращает записи урона оружия с типами. */
+  getWeaponDamageEntries(player: PlayerEntity, weapon: ItemTemplate | null): Array<{ damage: number; damageType: import("@simulation/core-types.ts").DamageType }>;
 };
 
 export type ActionPreview = {

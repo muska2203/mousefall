@@ -3,7 +3,7 @@ import {GameState} from "@simulation/types.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
-import { getEffectiveDamage } from "@simulation/systems/stats/effective-stats.ts";
+import { getEffectiveDamageEntries } from "@simulation/systems/stats/effective-stats.ts";
 
 // ─────────────────────────────────────────────
 // Контекст атаки (устраняет дублирование поиска)
@@ -58,7 +58,13 @@ export const attackEntity: ActionHandler = {
     if (!ctx.ok) {
       return [];
     }
-    return [{ type: 'DAMAGE', entityId: ctx.target.id, damage: getEffectiveDamage(ctx.attacker) }];
+    return getEffectiveDamageEntries(ctx.attacker).map(entry => ({
+      type: 'DAMAGE' as const,
+      entityId: ctx.target.id,
+      sourceEntityId: ctx.attacker.id,
+      damage: entry.damage,
+      damageType: entry.damageType,
+    }));
   },
 
   execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {

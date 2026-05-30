@@ -12,7 +12,8 @@
   "weapon": {
     "baseDamage": 4,
     "damageFormulaId": "sword",
-    "range": 1
+    "range": 1,
+    "damageType": "slashing"
   },
   "grantedAbilities": [],
   "equipModifiers": []

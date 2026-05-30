@@ -16,8 +16,10 @@ import {
   getBaseAccuracy,
   getBaseCritChance,
   getBaseCritMultiplier,
+  getBaseDamageEntries,
 } from './base-resolver.ts';
 import { applyModifiers } from './modifier-engine.ts';
+import type { WeaponDamageEntry } from './weapon-formulas.ts';
 
 // ─────────────────────────────────────────────
 // Type guards
@@ -38,6 +40,23 @@ export function getEffectiveDamage(entity: Entity): number {
   }
   // Враги и прочие — плоское значение
   return (entity as Actor).damage;
+}
+
+export function getEffectiveDamageEntries(entity: Entity): WeaponDamageEntry[] {
+  if (isPlayer(entity)) {
+    const baseEntries = getBaseDamageEntries(entity);
+    // Модификаторы урона применяем пропорционально к каждой записи
+    const totalBase = baseEntries.reduce((sum, e) => sum + e.damage, 0);
+    if (totalBase === 0) return [];
+    const modifiedTotal = Math.round(applyModifiers(entity, 'damage', totalBase).total);
+    const ratio = modifiedTotal / totalBase;
+    return baseEntries.map(e => ({
+      damage: Math.max(0, Math.round(e.damage * ratio)),
+      damageType: e.damageType,
+    }));
+  }
+  // Враги и прочие — плоское значение с типом по умолчанию
+  return [{ damage: (entity as Actor).damage, damageType: 'blunt' }];
 }
 
 export function getEffectiveArmor(entity: Entity): number {

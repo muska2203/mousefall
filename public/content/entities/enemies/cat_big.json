@@ -5,7 +5,8 @@
   "health": { "max": 60 },
   "combat": {
     "damage": 12,
-    "armor": 0
+    "armor": 0,
+    "damageType": "slashing"
   },
   "lootTable": [
     { "templateId": "health_potion", "weight": 5 },

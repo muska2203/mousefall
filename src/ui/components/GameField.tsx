@@ -19,6 +19,7 @@ import {PixiFloatingTextExecutor} from '@ui/animation/pixiFloatingTextExecutor';
 import {SkillAnimationExecutor} from '@ui/animation/skillExecutor';
 import {ProjectileAnimationExecutor} from '@ui/animation/projectileExecutor';
 import {ExplosionAnimationExecutor} from '@ui/animation/explosionExecutor';
+import {StatusBurstAnimationExecutor} from '@ui/animation/statusBurstExecutor';
 import type {AnimationContext} from '@ui/animation/types';
 import {TILE_SIZE} from '@utils/constants';
 
@@ -93,6 +94,7 @@ export function GameField({
         new SkillAnimationExecutor(),
         new ProjectileAnimationExecutor(),
         new ExplosionAnimationExecutor(),
+        new StatusBurstAnimationExecutor(),
       ];
       const context: AnimationContext = {
         worldRenderer: renderer,

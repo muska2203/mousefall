@@ -53,14 +53,16 @@ export const fireballSkill: SkillExecutor = {
         : 1;
       if (!isCombatEntity(caster)) continue;
       if (!isCombatEntity(entity)) continue;
-      const damage = formula({
+      const damageEntries = formula({
         caster,
         target: entity,
         skillLevel,
         baseDamage,
       });
 
-      intents.push({ type: 'DAMAGE', entityId: entity.id, damage });
+      for (const entry of damageEntries) {
+        intents.push({ type: 'DAMAGE', entityId: entity.id, sourceEntityId: caster.id, damage: entry.damage, damageType: entry.damageType });
+      }
 
       const burning: StatusEffect = {
         type: 'burning',

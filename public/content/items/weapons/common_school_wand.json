@@ -16,7 +16,12 @@
   "weapon": {
     "baseDamage": 2,
     "damageFormulaId": "staff",
-    "range": 1
+    "range": 1,
+    "damageType": "blunt",
+    "damageEntries": [
+      { "damageType": "blunt", "baseDamage": 2, "damageFormulaId": "staff" },
+      { "damageType": "fire", "baseDamage": 1 }
+    ]
   },
   "equipModifiers": []
 }

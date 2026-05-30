@@ -13,6 +13,19 @@ import {ANIMATION_CONFIG} from '@utils/animationConfig';
 import type {AnimationConfigKey} from '@utils/animationConfig';
 import {TILE_SIZE} from '@utils/constants';
 
+type DamageAnimationStep = Extract<AnimationStep, { type: 'DAMAGE' }>;
+type DamageType = DamageAnimationStep['damageType'];
+
+const DAMAGE_COLORS: Record<DamageType, string> = {
+  piercing: '#ff4444',
+  slashing: '#ff4444',
+  blunt: '#ff4444',
+  fire: '#ff8800',
+  electric: '#ffdd00',
+  poison: '#44ff44',
+  frost: '#88ddff',
+};
+
 const STAGGER_MS = 150;
 const CLEANUP_THRESHOLD_MS = 5000;
 
@@ -30,7 +43,7 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
     const config = ANIMATION_CONFIG[step.type as AnimationConfigKey];
     const pos = step.type === 'DAMAGE' ? step.position : {x: step.x, y: step.y};
     const text = step.type === 'DAMAGE' ? String(step.amount) : step.text;
-    const color = step.type === 'DAMAGE' ? '#ff4444' : '#ffffff';
+    const color = step.type === 'DAMAGE' ? DAMAGE_COLORS[step.damageType] : '#ffffff';
 
     // Мировые пиксели: центр по X, верх тайла по Y
     const worldX = pos.x * TILE_SIZE + TILE_SIZE / 2;

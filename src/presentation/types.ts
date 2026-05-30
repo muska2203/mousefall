@@ -8,7 +8,7 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot, Intent, RunStats } from '@simulation/types';
+import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { ItemDetailViewModel } from './itemDetailMapper';
 
@@ -37,6 +37,7 @@ export type AnimationStep =
       type: 'DAMAGE';
       targetId: string;
       amount: number;
+      damageType: DamageType;
       position: Position;
     }
   | {
@@ -77,6 +78,12 @@ export type AnimationStep =
       type: 'EXPLOSION';
       center: Position;
       radius: number;
+    }
+  | {
+      type: 'STATUS_BURST';
+      entityId: string;
+      position: Position;
+      statusType: string;
     }
   | {
       type: 'ITEM_DROP';
@@ -167,6 +174,8 @@ export type EnemyPopoverViewModel = {
   sprite: string;
   flavorText: string;
   damage: number;
+  damageType: DamageType;
+  damageTypeLabel: string;
   hp: number;
   maxHp: number;
   skills: Array<{ name: string; icon: string | null; cooldown: number; maxCooldown: number }>;
@@ -187,7 +196,7 @@ export type FieldObjectPopoverViewModel =
 /** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */
 export type PresentationIntent =
   | { type: 'MOVE'; entityId: string; dx: number; dy: number; from: Position; to: Position }
-  | { type: 'DAMAGE'; entityId: string; damage: number; position: Position }
+  | { type: 'DAMAGE'; entityId: string; damage: number; damageType: import('@simulation/core-types').DamageType; position: Position }
   | { type: 'DIE'; entityId: string; position: Position }
   | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
   | { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' }
@@ -214,7 +223,7 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
     case 'DAMAGE': {
       const entity = state.entities.get(intent.entityId);
       if (!entity) return null;
-      return { type: 'DAMAGE', entityId: intent.entityId, damage: intent.damage, position: { x: entity.x, y: entity.y } };
+      return { type: 'DAMAGE', entityId: intent.entityId, damage: intent.damage, damageType: intent.damageType, position: { x: entity.x, y: entity.y } };
     }
     case 'DIE': {
       const entity = state.entities.get(intent.entityId);

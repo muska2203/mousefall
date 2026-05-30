@@ -207,6 +207,7 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
     maxAp: 1,
     ap: 1,
     isAlive: true,
+    damageType: template.combat?.damageType ?? 'blunt',
     aiStrategyId: template.aiStrategyId!, // враги из enemyPool всегда имеют aiStrategyId
     abilities: [],
     activeCast: null,

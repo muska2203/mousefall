@@ -81,6 +81,16 @@ export type StatusEffectType =
   | 'stunned'
   | 'regenerating';
 
+/** Тип урона. */
+export type DamageType =
+  | 'piercing'
+  | 'slashing'
+  | 'blunt'
+  | 'fire'
+  | 'electric'
+  | 'poison'
+  | 'frost';
+
 export type StatusEffect = {
   type: StatusEffectType;
   /** Оставшиеся ходы. */
@@ -264,7 +274,7 @@ export type Intent =
   | RemoveItemIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
-export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; damage: number };
+export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect };
 export type ChangeFloorIntent = { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' };
@@ -324,7 +334,7 @@ export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationE
 
 export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position };
 
-export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; position: Position };
+export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; damageType: DamageType; position: Position };
 
 export type EntityDiedEvent = { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
 

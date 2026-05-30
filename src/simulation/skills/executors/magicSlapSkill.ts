@@ -50,14 +50,16 @@ export const magicSlapSkill: SkillExecutor = {
       if (!formula) continue;
       if (!isCombatEntity(caster)) continue;
       if (!isCombatEntity(entity)) continue;
-      const damage = formula({
+      const damageEntries = formula({
         caster,
         target: entity,
         skillLevel,
         baseDamage: 12,
       });
 
-      intents.push({ type: 'DAMAGE', entityId: entity.id, damage });
+      for (const entry of damageEntries) {
+        intents.push({ type: 'DAMAGE', entityId: entity.id, sourceEntityId: caster.id, damage: entry.damage, damageType: entry.damageType });
+      }
     }
 
     return intents;

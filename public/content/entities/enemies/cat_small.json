@@ -5,7 +5,8 @@
   "health": { "max": 15 },
   "combat": {
     "damage": 4,
-    "armor": 0
+    "armor": 0,
+    "damageType": "piercing"
   },
   "lootTable": [
     { "templateId": "health_potion", "weight": 3 },

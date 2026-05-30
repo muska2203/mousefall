@@ -49,6 +49,7 @@ describe('magicSlapSkill', () => {
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
     expect(damageIntents).toHaveLength(3);
     expect(damageIntents.every(i => i.entityId === enemy.id)).toBe(true);
+    expect(damageIntents.every(i => i.damageType === 'electric')).toBe(true);
   });
 
   it('deals damage to 3 different targets', () => {

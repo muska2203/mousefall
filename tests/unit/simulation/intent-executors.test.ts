@@ -85,7 +85,7 @@ describe('executeDamageIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, damage: 5}, builder, builder.root);
+        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt'}, builder, builder.root);
 
         expect(enemy.hp).toBe(15);
         expect(node).not.toBeNull();
@@ -98,7 +98,7 @@ describe('executeDamageIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, damage: 5}, builder, builder.root);
+        executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt'}, builder, builder.root);
 
         expect(enemy.hp).toBe(18); // 5 - 3 = 2 урона
     });
@@ -108,7 +108,7 @@ describe('executeDamageIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, damage: 5}, builder, builder.root);
+        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt'}, builder, builder.root);
 
         expect(enemy.hp).toBe(19);
         expect(node!.event.type).toBe('ENTITY_DAMAGED');
@@ -121,7 +121,7 @@ describe('executeDamageIntent', () => {
         const state = makeGameState();
         const builder = makeBuilder();
 
-        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: 'ghost', damage: 10}, builder, builder.root);
+        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: 'ghost', sourceEntityId: null, damage: 10, damageType: 'blunt'}, builder, builder.root);
 
         expect(node).toBeNull();
     });
@@ -178,7 +178,7 @@ describe('executeIntent с мировыми реакциями', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        executeIntent(state, {type: 'DAMAGE', entityId: enemy.id, damage: 5}, builder, builder.root);
+        executeIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt'}, builder, builder.root);
 
         // Проверяем дерево событий
         expect(builder.root.children.length).toBe(1);
@@ -200,7 +200,7 @@ describe('executeIntent с мировыми реакциями', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        executeIntent(state, {type: 'DAMAGE', entityId: enemy.id, damage: 3}, builder, builder.root);
+        executeIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 3, damageType: 'blunt'}, builder, builder.root);
 
         expect(builder.root.children.length).toBe(1);
         const damageNode = builder.root.children[0]!;

@@ -16,7 +16,7 @@ import type { ExecutionNode } from '@simulation/systems/actions/types';
 import type { AnimationStep, AnimationNode } from './types';
 import { filterByFOV } from './fogFilter';
 
-type AnimationBuilder = (event: GameEvent, childNodes: AnimationNode[]) => AnimationNode[] | null;
+type AnimationBuilder = (event: GameEvent, childNodes: AnimationNode[], state: GameState) => AnimationNode[] | null;
 
 const builders = new Map<string, AnimationBuilder>();
 
@@ -65,6 +65,7 @@ registerAnimationBuilder('ENTITY_DAMAGED', (event, children) => {
       type: 'DAMAGE',
       targetId: event.targetId,
       amount: event.damage,
+      damageType: event.damageType,
       position: event.position,
     },
     children,
@@ -165,6 +166,36 @@ registerAnimationBuilder('CAST_CANCELLED', (event) => {
   }];
 });
 
+registerAnimationBuilder('STATUS_APPLIED', (event, childNodes, state) => {
+  if (event.type !== 'STATUS_APPLIED') return null;
+  const entity = state.entities.get(event.entityId) ?? state.player;
+  if (!entity) return null;
+  return [{
+    step: {
+      type: 'STATUS_BURST',
+      entityId: event.entityId,
+      position: { x: entity.x, y: entity.y },
+      statusType: event.effect.type,
+    },
+    children: childNodes,
+  }];
+});
+
+registerAnimationBuilder('STATUS_TICKED', (event, childNodes, state) => {
+  if (event.type !== 'STATUS_TICKED') return null;
+  const entity = state.entities.get(event.entityId) ?? state.player;
+  if (!entity) return null;
+  return [{
+    step: {
+      type: 'STATUS_BURST',
+      entityId: event.entityId,
+      position: { x: entity.x, y: entity.y },
+      statusType: 'ticked',
+    },
+    children: childNodes,
+  }];
+});
+
 registerAnimationBuilder('ABILITY_USED', (event, children) => {
   if (event.type !== 'ABILITY_USED') return null;
 
@@ -206,7 +237,7 @@ export function buildAnimationTree(result: SimulationResult, state: GameState): 
     const phase = filtered.phases[i]!;
     const phaseNodes: AnimationNode[] = [];
     for (const action of phase.actions) {
-      phaseNodes.push(...convertExecutionNode(action));
+      phaseNodes.push(...convertExecutionNode(action, state));
     }
 
     // Если первый экшн игрока — MOVE, анимации окружения идут параллельно
@@ -217,7 +248,7 @@ export function buildAnimationTree(result: SimulationResult, state: GameState): 
       filtered.phases[i + 1]!.side === 'ENVIRONMENT'
     ) {
       for (const action of filtered.phases[i + 1]!.actions) {
-        phaseNodes.push(...convertExecutionNode(action));
+        phaseNodes.push(...convertExecutionNode(action, state));
       }
       i += 2;
     } else {
@@ -242,16 +273,16 @@ function isFirstActionMove(phase: TurnPhase): boolean {
 /** Рекурсивно конвертирует ExecutionNode в AnimationNode[].
  *  Если текущее событие не маппится в шаг — узел "растворяется",
  *  а его дети поднимаются как сиблинги к ближайшему анимированному предку. */
-function convertExecutionNode(node: ExecutionNode): AnimationNode[] {
+function convertExecutionNode(node: ExecutionNode, state: GameState): AnimationNode[] {
   const builder = builders.get(node.event.type);
 
   const childNodes: AnimationNode[] = [];
   for (const child of node.children) {
-    childNodes.push(...convertExecutionNode(child));
+    childNodes.push(...convertExecutionNode(child, state));
   }
 
   if (builder) {
-    const nodes = builder(node.event, childNodes);
+    const nodes = builder(node.event, childNodes, state);
     if (nodes) return nodes;
   }
 

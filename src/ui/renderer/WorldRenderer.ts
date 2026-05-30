@@ -195,6 +195,59 @@ export class WorldRenderer {
     });
   }
 
+  /** Анимировать вспышку статус-эффекта: частицы, разлетающиеся от центра.
+   *  Цвет зависит от типа статуса. */
+  animateStatusBurst(center: Position, statusType: string, config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
+    const colors: Record<string, number> = {
+      burning: 0xff4400,
+      poisoned: 0x44ff44,
+      frozen: 0x88ddff,
+      stunned: 0xffff00,
+      regenerating: 0x44ff88,
+      ticked: 0xffaa00,
+    };
+    const color = colors[statusType] ?? 0xffffff;
+    const centerX = center.x * TILE_SIZE + TILE_SIZE / 2;
+    const centerY = center.y * TILE_SIZE + TILE_SIZE / 2;
+    const particleCount = 6;
+
+    const particles = Array.from({ length: particleCount }, (_, i) => {
+      const g = new Graphics();
+      g.circle(0, 0, 3);
+      g.fill({ color, alpha: 0.9 });
+      g.x = centerX;
+      g.y = centerY;
+      this.root.addChild(g);
+
+      const angle = (i / particleCount) * Math.PI * 2;
+      const speed = TILE_SIZE * 0.3 + ((i % 3) * TILE_SIZE * 0.15);
+      const targetX = centerX + Math.cos(angle) * speed;
+      const targetY = centerY + Math.sin(angle) * speed;
+
+      return { g, targetX, targetY };
+    });
+
+    return new Promise((resolve) => {
+      runTickerTween({
+        duration: config.duration,
+        easing: config.easing,
+        onUpdate: (p) => {
+          for (const { g, targetX, targetY } of particles) {
+            g.x = lerp(centerX, targetX, p);
+            g.y = lerp(centerY, targetY, p);
+            g.alpha = lerp(0.9, 0, p);
+          }
+        },
+        onComplete: () => {
+          for (const { g } of particles) {
+            g.destroy();
+          }
+          resolve();
+        },
+      }, ticker);
+    });
+  }
+
   /** Преобразовать экранные координаты в координаты тайла мира.
    *  Использует ту же логику камеры, что и render(). */
   screenToWorld(screenX: number, screenY: number): Position {

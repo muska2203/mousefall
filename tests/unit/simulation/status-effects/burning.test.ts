@@ -42,6 +42,23 @@ describe('burning status effect', () => {
     expect(enemy.statusEffects).toHaveLength(0);
   });
 
+  it('creates ENTITY_DAMAGED event when burning ticks', () => {
+    const enemy = makeEnemy({ hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
+    const state = makeGameState();
+    state.entities.set(enemy.id, enemy);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const node = executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
+
+    expect(node).not.toBeNull();
+    expect(node!.event.type).toBe('ENTITY_DAMAGED');
+    expect(node!.event).toMatchObject({
+      targetId: enemy.id,
+      damageType: 'fire',
+    });
+    expect(node!.event.damage).toBeGreaterThan(0);
+  });
+
   it('updates duration instead of stacking when same effect is applied', () => {
     const enemy = makeEnemy({ hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 1, value: 10, statModifiers: null }] });
     // Имитируем наложение нового burning через APPLY_STATUS

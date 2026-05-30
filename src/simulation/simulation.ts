@@ -41,7 +41,7 @@ import {
 } from "@simulation/systems/stats/effective-stats.ts";
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
 import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
-import { getWeaponDamage as calcWeaponDamage } from "@simulation/systems/stats/weapon-formulas.ts";
+import { getWeaponDamage as calcWeaponDamage, getWeaponDamageEntries as calcWeaponDamageEntries } from "@simulation/systems/stats/weapon-formulas.ts";
 import { initSkillRegistry } from "@simulation/skills/index.ts";
 import { tryGetAbility, getAbility, getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
@@ -634,6 +634,10 @@ export class GameSimulation implements Simulation {
 
     getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number {
         return calcWeaponDamage(player, weapon);
+    }
+
+    getWeaponDamageEntries(player: PlayerEntity, weapon: ItemTemplate | null): ReturnType<typeof calcWeaponDamageEntries> {
+        return calcWeaponDamageEntries(player, weapon);
     }
 }
 

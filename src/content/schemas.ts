@@ -25,6 +25,7 @@ const HealthSchema = z.object({
 const CombatSchema = z.object({
   damage: z.number().int().nonnegative().describe('Базовый урон за атаку'),
   armor:  z.number().int().nonnegative().default(0).describe('Плоское снижение урона'),
+  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).optional().describe('Тип урона врага'),
 }).describe('Боевые характеристики');
 
 const LootEntrySchema = z.object({
@@ -60,10 +61,23 @@ export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
 // Шаблон предмета
 // ─────────────────────────────────────────────
 
+const WeaponDamageEntrySchema = z.object({
+  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).describe('Тип урона'),
+  baseDamage: z.number().int().nonnegative().describe('Базовый урон данного типа'),
+  damageFormulaId: z.string().min(1).optional().describe('ID формулы урона для данного типа (если отличается от общей)'),
+}).describe('Запись урона оружия');
+
 const WeaponStatsSchema = z.object({
-  baseDamage: z.number().int().nonnegative().describe('Базовый урон оружия'),
-  damageFormulaId: z.string().min(1).describe('ID формулы урона в коде (например, club, staff)'),
-  range:  z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
+  baseDamage: z.number().int().nonnegative().optional().describe('Базовый урон оружия (устаревшее, используйте damageEntries)'),
+  damageFormulaId: z.string().min(1).optional().describe('ID формулы урона в коде (устаревшее, используйте damageEntries)'),
+  range: z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
+  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).default('blunt').describe('Тип урона (fallback при отсутствии damageEntries)'),
+  damageEntries: z.array(WeaponDamageEntrySchema).optional().describe('Несколько видов урона за атаку'),
+}).refine((data) => {
+  if (data.damageEntries && data.damageEntries.length > 0) return true;
+  return data.baseDamage !== undefined && data.damageFormulaId !== undefined;
+}, {
+  message: 'Необходимо указать либо baseDamage + damageFormulaId, либо damageEntries',
 }).describe('Характеристики оружия');
 
 const ArmorStatsSchema = z.object({

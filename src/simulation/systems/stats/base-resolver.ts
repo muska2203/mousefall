@@ -13,8 +13,9 @@
 
 import type { PlayerEntity } from '@simulation/types.ts';
 import { getItem } from '@content/registry';
-import { getWeaponDamage } from './weapon-formulas.ts';
+import { getWeaponDamage, getWeaponDamageEntries } from './weapon-formulas.ts';
 import { applyModifiers } from './modifier-engine.ts';
+import type { WeaponDamageEntry } from './weapon-formulas.ts';
 
 // ─────────────────────────────────────────────
 // Effective базовые статы (с учётом +str, +dex и т.д. от экипировки)
@@ -58,6 +59,17 @@ export function getBaseDamage(player: PlayerEntity): number {
   }
   // Без оружия
   return getWeaponDamage(player, null);
+}
+
+export function getBaseDamageEntries(player: PlayerEntity): WeaponDamageEntry[] {
+  if (player.equippedWeaponId) {
+    const weaponTemplate = getItem(player.equippedWeaponId);
+    if (weaponTemplate.type === 'weapon') {
+      return getWeaponDamageEntries(player, weaponTemplate);
+    }
+  }
+  // Без оружия
+  return getWeaponDamageEntries(player, null);
 }
 
 export function getBaseArmor(player: PlayerEntity): number {

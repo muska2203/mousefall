@@ -28,7 +28,7 @@ function mockItem(id: string): ItemTemplate {
     abilityPool: [{ abilityId: 'fireball', weight: 1 }],
     equipModifiers: [],
     grantedAbilities: [],
-    weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2 },
+    weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2, damageType: 'blunt' },
   };
 }
 

@@ -10,6 +10,7 @@
  */
 
 import type { ItemTemplate } from '@content/schemas';
+import type { DamageType } from '@simulation/core-types';
 import { tryGetAbility } from '@content/registry';
 import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
 
@@ -20,6 +21,16 @@ const TYPE_LABELS: Record<string, string> = {
   consumable: 'Расходуемое',
   key: 'Ключ',
   gold: 'Золото',
+};
+
+const DAMAGE_TYPE_LABELS: Record<DamageType, string> = {
+  piercing: 'Колющий',
+  slashing: 'Рубящий',
+  blunt: 'Тупой',
+  fire: 'Огненный',
+  electric: 'Электрический',
+  poison: 'Ядовитый',
+  frost: 'Морозный',
 };
 
 const RARITY_LABELS: Record<string, string> = {
@@ -83,14 +94,26 @@ export function mapItemTemplateToDetail(
   const sections: ItemDetailSection[] = [];
 
   if (template.weapon) {
+    const stats: Array<{ label: string; value: string | number }> = [];
+    const entries = template.weapon.damageEntries;
+    if (entries && entries.length > 0) {
+      for (const entry of entries) {
+        stats.push({
+          label: `Урон (${DAMAGE_TYPE_LABELS[entry.damageType]})`,
+          value: entry.baseDamage,
+        });
+      }
+    } else {
+      stats.push({
+        label: `Базовый урон (${DAMAGE_TYPE_LABELS[template.weapon.damageType]})`,
+        value: template.weapon.baseDamage ?? 0,
+      });
+    }
+    stats.push({ label: 'Формула', value: template.weapon.damageFormulaId ?? '—' });
     sections.push({
       kind: 'stat-list',
       title: 'Боевые параметры',
-      stats: [
-        { label: 'Базовый урон', value: template.weapon.baseDamage },
-        { label: 'Формула', value: template.weapon.damageFormulaId },
-        { label: 'Дальность', value: template.weapon.range },
-      ],
+      stats,
     });
   }
 

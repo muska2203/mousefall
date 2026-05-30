@@ -80,7 +80,7 @@ describe('Deferred Deletion', () => {
 
     const result = deathReaction(
       state,
-      { type: 'ENTITY_DAMAGED', targetId: enemy.id, damage: 5, position: { x: 3, y: 3 } },
+      { type: 'ENTITY_DAMAGED', targetId: enemy.id, damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } },
       null as any,
       null as any,
     );
@@ -95,7 +95,7 @@ describe('Deferred Deletion', () => {
 
     const result = deathReaction(
       state,
-      { type: 'ENTITY_DAMAGED', targetId: enemy.id, damage: 5, position: { x: 3, y: 3 } },
+      { type: 'ENTITY_DAMAGED', targetId: enemy.id, damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } },
       null as any,
       null as any,
     );

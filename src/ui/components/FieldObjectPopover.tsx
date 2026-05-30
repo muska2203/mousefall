@@ -76,7 +76,7 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
 
           <div className="field-popover-stats">
             <span className="field-popover-stat">
-              Урон: <strong>{popover.data.damage}</strong>
+              Урон: <strong>{popover.data.damage}</strong> <span className="field-popover-damage-type">({popover.data.damageTypeLabel})</span>
             </span>
             <span className="field-popover-stat">
               HP: <strong>{popover.data.hp}</strong> / {popover.data.maxHp}

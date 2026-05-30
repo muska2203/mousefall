@@ -68,6 +68,7 @@ describe('fireballSkill', () => {
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.damage).toBeGreaterThan(0);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
+    expect(damageIntents[0]!.damageType).toBe('fire');
     expect(statusIntents).toHaveLength(1);
     expect(statusIntents[0]!.status.type).toBe('burning');
     expect(statusIntents[0]!.status.duration).toBe(3);
@@ -88,6 +89,7 @@ describe('fireballSkill', () => {
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
+    expect(damageIntents[0]!.damageType).toBe('fire');
   });
 
   it('hits multiple enemies in aoe', () => {
