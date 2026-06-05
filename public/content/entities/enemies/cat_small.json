@@ -1,13 +1,11 @@
 {
   "id": "cat_small",
-  "aiStrategyId": "stub_right",
+  "aiStrategyId": "hunter",
+  "aiSightRadius": 4,
   "name": "Котёнок-разбойник",
   "health": { "max": 15 },
-  "combat": {
-    "damage": 4,
-    "armor": 0,
-    "damageType": "piercing"
-  },
+  "baseStats": { "str": 1, "dex": 3, "int": 0, "vit": 0 },
+  "equipment": { "weapon": "cat_claw_small" },
   "lootTable": [
     { "templateId": "health_potion", "weight": 3 },
     { "templateId": "common_splinter_blade", "weight": 1 }

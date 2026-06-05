@@ -1,0 +1,18 @@
+{
+  "id": "cat_claw_big",
+  "name": "Босс-коготь",
+  "description": "Тяжёлый коготь, способный царапать броню.",
+  "fallback": "🐾",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 12,
+  "weapon": {
+    "baseDamage": 7,
+    "damageFormulaId": "dagger",
+    "range": 1,
+    "damageType": "slashing"
+  },
+  "grantedAbilities": [],
+  "equipModifiers": []
+}

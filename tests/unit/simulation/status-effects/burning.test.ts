@@ -3,6 +3,7 @@ import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameStat
 import { tickEntityStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
+import type { EntityDamagedEvent } from '../../../../src/simulation/core-types';
 import { GameSimulation } from '../../../../src/simulation/simulation';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 
@@ -56,7 +57,7 @@ describe('burning status effect', () => {
       targetId: enemy.id,
       damageType: 'fire',
     });
-    expect(node!.event.damage).toBeGreaterThan(0);
+    expect((node!.event as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
 
   it('updates duration instead of stacking when same effect is applied', () => {

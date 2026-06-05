@@ -14,6 +14,8 @@ import type { AiActor, GameState } from '../types';
 import type { GameAction } from '../systems/actions/types';
 
 export type AIStrategy = {
+  /** Обновить внутреннее состояние стратегии перед принятием решений (FSM-тики). */
+  updateState?(actor: AiActor, state: GameState): void;
   decideAction(actor: AiActor, state: GameState): GameAction;
 };
 
@@ -35,8 +37,5 @@ export function getStrategy(id: string): AIStrategy {
 // Встроенные стратегии
 // ─────────────────────────────────────────────
 
-registerStrategy('stub_right', {
-  decideAction(actor) {
-    return { type: 'MOVE', entityId: actor.id, dx: 1, dy: 0 };
-  },
-});
+// Стратегии регистрируются в отдельных файлах через side-effect import.
+// См. hunter-strategy.ts и simulation.ts

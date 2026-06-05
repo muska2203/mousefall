@@ -2,7 +2,7 @@ import type { GameState, PlayerEntity } from '@simulation/types';
 import { getItem } from '@content/registry';
 import { createInventoryItem } from './inventory-factory';
 import { addModifier } from './stats/modifier-engine';
-import { recalculatePlayerBaseStats } from './stats/recalculate';
+import { recalculateActorStats } from './stats/recalculate';
 import { getItemAbilityEntries } from './ability-grant';
 
 /**
@@ -55,5 +55,5 @@ export function createStartingEquipment(
     }
   }
 
-  recalculatePlayerBaseStats(player);
+  recalculateActorStats(player);
 }

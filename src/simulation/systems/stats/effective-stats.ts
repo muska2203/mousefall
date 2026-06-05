@@ -7,7 +7,7 @@
  * - Для врагов: плоские значения из state (без изменений).
  */
 
-import type { Actor, Entity, PlayerEntity } from '@simulation/types.ts';
+import type { Entity, StatActor } from '@simulation/types.ts';
 import {
   getBaseMaxHp,
   getBaseDamage,
@@ -25,8 +25,8 @@ import type { WeaponDamageEntry } from './weapon-formulas.ts';
 // Type guards
 // ─────────────────────────────────────────────
 
-function isPlayer(entity: Entity): entity is PlayerEntity {
-  return entity.type === 'player';
+function isStatActor(entity: Entity): entity is Entity & StatActor {
+  return 'baseStats' in entity;
 }
 
 // ─────────────────────────────────────────────
@@ -34,16 +34,15 @@ function isPlayer(entity: Entity): entity is PlayerEntity {
 // ─────────────────────────────────────────────
 
 export function getEffectiveDamage(entity: Entity): number {
-  if (isPlayer(entity)) {
+  if (isStatActor(entity)) {
     const base = getBaseDamage(entity);
     return Math.round(applyModifiers(entity, 'damage', base).total);
   }
-  // Враги и прочие — плоское значение
-  return (entity as Actor).damage;
+  return 0;
 }
 
 export function getEffectiveDamageEntries(entity: Entity): WeaponDamageEntry[] {
-  if (isPlayer(entity)) {
+  if (isStatActor(entity)) {
     const baseEntries = getBaseDamageEntries(entity);
     // Модификаторы урона применяем пропорционально к каждой записи
     const totalBase = baseEntries.reduce((sum, e) => sum + e.damage, 0);
@@ -55,47 +54,46 @@ export function getEffectiveDamageEntries(entity: Entity): WeaponDamageEntry[] {
       damageType: e.damageType,
     }));
   }
-  // Враги и прочие — плоское значение с типом по умолчанию
-  return [{ damage: (entity as Actor).damage, damageType: 'blunt' }];
+  return [];
 }
 
 export function getEffectiveArmor(entity: Entity): number {
-  if (isPlayer(entity)) {
+  if (isStatActor(entity)) {
     const base = getBaseArmor(entity);
     return Math.round(applyModifiers(entity, 'armor', base).total);
   }
-  return (entity as Actor).armor;
+  return 0;
 }
 
 // ─────────────────────────────────────────────
 // Жизнь (только игрок)
 // ─────────────────────────────────────────────
 
-export function getEffectiveMaxHp(player: PlayerEntity): number {
-  const base = getBaseMaxHp(player);
-  return applyModifiers(player, 'maxHp', base).total;
+export function getEffectiveMaxHp(actor: StatActor): number {
+  const base = getBaseMaxHp(actor);
+  return applyModifiers(actor, 'maxHp', base).total;
 }
 
 // ─────────────────────────────────────────────
 // Вторичные характеристики (только игрок)
 // ─────────────────────────────────────────────
 
-export function getEffectiveDodgeChance(player: PlayerEntity): number {
-  const base = getBaseDodgeChance(player);
-  return applyModifiers(player, 'dodgeChance', base).total;
+export function getEffectiveDodgeChance(actor: StatActor): number {
+  const base = getBaseDodgeChance(actor);
+  return applyModifiers(actor, 'dodgeChance', base).total;
 }
 
-export function getEffectiveAccuracy(player: PlayerEntity): number {
-  const base = getBaseAccuracy(player);
-  return applyModifiers(player, 'accuracy', base).total;
+export function getEffectiveAccuracy(actor: StatActor): number {
+  const base = getBaseAccuracy(actor);
+  return applyModifiers(actor, 'accuracy', base).total;
 }
 
-export function getEffectiveCritChance(player: PlayerEntity): number {
-  const base = getBaseCritChance(player);
-  return applyModifiers(player, 'critChance', base).total;
+export function getEffectiveCritChance(actor: StatActor): number {
+  const base = getBaseCritChance(actor);
+  return applyModifiers(actor, 'critChance', base).total;
 }
 
-export function getEffectiveCritMultiplier(player: PlayerEntity): number {
-  const base = getBaseCritMultiplier(player);
-  return applyModifiers(player, 'critMultiplier', base).total;
+export function getEffectiveCritMultiplier(actor: StatActor): number {
+  const base = getBaseCritMultiplier(actor);
+  return applyModifiers(actor, 'critMultiplier', base).total;
 }

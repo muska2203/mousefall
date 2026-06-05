@@ -1,0 +1,18 @@
+{
+  "id": "cat_claw_mid",
+  "name": "Уличный коготь",
+  "description": "Зазубренный коготь с остатками асфальта.",
+  "fallback": "🐾",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 5,
+  "weapon": {
+    "baseDamage": 4,
+    "damageFormulaId": "dagger",
+    "range": 1,
+    "damageType": "slashing"
+  },
+  "grantedAbilities": [],
+  "equipModifiers": []
+}

@@ -2,6 +2,7 @@ import {
     ActionPreview,
     Actor,
     DefaultActionPointCostResolver,
+    EnemyEntity,
     GameState,
     PlayerEntity,
     Position,
@@ -27,7 +28,7 @@ import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
-import "@simulation/ai/aggressive-strategy.ts";
+import "@simulation/ai/hunter-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
 import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
@@ -40,7 +41,7 @@ import {
   getEffectiveCritMultiplier,
 } from "@simulation/systems/stats/effective-stats.ts";
 import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
-import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
+import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
 import { getWeaponDamage as calcWeaponDamage, getWeaponDamageEntries as calcWeaponDamageEntries } from "@simulation/systems/stats/weapon-formulas.ts";
 import { initSkillRegistry } from "@simulation/skills/index.ts";
 import { tryGetAbility, getAbility, getItem } from "@content/registry";
@@ -114,7 +115,7 @@ export class GameSimulation implements Simulation {
             }
         }
 
-        recalculatePlayerBaseStats(player);
+        recalculateActorStats(player);
         const effective = getEffectiveBaseStats(player);
         return {
             level: player.level,
@@ -374,31 +375,34 @@ export class GameSimulation implements Simulation {
 
             enemy.ap = enemy.maxAp;
 
+            const enemyEntity = enemy as EnemyEntity;
+
             // Уменьшение cooldown скиллов врага
-            const enemyWithAbilities = enemy as import('@simulation/types').EnemyEntity;
-            for (const ability of enemyWithAbilities.abilities) {
+            for (const ability of enemyEntity.abilities) {
                 if (ability.currentCooldown > 0) {
                     ability.currentCooldown -= 1;
                 }
             }
 
             // Авто-резолв или тик каста врага
-            if (enemyWithAbilities.activeCast) {
-                if (enemyWithAbilities.activeCast.remainingTurns === 0) {
+            if (enemyEntity.activeCast) {
+                if (enemyEntity.activeCast.remainingTurns === 0) {
                     const castBuilder = new ExecutionBuilder({
                         type: 'ACTION_APPLIED',
                         action: { type: 'WAIT', entityId: enemy.id },
                     });
-                    this.resolveActiveCast(enemy, castBuilder, castBuilder.root);
+                    this.resolveActiveCast(enemyEntity, castBuilder, castBuilder.root);
                     actions.push(castBuilder.root);
                 } else {
-                    enemyWithAbilities.activeCast.remainingTurns--;
+                    enemyEntity.activeCast.remainingTurns--;
                 }
             }
 
+            const strategy = getStrategy(enemy.aiStrategyId);
+            strategy.updateState?.(enemy, this.state);
+
             while (enemy.ap > 0) {
 
-                const strategy = getStrategy(enemy.aiStrategyId);
                 const action = strategy.decideAction(enemy, this.state);
 
                 if (!action) {
@@ -487,19 +491,18 @@ export class GameSimulation implements Simulation {
     // =========================================================
 
     private resolveActiveCast(
-        actor: Actor,
+        actor: Actor & { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null },
         executionBuilder: ExecutionBuilder,
         parentNode: ExecutionNode,
     ): void {
-        if (!('activeCast' in actor)) return;
-        const cast = (actor as unknown as { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null }).activeCast;
+        const cast = actor.activeCast;
         if (!cast) return;
 
         const executor = getSkillExecutor(cast.abilityId);
         const template = getAbility(cast.abilityId);
 
         if (!executor) {
-            (actor as unknown as { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null }).activeCast = null;
+            actor.activeCast = null;
             return;
         }
 
@@ -521,7 +524,7 @@ export class GameSimulation implements Simulation {
             executeIntent(this.state, intent, executionBuilder, castNode);
         }
 
-        (actor as unknown as { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null }).activeCast = null;
+        actor.activeCast = null;
     }
 
     private canActorAct(actor: Actor, action: GameAction): boolean {
@@ -530,7 +533,8 @@ export class GameSimulation implements Simulation {
             return false;
         }
 
-        if ('activeCast' in actor && actor.activeCast !== null) {
+        const castingActor = actor as Actor & { activeCast: unknown };
+        if (castingActor.activeCast !== null && castingActor.activeCast !== undefined) {
             // Во время каста разрешены только ожидание и отмена каста
             if (action.type === 'WAIT') {
                 return true;

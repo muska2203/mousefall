@@ -15,12 +15,15 @@
  * - Вся случайность через параметр rng (детерминированно)
  */
 
-import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGState, StairsEntity } from '../types';
+import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGState, StairsEntity, RuntimeAbility } from '../types';
 import type { MapParams } from '@content/schemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
+import { createDefaultAIState } from '../ai/ai-state';
 import { getEntity, getItem } from '@content/registry';
 import { createItemEntity } from './item-entity-factory';
+import { addModifier } from './stats/modifier-engine';
+import { recalculateActorStats } from './stats/recalculate';
 
 // ─────────────────────────────────────────────
 // Тип выходных данных
@@ -191,7 +194,19 @@ function randomPosInRoom(rng: RNGState, room: Room): { x: number; y: number } {
 function createEnemy(state: GameState, templateId: string, x: number, y: number): EnemyEntity {
   const template = getEntity(templateId);
 
-  return {
+  const abilities: RuntimeAbility[] = [];
+
+  // Innate abilities
+  for (const abilityId of template.abilities ?? []) {
+    abilities.push({
+      templateId: abilityId,
+      source: 'innate',
+      level: 1,
+      currentCooldown: 0,
+    });
+  }
+
+  const enemy: EnemyEntity = {
     id: nextEntityId(state, 'enemy'),
     type: 'enemy',
     x,
@@ -208,10 +223,60 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
     ap: 1,
     isAlive: true,
     damageType: template.combat?.damageType ?? 'blunt',
-    aiStrategyId: template.aiStrategyId!, // враги из enemyPool всегда имеют aiStrategyId
-    abilities: [],
+    aiStrategyId: template.aiStrategyId ?? 'hunter',
+    aiSightRadius: template.aiSightRadius,
+    aiState: createDefaultAIState(template.aiStrategyId ?? 'hunter'),
+    baseStats: template.baseStats,
+    baseMaxHp: template.health.max,
+    statModifiers: [],
+    equippedWeaponId: null,
+    equippedArmorId: null,
+    equippedAmuletId: null,
+    dodgeChance: 0,
+    accuracy: 0,
+    critChance: 0,
+    critMultiplier: 1.5,
+    abilities,
     activeCast: null,
   };
+
+  // Экипировка из шаблона
+  const equipSlots = [
+    { slot: 'weapon' as const, id: template.equipment?.weapon },
+    { slot: 'armor' as const, id: template.equipment?.armor },
+    { slot: 'amulet' as const, id: template.equipment?.amulet },
+  ];
+
+  for (const { slot, id } of equipSlots) {
+    if (!id) continue;
+    const itemTemplate = getItem(id);
+    if (!itemTemplate) continue;
+
+    if (slot === 'weapon') enemy.equippedWeaponId = id;
+    else if (slot === 'armor') enemy.equippedArmorId = id;
+    else enemy.equippedAmuletId = id;
+
+    // Применяем equipModifiers
+    for (const mod of itemTemplate.equipModifiers ?? []) {
+      addModifier(enemy, { ...mod, source: `equipment_${slot}` });
+    }
+
+    // Добавляем grantedAbilities от предмета
+    for (const abilityId of itemTemplate.grantedAbilities ?? []) {
+      enemy.abilities.push({
+        templateId: abilityId,
+        source: 'equipment',
+        level: 1,
+        currentCooldown: 0,
+      });
+    }
+  }
+
+  recalculateActorStats(enemy);
+  // clamp hp к новому maxHp после пересчёта
+  enemy.hp = Math.min(enemy.hp, enemy.maxHp);
+
+  return enemy;
 }
 
 function createFloorItem(state: GameState, templateId: string, x: number, y: number): ItemEntity {

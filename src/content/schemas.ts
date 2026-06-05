@@ -28,6 +28,19 @@ const CombatSchema = z.object({
   damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).optional().describe('Тип урона врага'),
 }).describe('Боевые характеристики');
 
+const BaseStatsSchema = z.object({
+  str: z.number().int().default(0).describe('Сила'),
+  dex: z.number().int().default(0).describe('Ловкость'),
+  int: z.number().int().default(0).describe('Интеллект'),
+  vit: z.number().int().default(0).describe('Живучесть'),
+}).describe('Базовые характеристики');
+
+const EquipmentSchema = z.object({
+  weapon: z.string().min(1).optional().describe('ID шаблона экипированного оружия'),
+  armor: z.string().min(1).optional().describe('ID шаблона экипированной брони'),
+  amulet: z.string().min(1).optional().describe('ID шаблона экипированного амулета'),
+}).default({}).describe('Снаряжение врага');
+
 const LootEntrySchema = z.object({
   templateId: z.string().min(1).describe('ID шаблона предмета'),
   weight: z.number().int().nonnegative().describe('Вес выпадения'),
@@ -45,9 +58,13 @@ const LootDropTableEntrySchema = z.object({
 export const EntityTemplateSchema = z.object({
   id:       z.string().min(1).describe('Уникальный идентификатор сущности (совпадает с именем файла)'),
   aiStrategyId: z.string().min(1).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
+  aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Манхэттен + LOS). По умолчанию 6.'),
   name:     z.string().min(1).describe('Отображаемое имя'),
   health:   HealthSchema,
   combat:   CombatSchema.optional(),
+  baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 }).describe('Базовые характеристики врага'),
+  equipment: EquipmentSchema,
+  abilities: z.array(z.string().min(1)).default([]).describe('Innate-способности врага (ID шаблонов)'),
   lootTable:  z.array(LootEntrySchema).default([]).describe('Таблица выпадения предметов при смерти'),
   lootDropTable: z.array(LootDropTableEntrySchema).default([]).describe('Взвешенная таблица количества выпадаемых предметов'),
   xpReward:   z.number().int().nonnegative().default(0).describe('Опыт, выдаваемый игроку за убийство'),

@@ -132,23 +132,26 @@ export function posEqual(a: Position, b: Position): boolean {
  * @param to - Целевая позиция
  * @param isWalkable - Возвращает true, если позицию можно пройти
  * @param maxSteps - Максимальная глубина BFS (предотвращает бесконечный поиск на больших картах)
+ * @param allowDiagonal - Если true, ИИ может двигаться по диагонали (8 направлений)
  */
 export function nextStepToward(
   from: Position,
   to: Position,
   isWalkable: (pos: Position) => boolean,
   maxSteps = 20,
+  allowDiagonal = false,
 ): Position | null {
   if (posEqual(from, to)) return null;
 
   // Поиск в ширину (BFS)
   const queue: Array<{ pos: Position; firstStep: Position }> = [];
   const visited = new Set<string>();
+  const deltas = allowDiagonal ? ALL_DELTAS : CARDINAL_DELTAS;
 
   const key = (p: Position) => `${p.x},${p.y}`;
   visited.add(key(from));
 
-  for (const delta of CARDINAL_DELTAS) {
+  for (const delta of deltas) {
     const neighbor = { x: from.x + delta.x, y: from.y + delta.y };
     if (!visited.has(key(neighbor)) && (isWalkable(neighbor) || posEqual(neighbor, to))) {
       queue.push({ pos: neighbor, firstStep: neighbor });
@@ -165,7 +168,7 @@ export function nextStepToward(
       return current.firstStep;
     }
 
-    for (const delta of CARDINAL_DELTAS) {
+    for (const delta of deltas) {
       const neighbor = { x: current.pos.x + delta.x, y: current.pos.y + delta.y };
       if (!visited.has(key(neighbor)) && (isWalkable(neighbor) || posEqual(neighbor, to))) {
         queue.push({ pos: neighbor, firstStep: current.firstStep });

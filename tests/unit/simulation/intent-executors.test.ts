@@ -94,7 +94,7 @@ describe('executeDamageIntent', () => {
     });
 
     it('учитывает броню цели', () => {
-        const enemy = makeEnemy({hp: 20, armor: 3});
+        const enemy = makeEnemy({hp: 20, statModifiers: [{ stat: 'armor', value: 3, op: 'add', source: 'test' }]});
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
@@ -104,7 +104,7 @@ describe('executeDamageIntent', () => {
     });
 
     it('минимальный урон равен 1, даже если броня выше урона', () => {
-        const enemy = makeEnemy({hp: 20, armor: 100});
+        const enemy = makeEnemy({hp: 20, statModifiers: [{ stat: 'armor', value: 100, op: 'add', source: 'test' }]});
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 

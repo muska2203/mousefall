@@ -13,10 +13,15 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
     name: 'Тестовый враг',
     health: { max: 1 },
     combat: { damage: 1, armor: 0 },
+    baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+    equipment: {},
+    abilities: [],
     lootTable: [],
     lootDropTable: [{ count: 1, weight: 1 }],
     xpReward: 0,
     renderScale: 1,
+    aiSightRadius: 6,
+    aiStrategyId: 'hunter',
     ...partial,
   };
 }

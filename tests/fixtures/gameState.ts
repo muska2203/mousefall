@@ -21,6 +21,7 @@ import type {
 } from '../../src/simulation/types';
 import type { MapParams } from '../../src/content/schemas';
 import {createRNG} from '../../src/utils/rng';
+import { createDefaultAIState } from '../../src/simulation/ai/ai-state';
 import {PLAYER_ID} from '../../src/utils/constants';
 
 // ─────────────────────────────────────────────
@@ -102,9 +103,20 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     armor: 0,
     damageType: 'blunt',
     templateId: 'cat_small',
+    baseStats: { str: 1, dex: 1, int: 0, vit: 0 },
+    statModifiers: [],
+    equippedWeaponId: null,
+    equippedArmorId: null,
+    equippedAmuletId: null,
+    dodgeChance: 0,
+    accuracy: 0,
+    critChance: 0,
+    critMultiplier: 1.5,
     statusEffects: [],
     blocksMovement: true,
-    aiStrategyId: 'stub_right',
+    aiStrategyId: 'hunter',
+    aiSightRadius: 6,
+    aiState: createDefaultAIState('hunter'),
     maxAp: 1,
     ap: 1,
     isAlive: true,
@@ -175,7 +187,7 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
     rng: createRNG(12345),
     nextEntityCounter: 0,
     runStats: {
-      startTime: Date.now(),
+      startTime: 0,
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,

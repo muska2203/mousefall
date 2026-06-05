@@ -114,5 +114,28 @@ describe('math utils', () => {
       );
       expect(step).toBeNull();
     });
+
+    it('supports diagonal movement with allowDiagonal flag', () => {
+      // С диагоналями: соседняя диагональная клетка доступна сразу
+      const stepDiag = nextStepToward(
+        { x: 0, y: 0 },
+        { x: 1, y: 1 },
+        () => true,
+        20,
+        true,
+      );
+      expect(stepDiag).toEqual({ x: 1, y: 1 });
+
+      // Без диагоналей: до (1,1) пойдём либо через (1,0), либо через (0,1)
+      const stepStraight = nextStepToward(
+        { x: 0, y: 0 },
+        { x: 1, y: 1 },
+        () => true,
+        20,
+        false,
+      );
+      expect(stepStraight).not.toBeNull();
+      expect(stepStraight).not.toEqual({ x: 1, y: 1 });
+    });
   });
 });

@@ -11,7 +11,7 @@
  */
 
 import type {PlayerEntity} from './types';
-import { recalculatePlayerBaseStats } from './systems/stats/recalculate.ts';
+import { recalculateActorStats } from './systems/stats/recalculate.ts';
 
 export type CharacterAttributes = {
   strength: number;
@@ -62,7 +62,7 @@ export function applyCharacterConfig(
   };
 
   // Пересчёт базовых характеристик (без учёта стартовой экипировки — она применяется позже)
-  recalculatePlayerBaseStats(player);
+  recalculateActorStats(player);
 
   // Восстанавливаем текущие ресурсы до новых максимумов после пересчёта
   player.hp = player.maxHp;

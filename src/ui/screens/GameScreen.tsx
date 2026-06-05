@@ -176,6 +176,7 @@ export function GameScreen({session, onModeChange}: Props) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
+      if (e.key === 'Unidentified') return;
       const target = e.target as HTMLElement | null;
       if (target && INTERACTIVE_TAGS.has(target.tagName)) return;
 
@@ -198,7 +199,19 @@ export function GameScreen({session, onModeChange}: Props) {
         return;
       }
 
+      // Пробел: WAIT (пропуск хода). В режиме таргетинга — отмена таргетинга.
       if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        if (session.isTargeting()) {
+          session.cancelTargeting();
+        } else {
+          handleWait();
+        }
+        return;
+      }
+
+      // G: поднять предмет
+      if (e.key === 'g' || e.key === 'G' || e.key === 'п' || e.key === 'П') {
         e.preventDefault();
         handlePickup();
         return;
@@ -283,15 +296,7 @@ export function GameScreen({session, onModeChange}: Props) {
       />
       <InventoryPanel
         items={renderInput.inventory}
-        onItemClick={(instanceId) => {
-          const item = renderInput.inventory.find(i => i.instanceId === instanceId);
-          const type = item?.detail.type;
-          if (type === 'weapon' || type === 'armor' || type === 'amulet') {
-            handleEquipItem(instanceId);
-          } else if (type === 'consumable') {
-            handleUseItem(instanceId);
-          }
-        }}
+        onItemClick={(instanceId) => session.interactWithItem(instanceId)}
       />
       <SkillsPanel
         skills={renderInput.playerSkills}

@@ -1,0 +1,18 @@
+{
+  "id": "cat_claw_small",
+  "name": "Коготок",
+  "description": "Острый, но маленький. Как и его хозяин.",
+  "fallback": "🐾",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 2,
+  "weapon": {
+    "baseDamage": 2,
+    "damageFormulaId": "dagger",
+    "range": 1,
+    "damageType": "piercing"
+  },
+  "grantedAbilities": [],
+  "equipModifiers": []
+}

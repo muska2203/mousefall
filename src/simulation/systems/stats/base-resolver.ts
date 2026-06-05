@@ -11,8 +11,9 @@
  * - Для врагов не используется (у них плоские значения).
  */
 
-import type { PlayerEntity } from '@simulation/types.ts';
+import type { StatActor } from '@simulation/types.ts';
 import { getItem } from '@content/registry';
+import { PLAYER_BASE_MAX_HP, BASE_CRIT_MULTIPLIER } from '@utils/constants.ts';
 import { getWeaponDamage, getWeaponDamageEntries } from './weapon-formulas.ts';
 import { applyModifiers } from './modifier-engine.ts';
 import type { WeaponDamageEntry } from './weapon-formulas.ts';
@@ -28,12 +29,12 @@ export type EffectiveBaseStats = {
   vit: number;
 };
 
-export function getEffectiveBaseStats(player: PlayerEntity): EffectiveBaseStats {
+export function getEffectiveBaseStats(actor: StatActor): EffectiveBaseStats {
   return {
-    str: applyModifiers(player, 'str', player.baseStats.str).total,
-    dex: applyModifiers(player, 'dex', player.baseStats.dex).total,
-    int: applyModifiers(player, 'int', player.baseStats.int).total,
-    vit: applyModifiers(player, 'vit', player.baseStats.vit).total,
+    str: applyModifiers(actor, 'str', actor.baseStats.str).total,
+    dex: applyModifiers(actor, 'dex', actor.baseStats.dex).total,
+    int: applyModifiers(actor, 'int', actor.baseStats.int).total,
+    vit: applyModifiers(actor, 'vit', actor.baseStats.vit).total,
   };
 }
 
@@ -41,40 +42,42 @@ export function getEffectiveBaseStats(player: PlayerEntity): EffectiveBaseStats 
 // Жизнь
 // ─────────────────────────────────────────────
 
-export function getBaseMaxHp(player: PlayerEntity): number {
-  const s = getEffectiveBaseStats(player);
-  return 50 + s.vit * 10;
+export function getBaseMaxHp(actor: StatActor): number {
+  const s = getEffectiveBaseStats(actor);
+  // Для врагов baseMaxHp может быть задан в шаблоне; для игрока — фиксированная база.
+  const base = actor.baseMaxHp ?? PLAYER_BASE_MAX_HP;
+  return base + s.vit * 10;
 }
 
 // ─────────────────────────────────────────────
 // Урон и броня (с учётом экипировки)
 // ─────────────────────────────────────────────
 
-export function getBaseDamage(player: PlayerEntity): number {
-  if (player.equippedWeaponId) {
-    const weaponTemplate = getItem(player.equippedWeaponId);
+export function getBaseDamage(actor: StatActor): number {
+  if (actor.equippedWeaponId) {
+    const weaponTemplate = getItem(actor.equippedWeaponId);
     if (weaponTemplate.type === 'weapon') {
-      return getWeaponDamage(player, weaponTemplate);
+      return getWeaponDamage(actor, weaponTemplate);
     }
   }
   // Без оружия
-  return getWeaponDamage(player, null);
+  return getWeaponDamage(actor, null);
 }
 
-export function getBaseDamageEntries(player: PlayerEntity): WeaponDamageEntry[] {
-  if (player.equippedWeaponId) {
-    const weaponTemplate = getItem(player.equippedWeaponId);
+export function getBaseDamageEntries(actor: StatActor): WeaponDamageEntry[] {
+  if (actor.equippedWeaponId) {
+    const weaponTemplate = getItem(actor.equippedWeaponId);
     if (weaponTemplate.type === 'weapon') {
-      return getWeaponDamageEntries(player, weaponTemplate);
+      return getWeaponDamageEntries(actor, weaponTemplate);
     }
   }
   // Без оружия
-  return getWeaponDamageEntries(player, null);
+  return getWeaponDamageEntries(actor, null);
 }
 
-export function getBaseArmor(player: PlayerEntity): number {
-  if (player.equippedArmorId) {
-    const armorTemplate = getItem(player.equippedArmorId);
+export function getBaseArmor(actor: StatActor): number {
+  if (actor.equippedArmorId) {
+    const armorTemplate = getItem(actor.equippedArmorId);
     if (armorTemplate.type === 'armor' && armorTemplate.armor) {
       return armorTemplate.armor.baseArmor;
     }
@@ -86,21 +89,21 @@ export function getBaseArmor(player: PlayerEntity): number {
 // Вторичные характеристики
 // ─────────────────────────────────────────────
 
-export function getBaseDodgeChance(player: PlayerEntity): number {
-  const s = getEffectiveBaseStats(player);
+export function getBaseDodgeChance(actor: StatActor): number {
+  const s = getEffectiveBaseStats(actor);
   return s.dex * 0.02;
 }
 
-export function getBaseAccuracy(player: PlayerEntity): number {
-  const s = getEffectiveBaseStats(player);
+export function getBaseAccuracy(actor: StatActor): number {
+  const s = getEffectiveBaseStats(actor);
   return s.dex * 0.015;
 }
 
-export function getBaseCritChance(player: PlayerEntity): number {
-  const s = getEffectiveBaseStats(player);
+export function getBaseCritChance(actor: StatActor): number {
+  const s = getEffectiveBaseStats(actor);
   return s.dex * 0.01;
 }
 
-export function getBaseCritMultiplier(_player: PlayerEntity): number {
-  return 1.5;
+export function getBaseCritMultiplier(_actor: StatActor): number {
+  return BASE_CRIT_MULTIPLIER;
 }

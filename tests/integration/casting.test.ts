@@ -49,7 +49,7 @@ describe('Интеграция: кастинг способностей', () => 
       y: 5,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
-    const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100, aiStrategyId: 'aggressive' });
+    const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100, aiStrategyId: 'hunter' });
     state.player = player;
     state.entities.set(player.id, player);
     state.entities.set(enemy.id, enemy);
@@ -115,7 +115,7 @@ describe('Интеграция: кастинг способностей', () => 
     const enemy = makeEnemy({
       x: 6,
       y: 5,
-      aiStrategyId: 'aggressive',
+      aiStrategyId: 'hunter',
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;

@@ -1,7 +1,7 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { initRegistry, resetRegistry } from '@content/registry.ts';
 import type { ItemTemplate } from '@content/schemas';
-import { makePlayer } from '../../../../fixtures/gameState.ts';
+import { makePlayer, makeEnemy } from '../../../../fixtures/gameState.ts';
 import {
   getBaseMaxHp,
   getBaseDamage,
@@ -22,7 +22,7 @@ import {
   getEffectiveArmor,
   getEffectiveMaxHp,
 } from '@simulation/systems/stats/effective-stats.ts';
-import { recalculatePlayerBaseStats } from '@simulation/systems/stats/recalculate.ts';
+import { recalculateActorStats } from '@simulation/systems/stats/recalculate.ts';
 
 function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
   return {
@@ -219,9 +219,10 @@ describe('stats system', () => {
       expect(getEffectiveDamage(player)).toBe(5);
     });
 
-    it('returns flat damage for enemies', () => {
-      const enemy = { type: 'enemy', damage: 7 } as any;
-      expect(getEffectiveDamage(enemy)).toBe(7);
+    it('returns derived damage for enemies with baseStats', () => {
+      // unarmed: 1 + str * 1.0 = 1 + 2 = 3
+      const enemy = makeEnemy({ baseStats: { str: 2, dex: 0, int: 0, vit: 0 }, equippedWeaponId: null });
+      expect(getEffectiveDamage(enemy)).toBe(3);
     });
 
     it('returns base armor + modifiers for player', () => {
@@ -230,8 +231,8 @@ describe('stats system', () => {
       expect(getEffectiveArmor(player)).toBe(6);
     });
 
-    it('returns flat armor for enemies', () => {
-      const enemy = { type: 'enemy', armor: 3 } as any;
+    it('returns derived armor for enemies with baseStats', () => {
+      const enemy = makeEnemy({ equippedArmorId: null, statModifiers: [{ stat: 'armor', value: 3, op: 'add', source: 'test' }] });
       expect(getEffectiveArmor(enemy)).toBe(3);
     });
 
@@ -248,14 +249,14 @@ describe('stats system', () => {
   // Recalculate
   // ─────────────────────────────────────────────
 
-  describe('recalculatePlayerBaseStats', () => {
+  describe('recalculateActorStats', () => {
     it('updates maxHp, damage, armor', () => {
       const player = makePlayer({
         baseStats: { str: 2, dex: 0, int: 2, vit: 3 },
         equippedWeaponId: null,
         equippedArmorId: null,
       });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.maxHp).toBe(50 + 3 * 10); // 80
       expect(player.damage).toBe(1 + 2 * 1.0); // 3 (unarmed)
       expect(player.armor).toBe(0);
@@ -266,7 +267,7 @@ describe('stats system', () => {
         hp: 200,
         baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
       });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.hp).toBe(50); // clamped to maxHp (50 + 0*10)
     });
 
@@ -275,7 +276,7 @@ describe('stats system', () => {
         baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
         statModifiers: [{ stat: 'str', value: 3, op: 'add', source: 'item_test' }],
       });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       // effective str = 8, so maxHp = 50 + vit*10 = 50, damage = 1 + 8*1.0 = 9
       expect(player.damage).toBe(9);
     });
@@ -284,7 +285,7 @@ describe('stats system', () => {
       const player = makePlayer({
         baseStats: { str: 0, dex: 10, int: 0, vit: 0 },
       });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.2);
       expect(player.accuracy).toBeCloseTo(0.15);
       expect(player.critChance).toBeCloseTo(0.1);
@@ -296,7 +297,7 @@ describe('stats system', () => {
         baseStats: { str: 0, dex: 10, int: 0, vit: 0 },
         statModifiers: [{ stat: 'critChance', value: 0.05, op: 'add', source: 'buff' }],
       });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.critChance).toBeCloseTo(0.15); // 0.1 + 0.05
     });
   });
@@ -305,7 +306,7 @@ describe('stats system', () => {
     it('addModifier requires explicit recalculate', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
       addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       // effective dex = 20 -> dodgeChance = 0.4
       expect(player.dodgeChance).toBeCloseTo(0.4);
     });
@@ -313,20 +314,20 @@ describe('stats system', () => {
     it('removeModifiersBySource requires explicit recalculate', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
       addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.4);
       removeModifiersBySource(player, 'buff');
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.2);
     });
 
     it('consumeCharge removes modifier and requires explicit recalculate', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
       addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'temp', charges: 1 });
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.4);
       consumeCharge(player, 'dex');
-      recalculatePlayerBaseStats(player);
+      recalculateActorStats(player);
       expect(player.dodgeChance).toBeCloseTo(0.2);
     });
   });

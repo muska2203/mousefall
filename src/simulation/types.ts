@@ -32,6 +32,7 @@ import {
   ActiveCast,
   DamageType,
 } from "@simulation/core-types.ts";
+import type { AIState } from "./ai/ai-state";
 
 // Реэкспорт базовых типов из core-types для обратной совместимости потребителей
 export type {
@@ -121,12 +122,30 @@ export interface AiActor extends Actor {
   aiStrategyId: string;
 }
 
+/**
+ * Актор с derived-статами, базовыми характеристиками и экипировкой.
+ * Общий интерфейс для игрока и врагов, участвующих в формулах урона/брони.
+ */
+export interface StatActor {
+  baseStats: BaseStats;
+  statModifiers: StatModifier[];
+  equippedWeaponId: string | null;
+  equippedArmorId: string | null;
+  equippedAmuletId: string | null;
+  /** Базовое значение maxHp (для врагов — из шаблона; для игрока не используется). */
+  baseMaxHp?: number;
+  dodgeChance: number;
+  accuracy: number;
+  critChance: number;
+  critMultiplier: number;
+}
+
 /** Сущность игрока. Всегда присутствует в GameState.
  *
  * Важно: поля damage, armor, maxHp являются derived-кэшем.
- * Их нельзя менять напрямую — только через recalculatePlayerBaseStats().
+ * Их нельзя менять напрямую — только через recalculateActorStats().
  */
-export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolder {
+export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolder, StatActor {
   id: 'player';
   type: 'player';
   blocksMovement: true;
@@ -168,15 +187,38 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
 /** Сущность врага на карте. */
 export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHolder {
   /** Активные эффекты статуса. */
-  /** Состояние ИИ в рантайме (сохраняется для памяти патруля/погони). */
   type: 'enemy';
   blocksMovement: boolean;
-  /** Тип урона врага. */
+  /** Тип урона врага (fallback при отсутствии экипированного оружия). */
   damageType: DamageType;
-  /** Активные способности врага (задел на AI-скиллы). */
+  /** Базовые характеристики. */
+  baseStats: BaseStats;
+  /** Базовое значение maxHp (из шаблона; для пересчёта через vit). */
+  baseMaxHp?: number;
+  /** Активные модификаторы (баффы, дебаффы, эффекты экипировки). */
+  statModifiers: StatModifier[];
+  /** ID экипированного шаблона оружия или null. */
+  equippedWeaponId: string | null;
+  /** ID экипированного шаблона брони или null. */
+  equippedArmorId: string | null;
+  /** ID экипированного амулета или null. */
+  equippedAmuletId: string | null;
+  /** Шанс уклонения (derived-кэш). */
+  dodgeChance: number;
+  /** Точность (derived-кэш). */
+  accuracy: number;
+  /** Шанс критического удара (derived-кэш). */
+  critChance: number;
+  /** Множитель критического урона (derived-кэш). */
+  critMultiplier: number;
+  /** Активные способности врага (innate + от экипировки). */
   abilities: RuntimeAbility[];
   /** Текущая подготовка способности (каст) или null. */
   activeCast: ActiveCast | null;
+  /** Состояние конечного автомата ИИ (сохраняется вместе с сущностью). */
+  aiState: AIState;
+  /** Радиус обзора в клетках (Манхэттен + LOS). Копия из шаблона при спавне. */
+  aiSightRadius: number;
 }
 
 /** Предмет, лежащий на полу карты. */

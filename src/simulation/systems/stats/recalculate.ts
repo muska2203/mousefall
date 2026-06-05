@@ -11,7 +11,7 @@
  * Текущие hp/mp не превышают новые максимумы (clamp).
  */
 
-import type { PlayerEntity } from '@simulation/types.ts';
+import type { Actor, StatActor } from '@simulation/types.ts';
 import {
   getBaseMaxHp,
   getBaseDamage,
@@ -24,16 +24,21 @@ import {
   getEffectiveCritMultiplier,
 } from './effective-stats.ts';
 
-export function recalculatePlayerBaseStats(player: PlayerEntity): void {
+export function recalculateActorStats(actor: StatActor & Actor): void {
   // Обновляем derived-кэш: эти поля НЕЛЬЗЯ менять напрямую вне этого вызова.
-  player.maxHp = getBaseMaxHp(player);
-  player.damage = Math.round(getBaseDamage(player));
-  player.armor = Math.round(getBaseArmor(player));
+  actor.maxHp = getBaseMaxHp(actor);
+  actor.damage = Math.round(getBaseDamage(actor));
+  actor.armor = Math.round(getBaseArmor(actor));
 
-  player.dodgeChance = getEffectiveDodgeChance(player);
-  player.accuracy = getEffectiveAccuracy(player);
-  player.critChance = getEffectiveCritChance(player);
-  player.critMultiplier = getEffectiveCritMultiplier(player);
+  actor.dodgeChance = getEffectiveDodgeChance(actor);
+  actor.accuracy = getEffectiveAccuracy(actor);
+  actor.critChance = getEffectiveCritChance(actor);
+  actor.critMultiplier = getEffectiveCritMultiplier(actor);
 
-  player.hp = Math.min(player.hp, player.maxHp);
+  actor.hp = Math.min(actor.hp, actor.maxHp);
+}
+
+/** @deprecated Используйте recalculateActorStats */
+export function recalculatePlayerBaseStats(player: StatActor & Actor): void {
+  recalculateActorStats(player);
 }

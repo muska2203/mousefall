@@ -790,6 +790,27 @@ export class GameSession {
     return false;
   }
 
+  /**
+   * Взаимодействие с предметом в инвентаре.
+   * Presentation-level routing: решает EQUIP или USE_ITEM на основе типа предмета.
+   */
+  interactWithItem(instanceId: string): void {
+    if (!this.simulation || this.mode !== 'playing') {
+      return;
+    }
+    const state = this.simulation.getState();
+    const item = state.player.inventory.find(i => i.instanceId === instanceId);
+    if (!item) return;
+    const template = tryGetItem(item.templateId);
+    if (!template) return;
+
+    if (template.type === 'weapon' || template.type === 'armor' || template.type === 'amulet') {
+      this.dispatch({type: 'EQUIP', entityId: 'player', itemInstanceId: instanceId});
+    } else if (template.type === 'consumable') {
+      this.dispatch({type: 'USE_ITEM', entityId: 'player', itemInstanceId: instanceId});
+    }
+  }
+
   /** Возврат в главное меню. Уничтожает текущую симуляцию. */
   returnToMenu(): void {
     this.simulation = null;

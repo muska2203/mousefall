@@ -11,7 +11,7 @@
  *   увеличивается charges (если есть) или обновляется value.
  */
 
-import type { PlayerEntity, StatModifier } from '@simulation/types.ts';
+import type { StatActor, StatModifier } from '@simulation/types.ts';
 
 export type ModifierBreakdownEntry = {
   source: string;
@@ -29,11 +29,11 @@ export type ModifierResult = {
  * Формула: (base × (1 + sum(multiply))) + sum(add).
  */
 export function applyModifiers(
-  player: PlayerEntity,
+  actor: StatActor,
   stat: string,
   baseValue: number,
 ): ModifierResult {
-  const relevant = player.statModifiers.filter((m) => m.stat === stat);
+  const relevant = actor.statModifiers.filter((m) => m.stat === stat);
 
   const addMods = relevant.filter((m) => m.op === 'add');
   const multMods = relevant.filter((m) => m.op === 'multiply');
@@ -56,8 +56,8 @@ export function applyModifiers(
  * Если модификатор с таким source уже существует для этого stat —
  * увеличивает charges (если переданы) или обновляет value.
  */
-export function addModifier(player: PlayerEntity, modifier: StatModifier): void {
-  const existing = player.statModifiers.find(
+export function addModifier(actor: StatActor, modifier: StatModifier): void {
+  const existing = actor.statModifiers.find(
     (m) => m.source === modifier.source && m.stat === modifier.stat,
   );
 
@@ -69,7 +69,7 @@ export function addModifier(player: PlayerEntity, modifier: StatModifier): void 
       existing.op = modifier.op;
     }
   } else {
-    player.statModifiers.push({ ...modifier });
+    actor.statModifiers.push({ ...modifier });
   }
 
 }
@@ -77,8 +77,8 @@ export function addModifier(player: PlayerEntity, modifier: StatModifier): void 
 /**
  * Удаляет все модификаторы с указанным source.
  */
-export function removeModifiersBySource(player: PlayerEntity, source: string): void {
-  player.statModifiers = player.statModifiers.filter((m) => m.source !== source);
+export function removeModifiersBySource(actor: StatActor, source: string): void {
+  actor.statModifiers = actor.statModifiers.filter((m) => m.source !== source);
 }
 
 /**
@@ -87,19 +87,19 @@ export function removeModifiersBySource(player: PlayerEntity, source: string): v
  * Возвращает true, если charge был потрачен.
  */
 export function consumeCharge(
-  player: PlayerEntity,
+  actor: StatActor,
   stat: string,
   source?: string,
 ): boolean {
-  const index = player.statModifiers.findIndex(
+  const index = actor.statModifiers.findIndex(
     (m) => m.stat === stat && m.charges !== undefined && (source ? m.source === source : true),
   );
 
   if (index === -1) return false;
 
-  const mod = player.statModifiers[index]!;
+  const mod = actor.statModifiers[index]!;
   if ((mod.charges ?? 0) <= 1) {
-    player.statModifiers.splice(index, 1);
+    actor.statModifiers.splice(index, 1);
   } else {
     mod.charges!--;
   }

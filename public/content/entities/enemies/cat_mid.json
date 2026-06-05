@@ -1,13 +1,11 @@
 {
   "id": "cat_mid",
-  "aiStrategyId": "stub_right",
+  "aiStrategyId": "hunter",
+  "aiSightRadius": 6,
   "name": "Уличный кот",
   "health": { "max": 30 },
-  "combat": {
-    "damage": 7,
-    "armor": 0,
-    "damageType": "slashing"
-  },
+  "baseStats": { "str": 2, "dex": 4, "int": 0, "vit": 1 },
+  "equipment": { "weapon": "cat_claw_mid" },
   "lootTable": [
     { "templateId": "health_potion", "weight": 4 },
     { "templateId": "common_splinter_blade", "weight": 2 },

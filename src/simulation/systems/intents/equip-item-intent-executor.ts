@@ -9,7 +9,7 @@ import { IntentExecutor, EquipItemIntent } from "@simulation/systems/intents/typ
 import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
 import { getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
-import { recalculatePlayerBaseStats } from "@simulation/systems/stats/recalculate.ts";
+import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
 
 export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
   state: GameState,
@@ -39,7 +39,7 @@ export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
     addModifier(player, { ...mod, source: `item_${item.instanceId}` });
   }
 
-  recalculatePlayerBaseStats(player);
+  recalculateActorStats(player);
 
   return builder.addChild(parent, {
     type: 'ITEM_EQUIPPED',

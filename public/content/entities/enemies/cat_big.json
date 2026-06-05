@@ -1,13 +1,11 @@
 {
   "id": "cat_big",
-  "aiStrategyId": "stub_right",
+  "aiStrategyId": "hunter",
+  "aiSightRadius": 8,
   "name": "Босс-кот",
   "health": { "max": 60 },
-  "combat": {
-    "damage": 12,
-    "armor": 0,
-    "damageType": "slashing"
-  },
+  "baseStats": { "str": 4, "dex": 3, "int": 0, "vit": 2 },
+  "equipment": { "weapon": "cat_claw_big", "armor": "common_tin_plate" },
   "lootTable": [
     { "templateId": "health_potion", "weight": 5 },
     { "templateId": "common_splinter_blade", "weight": 3 },
