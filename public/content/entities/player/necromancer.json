@@ -1,7 +1,5 @@
 {
   "id": "necromancer",
-  "name": "Мышь-Косторез",
-  "description": "Тёмный некромант, повелитель плесени.",
   "portraitImg": "/assets/portraits/necromancer-ready.png",
-  "renderScale": 1.0
+  "renderScale": 1
 }

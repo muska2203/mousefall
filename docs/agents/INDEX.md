@@ -23,6 +23,7 @@
 | Как писать тесты, какие цели покрытия? | [`TESTING.md`](./TESTING.md) |
 | Как добавить контент (врага, предмет, карту)? | [`CONTENT.md`](./CONTENT.md) |
 | Как работают сохранения и загрузки? | [`SAVES.md`](./SAVES.md) |
+| Как добавить/изменить перевод или текст? | [`I18N.md`](./I18N.md) |
 | Что означает термин X? | [`GLOSSARY.md`](./GLOSSARY.md) |
 
 ---
@@ -35,6 +36,7 @@
 | `src/presentation/` | [`src/presentation/AGENTS.md`](../../src/presentation/AGENTS.md) |
 | `src/ui/` | [`src/ui/AGENTS.md`](../../src/ui/AGENTS.md) |
 | `src/content/` | [`src/content/AGENTS.md`](../../src/content/AGENTS.md) |
+| `src/i18n/` | [`src/i18n/AGENTS.md`](../../src/i18n/AGENTS.md) |
 
 ---
 

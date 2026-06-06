@@ -9,35 +9,12 @@
  * UI получает готовый ViewModel и не знает о существовании ItemTemplate.
  */
 
-import type { ItemTemplate } from '@content/schemas';
-import type { DamageType } from '@simulation/core-types';
-import { tryGetAbility } from '@content/registry';
+import type { LocalizedItemTemplate } from '@content/registry';
+import { tryGetLocalizedAbility } from '@content/registry';
 import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
-
-const TYPE_LABELS: Record<string, string> = {
-  weapon: 'Оружие',
-  armor: 'Броня',
-  amulet: 'Амулет',
-  consumable: 'Расходуемое',
-  key: 'Ключ',
-  gold: 'Золото',
-};
-
-const DAMAGE_TYPE_LABELS: Record<DamageType, string> = {
-  piercing: 'Колющий',
-  slashing: 'Рубящий',
-  blunt: 'Тупой',
-  fire: 'Огненный',
-  electric: 'Электрический',
-  poison: 'Ядовитый',
-  frost: 'Морозный',
-};
-
-const RARITY_LABELS: Record<string, string> = {
-  common: 'Обычный',
-  rare: 'Редкий',
-  unique: 'Уникальный',
-};
+import type { Locale } from '@content/texts/lookup';
+import { t } from '@i18n/t';
+import { damageTypeLabel } from './localizationHelpers';
 
 export type ItemDetailSection =
   | { kind: 'stat-list'; title: string; stats: Array<{ label: string; value: string | number }> }
@@ -79,6 +56,27 @@ export interface MapItemDetailOptions {
   fallbackIcon?: string;
 }
 
+function typeLabel(type: string): string {
+  switch (type) {
+    case 'weapon': return t('system.itemMapper.typeWeapon');
+    case 'armor': return t('system.itemMapper.typeArmor');
+    case 'amulet': return t('system.itemMapper.typeAmulet');
+    case 'consumable': return t('system.itemMapper.typeConsumable');
+    case 'key': return t('system.itemMapper.typeKey');
+    case 'gold': return t('system.itemMapper.typeGold');
+    default: return type;
+  }
+}
+
+function rarityLabel(rarity: string): string {
+  switch (rarity) {
+    case 'common': return t('system.itemMapper.rarityCommon');
+    case 'rare': return t('system.itemMapper.rarityRare');
+    case 'unique': return t('system.itemMapper.rarityUnique');
+    default: return rarity;
+  }
+}
+
 /**
  * Превращает ItemTemplate в ViewModel для ItemDetailPopover.
  *
@@ -86,9 +84,11 @@ export interface MapItemDetailOptions {
  * Когда rarity появится в схеме контента — убрать из opts и читать из template.
  */
 export function mapItemTemplateToDetail(
-  template: ItemTemplate,
-  opts?: MapItemDetailOptions,
+  template: LocalizedItemTemplate,
+  opts: MapItemDetailOptions | undefined,
+  locale: Locale,
 ): ItemDetailViewModel {
+  const currentLocale = locale;
   const rarity = opts?.rarity ?? 'common';
 
   const sections: ItemDetailSection[] = [];
@@ -99,20 +99,20 @@ export function mapItemTemplateToDetail(
     if (entries && entries.length > 0) {
       for (const entry of entries) {
         stats.push({
-          label: `Урон (${DAMAGE_TYPE_LABELS[entry.damageType]})`,
+          label: t('system.itemMapper.weaponDamageLabel', { damageType: damageTypeLabel(entry.damageType) }),
           value: entry.baseDamage,
         });
       }
     } else {
       stats.push({
-        label: `Базовый урон (${DAMAGE_TYPE_LABELS[template.weapon.damageType]})`,
+        label: t('system.itemMapper.weaponBaseDamageLabel', { damageType: damageTypeLabel(template.weapon.damageType) }),
         value: template.weapon.baseDamage ?? 0,
       });
     }
-    stats.push({ label: 'Формула', value: template.weapon.damageFormulaId ?? '—' });
+    stats.push({ label: t('system.itemMapper.weaponFormulaLabel'), value: template.weapon.damageFormulaId ?? t('system.itemMapper.weaponFormulaFallback') });
     sections.push({
       kind: 'stat-list',
-      title: 'Боевые параметры',
+      title: t('system.itemMapper.combatParamsTitle'),
       stats,
     });
   }
@@ -120,9 +120,9 @@ export function mapItemTemplateToDetail(
   if (template.armor) {
     sections.push({
       kind: 'stat-list',
-      title: 'Защита',
+      title: t('system.itemMapper.armorTitle'),
       stats: [
-        { label: 'Показатель брони', value: template.armor.baseArmor },
+        { label: t('system.itemMapper.armorRatingLabel'), value: template.armor.baseArmor },
       ],
     });
   }
@@ -130,22 +130,20 @@ export function mapItemTemplateToDetail(
   if (template.consumable) {
     sections.push({
       kind: 'stat-list',
-      title: 'Эффект',
+      title: t('system.itemMapper.consumableTitle'),
       stats: [
-        { label: 'Тип', value: template.consumable.effect },
+        { label: t('system.itemMapper.effectTypeLabel'), value: template.consumable.effect },
         ...(template.consumable.value !== undefined
-          ? [{ label: 'Значение', value: template.consumable.value }]
+          ? [{ label: t('system.itemMapper.effectValueLabel'), value: template.consumable.value }]
           : []),
       ],
     });
   }
 
-  sections.push({ kind: 'description', text: template.description });
-
   const abilityPool =
     template.abilityPool && template.abilityPool.length > 0
       ? template.abilityPool.map((entry) => {
-          const ability = tryGetAbility(entry.abilityId);
+          const ability = tryGetLocalizedAbility(entry.abilityId, currentLocale);
           return {
             abilityId: entry.abilityId,
             name: ability?.name ?? entry.abilityId,
@@ -160,8 +158,8 @@ export function mapItemTemplateToDetail(
     name: template.name,
     description: template.description,
     rarity,
-    rarityLabel: RARITY_LABELS[rarity] ?? rarity,
-    typeLabel: TYPE_LABELS[template.type] ?? template.type,
+    rarityLabel: rarityLabel(rarity),
+    typeLabel: typeLabel(template.type),
     type: template.type,
     icon: resolveItemIcon(template.spriteId ?? template.id),
     frameUrl: resolveItemFrame(rarity),

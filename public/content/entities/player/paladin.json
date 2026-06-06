@@ -1,7 +1,5 @@
 {
   "id": "paladin",
-  "name": "Сир Чеддар",
-  "description": "Благородный рыцарь Сырного Ордена.",
   "portraitImg": "/assets/portraits/paladin-ready.png",
-  "renderScale": 1.0
+  "renderScale": 1
 }

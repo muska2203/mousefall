@@ -1,6 +1,4 @@
 {
   "id": "stairs_down",
-  "name": "Лестница вниз",
-  "renderScale": 1.0,
-  "flavorText": "Ведёт в ещё более противную вонь."
+  "renderScale": 1
 }

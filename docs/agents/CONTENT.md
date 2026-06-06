@@ -7,7 +7,7 @@
 ## Где лежит контент
 
 ```
-public/content/
+public/content/           # JSON-шаблоны: только механика (статы, пулы, ID)
 ├── entities/
 │   ├── enemies/
 │   └── player/
@@ -17,7 +17,14 @@ public/content/
 │   └── consumables/
 ├── abilities/
 └── maps/
+
+src/content/texts/        # Пользовательские тексты: name, description, flavorText
+├── ru.ts                 # Русские тексты врагов, предметов, способностей
+├── en.ts                 # Английские тексты
+└── lookup.ts             # getContentText(category, id, locale)
 ```
+
+> **Важно:** JSON-шаблоны НЕ содержат `name`, `description`, `flavorText`. Все тексты живут в `src/content/texts/{ru,en}.ts` и мержатся с шаблоном через `getLocalizedItem()` / `getLocalizedEntity()`.
 
 ---
 

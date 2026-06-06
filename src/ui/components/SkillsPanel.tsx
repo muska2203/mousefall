@@ -5,6 +5,7 @@
  * Максимальная высота — 3 строки, далее скролл (аналогично журналу).
  */
 
+import { useTranslation } from '@i18n/hooks';
 import {Panel} from './Panel';
 import {SkillRow} from './SkillRow';
 import type { PlayerSkillViewModel } from '@presentation/types';
@@ -28,12 +29,12 @@ function sourceLabel(source: PlayerSkillViewModel['source']): string | null {
   }
 }
 
-function sourceTooltip(source: PlayerSkillViewModel['source']): string | null {
+function sourceTooltip(source: PlayerSkillViewModel['source'], t: (key: string) => string): string | null {
   switch (source) {
     case 'equipment':
-      return 'Скилл от экипировки';
+      return t('skillsPanel.equipmentSkillTooltip');
     case 'levelup':
-      return 'Скилл от прокачки';
+      return t('skillsPanel.levelupSkillTooltip');
     case 'innate':
     default:
       return null;
@@ -41,14 +42,17 @@ function sourceTooltip(source: PlayerSkillViewModel['source']): string | null {
 }
 
 export function SkillsPanel({
-  title = 'Скиллы',
+  title,
   skills,
-  emptyMessage = 'Нет скиллов',
+  emptyMessage,
   onSkillClick,
 }: Props) {
+  const { t } = useTranslation('components');
+  const resolvedTitle = title ?? t('skillsPanel.title');
+  const resolvedEmpty = emptyMessage ?? t('skillsPanel.noSkills');
   const titleNode = (
     <>
-      {title}
+      {resolvedTitle}
     </>
   );
 
@@ -59,7 +63,7 @@ export function SkillsPanel({
           {skills && skills.length > 0 ? (
             skills.map((s) => {
               const srcLabel = sourceLabel(s.source);
-              const srcTip = sourceTooltip(s.source);
+              const srcTip = sourceTooltip(s.source, t);
               return (
                 <li
                   key={s.abilityId}
@@ -86,14 +90,14 @@ export function SkillsPanel({
                   )}
                   {s.isCasting && (
                     <span className="cm-skill__cast-indicator">
-                      Каст {s.remainingCastTurns}
+                      {t('skillsPanel.castPrefix')}{s.remainingCastTurns}
                     </span>
                   )}
                 </li>
               );
             })
           ) : (
-            <SkillRow icon="—" name={emptyMessage} />
+            <SkillRow icon="—" name={resolvedEmpty} />
           )}
         </ul>
       </div>

@@ -125,11 +125,10 @@ export type ActiveCast = {
 
 export type ValidationResult =
   | { ok: true }
-  | { ok: false; reasonCode: string; reasonDescription: string };
+  | { ok: false; reasonCode: string };
 
 export type ValidationError = {
   code: string;
-  description: string;
 };
 
 // ─────────────────────────────────────────────

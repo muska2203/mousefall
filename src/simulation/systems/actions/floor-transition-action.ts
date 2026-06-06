@@ -19,20 +19,20 @@ import { performFloorTransition } from './floor-transition-logic';
 export const descendAction: ActionHandler = {
   validate(state: GameState, action): ValidationResult {
     if (action.type !== 'DESCEND') {
-      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected DESCEND action' };
+      return { ok: false, reasonCode: 'wrong_action_type' };
     }
     const entity = state.entities.get(action.entityId);
     if (!entity || entity.id !== 'player') {
-      return { ok: false, reasonCode: 'entity_not_player', reasonDescription: 'Только игрок может спускаться' };
+      return { ok: false, reasonCode: 'entity_not_player' };
     }
 
     const stairs = findStairsAt(state, entity.x, entity.y, 'stairs_down');
     if (!stairs) {
-      return { ok: false, reasonCode: 'no_stairs_down', reasonDescription: 'Здесь нет спуска вниз' };
+      return { ok: false, reasonCode: 'no_stairs_down' };
     }
 
     if (state.floor >= MAX_FLOOR) {
-      return { ok: false, reasonCode: 'max_floor_reached', reasonDescription: 'Достигнут нижний этаж подземелья' };
+      return { ok: false, reasonCode: 'max_floor_reached' };
     }
 
     return { ok: true };
@@ -58,20 +58,20 @@ export const descendAction: ActionHandler = {
 export const ascendAction: ActionHandler = {
   validate(state: GameState, action): ValidationResult {
     if (action.type !== 'ASCEND') {
-      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected ASCEND action' };
+      return { ok: false, reasonCode: 'wrong_action_type' };
     }
     const entity = state.entities.get(action.entityId);
     if (!entity || entity.id !== 'player') {
-      return { ok: false, reasonCode: 'entity_not_player', reasonDescription: 'Только игрок может подниматься' };
+      return { ok: false, reasonCode: 'entity_not_player' };
     }
 
     const stairs = findStairsAt(state, entity.x, entity.y, 'stairs_up');
     if (!stairs) {
-      return { ok: false, reasonCode: 'no_stairs_up', reasonDescription: 'Здесь нет подъёма вверх' };
+      return { ok: false, reasonCode: 'no_stairs_up' };
     }
 
     if (state.floor <= 1) {
-      return { ok: false, reasonCode: 'min_floor_reached', reasonDescription: 'Вы уже на поверхности' };
+      return { ok: false, reasonCode: 'min_floor_reached' };
     }
 
     return { ok: true };

@@ -74,6 +74,8 @@ src/
     renderer/
     screens/
     styles/
+  i18n/                # Локализация: i18next, схемы, переводы
+    locales/
   utils/               # Чистые утилиты
 
 public/
@@ -112,6 +114,8 @@ tests/
 | Изучить схемы контента | `src/content/schemas.ts` |
 | Понять поток хода | `src/simulation/simulation.ts` (`DefaultTestSimulation.dispatch`) |
 | Понять переход между этажами | `src/simulation/systems/world-reactions/stairs-reaction.ts` |
+| Добавить или изменить перевод | `src/i18n/schema.ts` + `src/i18n/locales/` |
+| Добавить текст врага/предмета | `src/content/texts/{ru,en}.ts` |
 
 ---
 

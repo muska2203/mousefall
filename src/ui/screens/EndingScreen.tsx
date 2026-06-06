@@ -7,6 +7,7 @@
  * Правая: EquipmentPanel, BossListPanel, EndingActionsPanel.
  */
 
+import { useTranslation } from '@i18n/hooks';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -46,49 +47,50 @@ function formatDuration(ms: number): string {
 }
 
 export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, playerStats, equipment, runStats, floor, turnRound}: Props) {
+  const { t } = useTranslation('screens');
   const isVictory = result === 'victory';
   const ps = playerStats;
 
   const heroStats: HeroStat[] = ps
     ? [
-        {type: 'readonly', icon: '💪', name: 'Сила', value: String(ps.effectiveStats.str)},
-        {type: 'readonly', icon: '✨', name: 'Интеллект', value: String(ps.effectiveStats.int)},
-        {type: 'readonly', icon: '🐾', name: 'Ловкость', value: String(ps.effectiveStats.dex)},
-        {type: 'readonly', icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
+        {type: 'readonly', icon: '💪', name: t('ending.statStrength'), value: String(ps.effectiveStats.str)},
+        {type: 'readonly', icon: '✨', name: t('ending.statIntelligence'), value: String(ps.effectiveStats.int)},
+        {type: 'readonly', icon: '🐾', name: t('ending.statDexterity'), value: String(ps.effectiveStats.dex)},
+        {type: 'readonly', icon: '❤️', name: t('ending.statVitality'), value: String(ps.effectiveStats.vit)},
       ]
     : [
-        {type: 'readonly', icon: '💪', name: 'Сила', value: '0'},
-        {type: 'readonly', icon: '✨', name: 'Интеллект', value: '0'},
-        {type: 'readonly', icon: '🐾', name: 'Ловкость', value: '0'},
-        {type: 'readonly', icon: '❤️', name: 'Выносливость', value: '0'},
+        {type: 'readonly', icon: '💪', name: t('ending.statStrength'), value: '0'},
+        {type: 'readonly', icon: '✨', name: t('ending.statIntelligence'), value: '0'},
+        {type: 'readonly', icon: '🐾', name: t('ending.statDexterity'), value: '0'},
+        {type: 'readonly', icon: '❤️', name: t('ending.statVitality'), value: '0'},
       ];
 
   const equipSlots: EquipSlotData[] = equipment
     ? [
-        {label: 'Оружие', icon: equipment.weaponId ? `/assets/items/${equipment.weaponId}.png` : undefined, fallback: '⚔', damage: equipment.weaponDamage, slotType: 'weapon', instanceId: equipment.weaponInstanceId},
-        {label: 'Броня', icon: equipment.armorId ? `/assets/items/${equipment.armorId}.png` : undefined, fallback: '🛡', slotType: 'armor', instanceId: equipment.armorInstanceId},
-        {label: 'Амулет', icon: equipment.amuletId ? `/assets/items/${equipment.amuletId}.png` : undefined, fallback: '📿', slotType: 'amulet', instanceId: equipment.amuletInstanceId},
+        {label: t('ending.slotWeapon'), icon: equipment.weaponId ? `/assets/items/${equipment.weaponId}.png` : undefined, fallback: '⚔', damage: equipment.weaponDamage, slotType: 'weapon', instanceId: equipment.weaponInstanceId},
+        {label: t('ending.slotArmor'), icon: equipment.armorId ? `/assets/items/${equipment.armorId}.png` : undefined, fallback: '🛡', slotType: 'armor', instanceId: equipment.armorInstanceId},
+        {label: t('ending.slotAmulet'), icon: equipment.amuletId ? `/assets/items/${equipment.amuletId}.png` : undefined, fallback: '📿', slotType: 'amulet', instanceId: equipment.amuletInstanceId},
       ]
     : [
-        {label: 'Оружие', fallback: '⚔', slotType: 'weapon', instanceId: null},
-        {label: 'Броня', fallback: '🛡', slotType: 'armor', instanceId: null},
-        {label: 'Амулет', fallback: '📿', slotType: 'amulet', instanceId: null},
+        {label: t('ending.slotWeapon'), fallback: '⚔', slotType: 'weapon', instanceId: null},
+        {label: t('ending.slotArmor'), fallback: '🛡', slotType: 'armor', instanceId: null},
+        {label: t('ending.slotAmulet'), fallback: '📿', slotType: 'amulet', instanceId: null},
       ];
 
   const duration = runStats ? formatDuration(Date.now() - runStats.startTime) : '00:00';
 
   const metrics: MetricItem[] = [
-    {label: 'Длительность', value: duration},
-    {label: 'Ходов', value: String(turnRound ?? 0)},
-    {label: 'Убито противников', value: String(runStats?.enemiesKilled ?? 0)},
-    {label: 'Достигнут уровень лабиринта', value: String(floor ?? 1)},
-    {label: 'Открыто сундуков', value: String(runStats?.chestsOpened ?? 0)},
-    {label: 'Подобрано предметов', value: String(runStats?.itemsPickedUp ?? 0)},
+    {label: t('ending.duration'), value: duration},
+    {label: t('ending.turns'), value: String(turnRound ?? 0)},
+    {label: t('ending.enemiesKilled'), value: String(runStats?.enemiesKilled ?? 0)},
+    {label: t('ending.maxFloorReached'), value: String(floor ?? 1)},
+    {label: t('ending.chestsOpened'), value: String(runStats?.chestsOpened ?? 0)},
+    {label: t('ending.itemsCollected'), value: String(runStats?.itemsPickedUp ?? 0)},
   ];
 
   const leftColumn = (
     <HeroPanel
-      title="Карточка героя"
+      title={t('ending.heroCardTitle')}
       portraitSrc={portraitSrc ?? '/assets/portraits/witcher-ready.png'}
       level={ps?.level ?? 1}
       hp={ps?.hp ?? 0}
@@ -103,8 +105,8 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
       status={result}
       subtitle={
         isVictory
-          ? 'Все противники повержены, забег завершен успешно.'
-          : 'HP опустилось до нуля, забег завершен.'
+          ? t('ending.victorySubtitle')
+          : t('ending.defeatSubtitle')
       }
       metrics={metrics}
     />
@@ -112,7 +114,7 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
 
   const rightColumn = (
     <>
-      <EquipmentPanel title="Снаряжение" slots={equipSlots} />
+      <EquipmentPanel title={t('ending.equipmentTitle')} slots={equipSlots} />
       <BossListPanel bosses={DEFEAT_BOSSES} />
       <EndingActionsPanel onNewRun={onNewRun} onReturnToMenu={onReturnToMenu} />
     </>

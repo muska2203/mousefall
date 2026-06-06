@@ -4,6 +4,7 @@
  * Используется в EndingScreen (центральная колонка).
  */
 
+import { useTranslation } from '@i18n/hooks';
 import {Panel} from './Panel';
 
 export type MetricItem = {
@@ -18,12 +19,13 @@ interface Props {
   metrics: MetricItem[];
 }
 
-export function EndingMetricsPanel({title = 'Итоги забега', status, subtitle, metrics}: Props) {
-  const statusText = status === 'victory' ? 'Победа' : 'Поражение';
+export function EndingMetricsPanel({title, status, subtitle, metrics}: Props) {
+  const { t } = useTranslation('components');
+  const statusText = status === 'victory' ? t('ending.resultVictory') : t('ending.resultDefeat');
   const statusClass = status === 'victory' ? 'cm-ending-status--victory' : '';
 
   return (
-    <Panel title={title} fill>
+    <Panel title={title ?? t('endingMetrics.title')} fill>
       <div className="cm-ending-summary">
         <div className={`cm-ending-status ${statusClass}`}>{statusText}</div>
         <p className="cm-ending-subtitle">{subtitle}</p>

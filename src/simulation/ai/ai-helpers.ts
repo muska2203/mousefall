@@ -14,8 +14,9 @@
 
 import type { GameAction } from '@simulation/systems/actions/types';
 import type { EnemyEntity, GameState, Position } from '@simulation/types';
-import { blocksLOS, isBlocked } from '@simulation/state';
-import { manhattanDistance, chebyshevDistance, nextStepToward } from '@utils/math';
+import { isBlocked } from '@simulation/state';
+import { chebyshevDistance, findPath } from '@utils/math';
+import { computeFOV } from '@simulation/systems/fov';
 import { getCastableAbilities } from './cast-helpers';
 import { getSkillExecutor } from '@simulation/skills/skillExecutor';
 
@@ -25,66 +26,15 @@ import { getSkillExecutor } from '@simulation/skills/skillExecutor';
 
 /**
  * Проверяет, видит ли враг игрока.
- * Условия:
- * 1. Расстояние Манхэттена ≤ enemy.aiSightRadius
- * 2. Между врагом и игроком нет стен (line of sight)
+ * Использует тот же алгоритм recursive shadowcasting, что и игрок,
+ * с радиусом обзора врага (aiSightRadius).
  *
  * Сущности (другие враги) НЕ блокируют зрение — только стены.
  */
 export function canSeePlayer(enemy: EnemyEntity, state: GameState): boolean {
+  const visible = computeFOV(state, enemy.x, enemy.y, enemy.aiSightRadius);
   const player = state.player;
-  const dist = manhattanDistance(
-    { x: enemy.x, y: enemy.y },
-    { x: player.x, y: player.y }
-  );
-
-  if (dist > enemy.aiSightRadius) {
-    return false;
-  }
-
-  return hasLineOfSight(state, enemy.x, enemy.y, player.x, player.y);
-}
-
-/**
- * Алгоритм Брезенхема для проверки линии видимости на сетке.
- * Возвращает true, если между (x0,y0) и (x1,y1) нет стен.
- * Целевая клетка не проверяется (игрок может стоять за стеной — это нормально).
- */
-function hasLineOfSight(
-  state: GameState,
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number
-): boolean {
-  let x = x0;
-  let y = y0;
-  const dx = Math.abs(x1 - x0);
-  const dy = Math.abs(y1 - y0);
-  const sx = x0 < x1 ? 1 : -1;
-  const sy = y0 < y1 ? 1 : -1;
-  let err = dx - dy;
-
-  while (true) {
-    if (x === x1 && y === y1) {
-      return true;
-    }
-
-    // Проверяем клетку перед сдвигом, кроме стартовой
-    if ((x !== x0 || y !== y0) && blocksLOS(state, x, y)) {
-      return false;
-    }
-
-    const e2 = 2 * err;
-    if (e2 > -dy) {
-      err -= dy;
-      x += sx;
-    }
-    if (e2 < dx) {
-      err += dx;
-      y += sy;
-    }
-  }
+  return visible.some((pos) => pos.x === player.x && pos.y === player.y);
 }
 
 // ─────────────────────────────────────────────
@@ -100,7 +50,7 @@ export function isAdjacent(a: Position, b: Position): boolean {
 
 /**
  * Пытается атаковать цель, если она рядом.
- * Иначе делает шаг к цели через BFS.
+ * Иначе делает шаг к цели через A* (findPath).
  * Если путь заблокирован — WAIT.
  */
 export function tryAttackOrMoveToward(
@@ -125,23 +75,18 @@ export function tryAttackOrMoveToward(
     };
   }
 
-  const step = nextStepToward(
+  const path = findPath(
     { x: enemy.x, y: enemy.y },
     { x: targetX, y: targetY },
     (pos) => !isBlocked(state, pos.x, pos.y),
-    20,
+    200,
     true // разрешаем диагональное движение
   );
 
-  if (step) {
+  if (path && path.length > 0) {
+    const step = path[0]!;
     const sdx = step.x - enemy.x;
     const sdy = step.y - enemy.y;
-    // Запрещаем резать угол между двумя стенами при диагональном движении
-    if (Math.abs(sdx) === 1 && Math.abs(sdy) === 1) {
-      if (isBlocked(state, enemy.x + sdx, enemy.y) && isBlocked(state, enemy.x, enemy.y + sdy)) {
-        return wait(enemy);
-      }
-    }
     return {
       type: 'MOVE',
       entityId: enemy.id,

@@ -1,0 +1,24 @@
+import type { SystemGameSessionTranslations } from '@i18n/schema';
+
+export const enGameSession = {
+  heroStatStrength: 'Strength',
+  heroStatIntelligence: 'Intelligence',
+  heroStatDexterity: 'Dexterity',
+  heroStatVitality: 'Vitality',
+  rarityFallback: 'Common',
+  typeFallback: 'Unknown',
+  equipSlotWeapon: 'Weapon',
+  equipSlotArmor: 'Armor',
+  equipSlotAmulet: 'Amulet',
+  effectPoisoned: 'Poisoned',
+  effectPoisonedDesc: '{{value}} damage per turn',
+  effectBurning: 'Burning',
+  effectBurningDesc: '{{value}} damage per turn',
+  effectFrozen: 'Frozen',
+  effectFrozenDesc: 'Speed reduced',
+  effectStunned: 'Stunned',
+  effectStunnedDesc: 'Skip turn',
+  effectRegenerating: 'Regenerating',
+  effectRegeneratingDesc: 'Restore {{value}} HP per turn',
+  effectUnknown: 'Unknown effect',
+} as const satisfies SystemGameSessionTranslations;

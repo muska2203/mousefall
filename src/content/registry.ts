@@ -18,6 +18,36 @@
  */
 
 import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate } from './schemas';
+import { getContentText, type Locale } from './texts/lookup';
+
+// ─────────────────────────────────────────────
+// Localized типы
+// ─────────────────────────────────────────────
+
+export type LocalizedEntityTemplate = EntityTemplate & {
+  name: string;
+  flavorText?: string;
+};
+
+export type LocalizedItemTemplate = ItemTemplate & {
+  name: string;
+  description: string;
+};
+
+export type LocalizedAbilityTemplate = AbilityTemplate & {
+  name: string;
+  description: string;
+};
+
+export type LocalizedPlayerTemplate = PlayerTemplate & {
+  name: string;
+  description: string;
+};
+
+export type LocalizedStairsTemplate = StairsTemplate & {
+  name: string;
+  flavorText?: string;
+};
 
 // ─────────────────────────────────────────────
 // Состояние реестра
@@ -70,6 +100,25 @@ export function getEntity(id: string): EntityTemplate {
 }
 
 /**
+ * Попытаться получить локализованный шаблон сущности. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedEntity(id: string, locale: Locale): LocalizedEntityTemplate | undefined {
+  const template = tryGetEntity(id);
+  if (!template) return undefined;
+  const text = getContentText('entities', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Получить локализованный шаблон сущности по ID.
+ */
+export function getLocalizedEntity(id: string, locale: Locale): LocalizedEntityTemplate {
+  const template = getEntity(id);
+  const text = getContentText('entities', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
  * Получить шаблон игрока по ID.
  * Выбрасывает исключение, если не найден.
  */
@@ -77,6 +126,15 @@ export function getPlayerTemplate(id: string): PlayerTemplate {
   const template = getRegistry().players.get(id);
   if (!template) throw new Error(`Player template not found: "${id}"`);
   return template;
+}
+
+/**
+ * Получить локализованный шаблон игрока по ID.
+ */
+export function getLocalizedPlayerTemplate(id: string, locale: Locale): LocalizedPlayerTemplate {
+  const template = getPlayerTemplate(id);
+  const text = getContentText('players', id, locale);
+  return { ...template, name: text.name, description: text.description ?? '' };
 }
 
 /**
@@ -94,6 +152,16 @@ export function getAllPlayerTemplates(): PlayerTemplate[] {
 }
 
 /**
+ * Получить все локализованные шаблоны игрока.
+ */
+export function getAllLocalizedPlayerTemplates(locale: Locale): LocalizedPlayerTemplate[] {
+  return Array.from(getRegistry().players.values()).map((template) => {
+    const text = getContentText('players', template.id, locale);
+    return { ...template, name: text.name, description: text.description ?? '' };
+  });
+}
+
+/**
  * Получить шаблон предмета по ID.
  * Выбрасывает исключение, если не найден.
  */
@@ -104,6 +172,25 @@ export function getItem(id: string): ItemTemplate {
 }
 
 /**
+ * Попытаться получить локализованный шаблон предмета. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedItem(id: string, locale: Locale): LocalizedItemTemplate | undefined {
+  const template = tryGetItem(id);
+  if (!template) return undefined;
+  const text = getContentText('items', id, locale);
+  return { ...template, name: text.name, description: text.description ?? '' };
+}
+
+/**
+ * Получить локализованный шаблон предмета по ID.
+ */
+export function getLocalizedItem(id: string, locale: Locale): LocalizedItemTemplate {
+  const template = getItem(id);
+  const text = getContentText('items', id, locale);
+  return { ...template, name: text.name, description: text.description ?? '' };
+}
+
+/**
  * Получить шаблон способности по ID.
  * Выбрасывает исключение, если не найден.
  */
@@ -111,6 +198,25 @@ export function getAbility(id: string): AbilityTemplate {
   const template = getRegistry().abilities.get(id);
   if (!template) throw new Error(`Ability template not found: "${id}"`);
   return template;
+}
+
+/**
+ * Попытаться получить локализованный шаблон способности. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedAbility(id: string, locale: Locale): LocalizedAbilityTemplate | undefined {
+  const template = tryGetAbility(id);
+  if (!template) return undefined;
+  const text = getContentText('abilities', id, locale);
+  return { ...template, name: text.name, description: text.description ?? '' };
+}
+
+/**
+ * Получить локализованный шаблон способности по ID.
+ */
+export function getLocalizedAbility(id: string, locale: Locale): LocalizedAbilityTemplate {
+  const template = getAbility(id);
+  const text = getContentText('abilities', id, locale);
+  return { ...template, name: text.name, description: text.description ?? '' };
 }
 
 /**
@@ -152,6 +258,25 @@ export function getStairs(id: string): StairsTemplate {
   const template = getRegistry().stairs.get(id);
   if (!template) throw new Error(`Stairs template not found: "${id}"`);
   return template;
+}
+
+/**
+ * Попытаться получить локализованный шаблон лестницы. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedStairs(id: string, locale: Locale): LocalizedStairsTemplate | undefined {
+  const template = tryGetStairs(id);
+  if (!template) return undefined;
+  const text = getContentText('stairs', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Получить локализованный шаблон лестницы по ID.
+ */
+export function getLocalizedStairs(id: string, locale: Locale): LocalizedStairsTemplate {
+  const template = getStairs(id);
+  const text = getContentText('stairs', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
 }
 
 /**

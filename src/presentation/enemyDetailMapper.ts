@@ -6,26 +6,18 @@
  */
 
 import type { EnemyEntity } from '@simulation/types';
-import type { DamageType } from '@simulation/core-types';
-import { tryGetEntity, tryGetItem, tryGetAbility } from '@content/registry';
+import { tryGetLocalizedEntity, tryGetLocalizedItem, tryGetLocalizedAbility } from '@content/registry';
 import { resolveEnemySprite, resolveItemIcon, resolveAbilityIcon } from '@utils/assetResolver';
 import type { EnemyPopoverViewModel } from './types';
+import type { Locale } from '@content/texts/lookup';
+import { damageTypeLabel } from './localizationHelpers';
 
-const DAMAGE_TYPE_LABELS: Record<DamageType, string> = {
-  piercing: 'Колющий',
-  slashing: 'Рубящий',
-  blunt: 'Тупой',
-  fire: 'Огненный',
-  electric: 'Электрический',
-  poison: 'Ядовитый',
-  frost: 'Морозный',
-};
-
-export function mapEnemyToPopover(enemy: EnemyEntity): EnemyPopoverViewModel {
-  const template = tryGetEntity(enemy.templateId);
+export function mapEnemyToPopover(enemy: EnemyEntity, locale: Locale): EnemyPopoverViewModel {
+  const currentLocale = locale;
+  const template = tryGetLocalizedEntity(enemy.templateId, currentLocale);
 
   const skills = enemy.abilities.map((ability) => {
-    const abilityTemplate = tryGetAbility(ability.templateId);
+    const abilityTemplate = tryGetLocalizedAbility(ability.templateId, currentLocale);
     return {
       name: abilityTemplate?.name ?? ability.templateId,
       icon: abilityTemplate?.spriteId ? resolveAbilityIcon(abilityTemplate.spriteId) : null,
@@ -35,7 +27,7 @@ export function mapEnemyToPopover(enemy: EnemyEntity): EnemyPopoverViewModel {
   });
 
   const loot = (template?.lootTable ?? []).map((entry) => {
-    const itemTemplate = tryGetItem(entry.templateId);
+    const itemTemplate = tryGetLocalizedItem(entry.templateId, currentLocale);
     return {
       name: itemTemplate?.name ?? entry.templateId,
       icon: itemTemplate ? resolveItemIcon(itemTemplate.spriteId ?? itemTemplate.id) : '',
@@ -43,12 +35,12 @@ export function mapEnemyToPopover(enemy: EnemyEntity): EnemyPopoverViewModel {
   });
 
   return {
-    name: enemy.displayName,
+    name: template?.name ?? enemy.displayName,
     sprite: resolveEnemySprite(enemy.templateId),
     flavorText: template?.flavorText ?? '',
     damage: enemy.damage,
     damageType: enemy.damageType,
-    damageTypeLabel: DAMAGE_TYPE_LABELS[enemy.damageType],
+    damageTypeLabel: damageTypeLabel(enemy.damageType),
     hp: enemy.hp,
     maxHp: enemy.maxHp,
     skills,

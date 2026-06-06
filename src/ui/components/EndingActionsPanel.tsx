@@ -4,6 +4,7 @@
  * Используется в EndingScreen (правая колонка).
  */
 
+import { useTranslation } from '@i18n/hooks';
 import {Panel} from './Panel';
 
 interface Props {
@@ -12,21 +13,22 @@ interface Props {
 }
 
 export function EndingActionsPanel({onNewRun, onReturnToMenu}: Props) {
+  const { t } = useTranslation('components');
   return (
-    <Panel title="Дальше">
+    <Panel title={t('endingActions.title')}>
       <div className="cm-ending-actions">
         <button className="cm-btn cm-btn--primary" type="button" onClick={onNewRun}>
-          Новый забег
+          {t('endingActions.newRun')}
         </button>
         {onReturnToMenu && (
           <button className="cm-btn cm-btn--secondary" type="button" onClick={onReturnToMenu}>
-            В меню
+            {t('endingActions.toMenu')}
           </button>
         )}
         <button
           className="cm-btn cm-btn--secondary"
           type="button"
-          onClick={() => alert('Devlog — в разработке')}
+          onClick={() => alert(t('endingActions.devlogAlert'))}
         >
           Devlog
         </button>

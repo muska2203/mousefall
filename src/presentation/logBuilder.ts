@@ -10,9 +10,11 @@
  * - Только фильтрация и форматирование событий.
  */
 
+import { t } from '@i18n/t';
 import type {GameEvent, GameState, SimulationResult, TurnSide} from '@simulation/types';
 import type {ExecutionNode} from '@simulation/systems/actions/types';
-import { getItem } from '@content/registry';
+import { getLocalizedItem, getLocalizedEntity, getLocalizedPlayerTemplate } from '@content/registry';
+import type { Locale } from '@content/texts/lookup';
 
 
 
@@ -49,48 +51,68 @@ function isEventRelevantToPlayer(event: GameEvent): boolean {
 export function gameEventToLog(
   state: GameState,
   event: GameEvent,
+  locale: Locale,
 ): { text: string; variant?: 'loot' | 'good' | 'bad' | 'info' } | null {
   switch (event.type) {
     case 'ENTITY_MOVED': {
-      const name = getEntityDisplayName(state, event.entityId);
-      return { text: `${name} переместился`, variant: 'info' };
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      return { text: t('system.logBuilder.heroMoved', { name }), variant: 'info' };
     }
     case 'ACTION_APPLIED': {
       const action = event.action;
       if (action.type === 'ATTACK') {
-        const name = getEntityDisplayName(state, action.entityId);
-        return { text: `${name} атаковал`, variant: 'info' };
+        const name = getEntityDisplayName(state, action.entityId, locale);
+        return { text: t('system.logBuilder.heroAttacked', { name }), variant: 'info' };
       }
       return null;
     }
     case 'ENTITY_DAMAGED': {
-      const name = getEntityDisplayName(state, event.targetId);
+      const name = getEntityDisplayName(state, event.targetId, locale);
       return {
-        text: `${name} получил ${event.damage} урона`,
+        text: t('system.logBuilder.damageTaken', { name, damage: event.damage }),
         variant: event.targetId === 'player' ? 'bad' : 'good',
       };
     }
     case 'ENTITY_DIED': {
-      const name = getEntityDisplayName(state, event.entityId);
-      return { text: `${name} погиб`, variant: 'bad' };
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      return { text: t('system.logBuilder.heroDied', { name }), variant: 'bad' };
     }
     case 'PLAYER_DIED':
-      return { text: 'Герой погиб', variant: 'bad' };
+      return { text: t('system.logBuilder.playerDied'), variant: 'bad' };
     case 'ENTITY_HEALED': {
-      const name = getEntityDisplayName(state, event.entityId);
-      return { text: `${name} восстановил ${event.amount} HP`, variant: 'good' };
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      return { text: t('system.logBuilder.healReceived', { name, amount: event.amount }), variant: 'good' };
     }
     case 'ITEM_USED': {
-      const template = getItem(event.templateId);
-      const itemName = template?.name ?? 'предмет';
-      return { text: `Герой использовал ${itemName}`, variant: 'info' };
+      const template = getLocalizedItem(event.templateId, locale);
+      const itemName = template?.name ?? t('system.logBuilder.itemUsedLabel');
+      return { text: t('system.logBuilder.heroUsedItem', { itemName }), variant: 'info' };
     }
     default:
       return null;
   }
 }
 
-function getEntityDisplayName(state: GameState, entityId: string): string {
+function getEntityDisplayName(state: GameState, entityId: string, locale: Locale): string {
   const entity = state.entities.get(entityId);
-  return entity?.displayName ?? (entityId === 'player' ? 'Герой' : 'Враг');
+  if (entity?.type === 'player') {
+    try {
+      const localized = getLocalizedPlayerTemplate(entity.templateId, locale);
+      return localized.name;
+    } catch {
+      return t('system.logBuilder.heroNameFallback');
+    }
+  }
+  if (entity?.displayName && entity.displayName !== entity.templateId) {
+    return entity.displayName;
+  }
+  if (entity?.templateId) {
+    try {
+      const localized = getLocalizedEntity(entity.templateId, locale);
+      return localized.name;
+    } catch {
+      // fallback
+    }
+  }
+  return entityId === 'player' ? t('system.logBuilder.heroNameFallback') : t('system.logBuilder.enemyNameFallback');
 }

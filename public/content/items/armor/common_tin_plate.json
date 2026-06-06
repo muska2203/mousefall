@@ -1,7 +1,5 @@
 {
   "id": "common_tin_plate",
-  "name": "Жестяная кираса",
-  "description": "Гремит при ходьбе, но лучше чем ничего.",
   "spriteId": "common_tin_plate",
   "icon": "/assets/items/common_tin_plate.png",
   "fallback": "🥋",

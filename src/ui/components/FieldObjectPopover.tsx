@@ -10,6 +10,7 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '@i18n/hooks';
 import type { FieldObjectPopoverViewModel } from '@presentation/types';
 import { ItemDetailCard } from './ItemDetailCard';
 
@@ -24,6 +25,7 @@ const POPOVER_OFFSET = 16;
 const VIEWPORT_PADDING = 8;
 
 export function FieldObjectPopover({ popover, visible, x, y }: Props) {
+  const { t } = useTranslation('components');
   const ref = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -76,16 +78,16 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
 
           <div className="field-popover-stats">
             <span className="field-popover-stat">
-              Урон: <strong>{popover.data.damage}</strong> <span className="field-popover-damage-type">({popover.data.damageTypeLabel})</span>
+              {t('fieldObjectPopover.damageLabel')}<strong>{popover.data.damage}</strong> <span className="field-popover-damage-type">({popover.data.damageTypeLabel})</span>
             </span>
             <span className="field-popover-stat">
-              HP: <strong>{popover.data.hp}</strong> / {popover.data.maxHp}
+              {t('fieldObjectPopover.hpLabel')}<strong>{popover.data.hp}</strong> / {popover.data.maxHp}
             </span>
           </div>
 
           {popover.data.skills.length > 0 && (
             <div className="field-popover-section">
-              <h4 className="field-popover-section-title">Скиллы</h4>
+              <h4 className="field-popover-section-title">{t('fieldObjectPopover.skillsTitle')}</h4>
               <ul className="field-popover-list field-popover-list-plain">
                 {popover.data.skills.map((skill, i) => (
                   <li key={i} className="field-popover-skill">
@@ -101,7 +103,7 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
                     <span className="field-popover-skill__name">{skill.name}</span>
                     {skill.maxCooldown > 0 && (
                       <span className="field-popover-skill__cooldown">
-                        {skill.cooldown > 0 ? `${skill.cooldown} ходов` : 'Готов'}
+                        {skill.cooldown > 0 ? `${skill.cooldown}${t('fieldObjectPopover.cooldownSuffix')}` : t('fieldObjectPopover.cooldownReady')}
                       </span>
                     )}
                   </li>
@@ -112,7 +114,7 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
 
           {popover.data.loot.length > 0 && (
             <div className="field-popover-section">
-              <h4 className="field-popover-section-title">Возможный лут</h4>
+              <h4 className="field-popover-section-title">{t('fieldObjectPopover.possibleLootTitle')}</h4>
               <ul className="field-popover-list field-popover-list-plain">
                 {popover.data.loot.map((lootItem, i) => (
                   <li key={i} className="field-popover-loot">

@@ -8,8 +8,10 @@
  */
 
 import {useState, useCallback, useMemo} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import type {CharacterConfig} from '@presentation/gameSession';
 import {GameSession} from '@presentation/gameSession';
+import { useSettingsStore } from '@ui/store/settings';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -29,18 +31,20 @@ const STARTER_WEAPON_IDS = ['common_splinter_blade', 'common_school_wand'];
 const STARTER_ARMOR_IDS = ['common_tin_plate', 'common_patch_cloak'];
 const STARTER_AMULET_IDS = ['common_knotted_fang', 'common_glass_bead'];
 
-function getStarterItemInfo(id: string) {
-  return GameSession.getStarterItemInfo(id);
+function getStarterItemInfo(id: string, locale: 'ru' | 'en') {
+  return GameSession.getStarterItemInfo(id, locale);
 }
 
 export function CharacterCreationScreen({onStartGame}: Props) {
+  const { t } = useTranslation('screens');
+  const locale = useSettingsStore((s) => s.locale);
   const templates = useMemo(() => {
     try {
-      return GameSession.getAvailablePlayerTemplates();
+      return GameSession.getAvailablePlayerTemplates(locale);
     } catch {
       return [];
     }
-  }, []);
+  }, [locale]);
 
   const portraits: PortraitItem[] = useMemo(
     () =>
@@ -101,73 +105,73 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     {
       type: 'alloc',
       icon: '💪',
-      name: 'Сила',
+      name: t('characterCreation.statStrength'),
       value: strength,
       onChange: setStrength,
       canIncrease: remaining > 0,
-      flavorText: 'Грубая сила — лучший аргумент в споре.',
+      flavorText: t('characterCreation.statStrengthFlavor'),
       detailLines: [
-        'Увеличивает физический урон от оружия.',
-        'Влияет на шанс пробить броню врага.',
-        'Немного увеличивает максимальный переносимый вес.',
+        t('characterCreation.statStrengthDetail1'),
+        t('characterCreation.statStrengthDetail2'),
+        t('characterCreation.statStrengthDetail3'),
       ],
     },
     {
       type: 'alloc',
       icon: '✨',
-      name: 'Интеллект',
+      name: t('characterCreation.statIntelligence'),
       value: intelligence,
       onChange: setIntelligence,
       canIncrease: remaining > 0,
-      flavorText: 'Знания — сила, но молния из пальцев тоже ничего.',
+      flavorText: t('characterCreation.statIntelligenceFlavor'),
       detailLines: [
-        'Усиливает магические способности и заклинания.',
-        'Увеличивает максимальный запас маны.',
-        'Повышает шанс критического удара умениями.',
+        t('characterCreation.statIntelligenceDetail1'),
+        t('characterCreation.statIntelligenceDetail2'),
+        t('characterCreation.statIntelligenceDetail3'),
       ],
     },
     {
       type: 'alloc',
       icon: '🐾',
-      name: 'Ловкость',
+      name: t('characterCreation.statDexterity'),
       value: agility,
       onChange: setAgility,
       canIncrease: remaining > 0,
-      flavorText: 'Быстрее ветра, тише тени, злее бабушки с тапком.',
+      flavorText: t('characterCreation.statDexterityFlavor'),
       detailLines: [
-        'Повышает шанс уклонения от атак.',
-        'Увеличивает точность и шанс критического попадания.',
-        'Влияет на скорость передвижения по полю боя.',
+        t('characterCreation.statDexterityDetail1'),
+        t('characterCreation.statDexterityDetail2'),
+        t('characterCreation.statDexterityDetail3'),
       ],
     },
     {
       type: 'alloc',
       icon: '❤️',
-      name: 'Выносливость',
+      name: t('characterCreation.statVitality'),
       value: vitality,
       onChange: setVitality,
       canIncrease: remaining > 0,
-      flavorText: 'Жить — значит терпеть. И есть побольше.',
+      flavorText: t('characterCreation.statVitalityFlavor'),
       detailLines: [
-        'Увеличивает максимальное здоровье (HP).',
-        'Повышает сопротивление отрицательным эффектам.',
-        'Улучшает восстановление здоровья между боями.',
+        t('characterCreation.statVitalityDetail1'),
+        t('characterCreation.statVitalityDetail2'),
+        t('characterCreation.statVitalityDetail3'),
       ],
     },
   ];
 
   const statAllocHeader = (
     <>
-      <div className="cm-welcome-section-title">Распределение очков</div>
+      <div className="cm-welcome-section-title">{t('characterCreation.statsTitle')}</div>
       <div className="cm-welcome-points">
-        Свободно очков: <span className="cm-welcome-points-val">{remaining}</span>
+        {t('characterCreation.freePoints')}<span className="cm-welcome-points-val">{remaining}</span>
       </div>
     </>
   );
 
   const weaponItemsWithDamage = useMemo(() => {
     return STARTER_WEAPON_IDS.map((id) => {
-      const base = getStarterItemInfo(id);
+      const base = getStarterItemInfo(id, locale);
       try {
         const stats = GameSession.previewCharacterStats({
           templateId: selectedTemplateId,
@@ -183,29 +187,29 @@ export function CharacterCreationScreen({onStartGame}: Props) {
 
   const starterSlots: StarterSlot[] = [
     {
-      label: 'Оружие',
+      label: t('characterCreation.slotWeapon'),
       selectedId: weaponId,
       onSelect: setWeaponId,
       items: weaponItemsWithDamage,
     },
     {
-      label: 'Броня',
+      label: t('characterCreation.slotArmor'),
       selectedId: armorId,
       onSelect: setArmorId,
-      items: STARTER_ARMOR_IDS.map(getStarterItemInfo),
+      items: STARTER_ARMOR_IDS.map((id) => getStarterItemInfo(id, locale)),
     },
     {
-      label: 'Амулет',
+      label: t('characterCreation.slotAmulet'),
       selectedId: amuletId,
       onSelect: setAmuletId,
-      items: STARTER_AMULET_IDS.map(getStarterItemInfo),
+      items: STARTER_AMULET_IDS.map((id) => getStarterItemInfo(id, locale)),
     },
   ];
 
   const leftColumn = (
     <HeroPanel
       portraitSrc={selectedPortrait?.img ?? '/assets/portraits/witcher-ready.png'}
-      portraitAlt={selectedPortrait?.name ?? 'Герой'}
+      portraitAlt={selectedPortrait?.name ?? t('characterCreation.portraitAlt')}
       level={previewStats?.level ?? 1}
       hp={previewStats?.hp ?? 100}
       maxHp={previewStats?.maxHp ?? 100}
@@ -216,7 +220,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   );
 
   const centerColumn = (
-    <Panel title="Выбор внешности" titleId="portrait-title" fill>
+    <Panel title={t('characterCreation.appearanceTitle')} titleId="portrait-title" fill>
       <PortraitGallery portraits={portraits} selectedId={selectedTemplateId} onSelect={setSelectedTemplateId} />
     </Panel>
   );
@@ -225,29 +229,29 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     <>
       <StarterEquipmentPanel slots={starterSlots} />
 
-      <Panel title="Параметры забега" titleId="params-title">
+      <Panel title={t('characterCreation.runSettingsTitle')} titleId="params-title">
         <div className="cm-welcome-info-body">
           <label className="cm-welcome-seed-label">
-            <span className="cm-welcome-seed-label__text">Сид карты</span>
+            <span className="cm-welcome-seed-label__text">{t('characterCreation.seedLabel')}</span>
             <input
               className="cm-welcome-seed-input"
               type="text"
               inputMode="numeric"
-              placeholder="Случайный"
+              placeholder={t('characterCreation.seedPlaceholder')}
               value={seedInput}
               onChange={(e) => setSeedInput(e.target.value)}
-              aria-label="Сид карты (число). Оставьте пустым для случайного."
+              aria-label={t('characterCreation.seedAriaLabel')}
             />
           </label>
         </div>
       </Panel>
 
-      <Panel title="Информация" titleId="info-title">
+      <Panel title={t('characterCreation.infoTitle')} titleId="info-title">
         <div className="cm-welcome-info-body">
-          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => alert('Подсказки по игре — в разработке')}>
-            Подсказки по игре
+          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => alert(t('characterCreation.hintsAlert'))}>
+            {t('characterCreation.hintsButton')}
           </button>
-          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => alert('Devlog — в разработке')}>
+          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => alert(t('characterCreation.devlogAlert'))}>
             Devlog
           </button>
         </div>
@@ -255,7 +259,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
 
       <div className="cm-welcome-start-wrap">
         <button className="cm-btn cm-btn--primary cm-welcome-start" type="button" onClick={handleStart} disabled={!isValid}>
-          Начать забег
+          {t('characterCreation.startRun')}
         </button>
       </div>
     </>

@@ -353,6 +353,17 @@
   padding: 14px 32px;
 }
 
+.cm-main-menu__locale select {
+  background: var(--panel-bg);
+  color: var(--gold);
+  border: 2px solid var(--bronze);
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
 /* Сид карты */
 .cm-welcome-seed-label {
   display: flex;

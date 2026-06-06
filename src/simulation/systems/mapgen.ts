@@ -26,6 +26,10 @@ import { addModifier } from './stats/modifier-engine';
 import { recalculateActorStats } from './stats/recalculate';
 
 // ─────────────────────────────────────────────
+// Лестницы
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
 // Тип выходных данных
 // ─────────────────────────────────────────────
 
@@ -191,7 +195,7 @@ function randomPosInRoom(rng: RNGState, room: Room): { x: number; y: number } {
 // Вспомогательные функции создания сущностей
 // ─────────────────────────────────────────────
 
-function createEnemy(state: GameState, templateId: string, x: number, y: number): EnemyEntity {
+export function createEnemy(state: GameState, templateId: string, x: number, y: number): EnemyEntity {
   const template = getEntity(templateId);
 
   const abilities: RuntimeAbility[] = [];
@@ -211,7 +215,7 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
     type: 'enemy',
     x,
     y,
-    displayName: template.name,
+    displayName: template.id,
     hp: template.health.max,
     maxHp: template.health.max,
     damage: template.combat?.damage ?? 0,
@@ -273,8 +277,8 @@ function createEnemy(state: GameState, templateId: string, x: number, y: number)
   }
 
   recalculateActorStats(enemy);
-  // clamp hp к новому maxHp после пересчёта
-  enemy.hp = Math.min(enemy.hp, enemy.maxHp);
+  // Восстанавливаем текущие HP до вычисленного максимума (аналогично игроку при создании)
+  enemy.hp = enemy.maxHp;
 
   return enemy;
 }
@@ -289,7 +293,7 @@ export function createStairs(state: GameState, templateId: 'stairs_down' | 'stai
     type: 'stairs',
     x,
     y,
-    displayName: templateId === 'stairs_down' ? 'Лестница вниз' : 'Лестница вверх',
+    displayName: templateId,
     templateId,
     blocksMovement: false,
   };

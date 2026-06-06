@@ -1,7 +1,5 @@
 {
   "id": "orc-barbarian",
-  "name": "Клыкохвост",
-  "description": "Яростный воин с сырными клыками.",
   "portraitImg": "/assets/portraits/orc-barbarian-ready.png",
-  "renderScale": 1.0
+  "renderScale": 1
 }

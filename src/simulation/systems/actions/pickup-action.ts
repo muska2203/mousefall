@@ -16,17 +16,17 @@ export const pickupEntity: ActionHandler = {
 
   validate(state: GameState, action) {
     if (action.type !== 'PICKUP') {
-      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected PICKUP action' };
+      return { ok: false, reasonCode: 'wrong_action_type' };
     }
 
     const actor = findEntity(state, action.entityId);
     if (!actor) {
-      return { ok: false, reasonCode: 'entity_not_exists', reasonDescription: 'Entity not exists' };
+      return { ok: false, reasonCode: 'entity_not_exists' };
     }
 
     const items = findAllEntitiesAt(state, actor.x, actor.y).filter(e => e.type === 'item');
     if (items.length === 0) {
-      return { ok: false, reasonCode: 'no_item_here', reasonDescription: 'No item to pick up here' };
+      return { ok: false, reasonCode: 'no_item_here' };
     }
 
     return { ok: true };

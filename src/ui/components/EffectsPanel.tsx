@@ -4,6 +4,7 @@
  * Используется в GameScreen (левая колонка).
  */
 
+import { useTranslation } from '@i18n/hooks';
 import {Panel} from './Panel';
 import {EffectCard} from './EffectCard';
 
@@ -19,17 +20,20 @@ interface Props {
   effects?: EffectItem[];
 }
 
-export function EffectsPanel({title = 'Активные эффекты', effects}: Props) {
+export function EffectsPanel({title, effects}: Props) {
+  const { t } = useTranslation('components');
+  const resolvedTitle = title ?? t('effectsPanel.title');
+
   return (
-    <Panel title={title}>
+    <Panel title={resolvedTitle}>
       <div className="cm-effects-viewport cm-scroll-wood">
-        <ul className="cm-effects" role="list" aria-label={title}>
+        <ul className="cm-effects" role="list" aria-label={resolvedTitle}>
           {effects && effects.length > 0 ? (
             effects.map((e, i) => (
               <EffectCard key={`effect-${e.name}-${i}`} {...e} />
             ))
           ) : (
-            <EffectCard icon="—" name="Эффекты" desc="Нет активных эффектов." turns={0} />
+            <EffectCard icon="—" name={t('effectsPanel.noEffectsName')} desc={t('effectsPanel.noEffectsDesc')} turns={0} />
           )}
         </ul>
       </div>

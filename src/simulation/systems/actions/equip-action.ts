@@ -19,13 +19,13 @@ export const equipEntity: ActionHandler = {
 
   validate(state: GameState, action) {
     if (action.type !== 'EQUIP') {
-      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected EQUIP action' };
+      return { ok: false, reasonCode: 'wrong_action_type' };
     }
 
     const player = state.player;
     const item = player.inventory.find(i => i.instanceId === action.itemInstanceId);
     if (!item) {
-      return { ok: false, reasonCode: 'item_not_found', reasonDescription: 'Предмет не найден в инвентаре' };
+      return { ok: false, reasonCode: 'item_not_found' };
     }
 
     const template = getItem(item.templateId);
@@ -35,7 +35,7 @@ export const equipEntity: ActionHandler = {
     else if (template.type === 'amulet') slot = 'amulet';
 
     if (!slot) {
-      return { ok: false, reasonCode: 'not_equippable', reasonDescription: 'Предмет нельзя экипировать' };
+      return { ok: false, reasonCode: 'not_equippable' };
     }
 
     return { ok: true };

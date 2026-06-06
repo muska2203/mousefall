@@ -27,8 +27,6 @@ import { recalculateActorStats } from '@simulation/systems/stats/recalculate.ts'
 function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
   return {
     id,
-    name: id,
-    description: '',
     type: 'consumable',
     stackable: false,
     maxStack: 1,

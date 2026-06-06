@@ -22,10 +22,11 @@
     "paths": {
       "@simulation/*": ["src/simulation/*"],
       "@utils/*":      ["src/utils/*"],
-      "@store/*":      ["src/store/*"],
+
       "@ui/*":         ["src/ui/*"],
       "@content/*":    ["src/content/*"],
-      "@presentation/*": ["src/presentation/*"]
+      "@presentation/*": ["src/presentation/*"],
+      "@i18n/*":        ["src/i18n/*"]
     }
   },
   "include": ["src", "tests"],

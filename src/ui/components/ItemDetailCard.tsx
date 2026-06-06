@@ -5,6 +5,7 @@
  * Принимает готовый ItemDetailViewModel от Presentation.
  */
 
+import { useTranslation } from '@i18n/hooks';
 import type { ItemDetailViewModel } from '@presentation/itemDetailMapper';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function ItemDetailCard({ item }: Props) {
+  const { t } = useTranslation('components');
   const abilities = item.grantedAbilities;
 
   return (
@@ -54,7 +56,7 @@ export function ItemDetailCard({ item }: Props) {
 
       {abilities && abilities.length > 0 && (
         <div className="item-detail-section">
-          <h4 className="item-detail-section-title">Скиллы предмета</h4>
+          <h4 className="item-detail-section-title">{t('itemDetail.itemSkillsTitle')}</h4>
           {abilities.map((ability) => (
             <div className="item-detail-ability" key={ability.templateId}>
               {ability.icon && (
@@ -67,7 +69,7 @@ export function ItemDetailCard({ item }: Props) {
                 />
               )}
               <span className="item-detail-ability__name">{ability.name}</span>
-              <span className="item-detail-ability__level">ур. {ability.level}</span>
+              <span className="item-detail-ability__level">{t('itemDetail.abilityLevelPrefix')}{ability.level}</span>
             </div>
           ))}
         </div>
@@ -75,7 +77,7 @@ export function ItemDetailCard({ item }: Props) {
 
       {item.abilityPool && item.abilityPool.length > 0 && (
         <div className="item-detail-section">
-          <h4 className="item-detail-section-title">Возможные скиллы</h4>
+          <h4 className="item-detail-section-title">{t('itemDetail.possibleSkillsTitle')}</h4>
           <ul className="item-detail-list item-detail-list-plain">
             {item.abilityPool.map((ability) => (
               <li key={ability.abilityId} className="item-detail-ability item-detail-ability--pool">
@@ -119,7 +121,7 @@ export function ItemDetailCard({ item }: Props) {
         if (section.kind === 'description') {
           return (
             <div className="item-detail-section" key={index}>
-              <h4 className="item-detail-section-title">Описание</h4>
+              <h4 className="item-detail-section-title">{t('itemDetail.descriptionTitle')}</h4>
               <p className="item-detail-desc">{section.text}</p>
             </div>
           );

@@ -1,22 +1,48 @@
 {
   "id": "cat_big",
   "aiStrategyId": "hunter",
-  "aiSightRadius": 8,
-  "name": "Босс-кот",
-  "health": { "max": 60 },
-  "baseStats": { "str": 4, "dex": 3, "int": 0, "vit": 2 },
-  "equipment": { "weapon": "cat_claw_big", "armor": "common_tin_plate" },
+  "aiSightRadius": 6,
+  "health": {
+    "max": 30
+  },
+  "baseStats": {
+    "str": 4,
+    "dex": 3,
+    "int": 0,
+    "vit": 2
+  },
+  "equipment": {
+    "weapon": "cat_claw_big",
+    "armor": "common_tin_plate"
+  },
   "lootTable": [
-    { "templateId": "health_potion", "weight": 5 },
-    { "templateId": "common_splinter_blade", "weight": 3 },
-    { "templateId": "common_tin_plate", "weight": 2 }
+    {
+      "templateId": "health_potion",
+      "weight": 5
+    },
+    {
+      "templateId": "common_splinter_blade",
+      "weight": 3
+    },
+    {
+      "templateId": "common_tin_plate",
+      "weight": 2
+    }
   ],
   "lootDropTable": [
-    { "count": 0, "weight": 1 },
-    { "count": 1, "weight": 1 },
-    { "count": 2, "weight": 2 }
+    {
+      "count": 0,
+      "weight": 1
+    },
+    {
+      "count": 1,
+      "weight": 1
+    },
+    {
+      "count": 2,
+      "weight": 2
+    }
   ],
   "xpReward": 40,
-  "renderScale": 1.3,
-  "flavorText": "Главный кот района. Его гремучее мурлыканье слышно за три квартала."
+  "renderScale": 1.3
 }

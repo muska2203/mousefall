@@ -10,8 +10,6 @@ import type {ItemTemplate, PlayerTemplate} from '../../../src/content/schemas';
 function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
   return {
     id,
-    name: id,
-    description: '',
     type: 'consumable',
     stackable: false,
     maxStack: 1,
@@ -23,8 +21,6 @@ function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
 function mockPlayerTemplate(id: string, template: Partial<PlayerTemplate> = {}): PlayerTemplate {
   return {
     id,
-    name: id,
-    description: '',
     portraitImg: `/assets/portraits/${id}-ready.png`,
     renderScale: 1.5,
     ...template,

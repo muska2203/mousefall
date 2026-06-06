@@ -157,7 +157,7 @@ registerAnimationBuilder('CAST_CANCELLED', (event) => {
   return [{
     step: {
       type: 'UI_FLOATING_TEXT',
-      text: 'Каст прерван',
+      textKey: 'system.animation.castInterrupted',
       x: event.from.x,
       y: event.from.y,
       styleKey: 'cast_cancel',

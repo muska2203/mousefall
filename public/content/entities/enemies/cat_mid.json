@@ -1,21 +1,43 @@
 {
   "id": "cat_mid",
   "aiStrategyId": "hunter",
-  "aiSightRadius": 6,
-  "name": "Уличный кот",
-  "health": { "max": 30 },
-  "baseStats": { "str": 2, "dex": 4, "int": 0, "vit": 1 },
-  "equipment": { "weapon": "cat_claw_mid" },
+  "aiSightRadius": 5,
+  "health": {
+    "max": 20
+  },
+  "baseStats": {
+    "str": 2,
+    "dex": 4,
+    "int": 0,
+    "vit": 1
+  },
+  "equipment": {
+    "weapon": "cat_claw_mid"
+  },
   "lootTable": [
-    { "templateId": "health_potion", "weight": 4 },
-    { "templateId": "common_splinter_blade", "weight": 2 },
-    { "templateId": "common_tin_plate", "weight": 1 }
+    {
+      "templateId": "health_potion",
+      "weight": 4
+    },
+    {
+      "templateId": "common_splinter_blade",
+      "weight": 2
+    },
+    {
+      "templateId": "common_tin_plate",
+      "weight": 1
+    }
   ],
   "lootDropTable": [
-    { "count": 0, "weight": 2 },
-    { "count": 1, "weight": 1 }
+    {
+      "count": 0,
+      "weight": 2
+    },
+    {
+      "count": 1,
+      "weight": 1
+    }
   ],
   "xpReward": 18,
-  "renderScale": 1.5,
-  "flavorText": "Средний бизнес-кот. Нанимает котят и не платит налоги."
+  "renderScale": 1.5
 }

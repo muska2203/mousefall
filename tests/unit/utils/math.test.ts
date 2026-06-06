@@ -9,7 +9,7 @@ import {
   allNeighbors,
   stepToward,
   posEqual,
-  nextStepToward,
+  findPath,
 } from '../../../src/utils/math';
 
 describe('math utils', () => {
@@ -86,56 +86,96 @@ describe('math utils', () => {
     });
   });
 
-  describe('nextStepToward', () => {
-    it('returns next step via BFS', () => {
-      const step = nextStepToward(
-        { x: 0, y: 0 },
+    describe('findPath', () => {
+    it('возвращает пустой массив, если начальная позиция совпадает с целевой', () => {
+      const path = findPath({ x: 5, y: 5 }, { x: 5, y: 5 }, () => true);
+      expect(path).toEqual([]);
+    });
+
+    it('возвращает прямой путь без препятствий', () => {
+      const path = findPath({ x: 0, y: 0 }, { x: 3, y: 0 }, () => true);
+      expect(path).toEqual([
+        { x: 1, y: 0 },
         { x: 2, y: 0 },
-        () => true,
-      );
-      expect(step).toEqual({ x: 1, y: 0 });
+        { x: 3, y: 0 },
+      ]);
     });
 
-    it('returns null when destination is same as start', () => {
-      const step = nextStepToward(
+    it('обходит препятствия', () => {
+      const walls = new Set(['1,0', '1,1', '1,2']);
+      const path = findPath(
         { x: 0, y: 0 },
-        { x: 0, y: 0 },
-        () => true,
+        { x: 3, y: 0 },
+        (pos) => !walls.has(`${pos.x},${pos.y}`),
       );
-      expect(step).toBeNull();
+      expect(path).not.toBeNull();
+      expect(path![path!.length - 1]).toEqual({ x: 3, y: 0 });
+      // Проверяем, что ни одна клетка пути не является стеной
+      for (const p of path!) {
+        expect(walls.has(`${p.x},${p.y}`)).toBe(false);
+      }
     });
 
-    it('returns null when blocked and maxSteps exceeded', () => {
-      const step = nextStepToward(
-        { x: 0, y: 0 },
-        { x: 2, y: 0 },
-        () => false,
-        5,
-      );
-      expect(step).toBeNull();
-    });
-
-    it('supports diagonal movement with allowDiagonal flag', () => {
-      // С диагоналями: соседняя диагональная клетка доступна сразу
-      const stepDiag = nextStepToward(
-        { x: 0, y: 0 },
+    it('использует диагонали при allowDiagonal=true', () => {
+      const path = findPath({ x: 0, y: 0 }, { x: 3, y: 3 }, () => true, 200, true);
+      // С диагоналями путь должен быть короче (3 шага вместо 6)
+      expect(path).toHaveLength(3);
+      expect(path).toEqual([
         { x: 1, y: 1 },
-        () => true,
-        20,
+        { x: 2, y: 2 },
+        { x: 3, y: 3 },
+      ]);
+    });
+
+    it('не использует диагонали при allowDiagonal=false', () => {
+      const path = findPath({ x: 0, y: 0 }, { x: 2, y: 2 }, () => true, 200, false);
+      // Без диагоналей путь должен содержать только кардинальные шаги
+      for (const p of path!) {
+        const dx = Math.abs(p.x - 0);
+        const dy = Math.abs(p.y - 0);
+        expect(dx + dy).toBeGreaterThan(0);
+      }
+      expect(path![path!.length - 1]).toEqual({ x: 2, y: 2 });
+    });
+
+    it('возвращает null, если цель недостижима', () => {
+      const path = findPath({ x: 0, y: 0 }, { x: 2, y: 0 }, () => false);
+      expect(path).toBeNull();
+    });
+
+    it('срезает углы (диагональ между двумя стенами)', () => {
+      const walls = new Set(['1,0', '0,1']);
+      const path = findPath(
+        { x: 0, y: 0 },
+        { x: 2, y: 2 },
+        (pos) => !walls.has(`${pos.x},${pos.y}`),
+        200,
         true,
       );
-      expect(stepDiag).toEqual({ x: 1, y: 1 });
+      // Диагональ из (0,0) в (1,1) разрешена, даже если (1,0) и (0,1) — стены
+      expect(path).not.toBeNull();
+      expect(path![0]).toEqual({ x: 1, y: 1 });
+    });
 
-      // Без диагоналей: до (1,1) пойдём либо через (1,0), либо через (0,1)
-      const stepStraight = nextStepToward(
+    it('учитывает maxSteps', () => {
+      const path = findPath(
         { x: 0, y: 0 },
-        { x: 1, y: 1 },
+        { x: 100, y: 100 },
         () => true,
-        20,
-        false,
+        5, // очень мало шагов
+        true,
       );
-      expect(stepStraight).not.toBeNull();
-      expect(stepStraight).not.toEqual({ x: 1, y: 1 });
+      expect(path).toBeNull();
+    });
+
+    it('достигает цели, даже если она сама непроходима (isWalkable для to игнорируется)', () => {
+      const path = findPath(
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+        (pos) => pos.x !== 2, // целевая клетка "непроходима"
+      );
+      expect(path).not.toBeNull();
+      expect(path![path!.length - 1]).toEqual({ x: 2, y: 0 });
     });
   });
 });

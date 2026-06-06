@@ -12,8 +12,6 @@ function mockConsumable(
 ): ItemTemplate {
   return {
     id,
-    name: id,
-    description: '',
     type: 'consumable',
     stackable: true,
     maxStack: 10,
@@ -40,8 +38,6 @@ beforeEach(() => {
       ['buff_potion', mockConsumable('buff_potion', 'buff', 5)],
       ['test_weapon', {
         id: 'test_weapon',
-        name: 'test_weapon',
-        description: '',
         type: 'weapon',
         stackable: false,
         maxStack: 1,

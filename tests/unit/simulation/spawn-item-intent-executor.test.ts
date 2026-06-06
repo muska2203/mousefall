@@ -12,8 +12,6 @@ function makeBuilder() {
 function makeTestItemTemplate(id: string): ItemTemplate {
     return {
         id,
-        name: 'Тестовый предмет',
-        description: 'Для тестов',
         type: 'consumable',
         stackable: false,
         maxStack: 1,
@@ -62,7 +60,7 @@ describe('executeSpawnItemIntent', () => {
         const item = state.entities.get(itemId!)!;
         expect(item.type).toBe('item');
         expect(item.templateId).toBe('test_item');
-        expect(item.displayName).toBe('Тестовый предмет');
+        expect(item.displayName).toBe('test_item');
         expect((item as import('../../../src/simulation/types').ItemEntity).item.quantity).toBe(1);
     });
 

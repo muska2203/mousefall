@@ -8,6 +8,10 @@
   "maxRoomSize": 10,
   "enemyDensity": 0.6,
   "itemDensity": 0.3,
-  "enemyPool": ["cat_small"],
-  "itemPool": ["health_potion"]
+  "enemyPool": [
+    "cat_small"
+  ],
+  "itemPool": [
+    "health_potion"
+  ]
 }

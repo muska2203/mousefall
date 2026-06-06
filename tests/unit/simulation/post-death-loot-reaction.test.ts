@@ -8,7 +8,6 @@ import type { EntityTemplate } from '../../../src/content/schemas';
 function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTemplate {
     return {
         id: 'test_enemy',
-        name: 'Тестовый враг',
         health: { max: 10 },
         combat: { damage: 1, armor: 0 },
         baseStats: { str: 0, dex: 0, int: 0, vit: 0 },

@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from '@i18n/hooks';
 import { DetailPopover } from './DetailPopover';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function StatRow({ icon, name, value, onChange, canIncrease, flavorText, detailLines }: Props) {
+  const { t } = useTranslation('components');
   const canDecrease = value > 0;
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
@@ -47,7 +49,7 @@ export function StatRow({ icon, name, value, onChange, canIncrease, flavorText, 
           className="cm-stat-btn"
           onClick={() => canDecrease && onChange(value - 1)}
           disabled={!canDecrease}
-          aria-label={`Уменьшить ${name}`}
+          aria-label={t('statRow.decreaseAria', { name })}
         >
           −
         </button>
@@ -57,7 +59,7 @@ export function StatRow({ icon, name, value, onChange, canIncrease, flavorText, 
           className="cm-stat-btn"
           onClick={() => canIncrease && onChange(value + 1)}
           disabled={!canIncrease}
-          aria-label={`Увеличить ${name}`}
+          aria-label={t('statRow.increaseAria', { name })}
         >
           +
         </button>

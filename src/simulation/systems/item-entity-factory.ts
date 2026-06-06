@@ -29,7 +29,7 @@ export function createItemEntity(
     templateId,
     x,
     y,
-    displayName: template.name,
+    displayName: template.id,
     blocksMovement: false,
     item: inventoryItem,
   };

@@ -5,6 +5,7 @@
  */
 
 import {useRef, useEffect} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import type {LogItem} from '@presentation/gameSession';
 import {Panel} from './Panel';
 import {LogEntry} from './LogEntry';
@@ -15,7 +16,8 @@ interface Props {
   emptyMessage?: string;
 }
 
-export function LogPanel({title = 'Журнал', entries, emptyMessage = 'Начало забега. Удачи!'}: Props) {
+export function LogPanel({title, entries, emptyMessage}: Props) {
+  const { t } = useTranslation('components');
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,15 +27,17 @@ export function LogPanel({title = 'Журнал', entries, emptyMessage = 'На�
     }
   }, [entries]);
 
+  const resolvedTitle = title ?? t('logPanel.title');
+  const resolvedEmpty = emptyMessage ?? t('logPanel.emptyMessage');
   const titleNode = (
     <>
-      {title}
+      {resolvedTitle}
     </>
   );
   return (
     <Panel title={titleNode}>
-      <div ref={logRef} className="cm-log cm-scroll-wood" role="log" aria-live="polite" aria-label={title}>
-        {entries.length === 0 && <LogEntry text={emptyMessage} />}
+      <div ref={logRef} className="cm-log cm-scroll-wood" role="log" aria-live="polite" aria-label={resolvedTitle}>
+        {entries.length === 0 && <LogEntry text={resolvedEmpty} />}
         {entries.map((entry) => (
           <LogEntry key={entry.id} text={entry.text} variant={entry.variant} />
         ))}

@@ -1,7 +1,5 @@
 {
   "id": "health_potion",
-  "name": "Health Potion",
-  "description": "A small vial of red liquid. Restores 30 HP.",
   "spriteId": "health_potion",
   "icon": "/assets/items/health_potion.png",
   "fallback": "🧪",

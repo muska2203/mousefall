@@ -19,17 +19,17 @@ export const moveEntity: ActionHandler = {
 
     validate(state: GameState, action) {
         if (action.type !== 'MOVE') {
-            return {ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected MOVE action'};
+            return {ok: false, reasonCode: 'wrong_action_type'};
         }
 
         const entity = findEntity(state, action.entityId);
 
-        if (!entity) return {ok: false, reasonCode: "entity_not_exists", reasonDescription: 'Entity not exists'};
+        if (!entity) return {ok: false, reasonCode: "entity_not_exists"};
 
         const newX = entity.x + action.dx;
         const newY = entity.y + action.dy;
         if (isBlocked(state, newX, newY)) {
-            return {ok: false, reasonCode: "tile_blocked", reasonDescription: "Tile is blocked"};
+            return {ok: false, reasonCode: "tile_blocked"};
         }
         return {ok: true};
     },

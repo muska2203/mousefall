@@ -6,6 +6,7 @@
  */
 
 import type { GameEvent, GameState } from '@simulation/types';
+import type { Locale } from '@content/texts/lookup';
 import { gameEventToLog } from './logBuilder';
 
 export type LogItem = {
@@ -18,9 +19,9 @@ export class LogBuffer {
   logs: LogItem[] = [];
   private nextLogId = 1;
 
-  append(state: GameState, events: GameEvent[]): void {
+  append(state: GameState, events: GameEvent[], locale: Locale): void {
     for (const event of events) {
-      const entry = gameEventToLog(state, event);
+      const entry = gameEventToLog(state, event, locale);
       if (entry) {
         this.logs.push({ id: this.nextLogId++, text: entry.text, variant: entry.variant });
       }

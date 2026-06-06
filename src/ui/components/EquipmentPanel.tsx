@@ -5,6 +5,7 @@
  */
 
 import {useState} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import type {ItemDetailViewModel} from '@presentation/itemDetailMapper';
 import {Panel} from './Panel';
 import {EquipSlot} from './EquipSlot';
@@ -27,14 +28,15 @@ interface Props {
   onUnequip?: (slot: 'weapon' | 'armor' | 'amulet') => void;
 }
 
-export function EquipmentPanel({title = 'Экипировка', slots, onUnequip}: Props) {
+export function EquipmentPanel({title, slots, onUnequip}: Props) {
+  const { t } = useTranslation('components');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{x: number; y: number}>({x: 0, y: 0});
 
   const hoveredSlot = hoveredIndex !== null ? slots[hoveredIndex] : null;
 
   return (
-    <Panel title={title}>
+    <Panel title={title ?? t('equipmentPanel.title')}>
       <div className="cm-equip-slots">
         {slots.map((slot, i) => (
           <div

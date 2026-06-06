@@ -1,7 +1,5 @@
 {
   "id": "halfling-mage",
-  "name": "Сырный Мерлин",
-  "description": "Хитрый заклинатель, обращающий сыр в ману.",
   "portraitImg": "/assets/portraits/halfling-mage-ready.png",
-  "renderScale": 1.0
+  "renderScale": 1
 }

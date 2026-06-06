@@ -1,7 +1,5 @@
 {
   "id": "witcher",
-  "name": "Белый Хвост",
-  "description": "Охотник на чудовищ и мечник-алхимик.",
   "portraitImg": "/assets/portraits/witcher-ready.png",
-  "renderScale": 1.0
+  "renderScale": 1
 }

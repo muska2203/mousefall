@@ -20,6 +20,7 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '@i18n/hooks';
 
 interface Props {
   /** Название описываемого элемента. */
@@ -42,6 +43,7 @@ const POPOVER_OFFSET = 16;
 const VIEWPORT_PADDING = 8;
 
 export function DetailPopover({ title, icon, flavorText, details, visible, x, y }: Props) {
+  const { t } = useTranslation('components');
   const ref = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -92,7 +94,7 @@ export function DetailPopover({ title, icon, flavorText, details, visible, x, y 
 
         {details.length > 0 && (
           <div className="detail-popover-section">
-            <h4 className="detail-popover-section-title">Влияние</h4>
+            <h4 className="detail-popover-section-title">{t('detailPopover.impactTitle')}</h4>
             <ul className="detail-popover-list">
               {details.map((line, index) => (
                 <li key={index} className="detail-popover-list-item">

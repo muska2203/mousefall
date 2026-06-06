@@ -1,0 +1,24 @@
+import type { SystemGameSessionTranslations } from '@i18n/schema';
+
+export const ruGameSession = {
+  heroStatStrength: 'Сила',
+  heroStatIntelligence: 'Интеллект',
+  heroStatDexterity: 'Ловкость',
+  heroStatVitality: 'Выносливость',
+  rarityFallback: 'Обычный',
+  typeFallback: 'Неизвестно',
+  equipSlotWeapon: 'Оружие',
+  equipSlotArmor: 'Броня',
+  equipSlotAmulet: 'Амулет',
+  effectPoisoned: 'Отравление',
+  effectPoisonedDesc: 'Урон {{value}} в ход',
+  effectBurning: 'Горение',
+  effectBurningDesc: 'Урон {{value}} в ход',
+  effectFrozen: 'Заморозка',
+  effectFrozenDesc: 'Скорость снижена',
+  effectStunned: 'Оглушение',
+  effectStunnedDesc: 'Пропуск хода',
+  effectRegenerating: 'Регенерация',
+  effectRegeneratingDesc: 'Восстановление {{value}} ХП в ход',
+  effectUnknown: 'Неизвестный эффект',
+} as const satisfies SystemGameSessionTranslations;

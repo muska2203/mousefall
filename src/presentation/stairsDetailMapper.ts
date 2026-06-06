@@ -6,12 +6,14 @@
  */
 
 import type { StairsEntity } from '@simulation/types';
-import { tryGetStairs } from '@content/registry';
+import { tryGetLocalizedStairs } from '@content/registry';
 import { resolveStairsSprite } from '@utils/assetResolver';
 import type { StairsPopoverViewModel } from './types';
+import type { Locale } from '@content/texts/lookup';
 
-export function mapStairsToPopover(stairs: StairsEntity): StairsPopoverViewModel {
-  const template = tryGetStairs(stairs.templateId);
+export function mapStairsToPopover(stairs: StairsEntity, locale: Locale): StairsPopoverViewModel {
+  const currentLocale = locale;
+  const template = tryGetLocalizedStairs(stairs.templateId, currentLocale);
 
   return {
     name: template?.name ?? stairs.displayName,

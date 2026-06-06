@@ -19,23 +19,23 @@ export const useItemAction: ActionHandler = {
 
   validate(state: GameState, action) {
     if (action.type !== 'USE_ITEM') {
-      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected USE_ITEM action' };
+      return { ok: false, reasonCode: 'wrong_action_type' };
     }
 
     const player = state.player;
     const item = player.inventory.find(i => i.instanceId === action.itemInstanceId);
     if (!item) {
-      return { ok: false, reasonCode: 'item_not_found', reasonDescription: 'Предмет не найден в инвентаре' };
+      return { ok: false, reasonCode: 'item_not_found' };
     }
 
     const template = getItem(item.templateId);
     if (template.type !== 'consumable' || !template.consumable) {
-      return { ok: false, reasonCode: 'not_consumable', reasonDescription: 'Предмет нельзя использовать' };
+      return { ok: false, reasonCode: 'not_consumable' };
     }
 
     const supportedEffects = ['heal', 'buff'];
     if (!supportedEffects.includes(template.consumable.effect)) {
-      return { ok: false, reasonCode: 'unsupported_effect', reasonDescription: `Эффект предмета "${template.consumable.effect}" не поддерживается` };
+      return { ok: false, reasonCode: 'unsupported_effect' };
     }
 
     return { ok: true };

@@ -220,8 +220,6 @@ export class GameSimulation implements Simulation {
                 errors: [
                     {
                         code: 'handler_not_found',
-                        description:
-                            `Game action ${action.type} not handled.`,
                     },
                 ],
             };
@@ -240,8 +238,6 @@ export class GameSimulation implements Simulation {
                 : [
                     {
                         code: validationResult.reasonCode,
-                        description:
-                        validationResult.reasonDescription,
                     },
                 ];
 
@@ -310,7 +306,7 @@ export class GameSimulation implements Simulation {
         if (!this.canActorAct(actor, action)) {
             executionBuilder.addChild(parentNode, {
                 type: 'ACTION_REJECTED',
-                errors: [{ code: 'actor_cannot_act', description: 'Actor cannot act now' }],
+                errors: [{ code: 'actor_cannot_act' }],
             });
             return false;
         }
@@ -321,7 +317,7 @@ export class GameSimulation implements Simulation {
         if (actor.ap < actionCost) {
             executionBuilder.addChild(parentNode, {
                 type: 'ACTION_REJECTED',
-                errors: [{ code: 'not_enough_ap', description: 'Not enough action points' }],
+                errors: [{ code: 'not_enough_ap' }],
             });
             return false;
         }
@@ -332,7 +328,7 @@ export class GameSimulation implements Simulation {
         if (!handler) {
             executionBuilder.addChild(parentNode, {
                 type: 'ACTION_REJECTED',
-                errors: [{ code: 'handler_not_found', description: `Game action ${action.type} not handled.` }],
+                errors: [{ code: 'handler_not_found' }],
             });
             return false;
         }
@@ -348,7 +344,7 @@ export class GameSimulation implements Simulation {
         if (!validation.ok) {
             executionBuilder.addChild(parentNode, {
                 type: 'ACTION_REJECTED',
-                errors: [{ code: validation.reasonCode, description: validation.reasonDescription }],
+                errors: [{ code: validation.reasonCode }],
             });
             return false;
         }
@@ -627,7 +623,6 @@ export class GameSimulation implements Simulation {
             const template = tryGetAbility(abilityId);
             if (!template) return null;
             return {
-                name: template.name,
                 spriteId: template.spriteId,
                 cooldown: template.cooldown,
             };

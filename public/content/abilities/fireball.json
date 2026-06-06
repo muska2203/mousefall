@@ -1,7 +1,5 @@
 {
   "id": "fireball",
-  "name": "Огненный шар",
-  "description": "Взрыв огня в радиусе 1 клетки. Поджигает цели.",
   "spriteId": "fireball",
   "cooldown": 3,
   "castTime": 2

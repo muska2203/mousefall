@@ -12,8 +12,10 @@
  */
 
 import {useState, useCallback, useRef, useEffect} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
 import type {CharacterConfig, PlayerStatsSnapshot} from '@presentation/gameSession';
+import { useSettingsStore } from '@ui/store/settings';
 
 import {MainMenuScreen} from './screens/MainMenuScreen';
 import {CharacterCreationScreen} from './screens/CharacterCreationScreen';
@@ -21,6 +23,7 @@ import {GameScreen} from './screens/GameScreen';
 import {EndingScreen} from './screens/EndingScreen';
 
 export default function App() {
+  const { t } = useTranslation('common');
   const sessionRef = useRef<GameSession | null>(null);
   if (!sessionRef.current) {
     sessionRef.current = new GameSession();
@@ -28,6 +31,11 @@ export default function App() {
   const session = sessionRef.current;
 
   const [mode, setMode] = useState<SessionMode>(session.getMode());
+  const locale = useSettingsStore((s) => s.locale);
+
+  useEffect(() => {
+    session.setLocale(locale);
+  }, [session, locale]);
 
   useEffect(() => {
     // Выставляем в глобальную область для отладки в консоли
@@ -121,6 +129,6 @@ export default function App() {
     }
 
     default:
-      return <div>Неизвестный режим: {mode}</div>;
+      return <div>{t('ui.unknownMode', { mode })}</div>;
   }
 }

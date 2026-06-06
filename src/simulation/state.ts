@@ -44,7 +44,7 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     id: PLAYER_ID,
     type: 'player',
     blocksMovement: true,
-    displayName: 'Герой',
+    displayName: templateId,
     templateId,
     x: 0,
     y: 0,

@@ -15,7 +15,7 @@ export const unequipEntity: ActionHandler = {
 
   validate(state: GameState, action) {
     if (action.type !== 'UNEQUIP') {
-      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected UNEQUIP action' };
+      return { ok: false, reasonCode: 'wrong_action_type' };
     }
 
     const player = state.player;
@@ -23,7 +23,7 @@ export const unequipEntity: ActionHandler = {
       : action.slot === 'armor' ? player.equippedArmorInstanceId
       : player.equippedAmuletInstanceId;
     if (!equippedId) {
-      return { ok: false, reasonCode: 'slot_empty', reasonDescription: 'Слот пуст' };
+      return { ok: false, reasonCode: 'slot_empty' };
     }
 
     return { ok: true };

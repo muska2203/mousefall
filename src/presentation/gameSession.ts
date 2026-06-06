@@ -13,6 +13,7 @@
  * - Все мутации GameState только через simulation.dispatch() или фабрики Simulation.
  */
 
+import { t } from '@i18n/t';
 import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnapshot, Position, ActionPreview} from '@simulation/types';
 
 import type {ExecutionNode} from '@simulation/systems/actions/types';
@@ -21,7 +22,8 @@ import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulatio
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
 import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel} from './types';
-import {getAllPlayerTemplates, tryGetPlayerTemplate, tryGetItem} from '@content/registry';
+import {getAllLocalizedPlayerTemplates, tryGetPlayerTemplate, tryGetLocalizedItem, tryGetLocalizedAbility} from '@content/registry';
+import type { Locale } from '@content/texts/lookup';
 
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
@@ -116,6 +118,7 @@ export class GameSession {
   private viewModelCache: GameViewModel | null = null;
   /** Монотонный счётчик партий анимаций. Инкрементируется при каждом dispatch, порождающем анимации. */
   private animationBatchId = 0;
+  private locale: Locale = 'ru';
   /** Клетка под мышью в режиме таргетинга. */
   private targetingHover: Position | null = null;
   /** Клетка под мышью в обычном режиме (для popover объекта на поле). */
@@ -138,6 +141,12 @@ export class GameSession {
     }
   }
 
+  /** Установить текущую локаль. */
+  setLocale(locale: Locale): void {
+    this.locale = locale;
+    this.notify();
+  }
+
   /** Текущий ViewModel для отрисовки UI. Кешируется между нотификациями для useSyncExternalStore. */
   getViewModel(): GameViewModel {
     if (!this.viewModelCache) {
@@ -152,6 +161,7 @@ export class GameSession {
   }
 
   private buildRenderInput(state: Readonly<GameState>): RenderInput {
+    const locale = this.locale;
     const player = state.player;
     const equipment: EquipmentSnapshot = {
       weaponId: player.equippedWeaponId,
@@ -164,7 +174,7 @@ export class GameSession {
     };
 
     const playerSkills: PlayerSkillViewModel[] = player.abilities.map(ability => {
-      const template = this.getAbilityTemplate(ability.templateId);
+      const template = this.getAbilityTemplate(ability.templateId, locale);
       const isCasting = player.activeCast?.abilityId === ability.templateId;
       return {
         abilityId: ability.templateId,
@@ -183,19 +193,19 @@ export class GameSession {
     const eq = equipment;
 
     const heroStats = [
-      {type: 'readonly' as const, icon: '💪', name: 'Сила', value: String(ps.effectiveStats.str)},
-      {type: 'readonly' as const, icon: '✨', name: 'Интеллект', value: String(ps.effectiveStats.int)},
-      {type: 'readonly' as const, icon: '🐾', name: 'Ловкость', value: String(ps.effectiveStats.dex)},
-      {type: 'readonly' as const, icon: '❤️', name: 'Выносливость', value: String(ps.effectiveStats.vit)},
+      {type: 'readonly' as const, icon: '💪', name: t('system.gameSession.heroStatStrength'), value: String(ps.effectiveStats.str)},
+      {type: 'readonly' as const, icon: '✨', name: t('system.gameSession.heroStatIntelligence'), value: String(ps.effectiveStats.int)},
+      {type: 'readonly' as const, icon: '🐾', name: t('system.gameSession.heroStatDexterity'), value: String(ps.effectiveStats.dex)},
+      {type: 'readonly' as const, icon: '❤️', name: t('system.gameSession.heroStatVitality'), value: String(ps.effectiveStats.vit)},
     ];
 
-    const weaponTemplate = eq.weaponId ? tryGetItem(eq.weaponId) : null;
-    const armorTemplate = eq.armorId ? tryGetItem(eq.armorId) : null;
-    const amuletTemplate = eq.amuletId ? tryGetItem(eq.amuletId) : null;
+    const weaponTemplate = eq.weaponId ? tryGetLocalizedItem(eq.weaponId, locale) : null;
+    const armorTemplate = eq.armorId ? tryGetLocalizedItem(eq.armorId, locale) : null;
+    const amuletTemplate = eq.amuletId ? tryGetLocalizedItem(eq.amuletId, locale) : null;
 
-    const weaponDetail = weaponTemplate ? mapItemTemplateToDetail(weaponTemplate) : undefined;
-    const armorDetail = armorTemplate ? mapItemTemplateToDetail(armorTemplate) : undefined;
-    const amuletDetail = amuletTemplate ? mapItemTemplateToDetail(amuletTemplate) : undefined;
+    const weaponDetail = weaponTemplate ? mapItemTemplateToDetail(weaponTemplate, {}, locale) : undefined;
+    const armorDetail = armorTemplate ? mapItemTemplateToDetail(armorTemplate, {}, locale) : undefined;
+    const amuletDetail = amuletTemplate ? mapItemTemplateToDetail(amuletTemplate, {}, locale) : undefined;
 
     const equippedIds = new Set([
       player.equippedWeaponInstanceId,
@@ -204,18 +214,22 @@ export class GameSession {
     ].filter(Boolean) as string[]);
 
     const buildItemDetail = (invItem: typeof player.inventory[0]) => {
-      const template = tryGetItem(invItem.templateId);
+      const template = tryGetLocalizedItem(invItem.templateId, locale);
       const detail = template
-        ? mapItemTemplateToDetail(template, {
-            stackCount: invItem.quantity,
-            rarity: template.rarity,
-          })
+        ? {
+            ...mapItemTemplateToDetail(template, {
+              stackCount: invItem.quantity,
+              rarity: template.rarity,
+            }, locale),
+            name: template.name,
+            description: template.description,
+          }
         : {
             name: invItem.templateId,
             description: '',
             rarity: 'common' as const,
-            rarityLabel: 'Обычный',
-            typeLabel: 'Неизвестно',
+            rarityLabel: t('system.gameSession.rarityFallback'),
+            typeLabel: t('system.gameSession.typeFallback'),
             type: 'unknown',
             icon: '',
             frameUrl: '',
@@ -224,7 +238,7 @@ export class GameSession {
             sections: [],
           };
       const grantedAbilities = invItem.grantedAbilities.map((ability) => {
-        const abilityTemplate = this.getAbilityTemplate(ability.templateId);
+        const abilityTemplate = this.getAbilityTemplate(ability.templateId, locale);
         return {
           templateId: ability.templateId,
           name: abilityTemplate?.name ?? ability.templateId,
@@ -251,7 +265,7 @@ export class GameSession {
 
     const equipSlots = [
       {
-        label: 'Оружие',
+        label: t('system.gameSession.equipSlotWeapon'),
         icon: weaponItem ? resolveItemIcon(weaponItem.templateId) : undefined,
         fallback: '⚔',
         damage: player.equippedWeaponId ? player.damage : null,
@@ -262,7 +276,7 @@ export class GameSession {
         grantedAbilityNames: weaponDetailVm?.grantedAbilities?.map(a => a.name) ?? [],
       },
       {
-        label: 'Броня',
+        label: t('system.gameSession.equipSlotArmor'),
         icon: armorItem ? resolveItemIcon(armorItem.templateId) : undefined,
         fallback: '🛡',
         rarity: armorDetailVm?.rarity ?? 'common',
@@ -272,7 +286,7 @@ export class GameSession {
         grantedAbilityNames: armorDetailVm?.grantedAbilities?.map(a => a.name) ?? [],
       },
       {
-        label: 'Амулет',
+        label: t('system.gameSession.equipSlotAmulet'),
         icon: amuletItem ? resolveItemIcon(amuletItem.templateId) : undefined,
         fallback: '📿',
         rarity: amuletDetailVm?.rarity ?? 'common',
@@ -296,7 +310,7 @@ export class GameSession {
       .filter(invItem => !equippedIds.has(invItem.instanceId))
       .map(invItem => {
         const detail = buildItemDetail(invItem);
-        const template = tryGetItem(invItem.templateId);
+        const template = tryGetLocalizedItem(invItem.templateId, locale);
         const damage = template?.type === 'weapon' && template.weapon
           ? this.simulation!.getWeaponDamage(state.player, template)
           : null;
@@ -314,17 +328,17 @@ export class GameSession {
     const activeEffects: ActiveEffectViewModel[] = state.player.statusEffects.map(effect => {
       switch (effect.type) {
         case 'poisoned':
-          return {icon: '🧪', name: 'Отравление', desc: `Урон ${effect.value} в ход`, turns: effect.duration};
+          return {icon: '🧪', name: t('system.gameSession.effectPoisoned'), desc: t('system.gameSession.effectPoisonedDesc', { value: effect.value }), turns: effect.duration};
         case 'burning':
-          return {icon: '🔥', name: 'Горение', desc: `Урон ${effect.value} в ход`, turns: effect.duration};
+          return {icon: '🔥', name: t('system.gameSession.effectBurning'), desc: t('system.gameSession.effectBurningDesc', { value: effect.value }), turns: effect.duration};
         case 'frozen':
-          return {icon: '❄️', name: 'Заморозка', desc: 'Скорость снижена', turns: effect.duration};
+          return {icon: '❄️', name: t('system.gameSession.effectFrozen'), desc: t('system.gameSession.effectFrozenDesc'), turns: effect.duration};
         case 'stunned':
-          return {icon: '💫', name: 'Оглушение', desc: 'Пропуск хода', turns: effect.duration};
+          return {icon: '💫', name: t('system.gameSession.effectStunned'), desc: t('system.gameSession.effectStunnedDesc'), turns: effect.duration};
         case 'regenerating':
-          return {icon: '✨', name: 'Регенерация', desc: `Восстановление ${effect.value} ХП в ход`, turns: effect.duration};
+          return {icon: '✨', name: t('system.gameSession.effectRegenerating'), desc: t('system.gameSession.effectRegeneratingDesc', { value: effect.value }), turns: effect.duration};
         default:
-          return {icon: '❓', name: 'Неизвестный эффект', desc: '', turns: effect.duration};
+          return {icon: '❓', name: t('system.gameSession.effectUnknown'), desc: '', turns: effect.duration};
       }
     });
 
@@ -351,8 +365,11 @@ export class GameSession {
     };
   }
 
-  private getAbilityTemplate(abilityId: string) {
-    return this.simulation!.getAbilityInfo(abilityId);
+  private getAbilityTemplate(abilityId: string, locale: Locale): { name: string; description: string; spriteId: string | undefined; cooldown: number } | null {
+    const fromSim = this.simulation!.getAbilityInfo(abilityId);
+    if (!fromSim) return null;
+    const localized = tryGetLocalizedAbility(abilityId, locale);
+    return localized ? { ...fromSim, name: localized.name, description: localized.description } : { ...fromSim, name: abilityId, description: '' };
   }
 
   private buildTargetingOverlay(state: Readonly<GameState>): RenderInput['targetingOverlay'] {
@@ -395,23 +412,25 @@ export class GameSession {
       }
     }
 
+    const currentLocale = this.locale;
+
     if (enemy) {
-      return { kind: 'enemy', data: mapEnemyToPopover(enemy) };
+      return { kind: 'enemy', data: mapEnemyToPopover(enemy, currentLocale) };
     }
 
     if (item) {
-      const template = tryGetItem(item.item.templateId);
+      const template = tryGetLocalizedItem(item.item.templateId, currentLocale);
       if (template) {
         const detail = mapItemTemplateToDetail(template, {
           stackCount: item.item.quantity,
           rarity: template.rarity,
-        });
-        return { kind: 'item', data: detail };
+        }, currentLocale);
+        return { kind: 'item', data: { ...detail, name: template.name, description: template.description } };
       }
     }
 
     if (stairs) {
-      return { kind: 'stairs', data: mapStairsToPopover(stairs) };
+      return { kind: 'stairs', data: mapStairsToPopover(stairs, currentLocale) };
     }
 
     return null;
@@ -447,8 +466,8 @@ export class GameSession {
    * Возвращает все доступные шаблоны игрока из Content Registry.
    * Статический метод — не требует активной симуляции.
    */
-  static getAvailablePlayerTemplates() {
-    return getAllPlayerTemplates();
+  static getAvailablePlayerTemplates(locale: Locale) {
+    return getAllLocalizedPlayerTemplates(locale);
   }
 
   /**
@@ -463,8 +482,8 @@ export class GameSession {
    * Возвращает информацию о предмете по ID для отображения в UI.
    * Статический метод — не требует активной симуляции.
    */
-  static getItemInfo(id: string): {name: string; icon?: string; fallback?: string; type: string} | null {
-    const template = tryGetItem(id);
+  static getItemInfo(id: string, locale: Locale): {name: string; icon?: string; fallback?: string; type: string} | null {
+    const template = tryGetLocalizedItem(id, locale);
     if (!template) return null;
     return {
       name: template.name,
@@ -474,21 +493,22 @@ export class GameSession {
     };
   }
 
-  static getStarterItemInfo(id: string): {
+  static getStarterItemInfo(id: string, locale: Locale): {
     id: string;
     name: string;
     icon: string;
     fallback: string;
     detail: import('./itemDetailMapper').ItemDetailViewModel | undefined;
   } {
-    const info = GameSession.getItemInfo(id);
-    const template = tryGetItem(id);
+    const info = GameSession.getItemInfo(id, locale);
+    const template = tryGetLocalizedItem(id, locale);
+    const rawTemplate = tryGetLocalizedItem(id, locale);
     return {
       id,
       name: info?.name ?? id,
       icon: info?.icon ?? `/assets/items/${id}.png`,
       fallback: info?.fallback ?? '?',
-      detail: template ? mapItemTemplateToDetail(template) : undefined,
+      detail: rawTemplate ? mapItemTemplateToDetail(rawTemplate, {}, locale) : undefined,
     };
   }
 
@@ -645,7 +665,7 @@ export class GameSession {
     if (result.success && result.stateChanged) {
       const state = this.simulation.getState();
       const events = extractEvents(result);
-      this.logs.append(state, events);
+      this.logs.append(state, events, this.locale);
       this.logs.logs = this.logs.logs.slice(-30);
 
       // Проверяем, не обнаружена ли лестница — нужен ли авто-переход
@@ -696,7 +716,7 @@ export class GameSession {
       return {
         valid: false,
         intents: [],
-        errors: [{code: 'no_simulation', description: 'Simulation not initialized'}],
+        errors: [{code: 'no_simulation'}],
       };
     }
     return this.simulation.preview(action);
@@ -801,7 +821,7 @@ export class GameSession {
     const state = this.simulation.getState();
     const item = state.player.inventory.find(i => i.instanceId === instanceId);
     if (!item) return;
-    const template = tryGetItem(item.templateId);
+    const template = tryGetLocalizedItem(item.templateId, this.locale);
     if (!template) return;
 
     if (template.type === 'weapon' || template.type === 'armor' || template.type === 'amulet') {

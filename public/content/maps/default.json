@@ -8,6 +8,10 @@
   "maxRoomSize": 4,
   "enemyDensity": 1,
   "itemDensity": 0,
-  "enemyPool": ["cat_small", "cat_mid", "cat_big"],
+  "enemyPool": [
+    "cat_small",
+    "cat_mid",
+    "cat_big"
+  ],
   "itemPool": []
 }

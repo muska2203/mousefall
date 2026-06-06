@@ -6,8 +6,6 @@ import type { ItemTemplate } from '../../../../src/content/schemas';
 function mockItemTemplate(abilityPool: ItemTemplate['abilityPool']): ItemTemplate {
   return {
     id: 'test_item',
-    name: 'Тестовый предмет',
-    description: '',
     type: 'weapon',
     stackable: false,
     maxStack: 1,

@@ -1,7 +1,5 @@
 {
   "id": "cat_claw_small",
-  "name": "Коготок",
-  "description": "Острый, но маленький. Как и его хозяин.",
   "fallback": "🐾",
   "type": "weapon",
   "stackable": false,

@@ -5,6 +5,7 @@
  */
 
 import {useState} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import type {ItemDetailViewModel} from '@presentation/itemDetailMapper';
 import {Panel} from './Panel';
 import {ItemButton} from './ItemButton';
@@ -31,7 +32,8 @@ interface Props {
   slots: StarterSlot[];
 }
 
-export function StarterEquipmentPanel({title = 'Стартовая экипировка', slots}: Props) {
+export function StarterEquipmentPanel({title, slots}: Props) {
+  const { t } = useTranslation('components');
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{x: number; y: number}>({x: 0, y: 0});
 
@@ -45,13 +47,13 @@ export function StarterEquipmentPanel({title = 'Стартовая экипир�
   }
 
   return (
-    <Panel title={title} titleId="equip-title" fill className="cm-panel--welcome-equip">
+    <Panel title={title ?? t('starterEquipmentPanel.title')} titleId="equip-title" fill className="cm-panel--welcome-equip">
       {slots.map((slot) => (
         <div key={slot.label} className="cm-welcome-equip-slot">
           <div className="cm-welcome-equip-header">
             <span className="cm-welcome-equip-label">{slot.label}</span>
             <span className="cm-welcome-equip-desc">
-              Выбрано: {slot.items.find((i) => i.id === slot.selectedId)?.name ?? '—'}
+              {t('starterEquipmentPanel.selectedPrefix')}{slot.items.find((i) => i.id === slot.selectedId)?.name ?? '—'}
             </span>
           </div>
           <div className="cm-welcome-options">

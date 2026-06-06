@@ -12,8 +12,6 @@ beforeEach(() => {
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
-    name: id,
-    description: 'test',
     cooldown: 3,
     ...overrides,
   } as AbilityTemplate;

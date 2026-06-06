@@ -1,7 +1,5 @@
 {
   "id": "common_glass_bead",
-  "name": "Тусклая бусина",
-  "description": "Кажется, в ней когда-то был свет.",
   "spriteId": "common_glass_bead",
   "icon": "/assets/items/common_glass_bead.png",
   "fallback": "🧿",

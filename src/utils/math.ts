@@ -123,59 +123,114 @@ export function posEqual(a: Position, b: Position): boolean {
 // ─────────────────────────────────────────────
 
 /**
- * Простой поиск пути в ширину (BFS). Возвращает следующий шаг к `to` или null, если цель недостижима.
- *
- * Используется ИИ для обхода препятствий.
- * Возвращает только СЛЕДУЮЩУЮ позицию для движения (не весь путь) — достаточно для пошагового ИИ.
+ * Эвристика для A* (Чебышёв с весом диагонали).
+ * Точная нижняя граница при стоимости прямого хода = 10, диагонального = 14.
+ */
+function chebyshevHeuristic(a: Position, b: Position): number {
+  const dx = Math.abs(a.x - b.x);
+  const dy = Math.abs(a.y - b.y);
+  return 10 * Math.max(dx, dy) + 4 * Math.min(dx, dy);
+}
+
+const keyOf = (p: Position) => `${p.x},${p.y}`;
+
+/**
+ * Восстанавливает путь из A* по таблице cameFrom.
+ */
+function reconstructPath(
+  cameFrom: Map<string, string>,
+  currentKey: string,
+  startKey: string,
+): Position[] {
+  const path: Position[] = [];
+  let k = currentKey;
+  while (k !== startKey) {
+    const parts = k.split(',').map(Number);
+    path.push({ x: parts[0]!, y: parts[1]! });
+    k = cameFrom.get(k)!;
+  }
+  path.reverse();
+  return path;
+}
+
+/**
+ * Поиск кратчайшего пути A* (8 направлений, разрешены диагонали).
+ * Возвращает массив позиций от `from` (не включая) до `to` (включая),
+ * или null, если цель недостижима.
  *
  * @param from - Начальная позиция
  * @param to - Целевая позиция
  * @param isWalkable - Возвращает true, если позицию можно пройти
- * @param maxSteps - Максимальная глубина BFS (предотвращает бесконечный поиск на больших картах)
- * @param allowDiagonal - Если true, ИИ может двигаться по диагонали (8 направлений)
+ * @param maxSteps - Максимальное число рассмотренных узлов
+ * @param allowDiagonal - Если true, доступны 8 направлений (включая диагонали)
  */
-export function nextStepToward(
+export function findPath(
   from: Position,
   to: Position,
   isWalkable: (pos: Position) => boolean,
-  maxSteps = 20,
-  allowDiagonal = false,
-): Position | null {
-  if (posEqual(from, to)) return null;
+  maxSteps = 200,
+  allowDiagonal = true,
+): Position[] | null {
+  if (posEqual(from, to)) return [];
 
-  // Поиск в ширину (BFS)
-  const queue: Array<{ pos: Position; firstStep: Position }> = [];
-  const visited = new Set<string>();
+  const startKey = keyOf(from);
   const deltas = allowDiagonal ? ALL_DELTAS : CARDINAL_DELTAS;
 
-  const key = (p: Position) => `${p.x},${p.y}`;
-  visited.add(key(from));
+  const cameFrom = new Map<string, string>();
+  const gScore = new Map<string, number>();
+  const openSet = new Map<string, number>(); // key -> fScore
 
-  for (const delta of deltas) {
-    const neighbor = { x: from.x + delta.x, y: from.y + delta.y };
-    if (!visited.has(key(neighbor)) && (isWalkable(neighbor) || posEqual(neighbor, to))) {
-      queue.push({ pos: neighbor, firstStep: neighbor });
-      visited.add(key(neighbor));
+  gScore.set(startKey, 0);
+  openSet.set(startKey, chebyshevHeuristic(from, to));
+
+  let visitedCount = 0;
+
+  while (openSet.size > 0 && visitedCount < maxSteps) {
+    // Извлекаем узел с минимальным fScore
+    let currentKey: string | null = null;
+    let currentF = Infinity;
+    for (const [k, f] of openSet) {
+      if (f < currentF) {
+        currentF = f;
+        currentKey = k;
+      }
     }
-  }
 
-  let steps = 0;
-  while (queue.length > 0 && steps < maxSteps) {
-    const current = queue.shift()!;
-    steps++;
+    if (currentKey === null) break;
 
-    if (posEqual(current.pos, to)) {
-      return current.firstStep;
+    const parts = currentKey.split(',').map(Number);
+    const current = { x: parts[0]!, y: parts[1]! };
+
+    if (posEqual(current, to)) {
+      return reconstructPath(cameFrom, currentKey, startKey);
     }
+
+    openSet.delete(currentKey);
+    visitedCount++;
+
+    const currentG = gScore.get(currentKey)!;
 
     for (const delta of deltas) {
-      const neighbor = { x: current.pos.x + delta.x, y: current.pos.y + delta.y };
-      if (!visited.has(key(neighbor)) && (isWalkable(neighbor) || posEqual(neighbor, to))) {
-        queue.push({ pos: neighbor, firstStep: current.firstStep });
-        visited.add(key(neighbor));
+      const neighbor = { x: current.x + delta.x, y: current.y + delta.y };
+      const neighborKey = keyOf(neighbor);
+
+      if (!isWalkable(neighbor) && !posEqual(neighbor, to)) {
+        continue;
+      }
+
+      const stepCost = Math.abs(delta.x) + Math.abs(delta.y) === 2 ? 14 : 10;
+      const tentativeG = currentG + stepCost;
+
+      const neighborG = gScore.get(neighborKey) ?? Infinity;
+      if (tentativeG < neighborG) {
+        cameFrom.set(neighborKey, currentKey);
+        gScore.set(neighborKey, tentativeG);
+        openSet.set(neighborKey, tentativeG + chebyshevHeuristic(neighbor, to));
       }
     }
   }
 
-  return null; // Недостижимо в пределах maxSteps
+  return null;
 }
+
+

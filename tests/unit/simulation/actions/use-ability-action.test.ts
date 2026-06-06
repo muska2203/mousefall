@@ -13,8 +13,6 @@ beforeEach(() => {
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
-    name: id,
-    description: 'test',
     cooldown: 3,
     ...overrides,
   } as AbilityTemplate;
@@ -90,7 +88,7 @@ describe('useAbilityAction', () => {
     const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
     const validation = useAbilityAction.validate(state, action);
     if (!validation.ok) {
-      console.log('Validation failed:', validation.reasonCode, validation.reasonDescription);
+      console.log('Validation failed:', validation.reasonCode);
     }
     expect(validation.ok).toBe(true);
 

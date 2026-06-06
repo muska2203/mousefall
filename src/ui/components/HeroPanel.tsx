@@ -6,6 +6,7 @@
  */
 
 import {type ReactNode} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import {Panel} from './Panel';
 import {Portrait} from './Portrait';
 import {ResourceBar} from './ResourceBar';
@@ -50,9 +51,9 @@ interface Props {
 }
 
 export function HeroPanel({
-  title = 'Герой',
+  title,
   portraitSrc,
-  portraitAlt = 'Герой',
+  portraitAlt,
   level,
   hp,
   maxHp,
@@ -62,14 +63,16 @@ export function HeroPanel({
   children,
   fill = true,
 }: Props) {
+  const { t } = useTranslation('components');
+  const { t: tc } = useTranslation('common');
   const hasAlloc = stats.some((s) => s.type === 'alloc');
 
   return (
-    <Panel title={title} titleId="hero-title" fill={fill} className="cm-panel--hero">
-      <Portrait src={portraitSrc} alt={portraitAlt} level={level} size={112} />
-      <ResourceBar type="hp" icon="/assets/icons/hp.svg" label="HP" current={hp} max={maxHp} />
+    <Panel title={title ?? t('heroPanel.title')} titleId="hero-title" fill={fill} className="cm-panel--hero">
+      <Portrait src={portraitSrc} alt={portraitAlt ?? t('heroPanel.portraitAlt')} level={level} size={112} />
+      <ResourceBar type="hp" icon="/assets/icons/hp.svg" label={tc('game.hp')} current={hp} max={maxHp} />
       {xp != null && maxXp != null && (
-        <ResourceBar type="xp" icon="/assets/icons/xp.svg" label="Опыт" current={xp} max={maxXp} />
+        <ResourceBar type="xp" icon="/assets/icons/xp.svg" label={tc('game.xp')} current={xp} max={maxXp} />
       )}
       {children}
       <ul className={`cm-stats ${hasAlloc ? 'cm-stats--alloc' : ''}`}>

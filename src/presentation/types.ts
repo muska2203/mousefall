@@ -57,7 +57,8 @@ export type AnimationStep =
     }
   | {
       type: 'UI_FLOATING_TEXT';
-      text: string;
+      text?: string;
+      textKey?: string;
       x: number;
       y: number;
       styleKey: string;

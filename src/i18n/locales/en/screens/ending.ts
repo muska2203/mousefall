@@ -1,0 +1,27 @@
+import type { ScreensEndingTranslations } from '@i18n/schema';
+
+export const enEnding = {
+  heroCardTitle: 'Hero Card',
+  equipmentTitle: 'Equipment',
+  duration: 'Duration',
+  turns: 'Turns',
+  enemiesKilled: 'Enemies Killed',
+  maxFloorReached: 'Max Floor Reached',
+  chestsOpened: 'Chests Opened',
+  itemsCollected: 'Items Collected',
+  victorySubtitle: 'All enemies defeated, run completed successfully.',
+  defeatSubtitle: 'HP reached zero, run ended.',
+  boss1: '🐈 Basement Hunter',
+  boss2: '👁 Blind Warden',
+  boss3: '🦴 Bone Purrer',
+  boss4: '👑 Lord of the Pantry',
+  resultVictory: 'Victory',
+  resultDefeat: 'Defeat',
+  statStrength: 'Strength',
+  statIntelligence: 'Intelligence',
+  statDexterity: 'Dexterity',
+  statVitality: 'Vitality',
+  slotWeapon: 'Weapon',
+  slotArmor: 'Armor',
+  slotAmulet: 'Amulet',
+} as const satisfies ScreensEndingTranslations;

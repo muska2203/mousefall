@@ -10,7 +10,6 @@ import type { ExecutionNode } from '../../src/simulation/core-types';
 function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTemplate {
   return {
     id: 'test_enemy',
-    name: 'Тестовый враг',
     health: { max: 1 },
     combat: { damage: 1, armor: 0 },
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
@@ -29,8 +28,6 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
 function makeItemTemplate(partial: Partial<ItemTemplate> = {}): ItemTemplate {
   return {
     id: 'test_potion',
-    name: 'Тестовое зелье',
-    description: 'Для тестов',
     type: 'consumable',
     stackable: false,
     maxStack: 1,

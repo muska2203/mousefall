@@ -1,7 +1,5 @@
 {
   "id": "common_splinter_blade",
-  "name": "Ржавый сырорез",
-  "description": "Небольшой тупой клинок, от которого пахнет сыром.",
   "spriteId": "common_splinter_blade",
   "icon": "/assets/items/common_splinter_blade.png",
   "fallback": "🗡",

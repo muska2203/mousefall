@@ -1,7 +1,5 @@
 {
   "id": "magic_slap",
-  "name": "Магический шлёпок",
-  "description": "Три быстрых удара магией по выбранным целям.",
   "spriteId": "magic_slap",
   "cooldown": 2
 }

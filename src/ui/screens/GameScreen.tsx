@@ -8,6 +8,7 @@
  */
 
 import {useCallback, useEffect, useSyncExternalStore, useState} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
 
 import {KEY_MAP, INTERACTIVE_TAGS} from '@ui/input/keyboardMap';
@@ -238,9 +239,11 @@ export function GameScreen({session, onModeChange}: Props) {
     };
   }, [performMoveOrAttack, handlePickup, handleDescend, handleAscend, session]);
 
+  const { t } = useTranslation('screens');
+
   if (!renderInput) {
     return (
-      <ThreeColumnLayout variant="game" left={null} center={<div>Загрузка...</div>} right={null} />
+      <ThreeColumnLayout variant="game" left={null} center={<div>{t('game.loading')}</div>} right={null} />
     );
   }
 

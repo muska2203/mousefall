@@ -8,6 +8,13 @@
   "maxRoomSize": 12,
   "enemyDensity": 0.7,
   "itemDensity": 0.35,
-  "enemyPool": ["cat_small", "cat_mid"],
-  "itemPool": ["health_potion", "common_splinter_blade", "common_tin_plate"]
+  "enemyPool": [
+    "cat_small",
+    "cat_mid"
+  ],
+  "itemPool": [
+    "health_potion",
+    "common_splinter_blade",
+    "common_tin_plate"
+  ]
 }

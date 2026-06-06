@@ -1,7 +1,5 @@
 {
   "id": "common_patch_cloak",
-  "name": "Потёртый плащ пыльника",
-  "description": "Пахнет пылью и тайнами.",
   "spriteId": "common_patch_cloak",
   "icon": "/assets/items/common_patch_cloak.png",
   "fallback": "👘",

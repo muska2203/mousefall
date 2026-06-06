@@ -59,7 +59,6 @@ export const EntityTemplateSchema = z.object({
   id:       z.string().min(1).describe('Уникальный идентификатор сущности (совпадает с именем файла)'),
   aiStrategyId: z.string().min(1).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
   aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Манхэттен + LOS). По умолчанию 6.'),
-  name:     z.string().min(1).describe('Отображаемое имя'),
   health:   HealthSchema,
   combat:   CombatSchema.optional(),
   baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 }).describe('Базовые характеристики врага'),
@@ -69,7 +68,6 @@ export const EntityTemplateSchema = z.object({
   lootDropTable: z.array(LootDropTableEntrySchema).default([]).describe('Взвешенная таблица количества выпадаемых предметов'),
   xpReward:   z.number().int().nonnegative().default(0).describe('Опыт, выдаваемый игроку за убийство'),
   renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
-  flavorText: z.string().optional().describe('Краткое шуточное описание для popover на игровом поле'),
 }).describe('Шаблон врага или NPC');
 
 export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
@@ -109,8 +107,6 @@ const ConsumableEffectSchema = z.object({
 
 export const ItemTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор предмета (совпадает с именем файла)'),
-  name:        z.string().min(1).describe('Отображаемое имя'),
-  description: z.string().describe('Описание, показываемое в инвентаре'),
   spriteId:    z.string().optional().describe('Ключ спрайта PixiJS'),
   icon:        z.string().optional().describe('Путь к иконке предмета для UI'),
   fallback:    z.string().optional().describe('Emoji-запасной вариант для отображения в UI'),
@@ -146,8 +142,6 @@ export type ItemTemplate = z.output<typeof ItemTemplateSchema>;
 
 export const AbilityTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор способности'),
-  name:        z.string().min(1).describe('Отображаемое имя'),
-  description: z.string().describe('Описание способности, показываемое в UI'),
   spriteId:    z.string().optional(),
   cooldown:    z.number().int().nonnegative().default(0).describe('Ходов до повторного использования'),
   castTime:    z.number().int().nonnegative().default(0).describe('Ходов подготовки (0 = мгновенно)'),
@@ -181,9 +175,7 @@ export type MapParams = z.infer<typeof MapParamsSchema>;
 
 export const StairsTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор лестницы'),
-  name:        z.string().min(1).describe('Отображаемое имя'),
   renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
-  flavorText:  z.string().optional().describe('Краткое шуточное описание для popover на игровом поле'),
 }).describe('Шаблон лестницы');
 
 export type StairsTemplate = z.output<typeof StairsTemplateSchema>;
@@ -194,8 +186,6 @@ export type StairsTemplate = z.output<typeof StairsTemplateSchema>;
 
 export const PlayerTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор шаблона игрока (совпадает с именем файла)'),
-  name:        z.string().min(1).describe('Отображаемое имя'),
-  description: z.string().describe('Описание, показываемое в UI'),
   portraitImg: z.string().describe('Путь к изображению портрета'),
   renderScale: z.number().min(0).optional().default(1.5).describe('Масштаб спрайта относительно размера тайла'),
 }).describe('Шаблон класса/внешности игрока');

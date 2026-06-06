@@ -7,6 +7,7 @@
  */
 
 import {useRef, useEffect} from 'react';
+import { useTranslation } from '@i18n/hooks';
 import type {RenderInput} from '@presentation/types';
 import {Panel} from './Panel';
 import {HotSlot} from './HotSlot';
@@ -48,6 +49,7 @@ export function GameField({
   onMouseLeave,
   hotbarSize = 8,
 }: Props) {
+  const { t } = useTranslation('components');
   const isInputBlocked = renderInput?.phase === 'animating';
   const containerRef = useRef<HTMLDivElement>(null);
   const pixiRef = useRef<PixiApp | null>(null);
@@ -241,7 +243,7 @@ export function GameField({
   }, [onMouseMove, onMouseClick]);
 
   return (
-    <Panel title={`Уровень ${floor}`} fill>
+    <Panel title={t('gameField.floorTitle', { floor })} fill>
       {/* Оверлей кнопки пропуска хода — вне canvas-контейнера, чтобы не конфликтовать с PixiJS */}
       <div className="cm-field-wrap">
         <button
@@ -249,15 +251,15 @@ export function GameField({
           className="cm-phase cm-phase--field cm-phase--skip-turn"
           onClick={onWait}
           disabled={isInputBlocked}
-          aria-label="Пропустить ход"
+          aria-label={t('gameField.skipTurnAriaLabel')}
         >
-          <span className="cm-phase__default">Ход игрока</span>
+          <span className="cm-phase__default">{t('gameField.playerPhaseLabel')}</span>
           <span className="cm-phase__hover" aria-hidden="true">
-            Пропустить ход
+            {t('gameField.skipTurnHoverLabel')}
           </span>
         </button>
 
-        <div className="cm-field" aria-label="Игровое поле" ref={containerRef}>
+        <div className="cm-field" aria-label={t('gameField.gameFieldAriaLabel')} ref={containerRef}>
           <div className="cm-hotbar-wrap cm-panel cm-hotbar-wrap--in-field cm-hotbar-wrap--recessed">
             <span className="cm-rivet cm-rivet--tl" />
             <span className="cm-rivet cm-rivet--tr" />

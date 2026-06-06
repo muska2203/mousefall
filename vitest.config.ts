@@ -23,6 +23,7 @@ export default defineConfig({
       '@renderer':   resolve(__dirname, 'src/renderer'),
       '@content':    resolve(__dirname, 'src/content'),
       '@presentation': resolve(__dirname, 'src/presentation'),
+      '@i18n':         resolve(__dirname, 'src/i18n'),
     },
   },
 });

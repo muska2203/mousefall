@@ -12,6 +12,7 @@ import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
 import type {AnimationConfigKey} from '@utils/animationConfig';
 import {TILE_SIZE} from '@utils/constants';
+import { t } from '@i18n/t';
 
 type DamageAnimationStep = Extract<AnimationStep, { type: 'DAMAGE' }>;
 type DamageType = DamageAnimationStep['damageType'];
@@ -42,7 +43,7 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
 
     const config = ANIMATION_CONFIG[step.type as AnimationConfigKey];
     const pos = step.type === 'DAMAGE' ? step.position : {x: step.x, y: step.y};
-    const text = step.type === 'DAMAGE' ? String(step.amount) : step.text;
+    const text = step.type === 'DAMAGE' ? String(step.amount) : (step.textKey ? t(step.textKey) : step.text ?? '');
     const color = step.type === 'DAMAGE' ? DAMAGE_COLORS[step.damageType] : '#ffffff';
 
     // Мировые пиксели: центр по X, верх тайла по Y

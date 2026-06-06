@@ -1,7 +1,5 @@
 {
   "id": "samurai",
-  "name": "Усатый Сэнсэй",
-  "description": "Мастер сырного клинка.",
   "portraitImg": "/assets/portraits/samurai-ready.png",
-  "renderScale": 1.0
+  "renderScale": 1
 }

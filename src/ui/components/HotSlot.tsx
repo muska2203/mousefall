@@ -2,6 +2,8 @@
  * Слот хотбара (быстрый доступ к скиллам/предметам).
  */
 
+import { useTranslation } from '@i18n/hooks';
+
 interface Props {
   index: number;
   icon?: string;
@@ -13,12 +15,13 @@ interface Props {
 }
 
 export function HotSlot({index, icon, fallback, active = false, empty = true, qty, rarity = 'common'}: Props) {
+  const { t } = useTranslation('components');
   return (
     <button
       type="button"
       className={`cm-hot-slot ${active ? 'active' : ''} ${empty ? 'cm-hot-slot--empty' : ''}`}
       data-slot-index={index}
-      aria-label={empty ? `Слот быстрого доступа ${index + 1} (пусто)` : `Слот быстрого доступа ${index + 1}`}
+      aria-label={empty ? t('hotSlot.emptySlotAria', { index: index + 1 }) : t('hotSlot.occupiedSlotAria', { index: index + 1 })}
       tabIndex={empty ? -1 : 0}
     >
       <span className="cm-hot-slot__key">{index + 1}</span>

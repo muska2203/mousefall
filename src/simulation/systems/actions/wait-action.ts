@@ -6,7 +6,7 @@ export const waitEntity: ActionHandler = {
 
     validate(state: GameState, action) {
         if (action.type !== 'WAIT') {
-            return {ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected WAIT action'};
+            return {ok: false, reasonCode: 'wrong_action_type'};
         }
         return {ok: true};
     },

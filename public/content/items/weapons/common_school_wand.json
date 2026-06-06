@@ -1,7 +1,5 @@
 {
   "id": "common_school_wand",
-  "name": "Треснувшая спица",
-  "description": "Почти палочка. Почти волшебная.",
   "spriteId": "common_school_wand",
   "icon": "/assets/items/common_school_wand.png",
   "fallback": "🪄",
@@ -10,8 +8,14 @@
   "maxStack": 1,
   "value": 10,
   "abilityPool": [
-    { "abilityId": "fireball", "weight": 1 },
-    { "abilityId": "magic_slap", "weight": 1 }
+    {
+      "abilityId": "fireball",
+      "weight": 1
+    },
+    {
+      "abilityId": "magic_slap",
+      "weight": 1
+    }
   ],
   "weapon": {
     "baseDamage": 2,
@@ -19,8 +23,15 @@
     "range": 1,
     "damageType": "blunt",
     "damageEntries": [
-      { "damageType": "blunt", "baseDamage": 2, "damageFormulaId": "staff" },
-      { "damageType": "fire", "baseDamage": 1 }
+      {
+        "damageType": "blunt",
+        "baseDamage": 2,
+        "damageFormulaId": "staff"
+      },
+      {
+        "damageType": "fire",
+        "baseDamage": 1
+      }
     ]
   },
   "equipModifiers": []

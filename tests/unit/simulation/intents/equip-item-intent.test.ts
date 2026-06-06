@@ -8,8 +8,6 @@ import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/typ
 function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTemplate['equipModifiers'] = []): ItemTemplate {
   return {
     id,
-    name: id,
-    description: '',
     type,
     stackable: false,
     maxStack: 1,

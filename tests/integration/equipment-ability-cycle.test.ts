@@ -8,8 +8,6 @@ import { defaultTestMapParams } from '../fixtures/gameState';
 function mockAbility(id: string): AbilityTemplate {
   return {
     id,
-    name: 'Огненный шар',
-    description: 'Тестовая способность',
     cooldown: 3,
     castTime: 0,
   };
@@ -18,8 +16,6 @@ function mockAbility(id: string): AbilityTemplate {
 function mockItem(id: string): ItemTemplate {
   return {
     id,
-    name: 'Тестовый посох',
-    description: 'Тест',
     type: 'weapon',
     stackable: false,
     maxStack: 1,
@@ -35,8 +31,6 @@ function mockItem(id: string): ItemTemplate {
 function mockPlayerTemplate(id: string): PlayerTemplate {
   return {
     id,
-    name: 'Тестовый герой',
-    description: '',
     portraitImg: '',
     renderScale: 1,
   };

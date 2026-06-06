@@ -38,14 +38,14 @@ export const attackEntity: ActionHandler = {
 
   validate(state: GameState, action) {
     if (action.type !== 'ATTACK') {
-      return { ok: false, reasonCode: 'wrong_action_type', reasonDescription: 'Expected ATTACK action' };
+      return { ok: false, reasonCode: 'wrong_action_type' };
     }
     const ctx = resolveAttackContext(state, action);
     if (!ctx.ok) {
       if (ctx.reason === 'attacker_missing') {
-        return { ok: false, reasonCode: 'entity_not_exists', reasonDescription: 'Entity not exists' };
+        return { ok: false, reasonCode: 'entity_not_exists' };
       }
-      return { ok: false, reasonCode: 'no_target_at_tile', reasonDescription: 'No target at tile' };
+      return { ok: false, reasonCode: 'no_target_at_tile' };
     }
     return { ok: true };
   },

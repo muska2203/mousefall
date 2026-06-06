@@ -1,6 +1,4 @@
 {
   "id": "stairs_up",
-  "name": "Лестница вверх",
-  "renderScale": 1.0,
-  "flavorText": "Обратно к солнечному свету и неоплаченным счетам."
+  "renderScale": 1
 }

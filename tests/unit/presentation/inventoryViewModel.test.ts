@@ -7,8 +7,6 @@ import type { ItemTemplate } from '../../../src/content/schemas';
 function mockItem(id: string, overrides: Partial<ItemTemplate> & Record<string, unknown> = {}): ItemTemplate {
   return {
     id,
-    name: 'Тестовый предмет',
-    description: 'Описание',
     type: 'consumable',
     stackable: true,
     maxStack: 10,

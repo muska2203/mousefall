@@ -217,7 +217,7 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   activeCast: ActiveCast | null;
   /** Состояние конечного автомата ИИ (сохраняется вместе с сущностью). */
   aiState: AIState;
-  /** Радиус обзора в клетках (Манхэттен + LOS). Копия из шаблона при спавне. */
+  /** Радиус обзора в клетках (евклидов, recursive shadowcasting). Копия из шаблона при спавне. */
   aiSightRadius: number;
 }
 
@@ -406,7 +406,7 @@ export type Simulation = {
   ): import("@simulation/core-types.ts").Position[];
 
   /** Возвращает базовую информацию о способности для отображения в UI. */
-  getAbilityInfo(abilityId: string): { name: string; spriteId: string | undefined; cooldown: number } | null;
+  getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number } | null;
 
   /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
   getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number;

@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslation } from '@i18n/hooks';
 import type { InventoryItemViewModel } from '@presentation/types';
 import { ItemDetailPopover } from './ItemDetailPopover';
 
@@ -17,13 +18,14 @@ interface Props {
 }
 
 export function InventoryPanel({ items, onItemClick }: Props) {
+  const { t } = useTranslation('components');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const hoveredItem = hoveredIndex !== null ? items[hoveredIndex] : null;
 
   return (
-    <Panel title="Инвентарь" className="cm-panel--inventory" fill={true}>
+    <Panel title={t('inventoryPanel.title')} className="cm-panel--inventory" fill={true}>
       <div className="cm-inv-wrap cm-scroll-wood">
         <div className="cm-inv-grid">
           {items.map((item, index) => (

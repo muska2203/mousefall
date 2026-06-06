@@ -4,6 +4,8 @@
  * Используется в CharacterCreationScreen.
  */
 
+import { useTranslation } from '@i18n/hooks';
+
 export type PortraitItem = {
   id: string;
   name: string;
@@ -18,13 +20,14 @@ interface Props {
 }
 
 export function PortraitGallery({portraits, selectedId, onSelect}: Props) {
+  const { t } = useTranslation('components');
   const selected = portraits.find((p) => p.id === selectedId) ?? portraits[0]!;
 
   return (
     <div className="cm-welcome-center">
       <div className="cm-welcome-preview">
         <div className="cm-welcome-preview-img-wrap">
-          <img src={selected.img} alt="Предпросмотр" />
+          <img src={selected.img} alt={t('portraitGallery.previewAlt')} />
         </div>
         <h3 className="cm-welcome-preview-name">{selected.name}</h3>
         <p className="cm-welcome-preview-desc">{selected.desc}</p>
