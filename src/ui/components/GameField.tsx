@@ -6,9 +6,9 @@
  * Управляет анимационной очередью через AnimationSequencer и сигнализирует о завершении.
  */
 
-import {useRef, useEffect} from 'react';
+import {useRef, useEffect, useState} from 'react';
 import { useTranslation } from '@i18n/hooks';
-import type {RenderInput} from '@presentation/types';
+import type {RenderInput, TurnSide} from '@presentation/types';
 import {Panel} from './Panel';
 import {HotSlot} from './HotSlot';
 import {PixiApp} from '@ui/renderer/PixiApp';
@@ -22,7 +22,7 @@ import {ProjectileAnimationExecutor} from '@ui/animation/projectileExecutor';
 import {ExplosionAnimationExecutor} from '@ui/animation/explosionExecutor';
 import {StatusBurstAnimationExecutor} from '@ui/animation/statusBurstExecutor';
 import type {AnimationContext} from '@ui/animation/types';
-import {TILE_SIZE} from '@utils/constants';
+
 
 interface Props {
   floor: number;
@@ -51,6 +51,9 @@ export function GameField({
 }: Props) {
   const { t } = useTranslation('components');
   const isInputBlocked = renderInput?.phase === 'animating';
+  const [animationPhaseSide, setAnimationPhaseSide] = useState<TurnSide | null>(null);
+  const activeSide = renderInput?.state.turn.activeSide ?? 'PLAYER';
+  const displayedSide = isInputBlocked ? (animationPhaseSide ?? activeSide) : activeSide;
   const containerRef = useRef<HTMLDivElement>(null);
   const pixiRef = useRef<PixiApp | null>(null);
   const rendererRef = useRef<WorldRenderer | null>(null);
@@ -172,8 +175,12 @@ export function GameField({
           ticker: pixiRef.current!.app.ticker,
         });
 
-        const result = sequencerRef.current.run(animations);
+        setAnimationPhaseSide(animations[0]?.side ?? null);
+        const result = sequencerRef.current.run(animations, {
+          onPhaseStart: (side) => setAnimationPhaseSide(side),
+        });
         result.blockingDone.then(() => {
+          setAnimationPhaseSide(null);
           onCompleteRef.current();
         });
       }
@@ -246,18 +253,10 @@ export function GameField({
     <Panel title={t('gameField.floorTitle', { floor })} fill>
       {/* Оверлей кнопки пропуска хода — вне canvas-контейнера, чтобы не конфликтовать с PixiJS */}
       <div className="cm-field-wrap">
-        <button
-          type="button"
-          className="cm-phase cm-phase--field cm-phase--skip-turn"
-          onClick={onWait}
-          disabled={isInputBlocked}
-          aria-label={t('gameField.skipTurnAriaLabel')}
-        >
-          <span className="cm-phase__default">{t('gameField.playerPhaseLabel')}</span>
-          <span className="cm-phase__hover" aria-hidden="true">
-            {t('gameField.skipTurnHoverLabel')}
-          </span>
-        </button>
+        <PhaseButton
+          side={displayedSide}
+          onWait={onWait}
+        />
 
         <div className="cm-field" aria-label={t('gameField.gameFieldAriaLabel')} ref={containerRef}>
           <div className="cm-hotbar-wrap cm-panel cm-hotbar-wrap--in-field cm-hotbar-wrap--recessed">
@@ -274,5 +273,40 @@ export function GameField({
         </div>
       </div>
     </Panel>
+  );
+}
+
+interface PhaseButtonProps {
+  side: TurnSide;
+  onWait: () => void;
+}
+
+/** Плашка текущей фазы хода. Во время анимаций отображает сторону
+ *  проигрываемой анимационной фазы; в idle — активную сторону из состояния. */
+function PhaseButton({ side, onWait }: PhaseButtonProps) {
+  const { t } = useTranslation('components');
+
+  const isPlayerTurn = side === 'PLAYER';
+  const label = isPlayerTurn
+    ? t('gameField.playerPhaseLabel')
+    : side === 'ENVIRONMENT'
+      ? t('gameField.environmentPhaseLabel')
+      : t('gameField.statusTickPhaseLabel');
+
+  return (
+    <button
+      type="button"
+      className="cm-phase cm-phase--field cm-phase--skip-turn"
+      onClick={onWait}
+      disabled={!isPlayerTurn}
+      aria-label={label}
+    >
+      <span className="cm-phase__default">{label}</span>
+      {isPlayerTurn && (
+        <span className="cm-phase__hover" aria-hidden="true">
+          {t('gameField.skipTurnHoverLabel')}
+        </span>
+      )}
+    </button>
   );
 }

@@ -7,5 +7,6 @@ export const ruCommonGame = {
   vitality: 'Выносливость',
   hp: 'HP',
   xp: 'Опыт',
+  ap: 'Действия',
   level: 'Уровень',
 } as const satisfies CommonGameTranslations;

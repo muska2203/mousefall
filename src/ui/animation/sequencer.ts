@@ -8,7 +8,7 @@
  * - Если в дереве нет blocking-узлов — blockingDone резолвится мгновенно.
  */
 
-import type { AnimationNode } from '@presentation/types';
+import type { AnimationNode, AnimationPhase, TurnSide } from '@presentation/types';
 import { ANIMATION_CONFIG } from '@utils/animationConfig';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { AnimationExecutor, AnimationContext, AnimationRunResult } from './types';
@@ -20,6 +20,14 @@ function countBlockingNodes(nodes: AnimationNode[]): number {
       count++;
     }
     count += countBlockingNodes(node.children);
+  }
+  return count;
+}
+
+function countBlockingInPhases(phases: AnimationPhase[]): number {
+  let count = 0;
+  for (const phase of phases) {
+    count += countBlockingNodes(phase.nodes);
   }
   return count;
 }
@@ -42,14 +50,13 @@ export class AnimationSequencer {
     Object.assign(this.context, partial);
   }
 
-  run(phases: AnimationNode[][]): AnimationRunResult {
+  run(
+    phases: AnimationPhase[],
+    callbacks?: { onPhaseStart?: (side: TurnSide) => void },
+  ): AnimationRunResult {
     this.cancelled = false;
 
-    let totalBlocking = 0;
-    for (const phase of phases) {
-      totalBlocking += countBlockingNodes(phase);
-    }
-    this.remainingBlocking = totalBlocking;
+    this.remainingBlocking = countBlockingInPhases(phases);
 
     this.blockingPromise = new Promise<void>((resolve) => {
       this.blockingResolve = resolve;
@@ -62,7 +69,15 @@ export class AnimationSequencer {
     const allPromise = (async () => {
       for (const phase of phases) {
         if (this.cancelled) break;
-        await Promise.all(phase.map((node) => this.runNode(node)));
+        callbacks?.onPhaseStart?.(phase.side);
+        if (phase.sequential) {
+          for (const node of phase.nodes) {
+            if (this.cancelled) break;
+            await this.runNode(node);
+          }
+        } else {
+          await Promise.all(phase.nodes.map((node) => this.runNode(node)));
+        }
       }
       if (!this.cancelled && this.remainingBlocking === 0 && this.blockingResolve) {
         (this.blockingResolve as (() => void))();

@@ -1,7 +1,6 @@
 import {
     ActionPreview,
     Actor,
-    DefaultActionPointCostResolver,
     EnemyEntity,
     GameState,
     PlayerEntity,
@@ -12,6 +11,7 @@ import {
     ValidationError,
     ValidationResult
 } from "@simulation/types.ts";
+import {DefaultActionPointCostResolver, type ActionPointCostResolver} from "@simulation/systems/action-cost-resolver.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
 import { getSkillExecutor } from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
@@ -53,13 +53,19 @@ export {findFirstAttackableEntityAt};
 
 export class GameSimulation implements Simulation {
 
-    private readonly apCostResolver =
-        new DefaultActionPointCostResolver();
-
     constructor(
         private state: GameState,
         private readonly actionHandlerRegistry: ActionHandlerRegistry,
+        private readonly apCostResolver: ActionPointCostResolver = new DefaultActionPointCostResolver(),
     ) {
+    }
+
+    /**
+     * Возвращает стоимость действия в AP с учётом текущего состояния.
+     * Используется UI для отображения стоимости действий.
+     */
+    getActionCost(action: GameAction): number {
+        return this.apCostResolver.getCost(action, this.state);
     }
 
     /**
@@ -181,20 +187,7 @@ export class GameSimulation implements Simulation {
         phases.push({ side: 'PLAYER', actions: [root] });
 
         if (this.isPlayerExhausted()) {
-            const envActions: ExecutionNode[] = [];
-
-            this.runEnvironmentTurn(envActions);
-            phases.push({ side: 'ENVIRONMENT', actions: envActions });
-
-            const playerCastNode = this.beginNextPlayerTurn();
-            if (playerCastNode) {
-                phases.push({ side: 'PLAYER', actions: [playerCastNode] });
-            }
-
-            const tickNodes = this.runStatusTicks();
-            if (tickNodes.length > 0) {
-                phases.push({ side: 'STATUS_TICK', actions: tickNodes });
-            }
+            this.endPlayerTurn(phases);
         }
 
         return {
@@ -303,16 +296,15 @@ export class GameSimulation implements Simulation {
         parentNode: ExecutionNode,
     ): boolean {
 
-        if (!this.canActorAct(actor, action)) {
+        const actionCost = this.apCostResolver.getCost(action, this.state);
+
+        if (!this.canActorAct(actor, action, actionCost)) {
             executionBuilder.addChild(parentNode, {
                 type: 'ACTION_REJECTED',
                 errors: [{ code: 'actor_cannot_act' }],
             });
             return false;
         }
-
-        const actionCost =
-            this.apCostResolver.getCost(action);
 
         if (actor.ap < actionCost) {
             executionBuilder.addChild(parentNode, {
@@ -352,6 +344,29 @@ export class GameSimulation implements Simulation {
         executeIntent(this.state, { type: 'CONSUME_AP', entityId: actor.id, amount: actionCost }, executionBuilder, parentNode);
 
         return true;
+    }
+
+    // =========================================================
+    // ЗАВЕРШЕНИЕ ХОДА ИГРОКА
+    // =========================================================
+
+    private endPlayerTurn(
+        phases: TurnPhase[],
+    ): void {
+        const envActions: ExecutionNode[] = [];
+
+        this.runEnvironmentTurn(envActions);
+        phases.push({ side: 'ENVIRONMENT', actions: envActions });
+
+        const playerCastNode = this.beginNextPlayerTurn();
+        if (playerCastNode) {
+            phases.push({ side: 'PLAYER', actions: [playerCastNode] });
+        }
+
+        const tickNodes = this.runStatusTicks();
+        if (tickNodes.length > 0) {
+            phases.push({ side: 'STATUS_TICK', actions: tickNodes });
+        }
     }
 
     // =========================================================
@@ -523,9 +538,10 @@ export class GameSimulation implements Simulation {
         actor.activeCast = null;
     }
 
-    private canActorAct(actor: Actor, action: GameAction): boolean {
+    private canActorAct(actor: Actor, action: GameAction, actionCost: number): boolean {
 
-        if (actor.ap <= 0) {
+        // Действия с нулевой стоимостью (EQUIP/UNEQUIP) доступны даже при 0 AP.
+        if (actor.ap <= 0 && actionCost > 0) {
             return false;
         }
 

@@ -21,6 +21,7 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
     renderScale: 1,
     aiSightRadius: 6,
     aiStrategyId: 'hunter',
+    maxAp: 1,
     ...partial,
   };
 }
@@ -36,6 +37,7 @@ function makeItemTemplate(partial: Partial<ItemTemplate> = {}): ItemTemplate {
     equipModifiers: [],
     abilityPool: [],
     grantedAbilities: [],
+    apCost: 1,
     ...partial,
   };
 }
@@ -49,8 +51,8 @@ function makeLootGameState(): GameState {
     x: 1,
     y: 1,
     baseStats: { str: 998, dex: 0, int: 0, vit: 0 },
-    maxAp: 2,
-    ap: 2,
+    maxAp: 3,
+    ap: 3,
   });
 
   const enemy = makeEnemy({

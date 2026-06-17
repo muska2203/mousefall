@@ -10,5 +10,6 @@
   "consumable": {
     "effect": "heal",
     "value": 30
-  }
+  },
+  "apCost": 1
 }

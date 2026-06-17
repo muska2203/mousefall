@@ -20,6 +20,8 @@
   --hp-track: #3a1818;
   --xp: #7b3fc9;
   --xp-track: #2a1845;
+  --ap: #d4a017;
+  --ap-track: #3a2e18;
   --log-loot: #e8c84a;
   --log-good: #6ecf7a;
   --log-bad: #e85a5a;
@@ -520,6 +522,13 @@ body:has(.cm-app--game) #app {
 }
 .cm-bar--xp .cm-bar__fill {
   background: linear-gradient(180deg, #c090ff, var(--xp));
+}
+
+.cm-bar--ap .cm-bar__track {
+  background: var(--ap-track);
+}
+.cm-bar--ap .cm-bar__fill {
+  background: linear-gradient(180deg, #f0c850, var(--ap));
 }
 
 /* --- Статы с плюсом --- */

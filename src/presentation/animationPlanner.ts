@@ -13,7 +13,7 @@
 
 import type { SimulationResult, GameEvent, GameState, TurnPhase } from '@simulation/types';
 import type { ExecutionNode } from '@simulation/systems/actions/types';
-import type { AnimationStep, AnimationNode } from './types';
+import type { AnimationStep, AnimationNode, AnimationPhase } from './types';
 import { filterByFOV } from './fogFilter';
 
 type AnimationBuilder = (event: GameEvent, childNodes: AnimationNode[], state: GameState) => AnimationNode[] | null;
@@ -228,46 +228,102 @@ registerAnimationBuilder('ABILITY_USED', (event, children) => {
 
 // ── Построение дерева ──────────────────────────────────────────────
 
-export function buildAnimationTree(result: SimulationResult, state: GameState): AnimationNode[][] {
+export function buildAnimationTree(result: SimulationResult, state: GameState): AnimationPhase[] {
   const filtered = filterByFOV(result, state);
-  const phases: AnimationNode[][] = [];
+  const phases: AnimationPhase[] = [];
 
-  let i = 0;
-  while (i < filtered.phases.length) {
-    const phase = filtered.phases[i]!;
+  for (const phase of filtered.phases) {
     const phaseNodes: AnimationNode[] = [];
     for (const action of phase.actions) {
       phaseNodes.push(...convertExecutionNode(action, state));
     }
 
-    // Если первый экшн игрока — MOVE, анимации окружения идут параллельно
-    if (
-      phase.side === 'PLAYER' &&
-      isFirstActionMove(phase) &&
-      i + 1 < filtered.phases.length &&
-      filtered.phases[i + 1]!.side === 'ENVIRONMENT'
-    ) {
-      for (const action of filtered.phases[i + 1]!.actions) {
-        phaseNodes.push(...convertExecutionNode(action, state));
-      }
-      i += 2;
-    } else {
-      i += 1;
-    }
+    const chainedNodes = chainNodesByEntity(phaseNodes);
+    if (chainedNodes.length === 0) continue;
 
-    if (phaseNodes.length > 0) {
-      phases.push(phaseNodes);
+    // Ходы окружения разбиваем на подфазы по актёрам, чтобы враги ходили
+    // последовательно друг за другом, а не параллельно.
+    if (phase.side === 'ENVIRONMENT') {
+      const subPhases = splitByActor(chainedNodes);
+      for (const nodes of subPhases) {
+        phases.push({ side: 'ENVIRONMENT', nodes, sequential: true });
+      }
+    } else {
+      phases.push({ side: phase.side, nodes: chainedNodes });
     }
   }
 
   return phases;
 }
 
-function isFirstActionMove(phase: TurnPhase): boolean {
-  const firstAction = phase.actions[0];
-  if (!firstAction) return false;
-  const event = firstAction.event;
-  return event.type === 'ACTION_APPLIED' && event.action.type === 'MOVE';
+/** Возвращает ID сущности, которой принадлежит анимационный узел, или null. */
+function getNodeEntityId(node: AnimationNode): string | null {
+  const step = node.step;
+  switch (step.type) {
+    case 'MOVE':
+    case 'DEATH':
+    case 'ABILITY_CAST':
+    case 'STATUS_BURST':
+      return step.entityId;
+    case 'ATTACK':
+      return step.attackerId;
+    default:
+      return null;
+  }
+}
+
+/** Превращает последовательные корневые узлы одной сущности в цепочку parent → child.
+ *  Нужно, чтобы sequencer не запускал их параллельно и не отменял предыдущую анимацию
+ *  одного и того же спрайта (например, два MOVE врага за ход). */
+function chainNodesByEntity(nodes: AnimationNode[]): AnimationNode[] {
+  const roots: AnimationNode[] = [];
+  const tails = new Map<string, AnimationNode>();
+
+  for (const node of nodes) {
+    const entityId = getNodeEntityId(node);
+    if (entityId) {
+      const tail = tails.get(entityId);
+      if (tail) {
+        tail.children.push(node);
+        tails.set(entityId, node);
+        continue;
+      }
+      tails.set(entityId, node);
+    }
+    roots.push(node);
+  }
+
+  return roots;
+}
+
+/** Разбивает корневые узлы фазы окружения на подфазы по одному актёру.
+ *
+ *  Входные узлы уже прошли через chainNodesByEntity, поэтому у каждой сущности
+ *  не более одного корневого узла (с цепочкой children). Группировка здесь
+ *  — страховка: явно собирает узлы одного entityId в одну подфазу и повторно
+ *  выстраивает их в цепочку parent → child, чтобы анимации актёра шли строго
+ *  последовательно. */
+function splitByActor(nodes: AnimationNode[]): AnimationNode[][] {
+  const groups: AnimationNode[][] = [];
+  const entityToGroup = new Map<string, number>();
+
+  for (const node of nodes) {
+    const entityId = getNodeEntityId(node);
+    if (entityId) {
+      const index = entityToGroup.get(entityId);
+      if (index !== undefined) {
+        groups[index]!.push(node);
+      } else {
+        entityToGroup.set(entityId, groups.length);
+        groups.push([node]);
+      }
+    } else {
+      // Ноды без привязки к сущности (например, FOG_UPDATE) идут отдельно.
+      groups.push([node]);
+    }
+  }
+
+  return groups.map((group) => chainNodesByEntity(group));
 }
 
 /** Рекурсивно конвертирует ExecutionNode в AnimationNode[].

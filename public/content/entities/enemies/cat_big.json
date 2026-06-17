@@ -1,5 +1,6 @@
 {
   "id": "cat_big",
+  "maxAp": 2,
   "aiStrategyId": "hunter",
   "aiSightRadius": 6,
   "health": {

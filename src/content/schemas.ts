@@ -68,6 +68,8 @@ export const EntityTemplateSchema = z.object({
   lootDropTable: z.array(LootDropTableEntrySchema).default([]).describe('Взвешенная таблица количества выпадаемых предметов'),
   xpReward:   z.number().int().nonnegative().default(0).describe('Опыт, выдаваемый игроку за убийство'),
   renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  maxAp: z.number().int().positive().default(1)
+    .describe('Максимальное количество очков действий (AP)'),
 }).describe('Шаблон врага или NPC');
 
 export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
@@ -132,6 +134,8 @@ export const ItemTemplateSchema = z.object({
   grantedAbilities: z.array(
     z.string().min(1).describe('ID способности, которая гарантированно выдаётся при экипировке')
   ).default([]).describe('Обязательные способности предмета, выдаются всегда (в отличие от abilityPool)'),
+  apCost: z.number().int().nonnegative().default(1)
+    .describe('Стоимость использования предмета в очках действий (AP) через действие USE_ITEM'),
 }).describe('Шаблон предмета');
 
 export type ItemTemplate = z.output<typeof ItemTemplateSchema>;
@@ -145,6 +149,8 @@ export const AbilityTemplateSchema = z.object({
   spriteId:    z.string().optional(),
   cooldown:    z.number().int().nonnegative().default(0).describe('Ходов до повторного использования'),
   castTime:    z.number().int().nonnegative().default(0).describe('Ходов подготовки (0 = мгновенно)'),
+  apCost: z.number().int().nonnegative().default(1)
+    .describe('Стоимость использования в очках действий (AP)'),
 }).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;
@@ -188,6 +194,8 @@ export const PlayerTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор шаблона игрока (совпадает с именем файла)'),
   portraitImg: z.string().describe('Путь к изображению портрета'),
   renderScale: z.number().min(0).optional().default(1.5).describe('Масштаб спрайта относительно размера тайла'),
+  maxAp: z.number().int().positive().default(2)
+    .describe('Стартовое максимальное количество очков действий (AP)'),
 }).describe('Шаблон класса/внешности игрока');
 
 export type PlayerTemplate = z.output<typeof PlayerTemplateSchema>;

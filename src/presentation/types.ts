@@ -8,12 +8,12 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType } from '@simulation/types';
+import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { ItemDetailViewModel } from './itemDetailMapper';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
-export type { TileType } from '@simulation/types';
+export type { TileType, TurnSide } from '@simulation/types';
 export type { AnimationConfigKey } from '@utils/animationConfig';
 
 export type Position = { x: number; y: number };
@@ -100,6 +100,15 @@ export type AnimationStep =
 export type AnimationNode = {
   step: AnimationStep;
   children: AnimationNode[];
+};
+
+/** Одна анимационная фаза, соответствующая стороне хода из SimulationResult.
+ *  Корневые узлы фазы по умолчанию запускаются параллельно.
+ *  Если sequential === true, корневые узлы выполняются строго друг за другом. */
+export type AnimationPhase = {
+  side: TurnSide;
+  nodes: AnimationNode[];
+  sequential?: boolean;
 };
 
 /** Readonly псевдоним GameState для renderer и UI. */
@@ -259,9 +268,9 @@ export type RenderInput = {
   state: RenderState;
   /** Подсвеченный автопуть (если есть). */
   highlightedPath: Position[] | null;
-  /** Очередь анимаций в виде массива фаз. Каждая фаза — массив деревьев,
-   *  запускаемых параллельно; фазы между собой выполняются последовательно. */
-  animations: AnimationNode[][] | null;
+  /** Очередь анимаций в виде массива фаз. Каждая фаза привязана к стороне хода
+   *  и содержит деревья анимаций; фазы между собой выполняются последовательно. */
+  animations: AnimationPhase[] | null;
   /** Идентификатор текущей партии анимаций. Инкрементируется при каждом dispatch с анимациями. */
   animationBatchId: number;
   /** Фаза отрисовки: idle — можно вводить, animating — идут анимации. */

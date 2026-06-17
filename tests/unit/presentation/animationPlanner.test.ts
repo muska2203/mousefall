@@ -46,9 +46,10 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('MOVE');
-    expect(tree[0]![0]!.children).toHaveLength(0);
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.side).toBe('PLAYER');
+    expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(0);
   });
 
   it('converts ACTION_APPLIED (ATTACK) to ATTACK step', () => {
@@ -57,8 +58,8 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('ATTACK');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('ATTACK');
   });
 
   it('converts ENTITY_DAMAGED to DAMAGE step', () => {
@@ -67,8 +68,8 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('DAMAGE');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('DAMAGE');
   });
 
   it('preserves parent-child structure', () => {
@@ -78,10 +79,10 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('DAMAGE');
-    expect(tree[0]![0]!.children).toHaveLength(1);
-    expect(tree[0]![0]!.children[0]!.step.type).toBe('DEATH');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('DAMAGE');
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('DEATH');
   });
 
   it('flattens up non-animated nodes', () => {
@@ -92,8 +93,8 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('MOVE');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
   });
 
   it('converts ITEM_DROPPED to ITEM_DROP step with from and position', () => {
@@ -109,8 +110,8 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    const step = tree[0]![0]!.step as any;
+    expect(tree[0]!.nodes).toHaveLength(1);
+    const step = tree[0]!.nodes[0]!.step as any;
     expect(step.type).toBe('ITEM_DROP');
     expect(step.itemId).toBe('item_1');
     expect(step.position).toEqual({ x: 3, y: 3 });
@@ -124,12 +125,12 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('ABILITY_CAST');
-    expect((tree[0]![0]!.step as any).entityId).toBe('player');
-    expect((tree[0]![0]!.step as any).abilityId).toBe('magic_slap');
-    expect((tree[0]![0]!.step as any).targets).toEqual([{ x: 3, y: 3 }]);
-    expect((tree[0]![0]!.step as any).from).toEqual({ x: 1, y: 1 });
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('ABILITY_CAST');
+    expect((tree[0]!.nodes[0]!.step as any).entityId).toBe('player');
+    expect((tree[0]!.nodes[0]!.step as any).abilityId).toBe('magic_slap');
+    expect((tree[0]!.nodes[0]!.step as any).targets).toEqual([{ x: 3, y: 3 }]);
+    expect((tree[0]!.nodes[0]!.step as any).from).toEqual({ x: 1, y: 1 });
   });
 
   it('expands fireball into ABILITY_CAST → PROJECTILE → EXPLOSION chain', () => {
@@ -138,12 +139,12 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('ABILITY_CAST');
-    expect(tree[0]![0]!.children).toHaveLength(1);
-    expect(tree[0]![0]!.children[0]!.step.type).toBe('PROJECTILE');
-    expect(tree[0]![0]!.children[0]!.children).toHaveLength(1);
-    expect(tree[0]![0]!.children[0]!.children[0]!.step.type).toBe('EXPLOSION');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('ABILITY_CAST');
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('PROJECTILE');
+    expect(tree[0]!.nodes[0]!.children[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.children[0]!.step.type).toBe('EXPLOSION');
   });
 
   it('supports custom builders via registerAnimationBuilder', () => {
@@ -157,11 +158,11 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('UI_FLOATING_TEXT');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('UI_FLOATING_TEXT');
   });
 
-  it('merges PLAYER and ENVIRONMENT phases when first player action is MOVE', () => {
+  it('keeps PLAYER and ENVIRONMENT phases sequential', () => {
     const playerMove = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } }, [
       makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
     ]);
@@ -172,26 +173,50 @@ describe('buildAnimationTree', () => {
     ]);
     const tree = buildAnimationTree(result, makeMockState());
 
-    expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(2);
-    expect(tree[0]![0]!.step.type).toBe('MOVE');
-    expect(tree[0]![1]!.step.type).toBe('MOVE');
+    expect(tree).toHaveLength(2);
+    expect(tree[0]!.side).toBe('PLAYER');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
+    expect(tree[1]!.side).toBe('ENVIRONMENT');
+    expect(tree[1]!.nodes).toHaveLength(1);
+    expect(tree[1]!.nodes[0]!.step.type).toBe('MOVE');
+    expect(tree[1]!.sequential).toBe(true);
   });
 
-  it('keeps PLAYER and ENVIRONMENT sequential when first player action is ATTACK', () => {
-    const playerAttack = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 } });
-    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+  it('chains multiple MOVE steps of the same actor into parent → child', () => {
+    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const secondMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 4, y: 5 }, to: { x: 3, y: 5 } });
     const result = makeResultWithPhases([
-      { side: 'PLAYER', actions: [playerAttack] },
-      { side: 'ENVIRONMENT', actions: [enemyMove] },
+      { side: 'ENVIRONMENT', actions: [firstMove, secondMove] },
+    ]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
+    expect((tree[0]!.nodes[0]!.step as any).to).toEqual({ x: 4, y: 5 });
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('MOVE');
+    expect((tree[0]!.nodes[0]!.children[0]!.step as any).to).toEqual({ x: 3, y: 5 });
+  });
+
+  it('splits ENVIRONMENT phase into sequential subphases per actor', () => {
+    const enemyAMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemyA', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const enemyBMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemyB', from: { x: 3, y: 3 }, to: { x: 2, y: 3 } });
+    const result = makeResultWithPhases([
+      { side: 'ENVIRONMENT', actions: [enemyAMove, enemyBMove] },
     ]);
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(2);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('ATTACK');
-    expect(tree[1]!).toHaveLength(1);
-    expect(tree[1]![0]!.step.type).toBe('MOVE');
+    expect(tree[0]!.side).toBe('ENVIRONMENT');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect((tree[0]!.nodes[0]!.step as any).entityId).toBe('enemyA');
+    expect(tree[0]!.sequential).toBe(true);
+    expect(tree[1]!.side).toBe('ENVIRONMENT');
+    expect(tree[1]!.nodes).toHaveLength(1);
+    expect((tree[1]!.nodes[0]!.step as any).entityId).toBe('enemyB');
+    expect(tree[1]!.sequential).toBe(true);
   });
 
   it('converts STATUS_TICKED with ENTITY_DAMAGED child into STATUS_BURST → DAMAGE chain', () => {
@@ -204,13 +229,13 @@ describe('buildAnimationTree', () => {
     const tree = buildAnimationTree(result, state);
 
     expect(tree).toHaveLength(1);
-    expect(tree[0]!).toHaveLength(1);
-    expect(tree[0]![0]!.step.type).toBe('STATUS_BURST');
-    expect(tree[0]![0]!.children).toHaveLength(1);
-    expect(tree[0]![0]!.children[0]!.step.type).toBe('DAMAGE');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('STATUS_BURST');
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('DAMAGE');
   });
 
-  it('keeps STATUS_TICK as separate phase after merged PLAYER+ENVIRONMENT', () => {
+  it('keeps STATUS_TICK as separate phase after ENVIRONMENT', () => {
     const playerMove = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } }, [
       makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
     ]);
@@ -223,9 +248,13 @@ describe('buildAnimationTree', () => {
     ]);
     const tree = buildAnimationTree(result, makeMockState());
 
-    expect(tree).toHaveLength(2);
-    expect(tree[0]!).toHaveLength(2); // PLAYER + ENVIRONMENT merged
-    expect(tree[1]!).toHaveLength(1); // STATUS_TICK separate
-    expect(tree[1]![0]!.step.type).toBe('DAMAGE');
+    expect(tree).toHaveLength(3);
+    expect(tree[0]!.side).toBe('PLAYER');
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[1]!.side).toBe('ENVIRONMENT');
+    expect(tree[1]!.nodes).toHaveLength(1);
+    expect(tree[2]!.side).toBe('STATUS_TICK');
+    expect(tree[2]!.nodes).toHaveLength(1);
+    expect(tree[2]!.nodes[0]!.step.type).toBe('DAMAGE');
   });
 });

@@ -15,6 +15,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     cooldown: 3,
+    apCost: 1,
     ...overrides,
   } as AbilityTemplate;
 }
@@ -27,7 +28,7 @@ describe('Интеграция: кастинг способностей', () => 
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['fireball', mockAbility('fireball', { castTime: 2 })],
+        ['fireball', mockAbility('fireball', { castTime: 2, apCost: 2 })],
       ]),
       maps: new Map(),
       stairs: new Map(),
@@ -45,6 +46,8 @@ describe('Интеграция: кастинг способностей', () => 
     const player = makePlayer({
       x: 5,
       y: 5,
+      maxAp: 2,
+      ap: 2,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100, aiStrategyId: 'hunter' });
@@ -88,6 +91,8 @@ describe('Интеграция: кастинг способностей', () => 
     const player = makePlayer({
       x: 5,
       y: 5,
+      maxAp: 2,
+      ap: 2,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;
@@ -114,6 +119,8 @@ describe('Интеграция: кастинг способностей', () => 
       x: 6,
       y: 5,
       aiStrategyId: 'hunter',
+      maxAp: 2,
+      ap: 2,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;

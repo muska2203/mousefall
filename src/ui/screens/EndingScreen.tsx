@@ -17,8 +17,7 @@ import {EndingMetricsPanel} from '@ui/components/EndingMetricsPanel';
 import type {MetricItem} from '@ui/components/EndingMetricsPanel';
 import {BossListPanel} from '@ui/components/BossListPanel';
 import {EndingActionsPanel} from '@ui/components/EndingActionsPanel';
-import type {PlayerStatsSnapshot, EquipmentSnapshot} from '@presentation/gameSession';
-import type {RunStats} from '@simulation/types';
+import type {PlayerStatsSnapshot, EquipmentSnapshot, RunStats} from '@presentation/gameSession';
 
 interface Props {
   result: 'defeat' | 'victory';
@@ -95,6 +94,8 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
       level={ps?.level ?? 1}
       hp={ps?.hp ?? 0}
       maxHp={ps?.maxHp ?? 100}
+      ap={ps?.ap}
+      maxAp={ps?.maxAp}
       xp={ps?.xp ?? 0}
       stats={heroStats}
     />

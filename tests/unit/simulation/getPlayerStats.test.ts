@@ -116,5 +116,6 @@ describe('GameSimulation.getPlayerStats', () => {
     expect(stats.accuracy).toBeCloseTo(0.045); // dex 3 * 0.015
     expect(stats.critChance).toBeCloseTo(0.03); // dex 3 * 0.01
     expect(stats.critMultiplier).toBe(1.5);
+    expect(stats.maxAp).toBe(sim.getState().player.maxAp);
   });
 });

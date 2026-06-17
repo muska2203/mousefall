@@ -1,4 +1,4 @@
-import {describe, expect, it, beforeEach, afterEach} from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer } from '../../../fixtures/gameState';
 import { useAbilityAction } from '../../../../src/simulation/systems/actions/use-ability-action';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
@@ -14,6 +14,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     cooldown: 3,
+    apCost: 1,
     ...overrides,
   } as AbilityTemplate;
 }
@@ -26,7 +27,7 @@ describe('useAbilityAction', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['fireball', mockAbility('fireball', { cooldown: 3 })],
+        ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2 })],
       ]),
       maps: new Map(),
       stairs: new Map(),
@@ -37,7 +38,7 @@ describe('useAbilityAction', () => {
     resetRegistry();
   });
 
-  it('blocks usage when ability is on cooldown', () => {
+  it('блокирует использование способности на кулдауне', () => {
     const state = makeGameState();
     const player = makePlayer({
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 2 }],
@@ -53,7 +54,7 @@ describe('useAbilityAction', () => {
     }
   });
 
-  it('blocks usage for invalid target', () => {
+  it('блокирует использование с некорректной целью', () => {
     const state = makeGameState();
     state.visible[5]![5] = true;
     const player = makePlayer({
@@ -64,7 +65,7 @@ describe('useAbilityAction', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    // target out of range
+    // Цель вне досягаемости
     const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 20, y: 20 }] };
     const result = useAbilityAction.validate(state, action);
     expect(result.ok).toBe(false);
@@ -73,7 +74,7 @@ describe('useAbilityAction', () => {
     }
   });
 
-  it('allows usage with valid target and deducts MP/cooldown on execute', () => {
+  it('позволяет использовать способность с корректной целью и накладывает кулдаун при выполнении', () => {
     const state = makeGameState();
     state.visible[5]![5] = true;
     state.visible[5]![6] = true;
@@ -100,7 +101,7 @@ describe('useAbilityAction', () => {
     expect(ability?.currentCooldown).toBe(3);
   });
 
-  it('blocks usage when already casting', () => {
+  it('блокирует использование способности во время другого каста', () => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
@@ -132,7 +133,7 @@ describe('useAbilityAction', () => {
     }
   });
 
-  it('does not set cooldown for castTime > 0 on resolve, uses BEGIN_CAST instead', () => {
+  it('не накладывает кулдаун при старте каста, используя BEGIN_CAST', () => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
@@ -162,7 +163,7 @@ describe('useAbilityAction', () => {
     expect(intents.some(i => i.type === 'BEGIN_CAST')).toBe(true);
   });
 
-  it('places intents as children of ABILITY_USED event in execution tree', () => {
+  it('помещает интенты как детей события ABILITY_USED в дереве выполнения', () => {
     const state = makeGameState();
     state.visible[5]![5] = true;
     state.visible[5]![6] = true;
@@ -185,11 +186,10 @@ describe('useAbilityAction', () => {
     expect(builder.root.children).toHaveLength(1);
     expect(builder.root.children[0]!.event.type).toBe('ABILITY_USED');
 
-    // Интенты должны быть детьми ABILITY_USED, а не сиблингами корню
+    // Интенты должны быть детьми ABILITY_USED
     const abilityNode = builder.root.children[0]!;
     expect(abilityNode.children.length).toBeGreaterThan(0);
     const intentEventTypes = abilityNode.children.map(c => c.event.type);
-    // У корня только один ребёнок — ABILITY_USED
-    expect(builder.root.children).toHaveLength(1);
+    expect(intentEventTypes.some(t => t === 'ENTITY_DAMAGED' || t === 'CAST_STARTED')).toBe(true);
   });
 });

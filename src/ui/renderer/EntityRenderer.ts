@@ -49,7 +49,7 @@ export class EntityRenderer {
     const itemDropIds = new Set<string>();
     if (input.animations) {
       for (const phase of input.animations) {
-        for (const node of phase) {
+        for (const node of phase.nodes) {
           collectAnimatedEntityIds(node, animatedIds);
           collectItemDropIds(node, itemDropIds);
         }

@@ -2,6 +2,16 @@ import {GameState} from "@simulation/types.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 
+/**
+ * Обработчик действия WAIT — завершение хода актора.
+ *
+ * Логика:
+ * - Не порождает собственных интентов.
+ * - Стоимость AP вычисляется в `DefaultActionPointCostResolver`: `WAIT` стоит
+ *   текущее количество AP актора (`actor.ap`).
+ * - Центральное списание AP в `GameSimulation.executeAction` списывает все AP,
+ *   что приводит к `isPlayerExhausted()` и автоматическому запуску хода врагов.
+ */
 export const waitEntity: ActionHandler = {
 
     validate(state: GameState, action) {

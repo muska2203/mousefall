@@ -138,10 +138,11 @@ export function getLocalizedPlayerTemplate(id: string, locale: Locale): Localize
 }
 
 /**
- * Попытаться получить шаблон игрока. Возвращает undefined, если не найден.
+ * Попытаться получить шаблон игрока. Возвращает undefined, если реестр не инициализирован или шаблон не найден.
  */
 export function tryGetPlayerTemplate(id: string): PlayerTemplate | undefined {
-  return getRegistry().players.get(id);
+  if (_registry === null) return undefined;
+  return _registry.players.get(id);
 }
 
 /**
@@ -230,24 +231,30 @@ export function getMapParams(id: string): MapParams {
 }
 
 /**
- * Попытаться получить шаблон сущности. Возвращает undefined, если не найден.
+ * Попытаться получить шаблон сущности.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
  */
 export function tryGetEntity(id: string): EntityTemplate | undefined {
-  return getRegistry().entities.get(id);
+  if (_registry === null) return undefined;
+  return _registry.entities.get(id);
 }
 
 /**
- * Попытаться получить шаблон предмета. Возвращает undefined, если не найден.
+ * Попытаться получить шаблон предмета.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
  */
 export function tryGetItem(id: string): ItemTemplate | undefined {
-  return getRegistry().items.get(id);
+  if (_registry === null) return undefined;
+  return _registry.items.get(id);
 }
 
 /**
- * Попытаться получить шаблон способности. Возвращает undefined, если не найден.
+ * Попытаться получить шаблон способности.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
  */
 export function tryGetAbility(id: string): AbilityTemplate | undefined {
-  return getRegistry().abilities.get(id);
+  if (_registry === null) return undefined;
+  return _registry.abilities.get(id);
 }
 
 /**
@@ -280,8 +287,10 @@ export function getLocalizedStairs(id: string, locale: Locale): LocalizedStairsT
 }
 
 /**
- * Попытаться получить шаблон лестницы. Возвращает undefined, если не найден.
+ * Попытаться получить шаблон лестницы.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
  */
 export function tryGetStairs(id: string): StairsTemplate | undefined {
-  return getRegistry().stairs.get(id);
+  if (_registry === null) return undefined;
+  return _registry.stairs.get(id);
 }

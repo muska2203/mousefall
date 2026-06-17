@@ -259,6 +259,8 @@ export function GameScreen({session, onModeChange}: Props) {
         level={ps.level}
         hp={ps.hp}
         maxHp={ps.maxHp}
+        ap={ps.ap}
+        maxAp={ps.maxAp}
         xp={ps.xp}
         stats={renderInput.heroStats}
       />

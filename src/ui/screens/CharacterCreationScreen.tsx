@@ -213,6 +213,8 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       level={previewStats?.level ?? 1}
       hp={previewStats?.hp ?? 100}
       maxHp={previewStats?.maxHp ?? 100}
+      ap={previewStats?.ap}
+      maxAp={previewStats?.maxAp}
       stats={heroStats}
     >
       {statAllocHeader}

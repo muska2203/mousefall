@@ -18,6 +18,7 @@ export interface CommonGameTranslations {
   vitality: string;
   hp: string;
   xp: string;
+  ap: string;
   level: string;
 }
 
@@ -180,6 +181,8 @@ export interface ComponentsGameFieldTranslations {
   floorTitle: string;
   skipTurnAriaLabel: string;
   playerPhaseLabel: string;
+  environmentPhaseLabel: string;
+  statusTickPhaseLabel: string;
   skipTurnHoverLabel: string;
   gameFieldAriaLabel: string;
 }

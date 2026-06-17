@@ -16,6 +16,7 @@ function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTe
     abilityPool: [],
     equipModifiers,
     grantedAbilities: [],
+    apCost: 1,
   };
 }
 

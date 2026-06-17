@@ -1,5 +1,6 @@
 {
   "id": "witcher",
+  "maxAp": 2,
   "portraitImg": "/assets/portraits/witcher-ready.png",
   "renderScale": 1
 }

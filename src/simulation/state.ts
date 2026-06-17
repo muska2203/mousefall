@@ -29,6 +29,7 @@ import type {
 import type { MapParams } from '@content/schemas';
 import {createRNG} from '../utils/rng';
 import {PLAYER_ID} from '../utils/constants';
+import { tryGetPlayerTemplate } from '@content/registry';
 
 // ─────────────────────────────────────────────
 // Фабрика начального состояния
@@ -40,6 +41,10 @@ import {PLAYER_ID} from '../utils/constants';
  * и передайте результат в createStateForFloor().
  */
 export function createInitialPlayer(templateId: string): PlayerEntity {
+  const template = tryGetPlayerTemplate(templateId);
+  // Fallback совпадает со значением по умолчанию в PlayerTemplateSchema.
+  const startingMaxAp = template?.maxAp ?? 2;
+
   return {
     id: PLAYER_ID,
     type: 'player',
@@ -63,8 +68,8 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     equippedArmorInstanceId: null,
     equippedAmuletInstanceId: null,
     isAlive: true,
-    ap: 1,
-    maxAp: 1,
+    ap: startingMaxAp,
+    maxAp: startingMaxAp,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     statModifiers: [],
     dodgeChance: 0,
@@ -174,7 +179,9 @@ export function findAllAliveAiActors(state: GameState) {
   return Array.from(state.entities.values())
       .filter(e => 'aiStrategyId' in e)
       .map(e => e as AiActor)
-      .filter(e => e.isAlive);
+      .filter(e => e.isAlive)
+      // Детерминированный порядок обработки — важен для воспроизводимости.
+      .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export const TARGET_PRIORITY: Record<EntityType, number> = {

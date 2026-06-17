@@ -20,6 +20,7 @@ function makeTestItemTemplate(id: string): ItemTemplate {
         equipModifiers: [],
         abilityPool: [],
         grantedAbilities: [],
+        apCost: 1,
     };
 }
 

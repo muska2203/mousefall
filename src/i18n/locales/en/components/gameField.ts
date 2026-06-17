@@ -4,6 +4,8 @@ export const enGameField = {
   floorTitle: 'Floor {{floor}}',
   skipTurnAriaLabel: 'Skip turn',
   playerPhaseLabel: 'Player turn',
+  environmentPhaseLabel: 'Environment turn',
+  statusTickPhaseLabel: 'Status tick',
   skipTurnHoverLabel: 'Skip turn',
   gameFieldAriaLabel: 'Game field',
 } as const satisfies ComponentsGameFieldTranslations;

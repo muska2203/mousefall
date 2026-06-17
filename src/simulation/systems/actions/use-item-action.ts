@@ -4,8 +4,8 @@
  * Логика:
  * - Проверяет, что предмет есть в инвентаре и является consumable.
  * - Разрешает эффект в зависимости от consumable.effect:
- *   heal → HEAL + CONSUME_AP + REMOVE_ITEM
- *   buff → APPLY_STATUS + CONSUME_AP + REMOVE_ITEM
+ *   heal → HEAL + REMOVE_ITEM
+ *   buff → APPLY_STATUS + REMOVE_ITEM
  *   Прочие эффекты пока не реализованы.
  */
 
@@ -86,7 +86,6 @@ export const useItemAction: ActionHandler = {
     }
 
     intents.push(
-      { type: 'CONSUME_AP', entityId: action.entityId, amount: 1 },
       { type: 'REMOVE_ITEM', entityId: action.entityId, itemInstanceId: item.instanceId, templateId: item.templateId },
     );
 

@@ -20,6 +20,7 @@ function mockConsumable(
     abilityPool: [],
     equipModifiers: [],
     grantedAbilities: [],
+    apCost: 1,
     consumable: { effect, value },
   };
 }
@@ -45,6 +46,8 @@ beforeEach(() => {
         rarity: 'common',
         abilityPool: [],
         equipModifiers: [],
+        grantedAbilities: [],
+        apCost: 1,
       } as unknown as ItemTemplate],
     ]),
     abilities: new Map(),
@@ -103,7 +106,7 @@ describe('useItemAction.validate', () => {
 });
 
 describe('useItemAction.resolve', () => {
-  it('для heal возвращает HEAL + CONSUME_AP + REMOVE_ITEM', () => {
+  it('для heal возвращает HEAL + REMOVE_ITEM', () => {
     const state = makeGameState();
     const player = makePlayer({
       inventory: [{ instanceId: 'potion_1', templateId: 'heal_potion', quantity: 2, grantedAbilities: []}],
@@ -114,13 +117,12 @@ describe('useItemAction.resolve', () => {
     const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'potion_1' };
     const intents = useItemAction.resolve(state, action);
 
-    expect(intents).toHaveLength(3);
+    expect(intents).toHaveLength(2);
     expect(intents[0]!.type).toBe('HEAL');
-    expect(intents[1]!.type).toBe('CONSUME_AP');
-    expect(intents[2]!.type).toBe('REMOVE_ITEM');
+    expect(intents[1]!.type).toBe('REMOVE_ITEM');
   });
 
-  it('для buff возвращает APPLY_STATUS + CONSUME_AP + REMOVE_ITEM', () => {
+  it('для buff возвращает APPLY_STATUS + REMOVE_ITEM', () => {
     const state = makeGameState();
     const player = makePlayer({
       inventory: [{ instanceId: 'potion_1', templateId: 'buff_potion', quantity: 1, grantedAbilities: []}],
@@ -131,10 +133,9 @@ describe('useItemAction.resolve', () => {
     const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'potion_1' };
     const intents = useItemAction.resolve(state, action);
 
-    expect(intents).toHaveLength(3);
+    expect(intents).toHaveLength(2);
     expect(intents[0]!.type).toBe('APPLY_STATUS');
-    expect(intents[1]!.type).toBe('CONSUME_AP');
-    expect(intents[2]!.type).toBe('REMOVE_ITEM');
+    expect(intents[1]!.type).toBe('REMOVE_ITEM');
   });
 });
 

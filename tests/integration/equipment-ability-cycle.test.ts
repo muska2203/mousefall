@@ -10,6 +10,7 @@ function mockAbility(id: string): AbilityTemplate {
     id,
     cooldown: 3,
     castTime: 0,
+    apCost: 1,
   };
 }
 
@@ -24,6 +25,7 @@ function mockItem(id: string): ItemTemplate {
     abilityPool: [{ abilityId: 'fireball', weight: 1 }],
     equipModifiers: [],
     grantedAbilities: [],
+    apCost: 1,
     weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2, damageType: 'blunt' },
   };
 }
@@ -33,6 +35,7 @@ function mockPlayerTemplate(id: string): PlayerTemplate {
     id,
     portraitImg: '',
     renderScale: 1,
+    maxAp: 2,
   };
 }
 

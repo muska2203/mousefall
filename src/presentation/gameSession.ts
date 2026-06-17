@@ -42,7 +42,7 @@ export type {CharacterConfig} from '@simulation/characterCreation';
 export type {MapParams} from '@content/schemas';
 export type {AnimationNode, RenderInput, EquipmentSnapshot} from './types';
 export type {RenderState} from './types';
-export type {PlayerStatsSnapshot} from '@simulation/types';
+export type {PlayerStatsSnapshot, RunStats} from '@simulation/types';
 
 export type SessionMode =
   | 'mainMenu'
@@ -189,7 +189,16 @@ export class GameSession {
       };
     });
 
-    const ps = this.simulation!.getPlayerStats();
+    const currentPs = this.simulation!.getPlayerStats();
+    // Во время анимаций показываем AP игрока после его действия, но до восстановления
+    // в начале следующего хода. Presentation сама извлекает это значение из дерева
+    // событий, чтобы слой симуляции не знал про анимации/отображение.
+    const pendingAp = this.animation.phase === 'animating' && this.lastResult
+      ? this.extractPlayerApAfterAction(this.lastResult)
+      : undefined;
+    const ps = pendingAp !== undefined
+      ? { ...currentPs, ap: pendingAp }
+      : currentPs;
     const eq = equipment;
 
     const heroStats = [
@@ -363,6 +372,33 @@ export class GameSession {
       runStats: state.runStats,
       fieldObjectPopover,
     };
+  }
+
+  /** Извлекает AP игрока после выполнения его действия, но до восстановления
+   *  в начале следующего хода. Ищет событие RESOURCE_CONSUMED с resource='ap'
+   *  в дереве фазы PLAYER. Возвращает undefined, если событие не найдено. */
+  private extractPlayerApAfterAction(result: SimulationResult): number | undefined {
+    const playerPhase = result.phases.find((phase) => phase.side === 'PLAYER');
+    if (!playerPhase) return undefined;
+
+    for (const action of playerPhase.actions) {
+      const remaining = this.findApConsumedRemaining(action);
+      if (remaining !== undefined) return remaining;
+    }
+
+    return undefined;
+  }
+
+  private findApConsumedRemaining(node: ExecutionNode): number | undefined {
+    const event = node.event;
+    if (event.type === 'RESOURCE_CONSUMED' && event.resource === 'ap') {
+      return event.remaining;
+    }
+    for (const child of node.children) {
+      const remaining = this.findApConsumedRemaining(child);
+      if (remaining !== undefined) return remaining;
+    }
+    return undefined;
   }
 
   private getAbilityTemplate(abilityId: string, locale: Locale): { name: string; description: string; spriteId: string | undefined; cooldown: number } | null {

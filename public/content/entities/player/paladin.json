@@ -1,5 +1,6 @@
 {
   "id": "paladin",
+  "maxAp": 2,
   "portraitImg": "/assets/portraits/paladin-ready.png",
   "renderScale": 1
 }

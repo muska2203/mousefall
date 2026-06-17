@@ -449,24 +449,4 @@ export type SimulationResult = {
   phases: TurnPhase[];
 };
 
-type ActionPointCostResolver = {
-  getCost(action: GameAction): number;
-};
 
-export class DefaultActionPointCostResolver
-    implements ActionPointCostResolver {
-
-  getCost(action: GameAction): number {
-    switch (action.type) {
-      case 'USE_ABILITY':
-      case 'USE_ITEM':
-        // TODO: брать стоимость AP из шаблона способности / предмета
-        return 1;
-      case 'EQUIP':
-      case 'UNEQUIP':
-        return 0;
-      default:
-        return 1;
-    }
-  }
-}

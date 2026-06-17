@@ -298,12 +298,15 @@ describe('EntityRenderer', () => {
     // Удаляем врага, но запланируем анимацию смерти
     input.state.entities.delete('enemy1');
     input.animations = [
-      [
-        {
-          step: {type: 'DEATH', entityId: 'enemy1'},
-          children: [],
-        },
-      ],
+      {
+        side: 'PLAYER',
+        nodes: [
+          {
+            step: {type: 'DEATH', entityId: 'enemy1'},
+            children: [],
+          },
+        ],
+      },
     ];
 
     renderer.update(input);
@@ -347,12 +350,15 @@ describe('EntityRenderer', () => {
       y: 3,
     });
     input.animations = [
-      [
-        {
-          step: {type: 'MOVE', entityId: 'enemy1', from: {x: 1, y: 1}, to: {x: 3, y: 3}},
-          children: [],
-        },
-      ],
+      {
+        side: 'PLAYER',
+        nodes: [
+          {
+            step: {type: 'MOVE', entityId: 'enemy1', from: {x: 1, y: 1}, to: {x: 3, y: 3}},
+            children: [],
+          },
+        ],
+      },
     ];
 
     renderer.update(input);
@@ -390,12 +396,15 @@ describe('EntityRenderer', () => {
 
     // Запланируем анимацию появления
     input.animations = [
-      [
-        {
-          step: {type: 'ITEM_DROP', itemId: 'item1', position: {x: 3, y: 3}, from: {x: 2, y: 2}, templateId: 'health_potion'},
-          children: [],
-        },
-      ],
+      {
+        side: 'PLAYER',
+        nodes: [
+          {
+            step: {type: 'ITEM_DROP', itemId: 'item1', position: {x: 3, y: 3}, from: {x: 2, y: 2}, templateId: 'health_potion'},
+            children: [],
+          },
+        ],
+      },
     ];
 
     renderer.update(input);

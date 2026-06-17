@@ -1,5 +1,6 @@
 {
   "id": "elven-ranger",
+  "maxAp": 2,
   "portraitImg": "/assets/portraits/elven-ranger-ready.png",
   "renderScale": 1
 }
