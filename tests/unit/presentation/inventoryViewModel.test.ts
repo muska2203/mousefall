@@ -26,6 +26,7 @@ describe('Inventory ViewModel', () => {
       ]),
       abilities: new Map(),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });
@@ -92,6 +93,7 @@ describe('Inventory sorting', () => {
       ]),
       abilities: new Map(),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });

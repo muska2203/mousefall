@@ -17,6 +17,7 @@ import type {
   GameState,
   ItemEntity,
   PlayerEntity,
+  DoorEntity,
   TileType
 } from '../../src/simulation/types';
 import type { MapParams } from '../../src/content/schemas';
@@ -141,6 +142,24 @@ export function makeFloorItem(overrides: Partial<ItemEntity> = {}): ItemEntity {
       quantity: 1,
       grantedAbilities: [],
     },
+    ...overrides,
+  };
+}
+
+export function makeDoor(overrides: Partial<DoorEntity> = {}): DoorEntity {
+  return {
+    id: 'door_test_1',
+    type: 'door',
+    displayName: 'Деревянная дверь',
+    templateId: 'wooden_door',
+    x: 4,
+    y: 5,
+    blocksMovement: true,
+    hp: 30,
+    maxHp: 30,
+    armor: 2,
+    isAlive: true,
+    statusEffects: [],
     ...overrides,
   };
 }

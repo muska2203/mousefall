@@ -22,7 +22,16 @@ import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulatio
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
 import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel} from './types';
-import {getAllLocalizedPlayerTemplates, tryGetPlayerTemplate, tryGetLocalizedItem, tryGetLocalizedAbility} from '@content/registry';
+import {
+  getAllLocalizedPlayerTemplates,
+  tryGetPlayerTemplate,
+  tryGetLocalizedItem,
+  tryGetLocalizedAbility,
+  getAllLocalizedItems,
+  getAllLocalizedEntities,
+  getAllLocalizedDoors,
+  getAllLocalizedStairs,
+} from '@content/registry';
 import type { Locale } from '@content/texts/lookup';
 
 import {buildAnimationTree} from './animationPlanner';
@@ -30,6 +39,7 @@ import {extractEvents, gameEventToLog} from './logBuilder';
 import {mapItemTemplateToDetail} from './itemDetailMapper';
 import {mapEnemyToPopover} from './enemyDetailMapper';
 import {mapStairsToPopover} from './stairsDetailMapper';
+import {mapDoorToPopover} from './doorDetailMapper';
 import {resolveAbilityIcon, resolveItemIcon} from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
@@ -125,6 +135,8 @@ export class GameSession {
   private fieldHover: Position | null = null;
   /** Удерживаемое направление движения (для автохода при зажатой клавише). */
   private heldDirection: {dx: number; dy: number} | null = null;
+  /** Флаг debug-режима. Живёт только в Presentation, не попадает в GameState. */
+  private debugEnabled: boolean = false;
 
   /** Подписаться на изменения сессии. Вызывается после любого mutate-метода. */
   subscribe(callback: () => void): () => void {
@@ -145,6 +157,11 @@ export class GameSession {
   setLocale(locale: Locale): void {
     this.locale = locale;
     this.notify();
+  }
+
+  /** Получить текущую локаль. */
+  getLocale(): Locale {
+    return this.locale;
   }
 
   /** Текущий ViewModel для отрисовки UI. Кешируется между нотификациями для useSyncExternalStore. */
@@ -431,6 +448,7 @@ export class GameSession {
 
     // Ищем объект на клетке, исключая игрока
     let enemy = null;
+    let door = null;
     let item = null;
     let stairs = null;
 
@@ -439,6 +457,9 @@ export class GameSession {
       if (entity.type === 'enemy') {
         enemy = entity;
         break; // приоритет врагам
+      }
+      if (entity.type === 'door' && !door) {
+        door = entity;
       }
       if (entity.type === 'item') {
         item = entity;
@@ -452,6 +473,10 @@ export class GameSession {
 
     if (enemy) {
       return { kind: 'enemy', data: mapEnemyToPopover(enemy, currentLocale) };
+    }
+
+    if (door) {
+      return { kind: 'door', data: mapDoorToPopover(door, currentLocale) };
     }
 
     if (item) {
@@ -512,6 +537,38 @@ export class GameSession {
    */
   static getPlayerPortraitSrc(templateId: string): string | undefined {
     return tryGetPlayerTemplate(templateId)?.portraitImg;
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны предметов.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllItems(locale: Locale) {
+    return getAllLocalizedItems(locale);
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны сущностей (врагов / NPC).
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllEntities(locale: Locale) {
+    return getAllLocalizedEntities(locale);
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны дверей.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllDoors(locale: Locale) {
+    return getAllLocalizedDoors(locale);
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны лестниц.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllStairs(locale: Locale) {
+    return getAllLocalizedStairs(locale);
   }
 
   /**
@@ -582,7 +639,7 @@ export class GameSession {
       enemyPool: ['cat_small', 'cat_mid', 'cat_big'],
       itemPool: ['health_potion'],
     };
-    this.simulation = GameSimulation.createNewGame(seed, config, defaultMapParams);
+    this.simulation = GameSimulation.createNewGame(seed, config, defaultMapParams, this.debugEnabled);
     this.mode = 'playing';
     this.lastResult = null;
     this.animation.phase = 'idle';
@@ -597,7 +654,7 @@ export class GameSession {
    * Десериализация (JSON → GameState) — ответственность вызывающего (Presentation-level helper или UI).
    */
   loadGame(state: GameState): void {
-    this.simulation = GameSimulation.loadSavedGame(state);
+    this.simulation = GameSimulation.loadSavedGame(state, this.debugEnabled);
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
     this.animation.phase = this.mode === 'playing' ? 'idle' : 'gameOver';
@@ -865,6 +922,50 @@ export class GameSession {
     } else if (template.type === 'consumable') {
       this.dispatch({type: 'USE_ITEM', entityId: 'player', itemInstanceId: instanceId});
     }
+  }
+
+  /** Переключить debug-режим. */
+  toggleDebug(): void {
+    this.debugEnabled = !this.debugEnabled;
+    if (this.simulation) {
+      this.simulation.setDebugEnabled(this.debugEnabled);
+    }
+    this.notify();
+  }
+
+  /** Включён ли debug-режим. */
+  isDebug(): boolean {
+    return this.debugEnabled;
+  }
+
+  /** Debug: добавить предмет в инвентарь игрока. */
+  debugAddItem(templateId: string): void {
+    if (!this.simulation || this.mode !== 'playing') {
+      return;
+    }
+    this.dispatch({
+      type: 'DEBUG_ADD_ITEM',
+      entityId: 'player',
+      templateId,
+    });
+  }
+
+  /** Debug: заспавнить объект на карте. */
+  debugSpawnEntity(
+    spawnType: 'item' | 'enemy' | 'door' | 'stairs',
+    templateId: string,
+    position: Position,
+  ): void {
+    if (!this.simulation || this.mode !== 'playing') {
+      return;
+    }
+    this.dispatch({
+      type: 'DEBUG_SPAWN_ENTITY',
+      entityId: 'player',
+      spawnType,
+      templateId,
+      position,
+    });
   }
 
   /** Возврат в главное меню. Уничтожает текущую симуляцию. */

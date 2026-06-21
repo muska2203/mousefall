@@ -64,6 +64,8 @@ export class DefaultActionPointCostResolver
 
       case 'EQUIP':
       case 'UNEQUIP':
+      case 'DEBUG_ADD_ITEM':
+      case 'DEBUG_SPAWN_ENTITY':
         return 0;
 
       default: {

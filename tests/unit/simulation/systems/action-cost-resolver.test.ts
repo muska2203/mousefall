@@ -42,6 +42,7 @@ describe('DefaultActionPointCostResolver', () => {
         ['fireball', mockAbility('fireball', { apCost: 2 })],
       ]),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });

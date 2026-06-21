@@ -17,8 +17,9 @@
 
 | Задача | Куда идти |
 |--------|-----------|
-| Добавить действие | `systems/actions/types.ts` → создать handler в `systems/actions/handlers/` → зарегистрировать |
+| Добавить действие | `core-types.ts` (union `GameAction`) → создать handler в `systems/actions/` → зарегистрировать в `simulation.ts` |
 | Добавить интент | `systems/intents/` → добавить executor |
+| Добавить debug-действие | `systems/actions/debug-*.ts` → зарегистрировать в `simulation.ts`. Должно проверять флаг debug-режима. |
 | Добавить реакцию мира | `systems/world-reactions/` |
 | Изменить ход | `simulation.ts`, метод `dispatch` |
 | Изменить генерацию карт | `systems/mapgen.ts` |
@@ -32,6 +33,7 @@
 - `preview(action)` — превью действия (для подсветки)
 - `getState()` — получить текущее состояние (`Readonly<GameState>`)
 - `generateMap()` — сгенерировать новую карту
+- `setDebugEnabled(enabled)` — включить/выключить debug-режим для чит-действий
 
 ---
 

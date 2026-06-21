@@ -8,7 +8,7 @@
  * - У каждой сущности есть стабильный строковый ID (используется для детерминированной сортировки)
  */
 
-import {ENTITY_TYPE} from "@utils/constants.ts";
+
 import type {ItemTemplate, MapParams} from "@content/schemas";
 import {
   Position,
@@ -79,11 +79,11 @@ export type Entity =
     | PlayerEntity
     | EnemyEntity
     | ItemEntity
-    | StairsEntity;
+    | StairsEntity
+    | DoorEntity;
 
 
-export type EntityType =
-    typeof ENTITY_TYPE[keyof typeof ENTITY_TYPE];
+export type EntityType = 'player' | 'enemy' | 'item' | 'stairs' | 'door';
 
 export interface BaseEntity {
   id: EntityId;
@@ -236,6 +236,12 @@ export interface StairsEntity extends BaseEntity, TemplateIdHolder {
   blocksMovement: false;
 }
 
+/** Дверь — непроходимый объект, блокирующий обзор. Может быть разрушена атаками и получать статус-эффекты. */
+export interface DoorEntity extends BaseEntity, Attackable, StatusEffectHolder, TemplateIdHolder {
+  type: 'door';
+  blocksMovement: true;
+}
+
 // ─────────────────────────────────────────────
 // Состояние ИИ в рантайме
 // ─────────────────────────────────────────────
@@ -382,6 +388,8 @@ export type Simulation = {
   getState(): Readonly<GameState>;
 
   generateMap(params: MapParams): void;
+
+  setDebugEnabled(enabled: boolean): void;
 
   getPlayerStats(): Readonly<PlayerStatsSnapshot>;
 

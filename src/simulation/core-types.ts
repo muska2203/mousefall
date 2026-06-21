@@ -182,6 +182,8 @@ export type GameAction =
   | EquipAction
   | UnequipAction
   | UseItemAction
+  | DebugAddItemAction
+  | DebugSpawnEntityAction
 ;
 
 export type MoveAction = {
@@ -241,6 +243,20 @@ export type UseItemAction = {
   type: 'USE_ITEM';
   entityId: EntityId;
   itemInstanceId: ItemInstanceId;
+};
+
+export type DebugAddItemAction = {
+  type: 'DEBUG_ADD_ITEM';
+  entityId: EntityId;
+  templateId: string;
+};
+
+export type DebugSpawnEntityAction = {
+  type: 'DEBUG_SPAWN_ENTITY';
+  entityId: EntityId;
+  spawnType: 'item' | 'enemy' | 'door' | 'stairs';
+  templateId: string;
+  position: Position;
 };
 
 export type TargetMode =

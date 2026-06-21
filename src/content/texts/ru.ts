@@ -107,4 +107,10 @@ export const ruContentTexts: ContentTexts = {
       flavorText: 'Обратно к солнечному свету и неоплаченным счетам.',
     },
   },
+  doors: {
+    wooden_door: {
+      name: 'Деревянная дверь',
+      flavorText: 'Хрупкая, но лучше, чем ничего.',
+    },
+  },
 };

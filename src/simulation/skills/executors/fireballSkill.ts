@@ -3,8 +3,8 @@ import { Intent } from '@simulation/systems/intents/types';
 import { TargetMode } from '@simulation/core-types';
 import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
-import { getEntitiesInRadius, getVisiblePositionsWithinRange, getEntityAt } from '@simulation/skills/targeting';
-import { isCombatEntity } from '@simulation/state';
+import { getEntitiesInRadius, getVisiblePositionsWithinRange } from '@simulation/skills/targeting';
+import { isCombatEntity, isDamageable } from '@simulation/state';
 
 export const fireballSkill: SkillExecutor = {
   id: 'fireball',
@@ -42,17 +42,18 @@ export const fireballSkill: SkillExecutor = {
     const affectedEntities = getEntitiesInRadius(state, center, 1);
 
     for (const entity of affectedEntities) {
+      // Предметы и лестницы не получают урона.
       if (entity.type === 'item' || entity.type === 'stairs') continue;
+      if (!isDamageable(entity)) continue;
       const isCenter = entity.x === center.x && entity.y === center.y;
       const formulaId = isCenter ? 'fireball_center' : 'fireball_aoe';
-      const baseDamage = isCenter ? 20 : 20; // base damage 20
+      const baseDamage = 20; // base damage 20
       const formula = damageFormulas[formulaId];
       if (!formula) continue;
       const skillLevel = caster.type === 'player'
         ? (caster.abilities.find(a => a.templateId === 'fireball')?.level ?? 1)
         : 1;
       if (!isCombatEntity(caster)) continue;
-      if (!isCombatEntity(entity)) continue;
       const damageEntries = formula({
         caster,
         target: entity,
@@ -67,7 +68,7 @@ export const fireballSkill: SkillExecutor = {
       const burning: StatusEffect = {
         type: 'burning',
         duration: 3,
-        value: Math.max(1, Math.round((('maxHp' in entity) ? entity.maxHp : 0) * 0.1)),
+        value: Math.max(1, Math.round(entity.maxHp * 0.1)),
         statModifiers: null,
       };
       intents.push({ type: 'APPLY_STATUS', entityId: entity.id, status: burning });

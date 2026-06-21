@@ -198,10 +198,20 @@ export type StairsPopoverViewModel = {
   flavorText: string;
 };
 
+export type DoorPopoverViewModel = {
+  name: string;
+  sprite: string;
+  flavorText: string;
+  hp: number;
+  maxHp: number;
+  armor: number;
+};
+
 export type FieldObjectPopoverViewModel =
   | { kind: 'enemy'; data: EnemyPopoverViewModel }
   | { kind: 'item'; data: ItemDetailViewModel }
-  | { kind: 'stairs'; data: StairsPopoverViewModel };
+  | { kind: 'stairs'; data: StairsPopoverViewModel }
+  | { kind: 'door'; data: DoorPopoverViewModel };
 
 /** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */
 export type PresentationIntent =

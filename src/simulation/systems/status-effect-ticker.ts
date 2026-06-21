@@ -15,25 +15,17 @@ export function tickEntityStatusEffects(entity: Entity): Intent[] {
 
 /**
  * Возвращает массив кортежей [entity, intents] для последующего исполнения.
+ * Тикает статусы у всех живых сущностей, способных их хранить (игрок, враги, двери и т.д.).
  */
 export function tickAllStatusEffects(state: GameState): { entity: Entity; intents: Intent[] }[] {
   const results: { entity: Entity; intents: Intent[] }[] = [];
 
-  // Игрок
-  if (state.player.hp > 0) {
-    const playerIntents = tickEntityStatusEffects(state.player);
-    if (playerIntents.length > 0) {
-      results.push({ entity: state.player, intents: playerIntents });
-    }
-  }
-
-  // Враги
   for (const entity of state.entities.values()) {
-    if (entity.type !== 'enemy') continue;
-    if (!('isAlive' in entity) || !entity.isAlive) continue;
-    const enemyIntents = tickEntityStatusEffects(entity);
-    if (enemyIntents.length > 0) {
-      results.push({ entity, intents: enemyIntents });
+    if (!('statusEffects' in entity)) continue;
+    if ('isAlive' in entity && !entity.isAlive) continue;
+    const intents = tickEntityStatusEffects(entity);
+    if (intents.length > 0) {
+      results.push({ entity, intents });
     }
   }
 

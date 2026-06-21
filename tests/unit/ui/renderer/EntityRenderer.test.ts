@@ -180,6 +180,7 @@ describe('EntityRenderer', () => {
       items: new Map(),
       abilities: new Map(),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });

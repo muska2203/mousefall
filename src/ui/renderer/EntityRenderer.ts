@@ -9,7 +9,7 @@ import {Container, Sprite, Texture, Text} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
-import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite} from './spriteRegistry';
+import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite, getDoorSprite} from './spriteRegistry';
 import {getTextureSync, getTexture} from './TextureCache';
 import {Tween, Vec2Tween, lerp} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
@@ -109,6 +109,20 @@ export class EntityRenderer {
           } else {
             sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
           }
+        }
+        existingIds.add(entity.id);
+      }
+      if (entity.type === 'door') {
+        // Не рендерим разрушенные двери, даже если они ещё не удалены из state.entities
+        if ('isAlive' in entity && entity.isAlive === false) continue;
+        const path = getDoorSprite(entity.templateId);
+        texturePaths.set(path, path);
+        const texture = getTextureSync(path);
+        const scale = getRenderScale(entity.templateId, false);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
+        const sprite = this.sprites.get(entity.id);
+        if (sprite && !this.activeAnimations.has(entity.id)) {
+          sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
         }
         existingIds.add(entity.id);
       }

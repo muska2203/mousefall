@@ -20,6 +20,7 @@ import { enMetaFooter } from './components/metaFooter';
 import { enHotSlot } from './components/hotSlot';
 import { enGameField } from './components/gameField';
 import { enFieldObjectPopover } from './components/fieldObjectPopover';
+import { enDebugPanel } from './components/debugPanel';
 import { enStarterEquipmentPanel } from './components/starterEquipmentPanel';
 import { enStatRow } from './components/statRow';
 import { enPortrait } from './components/portrait';
@@ -61,6 +62,7 @@ export const enResources: Resources = {
     hotSlot: enHotSlot,
     gameField: enGameField,
     fieldObjectPopover: enFieldObjectPopover,
+    debugPanel: enDebugPanel,
     starterEquipmentPanel: enStarterEquipmentPanel,
     statRow: enStatRow,
     portrait: enPortrait,

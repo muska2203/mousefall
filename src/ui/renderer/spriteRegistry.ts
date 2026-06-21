@@ -35,3 +35,8 @@ export function getStairsSprite(templateId: string): string {
 export function getItemSprite(templateId: string): string {
   return `/assets/items/${templateId}.png`;
 }
+
+/** Путь к спрайту двери по templateId. */
+export function getDoorSprite(templateId: string): string {
+  return `/assets/objects/doors/${templateId}.png`;
+}

@@ -138,6 +138,34 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
 
       {popover.kind === 'item' && <ItemDetailCard item={popover.data} />}
 
+      {popover.kind === 'door' && (
+        <div className="field-popover-card">
+          <div className="field-popover-head">
+            <img
+              className="field-popover-sprite"
+              src={popover.data.sprite}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <span className="field-popover-name">{popover.data.name}</span>
+          </div>
+
+          {popover.data.flavorText && (
+            <p className="field-popover-flavor">{popover.data.flavorText}</p>
+          )}
+
+          <div className="field-popover-stats">
+            <span className="field-popover-stat">
+              {t('fieldObjectPopover.hpLabel')}<strong>{popover.data.hp}</strong> / {popover.data.maxHp}
+            </span>
+            <span className="field-popover-stat">
+              {t('fieldObjectPopover.armorLabel')}<strong>{popover.data.armor}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
       {popover.kind === 'stairs' && (
         <div className="field-popover-card">
           <div className="field-popover-head">

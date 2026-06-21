@@ -30,6 +30,7 @@ describe('useAbilityAction', () => {
         ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2 })],
       ]),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });
@@ -111,6 +112,7 @@ describe('useAbilityAction', () => {
         ['fireball', mockAbility('fireball', { castTime: 2 })],
       ]),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
     const state = makeGameState();
@@ -143,6 +145,7 @@ describe('useAbilityAction', () => {
         ['fireball', mockAbility('fireball', { castTime: 2 })],
       ]),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
     const state = makeGameState();

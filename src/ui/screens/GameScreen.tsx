@@ -21,6 +21,7 @@ import {LogPanel} from '@ui/components/LogPanel';
 import {InventoryPanel} from '@ui/components/InventoryPanel';
 import {SkillsPanel} from '@ui/components/SkillsPanel';
 import {FieldObjectPopover} from '@ui/components/FieldObjectPopover';
+import {DebugPanel, type SpawnType} from '@ui/components/DebugPanel';
 
 interface Props {
   session: GameSession;
@@ -46,6 +47,8 @@ export function GameScreen({session, onModeChange}: Props) {
 
   const isInputBlocked = renderInput?.phase === 'animating';
   const [fieldHoverPos, setFieldHoverPos] = useState<{x: number; y: number} | null>(null);
+  const [tileHoverPos, setTileHoverPos] = useState<{x: number; y: number} | null>(null);
+  const [pendingDebugSpawn, setPendingDebugSpawn] = useState<{spawnType: SpawnType; templateId: string} | null>(null);
 
   const performMoveOrAttack = useCallback(
     (dx: number, dy: number) => {
@@ -135,6 +138,7 @@ export function GameScreen({session, onModeChange}: Props) {
     (pos: {x: number; y: number}) => {
       if (session.getMode() !== 'playing') return;
       if (isInputBlocked) return;
+      setTileHoverPos(pos);
       session.previewTarget(pos);
       session.setFieldHover(pos);
     },
@@ -154,15 +158,23 @@ export function GameScreen({session, onModeChange}: Props) {
   const handleMouseLeave = useCallback(() => {
     session.setFieldHover(null);
     setFieldHoverPos(null);
+    setTileHoverPos(null);
   }, [session]);
 
   const handleMouseClick = useCallback(
     (pos: {x: number; y: number}) => {
       if (session.getMode() !== 'playing') return;
       if (isInputBlocked) return;
+
+      if (pendingDebugSpawn && import.meta.env.DEV) {
+        session.debugSpawnEntity(pendingDebugSpawn.spawnType, pendingDebugSpawn.templateId, pos);
+        setPendingDebugSpawn(null);
+        return;
+      }
+
       session.submitTarget(pos);
     },
-    [session, isInputBlocked],
+    [session, isInputBlocked, pendingDebugSpawn],
   );
 
   // Синхронизация режима с App.tsx (важно при автоходе и смерти)
@@ -181,9 +193,13 @@ export function GameScreen({session, onModeChange}: Props) {
       const target = e.target as HTMLElement | null;
       if (target && INTERACTIVE_TAGS.has(target.tagName)) return;
 
-      // Отмена таргетинга
+      // Отмена таргетинга или ожидания спавна
       if (e.key === 'Escape') {
         e.preventDefault();
+        if (pendingDebugSpawn) {
+          setPendingDebugSpawn(null);
+          return;
+        }
         session.cancelTargeting();
         return;
       }
@@ -215,6 +231,15 @@ export function GameScreen({session, onModeChange}: Props) {
       if (e.key === 'g' || e.key === 'G' || e.key === 'п' || e.key === 'П') {
         e.preventDefault();
         handlePickup();
+        return;
+      }
+
+      // Backquote: переключить debug-панель (только в dev-сборке)
+      if (e.key === '`' || e.key === '~' || e.code === 'Backquote') {
+        if (import.meta.env.DEV) {
+          e.preventDefault();
+          session.toggleDebug();
+        }
         return;
       }
 
@@ -314,11 +339,23 @@ export function GameScreen({session, onModeChange}: Props) {
   );
 
   return (
-    <ThreeColumnLayout
-      variant="game"
-      left={leftColumn}
-      center={centerColumn}
-      right={rightColumn}
-    />
+    <>
+      <ThreeColumnLayout
+        variant="game"
+        left={leftColumn}
+        center={centerColumn}
+        right={rightColumn}
+      />
+      {import.meta.env.DEV && session.isDebug() && renderInput && (
+        <DebugPanel
+          session={session}
+          hoveredTile={tileHoverPos}
+          playerPosition={{x: renderInput.state.player.x, y: renderInput.state.player.y}}
+          pendingSpawn={pendingDebugSpawn}
+          onRequestSpawn={(spawnType, templateId) => setPendingDebugSpawn({spawnType, templateId})}
+          onCancelSpawn={() => setPendingDebugSpawn(null)}
+        />
+      )}
+    </>
   );
 }

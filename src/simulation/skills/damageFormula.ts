@@ -1,4 +1,4 @@
-import { PlayerEntity, EnemyEntity } from '@simulation/types';
+import { PlayerEntity, EnemyEntity, Attackable, Entity } from '@simulation/types';
 import type { DamageType } from '@simulation/core-types';
 
 export type SkillDamageEntry = {
@@ -8,7 +8,7 @@ export type SkillDamageEntry = {
 
 export type DamageFormulaContext = {
   caster: PlayerEntity | EnemyEntity;
-  target: PlayerEntity | EnemyEntity;
+  target: Entity & Attackable;
   skillLevel: number;
   baseDamage: number;
 };

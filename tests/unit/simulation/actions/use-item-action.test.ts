@@ -52,6 +52,7 @@ beforeEach(() => {
     ]),
     abilities: new Map(),
     maps: new Map(),
+    doors: new Map(),
     stairs: new Map(),
   });
 });

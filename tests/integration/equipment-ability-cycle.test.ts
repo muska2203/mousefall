@@ -54,6 +54,7 @@ beforeEach(() => {
       ['fireball', mockAbility('fireball')],
     ]),
     maps: new Map(),
+    doors: new Map(),
     stairs: new Map(),
   });
 });

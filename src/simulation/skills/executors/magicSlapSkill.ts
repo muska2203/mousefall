@@ -1,10 +1,10 @@
-import { GameState, Position, Entity } from '@simulation/types';
+import { GameState, Position, Entity, Attackable } from '@simulation/types';
 import { Intent } from '@simulation/systems/intents/types';
 import { TargetMode } from '@simulation/core-types';
 import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
-import { getEnemyPositionsWithinRange } from '@simulation/skills/targeting';
-import { isCombatEntity } from '@simulation/state';
+import { getDamageablePositionsWithinRange } from '@simulation/skills/targeting';
+import { isCombatEntity, isDamageable } from '@simulation/state';
 
 export const magicSlapSkill: SkillExecutor = {
   id: 'magic_slap',
@@ -14,7 +14,7 @@ export const magicSlapSkill: SkillExecutor = {
   },
 
   getValidTargets(state: GameState, caster: Entity): Position[] {
-    return getEnemyPositionsWithinRange(state, caster, 5);
+    return getDamageablePositionsWithinRange(state, caster, 5);
   },
 
   preview(state: GameState, caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
@@ -42,14 +42,13 @@ export const magicSlapSkill: SkillExecutor = {
 
     for (const targetPos of effectiveTargets) {
       const entity = Array.from(state.entities.values()).find(
-        e => e.x === targetPos.x && e.y === targetPos.y && (e.type === 'player' || e.type === 'enemy')
+        (e): e is Entity & Attackable => e.x === targetPos.x && e.y === targetPos.y && isDamageable(e)
       );
       if (!entity) continue;
 
       const formula = damageFormulas['magic_slap'];
       if (!formula) continue;
       if (!isCombatEntity(caster)) continue;
-      if (!isCombatEntity(entity)) continue;
       const damageEntries = formula({
         caster,
         target: entity,

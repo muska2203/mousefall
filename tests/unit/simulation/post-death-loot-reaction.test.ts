@@ -40,6 +40,7 @@ describe('postDeathLootReaction', () => {
             items: new Map(),
             abilities: new Map(),
             maps: new Map(),
+            doors: new Map(),
             stairs: new Map(),
         });
 
@@ -64,6 +65,7 @@ describe('postDeathLootReaction', () => {
             items: new Map(),
             abilities: new Map(),
             maps: new Map(),
+            doors: new Map(),
             stairs: new Map(),
         });
 
@@ -88,6 +90,7 @@ describe('postDeathLootReaction', () => {
             items: new Map(),
             abilities: new Map(),
             maps: new Map(),
+            doors: new Map(),
             stairs: new Map(),
         });
 
@@ -119,6 +122,7 @@ describe('postDeathLootReaction', () => {
             items: new Map(),
             abilities: new Map(),
             maps: new Map(),
+            doors: new Map(),
             stairs: new Map(),
         });
 

@@ -34,6 +34,13 @@ export function resolveStairsSprite(templateId: string): string {
 }
 
 /**
+ * Возвращает путь к спрайту двери по templateId.
+ */
+export function resolveDoorSprite(templateId: string): string {
+  return `/assets/objects/doors/${templateId}.png`;
+}
+
+/**
  * Возвращает путь к иконке способности по spriteId.
  */
 export function resolveAbilityIcon(spriteId: string): string {

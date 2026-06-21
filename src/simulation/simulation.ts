@@ -27,6 +27,8 @@ import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
+import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
+import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
@@ -57,7 +59,15 @@ export class GameSimulation implements Simulation {
         private state: GameState,
         private readonly actionHandlerRegistry: ActionHandlerRegistry,
         private readonly apCostResolver: ActionPointCostResolver = new DefaultActionPointCostResolver(),
-    ) {
+        private readonly debugContext: DebugContext = { enabled: false },
+    ) {}
+
+    /**
+     * Включить или выключить debug-режим для текущей симуляции.
+     * Изменение применяется к уже зарегистрированным обработчикам.
+     */
+    setDebugEnabled(enabled: boolean): void {
+        this.debugContext.enabled = enabled;
     }
 
     /**
@@ -76,21 +86,25 @@ export class GameSimulation implements Simulation {
         seed: number,
         config: CharacterConfig,
         mapParams: MapParams,
+        debugEnabled: boolean = false,
     ): GameSimulation {
         const state = createNewGameState(seed, mapParams, config.templateId);
         applyCharacterConfig(state.player, config);
         createStartingEquipment(state, state.player, config.startingEquipment);
-        const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+        const debugContext: DebugContext = { enabled: debugEnabled };
+        const simulation = new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
         simulation.generateMap(mapParams);
         return simulation;
     }
+
 
     /**
      * Фабрика загруженной игры.
      * Оборачивает десериализованное состояние в симуляцию без повторной генерации карты.
      */
-    static loadSavedGame(state: GameState): GameSimulation {
-        return new GameSimulation(state, defaultActionHandlerRegistry());
+    static loadSavedGame(state: GameState, debugEnabled: boolean = false): GameSimulation {
+        const debugContext: DebugContext = { enabled: debugEnabled };
+        return new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
     }
 
     /**
@@ -676,7 +690,7 @@ export class ActionHandlerRegistry {
     }
 }
 
-export function defaultActionHandlerRegistry(): ActionHandlerRegistry {
+export function defaultActionHandlerRegistry(debugContext: DebugContext = { enabled: false }): ActionHandlerRegistry {
     initSkillRegistry();
     const registry = new ActionHandlerRegistry();
 
@@ -690,6 +704,8 @@ export function defaultActionHandlerRegistry(): ActionHandlerRegistry {
     registry.register('EQUIP', equipEntity);
     registry.register('UNEQUIP', unequipEntity);
     registry.register('USE_ITEM', useItemAction);
+    registry.register('DEBUG_ADD_ITEM', createDebugAddItemActionHandler(debugContext));
+    registry.register('DEBUG_SPAWN_ENTITY', createDebugSpawnEntityActionHandler(debugContext));
     return registry;
 }
 

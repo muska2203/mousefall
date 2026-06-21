@@ -190,10 +190,26 @@ export interface ComponentsGameFieldTranslations {
 export interface ComponentsFieldObjectPopoverTranslations {
   damageLabel: string;
   hpLabel: string;
+  armorLabel: string;
   skillsTitle: string;
   cooldownSuffix: string;
   cooldownReady: string;
   possibleLootTitle: string;
+}
+
+export interface ComponentsDebugPanelTranslations {
+  title: string;
+  giveItemLabel: string;
+  addToInventoryButton: string;
+  spawnObjectLabel: string;
+  spawnTypeItem: string;
+  spawnTypeEnemy: string;
+  spawnTypeDoor: string;
+  spawnTypeStairs: string;
+  selectTileHint: string;
+  spawnButtonIdle: string;
+  spawnButtonPending: string;
+  cancelButton: string;
 }
 
 export interface ComponentsStarterEquipmentPanelTranslations {
@@ -234,6 +250,7 @@ export interface ComponentsTranslations {
   hotSlot: ComponentsHotSlotTranslations;
   gameField: ComponentsGameFieldTranslations;
   fieldObjectPopover: ComponentsFieldObjectPopoverTranslations;
+  debugPanel: ComponentsDebugPanelTranslations;
   starterEquipmentPanel: ComponentsStarterEquipmentPanelTranslations;
   statRow: ComponentsStatRowTranslations;
   portrait: ComponentsPortraitTranslations;

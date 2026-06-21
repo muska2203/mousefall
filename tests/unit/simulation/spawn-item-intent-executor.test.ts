@@ -33,6 +33,7 @@ describe('executeSpawnItemIntent', () => {
             items: new Map([['test_item', makeTestItemTemplate('test_item')]]),
             abilities: new Map(),
             maps: new Map(),
+            doors: new Map(),
             stairs: new Map(),
         });
     });

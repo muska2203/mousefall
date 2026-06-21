@@ -128,6 +128,7 @@ describe('Интеграция: цикл выпадения лута', () => {
       ]),
       abilities: new Map(),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });
@@ -271,6 +272,7 @@ describe('Интеграция: цикл выпадения лута', () => {
       ]),
       abilities: new Map(),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
 

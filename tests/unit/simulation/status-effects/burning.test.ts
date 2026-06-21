@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
 import { tickEntityStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
@@ -73,7 +73,7 @@ describe('burning status effect', () => {
     const enemy = makeEnemy({ x: 6, y: 5, hp: 5, maxHp: 100, statusEffects: [{ type: 'burning', duration: 3, value: 10, statModifiers: null }] });
     state.entities.set(enemy.id, enemy);
 
-    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map() });
+    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map() });
     const sim = GameSimulation.loadSavedGame(state);
 
     // Тикаем через beginNextPlayerTurn (вызывается после исчерпания AP игрока)
@@ -84,5 +84,22 @@ describe('burning status effect', () => {
     expect(updatedEnemy).toBeDefined();
     expect('isAlive' in updatedEnemy! && updatedEnemy.isAlive).toBe(false);
     resetRegistry();
+  });
+
+  it('damages door when burning ticks', () => {
+    const state = makeGameState();
+    const door = makeDoor({ x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
+    state.entities.set(door.id, door);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id });
+    const node = executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id }, builder, builder.root);
+
+    expect(node).not.toBeNull();
+    expect(node!.event.type).toBe('ENTITY_DAMAGED');
+    expect(node!.event).toMatchObject({
+      targetId: door.id,
+      damageType: 'fire',
+    });
+    expect((node!.event as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
 });

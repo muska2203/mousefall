@@ -8,6 +8,150 @@ import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { Entity, EntityId } from '../../../src/simulation/types';
 
+describe('GameSession debug mode', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map([
+        ['cat_small', {
+          id: 'cat_small',
+          health: {max: 20},
+          combat: {damage: 5, armor: 0},
+          baseStats: {str: 1, dex: 1, int: 0, vit: 0},
+          aiSightRadius: 6,
+          aiStrategyId: 'hunter',
+        } as any],
+      ]),
+      players: new Map(),
+      items: new Map([
+        ['health_potion', {
+          id: 'health_potion',
+          type: 'consumable',
+          stackable: false,
+          maxStack: 1,
+          value: 0,
+          abilityPool: [],
+          grantedAbilities: [],
+        } as any],
+      ]),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map([
+        ['wooden_door', {id: 'wooden_door', maxHp: 30, armor: 0} as any],
+      ]),
+      stairs: new Map([
+        ['stairs_down', {id: 'stairs_down'} as any],
+      ]),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('debugAddItem adds item to inventory when debug is enabled', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.toggleDebug();
+    session.loadGame(state);
+
+    expect(session.isDebug()).toBe(true);
+
+    session.debugAddItem('health_potion');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.inventory.length).toBe(1);
+    expect(vm.renderInput?.inventory[0]?.templateId).toBe('health_potion');
+  });
+
+  it('debugSpawnEntity spawns entity on map when debug is enabled', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.toggleDebug();
+    session.loadGame(state);
+
+    session.debugSpawnEntity('item', 'health_potion', {x: 3, y: 3});
+
+    const vm = session.getViewModel();
+    const spawned = vm.renderInput?.itemsOnFloor.find(i => i.x === 3 && i.y === 3);
+    expect(spawned).toBeDefined();
+    expect(spawned?.templateId).toBe('health_potion');
+  });
+
+  it('debug actions are rejected when debug is disabled', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    expect(session.isDebug()).toBe(false);
+
+    session.debugAddItem('health_potion');
+    session.debugSpawnEntity('item', 'health_potion', {x: 3, y: 3});
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.inventory.length).toBe(0);
+    expect(vm.renderInput?.itemsOnFloor.length).toBe(0);
+  });
+
+  it('debugAddItem works after toggling debug on already loaded game', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+    expect(session.isDebug()).toBe(false);
+
+    session.toggleDebug();
+
+    expect(session.isDebug()).toBe(true);
+    session.debugAddItem('health_potion');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.inventory.length).toBe(1);
+    expect(vm.renderInput?.inventory[0]?.templateId).toBe('health_potion');
+  });
+
+  it('debugSpawnEntity works after toggling debug on already loaded game', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+    expect(session.isDebug()).toBe(false);
+
+    session.toggleDebug();
+
+    expect(session.isDebug()).toBe(true);
+    session.debugSpawnEntity('item', 'health_potion', {x: 3, y: 3});
+
+    const vm = session.getViewModel();
+    const spawned = vm.renderInput?.itemsOnFloor.find(i => i.x === 3 && i.y === 3);
+    expect(spawned).toBeDefined();
+    expect(spawned?.templateId).toBe('health_potion');
+  });
+});
+
 describe('GameSession AP display during animations', () => {
   beforeEach(() => {
     resetRegistry();
@@ -17,6 +161,7 @@ describe('GameSession AP display during animations', () => {
       items: new Map(),
       abilities: new Map(),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });

@@ -24,6 +24,7 @@ describe('GameSession targeting', () => {
         ['magic_slap', mockAbility('magic_slap')],
       ]),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });

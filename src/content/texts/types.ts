@@ -10,4 +10,5 @@ export interface ContentTexts {
   abilities: Record<string, ContentText>;
   players: Record<string, ContentText>;
   stairs: Record<string, ContentText>;
+  doors: Record<string, ContentText>;
 }

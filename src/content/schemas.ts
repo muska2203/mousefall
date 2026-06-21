@@ -187,6 +187,19 @@ export const StairsTemplateSchema = z.object({
 export type StairsTemplate = z.output<typeof StairsTemplateSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон двери
+// ─────────────────────────────────────────────
+
+export const DoorTemplateSchema = z.object({
+  id:          z.string().min(1).describe('Уникальный идентификатор двери'),
+  maxHp:       z.number().int().positive().describe('Максимальное здоровье двери'),
+  armor:       z.number().int().nonnegative().default(0).describe('Броня двери'),
+  renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+}).describe('Шаблон двери');
+
+export type DoorTemplate = z.output<typeof DoorTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Шаблон игрока
 // ─────────────────────────────────────────────
 
@@ -212,4 +225,5 @@ export type LoadedContent = {
   abilities: Map<string, AbilityTemplate>;
   maps:      Map<string, MapParams>;
   stairs:    Map<string, StairsTemplate>;
+  doors:     Map<string, DoorTemplate>;
 };

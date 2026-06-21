@@ -15,12 +15,12 @@
  * - Вся случайность через параметр rng (детерминированно)
  */
 
-import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGState, StairsEntity, RuntimeAbility } from '../types';
+import type { GameMap, EnemyEntity, ItemEntity, Room, TileType, GameState, RNGState, StairsEntity, DoorEntity, RuntimeAbility } from '../types';
 import type { MapParams } from '@content/schemas';
 import { rngInt, rngChance } from '../../utils/rng';
 import { nextEntityId, createTileGrid } from '../state';
 import { createDefaultAIState } from '../ai/ai-state';
-import { getEntity, getItem } from '@content/registry';
+import { getEntity, getItem, getDoor } from '@content/registry';
 import { createItemEntity } from './item-entity-factory';
 import { addModifier } from './stats/modifier-engine';
 import { recalculateActorStats } from './stats/recalculate';
@@ -296,5 +296,23 @@ export function createStairs(state: GameState, templateId: 'stairs_down' | 'stai
     displayName: templateId,
     templateId,
     blocksMovement: false,
+  };
+}
+
+export function createDoor(state: GameState, templateId: string, x: number, y: number): DoorEntity {
+  const template = getDoor(templateId);
+  return {
+    id: nextEntityId(state, 'door'),
+    type: 'door',
+    x,
+    y,
+    displayName: templateId,
+    templateId,
+    blocksMovement: true,
+    hp: template.maxHp,
+    maxHp: template.maxHp,
+    armor: template.armor,
+    isAlive: true,
+    statusEffects: [],
   };
 }

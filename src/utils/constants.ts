@@ -75,10 +75,3 @@ export const SAVE_KEY_PREFIX = 'mousefall:save:';
 
 /** Идентификатор игрока всегда равен этому значению. */
 export const PLAYER_ID = 'player';
-
-export const ENTITY_TYPE = {
-    PLAYER: 'player',
-    ENEMY: 'enemy',
-    ITEM: 'item',
-    STAIRS: 'stairs',
-} as const;

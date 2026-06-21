@@ -62,6 +62,10 @@ export function getEffectiveArmor(entity: Entity): number {
     const base = getBaseArmor(entity);
     return Math.round(applyModifiers(entity, 'armor', base).total);
   }
+  // Для не-StatActor, но имеющих броню (например, дверей), используем плоское значение.
+  if ('armor' in entity) {
+    return (entity as { armor: number }).armor;
+  }
   return 0;
 }
 

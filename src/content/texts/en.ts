@@ -107,4 +107,10 @@ export const enContentTexts: ContentTexts = {
       flavorText: 'Back to sunlight and unpaid bills.',
     },
   },
+  doors: {
+    wooden_door: {
+      name: 'Wooden Door',
+      flavorText: 'Fragile, but better than nothing.',
+    },
+  },
 };

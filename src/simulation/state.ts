@@ -23,6 +23,7 @@ import type {
   GameState,
   PlayerEntity,
   EnemyEntity,
+  DoorEntity,
   Position,
   TileType,
 } from './types';
@@ -187,14 +188,22 @@ export function findAllAliveAiActors(state: GameState) {
 export const TARGET_PRIORITY: Record<EntityType, number> = {
   player: 100,
   enemy: 90,
+  door: 50,
   item: 0,
   stairs: 0,
 };
 
+/**
+ * Type guard: проверяет, что сущность может получать урон (есть hp и она жива).
+ * Используется для скиллов, урона и рукопашных атак по любым damageable-объектам.
+ */
+export function isDamageable(e: Entity): e is Entity & Attackable {
+  return 'hp' in e && (e as Entity & Attackable).isAlive !== false;
+}
+
 export function findFirstAttackableEntityAt(state: GameState, x: number, y: number): (Entity & Attackable) | undefined {
   return findAllEntitiesAt(state, x, y)
-      .filter(e => 'hp' in e && (e as Entity & Attackable).isAlive !== false)
-      .map(e => e as Entity & Attackable)
+      .filter(isDamageable)
       .sort((a, b) => TARGET_PRIORITY[b.type] - TARGET_PRIORITY[a.type])[0];
 }
 
@@ -219,7 +228,9 @@ export function isBlocked(state: GameState, x: number, y: number): boolean {
 export function blocksLOS(state: GameState, x: number, y: number): boolean {
   if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) return true;
   const tile = state.map.tiles[y]?.[x];
-  return tile === 'wall';
+  if (tile === 'wall') return true;
+  const door = findDoorAt(state, x, y);
+  return door ? door.isAlive !== false : false;
 }
 
 
@@ -238,6 +249,15 @@ export function findStairsAt(state: GameState, x: number, y: number, templateId?
   return entities
     .filter((e): e is import('./types').StairsEntity => e.type === 'stairs' && (!templateId || e.templateId === templateId))
     [0];
+}
+
+/**
+ * Возвращает дверь на заданной клетке или undefined.
+ */
+export function findDoorAt(state: GameState, x: number, y: number): DoorEntity | undefined {
+  const entities = findAllEntitiesAt(state, x, y);
+  return entities
+    .filter((e): e is DoorEntity => e.type === 'door' && e.isAlive !== false)[0];
 }
 
 /**

@@ -17,7 +17,7 @@
  * - Решение: синглтон с initRegistry() для инжекции в тестах — золотая середина
  */
 
-import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate } from './schemas';
+import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate, DoorTemplate } from './schemas';
 import { getContentText, type Locale } from './texts/lookup';
 
 // ─────────────────────────────────────────────
@@ -45,6 +45,11 @@ export type LocalizedPlayerTemplate = PlayerTemplate & {
 };
 
 export type LocalizedStairsTemplate = StairsTemplate & {
+  name: string;
+  flavorText?: string;
+};
+
+export type LocalizedDoorTemplate = DoorTemplate & {
   name: string;
   flavorText?: string;
 };
@@ -163,6 +168,40 @@ export function getAllLocalizedPlayerTemplates(locale: Locale): LocalizedPlayerT
 }
 
 /**
+ * Получить все шаблоны предметов.
+ */
+export function getAllItems(): ItemTemplate[] {
+  return Array.from(getRegistry().items.values());
+}
+
+/**
+ * Получить все локализованные шаблоны предметов.
+ */
+export function getAllLocalizedItems(locale: Locale): LocalizedItemTemplate[] {
+  return Array.from(getRegistry().items.values()).map((template) => {
+    const text = getContentText('items', template.id, locale);
+    return { ...template, name: text.name, description: text.description ?? '' };
+  });
+}
+
+/**
+ * Получить все шаблоны сущностей (врагов / NPC).
+ */
+export function getAllEntities(): EntityTemplate[] {
+  return Array.from(getRegistry().entities.values());
+}
+
+/**
+ * Получить все локализованные шаблоны сущностей.
+ */
+export function getAllLocalizedEntities(locale: Locale): LocalizedEntityTemplate[] {
+  return Array.from(getRegistry().entities.values()).map((template) => {
+    const text = getContentText('entities', template.id, locale);
+    return { ...template, name: text.name, flavorText: text.flavorText };
+  });
+}
+
+/**
  * Получить шаблон предмета по ID.
  * Выбрасывает исключение, если не найден.
  */
@@ -258,6 +297,61 @@ export function tryGetAbility(id: string): AbilityTemplate | undefined {
 }
 
 /**
+ * Получить шаблон двери по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getDoor(id: string): DoorTemplate {
+  const template = getRegistry().doors.get(id);
+  if (!template) throw new Error(`Door template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить локализованный шаблон двери. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedDoor(id: string, locale: Locale): LocalizedDoorTemplate | undefined {
+  const template = tryGetDoor(id);
+  if (!template) return undefined;
+  const text = getContentText('doors', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Получить локализованный шаблон двери по ID.
+ */
+export function getLocalizedDoor(id: string, locale: Locale): LocalizedDoorTemplate {
+  const template = getDoor(id);
+  const text = getContentText('doors', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Попытаться получить шаблон двери.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetDoor(id: string): DoorTemplate | undefined {
+  if (_registry === null) return undefined;
+  return _registry.doors.get(id);
+}
+
+/**
+ * Получить все шаблоны дверей.
+ */
+export function getAllDoors(): DoorTemplate[] {
+  return Array.from(getRegistry().doors.values());
+}
+
+/**
+ * Получить все локализованные шаблоны дверей.
+ */
+export function getAllLocalizedDoors(locale: Locale): LocalizedDoorTemplate[] {
+  return Array.from(getRegistry().doors.values()).map((template) => {
+    const text = getContentText('doors', template.id, locale);
+    return { ...template, name: text.name, flavorText: text.flavorText };
+  });
+}
+
+/**
  * Получить шаблон лестницы по ID.
  * Выбрасывает исключение, если не найден.
  */
@@ -293,4 +387,21 @@ export function getLocalizedStairs(id: string, locale: Locale): LocalizedStairsT
 export function tryGetStairs(id: string): StairsTemplate | undefined {
   if (_registry === null) return undefined;
   return _registry.stairs.get(id);
+}
+
+/**
+ * Получить все шаблоны лестниц.
+ */
+export function getAllStairs(): StairsTemplate[] {
+  return Array.from(getRegistry().stairs.values());
+}
+
+/**
+ * Получить все локализованные шаблоны лестниц.
+ */
+export function getAllLocalizedStairs(locale: Locale): LocalizedStairsTemplate[] {
+  return Array.from(getRegistry().stairs.values()).map((template) => {
+    const text = getContentText('stairs', template.id, locale);
+    return { ...template, name: text.name, flavorText: text.flavorText };
+  });
 }

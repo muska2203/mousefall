@@ -3,6 +3,7 @@ import type { ComponentsFieldObjectPopoverTranslations } from '@i18n/schema';
 export const enFieldObjectPopover = {
   damageLabel: 'Damage: ',
   hpLabel: 'HP: ',
+  armorLabel: 'Armor: ',
   skillsTitle: 'Skills',
   cooldownSuffix: ' turns',
   cooldownReady: 'Ready',

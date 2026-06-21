@@ -25,7 +25,9 @@ export const executeDieIntent: IntentExecutor<DieIntent> = (
             if ('activeCast' in entity) {
                 entity.activeCast = null;
             }
-            state.runStats.enemiesKilled++;
+            if (entity.type === 'enemy') {
+                state.runStats.enemiesKilled++;
+            }
             return builder.addChild(parent, {
                 type: 'ENTITY_DIED',
                 entityId: intent.entityId,

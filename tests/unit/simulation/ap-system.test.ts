@@ -47,6 +47,7 @@ describe('AP-система: мульти-AP сценарии', () => {
         ['magic_slap', mockAbility('magic_slap', { cooldown: 2, apCost: 1 })],
       ]),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });

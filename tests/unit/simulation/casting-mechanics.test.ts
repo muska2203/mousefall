@@ -30,6 +30,7 @@ describe('canActorAct блокирует действия во время кас
         ['fireball', mockAbility('fireball', { castTime: 2, apCost: 2 })],
       ]),
       maps: new Map(),
+      doors: new Map(),
       stairs: new Map(),
     });
   });
