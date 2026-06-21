@@ -88,6 +88,10 @@ export function gameEventToLog(
       const itemName = template?.name ?? t('system.logBuilder.itemUsedLabel');
       return { text: t('system.logBuilder.heroUsedItem', { itemName }), variant: 'info' };
     }
+    case 'DOOR_OPENED':
+      return { text: t('system.logBuilder.doorOpened'), variant: 'info' };
+    case 'DOOR_CLOSED':
+      return { text: t('system.logBuilder.doorClosed'), variant: 'info' };
     default:
       return null;
   }

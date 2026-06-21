@@ -2,5 +2,6 @@
   "id": "wooden_door",
   "maxHp": 30,
   "armor": 2,
-  "renderScale": 1.0
+  "renderScale": 1.0,
+  "openSpriteId": "wooden_door_open"
 }

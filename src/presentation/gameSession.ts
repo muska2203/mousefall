@@ -19,6 +19,7 @@ import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnap
 import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt} from '@simulation/simulation';
+import {findDoorAt} from '@simulation/state';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
 import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel} from './types';
@@ -40,6 +41,8 @@ import {mapItemTemplateToDetail} from './itemDetailMapper';
 import {mapEnemyToPopover} from './enemyDetailMapper';
 import {mapStairsToPopover} from './stairsDetailMapper';
 import {mapDoorToPopover} from './doorDetailMapper';
+import { tryGetDoor } from '@content/registry';
+import { resolveDoorSprite } from '@utils/assetResolver';
 import {resolveAbilityIcon, resolveItemIcon} from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
@@ -336,6 +339,18 @@ export class GameSession {
         templateId: e.templateId,
       }));
 
+    // Предвычисляем пути к спрайтам дверей, чтобы UI не обращался к Content-реестру напрямую.
+    const doorSprites = new Map<string, string>();
+    for (const entity of state.entities.values()) {
+      if (entity.type === 'door' && entity.isAlive !== false) {
+        const template = tryGetDoor(entity.templateId);
+        doorSprites.set(
+          entity.id,
+          resolveDoorSprite(entity.templateId, entity.isOpen, template?.openSpriteId),
+        );
+      }
+    }
+
     const inventory = state.player.inventory
       .filter(invItem => !equippedIds.has(invItem.instanceId))
       .map(invItem => {
@@ -389,6 +404,7 @@ export class GameSession {
       heroStats,
       equipSlots,
       itemsOnFloor,
+      doorSprites,
       inventory,
       activeEffects,
       runStats: state.runStats,
@@ -458,6 +474,50 @@ export class GameSession {
           labelKey: 'components.interactionHint.ascend',
           priority: 1,
         });
+      }
+    }
+
+    // Двери на соседних клетках.
+    const neighborOffsets = [
+      { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
+      { dx: 1, dy: 1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 },
+    ];
+    for (const offset of neighborOffsets) {
+      const x = px + offset.dx;
+      const y = py + offset.dy;
+      const door = findDoorAt(state, x, y);
+      if (!door || door.isAlive === false) continue;
+
+      if (door.isOpen) {
+        const closeAction: GameAction = {
+          type: 'CLOSE_DOOR',
+          entityId: player.id,
+          targetPosition: { x, y },
+        };
+        if (canPerform(closeAction)) {
+          options.push({
+            kind: 'closeDoor',
+            action: closeAction,
+            targetPosition: { x, y },
+            labelKey: 'components.interactionHint.closeDoor',
+            priority: 2,
+          });
+        }
+      } else {
+        const openAction: GameAction = {
+          type: 'OPEN_DOOR',
+          entityId: player.id,
+          targetPosition: { x, y },
+        };
+        if (canPerform(openAction)) {
+          options.push({
+            kind: 'openDoor',
+            action: openAction,
+            targetPosition: { x, y },
+            labelKey: 'components.interactionHint.openDoor',
+            priority: 2,
+          });
+        }
       }
     }
 
@@ -976,10 +1036,32 @@ export class GameSession {
 
     const target = findFirstAttackableEntityAt(state, targetX, targetY);
 
-    const action: GameAction =
-      target && target.id !== state.player.id
-        ? {type: 'ATTACK', entityId: state.player.id, dx, dy}
-        : {type: 'MOVE', entityId: state.player.id, dx, dy};
+    let action: GameAction;
+
+    const doorAtTarget = findDoorAt(state, targetX, targetY);
+
+    if (target && target.id !== state.player.id && !doorAtTarget) {
+      // Атака по врагу/не-двери.
+      action = {type: 'ATTACK', entityId: state.player.id, dx, dy};
+    } else if (doorAtTarget) {
+      if (doorAtTarget.isOpen) {
+        // Открытая дверь — просто заходим на её клетку.
+        action = {type: 'MOVE', entityId: state.player.id, dx, dy};
+      } else {
+        // Закрытая дверь — открываем вместо атаки.
+        // Сбрасываем удерживаемое направление, чтобы при зажатой клавише
+        // персонаж не зашёл на клетку двери автоматически в тот же ход.
+        this.dispatch({
+          type: 'OPEN_DOOR',
+          entityId: state.player.id,
+          targetPosition: {x: targetX, y: targetY},
+        });
+        this.clearHeldDirection();
+        return;
+      }
+    } else {
+      action = {type: 'MOVE', entityId: state.player.id, dx, dy};
+    }
 
     this.dispatch(action);
   }

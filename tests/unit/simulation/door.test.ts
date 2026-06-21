@@ -2,20 +2,23 @@
  * Тесты объекта "дверь".
  *
  * Проверяем базовые свойства:
- * - дверь непроходима;
- * - дверь блокирует линию видимости;
+ * - дверь непроходима в закрытом состоянии;
+ * - дверь блокирует линию видимости в закрытом состоянии;
+ * - открытая дверь проходима и не блокирует обзор;
+ * - дверь может быть открыта и закрыта с соседней клетки;
  * - дверь может быть атакована и разрушена.
  */
 
 import { describe, it, expect } from 'vitest';
 import { isBlocked, blocksLOS, findFirstAttackableEntityAt, findDoorAt } from '../../../src/simulation/state';
 import { attackEntity } from '../../../src/simulation/systems/actions/attack-action';
+import { openDoorAction, closeDoorAction } from '../../../src/simulation/systems/actions/door-action';
 import { GameSimulation } from '../../../src/simulation/simulation';
-import type { DoorEntity } from '../../../src/simulation/types';
-import { makeGameState, makePlayer, makeDoor, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
+import type { DoorEntity, EntityId, Entity } from '../../../src/simulation/types';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
 
 describe('Door entity', () => {
-  it('blocks movement', () => {
+  it('blocks movement when closed', () => {
     const door = makeDoor({ x: 4, y: 5 });
     const state = makeGameState({
       entities: new Map([[door.id, door]]),
@@ -24,7 +27,7 @@ describe('Door entity', () => {
     expect(isBlocked(state, 4, 5)).toBe(true);
   });
 
-  it('blocks line of sight while alive', () => {
+  it('blocks line of sight while closed and alive', () => {
     const door = makeDoor({ x: 4, y: 5 });
     const state = makeGameState({
       entities: new Map([[door.id, door]]),
@@ -39,6 +42,16 @@ describe('Door entity', () => {
       entities: new Map([[door.id, door]]),
     });
 
+    expect(blocksLOS(state, 4, 5)).toBe(false);
+  });
+
+  it('does not block movement or line of sight when open', () => {
+    const door = makeDoor({ x: 4, y: 5, isOpen: true, blocksMovement: false });
+    const state = makeGameState({
+      entities: new Map([[door.id, door]]),
+    });
+
+    expect(isBlocked(state, 4, 5)).toBe(false);
     expect(blocksLOS(state, 4, 5)).toBe(false);
   });
 
@@ -110,5 +123,106 @@ describe('Door entity', () => {
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
     expect(sim.getState().entities.has(door.id)).toBe(false);
+  });
+
+  it('can be opened from an adjacent tile', () => {
+    const player = makePlayer({ x: 3, y: 5, maxAp: 2, ap: 2 });
+    const door = makeDoor({ x: 4, y: 5 });
+    const state = makeStateWithPlayerAndEntity(player, door);
+
+    const validation = openDoorAction.validate(state, {
+      type: 'OPEN_DOOR',
+      entityId: player.id,
+      targetPosition: { x: 4, y: 5 },
+    });
+    expect(validation.ok).toBe(true);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    const result = sim.dispatch({
+      type: 'OPEN_DOOR',
+      entityId: player.id,
+      targetPosition: { x: 4, y: 5 },
+    });
+    expect(result.success).toBe(true);
+
+    const updatedDoor = sim.getState().entities.get(door.id) as DoorEntity;
+    expect(updatedDoor.isOpen).toBe(true);
+    expect(updatedDoor.blocksMovement).toBe(false);
+    expect(isBlocked(sim.getState(), 4, 5)).toBe(false);
+    expect(blocksLOS(sim.getState(), 4, 5)).toBe(false);
+  });
+
+  it('can be closed from an adjacent tile', () => {
+    const player = makePlayer({ x: 3, y: 5, maxAp: 2, ap: 2 });
+    const door = makeDoor({ x: 4, y: 5, isOpen: true, blocksMovement: false });
+    const state = makeStateWithPlayerAndEntity(player, door);
+
+    const validation = closeDoorAction.validate(state, {
+      type: 'CLOSE_DOOR',
+      entityId: player.id,
+      targetPosition: { x: 4, y: 5 },
+    });
+    expect(validation.ok).toBe(true);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    const result = sim.dispatch({
+      type: 'CLOSE_DOOR',
+      entityId: player.id,
+      targetPosition: { x: 4, y: 5 },
+    });
+    expect(result.success).toBe(true);
+
+    const updatedDoor = sim.getState().entities.get(door.id) as DoorEntity;
+    expect(updatedDoor.isOpen).toBe(false);
+    expect(updatedDoor.blocksMovement).toBe(true);
+    expect(isBlocked(sim.getState(), 4, 5)).toBe(true);
+    expect(blocksLOS(sim.getState(), 4, 5)).toBe(true);
+  });
+
+  it('cannot open an already open door', () => {
+    const player = makePlayer({ x: 3, y: 5 });
+    const door = makeDoor({ x: 4, y: 5, isOpen: true, blocksMovement: false });
+    const state = makeStateWithPlayerAndEntity(player, door);
+
+    const validation = openDoorAction.validate(state, {
+      type: 'OPEN_DOOR',
+      entityId: player.id,
+      targetPosition: { x: 4, y: 5 },
+    });
+    expect(validation.ok).toBe(false);
+  });
+
+  it('cannot close an already closed door', () => {
+    const player = makePlayer({ x: 3, y: 5 });
+    const door = makeDoor({ x: 4, y: 5 });
+    const state = makeStateWithPlayerAndEntity(player, door);
+
+    const validation = closeDoorAction.validate(state, {
+      type: 'CLOSE_DOOR',
+      entityId: player.id,
+      targetPosition: { x: 4, y: 5 },
+    });
+    expect(validation.ok).toBe(false);
+  });
+
+  it('cannot close a door if its tile is blocked by another entity', () => {
+    const player = makePlayer({ x: 3, y: 5 });
+    const door = makeDoor({ x: 4, y: 5, isOpen: true, blocksMovement: false });
+    const enemy = makeEnemy({ id: 'enemy_test_1', x: 4, y: 5, blocksMovement: true });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [door.id, door],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const validation = closeDoorAction.validate(state, {
+      type: 'CLOSE_DOOR',
+      entityId: player.id,
+      targetPosition: { x: 4, y: 5 },
+    });
+    expect(validation.ok).toBe(false);
   });
 });

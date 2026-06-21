@@ -156,6 +156,7 @@ export function makeDoor(overrides: Partial<DoorEntity> = {}): DoorEntity {
     x: 4,
     y: 5,
     blocksMovement: true,
+    isOpen: false,
     hp: 30,
     maxHp: 30,
     armor: 2,

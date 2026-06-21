@@ -126,6 +126,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       },
     },
     highlightedPath: null,
+    doorSprites: new Map(),
     animations: null,
     phase: 'idle' as const,
     zoom: 1,

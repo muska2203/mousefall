@@ -108,6 +108,34 @@ registerAnimationBuilder('ITEM_DROPPED', (event, children) => {
   }];
 });
 
+registerAnimationBuilder('DOOR_OPENED', (event) => {
+  if (event.type !== 'DOOR_OPENED') return null;
+  return [{
+    step: {
+      type: 'UI_FLOATING_TEXT',
+      textKey: 'system.animation.doorOpened',
+      x: event.position.x,
+      y: event.position.y,
+      styleKey: 'info',
+    },
+    children: [],
+  }];
+});
+
+registerAnimationBuilder('DOOR_CLOSED', (event) => {
+  if (event.type !== 'DOOR_CLOSED') return null;
+  return [{
+    step: {
+      type: 'UI_FLOATING_TEXT',
+      textKey: 'system.animation.doorClosed',
+      x: event.position.x,
+      y: event.position.y,
+      styleKey: 'info',
+    },
+    children: [],
+  }];
+});
+
 registerAnimationBuilder('CAST_RESOLVED', (event, children) => {
   if (event.type !== 'CAST_RESOLVED') return null;
 

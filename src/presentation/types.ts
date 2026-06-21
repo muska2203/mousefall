@@ -115,6 +115,9 @@ export type AnimationPhase = {
 /** Readonly псевдоним GameState для renderer и UI. */
 export type RenderState = Readonly<GameState>;
 
+/** Предвычисленные пути к спрайтам дверей. Ключ — ID сущности двери. */
+export type DoorSpriteMap = Map<string, string>;
+
 /** Снапшот экипировки для отображения в UI. */
 export type EquipmentSnapshot = {
   weaponId: string | null;
@@ -215,7 +218,7 @@ export type FieldObjectPopoverViewModel =
   | { kind: 'door'; data: DoorPopoverViewModel };
 
 /** Вид взаимодействия, доступного персонажу на клетке рядом с объектом. */
-export type InteractionKind = 'pickup' | 'descend' | 'ascend';
+export type InteractionKind = 'pickup' | 'descend' | 'ascend' | 'openDoor' | 'closeDoor';
 
 /** Одна доступная опция взаимодействия на кнопку F. */
 export type InteractionOption = {
@@ -334,6 +337,8 @@ export type RenderInput = {
   equipSlots: EquipSlotViewModel[];
   /** Предметы на полу для отображения на карте. */
   itemsOnFloor: Array<{ id: string; x: number; y: number; templateId: string }>;
+  /** Предвычисленные пути к спрайтам дверей (entityId → spritePath). */
+  doorSprites: DoorSpriteMap;
   /** Инвентарь игрока. */
   inventory: InventoryItemViewModel[];
   /** Активные статус-эффекты игрока. */

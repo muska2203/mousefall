@@ -34,9 +34,13 @@ export function resolveStairsSprite(templateId: string): string {
 }
 
 /**
- * Возвращает путь к спрайту двери по templateId.
+ * Возвращает путь к спрайту двери по templateId и состоянию.
  */
-export function resolveDoorSprite(templateId: string): string {
+export function resolveDoorSprite(templateId: string, isOpen: boolean = false, openSpriteId?: string): string {
+  if (isOpen) {
+    const spriteId = openSpriteId ? openSpriteId : `${templateId}_open`;
+    return `/assets/objects/doors/${spriteId}.png`;
+  }
   return `/assets/objects/doors/${templateId}.png`;
 }
 

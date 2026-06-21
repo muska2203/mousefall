@@ -309,6 +309,7 @@ export function createDoor(state: GameState, templateId: string, x: number, y: n
     displayName: templateId,
     templateId,
     blocksMovement: true,
+    isOpen: false,
     hp: template.maxHp,
     maxHp: template.maxHp,
     armor: template.armor,

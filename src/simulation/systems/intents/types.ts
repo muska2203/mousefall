@@ -1,5 +1,5 @@
 import {GameState} from "@simulation/types.ts";
-import {ExecutionBuilder, ExecutionNode, Intent} from "@simulation/core-types.ts";
+import {ExecutionBuilder, ExecutionNode, Intent, OpenDoorIntent, CloseDoorIntent} from "@simulation/core-types.ts";
 
 // Реэкспорт базовых типов для обратной совместимости потребителей
 export type {
@@ -21,7 +21,12 @@ export type {
   BeginCastIntent,
   HealIntent,
   RemoveItemIntent,
+  OpenDoorIntent,
+  CloseDoorIntent,
 } from "@simulation/core-types.ts";
+
+export type OpenDoorIntentExecutor = IntentExecutor<OpenDoorIntent>;
+export type CloseDoorIntentExecutor = IntentExecutor<CloseDoorIntent>;
 
 export type IntentExecutor<T extends Intent> = (
   state: GameState,

@@ -11,4 +11,6 @@ export const ruLogBuilder = {
   heroUsedItem: 'Герой использовал {{itemName}}',
   heroNameFallback: 'Герой',
   enemyNameFallback: 'Враг',
+  doorOpened: 'Дверь открыта',
+  doorClosed: 'Дверь закрыта',
 } as const satisfies SystemLogBuilderTranslations;

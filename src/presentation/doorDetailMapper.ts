@@ -17,7 +17,7 @@ export function mapDoorToPopover(door: DoorEntity, locale: Locale): DoorPopoverV
 
   return {
     name: template?.name ?? door.displayName,
-    sprite: resolveDoorSprite(door.templateId),
+    sprite: resolveDoorSprite(door.templateId, door.isOpen, template?.openSpriteId),
     flavorText: template?.flavorText ?? '',
     hp: door.hp,
     maxHp: door.maxHp,

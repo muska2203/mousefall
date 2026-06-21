@@ -201,6 +201,8 @@ export interface ComponentsInteractionHintTranslations {
   pickup: string;
   descend: string;
   ascend: string;
+  openDoor: string;
+  closeDoor: string;
   keyF: string;
   keyTab: string;
 }
@@ -278,6 +280,8 @@ export interface SystemLogBuilderTranslations {
   heroUsedItem: string;
   heroNameFallback: string;
   enemyNameFallback: string;
+  doorOpened: string;
+  doorClosed: string;
 }
 
 export interface SystemItemMapperTranslations {
@@ -321,6 +325,8 @@ export interface SystemEnemyMapperTranslations {
 
 export interface SystemAnimationTranslations {
   castInterrupted: string;
+  doorOpened: string;
+  doorClosed: string;
 }
 
 export interface SystemGameSessionTranslations {

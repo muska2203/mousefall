@@ -182,6 +182,8 @@ export type GameAction =
   | EquipAction
   | UnequipAction
   | UseItemAction
+  | OpenDoorAction
+  | CloseDoorAction
   | DebugAddItemAction
   | DebugSpawnEntityAction
 ;
@@ -245,6 +247,18 @@ export type UseItemAction = {
   itemInstanceId: ItemInstanceId;
 };
 
+export type OpenDoorAction = {
+  type: 'OPEN_DOOR';
+  entityId: EntityId;
+  targetPosition: Position;
+};
+
+export type CloseDoorAction = {
+  type: 'CLOSE_DOOR';
+  entityId: EntityId;
+  targetPosition: Position;
+};
+
 export type DebugAddItemAction = {
   type: 'DEBUG_ADD_ITEM';
   entityId: EntityId;
@@ -286,7 +300,9 @@ export type Intent =
   | RevokeAbilityIntent
   | BeginCastIntent
   | HealIntent
-  | RemoveItemIntent;
+  | RemoveItemIntent
+  | OpenDoorIntent
+  | CloseDoorIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType };
@@ -305,6 +321,8 @@ export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; 
 export type BeginCastIntent = { type: 'BEGIN_CAST'; entityId: EntityId; abilityId: string; targets: Position[]; turns: number };
 export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
+export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
+export type CloseDoorIntent = { type: 'CLOSE_DOOR'; entityId: EntityId; targetPosition: Position };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)

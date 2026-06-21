@@ -19,6 +19,7 @@ import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-abi
 import {executeBeginCastIntent} from "@simulation/systems/intents/begin-cast-intent-executor.ts";
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
+import {executeOpenDoorIntent, executeCloseDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
@@ -38,6 +39,8 @@ const intentExecutors = {
   BEGIN_CAST: executeBeginCastIntent,
   HEAL: executeHealIntent,
   REMOVE_ITEM: executeRemoveItemIntent,
+  OPEN_DOOR: executeOpenDoorIntent,
+  CLOSE_DOOR: executeCloseDoorIntent,
 };
 
 export function executeIntent(

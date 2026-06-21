@@ -117,7 +117,8 @@ export class EntityRenderer {
       if (entity.type === 'door') {
         // Не рендерим разрушенные двери, даже если они ещё не удалены из state.entities
         if ('isAlive' in entity && entity.isAlive === false) continue;
-        const path = getDoorSprite(entity.templateId);
+        const door = entity;
+        const path = input.doorSprites.get(door.id) ?? getDoorSprite(door.templateId, door.isOpen);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);

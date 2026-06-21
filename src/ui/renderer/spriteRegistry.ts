@@ -1,7 +1,10 @@
 /**
  * Реестр спрайтов: маппинг templateId / типов на URL ассетов.
  *
- * TODO: в будущем перейти на content-driven подход — читать spriteId из JSON-шаблонов.
+ * Ответственность:
+ * - Соглашения об именовании файлов в public/assets/.
+ * - UI не обращается к Content-реестру напрямую; кастомные спрайты дверей
+ *   приходят через RenderInput.doorSprites от Presentation.
  */
 
 import type {TileType} from '@presentation/types';
@@ -16,14 +19,14 @@ export function getTileSprite(tile: TileType): string {
   }
 }
 
-/** Путь к спрайту врага по templateId. */
-export function getEnemySprite(templateId: string): string {
-  return `/assets/enemies/${templateId}.png`;
-}
-
 /** Путь к спрайту игрока по templateId. */
 export function getPlayerSprite(templateId: string): string {
   return `/assets/actors/player_${templateId}.png`;
+}
+
+/** Путь к спрайту врага по templateId. */
+export function getEnemySprite(templateId: string): string {
+  return `/assets/enemies/${templateId}.png`;
 }
 
 /** Путь к спрайту лестницы по templateId. */
@@ -36,7 +39,13 @@ export function getItemSprite(templateId: string): string {
   return `/assets/items/${templateId}.png`;
 }
 
-/** Путь к спрайту двери по templateId. */
-export function getDoorSprite(templateId: string): string {
+/**
+ * Fallback-путь к спрайту двери по templateId и состоянию.
+ * Для кастомных openSpriteId используется RenderInput.doorSprites.
+ */
+export function getDoorSprite(templateId: string, isOpen: boolean = false): string {
+  if (isOpen) {
+    return `/assets/objects/doors/${templateId}_open.png`;
+  }
   return `/assets/objects/doors/${templateId}.png`;
 }

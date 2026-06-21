@@ -5,7 +5,7 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import '@i18n/config';
 import { GameSession } from '../../../src/presentation/gameSession';
-import { makeGameState, makePlayer, makeEnemy, makeFloorItem, makeStairs } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItem, makeStairs } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { Entity, EntityId } from '../../../src/simulation/types';
 
@@ -223,6 +223,96 @@ describe('GameSession AP display during animations', () => {
   });
 });
 
+
+describe('GameSession moveOrAttack with doors', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map([
+        ['wooden_door', {id: 'wooden_door', maxHp: 30, armor: 0} as any],
+      ]),
+      stairs: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('opens a closed door instead of attacking', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const door = makeDoor({ x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [door.id, door]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.moveOrAttack(1, 0);
+
+    const newState = session.getViewModel().renderInput!.state;
+    const updatedDoor = newState.entities.get(door.id) as import('../../../src/simulation/types').DoorEntity;
+    expect(updatedDoor.isOpen).toBe(true);
+    expect(updatedDoor.blocksMovement).toBe(false);
+    expect(newState.player.x).toBe(5);
+    expect(newState.player.y).toBe(5);
+    expect(newState.player.ap).toBe(1);
+  });
+
+  it('moves onto an open door tile instead of attacking', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const door = makeDoor({ x: 6, y: 5, isOpen: true, blocksMovement: false });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [door.id, door]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.moveOrAttack(1, 0);
+    session.onAnimationsComplete();
+
+    const newState = session.getViewModel().renderInput!.state;
+    const updatedDoor = newState.entities.get(door.id) as import('../../../src/simulation/types').DoorEntity;
+    expect(updatedDoor.hp).toBe(door.hp);
+    expect(newState.player.x).toBe(6);
+    expect(newState.player.y).toBe(5);
+    expect(newState.player.ap).toBe(1);
+  });
+
+  it('does not auto-move into a door after opening it while key is held', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const door = makeDoor({ x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [door.id, door]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    // Имитируем зажатую клавишу движения.
+    session.setHeldDirection(1, 0);
+    session.moveOrAttack(1, 0);
+    session.onAnimationsComplete();
+
+    const newState = session.getViewModel().renderInput!.state;
+    const updatedDoor = newState.entities.get(door.id) as import('../../../src/simulation/types').DoorEntity;
+    expect(updatedDoor.isOpen).toBe(true);
+    // Персонаж должен остаться на месте, а не автоматически заходить в дверь.
+    expect(newState.player.x).toBe(5);
+    expect(newState.player.y).toBe(5);
+    expect(newState.player.ap).toBe(1);
+  });
+});
 
 describe('GameSession interactions (F / Tab)', () => {
   beforeEach(() => {

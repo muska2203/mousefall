@@ -236,10 +236,12 @@ export interface StairsEntity extends BaseEntity, TemplateIdHolder {
   blocksMovement: false;
 }
 
-/** Дверь — непроходимый объект, блокирующий обзор. Может быть разрушена атаками и получать статус-эффекты. */
+/** Дверь — объект, который может быть открыт или закрыт. Может быть разрушена атаками и получать статус-эффекты. */
 export interface DoorEntity extends BaseEntity, Attackable, StatusEffectHolder, TemplateIdHolder {
   type: 'door';
-  blocksMovement: true;
+  blocksMovement: boolean;
+  /** true — дверь открыта, проходима и не блокирует обзор. */
+  isOpen: boolean;
 }
 
 // ─────────────────────────────────────────────

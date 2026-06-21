@@ -11,4 +11,6 @@ export const enLogBuilder = {
   heroUsedItem: 'Hero used {{itemName}}',
   heroNameFallback: 'Hero',
   enemyNameFallback: 'Enemy',
+  doorOpened: 'Door opened',
+  doorClosed: 'Door closed',
 } as const satisfies SystemLogBuilderTranslations;

@@ -191,10 +191,11 @@ export type StairsTemplate = z.output<typeof StairsTemplateSchema>;
 // ─────────────────────────────────────────────
 
 export const DoorTemplateSchema = z.object({
-  id:          z.string().min(1).describe('Уникальный идентификатор двери'),
-  maxHp:       z.number().int().positive().describe('Максимальное здоровье двери'),
-  armor:       z.number().int().nonnegative().default(0).describe('Броня двери'),
-  renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  id:            z.string().min(1).describe('Уникальный идентификатор двери'),
+  maxHp:         z.number().int().positive().describe('Максимальное здоровье двери'),
+  armor:         z.number().int().nonnegative().default(0).describe('Броня двери'),
+  renderScale:   z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  openSpriteId:  z.string().min(1).optional().describe('ID спрайта открытой двери. Если не указан — используется <id>_open'),
 }).describe('Шаблон двери');
 
 export type DoorTemplate = z.output<typeof DoorTemplateSchema>;

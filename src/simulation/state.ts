@@ -230,7 +230,8 @@ export function blocksLOS(state: GameState, x: number, y: number): boolean {
   const tile = state.map.tiles[y]?.[x];
   if (tile === 'wall') return true;
   const door = findDoorAt(state, x, y);
-  return door ? door.isAlive !== false : false;
+  // Закрытая живая дверь блокирует обзор, открытая — нет.
+  return door ? door.isAlive !== false && !door.isOpen : false;
 }
 
 
