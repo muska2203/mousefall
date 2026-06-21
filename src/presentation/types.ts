@@ -9,6 +9,7 @@
  */
 
 import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide } from '@simulation/types';
+import type { GameAction } from '@simulation/systems/actions/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { ItemDetailViewModel } from './itemDetailMapper';
 
@@ -213,6 +214,32 @@ export type FieldObjectPopoverViewModel =
   | { kind: 'stairs'; data: StairsPopoverViewModel }
   | { kind: 'door'; data: DoorPopoverViewModel };
 
+/** Вид взаимодействия, доступного персонажу на клетке рядом с объектом. */
+export type InteractionKind = 'pickup' | 'descend' | 'ascend';
+
+/** Одна доступная опция взаимодействия на кнопку F. */
+export type InteractionOption = {
+  kind: InteractionKind;
+  /** Готовое действие, которое нужно отправить в Simulation. */
+  action: GameAction;
+  /** Клетка объекта, с которым происходит взаимодействие. */
+  targetPosition: Position;
+  /** Ключ перевода для короткой метки подсказки (например, "interactionHint.pickup"). */
+  labelKey: string;
+  /** Приоритет для автовыбора по умолчанию: меньше — выше. */
+  priority: number;
+};
+
+/** Данные для отрисовки подсказки взаимодействия рядом с объектом. */
+export type InteractionHintViewModel = {
+  /** Клетка объекта (Presentation не знает экранных координат). */
+  targetPosition: Position;
+  /** Уже переведённая метка текущего действия. */
+  label: string;
+  /** true, если доступно более одной опции. */
+  hasMultiple: boolean;
+};
+
 /** DTO-версия Intent для UI. Скрывает внутренние типы Simulation. */
 export type PresentationIntent =
   | { type: 'MOVE'; entityId: string; dx: number; dy: number; from: Position; to: Position }
@@ -315,4 +342,8 @@ export type RenderInput = {
   runStats: RunStats;
   /** Popover объекта под курсором на игровом поле (только в фазе хода игрока). */
   fieldObjectPopover: FieldObjectPopoverViewModel | null;
+  /** Подсказка текущего доступного взаимодействия (F) рядом с объектом. */
+  interactionHint: InteractionHintViewModel | null;
+  /** Включён ли debug-режим. Используется renderer'ом для отключения тумана войны. */
+  debugEnabled: boolean;
 };

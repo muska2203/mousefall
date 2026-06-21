@@ -3,8 +3,9 @@
  */
 
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
+import '@i18n/config';
 import { GameSession } from '../../../src/presentation/gameSession';
-import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeFloorItem, makeStairs } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { Entity, EntityId } from '../../../src/simulation/types';
 
@@ -219,5 +220,202 @@ describe('GameSession AP display during animations', () => {
     const vm = session.getViewModel();
     // Анимация может быть очень короткой, но renderInput должен показать 1 AP.
     expect(vm.renderInput?.playerStats.ap).toBe(1);
+  });
+});
+
+
+describe('GameSession interactions (F / Tab)', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map([
+        ['health_potion', {
+          id: 'health_potion',
+          type: 'consumable',
+          stackable: false,
+          maxStack: 1,
+          value: 0,
+          abilityPool: [],
+          grantedAbilities: [],
+        } as any],
+      ]),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map([
+        ['wooden_door', {id: 'wooden_door', maxHp: 30, armor: 0} as any],
+      ]),
+      stairs: new Map([
+        ['stairs_down', {id: 'stairs_down'} as any],
+        ['stairs_up', {id: 'stairs_up'} as any],
+      ]),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('shows pickup hint when an item is on player tile', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const item = makeFloorItem({ x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [item.id, item]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    expect(hint).toBeDefined();
+    expect(hint?.targetPosition).toEqual({ x: 5, y: 5 });
+    expect(hint?.hasMultiple).toBe(false);
+  });
+
+  it('shows descend hint when stairs_down is on player tile', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      entities: new Map<EntityId, Entity>([[player.id, player], [stairs.id, stairs]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    expect(hint).toBeDefined();
+    expect(hint?.label).toContain('Спуститься');
+  });
+
+  it('shows ascend hint when stairs_up is on player tile above floor 1', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const stairs = makeStairs('stairs_up', { x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 2,
+      entities: new Map<EntityId, Entity>([[player.id, player], [stairs.id, stairs]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    expect(hint).toBeDefined();
+    expect(hint?.label).toContain('Подняться');
+  });
+
+  it('prioritizes pickup over stairs when both are present', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const item = makeFloorItem({ x: 5, y: 5 });
+    const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [item.id, item],
+        [stairs.id, stairs],
+      ]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    expect(hint?.hasMultiple).toBe(true);
+    expect(hint?.label).toContain('Поднять');
+  });
+
+  it('Tab cycles interaction options', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const item = makeFloorItem({ x: 5, y: 5 });
+    const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [item.id, item],
+        [stairs.id, stairs],
+      ]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    expect(session.getViewModel().renderInput?.interactionHint?.label).toContain('Поднять');
+    session.cycleInteraction(1);
+    expect(session.getViewModel().renderInput?.interactionHint?.label).toContain('Спуститься');
+    session.cycleInteraction(1);
+    expect(session.getViewModel().renderInput?.interactionHint?.label).toContain('Поднять');
+  });
+
+  it('performSelectedInteraction dispatches PICKUP when item is selected', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 1 });
+    const item = makeFloorItem({ x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [item.id, item]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.performSelectedInteraction();
+    session.onAnimationsComplete();
+
+    expect(session.getViewModel().renderInput?.inventory.length).toBe(1);
+  });
+
+  it('performSelectedInteraction dispatches DESCEND when stairs_down is selected', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      entities: new Map<EntityId, Entity>([[player.id, player], [stairs.id, stairs]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.performSelectedInteraction();
+
+    expect(session.getViewModel().mode).toBe('playing');
+    // После DESCEND симуляция выполняет переход этажа.
+    expect(session.getViewModel().renderInput?.state.floor).toBe(2);
+  });
+
+  it('resets selected index when player moves', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 1 });
+    const item = makeFloorItem({ x: 5, y: 5 });
+    const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [item.id, item],
+        [stairs.id, stairs],
+      ]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.cycleInteraction(1);
+    expect(session.getViewModel().renderInput?.interactionHint?.label).toContain('Спуститься');
+
+    // Перемещаем игрока через MOVE и дожидаемся завершения анимации.
+    session.dispatch({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
+    session.onAnimationsComplete();
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    // На новой клетке взаимодействий нет — подсказка должна исчезнуть.
+    expect(hint).toBeNull();
   });
 });

@@ -18,6 +18,7 @@ import type {
   ItemEntity,
   PlayerEntity,
   DoorEntity,
+  StairsEntity,
   TileType
 } from '../../src/simulation/types';
 import type { MapParams } from '../../src/content/schemas';
@@ -160,6 +161,22 @@ export function makeDoor(overrides: Partial<DoorEntity> = {}): DoorEntity {
     armor: 2,
     isAlive: true,
     statusEffects: [],
+    ...overrides,
+  };
+}
+
+export function makeStairs(
+  templateId: 'stairs_down' | 'stairs_up',
+  overrides: Partial<StairsEntity> = {},
+): StairsEntity {
+  return {
+    id: `stairs_${templateId}_${overrides.x ?? 5}_${overrides.y ?? 5}`,
+    type: 'stairs',
+    displayName: 'Лестница',
+    templateId,
+    blocksMovement: false,
+    x: 5,
+    y: 5,
     ...overrides,
   };
 }

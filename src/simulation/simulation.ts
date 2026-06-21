@@ -32,7 +32,7 @@ import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/d
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
-import {createNewGameState, findFirstAttackableEntityAt, createInitialPlayer} from "@simulation/state.ts";
+import {createNewGameState, findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
 import {updateFOV} from "@simulation/systems/fov.ts";
@@ -51,7 +51,7 @@ import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
 import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
 
-export {findFirstAttackableEntityAt};
+export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
 
 export class GameSimulation implements Simulation {
 

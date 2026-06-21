@@ -20,6 +20,7 @@ import { ruMetaFooter } from './components/metaFooter';
 import { ruHotSlot } from './components/hotSlot';
 import { ruGameField } from './components/gameField';
 import { ruFieldObjectPopover } from './components/fieldObjectPopover';
+import { ruInteractionHint } from './components/interactionHint';
 import { ruDebugPanel } from './components/debugPanel';
 import { ruStarterEquipmentPanel } from './components/starterEquipmentPanel';
 import { ruStatRow } from './components/statRow';
@@ -62,6 +63,7 @@ export const ruResources: Resources = {
     hotSlot: ruHotSlot,
     gameField: ruGameField,
     fieldObjectPopover: ruFieldObjectPopover,
+    interactionHint: ruInteractionHint,
     debugPanel: ruDebugPanel,
     starterEquipmentPanel: ruStarterEquipmentPanel,
     statRow: ruStatRow,

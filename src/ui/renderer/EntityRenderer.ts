@@ -7,7 +7,7 @@
 
 import {Container, Sprite, Texture, Text} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_SIZE, FOG_EXPLORED_SPRITE_ALPHA} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
 import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite, getDoorSprite} from './spriteRegistry';
 import {getTextureSync, getTexture} from './TextureCache';
@@ -78,7 +78,7 @@ export class EntityRenderer {
         this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, true, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = isCellVisible(state, entity.x, entity.y);
+          sprite.visible = input.debugEnabled || isCellVisible(state, entity.x, entity.y);
         }
         existingIds.add(entity.id);
       }
@@ -90,7 +90,8 @@ export class EntityRenderer {
         this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
+          sprite.visible = input.debugEnabled || isCellExploredOrVisible(state, entity.x, entity.y);
+          sprite.alpha = getStaticEntityAlpha(state, entity.x, entity.y, input.debugEnabled);
         }
         existingIds.add(entity.id);
       }
@@ -107,7 +108,8 @@ export class EntityRenderer {
           if (itemDropIds.has(entity.id)) {
             sprite.visible = false;
           } else {
-            sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
+            sprite.visible = input.debugEnabled || isCellExploredOrVisible(state, entity.x, entity.y);
+            sprite.alpha = getStaticEntityAlpha(state, entity.x, entity.y, input.debugEnabled);
           }
         }
         existingIds.add(entity.id);
@@ -122,7 +124,8 @@ export class EntityRenderer {
         this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = isCellExploredOrVisible(state, entity.x, entity.y);
+          sprite.visible = input.debugEnabled || isCellExploredOrVisible(state, entity.x, entity.y);
+          sprite.alpha = getStaticEntityAlpha(state, entity.x, entity.y, input.debugEnabled);
         }
         existingIds.add(entity.id);
       }
@@ -583,6 +586,16 @@ function isCellVisible(state: RenderInput['state'], x: number, y: number): boole
 
 function isCellExploredOrVisible(state: RenderInput['state'], x: number, y: number): boolean {
   return (state.visible[y]?.[x] ?? false) || (state.explored[y]?.[x] ?? false);
+}
+
+/** Альфа для статических сущностей (предметы, двери, лестницы).
+ *  На explored клетках спрайт затемняется, чтобы визуально совпадало с туманом,
+ *  который теперь рисуется под сущностями. */
+function getStaticEntityAlpha(state: RenderInput['state'], x: number, y: number, debugEnabled: boolean): number {
+  if (debugEnabled) return 1;
+  if (isCellVisible(state, x, y)) return 1;
+  if (isCellExploredOrVisible(state, x, y)) return FOG_EXPLORED_SPRITE_ALPHA;
+  return 1; // спрайт будет скрыт через visible = false
 }
 
 /** Рекурсивно собирает entityId из деревьев анимаций, для которых запланированы анимации спрайтов. */

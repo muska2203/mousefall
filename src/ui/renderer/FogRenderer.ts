@@ -9,12 +9,12 @@
 
 import {Container, Graphics} from 'pixi.js';
 import type {RenderInput, Position} from '@presentation/types';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_SIZE, FOG_EXPLORED_ALPHA} from '@utils/constants';
 import {runTickerTween, lerp, type TickerLike, type EasingFn} from '@utils/tween';
 
 const COLOR_HIDDEN = 0x000000;
 const COLOR_EXPLORED = 0x000000;
-const ALPHA_EXPLORED = 0.55;
+const ALPHA_EXPLORED = FOG_EXPLORED_ALPHA;
 const ALPHA_HIDDEN = 1.0;
 
 export class FogRenderer {
@@ -26,6 +26,11 @@ export class FogRenderer {
   }
 
   update(input: RenderInput, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): void {
+    if (input.debugEnabled) {
+      this.graphics.clear();
+      return;
+    }
+
     const {visible, explored, map} = input.state;
 
     // Рисуем туман на всей видимой области, включая пространство за пределами карты

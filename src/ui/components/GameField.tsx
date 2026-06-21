@@ -9,8 +9,10 @@
 import {useRef, useEffect, useState} from 'react';
 import { useTranslation } from '@i18n/hooks';
 import type {RenderInput, TurnSide} from '@presentation/types';
+import {TILE_SIZE} from '@utils/constants';
 import {Panel} from './Panel';
 import {HotSlot} from './HotSlot';
+import {InteractionHint} from './InteractionHint';
 import {PixiApp} from '@ui/renderer/PixiApp';
 import {WorldRenderer} from '@ui/renderer/WorldRenderer';
 import {AnimationSequencer} from '@ui/animation/sequencer';
@@ -52,6 +54,7 @@ export function GameField({
   const { t } = useTranslation('components');
   const isInputBlocked = renderInput?.phase === 'animating';
   const [animationPhaseSide, setAnimationPhaseSide] = useState<TurnSide | null>(null);
+  const [hintScreenPos, setHintScreenPos] = useState<{x: number; y: number} | null>(null);
   const activeSide = renderInput?.state.turn.activeSide ?? 'PLAYER';
   const displayedSide = isInputBlocked ? (animationPhaseSide ?? activeSide) : activeSide;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,6 +165,19 @@ export function GameField({
     if (renderInput && rendererRef.current) {
       rendererRef.current.render(renderInput);
 
+      // Синхронизируем экранную позицию подсказки взаимодействия
+      // (справа-снизу от целевой клетки). Показываем только после завершения анимаций.
+      if (renderInput.interactionHint && renderInput.phase !== 'animating') {
+        const pos = rendererRef.current.worldToScreen(renderInput.interactionHint.targetPosition);
+        const tileScreenSize = TILE_SIZE * renderInput.zoom;
+        setHintScreenPos({
+          x: pos.x + tileScreenSize,
+          y: pos.y + tileScreenSize / 4 * 3,
+        });
+      } else {
+        setHintScreenPos(null);
+      }
+
       const animations = renderInput.animations;
       const hasNewAnimations = animations && animations.length > 0 && renderInput.animationBatchId !== lastBatchIdRef.current;
       lastBatchIdRef.current = renderInput.animationBatchId;
@@ -259,6 +275,14 @@ export function GameField({
         />
 
         <div className="cm-field" aria-label={t('gameField.gameFieldAriaLabel')} ref={containerRef}>
+          {hintScreenPos && renderInput?.interactionHint && (
+            <InteractionHint
+              screenX={hintScreenPos.x}
+              screenY={hintScreenPos.y}
+              label={renderInput.interactionHint.label}
+              hasMultiple={renderInput.interactionHint.hasMultiple}
+            />
+          )}
           <div className="cm-hotbar-wrap cm-panel cm-hotbar-wrap--in-field cm-hotbar-wrap--recessed">
             <span className="cm-rivet cm-rivet--tl" />
             <span className="cm-rivet cm-rivet--tr" />

@@ -197,6 +197,14 @@ export interface ComponentsFieldObjectPopoverTranslations {
   possibleLootTitle: string;
 }
 
+export interface ComponentsInteractionHintTranslations {
+  pickup: string;
+  descend: string;
+  ascend: string;
+  keyF: string;
+  keyTab: string;
+}
+
 export interface ComponentsDebugPanelTranslations {
   title: string;
   giveItemLabel: string;
@@ -250,6 +258,7 @@ export interface ComponentsTranslations {
   hotSlot: ComponentsHotSlotTranslations;
   gameField: ComponentsGameFieldTranslations;
   fieldObjectPopover: ComponentsFieldObjectPopoverTranslations;
+  interactionHint: ComponentsInteractionHintTranslations;
   debugPanel: ComponentsDebugPanelTranslations;
   starterEquipmentPanel: ComponentsStarterEquipmentPanelTranslations;
   statRow: ComponentsStatRowTranslations;

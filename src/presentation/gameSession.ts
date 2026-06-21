@@ -18,10 +18,10 @@ import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnap
 
 import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
-import {GameSimulation, findFirstAttackableEntityAt} from '@simulation/simulation';
+import {GameSimulation, findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt} from '@simulation/simulation';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel} from './types';
 import {
   getAllLocalizedPlayerTemplates,
   tryGetPlayerTemplate,
@@ -137,6 +137,10 @@ export class GameSession {
   private heldDirection: {dx: number; dy: number} | null = null;
   /** Флаг debug-режима. Живёт только в Presentation, не попадает в GameState. */
   private debugEnabled: boolean = false;
+  /** Индекс выбранной опции взаимодействия (F / Tab). */
+  private selectedInteractionIndex = 0;
+  /** Ключ последнего набора опций взаимодействия, чтобы сбрасывать индекс при изменении. */
+  private lastInteractionOptionsKey = '';
 
   /** Подписаться на изменения сессии. Вызывается после любого mutate-метода. */
   subscribe(callback: () => void): () => void {
@@ -369,6 +373,7 @@ export class GameSession {
     });
 
     const fieldObjectPopover = this.buildFieldObjectPopover(state);
+    const interactionHint = this.buildInteractionHint(state);
 
     return {
       state,
@@ -388,7 +393,134 @@ export class GameSession {
       activeEffects,
       runStats: state.runStats,
       fieldObjectPopover,
+      interactionHint,
+      debugEnabled: this.debugEnabled,
     };
+  }
+
+  // ── Взаимодействия (F / Tab) ─────────────────────────────────────
+
+  /** Собрать все доступные опции взаимодействия для текущей клетки игрока.
+   *
+   * Presentation не решает, доступно ли действие: валидность проверяется через
+   * simulation.preview(), чтобы единственный источник правил оставался в Simulation.
+   * Дополнительно проверяется достаточность AP через simulation.getActionCost(). */
+  private buildInteractionOptions(state: Readonly<GameState>): InteractionOption[] {
+    if (!this.simulation) return [];
+    const options: InteractionOption[] = [];
+    const player = state.player;
+    const px = player.x;
+    const py = player.y;
+
+    const canPerform = (action: GameAction): boolean => {
+      const preview = this.simulation!.preview(action);
+      if (!preview.valid) return false;
+      const cost = this.simulation!.getActionCost(action);
+      return player.ap >= cost;
+    };
+
+    // Предметы на клетке игрока — одна опция на все предметы (PICKUP поднимает первый).
+    const pickupAction: GameAction = { type: 'PICKUP', entityId: player.id };
+    if (canPerform(pickupAction)) {
+      options.push({
+        kind: 'pickup',
+        action: pickupAction,
+        targetPosition: { x: px, y: py },
+        labelKey: 'components.interactionHint.pickup',
+        priority: 0,
+      });
+    }
+
+    // Лестница вниз.
+    const stairsDown = findStairsAt(state, px, py, 'stairs_down');
+    if (stairsDown) {
+      const descendAction: GameAction = { type: 'DESCEND', entityId: player.id };
+      if (canPerform(descendAction)) {
+        options.push({
+          kind: 'descend',
+          action: descendAction,
+          targetPosition: { x: stairsDown.x, y: stairsDown.y },
+          labelKey: 'components.interactionHint.descend',
+          priority: 1,
+        });
+      }
+    }
+
+    // Лестница вверх.
+    const stairsUp = findStairsAt(state, px, py, 'stairs_up');
+    if (stairsUp) {
+      const ascendAction: GameAction = { type: 'ASCEND', entityId: player.id };
+      if (canPerform(ascendAction)) {
+        options.push({
+          kind: 'ascend',
+          action: ascendAction,
+          targetPosition: { x: stairsUp.x, y: stairsUp.y },
+          labelKey: 'components.interactionHint.ascend',
+          priority: 1,
+        });
+      }
+    }
+
+    return options.sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return a.kind.localeCompare(b.kind);
+    });
+  }
+
+  /** Сбросить выбранный индекс, если набор опций или позиция игрока изменились. */
+  private maybeResetInteractionIndex(options: InteractionOption[], player: Readonly<GameState>['player']): void {
+    const key = `${player.x},${player.y}|` + options.map(o => `${o.kind}:${o.targetPosition.x}:${o.targetPosition.y}`).join('|');
+    if (key !== this.lastInteractionOptionsKey) {
+      this.lastInteractionOptionsKey = key;
+      this.selectedInteractionIndex = 0;
+    }
+  }
+
+  /** Получить актуальный список опций с учётом сброса индекса. */
+  private getInteractionOptions(state: Readonly<GameState>): InteractionOption[] {
+    const options = this.buildInteractionOptions(state);
+    this.maybeResetInteractionIndex(options, state.player);
+    return options;
+  }
+
+  /** Вернуть выбранную опцию, если список не пуст. */
+  private getSelectedOption(options: InteractionOption[]): InteractionOption | null {
+    return options[this.selectedInteractionIndex] ?? options[0] ?? null;
+  }
+
+  /** Построить ViewModel подсказки для renderer'а. */
+  private buildInteractionHint(state: Readonly<GameState>): InteractionHintViewModel | null {
+    const options = this.getInteractionOptions(state);
+    const option = this.getSelectedOption(options);
+    if (!option) return null;
+    return {
+      targetPosition: option.targetPosition,
+      label: t(option.labelKey),
+      hasMultiple: options.length > 1,
+    };
+  }
+
+  /** Переключиться на следующую доступную опцию взаимодействия (Tab). */
+  cycleInteraction(delta = 1): void {
+    if (!this.simulation || this.mode !== 'playing' || this.animation.phase === 'animating') return;
+    const state = this.simulation.getState();
+    const options = this.getInteractionOptions(state);
+    if (options.length <= 1) return;
+    this.selectedInteractionIndex = (this.selectedInteractionIndex + delta) % options.length;
+    if (this.selectedInteractionIndex < 0) {
+      this.selectedInteractionIndex += options.length;
+    }
+    this.notify();
+  }
+
+  /** Выполнить выбранное взаимодействие (F). */
+  performSelectedInteraction(): void {
+    if (!this.simulation || this.mode !== 'playing' || this.animation.phase === 'animating') return;
+    const state = this.simulation.getState();
+    const options = this.getInteractionOptions(state);
+    const option = this.getSelectedOption(options);
+    if (!option) return;
+    this.dispatch(option.action);
   }
 
   /** Извлекает AP игрока после выполнения его действия, но до восстановления
@@ -658,6 +790,8 @@ export class GameSession {
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
     this.animation.phase = this.mode === 'playing' ? 'idle' : 'gameOver';
+    this.selectedInteractionIndex = 0;
+    this.lastInteractionOptionsKey = '';
     this.clearLogs();
     this.notify();
   }

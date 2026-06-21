@@ -169,6 +169,8 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       itemsPickedUp: 0,
     },
     fieldObjectPopover: null,
+    interactionHint: null,
+    debugEnabled: false,
   };
 }
 

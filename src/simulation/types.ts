@@ -385,6 +385,9 @@ export type Simulation = {
 
   preview(action: GameAction): ActionPreview;
 
+  /** Возвращает стоимость действия в AP. */
+  getActionCost(action: GameAction): number;
+
   getState(): Readonly<GameState>;
 
   generateMap(params: MapParams): void;

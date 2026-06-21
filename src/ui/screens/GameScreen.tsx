@@ -67,26 +67,18 @@ export function GameScreen({session, onModeChange}: Props) {
     onModeChange(session.getMode());
   }, [session, onModeChange, isInputBlocked]);
 
-  const handleDescend = useCallback(() => {
+  const handleInteract = useCallback(() => {
     if (session.getMode() !== 'playing') return;
     if (isInputBlocked) return;
-    session.dispatch({type: 'DESCEND', entityId: 'player'});
+    session.performSelectedInteraction();
     onModeChange(session.getMode());
   }, [session, onModeChange, isInputBlocked]);
 
-  const handleAscend = useCallback(() => {
+  const handleCycleInteraction = useCallback(() => {
     if (session.getMode() !== 'playing') return;
     if (isInputBlocked) return;
-    session.dispatch({type: 'ASCEND', entityId: 'player'});
-    onModeChange(session.getMode());
-  }, [session, onModeChange, isInputBlocked]);
-
-  const handlePickup = useCallback(() => {
-    if (session.getMode() !== 'playing') return;
-    if (isInputBlocked) return;
-    session.dispatch({type: 'PICKUP', entityId: 'player'});
-    onModeChange(session.getMode());
-  }, [session, onModeChange, isInputBlocked]);
+    session.cycleInteraction(1);
+  }, [session, isInputBlocked]);
 
   const handleEquipItem = useCallback(
     (itemInstanceId: string) => {
@@ -204,15 +196,17 @@ export function GameScreen({session, onModeChange}: Props) {
         return;
       }
 
-      // Спуск / подъём по лестнице (ручное управление)
-      if (e.key === '>' || e.key === '.') {
+      // F / А: выполнить текущее доступное взаимодействие.
+      if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') {
         e.preventDefault();
-        handleDescend();
+        handleInteract();
         return;
       }
-      if (e.key === '<' || e.key === ',') {
+
+      // Tab: переключиться на следующее доступное взаимодействие.
+      if (e.key === 'Tab') {
         e.preventDefault();
-        handleAscend();
+        handleCycleInteraction();
         return;
       }
 
@@ -224,13 +218,6 @@ export function GameScreen({session, onModeChange}: Props) {
         } else {
           handleWait();
         }
-        return;
-      }
-
-      // G: поднять предмет
-      if (e.key === 'g' || e.key === 'G' || e.key === 'п' || e.key === 'П') {
-        e.preventDefault();
-        handlePickup();
         return;
       }
 
@@ -262,7 +249,7 @@ export function GameScreen({session, onModeChange}: Props) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [performMoveOrAttack, handlePickup, handleDescend, handleAscend, session]);
+  }, [performMoveOrAttack, handleInteract, handleCycleInteraction, session]);
 
   const { t } = useTranslation('screens');
 

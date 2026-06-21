@@ -41,11 +41,17 @@ export class WorldRenderer {
     this.viewportWidth = viewportWidth;
     this.viewportHeight = viewportHeight;
 
+    // Порядок слоёв важен:
+    // 1. тайлы пола
+    // 2. подсветка клеток (таргетинг) — под туманом, чтобы не светила в затемнённой зоне
+    // 3. туман войны — затемняет пол, но не сущности
+    // 4. сущности и предметы — рисуются поверх тумана, чтобы большие спрайты не обрезались
+    // 5. превью интентов (стрелки, цифры урона) — поверх сущностей
     this.root.addChild(this.tileRenderer.container);
     this.root.addChild(this.targetingRenderer.overlayContainer);
+    this.root.addChild(this.fogRenderer.container);
     this.root.addChild(this.entityRenderer.container);
     this.root.addChild(this.targetingRenderer.previewContainer);
-    this.root.addChild(this.fogRenderer.container);
 
     this.textLayer.addChild(this.targetingRenderer.previewTextContainer);
     this.textLayer.addChild(this.floatingTextRenderer.container);

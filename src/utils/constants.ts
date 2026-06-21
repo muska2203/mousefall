@@ -10,6 +10,12 @@
 /** Пикселей на одну клетку сетки. */
 export const TILE_SIZE = 32;
 
+/** Альфа затемнения explored клеток тумана войны. */
+export const FOG_EXPLORED_ALPHA = 0.55;
+
+/** Альфа спрайтов на explored клетках, чтобы визуально совпадало с затемнением тумана. */
+export const FOG_EXPLORED_SPRITE_ALPHA = 1 - FOG_EXPLORED_ALPHA;
+
 /** Клеток, видимых по горизонтали во вьюпорте. */
 export const VIEWPORT_TILES_X = 25;
 

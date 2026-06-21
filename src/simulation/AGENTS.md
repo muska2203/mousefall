@@ -30,10 +30,14 @@
 ## Публичный API Simulation
 
 - `dispatch(action)` — выполнить действие
-- `preview(action)` — превью действия (для подсветки)
+- `preview(action)` — превью действия (для подсветки и проверки доступности)
+- `getActionCost(action)` — получить стоимость действия в AP
 - `getState()` — получить текущее состояние (`Readonly<GameState>`)
 - `generateMap()` — сгенерировать новую карту
 - `setDebugEnabled(enabled)` — включить/выключить debug-режим для чит-действий
+
+Также из `@simulation/simulation` реэкспортируются read-only хелперы запросов к состоянию:
+`findFirstAttackableEntityAt`, `findAllEntitiesAt`, `findStairsAt`.
 
 ---
 
