@@ -40,6 +40,19 @@ export type Room = {
   height: number;
 };
 
+/** Сегмент коридора: прямой отрезок между двумя точками сетки. */
+export type CorridorSegment = {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+};
+
+/** Коридор как цельная фигура. Для L-образного коридора — два сегмента. */
+export type Corridor = {
+  segments: CorridorSegment[];
+};
+
 export type GameMap = {
   width: number;
   height: number;
@@ -47,6 +60,8 @@ export type GameMap = {
   tiles: TileType[][];
   /** Метаданные комнат из генератора карты (используются для размещения врагов/предметов). */
   rooms: Room[];
+  /** Метаданные коридоров для debug-визуализации генерации. */
+  corridors: Corridor[];
 };
 
 // ─────────────────────────────────────────────

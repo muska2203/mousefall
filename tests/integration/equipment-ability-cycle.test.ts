@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { GameSimulation } from '../../src/simulation/simulation';
 import { initRegistry, resetRegistry } from '../../src/content/registry';
-import type { ItemTemplate, AbilityTemplate, PlayerTemplate } from '../../src/content/schemas';
+import type { ItemTemplate, AbilityTemplate, PlayerTemplate, DoorTemplate } from '../../src/content/schemas';
 import { initSkillRegistry } from '../../src/simulation/skills/index';
 import { defaultTestMapParams } from '../fixtures/gameState';
 
@@ -54,7 +54,13 @@ beforeEach(() => {
       ['fireball', mockAbility('fireball')],
     ]),
     maps: new Map(),
-    doors: new Map(),
+    doors: new Map([
+      ['wooden_door', {
+        id: 'wooden_door',
+        maxHp: 30,
+        armor: 2,
+      } as DoorTemplate],
+    ]),
     stairs: new Map(),
   });
 });

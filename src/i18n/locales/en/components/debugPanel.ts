@@ -13,4 +13,7 @@ export const enDebugPanel: ComponentsDebugPanelTranslations = {
   spawnButtonIdle: 'Place on map',
   spawnButtonPending: 'Select a tile...',
   cancelButton: 'Cancel',
+  levelLabel: 'Level',
+  regenerateMapButton: 'Regenerate level',
+  showMapgenDebug: 'Show rooms and corridors',
 };

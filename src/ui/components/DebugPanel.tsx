@@ -101,6 +101,10 @@ export function DebugPanel({
     onRequestSpawn(spawnType, spawnTemplateId);
   };
 
+  const handleRegenerateMap = () => {
+    session.debugRegenerateMap();
+  };
+
   const spawnTypeLabels: Record<SpawnType, string> = {
     item: t('debugPanel.spawnTypeItem'),
     enemy: t('debugPanel.spawnTypeEnemy'),
@@ -188,6 +192,28 @@ export function DebugPanel({
             {t('debugPanel.cancelButton')}
           </button>
         ) : null}
+      </div>
+
+      <div className="cm-debug-panel__section">
+        <label className="cm-debug-panel__label">{t('debugPanel.levelLabel')}</label>
+        <button
+          type="button"
+          className="cm-debug-panel__button"
+          onClick={handleRegenerateMap}
+        >
+          {t('debugPanel.regenerateMapButton')}
+        </button>
+      </div>
+
+      <div className="cm-debug-panel__section">
+        <label className="cm-debug-panel__checkbox-label">
+          <input
+            type="checkbox"
+            checked={session.isMapgenDebug()}
+            onChange={() => session.toggleMapgenDebug()}
+          />
+          {t('debugPanel.showMapgenDebug')}
+        </label>
       </div>
     </div>
   );

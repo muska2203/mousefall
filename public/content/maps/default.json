@@ -1,7 +1,8 @@
 {
   "id": "default",
-  "width": 20,
-  "height": 20,
+  "strategy": "tree",
+  "width": 30,
+  "height": 30,
   "minRooms": 5,
   "maxRooms": 20,
   "minRoomSize": 2,

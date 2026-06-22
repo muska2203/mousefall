@@ -13,4 +13,7 @@ export const ruDebugPanel: ComponentsDebugPanelTranslations = {
   spawnButtonIdle: 'Поставить на карту',
   spawnButtonPending: 'Выберите клетку...',
   cancelButton: 'Отмена',
+  levelLabel: 'Уровень',
+  regenerateMapButton: 'Перегенерировать уровень',
+  showMapgenDebug: 'Показать комнаты и коридоры',
 };

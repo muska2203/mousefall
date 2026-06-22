@@ -7,6 +7,7 @@ import type { MapParams } from '@content/schemas';
 
 const testMapParams: MapParams = {
   id: 'test',
+  strategy: 'tree',
   width: 50,
   height: 50,
   minRooms: 2,
@@ -33,7 +34,7 @@ function makeWalledGrid(w: number, h: number): TileType[][] {
 }
 
 function makeMap(width: number, height: number, tiles: TileType[][]): GameMap {
-  return { width, height, tiles, rooms: [] };
+  return { width, height, tiles, rooms: [], corridors: [] };
 }
 
 describe('computeFOV', () => {

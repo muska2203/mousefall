@@ -140,6 +140,8 @@ export class GameSession {
   private heldDirection: {dx: number; dy: number} | null = null;
   /** Флаг debug-режима. Живёт только в Presentation, не попадает в GameState. */
   private debugEnabled: boolean = false;
+  /** Флаг debug-визуализации комнат и коридоров. Живёт только в Presentation. */
+  private mapgenDebugEnabled: boolean = false;
   /** Индекс выбранной опции взаимодействия (F / Tab). */
   private selectedInteractionIndex = 0;
   /** Ключ последнего набора опций взаимодействия, чтобы сбрасывать индекс при изменении. */
@@ -411,6 +413,7 @@ export class GameSession {
       fieldObjectPopover,
       interactionHint,
       debugEnabled: this.debugEnabled,
+      mapgenDebugEnabled: this.mapgenDebugEnabled,
     };
   }
 
@@ -820,12 +823,13 @@ export class GameSession {
   startNewGame(config: CharacterConfig, seed: number): void {
     const defaultMapParams: MapParams = {
       id: 'floor_1',
-      height: 20,
-      width: 20,
+      strategy: 'tree',
+      height: 40,
+      width: 40,
       minRooms: 5,
       maxRooms: 20,
       minRoomSize: 3,
-      maxRoomSize: 4,
+      maxRoomSize: 8,
       enemyDensity: 1.0,
       itemDensity: 0.1,
       enemyPool: ['cat_small', 'cat_mid', 'cat_big'],
@@ -1154,6 +1158,17 @@ export class GameSession {
     return this.debugEnabled;
   }
 
+  /** Переключить визуализацию комнат и коридоров. */
+  toggleMapgenDebug(): void {
+    this.mapgenDebugEnabled = !this.mapgenDebugEnabled;
+    this.notify();
+  }
+
+  /** Включена ли визуализация комнат и коридоров. */
+  isMapgenDebug(): boolean {
+    return this.mapgenDebugEnabled;
+  }
+
   /** Debug: добавить предмет в инвентарь игрока. */
   debugAddItem(templateId: string): void {
     if (!this.simulation || this.mode !== 'playing') {
@@ -1182,6 +1197,16 @@ export class GameSession {
       templateId,
       position,
     });
+  }
+
+  /** Debug: полностью перегенерировать текущий уровень. */
+  debugRegenerateMap(): void {
+    if (!this.simulation || this.mode !== 'playing') {
+      return;
+    }
+    this.simulation.regenerateMap();
+    this.viewModelCache = null;
+    this.notify();
   }
 
   /** Возврат в главное меню. Уничтожает текущую симуляцию. */

@@ -5,7 +5,7 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import {GameSimulation} from '../../../src/simulation/simulation';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
-import type {ItemTemplate, PlayerTemplate} from '../../../src/content/schemas';
+import type {ItemTemplate, PlayerTemplate, DoorTemplate} from '../../../src/content/schemas';
 
 function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
   return {
@@ -47,7 +47,13 @@ describe('GameSimulation.getPlayerStats', () => {
       ]),
       abilities: new Map(),
       maps: new Map(),
-      doors: new Map(),
+      doors: new Map([
+        ['wooden_door', {
+          id: 'wooden_door',
+          maxHp: 30,
+          armor: 2,
+        } as DoorTemplate],
+      ]),
       stairs: new Map(),
     });
   });
@@ -90,6 +96,7 @@ describe('GameSimulation.getPlayerStats', () => {
       },
       {
         id: 'floor_1',
+        strategy: 'tree',
         height: 10,
         width: 10,
         minRooms: 2,

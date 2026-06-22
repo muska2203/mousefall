@@ -47,6 +47,7 @@ export function makeTestMap(width = 10, height = 10) {
     height,
     tiles,
     rooms: [{ x: 1, y: 1, width: width - 2, height: height - 2 }],
+    corridors: [],
   };
 }
 
@@ -192,6 +193,7 @@ export function makeStairs(
  */
 export const defaultTestMapParams: MapParams = {
   id: 'test',
+  strategy: 'tree',
   width: 10,
   height: 10,
   minRooms: 2,

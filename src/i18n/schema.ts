@@ -220,6 +220,9 @@ export interface ComponentsDebugPanelTranslations {
   spawnButtonIdle: string;
   spawnButtonPending: string;
   cancelButton: string;
+  levelLabel: string;
+  regenerateMapButton: string;
+  showMapgenDebug: string;
 }
 
 export interface ComponentsStarterEquipmentPanelTranslations {

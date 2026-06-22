@@ -24,7 +24,7 @@ function makeMockState(): GameState {
   const width = 10;
   const height = 10;
   return {
-    map: { width, height, tiles: [], rooms: [] },
+    map: { width, height, tiles: [], rooms: [], corridors: [] },
     visible: Array.from({ length: height }, () => Array(width).fill(true)),
     explored: Array.from({ length: height }, () => Array(width).fill(true)),
     entities: new Map([['player', { id: 'player', x: 0, y: 0 } as any]]),

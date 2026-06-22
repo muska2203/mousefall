@@ -22,7 +22,7 @@
 | Добавить debug-действие | `systems/actions/debug-*.ts` → зарегистрировать в `simulation.ts`. Должно проверять флаг debug-режима. |
 | Добавить реакцию мира | `systems/world-reactions/` |
 | Изменить ход | `simulation.ts`, метод `dispatch` |
-| Изменить генерацию карт | `systems/mapgen.ts` |
+| Изменить генерацию карт | `systems/mapgen.ts` (диспетчер) → `systems/map-generation/*-strategy.ts` |
 | Добавить тип события | `types.ts` (union `GameEvent`) |
 
 ---

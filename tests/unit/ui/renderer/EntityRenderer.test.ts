@@ -94,9 +94,10 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
 
   return {
     state: {
-      map: {width: 10, height: 10, tiles: [], rooms: []},
+      map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
       mapParams: {
         id: 'floor_1',
+        strategy: 'tree',
         height: 10,
         width: 10,
         minRooms: 1,
@@ -172,6 +173,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     fieldObjectPopover: null,
     interactionHint: null,
     debugEnabled: false,
+    mapgenDebugEnabled: false,
   };
 }
 

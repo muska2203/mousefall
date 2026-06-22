@@ -111,6 +111,7 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
       height: mapHeight,
       tiles: createTileGrid(mapWidth, mapHeight),
       rooms: [],
+      corridors: [],
     },
     mapParams,
     entities: new Map<EntityId, Entity>([[player.id, player]]),

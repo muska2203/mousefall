@@ -14,6 +14,7 @@ import {EntityRenderer} from './EntityRenderer';
 import {FogRenderer} from './FogRenderer';
 import {FloatingTextRenderer} from './FloatingTextRenderer';
 import {TargetingRenderer} from './TargetingRenderer';
+import {DebugMapRenderer} from './DebugMapRenderer';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
 import {Vec2Tween, type TickerLike, runTickerTween, lerp} from '@utils/tween';
 
@@ -33,6 +34,7 @@ export class WorldRenderer {
   private entityRenderer = new EntityRenderer();
   private fogRenderer = new FogRenderer();
   private floatingTextRenderer = new FloatingTextRenderer();
+  private debugMapRenderer = new DebugMapRenderer();
 
   private cameraAnimation: CameraAnimation | null = null;
   private lastInput: RenderInput | null = null;
@@ -43,11 +45,13 @@ export class WorldRenderer {
 
     // Порядок слоёв важен:
     // 1. тайлы пола
-    // 2. подсветка клеток (таргетинг) — под туманом, чтобы не светила в затемнённой зоне
-    // 3. туман войны — затемняет пол, но не сущности
-    // 4. сущности и предметы — рисуются поверх тумана, чтобы большие спрайты не обрезались
-    // 5. превью интентов (стрелки, цифры урона) — поверх сущностей
+    // 2. debug-оверлей комнат и коридоров — под туманом, чтобы не мешал игре
+    // 3. подсветка клеток (таргетинг) — под туманом, чтобы не светила в затемнённой зоне
+    // 4. туман войны — затемняет пол, но не сущности
+    // 5. сущности и предметы — рисуются поверх тумана, чтобы большие спрайты не обрезались
+    // 6. превью интентов (стрелки, цифры урона) — поверх сущностей
     this.root.addChild(this.tileRenderer.container);
+    this.root.addChild(this.debugMapRenderer.container);
     this.root.addChild(this.targetingRenderer.overlayContainer);
     this.root.addChild(this.fogRenderer.container);
     this.root.addChild(this.entityRenderer.container);
@@ -90,6 +94,7 @@ export class WorldRenderer {
     const cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
 
     this.tileRenderer.update(input, cameraX, cameraY, viewW, viewH);
+    this.debugMapRenderer.update(input);
     this.targetingRenderer.update(input);
     this.entityRenderer.update(input);
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);

@@ -16,6 +16,8 @@ import {
   ItemInstanceId,
   TileType,
   Room,
+  Corridor,
+  CorridorSegment,
   GameMap,
   BaseStats,
   StatModifierOp,
@@ -41,6 +43,8 @@ export type {
   ItemInstanceId,
   TileType,
   Room,
+  Corridor,
+  CorridorSegment,
   GameMap,
   BaseStats,
   StatModifierOp,
@@ -393,6 +397,9 @@ export type Simulation = {
   getState(): Readonly<GameState>;
 
   generateMap(params: MapParams): void;
+
+  /** Перегенерировать текущий этаж (debug). */
+  regenerateMap(): void;
 
   setDebugEnabled(enabled: boolean): void;
 

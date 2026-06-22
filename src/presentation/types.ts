@@ -351,4 +351,6 @@ export type RenderInput = {
   interactionHint: InteractionHintViewModel | null;
   /** Включён ли debug-режим. Используется renderer'ом для отключения тумана войны. */
   debugEnabled: boolean;
+  /** Включена ли debug-визуализация комнат и коридоров на карте. */
+  mapgenDebugEnabled: boolean;
 };

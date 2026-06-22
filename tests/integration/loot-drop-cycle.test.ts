@@ -69,6 +69,7 @@ function makeLootGameState(): GameState {
     map,
     mapParams: {
       id: 'test',
+      strategy: 'tree',
       width: 5,
       height: 5,
       minRooms: 1,

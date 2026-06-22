@@ -17,7 +17,7 @@ import { getSkillExecutor } from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
-import {findAllAliveAiActors, isActor, cleanupDeadEntities} from "@simulation/state.ts";
+import {findAllAliveAiActors, isActor, cleanupDeadEntities, createBoolGrid} from "@simulation/state.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
@@ -261,6 +261,11 @@ export class GameSimulation implements Simulation {
 
         this.state.map = generatedMap.map;
 
+        // Пересоздаём сетки видимости/разведки под фактический размер сгенерированной карты,
+        // так как tree-стратегия может расширять карту за пределы mapParams.width/height.
+        this.state.visible = createBoolGrid(generatedMap.map.width, generatedMap.map.height, false);
+        this.state.explored = createBoolGrid(generatedMap.map.width, generatedMap.map.height, false);
+
         this.state.player.x =
             generatedMap.playerStart.x;
 
@@ -281,6 +286,7 @@ export class GameSimulation implements Simulation {
         };
         generatedMap.enemies.forEach(e => this.state.entities.set(e.id, e));
         generatedMap.items.forEach(e => this.state.entities.set(e.id, e));
+        generatedMap.doors.forEach(d => this.state.entities.set(d.id, d));
 
         // Лестницы
         if (generatedMap.stairsDown && this.state.floor < MAX_FLOOR) {
@@ -298,6 +304,26 @@ export class GameSimulation implements Simulation {
 
         // Начальный расчёт поля зрения
         updateFOV(this.state);
+    }
+
+    /**
+     * Перегенерировать текущий этаж, заменив карту и все объекты на ней.
+     * Игрок сохраняется со своим инвентарём и характеристиками.
+     * Используется только в debug-режиме.
+     */
+    regenerateMap(): void {
+        if (!this.debugContext.enabled) {
+            return;
+        }
+
+        // Оставляем только игрока
+        this.state.entities = new Map([[this.state.player.id, this.state.player]]);
+
+        // Сбрасываем видимость и разведку под старую сетку (будет пересоздана в generateMap)
+        this.state.visible = createBoolGrid(this.state.map.width, this.state.map.height, false);
+        this.state.explored = createBoolGrid(this.state.map.width, this.state.map.height, false);
+
+        this.generateMap(this.state.mapParams);
     }
 
     // =========================================================

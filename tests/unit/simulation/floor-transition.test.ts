@@ -1,9 +1,11 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, beforeEach, afterEach} from "vitest";
 import {makeGameState, makePlayer} from "../../fixtures/gameState.ts";
 import {performFloorTransition} from "@simulation/systems/actions/floor-transition-logic";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action";
 import {stairsTransitionReaction} from "@simulation/systems/world-reactions/stairs-reaction";
 import type {GameState, StairsEntity, EntityMovedEvent} from "@simulation/types.ts";
+import type {DoorTemplate} from "@content/schemas";
+import {initRegistry, resetRegistry} from "@content/registry";
 import {ExecutionBuilder} from "@simulation/systems/actions/types";
 
 /**
@@ -158,6 +160,29 @@ describe('descendAction / ascendAction — валидация', () => {
 });
 
 describe('performFloorTransition — спуск и подъём', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map([
+        ['wooden_door', {
+          id: 'wooden_door',
+          maxHp: 30,
+          armor: 2,
+        } as DoorTemplate],
+      ]),
+      stairs: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
   it('генерирует новый этаж при спуске', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const state = makeGameState({ player, floor: 1 });

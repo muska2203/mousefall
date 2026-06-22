@@ -40,6 +40,7 @@ describe('canSeePlayer', () => {
         })
       ),
       rooms: [],
+      corridors: [],
     };
     const state = makeGameState({
       player,
@@ -148,6 +149,7 @@ describe('tryAttackOrMoveToward', () => {
         })
       ),
       rooms: [],
+      corridors: [],
     };
     const state = makeGameState({
       entities: new Map<EntityId, Entity>([[enemy.id, enemy]]),
@@ -175,6 +177,7 @@ describe('tryAttackOrMoveToward', () => {
         })
       ),
       rooms: [],
+      corridors: [],
     };
     const state = makeGameState({
       entities: new Map<EntityId, Entity>([[enemy.id, enemy]]),
@@ -201,6 +204,7 @@ describe('tryAttackOrMoveToward', () => {
         })
       ),
       rooms: [],
+      corridors: [],
     };
     const state = makeGameState({
       entities: new Map<EntityId, Entity>([[enemy.id, enemy]]),

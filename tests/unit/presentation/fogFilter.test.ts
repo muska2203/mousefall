@@ -11,7 +11,7 @@ function makeState(opts: { width?: number; height?: number; visible?: boolean[][
   const width = opts.width ?? 5;
   const height = opts.height ?? 5;
   return {
-    map: { width, height, tiles: [], rooms: [] },
+    map: { width, height, tiles: [], rooms: [], corridors: [] },
     visible: opts.visible ?? Array.from({ length: height }, () => Array(width).fill(false)),
     explored: Array.from({ length: height }, () => Array(width).fill(false)),
     entities: new Map(),

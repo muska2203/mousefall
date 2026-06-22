@@ -161,6 +161,7 @@ export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;
 
 export const MapParamsSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор параметров карты'),
+  strategy:    z.string().min(1).default('tree').describe('Алгоритм генерации карты: tree — дерево комнат от спавна до выхода'),
   width:       z.number().int().min(20).max(100).describe('Ширина карты в клетках'),
   height:      z.number().int().min(20).max(100).describe('Высота карты в клетках'),
   minRooms:    z.number().int().positive().describe('Минимальное количество комнат'),

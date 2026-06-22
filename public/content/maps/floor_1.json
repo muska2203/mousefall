@@ -1,5 +1,6 @@
 {
   "id": "floor_1",
+  "strategy": "tree",
   "width": 50,
   "height": 50,
   "minRooms": 6,

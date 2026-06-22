@@ -91,6 +91,7 @@ function generateNewFloor(state: GameState, targetFloor: number): void {
   // Враги и предметы
   generated.enemies.forEach(e => state.entities.set(e.id, e));
   generated.items.forEach(e => state.entities.set(e.id, e));
+  generated.doors.forEach(d => state.entities.set(d.id, d));
 
   // Лестницы
   if (generated.stairsDown && targetFloor < MAX_FLOOR) {
@@ -100,7 +101,8 @@ function generateNewFloor(state: GameState, targetFloor: number): void {
     state.entities.set(`stairs_up_${targetFloor}`, createStairs(state, 'stairs_up', generated.stairsUp.x, generated.stairsUp.y));
   }
 
-  // explored начинается чистой
+  // visible и explored начинаются чистыми под фактический размер новой карты
+  state.visible = createBoolGrid(state.map.width, state.map.height, false);
   state.explored = createBoolGrid(state.map.width, state.map.height, false);
 }
 
