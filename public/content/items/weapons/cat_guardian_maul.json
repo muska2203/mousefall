@@ -1,0 +1,18 @@
+{
+  "id": "cat_guardian_maul",
+  "spriteId": "cat_guardian_maul",
+  "icon": "/assets/items/cat_guardian_maul.png",
+  "fallback": "🔨",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 40,
+  "weapon": {
+    "baseDamage": 8,
+    "damageFormulaId": "club",
+    "range": 1,
+    "damageType": "blunt"
+  },
+  "grantedAbilities": [],
+  "equipModifiers": []
+}

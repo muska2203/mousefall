@@ -1,6 +1,6 @@
 {
   "id": "cat_mid",
-  "maxAp": 2,
+  "maxAp": 3,
   "aiStrategyId": "hunter",
   "aiSightRadius": 5,
   "health": {

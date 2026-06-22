@@ -1,0 +1,52 @@
+{
+  "id": "cat_guardian",
+  "maxAp": 3,
+  "aiStrategyId": "hunter",
+  "aiSightRadius": 8,
+  "health": {
+    "max": 80
+  },
+  "baseStats": {
+    "str": 6,
+    "dex": 2,
+    "int": 2,
+    "vit": 6
+  },
+  "equipment": {
+    "weapon": "cat_guardian_maul",
+    "armor": "cat_guardian_plate"
+  },
+  "abilities": [
+    
+  ],
+  "lootTable": [
+    {
+      "templateId": "health_potion",
+      "weight": 5
+    },
+    {
+      "templateId": "common_splinter_blade",
+      "weight": 2
+    },
+    {
+      "templateId": "cat_guardian_maul",
+      "weight": 1
+    },
+    {
+      "templateId": "cat_guardian_plate",
+      "weight": 1
+    }
+  ],
+  "lootDropTable": [
+    {
+      "count": 2,
+      "weight": 1
+    },
+    {
+      "count": 3,
+      "weight": 2
+    }
+  ],
+  "xpReward": 150,
+  "renderScale": 1.8
+}
