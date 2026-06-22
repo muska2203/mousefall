@@ -74,14 +74,24 @@ export function spawnEnemiesAndItems(
 ): { enemies: EnemyEntity[]; items: ItemEntity[] } {
   const enemies: EnemyEntity[] = [];
   const items: ItemEntity[] = [];
+  // Отслеживаем занятые тайлы, чтобы несколько врагов не спавнились в одной клетке.
+  const occupied = new Set<string>();
 
   for (let i = 1; i < rooms.length; i++) {
     const room = rooms[i]!;
 
-    if (rngChance(rng, params.enemyDensity * 100)) {
-      const templateId = params.enemyPool[rngInt(rng, 0, params.enemyPool.length - 1)] ?? 'cat_small';
-      const pos = randomPosInRoom(rng, room);
-      enemies.push(createEnemy(state, templateId, pos.x, pos.y));
+    // Количество врагов считается от площади комнаты: 1 враг на каждые 4×4 клеток при density = 1.
+    const roomArea = room.width * room.height;
+    const expectedEnemies = (roomArea / 16) * params.enemyDensity;
+    const guaranteedCount = Math.floor(expectedEnemies);
+    const extraChance = expectedEnemies - guaranteedCount;
+
+    for (let j = 0; j < guaranteedCount; j++) {
+      spawnEnemyInRoom(rng, room, params, state, enemies, occupied);
+    }
+
+    if (extraChance > 0 && rngChance(rng, extraChance * 100)) {
+      spawnEnemyInRoom(rng, room, params, state, enemies, occupied);
     }
 
     if (rngChance(rng, params.itemDensity * 100)) {
@@ -92,6 +102,35 @@ export function spawnEnemiesAndItems(
   }
 
   return { enemies, items };
+}
+
+/**
+ * Пытается заспавнить одного врага внутри комнаты на свободном тайле.
+ * Если подходящей клетки не нашлось (все заняты), враг не появляется.
+ */
+function spawnEnemyInRoom(
+  rng: RNGState,
+  room: Room,
+  params: MapParams,
+  state: GameState,
+  enemies: EnemyEntity[],
+  occupied: Set<string>,
+): void {
+  let pos = randomPosInRoom(rng, room);
+  let key = `${pos.x},${pos.y}`;
+  let attempts = 0;
+  // Если тайл занят, пробуем подобрать свободный, но не более 10 попыток.
+  while (occupied.has(key) && attempts < 10) {
+    pos = randomPosInRoom(rng, room);
+    key = `${pos.x},${pos.y}`;
+    attempts++;
+  }
+
+  occupied.add(key);
+  const templateId = params.enemyPool.length > 0
+    ? params.enemyPool[rngInt(rng, 0, params.enemyPool.length - 1)]!
+    : 'cat_small';
+  enemies.push(createEnemy(state, templateId, pos.x, pos.y));
 }
 
 // ─────────────────────────────────────────────

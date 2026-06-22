@@ -168,7 +168,7 @@ export const MapParamsSchema = z.object({
   maxRooms:    z.number().int().positive().describe('Максимальное количество комнат'),
   minRoomSize: z.number().int().min(2).describe('Минимальный размер комнаты'),
   maxRoomSize: z.number().int().max(20).describe('Максимальный размер комнаты'),
-  enemyDensity: z.number().min(0).max(1).describe('Плотность спавна врагов (0.0–1.0)'),
+  enemyDensity: z.number().min(0).max(1).describe('Множитель плотности врагов: 1.0 соответствует одному врагу на каждые 4×4 клеток комнаты'),
   itemDensity:  z.number().min(0).max(1).describe('Плотность спавна предметов (0.0–1.0)'),
   enemyPool:   z.array(z.string()).describe('ID шаблонов сущностей, допустимых к спавну'),
   itemPool:    z.array(z.string()).describe('ID шаблонов предметов, допустимых к спавну'),
