@@ -1,5 +1,6 @@
 import {GameState} from "@simulation/types.ts";
 import {executeMoveIntent} from "@simulation/systems/intents/move-intent-executer.ts";
+import {executePushIntent} from "@simulation/systems/intents/push-intent-executer.ts";
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
 import {Intent, IntentExecutor} from "@simulation/systems/intents/types.ts";
 import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
@@ -20,9 +21,11 @@ import {executeBeginCastIntent} from "@simulation/systems/intents/begin-cast-int
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
 import {executeOpenDoorIntent, executeCloseDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
+import {executeBumpIntent} from "@simulation/systems/intents/bump-intent-executor.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
+  PUSH: executePushIntent,
   DAMAGE: executeDamageIntent,
   DIE: executeDieIntent,
   APPLY_STATUS: executeApplyStatusIntent,
@@ -41,6 +44,7 @@ const intentExecutors = {
   REMOVE_ITEM: executeRemoveItemIntent,
   OPEN_DOOR: executeOpenDoorIntent,
   CLOSE_DOOR: executeCloseDoorIntent,
+  BUMP: executeBumpIntent,
 };
 
 export function executeIntent(

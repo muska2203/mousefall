@@ -13,12 +13,21 @@
 
 import type { SimulationResult, GameEvent, GameState, TurnPhase } from '@simulation/types';
 import type { ExecutionNode } from '@simulation/systems/actions/types';
-import type { AnimationStep, AnimationNode, AnimationPhase } from './types';
+import type { AnimationStep, AnimationNode, AnimationPhase, Position } from './types';
 import { filterByFOV } from './fogFilter';
 
 type AnimationBuilder = (event: GameEvent, childNodes: AnimationNode[], state: GameState) => AnimationNode[] | null;
 
 const builders = new Map<string, AnimationBuilder>();
+
+/** ID способности "рывок".
+ *  Пока у способностей нет контентного поля animationStyle, Presentation
+ *  использует этот ID для специальной анимационной ветки. При добавлении
+ *  других способностей с похожим поведением стоит вынести hint в шаблон. */
+const DASH_ABILITY_ID = 'dash';
+
+/** Длительность одной клетки рывка — быстрее обычного передвижения. */
+const DASH_MOVE_DURATION_MS = 110;
 
 /** Зарегистрировать builder для конкретного типа GameEvent.
  *  Используется для расширения системы новыми анимациями без правки ядра. */
@@ -91,6 +100,21 @@ registerAnimationBuilder('FOG_UPDATED', (event, children) => {
       newlyVisible: event.newlyVisible,
     },
     children,
+  }];
+});
+
+registerAnimationBuilder('ENTITY_BUMPED', (event) => {
+  if (event.type !== 'ENTITY_BUMPED') return null;
+  return [{
+    step: {
+      type: 'BOUNCE',
+      entityId: event.entityId,
+      x: event.position.x,
+      y: event.position.y,
+      dx: event.dx,
+      dy: event.dy,
+    },
+    children: [],
   }];
 });
 
@@ -227,6 +251,12 @@ registerAnimationBuilder('STATUS_TICKED', (event, childNodes, state) => {
 registerAnimationBuilder('ABILITY_USED', (event, children) => {
   if (event.type !== 'ABILITY_USED') return null;
 
+  // Рывок — особая анимация: без каста, с ускоренным движением,
+  // отталкиванием врага в момент приближения и отскоком о препятствия.
+  if (event.abilityId === DASH_ABILITY_ID) {
+    return buildDashAnimationNodes(event.entityId, children);
+  }
+
   const castStep: AnimationStep = {
     type: 'ABILITY_CAST',
     entityId: event.entityId,
@@ -300,14 +330,20 @@ function getNodeEntityId(node: AnimationNode): string | null {
   }
 }
 
-/** Превращает последовательные корневые узлы одной сущности в цепочку parent → child.
+/** Превращает последовательные узлы одной сущности в цепочку parent → child.
  *  Нужно, чтобы sequencer не запускал их параллельно и не отменял предыдущую анимацию
- *  одного и того же спрайта (например, два MOVE врага за ход). */
+ *  одного и того же спрайта (например, два MOVE врага за ход или рывок игрока).
+ *  Работает рекурсивно на всех уровнях дерева. */
 function chainNodesByEntity(nodes: AnimationNode[]): AnimationNode[] {
   const roots: AnimationNode[] = [];
   const tails = new Map<string, AnimationNode>();
 
   for (const node of nodes) {
+    // Сначала обрабатываем детей рекурсивно.
+    if (node.children.length > 0) {
+      node.children = chainNodesByEntity(node.children);
+    }
+
     const entityId = getNodeEntityId(node);
     if (entityId) {
       const tail = tails.get(entityId);
@@ -352,6 +388,84 @@ function splitByActor(nodes: AnimationNode[]): AnimationNode[][] {
   }
 
   return groups.map((group) => chainNodesByEntity(group));
+}
+
+/** Добавить значение в массив Map, создавая массив при необходимости. */
+function pushToMap<T>(map: Map<string, T[]>, key: string, value: T): void {
+  const arr = map.get(key);
+  if (arr) {
+    arr.push(value);
+  } else {
+    map.set(key, [value]);
+  }
+}
+
+/** Сравнить две позиции по координатам. */
+function positionsEqual(a: Position, b: Position): boolean {
+  return a.x === b.x && a.y === b.y;
+}
+
+/** Строит специализированное дерево анимаций для рывка.
+ *
+ * - Пропускает анимацию каста.
+ * - Устанавливает ускоренную длительность движения кастера.
+ * - Прикрепляет отскок к последнему шагу кастера.
+ * - Переносит урон/отталкивание/статус врага к моменту приближения кастера. */
+function buildDashAnimationNodes(casterId: string, childNodes: AnimationNode[]): AnimationNode[] {
+  const casterMoves: AnimationNode[] = [];
+  const casterBounces: AnimationNode[] = [];
+  const otherRoots: AnimationNode[] = [];
+  const enemyNodes = new Map<string, AnimationNode[]>();
+
+  for (const node of childNodes) {
+    const step = node.step;
+    if (step.type === 'MOVE' && step.entityId === casterId) {
+      step.duration = DASH_MOVE_DURATION_MS;
+      step.sway = false;
+      casterMoves.push(node);
+    } else if (step.type === 'BOUNCE' && step.entityId === casterId) {
+      casterBounces.push(node);
+    } else if (step.type === 'MOVE') {
+      pushToMap(enemyNodes, step.entityId, node);
+    } else if (step.type === 'DAMAGE') {
+      pushToMap(enemyNodes, step.targetId, node);
+    } else if (step.type === 'STATUS_BURST') {
+      pushToMap(enemyNodes, step.entityId, node);
+    } else {
+      otherRoots.push(node);
+    }
+  }
+
+  if (casterMoves.length === 0) {
+    // Рывок без движения — оставляем узлы как есть (например, отскок о стену на месте).
+    return childNodes;
+  }
+
+  const findCollisionMove = (collisionPos: Position): AnimationNode => {
+    const move = casterMoves.find((m) => m.step.type === 'MOVE' && positionsEqual(m.step.to, collisionPos));
+    return move ?? casterMoves[casterMoves.length - 1]!;
+  };
+
+  for (const nodes of enemyNodes.values()) {
+    const enemyMove = nodes.find((n) => n.step.type === 'MOVE');
+    const damageNode = nodes.find((n) => n.step.type === 'DAMAGE');
+    const collisionPos = enemyMove?.step.type === 'MOVE'
+      ? enemyMove.step.from
+      : damageNode?.step.type === 'DAMAGE'
+        ? damageNode.step.position
+        : undefined;
+    const collisionMove = collisionPos !== undefined ? findCollisionMove(collisionPos) : casterMoves[casterMoves.length - 1]!;
+    for (const n of nodes) {
+      collisionMove.children.push(n);
+    }
+  }
+
+  const lastCasterMove = casterMoves[casterMoves.length - 1]!;
+  for (const bounce of casterBounces) {
+    lastCasterMove.children.push(bounce);
+  }
+
+  return [...casterMoves, ...otherRoots];
 }
 
 /** Рекурсивно конвертирует ExecutionNode в AnimationNode[].

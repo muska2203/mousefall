@@ -13,6 +13,8 @@
     "range": 1,
     "damageType": "slashing"
   },
-  "grantedAbilities": [],
+  "grantedAbilities": [
+    "dash"
+  ],
   "equipModifiers": []
 }

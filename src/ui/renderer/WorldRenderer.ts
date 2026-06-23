@@ -80,11 +80,15 @@ export class WorldRenderer {
   /**
    * Обновить отрисовку на основе текущего состояния игры.
    * Если идёт камера-анимация, root-позиция будет переопределена в ticker.
+   * Если для игрока запланирована анимация MOVE — камера привязывается к
+   * начальной клетке анимации, чтобы избежать телепорта камеры в конечную
+   * позицию до старта анимации.
    */
   render(input: RenderInput): void {
     this.lastInput = input;
-    const playerScreenX = input.state.player.x * TILE_SIZE;
-    const playerScreenY = input.state.player.y * TILE_SIZE;
+    const cameraBase = this.findPlayerMoveFrom(input) ?? input.state.player;
+    const playerScreenX = cameraBase.x * TILE_SIZE;
+    const playerScreenY = cameraBase.y * TILE_SIZE;
 
     const scale = input.zoom;
     const viewW = this.viewportWidth / scale;
@@ -109,9 +113,9 @@ export class WorldRenderer {
   // ── Promise-based анимации ───────────────────────────────────────
 
   /** Анимировать перемещение сущности. Если followCamera — камера следует за ней. */
-  animateMove(entityId: string, from: Position, to: Position, config: AnimationConfigEntry, followCamera: boolean): Promise<void> {
+  animateMove(entityId: string, from: Position, to: Position, config: AnimationConfigEntry, followCamera: boolean, sway: boolean = true): Promise<void> {
     const promises: Promise<void>[] = [
-      this.entityRenderer.animateMove(entityId, from, to, config),
+      this.entityRenderer.animateMove(entityId, from, to, config, sway),
     ];
 
     if (followCamera) {
@@ -129,6 +133,11 @@ export class WorldRenderer {
   /** Анимировать смерть (fade-out + scale-down). */
   animateDeath(entityId: string, config: AnimationConfigEntry): Promise<void> {
     return this.entityRenderer.animateDeath(entityId, config);
+  }
+
+  /** Анимировать отскок сущности при столкновении с препятствием. */
+  animateBounce(entityId: string, x: number, y: number, dx: number, dy: number, config: AnimationConfigEntry): Promise<void> {
+    return this.entityRenderer.animateBounce(entityId, x, y, dx, dy, config);
   }
 
   /** Анимировать появление предмета (перелёт от from к to + fade-in + scale-up). */
@@ -292,6 +301,35 @@ export class WorldRenderer {
     ticker: TickerLike,
   ): Promise<void> {
     return this.fogRenderer.animateReveal(positions, config.duration, config.easing, ticker);
+  }
+
+  /**
+   * Ищет начальную клетку первой анимации MOVE игрока в запланированных анимациях.
+   * Возвращает null, если такой анимации нет.
+   */
+  private findPlayerMoveFrom(input: RenderInput): Position | null {
+    const playerId = input.state.player.id;
+    const animations = input.animations;
+    if (!animations) return null;
+
+    for (const phase of animations) {
+      for (const node of phase.nodes) {
+        const from = this.findMoveFromInNode(node, playerId);
+        if (from) return from;
+      }
+    }
+    return null;
+  }
+
+  private findMoveFromInNode(node: import('@presentation/types').AnimationNode, playerId: string): Position | null {
+    if (node.step.type === 'MOVE' && node.step.entityId === playerId) {
+      return node.step.from;
+    }
+    for (const child of node.children) {
+      const from = this.findMoveFromInNode(child, playerId);
+      if (from) return from;
+    }
+    return null;
   }
 
   /** Анимировать движение камеры между двумя тайлами. */

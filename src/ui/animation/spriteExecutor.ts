@@ -21,7 +21,8 @@ export class SpriteAnimationExecutor implements AnimationExecutor {
     switch (step.type) {
       case 'MOVE': {
         const isPlayer = step.entityId === ctx.playerId;
-        await wr.animateMove(step.entityId, step.from, step.to, config, isPlayer);
+        const moveConfig = step.duration !== undefined ? { ...config, duration: step.duration } : config;
+        await wr.animateMove(step.entityId, step.from, step.to, moveConfig, isPlayer, step.sway);
         break;
       }
       case 'ATTACK': {

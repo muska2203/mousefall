@@ -35,4 +35,14 @@ export const damageFormulas: Record<string, DamageFormula> = {
     const int = ctx.caster.type === 'player' ? ctx.caster.baseStats.int : 0;
     return single(Math.round(ctx.baseDamage * (1 + int * 0.2) * (1 + ctx.skillLevel * 0.05)), 'electric');
   },
+  // Рывок — столкновение с актором
+  dash_bump: (ctx) => {
+    const str = ctx.caster.type === 'player' ? ctx.caster.baseStats.str : 0;
+    return single(Math.round(ctx.baseDamage * (1 + str * 0.1) * (1 + ctx.skillLevel * 0.05)), 'blunt');
+  },
+  // Отталкивание в препятствие или другого актора
+  push_bump: (ctx) => {
+    const str = ctx.caster.type === 'player' ? ctx.caster.baseStats.str : 0;
+    return single(Math.round(ctx.baseDamage * (1 + str * 0.1) * (1 + ctx.skillLevel * 0.05)), 'blunt');
+  },
 };

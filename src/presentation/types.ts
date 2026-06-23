@@ -27,6 +27,10 @@ export type AnimationStep =
       entityId: string;
       from: Position;
       to: Position;
+      /** Переопределённая длительность движения (например, для рывка). */
+      duration?: number;
+      /** Если false, спрайт не будет покачиваться при движении (например, рывок). */
+      sway?: boolean;
     }
   | {
       type: 'ATTACK';
@@ -93,6 +97,16 @@ export type AnimationStep =
       position: Position;
       from: Position;
       templateId: string;
+    }
+  | {
+      type: 'BOUNCE';
+      entityId: string;
+      /** Клетка, где находится сущность в момент столкновения. */
+      x: number;
+      y: number;
+      /** Направление отскока (в сторону препятствия). */
+      dx: number;
+      dy: number;
     };
 
 /** Узел дерева анимаций.

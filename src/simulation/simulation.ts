@@ -18,6 +18,7 @@ import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
 import {findAllAliveAiActors, isActor, cleanupDeadEntities, createBoolGrid} from "@simulation/state.ts";
+import {isStunned, skipStunnedActorTurn} from "@simulation/systems/stun-helper.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
@@ -355,6 +356,13 @@ export class GameSimulation implements Simulation {
             return false;
         }
 
+        // Оглушённый актор пропускает ход: тикаем stunned и обнуляем AP.
+        // Разрешено только действие WAIT (см. canActorAct), остальные отклонены выше.
+        if (isStunned(actor)) {
+            skipStunnedActorTurn(this.state, actor.id, executionBuilder, parentNode);
+            return true;
+        }
+
         const handler =
             this.actionHandlerRegistry.get(action.type);
 
@@ -448,6 +456,17 @@ export class GameSimulation implements Simulation {
                 } else {
                     enemyEntity.activeCast.remainingTurns--;
                 }
+            }
+
+            // Оглушённый враг пропускает ход.
+            if (isStunned(enemy)) {
+                const stunBuilder = new ExecutionBuilder({
+                    type: 'ACTION_APPLIED',
+                    action: { type: 'WAIT', entityId: enemy.id },
+                });
+                skipStunnedActorTurn(this.state, enemy.id, stunBuilder, stunBuilder.root);
+                actions.push(stunBuilder.root);
+                continue;
             }
 
             const strategy = getStrategy(enemy.aiStrategyId);
@@ -593,6 +612,11 @@ export class GameSimulation implements Simulation {
                 return true;
             }
             return false;
+        }
+
+        if (isStunned(actor)) {
+            // Оглушённый актор может только завершить ход (WAIT).
+            return action.type === 'WAIT';
         }
 
         if (this.state.turn.activeSide === 'PLAYER') {

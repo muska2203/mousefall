@@ -23,6 +23,7 @@ import {SkillAnimationExecutor} from '@ui/animation/skillExecutor';
 import {ProjectileAnimationExecutor} from '@ui/animation/projectileExecutor';
 import {ExplosionAnimationExecutor} from '@ui/animation/explosionExecutor';
 import {StatusBurstAnimationExecutor} from '@ui/animation/statusBurstExecutor';
+import {BounceAnimationExecutor} from '@ui/animation/bounceExecutor';
 import type {AnimationContext} from '@ui/animation/types';
 
 
@@ -103,6 +104,7 @@ export function GameField({
         new ProjectileAnimationExecutor(),
         new ExplosionAnimationExecutor(),
         new StatusBurstAnimationExecutor(),
+        new BounceAnimationExecutor(),
       ];
       const context: AnimationContext = {
         worldRenderer: renderer,

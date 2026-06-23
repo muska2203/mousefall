@@ -80,7 +80,8 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     }
     case 'ITEM_DROPPED':
     case 'DOOR_OPENED':
-    case 'DOOR_CLOSED': {
+    case 'DOOR_CLOSED':
+    case 'ENTITY_BUMPED': {
       return isPosVisible(event.position, state);
     }
     case 'STAIR_EXIT_TRIGGERED':

@@ -28,6 +28,7 @@ export const ANIMATION_CONFIG = {
   EXPLOSION: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
   STATUS_BURST: { duration: 400, blocking: false, easing: Easing.easeOutQuad },
   ITEM_DROP: { duration: 200, blocking: false, easing: Easing.easeOutQuad },
+  BOUNCE: { duration: 150, blocking: true, easing: Easing.easeOutBack },
 } as const satisfies Record<string, AnimationConfigEntry>;
 
 export type AnimationConfigKey = keyof typeof ANIMATION_CONFIG;

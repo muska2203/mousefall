@@ -22,10 +22,19 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
         const rawDamage = Math.max(1, Math.round(maxHp * 0.1));
         const node = executeDamage(state, entity.id, rawDamage, 'fire', null, builder, damageNode ?? parent);
         if (node) damageNode = node;
+        effect.duration -= 1;
+        break;
+      }
+      case 'stunned': {
+        // Оглушение тикает отдельно при пропуске хода актора,
+        // чтобы гарантировать ровно один пропущенный ход.
+        break;
+      }
+      default: {
+        effect.duration -= 1;
         break;
       }
     }
-    effect.duration -= 1;
   }
 
   const expired = holder.statusEffects.filter(e => e.duration <= 0);

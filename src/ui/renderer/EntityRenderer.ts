@@ -146,7 +146,7 @@ export class EntityRenderer {
   }
 
   /** Анимация перемещения спрайта между тайлами. Возвращает Promise, резолвящийся по завершении. */
-  animateMove(entityId: string, from: Position, to: Position, config: AnimationConfigEntry): Promise<void> {
+  animateMove(entityId: string, from: Position, to: Position, config: AnimationConfigEntry, sway: boolean = true): Promise<void> {
     return new Promise((resolve) => {
       const sprite = this.sprites.get(entityId);
       if (!sprite) {
@@ -166,6 +166,7 @@ export class EntityRenderer {
 
       const swayCycles = 1;
       const swayAmplitude = 0.08;
+      const shouldSway = sway && isActor;
 
       const tween = new Vec2Tween({
         from: { x: from.x * TILE_SIZE + offsetX, y: from.y * TILE_SIZE + offsetY },
@@ -176,12 +177,12 @@ export class EntityRenderer {
           sprite.x = x;
           sprite.y = y;
           sprite.zIndex = y;
-          if (isActor) {
+          if (shouldSway) {
             sprite.rotation = Math.sin(progress * Math.PI * 2 * swayCycles) * swayAmplitude;
           }
         },
         onComplete: () => {
-          if (isActor) {
+          if (shouldSway) {
             sprite.rotation = 0;
           }
           this.activeAnimations.delete(entityId);
@@ -317,6 +318,47 @@ export class EntityRenderer {
           sprite.y = toY;
           sprite.alpha = endAlpha;
           sprite.scale.set(endScale);
+          this.activeAnimations.delete(entityId);
+          resolve();
+        },
+      });
+
+      const anim: ActiveAnimation = { tween, onComplete: resolve };
+      this.activeAnimations.set(entityId, anim);
+      tween.start(performance.now());
+    });
+  }
+
+  /** Анимация отскока при столкновении: короткий сдвиг в сторону препятствия и обратно. */
+  animateBounce(entityId: string, _x: number, _y: number, dx: number, dy: number, config: AnimationConfigEntry): Promise<void> {
+    return new Promise((resolve) => {
+      const sprite = this.sprites.get(entityId);
+      if (!sprite) {
+        resolve();
+        return;
+      }
+
+      this.cancelAnimationFor(entityId);
+
+      sprite.visible = true;
+
+      const startX = sprite.x;
+      const startY = sprite.y;
+      const offsetX = dx * TILE_SIZE * 0.25;
+      const offsetY = dy * TILE_SIZE * 0.25;
+
+      const tween = new Tween({
+        duration: config.duration,
+        easing: config.easing,
+        onUpdate: (p) => {
+          const t = p < 0.5 ? p * 2 : (1 - p) * 2;
+          sprite.x = startX + offsetX * t;
+          sprite.y = startY + offsetY * t;
+          sprite.zIndex = sprite.y;
+        },
+        onComplete: () => {
+          sprite.x = startX;
+          sprite.y = startY;
           this.activeAnimations.delete(entityId);
           resolve();
         },
@@ -616,6 +658,9 @@ function collectAnimatedEntityIds(node: AnimationNode, out: Set<string>): void {
       break;
     case 'ITEM_DROP':
       out.add(node.step.itemId);
+      break;
+    case 'BOUNCE':
+      out.add(node.step.entityId);
       break;
   }
   for (const child of node.children) {

@@ -58,6 +58,10 @@ export const enContentTexts: ContentTexts = {
     },
   },
   abilities: {
+    dash: {
+      name: 'Dash',
+      description: 'Dash 2 cells forward. Breaks through closed doors, pushes enemies, and may stun them.',
+    },
     fireball: {
       name: 'Fireball',
       description: 'A burst of fire in a radius of 1 cell. Sets targets on fire.',

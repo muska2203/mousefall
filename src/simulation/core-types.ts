@@ -300,6 +300,7 @@ export type TargetMode =
 
 export type Intent =
   | MoveIntent
+  | PushIntent
   | DamageIntent
   | DieIntent
   | ApplyStatusIntent
@@ -317,9 +318,11 @@ export type Intent =
   | HealIntent
   | RemoveItemIntent
   | OpenDoorIntent
-  | CloseDoorIntent;
+  | CloseDoorIntent
+  | BumpIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
+export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect };
@@ -338,6 +341,7 @@ export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
 export type CloseDoorIntent = { type: 'CLOSE_DOOR'; entityId: EntityId; targetPosition: Position };
+export type BumpIntent = { type: 'BUMP'; entityId: EntityId; position: Position; dx: number; dy: number };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -374,7 +378,8 @@ export type GameEvent =
   | CastStartedEvent
   | CastResolvedEvent
   | CastCancelledEvent
-  | EntityHealedEvent;
+  | EntityHealedEvent
+  | EntityBumpedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -429,6 +434,8 @@ export type AbilityRevokedEvent = { type: 'ABILITY_REVOKED'; entityId: EntityId;
 export type CastStartedEvent = { type: 'CAST_STARTED'; entityId: EntityId; abilityId: string; turns: number; targets: Position[]; from: Position };
 export type CastResolvedEvent = { type: 'CAST_RESOLVED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 export type CastCancelledEvent = { type: 'CAST_CANCELLED'; entityId: EntityId; abilityId: string; from: Position };
+
+export type EntityBumpedEvent = { type: 'ENTITY_BUMPED'; entityId: EntityId; position: Position; dx: number; dy: number };
 
 export type EntityHealedEvent = {
   type: 'ENTITY_HEALED';

@@ -200,6 +200,63 @@ describe('buildAnimationTree', () => {
     expect((tree[0]!.nodes[0]!.children[0]!.step as any).to).toEqual({ x: 3, y: 5 });
   });
 
+  it('dash skips cast and chains fast MOVE steps', () => {
+    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
+    const secondMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
+    const abilityUsed = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }], from: { x: 5, y: 5 } }, [firstMove, secondMove]);
+    const result = makeResult([abilityUsed]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
+    expect((tree[0]!.nodes[0]!.step as any).to).toEqual({ x: 6, y: 5 });
+    expect((tree[0]!.nodes[0]!.step as any).duration).toBe(110);
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('MOVE');
+    expect((tree[0]!.nodes[0]!.children[0]!.step as any).to).toEqual({ x: 7, y: 5 });
+    expect((tree[0]!.nodes[0]!.children[0]!.step as any).duration).toBe(110);
+  });
+
+  it('dash attaches enemy push/damage to the collision MOVE', () => {
+    const casterFirstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
+    const casterSecondMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
+    const enemyPushMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
+    const enemyDamage = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 6, y: 5 } });
+    const abilityUsed = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }], from: { x: 5, y: 5 } }, [
+      casterFirstMove,
+      enemyDamage,
+      enemyPushMove,
+      casterSecondMove,
+    ]);
+    const result = makeResult([abilityUsed]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree[0]!.nodes).toHaveLength(1);
+    const firstMoveNode = tree[0]!.nodes[0]!;
+    expect(firstMoveNode.step.type).toBe('MOVE');
+    expect((firstMoveNode.step as any).to).toEqual({ x: 6, y: 5 });
+    // Урон и отталкивание врага должны стать детьми первого MOVE (клетка столкновения).
+    const childTypes = firstMoveNode.children.map((c) => c.step.type);
+    expect(childTypes).toContain('DAMAGE');
+    expect(childTypes).toContain('MOVE');
+    // Второй шаг кастера — тоже ребёнок первого MOVE (цепочка ходов кастера).
+    expect(firstMoveNode.children.some((c) => c.step.type === 'MOVE' && (c.step as any).entityId === 'player')).toBe(true);
+  });
+
+  it('dash attaches wall bounce to the last caster MOVE', () => {
+    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
+    const bump = makeExecNode({ type: 'ENTITY_BUMPED', entityId: 'player', position: { x: 6, y: 5 }, dx: 1, dy: 0 });
+    const abilityUsed = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }], from: { x: 5, y: 5 } }, [firstMove, bump]);
+    const result = makeResult([abilityUsed]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('BOUNCE');
+  });
+
   it('splits ENVIRONMENT phase into sequential subphases per actor', () => {
     const enemyAMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemyA', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
     const enemyBMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemyB', from: { x: 3, y: 3 }, to: { x: 2, y: 3 } });

@@ -58,6 +58,10 @@ export const ruContentTexts: ContentTexts = {
     },
   },
   abilities: {
+    dash: {
+      name: 'Рывок',
+      description: 'Рывок на 2 клетки. Пробивает закрытые двери, отталкивает врагов и может оглушить их.',
+    },
     fireball: {
       name: 'Огненный шар',
       description: 'Взрыв огня в радиусе 1 клетки. Поджигает цели.',

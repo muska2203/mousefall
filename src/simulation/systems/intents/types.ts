@@ -5,6 +5,7 @@ import {ExecutionBuilder, ExecutionNode, Intent, OpenDoorIntent, CloseDoorIntent
 export type {
   Intent,
   MoveIntent,
+  PushIntent,
   DamageIntent,
   DieIntent,
   ApplyStatusIntent,
@@ -23,6 +24,7 @@ export type {
   RemoveItemIntent,
   OpenDoorIntent,
   CloseDoorIntent,
+  BumpIntent,
 } from "@simulation/core-types.ts";
 
 export type OpenDoorIntentExecutor = IntentExecutor<OpenDoorIntent>;
