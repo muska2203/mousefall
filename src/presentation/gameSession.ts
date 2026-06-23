@@ -720,10 +720,13 @@ export class GameSession {
 
   /**
    * Возвращает все доступные шаблоны игрока из Content Registry.
+   * Шаблон, помеченный isDefault, всегда идёт первым — это выбор по умолчанию
+   * в экране создания персонажа. Остальные сохраняют порядок манифеста.
    * Статический метод — не требует активной симуляции.
    */
   static getAvailablePlayerTemplates(locale: Locale) {
-    return getAllLocalizedPlayerTemplates(locale);
+    const templates = getAllLocalizedPlayerTemplates(locale);
+    return [...templates].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
   }
 
   /**
@@ -1044,8 +1047,10 @@ export class GameSession {
 
     const doorAtTarget = findDoorAt(state, targetX, targetY);
 
-    if (target && target.id !== state.player.id && !doorAtTarget) {
-      // Атака по врагу/не-двери.
+    if (target && target.id !== state.player.id && target.type !== 'door') {
+      // Атака по врагу/другой не-дверной цели.
+      // Если враг стоит на клетке с открытой дверью, атака всё равно должна
+      // сработать в приоритете, а не превращаться в MOVE.
       action = {type: 'ATTACK', entityId: state.player.id, dx, dy};
     } else if (doorAtTarget) {
       if (doorAtTarget.isOpen) {

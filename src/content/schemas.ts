@@ -211,6 +211,10 @@ export const PlayerTemplateSchema = z.object({
   renderScale: z.number().min(0).optional().default(1.5).describe('Масштаб спрайта относительно размера тайла'),
   maxAp: z.number().int().positive().default(2)
     .describe('Стартовое максимальное количество очков действий (AP)'),
+  baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 })
+    .describe('Стартовые базовые характеристики персонажа. Не могут быть снижены при распределении очков'),
+  isDefault: z.boolean().default(false)
+    .describe('Является ли шаблон выбранным по умолчанию в экране создания персонажа'),
 }).describe('Шаблон класса/внешности игрока');
 
 export type PlayerTemplate = z.output<typeof PlayerTemplateSchema>;

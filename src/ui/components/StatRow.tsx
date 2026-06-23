@@ -12,15 +12,17 @@ interface Props {
   value: number;
   onChange: (v: number) => void;
   canIncrease: boolean;
+  /** Минимально допустимое значение характеристики. */
+  min?: number;
   /** Краткое шуточное описание для тултипа. */
   flavorText?: string;
   /** Строки с подробным описанием влияния для тултипа. */
   detailLines?: string[];
 }
 
-export function StatRow({ icon, name, value, onChange, canIncrease, flavorText, detailLines }: Props) {
+export function StatRow({ icon, name, value, onChange, canIncrease, min = 0, flavorText, detailLines }: Props) {
   const { t } = useTranslation('components');
-  const canDecrease = value > 0;
+  const canDecrease = value > min;
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {

@@ -20,6 +20,8 @@ export type HeroStat =
       value: number;
       onChange: (v: number) => void;
       canIncrease: boolean;
+      /** Минимально допустимое значение характеристики. */
+      min?: number;
       /** Краткое шуточное описание для тултипа. */
       flavorText?: string;
       /** Строки с подробным описанием влияния для тултипа. */
@@ -92,6 +94,7 @@ export function HeroPanel({
               value={stat.value}
               onChange={stat.onChange}
               canIncrease={stat.canIncrease}
+              min={stat.min}
               flavorText={stat.flavorText}
               detailLines={stat.detailLines}
             />

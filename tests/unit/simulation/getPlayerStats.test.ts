@@ -23,6 +23,8 @@ function mockPlayerTemplate(id: string, template: Partial<PlayerTemplate> = {}):
     id,
     portraitImg: `/assets/portraits/${id}-ready.png`,
     renderScale: 1.5,
+    baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+    isDefault: false,
     ...template,
   } as PlayerTemplate;
 }

@@ -7,7 +7,7 @@
  * Правая: StarterEquipmentPanel, информация, кнопка старта.
  */
 
-import {useState, useCallback, useMemo} from 'react';
+import {useState, useCallback, useMemo, useEffect} from 'react';
 import { useTranslation } from '@i18n/hooks';
 import type {CharacterConfig} from '@presentation/gameSession';
 import {GameSession} from '@presentation/gameSession';
@@ -57,20 +57,33 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     [templates],
   );
 
-  const firstTemplateId = templates[0]?.id ?? 'witcher';
+  const firstTemplate = templates[0];
+  const firstTemplateId = firstTemplate?.id ?? 'witcher';
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(firstTemplateId);
-  const [strength, setStrength] = useState(0);
-  const [intelligence, setIntelligence] = useState(0);
-  const [agility, setAgility] = useState(0);
-  const [vitality, setVitality] = useState(0);
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId) ?? firstTemplate;
+  const templateBaseStats = selectedTemplate?.baseStats ?? { str: 0, dex: 0, int: 0, vit: 0 };
+
+  const [strength, setStrength] = useState(templateBaseStats.str);
+  const [intelligence, setIntelligence] = useState(templateBaseStats.int);
+  const [agility, setAgility] = useState(templateBaseStats.dex);
+  const [vitality, setVitality] = useState(templateBaseStats.vit);
+
+  // Сбрасываем характеристики к стартовым значениям выбранного шаблона при его смене
+  useEffect(() => {
+    setStrength(templateBaseStats.str);
+    setIntelligence(templateBaseStats.int);
+    setAgility(templateBaseStats.dex);
+    setVitality(templateBaseStats.vit);
+  }, [selectedTemplateId, templateBaseStats.str, templateBaseStats.dex, templateBaseStats.int, templateBaseStats.vit]);
+
   const [weaponId, setWeaponId] = useState('common_splinter_blade');
   const [armorId, setArmorId] = useState('common_tin_plate');
   const [amuletId, setAmuletId] = useState('common_knotted_fang');
   const [seedInput, setSeedInput] = useState('');
 
-  const spent = strength + intelligence + agility + vitality;
-  const remaining = POINTS_BUDGET - spent;
+  const currentSum = strength + intelligence + agility + vitality;
+  const remaining = POINTS_BUDGET - currentSum;
   const isValid = remaining === 0;
 
   const selectedPortrait = portraits.find((p) => p.id === selectedTemplateId) ?? portraits[0];
@@ -109,6 +122,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       value: strength,
       onChange: setStrength,
       canIncrease: remaining > 0,
+      min: templateBaseStats.str,
       flavorText: t('characterCreation.statStrengthFlavor'),
       detailLines: [
         t('characterCreation.statStrengthDetail1'),
@@ -123,6 +137,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       value: intelligence,
       onChange: setIntelligence,
       canIncrease: remaining > 0,
+      min: templateBaseStats.int,
       flavorText: t('characterCreation.statIntelligenceFlavor'),
       detailLines: [
         t('characterCreation.statIntelligenceDetail1'),
@@ -137,6 +152,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       value: agility,
       onChange: setAgility,
       canIncrease: remaining > 0,
+      min: templateBaseStats.dex,
       flavorText: t('characterCreation.statDexterityFlavor'),
       detailLines: [
         t('characterCreation.statDexterityDetail1'),
@@ -151,6 +167,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       value: vitality,
       onChange: setVitality,
       canIncrease: remaining > 0,
+      min: templateBaseStats.vit,
       flavorText: t('characterCreation.statVitalityFlavor'),
       detailLines: [
         t('characterCreation.statVitalityDetail1'),

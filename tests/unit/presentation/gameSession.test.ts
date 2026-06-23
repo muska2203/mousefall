@@ -228,7 +228,16 @@ describe('GameSession moveOrAttack with doors', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
-      entities: new Map(),
+      entities: new Map([
+        ['cat_small', {
+          id: 'cat_small',
+          health: {max: 20},
+          combat: {damage: 5, armor: 0},
+          baseStats: {str: 1, dex: 1, int: 0, vit: 0},
+          aiSightRadius: 6,
+          aiStrategyId: 'hunter',
+        } as any],
+      ]),
       players: new Map(),
       items: new Map(),
       abilities: new Map(),
@@ -308,6 +317,39 @@ describe('GameSession moveOrAttack with doors', () => {
     const updatedDoor = newState.entities.get(door.id) as import('../../../src/simulation/types').DoorEntity;
     expect(updatedDoor.isOpen).toBe(true);
     // Персонаж должен остаться на месте, а не автоматически заходить в дверь.
+    expect(newState.player.x).toBe(5);
+    expect(newState.player.y).toBe(5);
+    expect(newState.player.ap).toBe(1);
+  });
+
+  it('attacks an enemy standing on an open door tile', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 3, maxAp: 3 });
+    const door = makeDoor({ x: 6, y: 5, isOpen: true, blocksMovement: false });
+    const enemy = makeEnemy({ x: 6, y: 5, hp: 20, maxHp: 20, armor: 0 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [door.id, door],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const initialEnemyHp = enemy.hp;
+
+    session.moveOrAttack(1, 0);
+    session.onAnimationsComplete();
+
+    const newState = session.getViewModel().renderInput!.state;
+    const updatedEnemy = newState.entities.get(enemy.id) as import('../../../src/simulation/types').EnemyEntity;
+    const updatedDoor = newState.entities.get(door.id) as import('../../../src/simulation/types').DoorEntity;
+
+    // Должна произойти атака по врагу, а не попытка шага на клетку.
+    expect(updatedEnemy.hp).toBeLessThan(initialEnemyHp);
+    expect(updatedDoor.hp).toBe(door.hp);
     expect(newState.player.x).toBe(5);
     expect(newState.player.y).toBe(5);
     expect(newState.player.ap).toBe(1);
@@ -507,5 +549,58 @@ describe('GameSession interactions (F / Tab)', () => {
     const hint = session.getViewModel().renderInput?.interactionHint;
     // На новой клетке взаимодействий нет — подсказка должна исчезнуть.
     expect(hint).toBeNull();
+  });
+});
+
+
+describe('GameSession.getAvailablePlayerTemplates', () => {
+  beforeEach(() => {
+    resetRegistry();
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('sorts default template first while preserving manifest order for others', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map([
+        ['orc', {
+          id: 'orc',
+          portraitImg: '',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+          isDefault: false,
+        } as any],
+        ['witcher', {
+          id: 'witcher',
+          portraitImg: '',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 4, dex: 2, int: 0, vit: 4 },
+          isDefault: true,
+        } as any],
+        ['elf', {
+          id: 'elf',
+          portraitImg: '',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+          isDefault: false,
+        } as any],
+      ]),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+    });
+
+    const templates = GameSession.getAvailablePlayerTemplates('ru');
+
+    expect(templates.map((t) => t.id)).toEqual(['witcher', 'orc', 'elf']);
+    expect(templates[0]?.isDefault).toBe(true);
   });
 });

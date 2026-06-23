@@ -2,5 +2,12 @@
   "id": "witcher",
   "maxAp": 2,
   "portraitImg": "/assets/portraits/witcher-ready.png",
-  "renderScale": 1
+  "renderScale": 1,
+  "isDefault": true,
+  "baseStats": {
+    "str": 4,
+    "dex": 2,
+    "int": 0,
+    "vit": 4
+  }
 }
