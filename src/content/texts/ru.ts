@@ -70,6 +70,10 @@ export const ruContentTexts: ContentTexts = {
       name: 'Магический шлёпок',
       description: 'Три быстрых удара магией по выбранным целям.',
     },
+    counterattack: {
+      name: 'Контратака',
+      description: 'Готовит контратаку на следующий ход. Тратит все AP и даёт по одной контратаке за каждое потраченное AP.',
+    },
   },
   players: {
     'elven-ranger': {

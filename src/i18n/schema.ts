@@ -285,6 +285,7 @@ export interface SystemLogBuilderTranslations {
   enemyNameFallback: string;
   doorOpened: string;
   doorClosed: string;
+  counterattackTriggered: string;
 }
 
 export interface SystemItemMapperTranslations {
@@ -352,6 +353,8 @@ export interface SystemGameSessionTranslations {
   effectStunnedDesc: string;
   effectRegenerating: string;
   effectRegeneratingDesc: string;
+  effectCounterattack: string;
+  effectCounterattackDesc: string;
   effectUnknown: string;
 }
 

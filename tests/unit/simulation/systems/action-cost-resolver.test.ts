@@ -85,6 +85,24 @@ describe('DefaultActionPointCostResolver', () => {
     expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'fireball', targets: [] }, state)).toBe(2);
   });
 
+  it('USE_ABILITY с apCost "all" тратит все текущие AP актора', () => {
+    resetRegistry();
+    const player = makePlayer({ maxAp: 5, ap: 3 });
+    const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map([
+        ['counterattack', mockAbility('counterattack', { apCost: 'all' })],
+      ]),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+    });
+    expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'counterattack', targets: [] }, state)).toBe(3);
+  });
+
   it('USE_ABILITY возвращает fallback 1 для неизвестной способности', () => {
     const state = makeGameState();
     expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'unknown', targets: [] }, state)).toBe(1);

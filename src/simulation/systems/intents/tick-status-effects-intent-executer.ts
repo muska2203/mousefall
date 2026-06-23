@@ -1,4 +1,4 @@
-import { GameState } from '@simulation/types';
+import { GameState, StatusEffect } from '@simulation/types';
 import { TickStatusEffectsIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
 import { IntentExecutor } from '@simulation/systems/intents/types';
 import { executeDamage } from '@simulation/systems/damage/damage-processor';
@@ -12,10 +12,14 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
   const entity = state.entities.get(intent.entityId) ?? state.player;
   if (!entity || !('statusEffects' in entity)) return null;
 
-  const holder = entity as unknown as { statusEffects: Array<{ type: string; duration: number; value: number }> };
+  const intentPhase = intent.phase ?? 'environment';
+  const holder = entity as unknown as { statusEffects: StatusEffect[] };
   let damageNode: ExecutionNode | null = null;
 
   for (const effect of holder.statusEffects) {
+    const effectPhase = effect.tickAfter ?? 'environment';
+    if (effectPhase !== intentPhase) continue;
+
     switch (effect.type) {
       case 'burning': {
         const maxHp = 'maxHp' in entity ? entity.maxHp : 0;
@@ -42,13 +46,18 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
 
   const node = damageNode ?? parent;
 
+  builder.addChild(parent, {
+    type: 'STATUS_TICKED',
+    entityId: entity.id,
+  });
+
   for (const effect of expired) {
     builder.addChild(node, {
       type: 'STATUS_REMOVED',
       entityId: entity.id,
-      effectType: effect.type as import('@simulation/core-types').StatusEffectType,
+      effectType: effect.type,
     });
   }
 
-  return damageNode;
+  return node;
 };

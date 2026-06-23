@@ -29,6 +29,7 @@
     "/content/items/weapons/common_splinter_blade.json"
   ],
   "abilities": [
+    "/content/abilities/counterattack.json",
     "/content/abilities/dash.json",
     "/content/abilities/fireball.json",
     "/content/abilities/magic_slap.json"

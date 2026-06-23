@@ -14,7 +14,8 @@
     "damageType": "slashing"
   },
   "grantedAbilities": [
-    "dash"
+    "dash",
+    "counterattack"
   ],
   "equipModifiers": []
 }

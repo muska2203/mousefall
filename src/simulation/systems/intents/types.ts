@@ -13,6 +13,7 @@ export type {
   SetCooldownIntent,
   ConsumeApIntent,
   TickStatusEffectsIntent,
+  AdjustStatusStacksIntent,
   SpawnItemIntent,
   PickUpIntent,
   EquipItemIntent,

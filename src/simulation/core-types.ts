@@ -94,7 +94,8 @@ export type StatusEffectType =
   | 'burning'
   | 'frozen'
   | 'stunned'
-  | 'regenerating';
+  | 'regenerating'
+  | 'counterattack';
 
 /** Тип урона. */
 export type DamageType =
@@ -113,6 +114,10 @@ export type StatusEffect = {
   /** Величина эффекта (урон в ход, лечение в ход и т.д.). */
   value: number;
   statModifiers: StatModifier[] | null;
+  /** Фаза, после которой эффект должен тикать. По умолчанию 'environment'. */
+  tickAfter?: 'player' | 'environment';
+  /** Количество стаков (только для стакующихся статусов). */
+  stacks?: number;
 };
 
 export type RuntimeAbility = {
@@ -308,6 +313,7 @@ export type Intent =
   | SetCooldownIntent
   | ConsumeApIntent
   | TickStatusEffectsIntent
+  | AdjustStatusStacksIntent
   | SpawnItemIntent
   | PickUpIntent
   | EquipItemIntent
@@ -329,7 +335,13 @@ export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; stat
 export type ChangeFloorIntent = { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' };
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };
-export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId };
+export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId; phase?: 'player' | 'environment' };
+export type AdjustStatusStacksIntent = {
+  type: 'ADJUST_STATUS_STACKS';
+  entityId: EntityId;
+  statusType: StatusEffectType;
+  delta: number;
+};
 export type SpawnItemIntent = { type: 'SPAWN_ITEM'; templateId: string; position: Position; sourceEntityId: EntityId };
 export type PickUpIntent = { type: 'PICK_UP'; entityId: EntityId; itemId: EntityId; templateId: string };
 export type EquipItemIntent = { type: 'EQUIP_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
@@ -370,6 +382,7 @@ export type GameEvent =
   | AbilityUsedEvent
   | ResourceConsumedEvent
   | StatusTickedEvent
+  | StatusStacksAdjustedEvent
   | CooldownSetEvent
   | ItemEquippedEvent
   | ItemUnequippedEvent
@@ -420,6 +433,13 @@ export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; e
 export type StatusRemovedEvent = { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
 
 export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId };
+
+export type StatusStacksAdjustedEvent = {
+  type: 'STATUS_STACKS_ADJUSTED';
+  entityId: EntityId;
+  statusType: StatusEffectType;
+  stacks: number;
+};
 
 export type AbilityUsedEvent = { type: 'ABILITY_USED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 

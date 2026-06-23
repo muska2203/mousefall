@@ -149,8 +149,8 @@ export const AbilityTemplateSchema = z.object({
   spriteId:    z.string().optional(),
   cooldown:    z.number().int().nonnegative().default(0).describe('Ходов до повторного использования'),
   castTime:    z.number().int().nonnegative().default(0).describe('Ходов подготовки (0 = мгновенно)'),
-  apCost: z.number().int().nonnegative().default(1)
-    .describe('Стоимость использования в очках действий (AP)'),
+  apCost: z.union([z.number().int().nonnegative(), z.literal('all')]).default(1)
+    .describe('Стоимость использования в очках действий (AP). Число или "all" — все текущие AP актора.'),
 }).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;

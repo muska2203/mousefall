@@ -402,6 +402,11 @@ export class GameSimulation implements Simulation {
     private endPlayerTurn(
         phases: TurnPhase[],
     ): void {
+        const playerTickNodes = this.runStatusTicks('player');
+        if (playerTickNodes.length > 0) {
+            phases.push({ side: 'STATUS_TICK', actions: playerTickNodes });
+        }
+
         const envActions: ExecutionNode[] = [];
 
         this.runEnvironmentTurn(envActions);
@@ -412,7 +417,7 @@ export class GameSimulation implements Simulation {
             phases.push({ side: 'PLAYER', actions: [playerCastNode] });
         }
 
-        const tickNodes = this.runStatusTicks();
+        const tickNodes = this.runStatusTicks('environment');
         if (tickNodes.length > 0) {
             phases.push({ side: 'STATUS_TICK', actions: tickNodes });
         }
@@ -541,9 +546,9 @@ export class GameSimulation implements Simulation {
         return castNode;
     }
 
-    private runStatusTicks(): ExecutionNode[] {
+    private runStatusTicks(phase: 'player' | 'environment'): ExecutionNode[] {
         const nodes: ExecutionNode[] = [];
-        const tickResults = tickAllStatusEffects(this.state);
+        const tickResults = tickAllStatusEffects(this.state, phase);
         for (const { entity, intents } of tickResults) {
             for (const intent of intents) {
                 const builder = new ExecutionBuilder({

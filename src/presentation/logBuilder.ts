@@ -92,6 +92,13 @@ export function gameEventToLog(
       return { text: t('system.logBuilder.doorOpened'), variant: 'info' };
     case 'DOOR_CLOSED':
       return { text: t('system.logBuilder.doorClosed'), variant: 'info' };
+    case 'STATUS_STACKS_ADJUSTED': {
+      if (event.statusType === 'counterattack') {
+        const name = getEntityDisplayName(state, event.entityId, locale);
+        return { text: t('system.logBuilder.counterattackTriggered', { name }), variant: 'info' };
+      }
+      return null;
+    }
     default:
       return null;
   }

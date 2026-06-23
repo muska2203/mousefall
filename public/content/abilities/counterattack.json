@@ -1,0 +1,6 @@
+{
+  "id": "counterattack",
+  "spriteId": "counterattack",
+  "cooldown": 0,
+  "apCost": "all"
+}

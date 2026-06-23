@@ -49,8 +49,14 @@ export class DefaultActionPointCostResolver
         return actor.ap;
       }
 
-      case 'USE_ABILITY':
-        return tryGetAbility(action.abilityId)?.apCost ?? 1;
+      case 'USE_ABILITY': {
+        const apCost = tryGetAbility(action.abilityId)?.apCost ?? 1;
+        if (apCost === 'all') {
+          const actor = state.entities.get(action.entityId);
+          return actor && 'ap' in actor ? actor.ap : 1;
+        }
+        return apCost;
+      }
 
       case 'USE_ITEM': {
         const actor = state.entities.get(action.entityId);

@@ -248,6 +248,21 @@ registerAnimationBuilder('STATUS_TICKED', (event, childNodes, state) => {
   }];
 });
 
+registerAnimationBuilder('STATUS_STACKS_ADJUSTED', (event, childNodes, state) => {
+  if (event.type !== 'STATUS_STACKS_ADJUSTED') return null;
+  const entity = state.entities.get(event.entityId) ?? state.player;
+  if (!entity) return null;
+  return [{
+    step: {
+      type: 'STATUS_BURST',
+      entityId: event.entityId,
+      position: { x: entity.x, y: entity.y },
+      statusType: event.statusType,
+    },
+    children: childNodes,
+  }];
+});
+
 registerAnimationBuilder('ABILITY_USED', (event, children) => {
   if (event.type !== 'ABILITY_USED') return null;
 

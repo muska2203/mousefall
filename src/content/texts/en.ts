@@ -70,6 +70,10 @@ export const enContentTexts: ContentTexts = {
       name: 'Magic Slap',
       description: 'Three quick magic strikes on selected targets.',
     },
+    counterattack: {
+      name: 'Counterattack',
+      description: 'Prepare a counterattack for the next turn. Spends all AP and grants one counterattack per AP spent.',
+    },
   },
   players: {
     'elven-ranger': {

@@ -1,5 +1,5 @@
-import {findAttacker, findFirstAttackableEntityAt} from "@simulation/state.ts";
-import {GameState} from "@simulation/types.ts";
+import {findAttacker, findFirstAttackableEntityAt, isCombatEntity} from "@simulation/state.ts";
+import {GameState, StatusEffect} from "@simulation/types.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
@@ -30,6 +30,16 @@ function resolveAttackContext(state: GameState, action: AttackAction): AttackCon
   return { ok: true, attacker, target };
 }
 
+/**
+ * Проверяет, есть ли у боевой сущности активный статус контратаки
+ * с положительным количеством стаков.
+ */
+function hasCounterattack(entity: { statusEffects: StatusEffect[] }): boolean {
+  const effect = entity.statusEffects.find(e => e.type === 'counterattack');
+  if (!effect) return false;
+  return (effect.stacks ?? 1) > 0;
+}
+
 // ─────────────────────────────────────────────
 // Action handler
 // ─────────────────────────────────────────────
@@ -58,6 +68,31 @@ export const attackEntity: ActionHandler = {
     if (!ctx.ok) {
       return [];
     }
+
+    // Если у цели есть контратака — блокируем входящий урон и контратакуем.
+    if (isCombatEntity(ctx.target) && hasCounterattack(ctx.target)) {
+      const counterattackIntents: Intent[] = [
+        {
+          type: 'ADJUST_STATUS_STACKS',
+          entityId: ctx.target.id,
+          statusType: 'counterattack',
+          delta: -1,
+        },
+      ];
+
+      for (const entry of getEffectiveDamageEntries(ctx.target)) {
+        counterattackIntents.push({
+          type: 'DAMAGE',
+          entityId: ctx.attacker.id,
+          sourceEntityId: ctx.target.id,
+          damage: entry.damage,
+          damageType: entry.damageType,
+        });
+      }
+
+      return counterattackIntents;
+    }
+
     return getEffectiveDamageEntries(ctx.attacker).map(entry => ({
       type: 'DAMAGE' as const,
       entityId: ctx.target.id,

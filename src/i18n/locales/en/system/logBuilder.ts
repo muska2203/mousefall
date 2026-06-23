@@ -13,4 +13,5 @@ export const enLogBuilder = {
   enemyNameFallback: 'Enemy',
   doorOpened: 'Door opened',
   doorClosed: 'Door closed',
+  counterattackTriggered: '{{name}} counterattacks',
 } as const satisfies SystemLogBuilderTranslations;

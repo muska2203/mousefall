@@ -14,12 +14,19 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
 
   const holder = target as unknown as StatusEffectHolder;
 
-  // Проверяем дубликаты: если эффект того же типа уже есть — обновляем duration
+  // Проверяем дубликаты: если эффект того же типа уже есть — обновляем duration.
+  // Для стакующихся статусов суммируем стаки.
   const existingIndex = holder.statusEffects.findIndex((e: { type: string }) => e.type === intent.status.type);
   if (existingIndex >= 0) {
+    const existing = holder.statusEffects[existingIndex]!;
+    const incomingStacks = intent.status.stacks;
+    const newStacks = incomingStacks !== undefined
+      ? (existing.stacks ?? 1) + incomingStacks
+      : existing.stacks;
     holder.statusEffects[existingIndex] = {
-      ...holder.statusEffects[existingIndex]!,
+      ...existing,
       duration: intent.status.duration,
+      ...(newStacks !== undefined ? { stacks: newStacks } : {}),
     };
   } else {
     holder.statusEffects.push(intent.status);
