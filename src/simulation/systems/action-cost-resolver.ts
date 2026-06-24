@@ -6,6 +6,7 @@
  */
 
 import { tryGetAbility, tryGetItem } from '@content/registry';
+import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type { GameAction } from '@simulation/core-types.ts';
 import type { GameState } from '@simulation/types.ts';
 
@@ -53,7 +54,8 @@ export class DefaultActionPointCostResolver
         const apCost = tryGetAbility(action.abilityId)?.apCost ?? 1;
         if (apCost === 'all') {
           const actor = state.entities.get(action.entityId);
-          return actor && 'ap' in actor ? actor.ap : 1;
+          const currentAp = actor && 'ap' in actor ? actor.ap : 1;
+          return Math.min(currentAp, MAX_ABILITY_ALL_AP_COST);
         }
         return apCost;
       }

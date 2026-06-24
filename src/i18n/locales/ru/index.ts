@@ -17,7 +17,7 @@ import { ruEndingActions } from './components/endingActions';
 import { ruBossList } from './components/bossList';
 import { ruConsumables } from './components/consumables';
 import { ruMetaFooter } from './components/metaFooter';
-import { ruHotSlot } from './components/hotSlot';
+import { ruHotbar } from './components/hotbar';
 import { ruGameField } from './components/gameField';
 import { ruFieldObjectPopover } from './components/fieldObjectPopover';
 import { ruInteractionHint } from './components/interactionHint';
@@ -61,7 +61,7 @@ export const ruResources: Resources = {
     bossList: ruBossList,
     consumables: ruConsumables,
     metaFooter: ruMetaFooter,
-    hotSlot: ruHotSlot,
+    hotbar: ruHotbar,
     gameField: ruGameField,
     fieldObjectPopover: ruFieldObjectPopover,
     interactionHint: ruInteractionHint,

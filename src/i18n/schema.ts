@@ -172,9 +172,13 @@ export interface ComponentsMetaFooterTranslations {
   analyticsNote: string;
 }
 
-export interface ComponentsHotSlotTranslations {
+export interface ComponentsHotbarTranslations {
   emptySlotAria: string;
   occupiedSlotAria: string;
+  toolbarAria: string;
+  skillTooltipApCost: string;
+  skillTooltipCooldown: string;
+  skillTooltipCastTime: string;
 }
 
 export interface ComponentsGameFieldTranslations {
@@ -304,7 +308,7 @@ export interface ComponentsTranslations {
   bossList: ComponentsBossListTranslations;
   consumables: ComponentsConsumablesTranslations;
   metaFooter: ComponentsMetaFooterTranslations;
-  hotSlot: ComponentsHotSlotTranslations;
+  hotbar: ComponentsHotbarTranslations;
   gameField: ComponentsGameFieldTranslations;
   fieldObjectPopover: ComponentsFieldObjectPopoverTranslations;
   interactionHint: ComponentsInteractionHintTranslations;
@@ -330,7 +334,7 @@ export interface SystemLogBuilderTranslations {
   enemyNameFallback: string;
   doorOpened: string;
   doorClosed: string;
-  counterattackTriggered: string;
+  parryTriggered: string;
 }
 
 export interface SystemItemMapperTranslations {
@@ -398,8 +402,8 @@ export interface SystemGameSessionTranslations {
   effectStunnedDesc: string;
   effectRegenerating: string;
   effectRegeneratingDesc: string;
-  effectCounterattack: string;
-  effectCounterattackDesc: string;
+  effectParry: string;
+  effectParryDesc: string;
   effectUnknown: string;
 }
 

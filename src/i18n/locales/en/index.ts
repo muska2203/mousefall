@@ -17,7 +17,7 @@ import { enEndingActions } from './components/endingActions';
 import { enBossList } from './components/bossList';
 import { enConsumables } from './components/consumables';
 import { enMetaFooter } from './components/metaFooter';
-import { enHotSlot } from './components/hotSlot';
+import { enHotbar } from './components/hotbar';
 import { enGameField } from './components/gameField';
 import { enFieldObjectPopover } from './components/fieldObjectPopover';
 import { enInteractionHint } from './components/interactionHint';
@@ -61,7 +61,7 @@ export const enResources: Resources = {
     bossList: enBossList,
     consumables: enConsumables,
     metaFooter: enMetaFooter,
-    hotSlot: enHotSlot,
+    hotbar: enHotbar,
     gameField: enGameField,
     fieldObjectPopover: enFieldObjectPopover,
     interactionHint: enInteractionHint,

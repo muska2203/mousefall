@@ -173,6 +173,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     equipSlots: [],
     itemsOnFloor: [],
     inventory: [],
+    hotbar: [],
     activeEffects: [],
     runStats: {
       startTime: Date.now(),

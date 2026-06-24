@@ -16,7 +16,7 @@ describe('Шаблоны игрока', () => {
     expect(parsed.baseStats).toEqual({ str: 4, dex: 2, int: 0, vit: 4 });
     expect(parsed.isDefault).toBe(true);
     expect(parsed.portraitImg).toBe('/assets/portraits/witcher-ready.png');
-    expect(parsed.maxAp).toBe(2);
+    expect(parsed.maxAp).toBe(3);
   });
 
   it('шаблон без baseStats получает значения по умолчанию', () => {

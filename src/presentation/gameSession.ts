@@ -20,6 +20,7 @@ import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
 import {GameSimulation, findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt} from '@simulation/simulation';
 import {findDoorAt} from '@simulation/state';
+import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
 import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel} from './types';
@@ -94,6 +95,14 @@ const RARITY_ORDER: Record<string, number> = {
   unique: 2,
 };
 
+/** Размер панели быстрого доступа (слоты 1–9, 0). */
+const HOTBAR_SIZE = 10;
+
+/** Внутренняя привязка слота хотбара к скиллу или расходнику. */
+type HotbarAssignment =
+  | { kind: 'skill'; abilityId: string }
+  | { kind: 'consumable'; templateId: string };
+
 /**
  * Компаратор для сортировки инвентаря.
  *
@@ -152,6 +161,8 @@ export class GameSession {
   private selectedInteractionIndex = 0;
   /** Ключ последнего набора опций взаимодействия, чтобы сбрасывать индекс при изменении. */
   private lastInteractionOptionsKey = '';
+  /** Привязки слотов хотбара (10 слотов). Живут в Presentation, не в Simulation. */
+  private hotbarAssignments: (HotbarAssignment | null)[] = Array.from({ length: HOTBAR_SIZE }, () => null);
 
   /** Подписаться на изменения сессии. Вызывается после любого mutate-метода. */
   subscribe(callback: () => void): () => void {
@@ -391,11 +402,11 @@ export class GameSession {
           return {icon: '💫', name: t('system.gameSession.effectStunned'), desc: t('system.gameSession.effectStunnedDesc'), turns: effect.duration};
         case 'regenerating':
           return {icon: '✨', name: t('system.gameSession.effectRegenerating'), desc: t('system.gameSession.effectRegeneratingDesc', { value: effect.value }), turns: effect.duration};
-        case 'counterattack':
+        case 'parry':
           return {
             icon: '⚔️',
-            name: t('system.gameSession.effectCounterattack'),
-            desc: t('system.gameSession.effectCounterattackDesc', { stacks: effect.stacks ?? 1, turns: effect.duration }),
+            name: t('system.gameSession.effectParry'),
+            desc: t('system.gameSession.effectParryDesc', { stacks: effect.stacks ?? 1, turns: effect.duration }),
             turns: effect.duration,
           };
         default:
@@ -422,6 +433,7 @@ export class GameSession {
       itemsOnFloor,
       doorSprites,
       inventory,
+      hotbar: this.buildHotbar(state),
       activeEffects,
       runStats: state.runStats,
       fieldObjectPopover,
@@ -627,11 +639,16 @@ export class GameSession {
     return undefined;
   }
 
-  private getAbilityTemplate(abilityId: string, locale: Locale): { name: string; description: string; spriteId: string | undefined; cooldown: number; apCost: number | 'all' } | null {
+  private getAbilityTemplate(
+    abilityId: string,
+    locale: Locale,
+  ): { name: string; description: string; spriteId: string | undefined; cooldown: number; apCost: number | 'all'; castTime: number } | null {
     const fromSim = this.simulation!.getAbilityInfo(abilityId);
     if (!fromSim) return null;
     const localized = tryGetLocalizedAbility(abilityId, locale);
-    return localized ? { ...fromSim, name: localized.name, description: localized.description } : { ...fromSim, name: abilityId, description: '' };
+    return localized
+      ? { ...fromSim, name: localized.name, description: localized.description }
+      : { ...fromSim, name: abilityId, description: '' };
   }
 
   private buildTargetingOverlay(state: Readonly<GameState>): RenderInput['targetingOverlay'] {
@@ -857,6 +874,8 @@ export class GameSession {
     this.mode = 'playing';
     this.lastResult = null;
     this.animation.phase = 'idle';
+    this.hotbarAssignments = Array.from({ length: HOTBAR_SIZE }, () => null);
+    this.synchronizeHotbarAssignments(this.simulation.getState());
     this.clearLogs();
     this.clearToasts();
     this.notify();
@@ -875,6 +894,10 @@ export class GameSession {
     this.animation.phase = this.mode === 'playing' ? 'idle' : 'gameOver';
     this.selectedInteractionIndex = 0;
     this.lastInteractionOptionsKey = '';
+    this.hotbarAssignments = Array.from({ length: HOTBAR_SIZE }, () => null);
+    if (this.mode === 'playing') {
+      this.synchronizeHotbarAssignments(this.simulation.getState());
+    }
     this.clearLogs();
     this.clearToasts();
     this.notify();
@@ -1196,6 +1219,193 @@ export class GameSession {
     } else if (template.type === 'consumable') {
       this.dispatch({type: 'USE_ITEM', entityId: 'player', itemInstanceId: instanceId});
     }
+  }
+
+  /** Размер панели быстрого доступа. */
+  getHotbarSize(): number {
+    return HOTBAR_SIZE;
+  }
+
+  /** Активировать слот хотбара по индексу (клик или горячая клавиша). */
+  activateHotbarSlot(index: number): void {
+    if (!this.simulation || this.mode !== 'playing' || this.animation.phase === 'animating') return;
+    if (index < 0 || index >= HOTBAR_SIZE) return;
+
+    const assignment = this.hotbarAssignments[index];
+    if (!assignment) return;
+
+    if (assignment.kind === 'skill') {
+      this.beginTargeting(assignment.abilityId);
+    } else if (assignment.kind === 'consumable') {
+      const state = this.simulation.getState();
+      const item = state.player.inventory.find(i => i.templateId === assignment.templateId && i.quantity > 0);
+      if (!item) return;
+      this.dispatch({ type: 'USE_ITEM', entityId: 'player', itemInstanceId: item.instanceId });
+    }
+  }
+
+  /** Построить ViewModel хотбара для UI. */
+  private buildHotbar(state: Readonly<GameState>): import('./types').HotbarItemViewModel[] {
+    this.synchronizeHotbarAssignments(state);
+
+    const player = state.player;
+    const abilityById = new Map(player.abilities.map(a => [a.templateId, a]));
+
+    return Array.from({ length: HOTBAR_SIZE }, (_, index) => {
+      const assignment = this.hotbarAssignments[index];
+      if (!assignment) {
+        return {
+          slotIndex: index,
+          kind: 'empty' as const,
+          icon: null,
+          apCost: 0,
+          isAvailable: false,
+          isActive: false,
+        };
+      }
+
+      if (assignment.kind === 'skill') {
+        const runtimeAbility = abilityById.get(assignment.abilityId);
+        const info = runtimeAbility ? this.simulation!.getAbilityInfo(assignment.abilityId) : null;
+        const localized = info ? this.getAbilityTemplate(assignment.abilityId, this.locale) : null;
+        const isCasting = player.activeCast?.abilityId === assignment.abilityId;
+        const cooldown = runtimeAbility?.currentCooldown ?? 0;
+        const maxCooldown = info?.cooldown ?? 0;
+        const isAvailable = runtimeAbility !== undefined && cooldown === 0 && !isCasting;
+        const isActive = this.targeting.state?.abilityId === assignment.abilityId || isCasting;
+        const resolvedApCost = info?.apCost === 'all'
+          ? Math.min(player.ap, MAX_ABILITY_ALL_AP_COST)
+          : (info?.apCost ?? 1);
+
+        return {
+          slotIndex: index,
+          kind: 'skill' as const,
+          abilityId: assignment.abilityId,
+          icon: localized && localized.spriteId ? `/assets/skills/${localized.spriteId}.png` : null,
+          fallback: localized?.name?.[0] ?? '?',
+          apCost: resolvedApCost,
+          cooldown,
+          maxCooldown,
+          isCasting,
+          remainingCastTurns: isCasting ? player.activeCast!.remainingTurns : 0,
+          isAvailable,
+          isActive,
+          tooltip: localized
+            ? {
+                kind: 'skill' as const,
+                name: localized.name,
+                description: localized.description,
+                icon: localized.spriteId ? resolveAbilityIcon(localized.spriteId) : null,
+                cooldown,
+                maxCooldown,
+                apCost: info?.apCost ?? 1,
+                castTime: localized.castTime,
+              }
+            : undefined,
+        };
+      }
+
+      // assignment.kind === 'consumable'
+      const template = tryGetLocalizedItem(assignment.templateId, this.locale);
+      const itemsOfTemplate = player.inventory.filter(i => i.templateId === assignment.templateId);
+      const quantity = itemsOfTemplate.reduce((sum, i) => sum + i.quantity, 0);
+      const depleted = quantity <= 0;
+      const icon = template ? resolveItemIcon(template.spriteId ?? template.id) : null;
+      return {
+        slotIndex: index,
+        kind: 'consumable' as const,
+        templateId: assignment.templateId,
+        icon,
+        fallback: template?.fallback ?? '?',
+        rarity: template?.rarity ?? 'common',
+        quantity,
+        apCost: template?.apCost ?? 1,
+        isAvailable: !depleted,
+        isActive: false,
+        depleted,
+        tooltip: template
+          ? {
+              kind: 'consumable' as const,
+              item: mapItemTemplateToDetail(
+                template,
+                { stackCount: quantity, rarity: template.rarity, fallbackIcon: template.fallback },
+                this.locale,
+              ),
+            }
+          : undefined,
+      };
+    });
+  }
+
+  /** Синхронизировать привязки хотбара с текущим инвентарём и скиллами игрока. */
+  private synchronizeHotbarAssignments(state: Readonly<GameState>): void {
+    const player = state.player;
+    const abilityIds = new Set(player.abilities.map(a => a.templateId));
+
+    // Освобождаем слоты, если привязанный скилл больше не доступен.
+    for (let i = 0; i < HOTBAR_SIZE; i++) {
+      const assignment = this.hotbarAssignments[i];
+      if (!assignment) continue;
+      if (assignment.kind === 'skill' && !abilityIds.has(assignment.abilityId)) {
+        this.hotbarAssignments[i] = null;
+      }
+      // Расходники остаются в слоте как depleted-призраки, даже если их нет в инвентаре,
+      // чтобы UI мог показать серую иконку и красный 0.
+    }
+
+    const assignedAbilityIds = new Set(
+      this.hotbarAssignments
+        .filter((a): a is { kind: 'skill'; abilityId: string } => a?.kind === 'skill')
+        .map(a => a.abilityId),
+    );
+    const assignedConsumableTemplateIds = new Set(
+      this.hotbarAssignments
+        .filter((a): a is { kind: 'consumable'; templateId: string } => a?.kind === 'consumable')
+        .map(a => a.templateId),
+    );
+
+    const unassignedAbilities = player.abilities
+      .filter(a => !assignedAbilityIds.has(a.templateId))
+      .map(a => a.templateId);
+
+    const consumableTemplateIds = new Set(
+      player.inventory
+        .filter(item => {
+          const template = tryGetLocalizedItem(item.templateId, this.locale);
+          return template?.type === 'consumable';
+        })
+        .map(item => item.templateId),
+    );
+
+    const unassignedConsumableTemplates = [...consumableTemplateIds].filter(
+      templateId => !assignedConsumableTemplateIds.has(templateId),
+    );
+
+    const fillables: HotbarAssignment[] = [
+      ...unassignedAbilities.map(abilityId => ({ kind: 'skill' as const, abilityId })),
+      ...unassignedConsumableTemplates.map(templateId => ({ kind: 'consumable' as const, templateId })),
+    ];
+
+    for (const fillable of fillables) {
+      const slotIndex = this.findFirstFillableHotbarSlot(state);
+      if (slotIndex === -1) break;
+      this.hotbarAssignments[slotIndex] = fillable;
+    }
+  }
+
+  /** Найти первый слот, доступный для автозаполнения: пустой или с исчерпанным расходником. */
+  private findFirstFillableHotbarSlot(state: Readonly<GameState>): number {
+    for (let i = 0; i < HOTBAR_SIZE; i++) {
+      const assignment = this.hotbarAssignments[i];
+      if (!assignment) return i;
+      if (assignment.kind === 'consumable') {
+        const totalQuantity = state.player.inventory
+          .filter(item => item.templateId === assignment.templateId)
+          .reduce((sum, item) => sum + item.quantity, 0);
+        if (totalQuantity <= 0) return i;
+      }
+    }
+    return -1;
   }
 
   /** Переключить debug-режим. */

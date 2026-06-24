@@ -95,7 +95,7 @@ export type StatusEffectType =
   | 'frozen'
   | 'stunned'
   | 'regenerating'
-  | 'counterattack';
+  | 'parry';
 
 /** Тип урона. */
 export type DamageType =

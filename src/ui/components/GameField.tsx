@@ -8,10 +8,10 @@
 
 import {useRef, useEffect, useState} from 'react';
 import { useTranslation } from '@i18n/hooks';
-import type {RenderInput, TurnSide} from '@presentation/types';
+import type {RenderInput, TurnSide, HotbarItemViewModel} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {Panel} from './Panel';
-import {HotSlot} from './HotSlot';
+import {Hotbar} from './Hotbar';
 import {InteractionHint} from './InteractionHint';
 import {PixiApp} from '@ui/renderer/PixiApp';
 import {WorldRenderer} from '@ui/renderer/WorldRenderer';
@@ -39,6 +39,8 @@ interface Props {
   onMouseMoveScreen?: (pos: {screenX: number; screenY: number}) => void;
   onMouseLeave?: () => void;
   hotbarSize?: number;
+  hotbarItems?: HotbarItemViewModel[];
+  onHotbarClick?: (index: number) => void;
 }
 
 export function GameField({
@@ -51,7 +53,9 @@ export function GameField({
   onMouseClick,
   onMouseMoveScreen,
   onMouseLeave,
-  hotbarSize = 8,
+  hotbarSize = 10,
+  hotbarItems,
+  onHotbarClick,
 }: Props) {
   const { t } = useTranslation('components');
   const isInputBlocked = renderInput?.phase === 'animating';
@@ -287,17 +291,12 @@ export function GameField({
               hasMultiple={renderInput.interactionHint.hasMultiple}
             />
           )}
-          <div className="cm-hotbar-wrap cm-panel cm-hotbar-wrap--in-field cm-hotbar-wrap--recessed">
-            <span className="cm-rivet cm-rivet--tl" />
-            <span className="cm-rivet cm-rivet--tr" />
-            <span className="cm-rivet cm-rivet--bl" />
-            <span className="cm-rivet cm-rivet--br" />
-            <div className="cm-hotbar">
-              {Array.from({length: hotbarSize}).map((_, i) => (
-                <HotSlot key={`hot-${i}`} index={i} empty />
-              ))}
-            </div>
-          </div>
+          <Hotbar
+            items={hotbarItems ?? []}
+            size={hotbarSize}
+            disabled={isInputBlocked}
+            onSlotClick={onHotbarClick}
+          />
         </div>
       </div>
     </Panel>

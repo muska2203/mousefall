@@ -37,7 +37,7 @@ ui/
 │   ├── Portrait.tsx           # Circular portrait with level badge
 │   ├── ResourceBar.tsx        # HP / Mana / XP bar
 │   ├── StatRow.tsx            # Stat allocation / readonly row
-│   ├── GameField.tsx          # Phase button + ASCII map + hotbar
+│   ├── GameField.tsx          # Phase button + ASCII map + Hotbar
 │   ├── EffectsPanel.tsx       # Active buffs list
 │   ├── LogPanel.tsx           # Combat log with live region
 │   ├── LogEntry.tsx           # Single log line
@@ -47,7 +47,9 @@ ui/
 │   ├── ConsumablesPanel.tsx   # Consumable items
 │   ├── SkillsPanel.tsx        # Skill list with icons
 │   ├── SkillRow.tsx           # Single skill row
-│   ├── HotSlot.tsx            # Hotbar slot
+│   ├── Hotbar.tsx             # Quick access toolbar
+│   ├── HotbarSlot.tsx         # Single quick-access slot
+│   ├── SkillDetailPopover.tsx # Skill tooltip for hotbar slots
 │   ├── PortraitGallery.tsx    # Portrait selection grid
 │   ├── StarterEquipmentPanel.tsx  # Starter gear selection
 │   ├── ItemButton.tsx         # Item button with rarity frame
@@ -59,7 +61,7 @@ ui/
 └── styles/                    # Global CSS
     ├── game-screen.css        # Base theme, panels, bars, grids
     ├── welcome.css            # Character creation specific
-    ├── runtime.css            # Modals, tooltips, rarity glows (future)
+    ├── runtime.css            # Modals, tooltips, rarity glows
     └── ending.css             # Ending screen specific
 ```
 

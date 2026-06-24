@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer } from '../../../fixtures/gameState';
 import { DefaultActionPointCostResolver } from '../../../../src/simulation/systems/action-cost-resolver';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
+import { MAX_ABILITY_ALL_AP_COST } from '../../../../src/utils/constants';
 import type { AbilityTemplate, ItemTemplate } from '../../../../src/content/schemas';
 
 describe('DefaultActionPointCostResolver', () => {
@@ -85,7 +86,7 @@ describe('DefaultActionPointCostResolver', () => {
     expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'fireball', targets: [] }, state)).toBe(2);
   });
 
-  it('USE_ABILITY с apCost "all" тратит все текущие AP актора', () => {
+  it('USE_ABILITY с apCost "all" тратит текущие AP актора, но не более MAX_ABILITY_ALL_AP_COST', () => {
     resetRegistry();
     const player = makePlayer({ maxAp: 5, ap: 3 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -94,13 +95,16 @@ describe('DefaultActionPointCostResolver', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['counterattack', mockAbility('counterattack', { apCost: 'all' })],
+        ['parry', mockAbility('parry', { apCost: 'all' })],
       ]),
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
     });
-    expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'counterattack', targets: [] }, state)).toBe(3);
+    expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'parry', targets: [] }, state)).toBe(3);
+
+    player.ap = 5;
+    expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'parry', targets: [] }, state)).toBe(MAX_ABILITY_ALL_AP_COST);
   });
 
   it('USE_ABILITY возвращает fallback 1 для неизвестной способности', () => {

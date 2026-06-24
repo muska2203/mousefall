@@ -266,7 +266,7 @@
 }
 
 .cm-inv-cell,
-.cm-hot-slot,
+.cm-quick-slot,
 .cm-equip-slot__box {
   font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", var(--font-ui);
 }
@@ -511,24 +511,6 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
 }
 
-.cm-hot-slot__cooldown {
-  position: absolute;
-  right: 3px;
-  top: 3px;
-  min-width: 18px;
-  height: 16px;
-  border-radius: 999px;
-  padding: 0 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  line-height: 1;
-  color: #ffce8f;
-  background: rgba(38, 18, 12, 0.92);
-  border: 1px solid rgba(180, 103, 45, 0.8);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
 .cm-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -797,7 +779,7 @@
 }
 
 .cm-inv-cell,
-.cm-hot-slot,
+.cm-quick-slot,
 .cm-equip-slot__box {
   font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", var(--font-ui);
 }
@@ -1042,25 +1024,6 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
 }
 
-.cm-hot-slot__cooldown {
-  position: absolute;
-  right: 3px;
-  top: 3px;
-  min-width: 18px;
-  height: 16px;
-  border-radius: 999px;
-  padding: 0 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  line-height: 1;
-  color: #ffce8f;
-  background: rgba(38, 18, 12, 0.92);
-  border: 1px solid rgba(180, 103, 45, 0.8);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-
 /* --- DetailPopover (универсальный тултип) --- */
 .detail-popover {
   position: fixed;
@@ -1287,4 +1250,79 @@
 .field-popover-loot__name {
   flex: 1;
   min-width: 0;
+}
+
+/* --- SkillDetailPopover (тултип скилла в хотбаре) --- */
+.skill-detail-popover {
+  position: fixed;
+  z-index: 99990;
+  left: -9999px;
+  top: 0;
+  max-width: min(280px, calc(100vw - 24px));
+  pointer-events: none;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+  opacity: 0.98;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+}
+
+.skill-detail-card {
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #2d2118 0%, #1e1410 100%);
+  border: 1px solid var(--bronze-dark);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(196, 163, 90, 0.15);
+  backdrop-filter: blur(1px);
+}
+
+.skill-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(196, 163, 90, 0.25);
+}
+
+.skill-detail-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.skill-detail-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gold);
+  font-family: var(--font-panel-title);
+}
+
+.skill-detail-desc {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.skill-detail-section {
+  margin-top: 8px;
+}
+
+.skill-detail-list {
+  margin: 0;
+  padding-left: 14px;
+  list-style: disc;
+}
+
+.skill-detail-list-item {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.skill-detail-list-item + .skill-detail-list-item {
+  margin-top: 3px;
 }

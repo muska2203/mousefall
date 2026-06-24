@@ -714,6 +714,7 @@ export class GameSimulation implements Simulation {
                 cooldown: template.cooldown,
                 currentCooldown: runtime?.currentCooldown ?? 0,
                 apCost: template.apCost,
+                castTime: template.castTime,
             };
         } catch {
             return null;

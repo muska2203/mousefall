@@ -41,6 +41,9 @@ export const PLAYER_BASE_MAX_HP = 50;
 /** Базовый множитель критического урона. */
 export const BASE_CRIT_MULTIPLIER = 1.5;
 
+/** Максимальное количество AP, которое может потребовать способность со стоимостью "all". */
+export const MAX_ABILITY_ALL_AP_COST = 3;
+
 /** Опыт, необходимый для каждого уровня (индекс = уровень − 1). */
 export const XP_PER_LEVEL = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200] as const;
 

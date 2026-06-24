@@ -29,6 +29,13 @@ interface Props {
   onModeChange: (mode: SessionMode) => void;
 }
 
+/** Преобразует нажатую цифру в индекс слота хотбара (1→0, ..., 9→8, 0→9). */
+function keyToHotbarIndex(key: string): number {
+  if (key >= '1' && key <= '9') return Number(key) - 1;
+  if (key === '0') return 9;
+  return -1;
+}
+
 
 
 function getSnapshot(session: GameSession) {
@@ -130,6 +137,15 @@ export function GameScreen({session, onModeChange}: Props) {
       if (session.getMode() !== 'playing') return;
       if (isInputBlocked) return;
       session.beginTargeting(abilityId);
+    },
+    [session, isInputBlocked],
+  );
+
+  const handleHotbarClick = useCallback(
+    (index: number) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.activateHotbarSlot(index);
     },
     [session, isInputBlocked],
   );
@@ -238,6 +254,14 @@ export function GameScreen({session, onModeChange}: Props) {
         return;
       }
 
+      // Цифры 1–9, 0: активация слотов хотбара.
+      const hotbarIndex = keyToHotbarIndex(e.key);
+      if (hotbarIndex !== -1) {
+        e.preventDefault();
+        handleHotbarClick(hotbarIndex);
+        return;
+      }
+
       const delta = KEY_MAP[e.key];
       if (!delta) return;
       e.preventDefault();
@@ -301,6 +325,8 @@ export function GameScreen({session, onModeChange}: Props) {
         onMouseClick={handleMouseClick}
         onMouseMoveScreen={handleMouseMoveScreen}
         onMouseLeave={handleMouseLeave}
+        hotbarItems={renderInput.hotbar}
+        onHotbarClick={handleHotbarClick}
       />
       {renderInput.fieldObjectPopover && fieldHoverPos && (
         <FieldObjectPopover

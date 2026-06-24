@@ -754,8 +754,12 @@ export class EntityRenderer {
   }
 
   private syncHealthBarPosition(bar: HealthBar, sprite: Sprite): void {
-    bar.container.x = sprite.x - HP_BAR_WIDTH / 2;
-    bar.container.y = sprite.y - sprite.height - HP_BAR_VERTICAL_OFFSET;
+    // Центрируем полоску по горизонтали относительно спрайта с учётом его anchor.
+    // Для актёров anchor = (0.5, 1), для статических сущностей (двери) — (0, 0).
+    const centerX = sprite.x + sprite.width * (0.5 - sprite.anchor.x);
+    const topY = sprite.y - sprite.height * sprite.anchor.y;
+    bar.container.x = centerX - HP_BAR_WIDTH / 2;
+    bar.container.y = topY - HP_BAR_VERTICAL_OFFSET;
     bar.container.zIndex = sprite.zIndex + 1;
   }
 

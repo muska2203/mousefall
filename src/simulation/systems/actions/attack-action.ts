@@ -31,11 +31,11 @@ function resolveAttackContext(state: GameState, action: AttackAction): AttackCon
 }
 
 /**
- * Проверяет, есть ли у боевой сущности активный статус контратаки
+ * Проверяет, есть ли у боевой сущности активный статус парирования
  * с положительным количеством стаков.
  */
-function hasCounterattack(entity: { statusEffects: StatusEffect[] }): boolean {
-  const effect = entity.statusEffects.find(e => e.type === 'counterattack');
+function hasParry(entity: { statusEffects: StatusEffect[] }): boolean {
+  const effect = entity.statusEffects.find(e => e.type === 'parry');
   if (!effect) return false;
   return (effect.stacks ?? 1) > 0;
 }
@@ -69,19 +69,19 @@ export const attackEntity: ActionHandler = {
       return [];
     }
 
-    // Если у цели есть контратака — блокируем входящий урон и контратакуем.
-    if (isCombatEntity(ctx.target) && hasCounterattack(ctx.target)) {
-      const counterattackIntents: Intent[] = [
+    // Если у цели есть парирование — блокируем входящий урон и наносим ответный урон.
+    if (isCombatEntity(ctx.target) && hasParry(ctx.target)) {
+      const parryIntents: Intent[] = [
         {
           type: 'ADJUST_STATUS_STACKS',
           entityId: ctx.target.id,
-          statusType: 'counterattack',
+          statusType: 'parry',
           delta: -1,
         },
       ];
 
       for (const entry of getEffectiveDamageEntries(ctx.target)) {
-        counterattackIntents.push({
+        parryIntents.push({
           type: 'DAMAGE',
           entityId: ctx.attacker.id,
           sourceEntityId: ctx.target.id,
@@ -90,7 +90,7 @@ export const attackEntity: ActionHandler = {
         });
       }
 
-      return counterattackIntents;
+      return parryIntents;
     }
 
     return getEffectiveDamageEntries(ctx.attacker).map(entry => ({

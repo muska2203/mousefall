@@ -2,7 +2,7 @@ import { registerSkill } from './skillExecutor';
 import { fireballSkill } from './executors/fireballSkill';
 import { magicSlapSkill } from './executors/magicSlapSkill';
 import { dashSkill } from './executors/dashSkill';
-import { counterattackSkill } from './executors/counterattackSkill';
+import { parrySkill } from './executors/parrySkill';
 
 let initialized = false;
 
@@ -12,7 +12,7 @@ export function initSkillRegistry(): void {
   registerSkill(fireballSkill);
   registerSkill(magicSlapSkill);
   registerSkill(dashSkill);
-  registerSkill(counterattackSkill);
+  registerSkill(parrySkill);
 }
 
 export { getSkillExecutor } from './skillExecutor';

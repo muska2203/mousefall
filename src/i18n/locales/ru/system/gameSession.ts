@@ -20,7 +20,7 @@ export const ruGameSession = {
   effectStunnedDesc: 'Пропуск хода',
   effectRegenerating: 'Регенерация',
   effectRegeneratingDesc: 'Восстановление {{value}} ХП в ход',
-  effectCounterattack: 'Контратака',
-  effectCounterattackDesc: '{{stacks}} контратак, {{turns}} ход',
+  effectParry: 'Парирование',
+  effectParryDesc: '{{stacks}} парирований, {{turns}} ход',
   effectUnknown: 'Неизвестный эффект',
 } as const satisfies SystemGameSessionTranslations;

@@ -62,19 +62,19 @@
 
 | Строки | Проблема | Что сейчас | Что должно быть |
 |--------|----------|------------|-----------------|
-| 199–201 | Хотбар — 8 пустых слотов | `Array.from({length: hotbarSize}).map(...empty)` | Передавать `hotbarItems` из Props (из `player.equippedWeaponId` + скиллы/расходники) |
+| ~285–290 | ✅ Хотбар реализован | Отдельный компонент `Hotbar` (10 слотов 1–9, 0), принимает `items` и `onSlotClick` | — |
+
+### `src/ui/components/Hotbar.tsx`
+
+| Строки | Проблема | Что сейчас | Что должно быть |
+|--------|----------|------------|-----------------|
+| — | ✅ Переверстан с нуля | `Hotbar` + `HotbarSlot` + `SkillDetailPopover`, тултипы для скиллов и предметов | — |
 
 ### `src/ui/components/EquipSlot.tsx`
 
 | Строки | Проблема | Что сейчас | Что должно быть |
 |--------|----------|------------|-----------------|
 | 22 | Путь к рамке захардкожен | `` `/assets/items/loot_frame_${rarity}.png` `` | `resolveItemFrame(rarity)` из `utils/assetResolver.ts` |
-
-### `src/ui/components/HotSlot.tsx`
-
-| Строки | Проблема | Что сейчас | Что должно быть |
-|--------|----------|------------|-----------------|
-| 27 | Путь к рамке захардкожен | `` `/assets/items/loot_frame_${rarity}.png` `` | `resolveItemFrame(rarity)` из `utils/assetResolver.ts` |
 
 ### `src/ui/components/ItemButton.tsx`
 
@@ -117,4 +117,4 @@
 4. **InventoryPanel / ConsumablesPanel** — пробросить `inventory` из `player`, сгруппировать по типам.
 5. **SkillsPanel** — пока скрыть или оставить пустым (скиллов в симуляции нет).
 6. **EndingScreen** — прокинуть финальный `GameState` вместо hardcoded метрик.
-7. **AssetResolver** — заменить inline-пути в `EquipSlot`, `HotSlot`, `ItemButton`.
+7. **AssetResolver** — заменить inline-пути в `EquipSlot`, `ItemButton`.

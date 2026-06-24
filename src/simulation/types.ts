@@ -426,7 +426,7 @@ export type Simulation = {
   ): import("@simulation/core-types.ts").Position[];
 
   /** Возвращает базовую информацию о способности для отображения в UI. */
-  getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all' } | null;
+  getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all'; castTime: number } | null;
 
   /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
   getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number;

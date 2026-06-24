@@ -197,6 +197,62 @@ export type InventoryItemViewModel = {
   damage?: number | null;
 };
 
+export type HotbarItemKind = 'skill' | 'consumable' | 'empty';
+
+/** Тултип для скилла в хотбаре. */
+export type HotbarSkillTooltip = {
+  kind: 'skill';
+  name: string;
+  description: string;
+  icon: string | null;
+  cooldown: number;
+  maxCooldown: number;
+  apCost: number | 'all';
+  castTime?: number;
+};
+
+/** Тултип для расходника в хотбаре. */
+export type HotbarConsumableTooltip = {
+  kind: 'consumable';
+  item: ItemDetailViewModel;
+};
+
+/** Тултип, привязанный к слоту хотбара. */
+export type HotbarItemTooltip = HotbarSkillTooltip | HotbarConsumableTooltip;
+
+/** Один слот хотбара во ViewModel для UI. */
+export type HotbarItemViewModel = {
+  slotIndex: number;
+  kind: HotbarItemKind;
+  /** Для kind === 'skill' — id способности. */
+  abilityId?: string;
+  /** Для kind === 'consumable' — templateId предмета. */
+  templateId?: string;
+  icon: string | null;
+  fallback?: string;
+  rarity?: string;
+  /** Количество расходников в инвентаре (для consumable). */
+  quantity?: number;
+  /** Стоимость действия в AP. */
+  apCost: number | 'all';
+  /** Текущий оставшийся кулдаун (для skill). */
+  cooldown?: number;
+  /** Максимальный кулдаун из шаблона (для skill). */
+  maxCooldown?: number;
+  /** true, если скилл сейчас кастуется (для skill). */
+  isCasting?: boolean;
+  /** Оставшиеся ходов подготовки (для skill). */
+  remainingCastTurns?: number;
+  /** Доступен ли слот к использованию прямо сейчас. */
+  isAvailable: boolean;
+  /** Активирован ли слот (таргетинг или каст). */
+  isActive: boolean;
+  /** true, если расходник в слоте закончился, но слот ещё не перезаполнен. */
+  depleted?: boolean;
+  /** Тултип для отображения при наведении на слот. */
+  tooltip?: HotbarItemTooltip;
+};
+
 /** Активный статус-эффект для отображения в панели эффектов. */
 export type ActiveEffectViewModel = {
   icon: string;
@@ -363,6 +419,8 @@ export type RenderInput = {
   doorSprites: DoorSpriteMap;
   /** Инвентарь игрока. */
   inventory: InventoryItemViewModel[];
+  /** Хотбар игрока (10 слотов: 1–9, 0). */
+  hotbar: HotbarItemViewModel[];
   /** Активные статус-эффекты игрока. */
   activeEffects: ActiveEffectViewModel[];
   /** Статистика текущего забега. */
