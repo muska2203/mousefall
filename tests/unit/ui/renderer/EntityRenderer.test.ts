@@ -40,14 +40,24 @@ vi.mock('pixi.js', () => {
   class MockContainer {
     children: any[] = [];
     sortableChildren = false;
-    addChild(c: any) { this.children.push(c); }
+    addChild(c: any) { this.children.push(c); return c; }
     removeChildren() { this.children = []; }
+    destroy() {}
+  }
+  class MockGraphics {
+    x = 0;
+    y = 0;
+    visible = true;
+    scale = { x: 1, y: 1 };
+    rect() { return this; }
+    fill() { return this; }
     destroy() {}
   }
   return {
     Container: MockContainer,
     Sprite: MockSprite,
     Texture: MockTexture,
+    Graphics: MockGraphics,
   };
 });
 
@@ -416,6 +426,42 @@ describe('EntityRenderer', () => {
     renderer.update(input);
     // Спрайт должен быть скрыт до начала анимации
     expect(sprite.visible).toBe(false);
+  });
+
+  it('creates health bar for damaged enemy and hides it at full HP', () => {
+    const renderer = new EntityRenderer();
+    const input = makeRenderInput();
+
+    input.state.entities.set('enemy1', {
+      id: 'enemy1',
+      type: 'enemy',
+      x: 1,
+      y: 1,
+      blocksMovement: true,
+      hp: 3,
+      maxHp: 5,
+      armor: 0,
+      damage: 1,
+      maxAp: 1,
+      ap: 1,
+      templateId: 'cat_small',
+      aiStrategyId: 'melee',
+      statusEffects: [],
+      abilities: [],
+      activeCast: null,
+    } as any);
+
+    renderer.update(input);
+    expect((renderer as any).healthBars.has('enemy1')).toBe(true);
+    expect((renderer as any).healthBars.has('player')).toBe(false);
+
+    // Лечим врага до полного HP — полоска должна исчезнуть
+    input.state.entities.set('enemy1', {
+      ...(input.state.entities.get('enemy1') as any),
+      hp: 5,
+    });
+    renderer.update(input);
+    expect((renderer as any).healthBars.has('enemy1')).toBe(false);
   });
 
   it('animateItemDrop moves sprite from death tile to target tile with fade-in', async () => {

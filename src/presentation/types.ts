@@ -46,6 +46,14 @@ export type AnimationStep =
       position: Position;
     }
   | {
+      type: 'HP_CHANGE';
+      entityId: string;
+      fromHp: number;
+      toHp: number;
+      maxHp: number;
+      position: Position;
+    }
+  | {
       type: 'DEATH';
       entityId: string;
     }

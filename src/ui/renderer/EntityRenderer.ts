@@ -5,13 +5,13 @@
  * Поддерживает Promise-based анимации передвижения, атаки и смерти.
  */
 
-import {Container, Sprite, Texture, Text} from 'pixi.js';
+import {Container, Sprite, Texture, Text, Graphics} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE, FOG_EXPLORED_SPRITE_ALPHA} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
 import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite, getDoorSprite} from './spriteRegistry';
 import {getTextureSync, getTexture} from './TextureCache';
-import {Tween, Vec2Tween, lerp} from '@utils/tween';
+import {Tween, Vec2Tween, lerp, clamp01} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
 
@@ -19,17 +19,31 @@ const ACTOR_ANCHOR_X = 0.5;
 const ACTOR_ANCHOR_Y = 1;
 const ACTOR_OFFSET_Y_FACTOR = 0.85; // низ спрайта на 15% выше низа тайла
 
+const HP_BAR_WIDTH = TILE_SIZE * 0.8;
+const HP_BAR_HEIGHT = 4;
+const HP_BAR_VERTICAL_OFFSET = 6;
+const HP_BAR_BACKGROUND_COLOR = 0x3a1818;
+const HP_BAR_FILL_COLOR = 0xc42b2b;
+
 type ActiveAnimation = {
   tween: Animatable;
   onComplete: () => void;
+};
+
+type HealthBar = {
+  container: Container;
+  bg: Graphics;
+  fill: Graphics;
 };
 
 export class EntityRenderer {
   public readonly container = new Container();
   private sprites = new Map<string, Sprite>();
   private activeAnimations = new Map<string, ActiveAnimation>();
+  private hpChangeAnimations = new Map<string, ActiveAnimation>();
   private castIndicators = new Map<string, Text>();
   private statusIndicators = new Map<string, Text>();
+  private healthBars = new Map<string, HealthBar>();
 
   constructor() {
     this.container.sortableChildren = true;
@@ -47,11 +61,13 @@ export class EntityRenderer {
     // чтобы избежать мигания в конечной позиции или преждевременного исчезновения.
     const animatedIds = new Set<string>();
     const itemDropIds = new Set<string>();
+    const plannedHpChanges = new Map<string, number>();
     if (input.animations) {
       for (const phase of input.animations) {
         for (const node of phase.nodes) {
           collectAnimatedEntityIds(node, animatedIds);
           collectItemDropIds(node, itemDropIds);
+          collectPlannedHpChanges(node, plannedHpChanges);
         }
       }
     }
@@ -138,11 +154,14 @@ export class EntityRenderer {
         sprite.destroy();
         this.sprites.delete(id);
         this.activeAnimations.delete(id);
+        this.cancelHpChangeAnimation(id);
+        this.removeHealthBar(id);
       }
     }
 
     this.updateCastIndicators(input, existingIds);
     this.updateStatusIndicators(input, existingIds);
+    this.updateHealthBars(input, existingIds, plannedHpChanges);
   }
 
   /** Анимация перемещения спрайта между тайлами. Возвращает Promise, резолвящийся по завершении. */
@@ -370,6 +389,60 @@ export class EntityRenderer {
     });
   }
 
+  /** Анимация изменения HP: плавное сжатие/расширение заполнения полоски. */
+  animateHpChange(entityId: string, fromHp: number, toHp: number, maxHp: number, config: AnimationConfigEntry): Promise<void> {
+    return new Promise((resolve) => {
+      const sprite = this.sprites.get(entityId);
+      if (!sprite) {
+        resolve();
+        return;
+      }
+
+      const bar = this.ensureHealthBar(entityId);
+      bar.container.visible = sprite.visible;
+      this.syncHealthBarPosition(bar, sprite);
+      // Устанавливаем начальное заполнение до старта tween, чтобы избежать мигания.
+      this.updateHealthBarFill(bar, fromHp, maxHp);
+
+      // Прерываем предыдущую анимацию полоски для этой сущности, если есть.
+      const prev = this.hpChangeAnimations.get(entityId);
+      if (prev) {
+        prev.tween.cancel();
+        prev.onComplete();
+        this.hpChangeAnimations.delete(entityId);
+      }
+
+      const tween = new Tween({
+        duration: config.duration,
+        easing: config.easing,
+        onUpdate: (p) => {
+          const hp = lerp(fromHp, toHp, p);
+          this.updateHealthBarFill(bar, hp, maxHp);
+          this.syncHealthBarPosition(bar, sprite);
+        },
+        onComplete: () => {
+          this.updateHealthBarFill(bar, toHp, maxHp);
+          this.hpChangeAnimations.delete(entityId);
+          resolve();
+        },
+      });
+
+      const anim: ActiveAnimation = { tween, onComplete: resolve };
+      this.hpChangeAnimations.set(entityId, anim);
+      tween.start(performance.now());
+    });
+  }
+
+  /** Синхронизировать позиции всех полосок HP со спрайтами. Вызывается из ticker. */
+  syncHealthBarPositions(): void {
+    for (const [entityId, bar] of this.healthBars) {
+      const sprite = this.sprites.get(entityId);
+      if (!sprite) continue;
+      bar.container.visible = sprite.visible;
+      this.syncHealthBarPosition(bar, sprite);
+    }
+  }
+
   /** Анимация смерти: fade-out + scale-down. Удаляет спрайт по завершении. */
   animateDeath(entityId: string, config: AnimationConfigEntry): Promise<void> {
     return new Promise((resolve) => {
@@ -380,6 +453,7 @@ export class EntityRenderer {
       }
 
       this.cancelAnimationFor(entityId);
+      this.cancelHpChangeAnimation(entityId);
 
       sprite.visible = true;
 
@@ -398,6 +472,7 @@ export class EntityRenderer {
           sprite.destroy();
           this.sprites.delete(entityId);
           this.activeAnimations.delete(entityId);
+          this.removeHealthBar(entityId);
           resolve();
         },
       });
@@ -417,6 +492,13 @@ export class EntityRenderer {
         anim.onComplete();
       }
     }
+    for (const [entityId, anim] of this.hpChangeAnimations) {
+      const finished = anim.tween.update(now);
+      if (finished) {
+        this.hpChangeAnimations.delete(entityId);
+        anim.onComplete();
+      }
+    }
   }
 
   /** Есть ли незавершённые анимации. */
@@ -431,6 +513,11 @@ export class EntityRenderer {
       anim.onComplete();
     }
     this.activeAnimations.clear();
+    for (const anim of this.hpChangeAnimations.values()) {
+      anim.tween.cancel();
+      anim.onComplete();
+    }
+    this.hpChangeAnimations.clear();
   }
 
   clear(): void {
@@ -439,6 +526,10 @@ export class EntityRenderer {
       sprite.destroy();
     }
     this.sprites.clear();
+    for (const bar of this.healthBars.values()) {
+      bar.container.destroy();
+    }
+    this.healthBars.clear();
     for (const indicator of this.castIndicators.values()) {
       indicator.destroy();
     }
@@ -456,6 +547,15 @@ export class EntityRenderer {
       prev.tween.cancel();
       prev.onComplete();
       this.activeAnimations.delete(entityId);
+    }
+  }
+
+  private cancelHpChangeAnimation(entityId: string): void {
+    const prev = this.hpChangeAnimations.get(entityId);
+    if (prev) {
+      prev.tween.cancel();
+      prev.onComplete();
+      this.hpChangeAnimations.delete(entityId);
     }
   }
 
@@ -621,6 +721,83 @@ export class EntityRenderer {
       sprite.zIndex = sprite.y;
     }
   }
+
+  private ensureHealthBar(entityId: string): HealthBar {
+    let bar = this.healthBars.get(entityId);
+    if (!bar) {
+      const container = new Container();
+      const bg = new Graphics();
+      bg.rect(0, 0, HP_BAR_WIDTH, HP_BAR_HEIGHT);
+      bg.fill({ color: HP_BAR_BACKGROUND_COLOR });
+      const fill = new Graphics();
+      fill.rect(0, 0, HP_BAR_WIDTH, HP_BAR_HEIGHT);
+      fill.fill({ color: HP_BAR_FILL_COLOR });
+      container.addChild(bg, fill);
+      this.container.addChild(container);
+      bar = { container, bg, fill };
+      this.healthBars.set(entityId, bar);
+    }
+    return bar;
+  }
+
+  private removeHealthBar(entityId: string): void {
+    const bar = this.healthBars.get(entityId);
+    if (bar) {
+      bar.container.destroy();
+      this.healthBars.delete(entityId);
+    }
+  }
+
+  private updateHealthBarFill(bar: HealthBar, hp: number, maxHp: number): void {
+    const ratio = clamp01(hp / maxHp);
+    bar.fill.scale.x = ratio;
+  }
+
+  private syncHealthBarPosition(bar: HealthBar, sprite: Sprite): void {
+    bar.container.x = sprite.x - HP_BAR_WIDTH / 2;
+    bar.container.y = sprite.y - sprite.height - HP_BAR_VERTICAL_OFFSET;
+    bar.container.zIndex = sprite.zIndex + 1;
+  }
+
+  private updateHealthBars(input: RenderInput, existingIds: Set<string>, plannedHpChanges: Map<string, number>): void {
+    const state = input.state;
+    const seen = new Set<string>();
+
+    const checkEntity = (id: string, entity: unknown) => {
+      if (!hasHp(entity) || id === state.player.id) return;
+      if (entity.hp >= entity.maxHp && !plannedHpChanges.has(id)) {
+        this.removeHealthBar(id);
+        return;
+      }
+      seen.add(id);
+      const sprite = this.sprites.get(id);
+      if (!sprite) return;
+      const bar = this.ensureHealthBar(id);
+      bar.container.visible = sprite.visible;
+      if (!this.hpChangeAnimations.has(id)) {
+        const plannedFromHp = plannedHpChanges.get(id);
+        if (plannedFromHp !== undefined) {
+          // Показываем полоску в стартовом состоянии до начала анимации —
+          // иначе заполнение мигнёт конечным HP перед tween.
+          this.updateHealthBarFill(bar, plannedFromHp, entity.maxHp);
+        } else {
+          this.updateHealthBarFill(bar, entity.hp, entity.maxHp);
+        }
+      }
+      this.syncHealthBarPosition(bar, sprite);
+    };
+
+    checkEntity(state.player.id, state.player);
+    for (const entity of state.entities.values()) {
+      checkEntity(entity.id, entity);
+    }
+
+    for (const id of this.healthBars.keys()) {
+      if (!seen.has(id) && !existingIds.has(id)) {
+        this.removeHealthBar(id);
+      }
+    }
+  }
 }
 
 function isCellVisible(state: RenderInput['state'], x: number, y: number): boolean {
@@ -676,4 +853,19 @@ function collectItemDropIds(node: AnimationNode, out: Set<string>): void {
   for (const child of node.children) {
     collectItemDropIds(child, out);
   }
+}
+
+/** Рекурсивно собирает стартовое HP для сущностей с запланированной анимацией HP_CHANGE. */
+function collectPlannedHpChanges(node: AnimationNode, out: Map<string, number>): void {
+  if (node.step.type === 'HP_CHANGE') {
+    out.set(node.step.entityId, node.step.fromHp);
+  }
+  for (const child of node.children) {
+    collectPlannedHpChanges(child, out);
+  }
+}
+
+/** Type guard: объект имеет текущее и максимальное HP. */
+function hasHp(entity: unknown): entity is { hp: number; maxHp: number } {
+  return typeof entity === 'object' && entity !== null && 'hp' in entity && 'maxHp' in entity;
 }

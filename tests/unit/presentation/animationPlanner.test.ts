@@ -72,6 +72,27 @@ describe('buildAnimationTree', () => {
     expect(tree[0]!.nodes[0]!.step.type).toBe('DAMAGE');
   });
 
+  it('wraps HP_CHANGE inside DAMAGE for damaged enemy with HP', () => {
+    const state = makeMockState();
+    state.entities.set('enemy1', { id: 'enemy1', x: 3, y: 3, hp: 7, maxHp: 12 } as any);
+
+    const node = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } });
+    const result = makeResult([node]);
+    const tree = buildAnimationTree(result, state);
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('DAMAGE');
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('HP_CHANGE');
+
+    const hpChange = tree[0]!.nodes[0]!.children[0]!.step as any;
+    expect(hpChange.entityId).toBe('enemy1');
+    expect(hpChange.fromHp).toBe(12);
+    expect(hpChange.toHp).toBe(7);
+    expect(hpChange.maxHp).toBe(12);
+  });
+
   it('preserves parent-child structure', () => {
     const child = makeExecNode({ type: 'ENTITY_DIED', entityId: 'enemy1', position: { x: 2, y: 2 } });
     const parent = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 2, y: 2 } }, [child]);

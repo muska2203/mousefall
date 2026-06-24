@@ -19,6 +19,7 @@ import {AnimationSequencer} from '@ui/animation/sequencer';
 import {SpriteAnimationExecutor} from '@ui/animation/spriteExecutor';
 import {FogAnimationExecutor} from '@ui/animation/fogExecutor';
 import {PixiFloatingTextExecutor} from '@ui/animation/pixiFloatingTextExecutor';
+import {HpChangeAnimationExecutor} from '@ui/animation/hpChangeExecutor';
 import {SkillAnimationExecutor} from '@ui/animation/skillExecutor';
 import {ProjectileAnimationExecutor} from '@ui/animation/projectileExecutor';
 import {ExplosionAnimationExecutor} from '@ui/animation/explosionExecutor';
@@ -100,6 +101,7 @@ export function GameField({
         new SpriteAnimationExecutor(),
         new FogAnimationExecutor(),
         new PixiFloatingTextExecutor(),
+        new HpChangeAnimationExecutor(),
         new SkillAnimationExecutor(),
         new ProjectileAnimationExecutor(),
         new ExplosionAnimationExecutor(),

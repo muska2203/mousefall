@@ -11,12 +11,17 @@
  * - Неанимированные события пропускаются; их дети поднимаются как сиблинги к ближайшему анимированному предку.
  */
 
-import type { SimulationResult, GameEvent, GameState, TurnPhase } from '@simulation/types';
+import type { SimulationResult, GameEvent, GameState, TurnPhase, Entity } from '@simulation/types';
 import type { ExecutionNode } from '@simulation/systems/actions/types';
 import type { AnimationStep, AnimationNode, AnimationPhase, Position } from './types';
 import { filterByFOV } from './fogFilter';
 
 type AnimationBuilder = (event: GameEvent, childNodes: AnimationNode[], state: GameState) => AnimationNode[] | null;
+
+/** Type guard: сущность имеет HP-бар (не предмет/лестница). */
+function isAttackableEntity(entity: Entity): entity is Extract<Entity, { hp: number }> {
+  return 'hp' in entity && 'maxHp' in entity;
+}
 
 const builders = new Map<string, AnimationBuilder>();
 
@@ -67,8 +72,44 @@ registerAnimationBuilder('ACTION_APPLIED', (event, children) => {
   return null;
 });
 
-registerAnimationBuilder('ENTITY_DAMAGED', (event, children) => {
+registerAnimationBuilder('ENTITY_DAMAGED', (event, children, state) => {
   if (event.type !== 'ENTITY_DAMAGED') return null;
+
+  // Полоска HP анимируется только для не-игрока и только если у цели есть HP.
+  // Оборачиваем исходных детей (например, смерть) в HP_CHANGE,
+  // который выполняется после всплывающего текста урона и перед смертью.
+  // Это предотвращает уничтожение спрайта во время анимации полоски HP.
+  if (event.targetId !== state.player.id) {
+    const target = state.entities.get(event.targetId);
+    if (target && isAttackableEntity(target) && event.damage > 0) {
+      const toHp = target.hp;
+      const fromHp = toHp + event.damage;
+      if (fromHp !== toHp) {
+        const hpChangeNode: AnimationNode = {
+          step: {
+            type: 'HP_CHANGE',
+            entityId: event.targetId,
+            fromHp,
+            toHp,
+            maxHp: target.maxHp,
+            position: event.position,
+          },
+          children,
+        };
+        return [{
+          step: {
+            type: 'DAMAGE',
+            targetId: event.targetId,
+            amount: event.damage,
+            damageType: event.damageType,
+            position: event.position,
+          },
+          children: [hpChangeNode],
+        }];
+      }
+    }
+  }
+
   return [{
     step: {
       type: 'DAMAGE',
@@ -444,6 +485,8 @@ function buildDashAnimationNodes(casterId: string, childNodes: AnimationNode[]):
       pushToMap(enemyNodes, step.entityId, node);
     } else if (step.type === 'DAMAGE') {
       pushToMap(enemyNodes, step.targetId, node);
+    } else if (step.type === 'HP_CHANGE') {
+      pushToMap(enemyNodes, step.entityId, node);
     } else if (step.type === 'STATUS_BURST') {
       pushToMap(enemyNodes, step.entityId, node);
     } else {
@@ -464,11 +507,14 @@ function buildDashAnimationNodes(casterId: string, childNodes: AnimationNode[]):
   for (const nodes of enemyNodes.values()) {
     const enemyMove = nodes.find((n) => n.step.type === 'MOVE');
     const damageNode = nodes.find((n) => n.step.type === 'DAMAGE');
+    const hpChangeNode = nodes.find((n) => n.step.type === 'HP_CHANGE');
     const collisionPos = enemyMove?.step.type === 'MOVE'
       ? enemyMove.step.from
       : damageNode?.step.type === 'DAMAGE'
         ? damageNode.step.position
-        : undefined;
+        : hpChangeNode?.step.type === 'HP_CHANGE'
+          ? hpChangeNode.step.position
+          : undefined;
     const collisionMove = collisionPos !== undefined ? findCollisionMove(collisionPos) : casterMoves[casterMoves.length - 1]!;
     for (const n of nodes) {
       collisionMove.children.push(n);
