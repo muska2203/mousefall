@@ -708,9 +708,12 @@ export class GameSimulation implements Simulation {
         try {
             const template = tryGetAbility(abilityId);
             if (!template) return null;
+            const runtime = this.state.player.abilities.find((a) => a.templateId === abilityId);
             return {
                 spriteId: template.spriteId,
                 cooldown: template.cooldown,
+                currentCooldown: runtime?.currentCooldown ?? 0,
+                apCost: template.apCost,
             };
         } catch {
             return null;

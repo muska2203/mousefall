@@ -37,6 +37,9 @@ import type { Locale } from '@content/texts/lookup';
 
 import {buildAnimationTree} from './animationPlanner';
 import {extractEvents, gameEventToLog} from './logBuilder';
+import {extractToasts, errorCodeToToast} from './toastBuilder';
+import {ToastBuffer} from './toastBuffer';
+import type {ToastItem} from './types';
 import {mapItemTemplateToDetail} from './itemDetailMapper';
 import {mapEnemyToPopover} from './enemyDetailMapper';
 import {mapStairsToPopover} from './stairsDetailMapper';
@@ -73,6 +76,8 @@ export type GameViewModel = {
   renderInput: RenderInput | null;
   /** Журнал событий текущей сессии */
   logs: LogItem[];
+  /** Активные всплывающие уведомления */
+  toasts: ToastItem[];
 };
 
 /** Порядок слотов экипировки для сортировки инвентаря. */
@@ -125,6 +130,7 @@ export class GameSession {
   private lastResult: SimulationResult | null = null;
   private camera = new CameraState();
   private logs = new LogBuffer();
+  private toasts = new ToastBuffer();
   private animation = new AnimationState();
   private targeting = new TargetingController();
   private listeners = new Set<() => void>();
@@ -181,6 +187,7 @@ export class GameSession {
         mode: this.mode,
         renderInput: state ? this.buildRenderInput(state) : null,
         logs: this.logs.logs,
+        toasts: this.toasts.toasts,
       };
     }
     return this.viewModelCache;
@@ -620,7 +627,7 @@ export class GameSession {
     return undefined;
   }
 
-  private getAbilityTemplate(abilityId: string, locale: Locale): { name: string; description: string; spriteId: string | undefined; cooldown: number } | null {
+  private getAbilityTemplate(abilityId: string, locale: Locale): { name: string; description: string; spriteId: string | undefined; cooldown: number; apCost: number | 'all' } | null {
     const fromSim = this.simulation!.getAbilityInfo(abilityId);
     if (!fromSim) return null;
     const localized = tryGetLocalizedAbility(abilityId, locale);
@@ -817,6 +824,7 @@ export class GameSession {
     this.lastResult = null;
     this.animation.phase = 'idle';
     this.clearLogs();
+    this.clearToasts();
     this.notify();
   }
 
@@ -850,6 +858,7 @@ export class GameSession {
     this.lastResult = null;
     this.animation.phase = 'idle';
     this.clearLogs();
+    this.clearToasts();
     this.notify();
   }
 
@@ -867,14 +876,43 @@ export class GameSession {
     this.selectedInteractionIndex = 0;
     this.lastInteractionOptionsKey = '';
     this.clearLogs();
+    this.clearToasts();
     this.notify();
   }
 
   /** Начать выбор цели для способности. */
   beginTargeting(abilityId: string): void {
     if (!this.simulation) return;
+
+    const info = this.simulation.getAbilityInfo(abilityId);
+    if (!info) {
+      this.pushToastFromCode('ability_not_found');
+      return;
+    }
+
+    if (info.currentCooldown > 0) {
+      this.pushToastFromCode('ability_on_cooldown');
+      return;
+    }
+
+    const action: GameAction = {
+      type: 'USE_ABILITY',
+      entityId: 'player',
+      abilityId,
+      targets: [],
+    };
+    const cost = this.simulation.getActionCost(action);
+    const currentAp = this.simulation.getPlayerStats().ap;
+    if (currentAp < cost) {
+      this.pushToastFromCode('not_enough_ap');
+      return;
+    }
+
     const ok = this.targeting.beginTargeting(abilityId, this.simulation);
-    if (!ok) return;
+    if (!ok) {
+      this.pushToastFromCode('ability_not_found');
+      return;
+    }
     this.targetingHover = null;
     this.fieldHover = null;
     this.notify();
@@ -992,7 +1030,11 @@ export class GameSession {
         return;
       }
     } else {
-      // При неудачном ходе сбрасываем анимации
+      // При неудачном ходе показываем причины отказа и сбрасываем анимации
+      const rejectedToasts = extractToasts(result);
+      for (const toast of rejectedToasts) {
+        this.toasts.push(toast.kind, toast.title, toast.message, toast.duration);
+      }
       this.lastResult = null;
     }
 
@@ -1244,6 +1286,23 @@ export class GameSession {
 
   private clearLogs(): void {
     this.logs.clear();
+  }
+
+  private clearToasts(): void {
+    this.toasts.clear();
+  }
+
+  /** Добавить уведомление по коду ошибки симуляции и уведомить UI. */
+  private pushToastFromCode(code: string): void {
+    const toast = errorCodeToToast(code);
+    this.toasts.push(toast.kind, toast.title, toast.message, toast.duration);
+    this.notify();
+  }
+
+  /** Закрыть всплывающее уведомление по идентификатору. */
+  dismissToast(id: string): void {
+    this.toasts.remove(id);
+    this.notify();
   }
 
   /**

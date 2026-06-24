@@ -27,6 +27,7 @@ import { ruStatRow } from './components/statRow';
 import { ruPortrait } from './components/portrait';
 import { ruPortraitGallery } from './components/portraitGallery';
 import { ruDetailPopover } from './components/detailPopover';
+import { ruToast } from './components/toast';
 import { ruLogBuilder } from './system/logBuilder';
 import { ruItemMapper } from './system/itemMapper';
 import { ruEnemyMapper } from './system/enemyMapper';
@@ -70,6 +71,7 @@ export const ruResources: Resources = {
     portrait: ruPortrait,
     portraitGallery: ruPortraitGallery,
     detailPopover: ruDetailPopover,
+    toast: ruToast,
   },
   system: {
     logBuilder: ruLogBuilder,

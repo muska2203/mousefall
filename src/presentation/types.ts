@@ -368,3 +368,20 @@ export type RenderInput = {
   /** Включена ли debug-визуализация комнат и коридоров на карте. */
   mapgenDebugEnabled: boolean;
 };
+
+/** Тип всплывающего уведомления. */
+export type ToastKind = 'error' | 'warning' | 'info' | 'success';
+
+/** Одно всплывающее уведомление для UI. */
+export type ToastItem = {
+  /** Уникальный идентификатор уведомления. */
+  id: string;
+  /** Визуальный тип уведомления. */
+  kind: ToastKind;
+  /** Короткий заголовок. */
+  title: string;
+  /** Подробное описание. */
+  message: string;
+  /** Время отображения в мс. undefined — не закрывать автоматически. */
+  duration?: number;
+};

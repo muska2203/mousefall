@@ -27,6 +27,7 @@ import { enStatRow } from './components/statRow';
 import { enPortrait } from './components/portrait';
 import { enPortraitGallery } from './components/portraitGallery';
 import { enDetailPopover } from './components/detailPopover';
+import { enToast } from './components/toast';
 import { enLogBuilder } from './system/logBuilder';
 import { enItemMapper } from './system/itemMapper';
 import { enEnemyMapper } from './system/enemyMapper';
@@ -70,6 +71,7 @@ export const enResources: Resources = {
     portrait: enPortrait,
     portraitGallery: enPortraitGallery,
     detailPopover: enDetailPopover,
+    toast: enToast,
   },
   system: {
     logBuilder: enLogBuilder,

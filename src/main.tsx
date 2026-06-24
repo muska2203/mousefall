@@ -8,6 +8,7 @@ import './ui/styles/game-screen.css';
 import './ui/styles/welcome.css';
 import './ui/styles/runtime.css';
 import './ui/styles/ending.css';
+import './ui/styles/toasts.css';
 
 async function bootstrap() {
   await loadAllContent(browserFetchJson);

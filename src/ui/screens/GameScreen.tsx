@@ -21,6 +21,7 @@ import {LogPanel} from '@ui/components/LogPanel';
 import {InventoryPanel} from '@ui/components/InventoryPanel';
 import {SkillsPanel} from '@ui/components/SkillsPanel';
 import {FieldObjectPopover} from '@ui/components/FieldObjectPopover';
+import {ToastContainer} from '@ui/components/ToastContainer';
 import {DebugPanel, type SpawnType} from '@ui/components/DebugPanel';
 
 interface Props {
@@ -113,6 +114,13 @@ export function GameScreen({session, onModeChange}: Props) {
   const handleZoom = useCallback(
     (delta: number) => {
       session.setZoom(delta);
+    },
+    [session],
+  );
+
+  const handleDismissToast = useCallback(
+    (id: string) => {
+      session.dismissToast(id);
     },
     [session],
   );
@@ -333,6 +341,7 @@ export function GameScreen({session, onModeChange}: Props) {
         center={centerColumn}
         right={rightColumn}
       />
+      <ToastContainer toasts={vm.toasts} onDismiss={handleDismissToast} />
       {import.meta.env.DEV && session.isDebug() && renderInput && (
         <DebugPanel
           session={session}

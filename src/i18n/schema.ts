@@ -247,6 +247,50 @@ export interface ComponentsDetailPopoverTranslations {
   impactTitle: string;
 }
 
+export interface ComponentsToastTranslations {
+  skillOnCooldownTitle: string;
+  skillOnCooldownMessage: string;
+  notEnoughApTitle: string;
+  notEnoughApMessage: string;
+  actorCannotActTitle: string;
+  actorCannotActMessage: string;
+  invalidTargetTitle: string;
+  invalidTargetMessage: string;
+  wrongTargetCountTitle: string;
+  wrongTargetCountMessage: string;
+  alreadyCastingTitle: string;
+  alreadyCastingMessage: string;
+  abilityNotFoundTitle: string;
+  abilityNotFoundMessage: string;
+  itemNotFoundTitle: string;
+  itemNotFoundMessage: string;
+  notConsumableTitle: string;
+  notConsumableMessage: string;
+  unsupportedEffectTitle: string;
+  unsupportedEffectMessage: string;
+  notEquippableTitle: string;
+  notEquippableMessage: string;
+  slotEmptyTitle: string;
+  slotEmptyMessage: string;
+  bottomFloorReachedTitle: string;
+  bottomFloorReachedMessage: string;
+  maxFloorReachedTitle: string;
+  maxFloorReachedMessage: string;
+  noStairsDownTitle: string;
+  noStairsDownMessage: string;
+  noStairsUpTitle: string;
+  noStairsUpMessage: string;
+  minFloorReachedTitle: string;
+  minFloorReachedMessage: string;
+  tileBlockedTitle: string;
+  tileBlockedMessage: string;
+  noTargetAtTileTitle: string;
+  noTargetAtTileMessage: string;
+  genericErrorTitle: string;
+  genericErrorMessage: string;
+  closeLabel: string;
+}
+
 export interface ComponentsTranslations {
   heroPanel: ComponentsHeroPanelTranslations;
   logPanel: ComponentsLogPanelTranslations;
@@ -270,6 +314,7 @@ export interface ComponentsTranslations {
   portrait: ComponentsPortraitTranslations;
   portraitGallery: ComponentsPortraitGalleryTranslations;
   detailPopover: ComponentsDetailPopoverTranslations;
+  toast: ComponentsToastTranslations;
 }
 
 export interface SystemLogBuilderTranslations {

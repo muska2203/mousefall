@@ -8,6 +8,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     cooldown: 0,
+    apCost: 1,
     ...overrides,
   } as AbilityTemplate;
 }
@@ -136,6 +137,91 @@ describe('GameSession targeting', () => {
     expect(preview.valid).toBe(false);
     expect(preview.intents).toHaveLength(0);
     expect(preview.affectedPositions).toHaveLength(0);
+  });
+
+  it('beginTargeting shows toast and does not start when ability is on cooldown', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 2 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('fireball');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.targetingOverlay).toBeNull();
+    expect(vm.toasts).toHaveLength(1);
+    expect(vm.toasts[0]!.kind).toBe('warning');
+  });
+
+  it('beginTargeting shows toast and does not start when not enough AP', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 0,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('fireball');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.targetingOverlay).toBeNull();
+    expect(vm.toasts).toHaveLength(1);
+    expect(vm.toasts[0]!.kind).toBe('warning');
+  });
+
+  it('beginTargeting starts targeting when ability is available and AP is sufficient', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('fireball');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.targetingOverlay).not.toBeNull();
+    expect(vm.toasts).toHaveLength(0);
+  });
+
+  it('beginTargeting shows toast when ability is not found', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'unknown_skill', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('unknown_skill');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.targetingOverlay).toBeNull();
+    expect(vm.toasts).toHaveLength(1);
+    expect(vm.toasts[0]!.kind).toBe('error');
   });
 
 });
