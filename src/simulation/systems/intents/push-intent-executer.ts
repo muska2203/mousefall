@@ -158,5 +158,6 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
     entityId: intent.entityId,
     from,
     to,
+    movementType: 'walk',
   });
 };

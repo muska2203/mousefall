@@ -305,6 +305,7 @@ export type TargetMode =
 
 export type Intent =
   | MoveIntent
+  | JumpIntent
   | PushIntent
   | DamageIntent
   | DieIntent
@@ -328,6 +329,7 @@ export type Intent =
   | BumpIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
+export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
 export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
@@ -398,7 +400,7 @@ export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
 export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationError[] };
 
-export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position };
+export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' };
 
 export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; damageType: DamageType; position: Position };
 

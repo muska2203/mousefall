@@ -6,10 +6,11 @@
  */
 
 import {Container, Sprite, Texture} from 'pixi.js';
-import type {RenderInput} from '@presentation/types';
+import type {RenderInput, Position} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {getTileSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
+import {runTickerTween, type TickerLike} from '@utils/tween';
 
 export class TileRenderer {
   public readonly container = new Container();
@@ -80,6 +81,50 @@ export class TileRenderer {
         sprite.visible = false;
       }
     }
+  }
+
+  /** Анимировать тряску тайлов вокруг центра в заданном радиусе (Чебышёв). */
+  shakeTiles(center: Position, radius: number, duration: number, ticker: TickerLike): Promise<void> {
+    const targets: { sprite: Sprite; baseX: number; baseY: number }[] = [];
+
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const x = center.x + dx;
+        const y = center.y + dy;
+        const key = `${x},${y}`;
+        const sprite = this.sprites.get(key);
+        if (sprite && sprite.visible) {
+          targets.push({ sprite, baseX: sprite.x, baseY: sprite.y });
+        }
+      }
+    }
+
+    if (targets.length === 0) return Promise.resolve();
+
+    return new Promise((resolve) => {
+      runTickerTween({
+        duration,
+        easing: (t) => t,
+        onUpdate: (p) => {
+          const decay = 1 - p;
+          const intensity = TILE_SIZE * 0.08 * decay;
+          for (const target of targets) {
+            const angle = Math.PI * 2 * (target.baseX * 1.37 + target.baseY * 2.71) % (Math.PI * 2);
+            const offset = Math.sin(p * Math.PI * 6 + angle) * intensity;
+            target.sprite.x = target.baseX + offset;
+            target.sprite.y = target.baseY + Math.abs(offset) * 0.3;
+          }
+        },
+        onComplete: () => {
+          for (const target of targets) {
+            target.sprite.x = target.baseX;
+            target.sprite.y = target.baseY;
+          }
+          resolve();
+        },
+      }, ticker);
+    });
   }
 
   clear(): void {

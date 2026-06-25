@@ -112,6 +112,24 @@ export class WorldRenderer {
 
   // ── Promise-based анимации ───────────────────────────────────────
 
+  /** Анимировать прыжок сущности. */
+  animateJump(entityId: string, from: Position, to: Position, config: AnimationConfigEntry): Promise<void> {
+    const promises: Promise<void>[] = [
+      this.entityRenderer.animateJump(entityId, from, to, config),
+    ];
+
+    if (entityId === this.lastInput?.state.player.id) {
+      promises.push(this.animateCamera(from, to, config));
+    }
+
+    return Promise.all(promises).then(() => {});
+  }
+
+  /** Анимировать тряску тайлов вокруг точки. */
+  animateTileShake(center: Position, radius: number, config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
+    return this.tileRenderer.shakeTiles(center, radius, config.duration, ticker);
+  }
+
   /** Анимировать перемещение сущности. Если followCamera — камера следует за ней. */
   animateMove(entityId: string, from: Position, to: Position, config: AnimationConfigEntry, followCamera: boolean, sway: boolean = true): Promise<void> {
     const promises: Promise<void>[] = [
@@ -327,7 +345,7 @@ export class WorldRenderer {
   }
 
   private findMoveFromInNode(node: import('@presentation/types').AnimationNode, playerId: string): Position | null {
-    if (node.step.type === 'MOVE' && node.step.entityId === playerId) {
+    if ((node.step.type === 'MOVE' || node.step.type === 'JUMP') && node.step.entityId === playerId) {
       return node.step.from;
     }
     for (const child of node.children) {

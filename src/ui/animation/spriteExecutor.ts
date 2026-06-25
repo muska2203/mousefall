@@ -11,7 +11,7 @@ import type { AnimationConfigKey } from '@utils/animationConfig';
 
 export class SpriteAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {
-    return step.type === 'MOVE' || step.type === 'ATTACK' || step.type === 'DEATH' || step.type === 'ITEM_DROP';
+    return step.type === 'MOVE' || step.type === 'JUMP' || step.type === 'ATTACK' || step.type === 'DEATH' || step.type === 'ITEM_DROP';
   }
 
   async execute(step: AnimationStep, ctx: AnimationContext): Promise<void> {
@@ -23,6 +23,10 @@ export class SpriteAnimationExecutor implements AnimationExecutor {
         const isPlayer = step.entityId === ctx.playerId;
         const moveConfig = step.duration !== undefined ? { ...config, duration: step.duration } : config;
         await wr.animateMove(step.entityId, step.from, step.to, moveConfig, isPlayer, step.sway);
+        break;
+      }
+      case 'JUMP': {
+        await wr.animateJump(step.entityId, step.from, step.to, config);
         break;
       }
       case 'ATTACK': {

@@ -5,6 +5,7 @@ import {ExecutionBuilder, ExecutionNode, Intent, OpenDoorIntent, CloseDoorIntent
 export type {
   Intent,
   MoveIntent,
+  JumpIntent,
   PushIntent,
   DamageIntent,
   DieIntent,

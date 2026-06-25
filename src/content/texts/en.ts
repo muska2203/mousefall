@@ -74,6 +74,10 @@ export const enContentTexts: ContentTexts = {
       name: 'Parry',
       description: 'Prepare a parry for the next turn. Spends current AP (up to 3) and grants one parry per AP spent.',
     },
+    swoop: {
+      name: 'Swoop',
+      description: 'Leap to a free cell within radius 2. The ground slam deals minor damage to all hp-bearing objects around the landing point and pushes them one cell away.',
+    },
   },
   players: {
     'elven-ranger': {

@@ -45,4 +45,9 @@ export const damageFormulas: Record<string, DamageFormula> = {
     const str = ctx.caster.type === 'player' ? ctx.caster.baseStats.str : 0;
     return single(Math.round(ctx.baseDamage * (1 + str * 0.1) * (1 + ctx.skillLevel * 0.05)), 'blunt');
   },
+  // Налёт — удар по земле после приземления
+  swoop_slam: (ctx) => {
+    const str = ctx.caster.type === 'player' ? ctx.caster.baseStats.str : 0;
+    return single(Math.round(ctx.baseDamage * (1 + str * 0.12) * (1 + ctx.skillLevel * 0.05)), 'blunt');
+  },
 };

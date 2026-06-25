@@ -32,7 +32,8 @@
     "/content/abilities/dash.json",
     "/content/abilities/fireball.json",
     "/content/abilities/magic_slap.json",
-    "/content/abilities/parry.json"
+    "/content/abilities/parry.json",
+    "/content/abilities/swoop.json"
   ],
   "maps": [
     "/content/maps/default.json",

@@ -41,7 +41,7 @@ function makeMockState(): GameState {
 
 describe('buildAnimationTree', () => {
   it('converts ENTITY_MOVED to MOVE step', () => {
-    const node = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } });
+    const node = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } });
     const result = makeResult([node]);
     const tree = buildAnimationTree(result, makeMockState());
 
@@ -108,7 +108,7 @@ describe('buildAnimationTree', () => {
 
   it('flattens up non-animated nodes', () => {
     // ACTION_APPLIED не имеет builder — должен раствориться
-    const child = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
+    const child = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
     const parent = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } }, [child]);
     const result = makeResult([parent]);
     const tree = buildAnimationTree(result, makeMockState());
@@ -185,9 +185,9 @@ describe('buildAnimationTree', () => {
 
   it('keeps PLAYER and ENVIRONMENT phases sequential', () => {
     const playerMove = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } }, [
-      makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
+      makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
     ]);
-    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
     const result = makeResultWithPhases([
       { side: 'PLAYER', actions: [playerMove] },
       { side: 'ENVIRONMENT', actions: [enemyMove] },
@@ -205,8 +205,8 @@ describe('buildAnimationTree', () => {
   });
 
   it('chains multiple MOVE steps of the same actor into parent → child', () => {
-    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
-    const secondMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 4, y: 5 }, to: { x: 3, y: 5 } });
+    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const secondMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 4, y: 5 }, to: { x: 3, y: 5 } });
     const result = makeResultWithPhases([
       { side: 'ENVIRONMENT', actions: [firstMove, secondMove] },
     ]);
@@ -222,8 +222,8 @@ describe('buildAnimationTree', () => {
   });
 
   it('dash skips cast and chains fast MOVE steps', () => {
-    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
-    const secondMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
+    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
+    const secondMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
     const abilityUsed = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }], from: { x: 5, y: 5 } }, [firstMove, secondMove]);
     const result = makeResult([abilityUsed]);
     const tree = buildAnimationTree(result, makeMockState());
@@ -240,9 +240,9 @@ describe('buildAnimationTree', () => {
   });
 
   it('dash attaches enemy push/damage to the collision MOVE', () => {
-    const casterFirstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
-    const casterSecondMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
-    const enemyPushMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
+    const casterFirstMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
+    const casterSecondMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
+    const enemyPushMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
     const enemyDamage = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 6, y: 5 } });
     const abilityUsed = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }], from: { x: 5, y: 5 } }, [
       casterFirstMove,
@@ -266,7 +266,7 @@ describe('buildAnimationTree', () => {
   });
 
   it('dash attaches wall bounce to the last caster MOVE', () => {
-    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
+    const firstMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
     const bump = makeExecNode({ type: 'ENTITY_BUMPED', entityId: 'player', position: { x: 6, y: 5 }, dx: 1, dy: 0 });
     const abilityUsed = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }], from: { x: 5, y: 5 } }, [firstMove, bump]);
     const result = makeResult([abilityUsed]);
@@ -279,8 +279,8 @@ describe('buildAnimationTree', () => {
   });
 
   it('splits ENVIRONMENT phase into sequential subphases per actor', () => {
-    const enemyAMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemyA', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
-    const enemyBMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemyB', from: { x: 3, y: 3 }, to: { x: 2, y: 3 } });
+    const enemyAMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemyA', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const enemyBMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemyB', from: { x: 3, y: 3 }, to: { x: 2, y: 3 } });
     const result = makeResultWithPhases([
       { side: 'ENVIRONMENT', actions: [enemyAMove, enemyBMove] },
     ]);
@@ -313,11 +313,47 @@ describe('buildAnimationTree', () => {
     expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('DAMAGE');
   });
 
+  it('converts ENTITY_MOVED with movementType jump to JUMP step', () => {
+    const node = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'jump', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } });
+    const result = makeResult([node]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('JUMP');
+  });
+
+  it('builds swoop animation tree with JUMP, EXPLOSION and TILE_SHAKE', () => {
+    const target = { x: 7, y: 5 };
+    const swoopAction = makeExecNode({
+      type: 'ABILITY_USED',
+      entityId: 'player',
+      abilityId: 'swoop',
+      targets: [target],
+      from: { x: 5, y: 5 },
+    }, [
+      makeExecNode({ type: 'ENTITY_MOVED', movementType: 'jump', entityId: 'player', from: { x: 5, y: 5 }, to: target }),
+      makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 8, damageType: 'blunt', position: { x: 7, y: 6 } }),
+      makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 7, y: 6 }, to: { x: 7, y: 7 } }),
+    ]);
+
+    const result = makeResult([swoopAction]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    const root = tree[0]!.nodes[0]!;
+    expect(root.step.type).toBe('JUMP');
+    expect(root.children.some((c) => c.step.type === 'EXPLOSION')).toBe(true);
+    expect(root.children.some((c) => c.step.type === 'TILE_SHAKE')).toBe(true);
+    expect(root.children.some((c) => c.step.type === 'DAMAGE')).toBe(true);
+    expect(root.children.some((c) => c.step.type === 'MOVE')).toBe(true);
+  });
+
   it('keeps STATUS_TICK as separate phase after ENVIRONMENT', () => {
     const playerMove = makeExecNode({ type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } }, [
-      makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
+      makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
     ]);
-    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
+    const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
     const tick = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'player', damage: 1, damageType: 'poison', position: { x: 0, y: 0 } });
     const result = makeResultWithPhases([
       { side: 'PLAYER', actions: [playerMove] },

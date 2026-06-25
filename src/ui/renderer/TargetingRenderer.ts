@@ -71,6 +71,7 @@ export class TargetingRenderer {
     const damageByPos = new Map<string, number>();
     const statusesByPos = new Map<string, Array<{ type: string; duration: number; value: number }>>();
     const moves: Array<{ from: Position; to: Position }> = [];
+    const pushes: Array<{ from: Position; to: Position }> = [];
     const deaths: Position[] = [];
 
     for (const intent of overlay.previewIntents) {
@@ -88,7 +89,11 @@ export class TargetingRenderer {
           break;
         }
         case 'MOVE':
+        case 'JUMP':
           moves.push({ from: intent.from, to: intent.to });
+          break;
+        case 'PUSH':
+          pushes.push({ from: intent.from, to: intent.to });
           break;
         case 'DIE':
           deaths.push(intent.position);
@@ -111,7 +116,10 @@ export class TargetingRenderer {
       }
     }
     for (const move of moves) {
-      this.drawMoveArrow(move.from, move.to);
+      this.drawArrow(move.from, move.to, 0xffffff);
+    }
+    for (const push of pushes) {
+      this.drawArrow(push.from, push.to, 0xffaa00);
     }
     for (const pos of deaths) {
       this.drawDeathMarker(pos, zoom);
@@ -146,7 +154,7 @@ export class TargetingRenderer {
     this.previewTextContainer.addChild(text);
   }
 
-  private drawMoveArrow(from: Position, to: Position): void {
+  private drawArrow(from: Position, to: Position, color: number): void {
     const g = new Graphics();
     const fromX = from.x * TILE_SIZE + TILE_SIZE / 2;
     const fromY = from.y * TILE_SIZE + TILE_SIZE / 2;
@@ -155,7 +163,7 @@ export class TargetingRenderer {
 
     g.moveTo(fromX, fromY);
     g.lineTo(toX, toY);
-    g.stroke({ width: 2, color: 0xffffff, alpha: 0.8 });
+    g.stroke({ width: 2, color, alpha: 0.8 });
 
     // Стрелочка
     const angle = Math.atan2(toY - fromY, toX - fromX);
@@ -171,7 +179,7 @@ export class TargetingRenderer {
       toX - arrowLen * Math.cos(angle + arrowAngle),
       toY - arrowLen * Math.sin(angle + arrowAngle),
     );
-    g.stroke({ width: 2, color: 0xffffff, alpha: 0.8 });
+    g.stroke({ width: 2, color, alpha: 0.8 });
 
     this.previewContainer.addChild(g);
   }

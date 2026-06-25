@@ -30,6 +30,7 @@ const builders = new Map<string, AnimationBuilder>();
  *  использует этот ID для специальной анимационной ветки. При добавлении
  *  других способностей с похожим поведением стоит вынести hint в шаблон. */
 const DASH_ABILITY_ID = 'dash';
+const SWOOP_ABILITY_ID = 'swoop';
 
 /** Длительность одной клетки рывка — быстрее обычного передвижения. */
 const DASH_MOVE_DURATION_MS = 110;
@@ -44,9 +45,10 @@ export function registerAnimationBuilder(eventType: string, builder: AnimationBu
 
 registerAnimationBuilder('ENTITY_MOVED', (event, children) => {
   if (event.type !== 'ENTITY_MOVED') return null;
+  const stepType = event.movementType === 'jump' ? 'JUMP' : 'MOVE';
   return [{
     step: {
-      type: 'MOVE',
+      type: stepType,
       entityId: event.entityId,
       from: event.from,
       to: event.to,
@@ -228,6 +230,11 @@ registerAnimationBuilder('CAST_RESOLVED', (event, children) => {
     }
   }
 
+  if (event.abilityId === SWOOP_ABILITY_ID) {
+    // Налёт — особая анимация: без каста, с прыжком кастера и ударом по земле.
+    return buildSwoopAnimationNodes(event.entityId, event.targets, children);
+  }
+
   return [{ step: castStep, children }];
 });
 
@@ -337,6 +344,11 @@ registerAnimationBuilder('ABILITY_USED', (event, children) => {
     }
   }
 
+  if (event.abilityId === SWOOP_ABILITY_ID) {
+    // Налёт — особая анимация: без каста, с прыжком кастера и ударом по земле.
+    return buildSwoopAnimationNodes(event.entityId, event.targets, children);
+  }
+
   return [{ step: castStep, children }];
 });
 
@@ -375,6 +387,7 @@ function getNodeEntityId(node: AnimationNode): string | null {
   const step = node.step;
   switch (step.type) {
     case 'MOVE':
+    case 'JUMP':
     case 'DEATH':
     case 'ABILITY_CAST':
     case 'STATUS_BURST':
@@ -527,6 +540,49 @@ function buildDashAnimationNodes(casterId: string, childNodes: AnimationNode[]):
   }
 
   return [...casterMoves, ...otherRoots];
+}
+
+/** Строит специализированное дерево анимаций для Налёта.
+ *
+ * - Пропускает анимацию каста.
+ * - Запускает прыжок кастера.
+ * - После приземления параллельно запускаются:
+ *   взрыв/удар по земле, тряска соседних тайлов, урон, отталкивание целей.
+ */
+function buildSwoopAnimationNodes(
+  casterId: string,
+  targets: Position[],
+  childNodes: AnimationNode[],
+): AnimationNode[] {
+  const target = targets[0];
+  if (!target) return childNodes;
+
+  const casterJump = childNodes.find((n) => n.step.type === 'JUMP' && n.step.entityId === casterId);
+  const effectNodes = childNodes.filter((n) => !(n.step.type === 'JUMP' && n.step.entityId === casterId));
+
+  const landingEffects: AnimationNode[] = [];
+
+  // Удар по земле — визуальный взрыв в точке приземления.
+  landingEffects.push({
+    step: { type: 'EXPLOSION', center: target, radius: 1 },
+    children: [],
+  });
+
+  // Тряска соседних тайлов (8 клеток вокруг точки приземления).
+  landingEffects.push({
+    step: { type: 'TILE_SHAKE', center: target, radius: 1 },
+    children: [],
+  });
+
+  landingEffects.push(...effectNodes);
+
+  if (!casterJump) {
+    return landingEffects;
+  }
+
+  casterJump.children.push(...landingEffects);
+
+  return [casterJump];
 }
 
 /** Рекурсивно конвертирует ExecutionNode в AnimationNode[].

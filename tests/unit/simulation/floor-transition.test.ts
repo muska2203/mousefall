@@ -40,7 +40,7 @@ describe('stairsTransitionReaction — обнаружение лестницы',
       action: { type: 'MOVE', entityId: 'player', dx: 0, dy: 0 },
     });
     const moveEvent: EntityMovedEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', movementType: 'walk',
       entityId: 'player',
       from: { x: 5, y: 5 },
       to: { x: 5, y: 5 },
@@ -66,7 +66,7 @@ describe('stairsTransitionReaction — обнаружение лестницы',
       action: { type: 'MOVE', entityId: 'player', dx: 0, dy: 0 },
     });
     const moveEvent: EntityMovedEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', movementType: 'walk',
       entityId: 'player',
       from: { x: 4, y: 5 },
       to: { x: 5, y: 5 },
@@ -87,7 +87,7 @@ describe('stairsTransitionReaction — обнаружение лестницы',
       action: { type: 'MOVE', entityId: 'enemy_1', dx: 0, dy: 0 },
     });
     const moveEvent: EntityMovedEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', movementType: 'walk',
       entityId: 'enemy_1',
       from: { x: 2, y: 3 },
       to: { x: 3, y: 3 },
@@ -109,7 +109,7 @@ describe('stairsTransitionReaction — обнаружение лестницы',
       action: { type: 'MOVE', entityId: 'player', dx: 0, dy: 0 },
     });
     const moveEvent: EntityMovedEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', movementType: 'walk',
       entityId: 'player',
       from: { x: 5, y: 5 },
       to: { x: 5, y: 5 },

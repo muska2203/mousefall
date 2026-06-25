@@ -15,7 +15,8 @@
   },
   "grantedAbilities": [
     "dash",
-    "parry"
+    "parry",
+    "swoop"
   ],
   "equipModifiers": []
 }

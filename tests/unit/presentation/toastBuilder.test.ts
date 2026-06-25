@@ -18,7 +18,7 @@ function makeResult(actions: ExecutionNode[]): SimulationResult {
 
 describe('extractToasts', () => {
   it('returns empty array when there are no rejected actions', () => {
-    const node = makeExecNode({ type: 'ENTITY_MOVED', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
+    const node = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
     const result = makeResult([node]);
 
     expect(extractToasts(result)).toHaveLength(0);

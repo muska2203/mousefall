@@ -37,10 +37,10 @@ describe('isEventVisible', () => {
       ],
     });
 
-    const visibleMove = { type: 'ENTITY_MOVED' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 2, y: 2 } };
+    const visibleMove = { type: 'ENTITY_MOVED' as const, movementType: 'walk' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 2, y: 2 } };
     expect(isEventVisible(visibleMove, state)).toBe(true);
 
-    const hiddenMove = { type: 'ENTITY_MOVED' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } };
+    const hiddenMove = { type: 'ENTITY_MOVED' as const, movementType: 'walk' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } };
     expect(isEventVisible(hiddenMove, state)).toBe(false);
   });
 
@@ -116,7 +116,7 @@ describe('filterByFOV', () => {
       ],
     });
 
-    const node = makeNode({ type: 'ENTITY_MOVED', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
+    const node = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
     const result = makeResult([node]);
     const filtered = filterByFOV(result, state);
 
@@ -131,7 +131,7 @@ describe('filterByFOV', () => {
       ],
     });
 
-    const node = makeNode({ type: 'ENTITY_MOVED', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
+    const node = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
     const result = makeResult([node]);
     const filtered = filterByFOV(result, state);
 
@@ -168,8 +168,8 @@ describe('filterByFOV', () => {
       ],
     });
 
-    const visibleNode = makeNode({ type: 'ENTITY_MOVED', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
-    const hiddenNode = makeNode({ type: 'ENTITY_MOVED', entityId: 'e2', from: { x: 1, y: 1 }, to: { x: 1, y: 0 } });
+    const visibleNode = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
+    const hiddenNode = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e2', from: { x: 1, y: 1 }, to: { x: 1, y: 0 } });
     const result = makeResult([visibleNode, hiddenNode]);
     const filtered = filterByFOV(result, state);
 

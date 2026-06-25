@@ -164,6 +164,116 @@ export class EntityRenderer {
     this.updateHealthBars(input, existingIds, plannedHpChanges);
   }
 
+  /** Анимация прыжка спрайта между тайлами.
+   *
+   * Фазы:
+   * 1. Подготовка: сжатие по вертикали.
+   * 2. Рывок/отрыв: резкое восстановление масштаба + начало полёта.
+   * 3. Полёт: дугообразная траектория к цели.
+   * 4. Приземление: сжатие от удара.
+   * 5. Отскок: небольшое подпрыгивание на месте.
+   */
+  animateJump(entityId: string, from: Position, to: Position, config: AnimationConfigEntry): Promise<void> {
+    return new Promise((resolve) => {
+      const sprite = this.sprites.get(entityId);
+      if (!sprite) {
+        resolve();
+        return;
+      }
+
+      this.cancelAnimationFor(entityId);
+
+      const isActor = sprite.anchor.x === ACTOR_ANCHOR_X && sprite.anchor.y === ACTOR_ANCHOR_Y;
+      const offsetX = isActor ? TILE_SIZE / 2 : 0;
+      const offsetY = isActor ? TILE_SIZE * ACTOR_OFFSET_Y_FACTOR : 0;
+
+      sprite.visible = true;
+
+      const fromX = from.x * TILE_SIZE + offsetX;
+      const fromY = from.y * TILE_SIZE + offsetY;
+      const toX = to.x * TILE_SIZE + offsetX;
+      const toY = to.y * TILE_SIZE + offsetY;
+
+      const baseScaleX = sprite.scale.x;
+      const baseScaleY = sprite.scale.y;
+      const jumpHeight = TILE_SIZE * 0.6;
+      const anticipationSquash = 0.7;
+      const launchStretch = 1.1;
+      const landingSquash = 0.8;
+      const recoveryStretch = 1.05;
+
+      sprite.x = fromX;
+      sprite.y = fromY;
+
+      const tween = new Tween({
+        duration: config.duration,
+        easing: config.easing,
+        onUpdate: (p) => {
+          let x: number;
+          let y: number;
+          let scaleY = baseScaleY;
+          let scaleX = baseScaleX;
+
+          if (p < 0.15) {
+            // Подготовка: сжатие.
+            const t = p / 0.15;
+            scaleY = lerp(baseScaleY, baseScaleY * anticipationSquash, t);
+            scaleX = lerp(baseScaleX, baseScaleX * (1 + (1 - anticipationSquash) * 0.5), t);
+            x = fromX;
+            y = fromY + TILE_SIZE * 0.15 * t;
+          } else if (p < 0.25) {
+            // Рывок: резкое восстановление + старт полёта.
+            const t = (p - 0.15) / 0.10;
+            scaleY = lerp(baseScaleY * anticipationSquash, baseScaleY * launchStretch, t);
+            scaleX = lerp(baseScaleX * (1 + (1 - anticipationSquash) * 0.5), baseScaleX * 0.95, t);
+            const flightT = t * 0.2;
+            x = lerp(fromX, toX, flightT);
+            y = lerp(fromY, toY, flightT) - Math.sin(flightT * Math.PI) * jumpHeight * 0.2;
+          } else if (p < 0.85) {
+            // Полёт: дугообразная траектория.
+            const t = (p - 0.25) / 0.60;
+            scaleY = lerp(baseScaleY * launchStretch, baseScaleY, t);
+            scaleX = lerp(baseScaleX * 0.95, baseScaleX, t);
+            x = lerp(fromX, toX, 0.2 + t * 0.8);
+            const arc = Math.sin(t * Math.PI);
+            y = lerp(fromY, toY, 0.2 + t * 0.8) - arc * jumpHeight;
+          } else if (p < 0.95) {
+            // Приземление: сжатие от удара.
+            const t = (p - 0.85) / 0.10;
+            scaleY = lerp(baseScaleY, baseScaleY * landingSquash, t);
+            scaleX = lerp(baseScaleX, baseScaleX * (1 + (1 - landingSquash) * 0.5), t);
+            x = toX;
+            y = toY;
+          } else {
+            // Отскок: подпрыгивание на месте.
+            const t = (p - 0.95) / 0.05;
+            const bounce = Math.sin(t * Math.PI);
+            scaleY = lerp(baseScaleY * landingSquash, baseScaleY * recoveryStretch, bounce);
+            scaleX = lerp(baseScaleX * (1 + (1 - landingSquash) * 0.5), baseScaleX, bounce);
+            x = toX;
+            y = toY - TILE_SIZE * 0.08 * Math.sin(t * Math.PI);
+          }
+
+          sprite.x = x;
+          sprite.y = y;
+          sprite.zIndex = y;
+          sprite.scale.set(scaleX, scaleY);
+        },
+        onComplete: () => {
+          sprite.x = toX;
+          sprite.y = toY;
+          sprite.scale.set(baseScaleX, baseScaleY);
+          this.activeAnimations.delete(entityId);
+          resolve();
+        },
+      });
+
+      const anim: ActiveAnimation = { tween, onComplete: resolve };
+      this.activeAnimations.set(entityId, anim);
+      tween.start(performance.now());
+    });
+  }
+
   /** Анимация перемещения спрайта между тайлами. Возвращает Promise, резолвящийся по завершении. */
   animateMove(entityId: string, from: Position, to: Position, config: AnimationConfigEntry, sway: boolean = true): Promise<void> {
     return new Promise((resolve) => {
@@ -826,6 +936,7 @@ function getStaticEntityAlpha(state: RenderInput['state'], x: number, y: number,
 function collectAnimatedEntityIds(node: AnimationNode, out: Set<string>): void {
   switch (node.step.type) {
     case 'MOVE':
+    case 'JUMP':
       out.add(node.step.entityId);
       break;
     case 'ATTACK':

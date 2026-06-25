@@ -17,6 +17,8 @@ export type AnimationConfigEntry = {
 
 export const ANIMATION_CONFIG = {
   MOVE: { duration: 200, blocking: true, easing: Easing.linear },
+  JUMP: { duration: 450, blocking: true, easing: Easing.easeOutQuad },
+  TILE_SHAKE: { duration: 250, blocking: false, easing: Easing.linear },
   ATTACK: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
   DAMAGE: { duration: 800, blocking: true, easing: Easing.linear },
   HP_CHANGE: { duration: 100, blocking: false, easing: Easing.easeOutQuad },

@@ -1,6 +1,6 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { GameSession } from '../../../src/presentation/gameSession';
-import { makeGameState, makePlayer } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 
@@ -23,6 +23,7 @@ describe('GameSession targeting', () => {
       abilities: new Map([
         ['fireball', mockAbility('fireball')],
         ['magic_slap', mockAbility('magic_slap')],
+        ['swoop', mockAbility('swoop', { cooldown: 2, apCost: 2 })],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -201,6 +202,38 @@ describe('GameSession targeting', () => {
     const vm = session.getViewModel();
     expect(vm.renderInput?.targetingOverlay).not.toBeNull();
     expect(vm.toasts).toHaveLength(0);
+  });
+
+  it('previewTarget for swoop includes PUSH intent', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[7]![5] = true;
+    state.visible[7]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'swoop', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    const enemy = makeEnemy({ id: 'enemy_1', x: 7, y: 6, hp: 50, maxHp: 50 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(enemy.id, enemy);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('swoop');
+    const preview = session.previewTarget({ x: 7, y: 5 });
+
+    expect(preview.valid).toBe(true);
+    const pushIntents = preview.intents.filter(i => i.type === 'PUSH');
+    expect(pushIntents).toHaveLength(1);
+    expect(pushIntents[0]).toMatchObject({
+      type: 'PUSH',
+      entityId: enemy.id,
+      from: { x: 7, y: 6 },
+      to: { x: 7, y: 7 },
+    });
   });
 
   it('beginTargeting shows toast when ability is not found', () => {
