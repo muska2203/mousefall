@@ -906,6 +906,7 @@ export class GameSession {
   /** Начать выбор цели для способности. */
   beginTargeting(abilityId: string): void {
     if (!this.simulation) return;
+    if (this.animation.phase === 'animating') return;
 
     const info = this.simulation.getAbilityInfo(abilityId);
     if (!info) {

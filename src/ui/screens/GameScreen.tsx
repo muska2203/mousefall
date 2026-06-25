@@ -118,6 +118,15 @@ export function GameScreen({session, onModeChange}: Props) {
     [session, onModeChange, isInputBlocked],
   );
 
+  const handleItemClick = useCallback(
+    (itemInstanceId: string) => {
+      if (session.getMode() !== 'playing') return;
+      if (isInputBlocked) return;
+      session.interactWithItem(itemInstanceId);
+    },
+    [session, isInputBlocked],
+  );
+
   const handleZoom = useCallback(
     (delta: number) => {
       session.setZoom(delta);
@@ -347,13 +356,11 @@ export function GameScreen({session, onModeChange}: Props) {
       />
       <InventoryPanel
         items={renderInput.inventory}
-        onItemClick={(instanceId) => session.interactWithItem(instanceId)}
+        onItemClick={handleItemClick}
       />
       <SkillsPanel
         skills={renderInput.playerSkills}
-        onSkillClick={(abilityId) => {
-          session.beginTargeting(abilityId);
-        }}
+        onSkillClick={handleSkillClick}
       />
 
     </>

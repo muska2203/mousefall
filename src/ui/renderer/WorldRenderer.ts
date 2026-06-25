@@ -79,10 +79,12 @@ export class WorldRenderer {
 
   /**
    * Обновить отрисовку на основе текущего состояния игры.
-   * Если идёт камера-анимация, root-позиция будет переопределена в ticker.
    * Если для игрока запланирована анимация MOVE — камера привязывается к
    * начальной клетке анимации, чтобы избежать телепорта камеры в конечную
    * позицию до старта анимации.
+   * Если камера уже анимируется, root-позицию не сбрасываем — позволяем tween
+   * обновлять её в ticker. Иначе любой повторный render() во время движения
+   * (ресайз, hover, таргетинг, toast) телепортировал бы камеру назад.
    */
   render(input: RenderInput): void {
     this.lastInput = input;
@@ -104,8 +106,10 @@ export class WorldRenderer {
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);
 
     this.root.scale.set(scale);
-    this.root.x = -cameraX * scale;
-    this.root.y = -cameraY * scale;
+    if (!this.cameraAnimation) {
+      this.root.x = -cameraX * scale;
+      this.root.y = -cameraY * scale;
+    }
 
     this.syncTextLayer();
   }

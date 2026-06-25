@@ -257,4 +257,33 @@ describe('GameSession targeting', () => {
     expect(vm.toasts[0]!.kind).toBe('error');
   });
 
+  it('beginTargeting is ignored while animations are playing', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    const enemy = makeEnemy({ x: 6, y: 5 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(enemy.id, enemy);
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.dispatch({ type: 'MOVE', entityId: player.id, dx: 0, dy: 1 });
+
+    expect(session.getViewModel().renderInput?.phase).toBe('animating');
+
+    session.beginTargeting('fireball');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.targetingOverlay).toBeNull();
+    expect(vm.toasts).toHaveLength(0);
+  });
+
 });
