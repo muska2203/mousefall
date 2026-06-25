@@ -1,8 +1,9 @@
-import { GameState, ValidationResult, Entity, Position } from '@simulation/types';
+import { GameState, ValidationResult, Entity } from '@simulation/types';
 import { ActionHandler, ExecutionBuilder, ExecutionNode, UseAbilityAction } from '@simulation/systems/actions/types';
 import { Intent } from '@simulation/systems/intents/types';
 import { executeIntent } from '@simulation/systems/intents/execute-intent';
 import { getSkillExecutor } from '@simulation/skills/skillExecutor';
+import { validateAbilityTargets } from '@simulation/skills/target-validation';
 import { getAbility } from '@content/registry';
 
 export const useAbilityAction: ActionHandler = {
@@ -30,24 +31,9 @@ export const useAbilityAction: ActionHandler = {
       return { ok: false, reasonCode: 'already_casting' };
     }
 
-    const executor = getSkillExecutor(action.abilityId);
-    if (!executor) {
-      return { ok: false, reasonCode: 'executor_not_found' };
-    }
-
-    const validTargets = executor.getValidTargets(state, actor);
-    for (const target of action.targets) {
-      if (!positionInList(target, validTargets)) {
-        return { ok: false, reasonCode: 'invalid_target' };
-      }
-    }
-
-    const targetMode = executor.getTargetMode(state, actor);
-    if (targetMode.type === 'single' && action.targets.length !== 1) {
-      return { ok: false, reasonCode: 'wrong_target_count' };
-    }
-    if (targetMode.type === 'multi' && action.targets.length !== targetMode.count) {
-      return { ok: false, reasonCode: 'wrong_target_count' };
+    const targetValidation = validateAbilityTargets(state, actor, action.abilityId, action.targets);
+    if (!targetValidation.ok) {
+      return targetValidation;
     }
 
     return { ok: true };
@@ -118,6 +104,4 @@ export const useAbilityAction: ActionHandler = {
   },
 };
 
-function positionInList(pos: Position, list: Position[]): boolean {
-  return list.some(p => p.x === pos.x && p.y === pos.y);
-}
+

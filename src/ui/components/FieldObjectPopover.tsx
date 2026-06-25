@@ -112,6 +112,24 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
             </div>
           )}
 
+          {popover.data.preparingAbility && (
+            <div className="field-popover-section">
+              <h4 className="field-popover-section-title">{t('fieldObjectPopover.preparingTitle')}</h4>
+              <div className="field-popover-skill">
+                {popover.data.preparingAbility.icon && (
+                  <img
+                    className="field-popover-skill__icon"
+                    src={popover.data.preparingAbility.icon}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+                <span className="field-popover-skill__name">{popover.data.preparingAbility.name}</span>
+              </div>
+            </div>
+          )}
+
           {popover.data.loot.length > 0 && (
             <div className="field-popover-section">
               <h4 className="field-popover-section-title">{t('fieldObjectPopover.possibleLootTitle')}</h4>

@@ -17,6 +17,7 @@ export type {
   TargetMode,
   AttackAction,
   UseAbilityAction,
+  PrepareAbilityAction,
 } from "@simulation/core-types.ts";
 
 /** Обработчик игрового действия.

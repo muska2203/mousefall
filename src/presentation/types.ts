@@ -283,6 +283,20 @@ export type EnemyPopoverViewModel = {
   maxHp: number;
   skills: Array<{ name: string; icon: string | null; cooldown: number; maxCooldown: number }>;
   loot: Array<{ name: string; icon: string }>;
+  /** Информация о подготовленном скилле, если враг его готовит */
+  preparingAbility: { name: string; icon: string | null } | null;
+};
+
+/** Визуальное представление подготовленного AI-намерения. */
+export type AIPreparedIntentViewModel = {
+  entityId: string;
+  abilityId: string;
+  name: string;
+  icon: string | null;
+  fixedTargets: Position[];
+  affectedPositions: Position[];
+  /** Интенты выполнения скилла для отображения превью эффектов (урон, движение, статусы). */
+  intents: PresentationIntent[];
 };
 
 export type StairsPopoverViewModel = {
@@ -339,6 +353,7 @@ export type PresentationIntent =
   | { type: 'PUSH'; entityId: string; dx: number; dy: number; from: Position; to: Position }
   | { type: 'DASH'; entityId: string; dx: number; dy: number; distance: number; from: Position; to: Position }
   | { type: 'DAMAGE'; entityId: string; damage: number; damageType: import('@simulation/core-types').DamageType; position: Position }
+  | { type: 'HEAL'; entityId: string; amount: number; position: Position }
   | { type: 'DIE'; entityId: string; position: Position }
   | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
   | { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' }
@@ -389,6 +404,11 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
       const entity = state.entities.get(intent.entityId);
       if (!entity) return null;
       return { type: 'DAMAGE', entityId: intent.entityId, damage: intent.damage, damageType: intent.damageType, position: { x: entity.x, y: entity.y } };
+    }
+    case 'HEAL': {
+      const entity = state.entities.get(intent.entityId);
+      if (!entity) return null;
+      return { type: 'HEAL', entityId: intent.entityId, amount: intent.amount, position: { x: entity.x, y: entity.y } };
     }
     case 'DIE': {
       const entity = state.entities.get(intent.entityId);
@@ -466,6 +486,8 @@ export type RenderInput = {
   fieldObjectPopover: FieldObjectPopoverViewModel | null;
   /** Подсказка текущего доступного взаимодействия (F) рядом с объектом. */
   interactionHint: InteractionHintViewModel | null;
+  /** Подготовленные AI-намерения, видимые игроку (телеграфы скиллов). */
+  aiPreparedIntents: AIPreparedIntentViewModel[];
   /** Включён ли debug-режим. Используется renderer'ом для отключения тумана войны. */
   debugEnabled: boolean;
   /** Включена ли debug-визуализация комнат и коридоров на карте. */

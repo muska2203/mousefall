@@ -24,6 +24,8 @@ import { statusAppliedBuilder } from './builders/statusApplied';
 import { statusTickedBuilder } from './builders/statusTicked';
 import { statusStacksAdjustedBuilder } from './builders/statusStacksAdjusted';
 import { abilityUsedBuilder } from './builders/abilityUsed';
+import { abilityPreparedBuilder } from './builders/abilityPrepared';
+import { abilityPreparedCancelledBuilder } from './builders/abilityPreparedCancelled';
 import { castResolvedBuilder } from './builders/castResolved';
 
 // Регистрация скилловых composers (side-effect).
@@ -46,6 +48,8 @@ registerAnimationBuilder('STATUS_APPLIED', statusAppliedBuilder);
 registerAnimationBuilder('STATUS_TICKED', statusTickedBuilder);
 registerAnimationBuilder('STATUS_STACKS_ADJUSTED', statusStacksAdjustedBuilder);
 registerAnimationBuilder('ABILITY_USED', abilityUsedBuilder);
+registerAnimationBuilder('ABILITY_PREPARED', abilityPreparedBuilder);
+registerAnimationBuilder('ABILITY_PREPARED_CANCELLED', abilityPreparedCancelledBuilder);
 registerAnimationBuilder('CAST_RESOLVED', castResolvedBuilder);
 
 export { buildAnimationTree } from './core/treeBuilder';

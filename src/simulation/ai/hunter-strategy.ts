@@ -21,12 +21,8 @@
 
 import { registerStrategy } from './strategy-registry';
 import type { AiActor, EnemyEntity, GameState } from '@simulation/types';
-import { canSeePlayer, tryCastAbility, tryAttackOrMoveToward, wait } from './ai-helpers';
-
-/** Type guard: проверяет, что актор является врагом с AI-состоянием. */
-function isEnemyEntity(actor: AiActor): actor is EnemyEntity {
-  return 'aiState' in actor;
-}
+import { canSeePlayer, tryCastAbility, tryPrepareAbility, tryAttackOrMoveToward, wait } from './ai-helpers';
+import { isEnemyEntity } from './ai-state';
 
 registerStrategy('hunter', {
   updateState(actor, state) {
@@ -36,7 +32,7 @@ registerStrategy('hunter', {
 
   decideAction(actor, state) {
     if (!isEnemyEntity(actor)) {
-      return wait(actor as EnemyEntity);
+      return wait(actor);
     }
     const enemy = actor;
 
@@ -45,7 +41,21 @@ registerStrategy('hunter', {
       return wait(enemy);
     }
 
-    // Приоритет 2: начать кастование способности
+    // Приоритет 2: если уже есть подготовленное намерение — ждём до следующего хода
+    if (enemy.aiState.preparedIntent) {
+      return wait(enemy);
+    }
+
+    // Приоритет 3: подготовить скилл к выполнению в следующий ход
+    // Подготовка может прервать текущие действия, если враг видит игрока
+    if (canSeePlayer(enemy, state)) {
+      const prepareAction = tryPrepareAbility(enemy, state);
+      if (prepareAction) {
+        return prepareAction;
+      }
+    }
+
+    // Приоритет 4: начать кастование способности
     const castAction = tryCastAbility(enemy, state);
     if (castAction) {
       return castAction;

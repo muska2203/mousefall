@@ -16,6 +16,9 @@
     "weapon": "cat_claw_big",
     "armor": "common_tin_plate"
   },
+  "abilities": [
+    "magic_slap"
+  ],
   "lootTable": [
     {
       "templateId": "health_potion",

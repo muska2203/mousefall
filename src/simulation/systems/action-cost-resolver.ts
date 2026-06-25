@@ -60,6 +60,9 @@ export class DefaultActionPointCostResolver
         return apCost;
       }
 
+      case 'PREPARE_ABILITY':
+        return 0;
+
       case 'USE_ITEM': {
         const actor = state.entities.get(action.entityId);
         if (!actor || !('inventory' in actor)) {

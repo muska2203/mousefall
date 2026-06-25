@@ -34,6 +34,16 @@ export function mapEnemyToPopover(enemy: EnemyEntity, locale: Locale): EnemyPopo
     };
   });
 
+  const preparingAbility = enemy.aiState.preparedIntent
+    ? (() => {
+        const abilityTemplate = tryGetLocalizedAbility(enemy.aiState.preparedIntent!.abilityId, locale);
+        return {
+          name: abilityTemplate?.name ?? enemy.aiState.preparedIntent!.abilityId,
+          icon: abilityTemplate?.spriteId ? resolveAbilityIcon(abilityTemplate.spriteId) : null,
+        };
+      })()
+    : null;
+
   return {
     name: template?.name ?? enemy.displayName,
     sprite: resolveEnemySprite(enemy.templateId),
@@ -45,5 +55,6 @@ export function mapEnemyToPopover(enemy: EnemyEntity, locale: Locale): EnemyPopo
     maxHp: enemy.maxHp,
     skills,
     loot,
+    preparingAbility,
   };
 }

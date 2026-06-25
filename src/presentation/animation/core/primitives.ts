@@ -18,6 +18,8 @@ type ItemDroppedEvent = Extract<GameEvent, { type: 'ITEM_DROPPED' }>;
 type FogUpdatedEvent = Extract<GameEvent, { type: 'FOG_UPDATED' }>;
 type EntityHealedEvent = Extract<GameEvent, { type: 'ENTITY_HEALED' }>;
 type CastCancelledEvent = Extract<GameEvent, { type: 'CAST_CANCELLED' }>;
+type AbilityPreparedEvent = Extract<GameEvent, { type: 'ABILITY_PREPARED' }>;
+type AbilityPreparedCancelledEvent = Extract<GameEvent, { type: 'ABILITY_PREPARED_CANCELLED' }>;
 type StatusAppliedEvent = Extract<GameEvent, { type: 'STATUS_APPLIED' }>;
 type DoorOpenedEvent = Extract<GameEvent, { type: 'DOOR_OPENED' }>;
 type DoorClosedEvent = Extract<GameEvent, { type: 'DOOR_CLOSED' }>;
@@ -264,6 +266,26 @@ export function castCancelledNode(event: CastCancelledEvent): AnimationNode {
   return floatingTextNode(
     undefined,
     'system.animation.castInterrupted',
+    event.from,
+    'cast_cancel',
+  );
+}
+
+/** Создать узел подготовки AI-скилла. */
+export function abilityPreparedNode(event: AbilityPreparedEvent): AnimationNode {
+  return floatingTextNode(
+    undefined,
+    'system.animation.abilityPrepared',
+    event.from,
+    'info',
+  );
+}
+
+/** Создать узел отмены подготовки AI-скилла. */
+export function abilityPreparedCancelledNode(event: AbilityPreparedCancelledEvent): AnimationNode {
+  return floatingTextNode(
+    undefined,
+    'system.animation.abilityPreparedCancelled',
     event.from,
     'cast_cancel',
   );

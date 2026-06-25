@@ -199,6 +199,7 @@ export interface ComponentsFieldObjectPopoverTranslations {
   cooldownSuffix: string;
   cooldownReady: string;
   possibleLootTitle: string;
+  preparingTitle: string;
 }
 
 export interface ComponentsInteractionHintTranslations {
@@ -335,6 +336,8 @@ export interface SystemLogBuilderTranslations {
   doorOpened: string;
   doorClosed: string;
   parryTriggered: string;
+  abilityPrepared: string;
+  abilityPreparedCancelled: string;
 }
 
 export interface SystemItemMapperTranslations {
@@ -380,6 +383,8 @@ export interface SystemAnimationTranslations {
   castInterrupted: string;
   doorOpened: string;
   doorClosed: string;
+  abilityPrepared: string;
+  abilityPreparedCancelled: string;
 }
 
 export interface SystemGameSessionTranslations {

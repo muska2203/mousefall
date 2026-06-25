@@ -1,7 +1,7 @@
 {
   "id": "cat_guardian",
   "maxAp": 3,
-  "aiStrategyId": "hunter",
+  "aiStrategyId": "simple-boss",
   "aiSightRadius": 8,
   "health": {
     "max": 80
@@ -13,11 +13,10 @@
     "vit": 6
   },
   "equipment": {
-    "weapon": "cat_guardian_maul",
+    "weapon": "common_splinter_blade",
     "armor": "cat_guardian_plate"
   },
   "abilities": [
-    
   ],
   "lootTable": [
     {

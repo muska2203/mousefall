@@ -11,6 +11,7 @@ function mockAbility(id: string): AbilityTemplate {
     cooldown: 3,
     castTime: 0,
     apCost: 1,
+    aiPreparable: false,
   };
 }
 

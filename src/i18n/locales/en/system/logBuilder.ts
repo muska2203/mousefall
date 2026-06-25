@@ -14,4 +14,6 @@ export const enLogBuilder = {
   doorOpened: 'Door opened',
   doorClosed: 'Door closed',
   parryTriggered: '{{name}} parries',
+  abilityPrepared: '{{name}} is preparing {{ability}}',
+  abilityPreparedCancelled: '{{name}} interrupted preparation',
 } as const satisfies SystemLogBuilderTranslations;

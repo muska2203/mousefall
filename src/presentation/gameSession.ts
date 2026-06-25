@@ -23,7 +23,8 @@ import {findDoorAt} from '@simulation/state';
 import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel, AIPreparedIntentViewModel, PresentationIntent} from './types';
+import {toPresentationIntent} from './types';
 import {
   getAllLocalizedPlayerTemplates,
   tryGetPlayerTemplate,
@@ -416,6 +417,7 @@ export class GameSession {
 
     const fieldObjectPopover = this.buildFieldObjectPopover(state);
     const interactionHint = this.buildInteractionHint(state);
+    const aiPreparedIntents = this.buildAIPreparedIntents(state);
 
     return {
       state,
@@ -438,6 +440,7 @@ export class GameSession {
       runStats: state.runStats,
       fieldObjectPopover,
       interactionHint,
+      aiPreparedIntents,
       debugEnabled: this.debugEnabled,
       mapgenDebugEnabled: this.mapgenDebugEnabled,
     };
@@ -665,6 +668,50 @@ export class GameSession {
       selected: this.targeting.state.selectedTargets,
       previewIntents: preview?.intents ?? [],
     };
+  }
+
+  /**
+   * Собирает список подготовленных AI-намерений, видимых игроку.
+   * Зона поражения берётся из aiState (кэш, вычисленный при подготовке),
+   * чтобы не вычислять её повторно каждый кадр.
+   * Интенты выполнения получаются через SkillExecutor, чтобы отображать
+   * перемещение, урон, статусы и другие эффекты так же, как у пользовательских скиллов.
+   */
+  private buildAIPreparedIntents(state: Readonly<GameState>): AIPreparedIntentViewModel[] {
+    if (!this.simulation) return [];
+
+    const intents: AIPreparedIntentViewModel[] = [];
+
+    for (const entity of state.entities.values()) {
+      if (entity.type !== 'enemy') continue;
+      if (!('aiState' in entity)) continue;
+
+      const prepared = entity.aiState.preparedIntent;
+      if (!prepared) continue;
+
+      // Показываем только видимых врагов
+      if (!state.visible[entity.y]?.[entity.x]) continue;
+
+      const abilityTemplate = this.getAbilityTemplate(prepared.abilityId, this.locale);
+
+      const skillIntents = this.simulation.getAbilityIntents(prepared.abilityId, entity.id, prepared.fixedTargets);
+
+      const presentationIntents: PresentationIntent[] = skillIntents
+        .map((intent) => toPresentationIntent(intent, state))
+        .filter((intent): intent is PresentationIntent => intent !== null);
+
+      intents.push({
+        entityId: entity.id,
+        abilityId: prepared.abilityId,
+        name: abilityTemplate?.name ?? prepared.abilityId,
+        icon: abilityTemplate?.spriteId ? `/assets/skills/${abilityTemplate.spriteId}.png` : null,
+        fixedTargets: prepared.fixedTargets,
+        affectedPositions: prepared.affectedPositions,
+        intents: presentationIntents,
+      });
+    }
+
+    return intents;
   }
 
   private buildFieldObjectPopover(state: Readonly<GameState>): RenderInput['fieldObjectPopover'] {

@@ -23,6 +23,7 @@ export type {
   GrantAbilityIntent,
   RevokeAbilityIntent,
   BeginCastIntent,
+  PrepareAbilityIntent,
   HealIntent,
   RemoveItemIntent,
   OpenDoorIntent,

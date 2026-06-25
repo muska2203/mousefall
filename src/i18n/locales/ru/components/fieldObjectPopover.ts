@@ -8,4 +8,5 @@ export const ruFieldObjectPopover = {
   cooldownSuffix: ' ходов',
   cooldownReady: 'Готов',
   possibleLootTitle: 'Возможный лут',
+  preparingTitle: 'Готовит',
 } as const satisfies ComponentsFieldObjectPopoverTranslations;

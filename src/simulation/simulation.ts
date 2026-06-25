@@ -3,6 +3,7 @@ import {
     Actor,
     EnemyEntity,
     GameState,
+    Intent,
     PlayerEntity,
     Position,
     Simulation,
@@ -24,6 +25,7 @@ import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
 import {waitEntity} from "@simulation/systems/actions/wait-action.ts";
 import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
+import {prepareAbilityAction} from "@simulation/systems/actions/prepare-ability-action.ts";
 import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
@@ -33,6 +35,7 @@ import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import "@simulation/ai/hunter-strategy.ts";
+import "@simulation/ai/simple-boss-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
 import {createNewGameState, findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt, createInitialPlayer} from "@simulation/state.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
@@ -463,13 +466,55 @@ export class GameSimulation implements Simulation {
                 }
             }
 
+            // Выполнение подготовленного намерения AI
+            let preparedAbilityIdForCancel: string | null = null;
+            let preparedTargetsForCancel: Position[] = [];
+            if (enemyEntity.aiState.preparedIntent) {
+                if (isStunned(enemy)) {
+                    preparedAbilityIdForCancel = enemyEntity.aiState.preparedIntent.abilityId;
+                    preparedTargetsForCancel = enemyEntity.aiState.preparedIntent.fixedTargets;
+                    enemyEntity.aiState.preparedIntent = null;
+                } else {
+                    const prepared = enemyEntity.aiState.preparedIntent;
+                    enemyEntity.aiState.preparedIntent = null;
+                    const action: GameAction = {
+                        type: 'USE_ABILITY',
+                        entityId: enemy.id,
+                        abilityId: prepared.abilityId,
+                        targets: prepared.fixedTargets,
+                    };
+                    const builder = new ExecutionBuilder({
+                        type: 'ACTION_APPLIED',
+                        action,
+                    });
+                    const success = this.executeAction(
+                        enemy,
+                        action,
+                        builder,
+                        builder.root,
+                    );
+                    if (success) {
+                        actions.push(builder.root);
+                    }
+                }
+            }
+
             // Оглушённый враг пропускает ход.
             if (isStunned(enemy)) {
                 const stunBuilder = new ExecutionBuilder({
                     type: 'ACTION_APPLIED',
                     action: { type: 'WAIT', entityId: enemy.id },
                 });
-                skipStunnedActorTurn(this.state, enemy.id, stunBuilder, stunBuilder.root);
+                const stunNode = skipStunnedActorTurn(this.state, enemy.id, stunBuilder, stunBuilder.root);
+                if (preparedAbilityIdForCancel && stunNode) {
+                    stunBuilder.addChild(stunNode, {
+                        type: 'ABILITY_PREPARED_CANCELLED',
+                        entityId: enemy.id,
+                        abilityId: preparedAbilityIdForCancel,
+                        targets: preparedTargetsForCancel,
+                        from: { x: enemy.x, y: enemy.y },
+                    });
+                }
                 actions.push(stunBuilder.root);
                 continue;
             }
@@ -704,6 +749,18 @@ export class GameSimulation implements Simulation {
         return executor.getAffectedPositions(this.state, this.state.player, selectedTargets, hoveredTarget);
     }
 
+    getAbilityIntents(
+        abilityId: string,
+        entityId: string,
+        targets: Position[],
+    ): Intent[] {
+        const executor = getSkillExecutor(abilityId);
+        if (!executor) return [];
+        const entity = this.state.entities.get(entityId);
+        if (!entity) return [];
+        return executor.resolve(this.state, entity, targets);
+    }
+
     getAbilityInfo(abilityId: string) {
         try {
             const template = tryGetAbility(abilityId);
@@ -760,6 +817,7 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
     registry.register('DESCEND', descendAction);
     registry.register('ASCEND', ascendAction);
     registry.register('USE_ABILITY', useAbilityAction);
+    registry.register('PREPARE_ABILITY', prepareAbilityAction);
     registry.register('PICKUP', pickupEntity);
     registry.register('EQUIP', equipEntity);
     registry.register('UNEQUIP', unequipEntity);

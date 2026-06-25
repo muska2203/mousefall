@@ -14,4 +14,6 @@ export const ruLogBuilder = {
   doorOpened: 'Дверь открыта',
   doorClosed: 'Дверь закрыта',
   parryTriggered: '{{name}} паррирует',
+  abilityPrepared: '{{name}} готовит {{ability}}',
+  abilityPreparedCancelled: '{{name}} прервал подготовку',
 } as const satisfies SystemLogBuilderTranslations;

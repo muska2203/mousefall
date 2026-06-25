@@ -13,7 +13,7 @@
 import { t } from '@i18n/t';
 import type {GameEvent, GameState, SimulationResult, TurnSide} from '@simulation/types';
 import type {ExecutionNode} from '@simulation/systems/actions/types';
-import { getLocalizedItem, getLocalizedEntity, getLocalizedPlayerTemplate } from '@content/registry';
+import { getLocalizedItem, getLocalizedEntity, getLocalizedPlayerTemplate, tryGetLocalizedAbility } from '@content/registry';
 import type { Locale } from '@content/texts/lookup';
 
 
@@ -98,6 +98,18 @@ export function gameEventToLog(
         return { text: t('system.logBuilder.parryTriggered', { name }), variant: 'info' };
       }
       return null;
+    }
+    case 'ABILITY_PREPARED': {
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      const ability = tryGetLocalizedAbility(event.abilityId, locale);
+      const abilityName = ability?.name ?? event.abilityId;
+      return { text: t('system.logBuilder.abilityPrepared', { name, ability: abilityName }), variant: 'info' };
+    }
+    case 'ABILITY_PREPARED_CANCELLED': {
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      const ability = tryGetLocalizedAbility(event.abilityId, locale);
+      const abilityName = ability?.name ?? event.abilityId;
+      return { text: t('system.logBuilder.abilityPreparedCancelled', { name, ability: abilityName }), variant: 'info' };
     }
     default:
       return null;

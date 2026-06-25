@@ -198,6 +198,7 @@ export type GameAction =
   | DescendAction
   | AscendAction
   | UseAbilityAction
+  | PrepareAbilityAction
   | PickUpAction
   | EquipAction
   | UnequipAction
@@ -239,6 +240,13 @@ export type AscendAction = {
 
 export type UseAbilityAction = {
   type: 'USE_ABILITY';
+  entityId: EntityId;
+  abilityId: string;
+  targets: Position[];
+};
+
+export type PrepareAbilityAction = {
+  type: 'PREPARE_ABILITY';
   entityId: EntityId;
   abilityId: string;
   targets: Position[];
@@ -323,6 +331,7 @@ export type Intent =
   | GrantAbilityIntent
   | RevokeAbilityIntent
   | BeginCastIntent
+  | PrepareAbilityIntent
   | HealIntent
   | RemoveItemIntent
   | OpenDoorIntent
@@ -353,6 +362,7 @@ export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot
 export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
 export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
 export type BeginCastIntent = { type: 'BEGIN_CAST'; entityId: EntityId; abilityId: string; targets: Position[]; turns: number };
+export type PrepareAbilityIntent = { type: 'PREPARE_ABILITY'; entityId: EntityId; abilityId: string; targets: Position[] };
 export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
@@ -384,6 +394,8 @@ export type GameEvent =
   | StatusAppliedEvent
   | StatusRemovedEvent
   | AbilityUsedEvent
+  | AbilityPreparedEvent
+  | AbilityPreparedCancelledEvent
   | ResourceConsumedEvent
   | StatusTickedEvent
   | StatusStacksAdjustedEvent
@@ -446,6 +458,10 @@ export type StatusStacksAdjustedEvent = {
 };
 
 export type AbilityUsedEvent = { type: 'ABILITY_USED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
+
+export type AbilityPreparedEvent = { type: 'ABILITY_PREPARED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
+
+export type AbilityPreparedCancelledEvent = { type: 'ABILITY_PREPARED_CANCELLED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 
 export type ResourceConsumedEvent = { type: 'RESOURCE_CONSUMED'; entityId: EntityId; resource: 'ap'; amount: number; remaining: number };
 

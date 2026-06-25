@@ -15,6 +15,9 @@
   "equipment": {
     "weapon": "cat_claw_mid"
   },
+  "abilities": [
+    "swoop"
+  ],
   "lootTable": [
     {
       "templateId": "health_potion",

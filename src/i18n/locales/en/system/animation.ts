@@ -4,4 +4,6 @@ export const enAnimation = {
   castInterrupted: 'Cast interrupted',
   doorOpened: 'Door opened',
   doorClosed: 'Door closed',
+  abilityPrepared: 'Preparing',
+  abilityPreparedCancelled: 'Preparation interrupted',
 } as const satisfies SystemAnimationTranslations;

@@ -19,6 +19,7 @@ const COLORS = {
   selected: 0x4488ff,
   hover: 0xffff44,
   affected: 0xff4444,
+  aiPrepared: 0xff8800,
 };
 
 const ALPHAS = {
@@ -26,6 +27,7 @@ const ALPHAS = {
   selected: 0.15,
   hover: 0.15,
   affected: 0.15,
+  aiPrepared: 0.25,
 };
 
 export class TargetingRenderer {
@@ -50,31 +52,44 @@ export class TargetingRenderer {
 
     const overlay = input.targetingOverlay;
     const zoom = input.zoom;
-    if (!overlay) return;
 
-    // Оверлеи клеток
-    // Порядок наложения: valid → affected → selected → hover
-    for (const pos of overlay.valid) {
-      this.drawOverlay(pos, COLORS.valid, ALPHAS.valid);
-    }
-    for (const pos of overlay.affected) {
-      this.drawOverlay(pos, COLORS.affected, ALPHAS.affected);
-    }
-    for (const pos of overlay.selected) {
-      this.drawOverlay(pos, COLORS.selected, ALPHAS.selected);
-    }
-    if (overlay.hover) {
-      this.drawOverlay(overlay.hover, COLORS.hover, ALPHAS.hover);
+    if (overlay) {
+      // Оверлеи клеток
+      // Порядок наложения: valid → affected → selected → hover
+      for (const pos of overlay.valid) {
+        this.drawOverlay(pos, COLORS.valid, ALPHAS.valid);
+      }
+      for (const pos of overlay.affected) {
+        this.drawOverlay(pos, COLORS.affected, ALPHAS.affected);
+      }
+      for (const pos of overlay.selected) {
+        this.drawOverlay(pos, COLORS.selected, ALPHAS.selected);
+      }
+      if (overlay.hover) {
+        this.drawOverlay(overlay.hover, COLORS.hover, ALPHAS.hover);
+      }
     }
 
-    // Агрегируем и рисуем preview-интенты
+    // Подсветка зон подготовленных AI-скиллов — всегда, независимо от режима таргетинга игрока
+    for (const intent of input.aiPreparedIntents) {
+      for (const pos of intent.affectedPositions) {
+        this.drawOverlay(pos, COLORS.aiPrepared, ALPHAS.aiPrepared);
+      }
+    }
+
+    // Агрегируем и рисуем preview-интенты: как пользовательские, так и подготовленные AI
+    const previewIntents = [
+      ...(overlay?.previewIntents ?? []),
+      ...input.aiPreparedIntents.flatMap((intent) => intent.intents),
+    ];
+
     const damageByPos = new Map<string, number>();
     const statusesByPos = new Map<string, Array<{ type: string; duration: number; value: number }>>();
     const moves: Array<{ from: Position; to: Position }> = [];
     const pushes: Array<{ from: Position; to: Position }> = [];
     const deaths: Position[] = [];
 
-    for (const intent of overlay.previewIntents) {
+    for (const intent of previewIntents) {
       switch (intent.type) {
         case 'DAMAGE': {
           const key = `${intent.position.x},${intent.position.y}`;
@@ -100,6 +115,9 @@ export class TargetingRenderer {
           break;
         case 'DIE':
           deaths.push(intent.position);
+          break;
+        case 'HEAL':
+          // Лечение пока не визуализируется в превью таргетинга.
           break;
       }
     }

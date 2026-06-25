@@ -425,6 +425,13 @@ export type Simulation = {
     hoveredTarget: import("@simulation/core-types.ts").Position | null,
   ): import("@simulation/core-types.ts").Position[];
 
+  /** Возвращает интенты, которые исполнит способность от лица указанной сущности. */
+  getAbilityIntents(
+    abilityId: string,
+    entityId: string,
+    targets: import("@simulation/core-types.ts").Position[],
+  ): import("@simulation/core-types.ts").Intent[];
+
   /** Возвращает базовую информацию о способности для отображения в UI. */
   getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all'; castTime: number } | null;
 

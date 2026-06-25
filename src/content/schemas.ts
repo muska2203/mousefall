@@ -151,6 +151,7 @@ export const AbilityTemplateSchema = z.object({
   castTime:    z.number().int().nonnegative().default(0).describe('Ходов подготовки (0 = мгновенно)'),
   apCost: z.union([z.number().int().nonnegative(), z.literal('all')]).default(1)
     .describe('Стоимость использования в очках действий (AP). Число или "all" — все текущие AP актора.'),
+  aiPreparable: z.boolean().default(false).describe('AI может подготавливать этот скилл на следующий ход'),
 }).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;

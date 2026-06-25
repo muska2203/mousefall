@@ -44,6 +44,19 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
     });
   }
 
+  // Прерывание подготовки AI-намерения при стане
+  if (intent.status.type === 'stunned' && 'aiState' in target && target.aiState && target.aiState.preparedIntent) {
+    const { abilityId, fixedTargets } = target.aiState.preparedIntent;
+    target.aiState.preparedIntent = null;
+    builder.addChild(parent, {
+      type: 'ABILITY_PREPARED_CANCELLED',
+      entityId: intent.entityId,
+      abilityId,
+      targets: fixedTargets,
+      from: { x: target.x, y: target.y },
+    });
+  }
+
   return builder.addChild(parent, {
     type: 'STATUS_APPLIED',
     entityId: intent.entityId,

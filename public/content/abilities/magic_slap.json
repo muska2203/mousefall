@@ -2,5 +2,6 @@
   "id": "magic_slap",
   "spriteId": "magic_slap",
   "cooldown": 2,
-  "apCost": 1
+  "apCost": 1,
+  "aiPreparable": true
 }

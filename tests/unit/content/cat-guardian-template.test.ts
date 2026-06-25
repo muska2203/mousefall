@@ -27,8 +27,8 @@ describe('Шаблон босса cat_guardian', () => {
     expect(parsed.maxAp).toBe(3);
     expect(parsed.health.max).toBe(80);
     expect(parsed.baseStats).toEqual({ str: 6, dex: 2, int: 2, vit: 6 });
-    expect(parsed.equipment).toEqual({ weapon: 'cat_guardian_maul', armor: 'cat_guardian_plate' });
-    expect(parsed.abilities).toEqual([]);
+    expect(parsed.equipment).toEqual({ weapon: 'common_splinter_blade', armor: 'cat_guardian_plate' });
+    expect(parsed.abilities).toEqual(['fireball']);
     expect(parsed.xpReward).toBe(150);
     expect(parsed.renderScale).toBe(1.8);
   });

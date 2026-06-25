@@ -183,6 +183,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     },
     fieldObjectPopover: null,
     interactionHint: null,
+    aiPreparedIntents: [],
     debugEnabled: false,
     mapgenDebugEnabled: false,
   };

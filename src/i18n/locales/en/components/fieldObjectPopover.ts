@@ -8,4 +8,5 @@ export const enFieldObjectPopover = {
   cooldownSuffix: ' turns',
   cooldownReady: 'Ready',
   possibleLootTitle: 'Possible Loot',
+  preparingTitle: 'Preparing',
 } as const satisfies ComponentsFieldObjectPopoverTranslations;
