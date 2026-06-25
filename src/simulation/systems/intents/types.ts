@@ -6,6 +6,7 @@ export type {
   Intent,
   MoveIntent,
   JumpIntent,
+  DashIntent,
   PushIntent,
   DamageIntent,
   DieIntent,

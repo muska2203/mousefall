@@ -59,7 +59,7 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
         const targetPos = { x: actor.x + action.dx, y: actor.y + action.dy };
         return isPosVisible(actor, state) || isPosVisible(targetPos, state);
       }
-      // Для остальных типов корень "растворится" в animationPlanner,
+      // Для остальных типов корень "растворится" в animation builders,
       // но пропускаем его, чтобы дети могли подняться
       return true;
     }

@@ -14,7 +14,7 @@ export function emitEntityMoved(
     dy: number,
     builder: ExecutionBuilder,
     parent: ExecutionNode,
-    movementType: 'walk' | 'jump',
+    movementType: 'walk' | 'jump' | 'dash',
 ): ExecutionNode | null {
     const entity = findEntity(state, entityId);
     if (!entity) return null;

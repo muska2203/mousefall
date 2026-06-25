@@ -337,6 +337,7 @@ export type PresentationIntent =
   | { type: 'MOVE'; entityId: string; dx: number; dy: number; from: Position; to: Position }
   | { type: 'JUMP'; entityId: string; dx: number; dy: number; from: Position; to: Position }
   | { type: 'PUSH'; entityId: string; dx: number; dy: number; from: Position; to: Position }
+  | { type: 'DASH'; entityId: string; dx: number; dy: number; distance: number; from: Position; to: Position }
   | { type: 'DAMAGE'; entityId: string; damage: number; damageType: import('@simulation/core-types').DamageType; position: Position }
   | { type: 'DIE'; entityId: string; position: Position }
   | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
@@ -370,6 +371,19 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
       const entity = state.entities.get(intent.entityId);
       if (!entity) return null;
       return { type: 'PUSH', entityId: intent.entityId, dx: intent.dx, dy: intent.dy, from: { x: entity.x, y: entity.y }, to: { x: entity.x + intent.dx, y: entity.y + intent.dy } };
+    }
+    case 'DASH': {
+      const entity = state.entities.get(intent.entityId);
+      if (!entity) return null;
+      return {
+        type: 'DASH',
+        entityId: intent.entityId,
+        dx: intent.dx,
+        dy: intent.dy,
+        distance: intent.distance,
+        from: { x: entity.x, y: entity.y },
+        to: { x: entity.x + intent.dx * intent.distance, y: entity.y + intent.dy * intent.distance },
+      };
     }
     case 'DAMAGE': {
       const entity = state.entities.get(intent.entityId);

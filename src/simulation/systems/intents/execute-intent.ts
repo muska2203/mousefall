@@ -1,6 +1,7 @@
 import {GameState} from "@simulation/types.ts";
 import {executeMoveIntent} from "@simulation/systems/intents/move-intent-executer.ts";
 import {executeJumpIntent} from "@simulation/systems/intents/jump-intent-executor.ts";
+import {executeDashIntent} from "@simulation/systems/intents/dash-intent-executor.ts";
 import {executePushIntent} from "@simulation/systems/intents/push-intent-executer.ts";
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
 import {Intent, IntentExecutor} from "@simulation/systems/intents/types.ts";
@@ -28,6 +29,7 @@ import {executeBumpIntent} from "@simulation/systems/intents/bump-intent-executo
 const intentExecutors = {
   MOVE: executeMoveIntent,
   JUMP: executeJumpIntent,
+  DASH: executeDashIntent,
   PUSH: executePushIntent,
   DAMAGE: executeDamageIntent,
   DIE: executeDieIntent,

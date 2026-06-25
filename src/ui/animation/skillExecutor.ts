@@ -4,7 +4,7 @@
  * Правила:
  * - Выполняет пульсацию кастера.
  * - Специфичные визуальные эффекты (снаряд, взрыв) разворачиваются
- *   в animationPlanner.ts в шаги PROJECTILE / EXPLOSION.
+ *   в animation/skill composers в шаги PROJECTILE / EXPLOSION.
  */
 
 import type { AnimationExecutor, AnimationContext } from './types';

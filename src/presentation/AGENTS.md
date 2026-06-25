@@ -28,7 +28,8 @@
 
 | Задача | Куда идти |
 |--------|-----------|
-| Добавить новое событие в анимацию | `animationPlanner.ts` |
+| Добавить новое событие в анимацию | `animation/builders/<event>.ts` → зарегистрировать в `animation/index.ts` |
+| Добавить новый скилл | `animation/skills/<abilityId>.ts` → зарегистрировать в `animation/skills/registry.ts` |
 | Добавить строку в combat log | `logBuilder.ts` (или аналог) |
 | Добавить сессионное состояние | `gameSession.ts` / `types.ts` |
 | Изменить ViewModel | `types.ts` (тип `ViewModel`) + формирующий код |

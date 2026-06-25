@@ -36,7 +36,7 @@ import {
 } from '@content/registry';
 import type { Locale } from '@content/texts/lookup';
 
-import {buildAnimationTree} from './animationPlanner';
+import {buildAnimationTree} from './animation';
 import {extractEvents, gameEventToLog} from './logBuilder';
 import {extractToasts, errorCodeToToast} from './toastBuilder';
 import {ToastBuffer} from './toastBuffer';

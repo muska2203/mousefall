@@ -1,11 +1,11 @@
 /**
- * Unit tests for animationPlanner.
+ * Интеграционные тесты для анимационного планировщика.
  */
 
 import {describe, expect, it} from 'vitest';
-import {buildAnimationTree, registerAnimationBuilder} from '../../../src/presentation/animationPlanner';
-import type {ExecutionNode} from '../../../src/simulation/systems/actions/types';
-import type {SimulationResult, GameEvent, GameState} from '../../../src/simulation/types';
+import {buildAnimationTree, registerAnimationBuilder} from '../../../../src/presentation/animation';
+import type {ExecutionNode} from '../../../../src/simulation/systems/actions/types';
+import type {SimulationResult, GameEvent, GameState} from '../../../../src/simulation/types';
 
 function makeExecNode(event: GameEvent, children: ExecutionNode[] = []): ExecutionNode {
   return { event, parent: null, children };
