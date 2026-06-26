@@ -8,7 +8,7 @@ type IntentExecutor<T extends Intent> = (
     intent: T,
     builder: ExecutionBuilder,
     parent: ExecutionNode,
-) => void;
+) => ExecutionNode | null;
 ```
 
 ### Исполнение намерения исполняется общей функцией, которая на основе типа намерения выбирает исполнителя
@@ -19,13 +19,20 @@ export function executeIntent(
   intent: Intent,
   builder: ExecutionBuilder,
   parent: ExecutionNode,
-) {
+): ExecutionNode | null {
     const executor = intentExecutors[intent.type] as IntentExecutor<any>;
-    executor(
+    const resultNode = executor(
         state,
         intent,
         builder,
         parent,
     );
+    if (resultNode !== null) {
+        const reactionIntents = runWorldReactions(state, builder, resultNode);
+        for (const reactionIntent of reactionIntents) {
+            executeIntent(state, reactionIntent, builder, resultNode);
+        }
+    }
+    return resultNode;
 }
 ```

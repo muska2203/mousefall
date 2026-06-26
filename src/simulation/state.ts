@@ -155,20 +155,6 @@ export function findAttackableEntity(state: GameState, id: EntityId): (Entity & 
   return undefined;
 }
 
-/**
- * Физически удаляет всех мёртвых сущностей из state.entities.
- * Вызывается в конце хода окружения, перед началом хода игрока.
- */
-export function cleanupDeadEntities(state: GameState): void {
-  for (const [id, entity] of state.entities) {
-    if (id === PLAYER_ID) continue;
-    if ('isAlive' in entity && entity.isAlive === false) {
-      state.entities.delete(id);
-    }
-  }
-}
-
-
 export function findAttacker(state: GameState, id: EntityId): (Entity & Attacker) | undefined {
   const foundEntity = state.entities.get(id);
   if (foundEntity && 'damage' in foundEntity) {

@@ -110,9 +110,6 @@ export class TargetingRenderer {
         case 'PUSH':
           pushes.push({ from: intent.from, to: intent.to });
           break;
-        case 'DASH':
-          moves.push({ from: intent.from, to: intent.to });
-          break;
         case 'DIE':
           deaths.push(intent.position);
           break;

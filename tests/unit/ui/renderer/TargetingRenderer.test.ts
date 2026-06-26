@@ -230,11 +230,10 @@ describe('TargetingRenderer', () => {
         affectedPositions: [],
         intents: [
           {
-            type: 'DASH',
+            type: 'MOVE',
             entityId: 'enemy1',
-            dx: 1,
+            dx: 2,
             dy: 0,
-            distance: 2,
             from: {x: 0, y: 0},
             to: {x: 2, y: 0},
           },

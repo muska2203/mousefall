@@ -18,8 +18,8 @@ import { getSkillExecutor } from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
-import {findAllAliveAiActors, isActor, cleanupDeadEntities, createBoolGrid} from "@simulation/state.ts";
-import {isStunned, skipStunnedActorTurn} from "@simulation/systems/stun-helper.ts";
+import {findAllAliveAiActors, isActor, createBoolGrid} from "@simulation/state.ts";
+import {isStunned} from "@simulation/systems/stun-helper.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
@@ -362,7 +362,7 @@ export class GameSimulation implements Simulation {
         // Оглушённый актор пропускает ход: тикаем stunned и обнуляем AP.
         // Разрешено только действие WAIT (см. canActorAct), остальные отклонены выше.
         if (isStunned(actor)) {
-            skipStunnedActorTurn(this.state, actor.id, executionBuilder, parentNode);
+            executeIntent(this.state, { type: 'SKIP_STUNNED_TURN', entityId: actor.id }, executionBuilder, parentNode);
             return true;
         }
 
@@ -412,6 +412,16 @@ export class GameSimulation implements Simulation {
 
         const envActions: ExecutionNode[] = [];
 
+        // Фиксируем начало хода окружения.
+        const envBeginBuilder = new ExecutionBuilder({
+            type: 'TURN_BEGAN',
+            side: 'ENVIRONMENT',
+            round: this.state.turn.round,
+            actorId: null,
+        });
+        executeIntent(this.state, { type: 'BEGIN_TURN', side: 'ENVIRONMENT' }, envBeginBuilder, envBeginBuilder.root);
+        envActions.push(envBeginBuilder.root);
+
         this.runEnvironmentTurn(envActions);
         phases.push({ side: 'ENVIRONMENT', actions: envActions });
 
@@ -434,37 +444,44 @@ export class GameSimulation implements Simulation {
         actions: ExecutionNode[],
     ): void {
 
-        this.state.turn.activeSide =
-            'ENVIRONMENT';
-
         const enemies = findAllAliveAiActors(this.state)
 
         for (const enemy of enemies) {
 
-            enemy.ap = enemy.maxAp;
-
             const enemyEntity = enemy as EnemyEntity;
 
-            // Уменьшение cooldown скиллов врага
+            // Подготовка хода врага: восстановление AP, тики кулдаунов и каста.
+            const setupBuilder = new ExecutionBuilder({
+                type: 'TURN_BEGAN',
+                side: 'ENVIRONMENT',
+                round: this.state.turn.round,
+                actorId: enemy.id,
+            });
+            const setupRoot = setupBuilder.root;
+
+            executeIntent(this.state, { type: 'RESTORE_AP', entityId: enemy.id }, setupBuilder, setupRoot);
+
             for (const ability of enemyEntity.abilities) {
                 if (ability.currentCooldown > 0) {
-                    ability.currentCooldown -= 1;
+                    executeIntent(
+                        this.state,
+                        { type: 'TICK_COOLDOWN', entityId: enemy.id, abilityId: ability.templateId },
+                        setupBuilder,
+                        setupRoot,
+                    );
                 }
             }
 
             // Авто-резолв или тик каста врага
             if (enemyEntity.activeCast) {
                 if (enemyEntity.activeCast.remainingTurns === 0) {
-                    const castBuilder = new ExecutionBuilder({
-                        type: 'ACTION_APPLIED',
-                        action: { type: 'WAIT', entityId: enemy.id },
-                    });
-                    this.resolveActiveCast(enemyEntity, castBuilder, castBuilder.root);
-                    actions.push(castBuilder.root);
+                    this.resolveActiveCast(enemyEntity, setupBuilder, setupRoot);
                 } else {
-                    enemyEntity.activeCast.remainingTurns--;
+                    executeIntent(this.state, { type: 'TICK_CAST', entityId: enemy.id }, setupBuilder, setupRoot);
                 }
             }
+
+            actions.push(setupRoot);
 
             // Выполнение подготовленного намерения AI
             let preparedAbilityIdForCancel: string | null = null;
@@ -505,7 +522,7 @@ export class GameSimulation implements Simulation {
                     type: 'ACTION_APPLIED',
                     action: { type: 'WAIT', entityId: enemy.id },
                 });
-                const stunNode = skipStunnedActorTurn(this.state, enemy.id, stunBuilder, stunBuilder.root);
+                const stunNode = executeIntent(this.state, { type: 'SKIP_STUNNED_TURN', entityId: enemy.id }, stunBuilder, stunBuilder.root);
                 if (preparedAbilityIdForCancel && stunNode) {
                     stunBuilder.addChild(stunNode, {
                         type: 'ABILITY_PREPARED_CANCELLED',
@@ -556,39 +573,44 @@ export class GameSimulation implements Simulation {
 
     private beginNextPlayerTurn(): ExecutionNode | null {
 
-        cleanupDeadEntities(this.state);
+        // Подготовка хода игрока: смена стороны/раунда, тик каста, восстановление AP, тики кулдаунов.
+        // Очистка мёртвых сущностей происходит через канонический интент.
+        const setupBuilder = new ExecutionBuilder({
+            type: 'TURN_BEGAN',
+            side: 'PLAYER',
+            round: this.state.turn.round + 1,
+            actorId: this.state.player.id,
+        });
+        const setupRoot = setupBuilder.root;
 
-        this.state.turn.activeSide =
-            'PLAYER';
+        executeIntent(this.state, { type: 'CLEANUP_DEAD_ENTITIES' }, setupBuilder, setupRoot);
 
-        this.state.turn.round += 1;
+        executeIntent(this.state, { type: 'BEGIN_TURN', side: 'PLAYER' }, setupBuilder, setupRoot);
 
         // Авто-резолв или тик каста игрока
-        let castNode: ExecutionNode | null = null;
         if (this.state.player.activeCast) {
             if (this.state.player.activeCast.remainingTurns === 0) {
-                const castBuilder = new ExecutionBuilder({
-                    type: 'ACTION_APPLIED',
-                    action: { type: 'WAIT', entityId: this.state.player.id },
-                });
-                this.resolveActiveCast(this.state.player, castBuilder, castBuilder.root);
-                castNode = castBuilder.root;
+                this.resolveActiveCast(this.state.player, setupBuilder, setupRoot);
             } else {
-                this.state.player.activeCast.remainingTurns--;
+                executeIntent(this.state, { type: 'TICK_CAST', entityId: this.state.player.id }, setupBuilder, setupRoot);
             }
         }
 
-        this.state.player.ap =
-            this.state.player.maxAp;
+        executeIntent(this.state, { type: 'RESTORE_AP', entityId: this.state.player.id }, setupBuilder, setupRoot);
 
         // Уменьшение cooldown скиллов игрока
         for (const ability of this.state.player.abilities) {
             if (ability.currentCooldown > 0) {
-                ability.currentCooldown -= 1;
+                executeIntent(
+                    this.state,
+                    { type: 'TICK_COOLDOWN', entityId: this.state.player.id, abilityId: ability.templateId },
+                    setupBuilder,
+                    setupRoot,
+                );
             }
         }
 
-        return castNode;
+        return setupRoot.children.length > 0 ? setupRoot : null;
     }
 
     private runStatusTicks(phase: 'player' | 'environment'): ExecutionNode[] {
@@ -599,6 +621,7 @@ export class GameSimulation implements Simulation {
                 const builder = new ExecutionBuilder({
                     type: 'STATUS_TICKED',
                     entityId: entity.id,
+                    effectTypes: [],
                 });
                 executeIntent(this.state, intent, builder, builder.root);
                 nodes.push(builder.root);

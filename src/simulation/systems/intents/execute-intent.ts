@@ -1,7 +1,7 @@
 import {GameState} from "@simulation/types.ts";
 import {executeMoveIntent} from "@simulation/systems/intents/move-intent-executer.ts";
 import {executeJumpIntent} from "@simulation/systems/intents/jump-intent-executor.ts";
-import {executeDashIntent} from "@simulation/systems/intents/dash-intent-executor.ts";
+
 import {executePushIntent} from "@simulation/systems/intents/push-intent-executer.ts";
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
 import {Intent, IntentExecutor} from "@simulation/systems/intents/types.ts";
@@ -26,11 +26,17 @@ import {executeHealIntent} from "@simulation/systems/intents/heal-intent-execute
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
 import {executeOpenDoorIntent, executeCloseDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
 import {executeBumpIntent} from "@simulation/systems/intents/bump-intent-executor.ts";
+import {executeTriggerStairExitIntent} from "@simulation/systems/intents/trigger-stair-exit-intent-executor.ts";
+import {executeSkipStunnedTurnIntent} from "@simulation/systems/intents/skip-stunned-turn-intent-executor.ts";
+import {executeRestoreApIntent} from "@simulation/systems/intents/restore-ap-intent-executer.ts";
+import {executeTickCooldownIntent} from "@simulation/systems/intents/tick-cooldown-intent-executer.ts";
+import {executeTickCastIntent} from "@simulation/systems/intents/tick-cast-intent-executer.ts";
+import {executeBeginTurnIntent} from "@simulation/systems/intents/begin-turn-intent-executer.ts";
+import {executeCleanupDeadEntitiesIntent} from "@simulation/systems/intents/cleanup-dead-entities-intent-executor.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
   JUMP: executeJumpIntent,
-  DASH: executeDashIntent,
   PUSH: executePushIntent,
   DAMAGE: executeDamageIntent,
   DIE: executeDieIntent,
@@ -53,6 +59,13 @@ const intentExecutors = {
   OPEN_DOOR: executeOpenDoorIntent,
   CLOSE_DOOR: executeCloseDoorIntent,
   BUMP: executeBumpIntent,
+  TRIGGER_STAIR_EXIT: executeTriggerStairExitIntent,
+  SKIP_STUNNED_TURN: executeSkipStunnedTurnIntent,
+  RESTORE_AP: executeRestoreApIntent,
+  TICK_COOLDOWN: executeTickCooldownIntent,
+  TICK_CAST: executeTickCastIntent,
+  BEGIN_TURN: executeBeginTurnIntent,
+  CLEANUP_DEAD_ENTITIES: executeCleanupDeadEntitiesIntent,
 };
 
 export function executeIntent(
@@ -60,7 +73,7 @@ export function executeIntent(
   intent: Intent,
   builder: ExecutionBuilder,
   parent: ExecutionNode,
-) {
+): ExecutionNode | null {
     const executor = intentExecutors[intent.type] as IntentExecutor<any>;
     const resultNode = executor(
         state,
@@ -74,10 +87,5 @@ export function executeIntent(
             executeIntent(state, reactionIntent, builder, resultNode);
         }
     }
+    return resultNode;
 }
-
-
-
-
-
-

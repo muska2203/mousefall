@@ -47,7 +47,7 @@ describe('dashSkill', () => {
     resetRegistry();
   });
 
-  it('resolves to a single DASH intent', () => {
+  it('resolves to atomic intents for empty path', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
@@ -56,7 +56,7 @@ describe('dashSkill', () => {
     const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
 
     expect(intents).toHaveLength(1);
-    expect(intents[0]).toMatchObject({ type: 'DASH', entityId: player.id, dx: 1, dy: 0, distance: 2 });
+    expect(intents[0]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 2, dy: 0 });
   });
 
   it('moves caster 2 cells on empty path', () => {

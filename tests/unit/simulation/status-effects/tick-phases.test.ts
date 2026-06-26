@@ -54,7 +54,7 @@ describe('status effect tick phases', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const playerBuilder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const playerBuilder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'player' }, playerBuilder, playerBuilder.root);
 
     const poisoned = enemy.statusEffects.find(e => e.type === 'poisoned');
@@ -62,7 +62,7 @@ describe('status effect tick phases', () => {
     expect(poisoned!.duration).toBe(1);
     expect(burning!.duration).toBe(2);
 
-    const envBuilder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const envBuilder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'environment' }, envBuilder, envBuilder.root);
 
     expect(poisoned!.duration).toBe(1);

@@ -1,61 +1,18 @@
-import { GameState, StatusEffect } from '@simulation/types';
+import { GameState } from '@simulation/types';
 import { PushIntent, IntentExecutor } from '@simulation/systems/intents/types';
 import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
 import { findEntity, isBlocked, isActor, findAllEntitiesAt } from '@simulation/state';
-import { executeDamage } from '@simulation/systems/damage/damage-processor';
-import { executeApplyStatusIntent } from '@simulation/systems/intents/apply-status-intent-executer';
-
-/**
- * Базовый урон при столкновении отталкиваемого актора с препятствием или другим актором.
- */
-const PUSH_BUMP_DAMAGE = 5;
-
-/**
- * Тип урона при толчке.
- */
-const PUSH_DAMAGE_TYPE = 'blunt';
-
-/**
- * Создаёт эффект оглушения длительностью 1 ход.
- */
-function createStunEffect(): StatusEffect {
-  return {
-    type: 'stunned',
-    duration: 1,
-    value: 0,
-    statModifiers: null,
-  };
-}
-
-/**
- * Пытается наложить оглушение на сущность.
- * Оглушение применяется только к акторам, чтобы избежать зависших статусов на не-акторах
- * (дверях, предметах), которые никогда не делают ход и не тикают stunned.
- */
-function tryApplyStun(
-  state: GameState,
-  entityId: string,
-  builder: ExecutionBuilder,
-  parent: ExecutionNode,
-): ExecutionNode | null {
-  const target = findEntity(state, entityId);
-  if (!target || !isActor(target)) return null;
-
-  return executeApplyStatusIntent(
-    state,
-    { type: 'APPLY_STATUS', entityId, status: createStunEffect() },
-    builder,
-    parent,
-  );
-}
 
 /**
  * Исполняет интент отталкивания PUSH.
  *
- * Логика:
- * - Свободная клетка → перемещение (ENTITY_MOVED).
- * - Стена / непроходимый не-актор → урон и оглушение отталкиваемому актору.
- * - Другой актор в целевой клетке → урон и оглушение обоим акторам.
+ * Контракт:
+ * - PUSH-исполнитель не исполняет другие интенты напрямую.
+ * - Он определяет результат толчка и порождает семантическое событие:
+ *   - ENTITY_DISPLACED — если актор переместился на свободную клетку.
+ *   - ENTITY_COLLIDED — если актор столкнулся со стеной, другим актором
+ *     или непроходимым объектом.
+ * - Мировые реакции на эти события порождают DAMAGE, APPLY_STATUS, MOVE и т.д.
  */
 export const executePushIntent: IntentExecutor<PushIntent> = (
   state: GameState,
@@ -66,6 +23,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
   const entity = findEntity(state, intent.entityId);
   if (!entity || !isActor(entity)) return null;
 
+  const from = { x: entity.x, y: entity.y };
   const targetX = entity.x + intent.dx;
   const targetY = entity.y + intent.dy;
 
@@ -77,18 +35,16 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
     targetY >= state.map.height ||
     state.map.tiles[targetY]?.[targetX] === 'wall'
   ) {
-    const damageNode = executeDamage(state, entity.id, PUSH_BUMP_DAMAGE, PUSH_DAMAGE_TYPE, intent.sourceEntityId, builder, parent);
-    if (damageNode) {
-      builder.addChild(damageNode, {
-        type: 'ENTITY_BUMPED',
-        entityId: entity.id,
-        position: { x: entity.x, y: entity.y },
-        dx: intent.dx,
-        dy: intent.dy,
-      });
-    }
-    const stunNode = damageNode ? tryApplyStun(state, entity.id, builder, damageNode) : null;
-    return stunNode ?? damageNode ?? null;
+    return builder.addChild(parent, {
+      type: 'ENTITY_COLLIDED',
+      entityId: entity.id,
+      targetId: null,
+      collisionType: 'wall',
+      sourceEntityId: intent.sourceEntityId,
+      position: from,
+      dx: intent.dx,
+      dy: intent.dy,
+    });
   }
 
   const entitiesAtTarget = findAllEntitiesAt(state, targetX, targetY).filter(e => e.id !== entity.id);
@@ -96,68 +52,40 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
 
   // Столкновение с другим актором.
   if (actorAtTarget) {
-    let lastNode: ExecutionNode | null = null;
-
-    const pushedDamageNode = executeDamage(state, entity.id, PUSH_BUMP_DAMAGE, PUSH_DAMAGE_TYPE, intent.sourceEntityId, builder, parent);
-    if (pushedDamageNode) {
-      lastNode = pushedDamageNode;
-      builder.addChild(pushedDamageNode, {
-        type: 'ENTITY_BUMPED',
-        entityId: entity.id,
-        position: { x: entity.x, y: entity.y },
-        dx: intent.dx,
-        dy: intent.dy,
-      });
-    }
-
-    const pushedStunNode = lastNode ? tryApplyStun(state, entity.id, builder, lastNode) : null;
-    if (pushedStunNode) lastNode = pushedStunNode;
-
-    const targetDamageNode = executeDamage(state, actorAtTarget.id, PUSH_BUMP_DAMAGE, PUSH_DAMAGE_TYPE, intent.sourceEntityId, builder, parent);
-    if (targetDamageNode) {
-      lastNode = targetDamageNode;
-      builder.addChild(targetDamageNode, {
-        type: 'ENTITY_BUMPED',
-        entityId: actorAtTarget.id,
-        position: { x: actorAtTarget.x, y: actorAtTarget.y },
-        dx: intent.dx,
-        dy: intent.dy,
-      });
-    }
-
-    const targetStunNode = lastNode ? tryApplyStun(state, actorAtTarget.id, builder, lastNode) : null;
-    if (targetStunNode) lastNode = targetStunNode;
-
-    return lastNode;
+    return builder.addChild(parent, {
+      type: 'ENTITY_COLLIDED',
+      entityId: entity.id,
+      targetId: actorAtTarget.id,
+      collisionType: 'actor',
+      sourceEntityId: intent.sourceEntityId,
+      position: from,
+      dx: intent.dx,
+      dy: intent.dy,
+    });
   }
 
   // Столкновение с непроходимым не-актором (например, закрытой дверью при пуше).
   if (entitiesAtTarget.some(e => e.blocksMovement) || isBlocked(state, targetX, targetY)) {
-    const damageNode = executeDamage(state, entity.id, PUSH_BUMP_DAMAGE, PUSH_DAMAGE_TYPE, intent.sourceEntityId, builder, parent);
-    if (damageNode) {
-      builder.addChild(damageNode, {
-        type: 'ENTITY_BUMPED',
-        entityId: entity.id,
-        position: { x: entity.x, y: entity.y },
-        dx: intent.dx,
-        dy: intent.dy,
-      });
-    }
-    const stunNode = damageNode ? tryApplyStun(state, entity.id, builder, damageNode) : null;
-    return stunNode ?? damageNode ?? null;
+    return builder.addChild(parent, {
+      type: 'ENTITY_COLLIDED',
+      entityId: entity.id,
+      targetId: null,
+      collisionType: 'blocking-object',
+      sourceEntityId: intent.sourceEntityId,
+      position: from,
+      dx: intent.dx,
+      dy: intent.dy,
+    });
   }
 
-  // Свободная клетка — перемещение.
-  const from = { x: entity.x, y: entity.y };
-  entity.x = targetX;
-  entity.y = targetY;
-  const to = { x: targetX, y: targetY };
-
+  // Свободная клетка — актор будет перемещён реакцией на ENTITY_DISPLACED.
   return builder.addChild(parent, {
-    type: 'ENTITY_MOVED',
+    type: 'ENTITY_DISPLACED',
     entityId: intent.entityId,
+    sourceEntityId: intent.sourceEntityId,
     from,
-    to,
-    movementType: 'walk',
+    to: { x: targetX, y: targetY },
+    dx: intent.dx,
+    dy: intent.dy,
   });
 };

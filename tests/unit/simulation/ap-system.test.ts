@@ -232,4 +232,29 @@ describe('AP-система: мульти-AP сценарии', () => {
     const result = sim.dispatch({ type: 'EQUIP', entityId: 'player', itemInstanceId: 'w1' });
     expect(result.success).toBe(true);
   });
+
+  it('AP восстанавливается через событие AP_RESTORED', () => {
+    const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2 });
+    const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
+    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+
+    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    expect(result.success).toBe(true);
+
+    const restored = result.phases
+      .flatMap(p => p.actions)
+      .flatMap(a => collectEvents(a))
+      .filter(e => e.type === 'AP_RESTORED' && e.entityId === 'player');
+
+    expect(restored.length).toBe(1);
+    expect(restored[0]).toMatchObject({ amount: 2, remaining: 2 });
+  });
 });
+
+function collectEvents(node: import('../../../src/simulation/types').ExecutionNode): import('../../../src/simulation/types').GameEvent[] {
+  const events: import('../../../src/simulation/types').GameEvent[] = [node.event];
+  for (const child of node.children) {
+    events.push(...collectEvents(child));
+  }
+  return events;
+}

@@ -87,6 +87,10 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     case 'STAIR_EXIT_TRIGGERED':
     case 'FLOOR_CHANGED':
     case 'TURN_ENDED':
+    case 'TURN_BEGAN':
+    case 'AP_RESTORED':
+    case 'COOLDOWN_TICKED':
+    case 'CAST_TICKED':
     case 'PLAYER_LEVELED_UP':
       return true;
     case 'RESOURCE_CONSUMED': {

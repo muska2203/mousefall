@@ -314,7 +314,6 @@ export type TargetMode =
 export type Intent =
   | MoveIntent
   | JumpIntent
-  | DashIntent
   | PushIntent
   | DamageIntent
   | DieIntent
@@ -336,11 +335,17 @@ export type Intent =
   | RemoveItemIntent
   | OpenDoorIntent
   | CloseDoorIntent
-  | BumpIntent;
+  | BumpIntent
+  | TriggerStairExitIntent
+  | SkipStunnedTurnIntent
+  | RestoreApIntent
+  | TickCooldownIntent
+  | TickCastIntent
+  | BeginTurnIntent
+  | CleanupDeadEntitiesIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
-export type DashIntent = { type: 'DASH'; entityId: EntityId; dx: number; dy: number; distance: number };
 export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
@@ -368,6 +373,13 @@ export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemIn
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
 export type CloseDoorIntent = { type: 'CLOSE_DOOR'; entityId: EntityId; targetPosition: Position };
 export type BumpIntent = { type: 'BUMP'; entityId: EntityId; position: Position; dx: number; dy: number };
+export type TriggerStairExitIntent = { type: 'TRIGGER_STAIR_EXIT'; direction: 'down' | 'up' };
+export type SkipStunnedTurnIntent = { type: 'SKIP_STUNNED_TURN'; entityId: EntityId };
+export type RestoreApIntent = { type: 'RESTORE_AP'; entityId: EntityId };
+export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; abilityId: string };
+export type TickCastIntent = { type: 'TICK_CAST'; entityId: EntityId };
+export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: 'PLAYER' | 'ENVIRONMENT' };
+export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -408,7 +420,14 @@ export type GameEvent =
   | CastResolvedEvent
   | CastCancelledEvent
   | EntityHealedEvent
-  | EntityBumpedEvent;
+  | EntityBumpedEvent
+  | EntityCollidedEvent
+  | EntityDisplacedEvent
+  | TurnBeganEvent
+  | ApRestoredEvent
+  | CooldownTickedEvent
+  | CastTickedEvent
+  | DeadEntitiesCleanedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -448,7 +467,7 @@ export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; e
 
 export type StatusRemovedEvent = { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
 
-export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId };
+export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId; effectTypes: StatusEffectType[] };
 
 export type StatusStacksAdjustedEvent = {
   type: 'STATUS_STACKS_ADJUSTED';
@@ -477,10 +496,64 @@ export type CastCancelledEvent = { type: 'CAST_CANCELLED'; entityId: EntityId; a
 
 export type EntityBumpedEvent = { type: 'ENTITY_BUMPED'; entityId: EntityId; position: Position; dx: number; dy: number };
 
+export type EntityCollidedEvent = {
+  type: 'ENTITY_COLLIDED';
+  entityId: EntityId;
+  targetId: EntityId | null;
+  collisionType: 'wall' | 'actor' | 'blocking-object';
+  sourceEntityId: EntityId | null;
+  position: Position;
+  dx: number;
+  dy: number;
+};
+
+export type EntityDisplacedEvent = {
+  type: 'ENTITY_DISPLACED';
+  entityId: EntityId;
+  sourceEntityId: EntityId | null;
+  from: Position;
+  to: Position;
+  dx: number;
+  dy: number;
+};
+
+export type TurnBeganEvent = {
+  type: 'TURN_BEGAN';
+  side: 'PLAYER' | 'ENVIRONMENT';
+  round: number;
+  actorId: EntityId | null;
+};
+
+export type ApRestoredEvent = {
+  type: 'AP_RESTORED';
+  entityId: EntityId;
+  amount: number;
+  remaining: number;
+};
+
+export type CooldownTickedEvent = {
+  type: 'COOLDOWN_TICKED';
+  entityId: EntityId;
+  abilityId: string;
+  remaining: number;
+};
+
+export type CastTickedEvent = {
+  type: 'CAST_TICKED';
+  entityId: EntityId;
+  abilityId: string;
+  remainingTurns: number;
+};
+
 export type EntityHealedEvent = {
   type: 'ENTITY_HEALED';
   entityId: EntityId;
   amount: number;
   newHp: number;
   position: Position;
+};
+
+export type DeadEntitiesCleanedEvent = {
+  type: 'DEAD_ENTITIES_CLEANED';
+  removed: { entityId: EntityId; position: Position }[];
 };

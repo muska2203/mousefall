@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vitest';
 import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
 import { tickEntityStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
+import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
 import type { EntityDamagedEvent } from '../../../../src/simulation/core-types';
 import { GameSimulation } from '../../../../src/simulation/simulation';
@@ -20,15 +21,15 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder1 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const builder1 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder1, builder1.root);
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder2 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const builder2 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder2, builder2.root);
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder3 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const builder3 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder3, builder3.root);
     expect(enemy.statusEffects).toHaveLength(0);
   });
@@ -38,26 +39,42 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
     expect(enemy.statusEffects).toHaveLength(0);
   });
 
-  it('creates ENTITY_DAMAGED event when burning ticks', () => {
+  it('emits STATUS_TICKED with burning in effectTypes', () => {
     const enemy = makeEnemy({ hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
     const node = executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
 
     expect(node).not.toBeNull();
-    expect(node!.event.type).toBe('ENTITY_DAMAGED');
+    expect(node!.event.type).toBe('STATUS_TICKED');
     expect(node!.event).toMatchObject({
+      entityId: enemy.id,
+      effectTypes: ['burning'],
+    });
+  });
+
+  it('creates ENTITY_DAMAGED event when burning ticks through full intent chain', () => {
+    const enemy = makeEnemy({ hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
+    const state = makeGameState();
+    state.entities.set(enemy.id, enemy);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
+
+    const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');
+    expect(damagedEvents).toHaveLength(1);
+    expect(damagedEvents[0]).toMatchObject({
       targetId: enemy.id,
       damageType: 'fire',
     });
-    expect((node!.event as EntityDamagedEvent).damage).toBeGreaterThan(0);
+    expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
 
   it('updates duration instead of stacking when same effect is applied', () => {
@@ -86,20 +103,24 @@ describe('burning status effect', () => {
     resetRegistry();
   });
 
-  it('damages door when burning ticks', () => {
+  it('damages door when burning ticks through full intent chain', () => {
     const state = makeGameState();
     const door = makeDoor({ x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
     state.entities.set(door.id, door);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id });
-    const node = executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [] });
+    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id }, builder, builder.root);
 
-    expect(node).not.toBeNull();
-    expect(node!.event.type).toBe('ENTITY_DAMAGED');
-    expect(node!.event).toMatchObject({
+    const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');
+    expect(damagedEvents).toHaveLength(1);
+    expect(damagedEvents[0]).toMatchObject({
       targetId: door.id,
       damageType: 'fire',
     });
-    expect((node!.event as EntityDamagedEvent).damage).toBeGreaterThan(0);
+    expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
 });
+
+function collectEvents(node: any): any[] {
+  return [node.event, ...node.children.flatMap(collectEvents)];
+}

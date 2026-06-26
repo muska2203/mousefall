@@ -90,12 +90,20 @@ function getSkillLevel(caster: Entity): number {
 }
 
 /**
- * Предсказывает результат рывка без мутации состояния.
- * Актор останавливается на клетке перед любым объектом (стеной, актором и т.п.),
- * независимо от того, удастся ли оттолкнуть цель. Проверка успешности пуша
- * не выполняется, что упрощает превью.
+ * Разрешает рывок в список атомарных интентов.
+ *
+ * Каждый интент в итоговом списке проходит через executeIntent,
+ * поэтому мировые реакции срабатывают корректно (смерть от урона,
+ * отталкивание, оглушение, лестницы и т.д.).
+ *
+ * Порядок интентов:
+ * 1. OPEN_DOOR — если на пути закрытая дверь (перед движением через неё).
+ * 2. MOVE — перемещение кастера на доступное расстояние.
+ * 3. DAMAGE — урон акторам на пути.
+ * 4. PUSH — отталкивание актора.
+ * 5. BUMP — визуальный отскок кастера при столкновении.
  */
-function predictDashIntents(state: GameState, caster: Entity, target: Position): Intent[] {
+function resolveDashIntents(state: GameState, caster: Entity, target: Position): Intent[] {
   const dx = target.x - caster.x;
   const dy = target.y - caster.y;
   const stepX = Math.sign(dx);
@@ -120,7 +128,7 @@ function predictDashIntents(state: GameState, caster: Entity, target: Position):
     const cellX = currentX + stepX;
     const cellY = currentY + stepY;
 
-    // Стена или граница карты — рывок заканчивается на предыдущей клетке.
+    // Стена или граница карты — кастер остаётся на предыдущей клетке и отскакивает.
     if (
       cellX < 0 ||
       cellX >= state.map.width ||
@@ -128,12 +136,24 @@ function predictDashIntents(state: GameState, caster: Entity, target: Position):
       cellY >= state.map.height ||
       state.map.tiles[cellY]?.[cellX] === 'wall'
     ) {
+      intents.push({
+        type: 'BUMP',
+        entityId: caster.id,
+        position: { x: currentX, y: currentY },
+        dx: stepX,
+        dy: stepY,
+      });
       break;
     }
 
-    // Закрытая дверь открывается и не блокирует движение.
+    // Закрытая дверь открывается, и кастер проходит через неё.
     const door = findDoorAt(state, cellX, cellY);
     if (door && !door.isOpen) {
+      intents.push({
+        type: 'OPEN_DOOR',
+        entityId: caster.id,
+        targetPosition: { x: cellX, y: cellY },
+      });
       totalDx += stepX;
       totalDy += stepY;
       currentX += stepX;
@@ -141,7 +161,7 @@ function predictDashIntents(state: GameState, caster: Entity, target: Position):
       continue;
     }
 
-    // Актор на пути — урон и отталкивание. Кастер остаётся на клетке перед ним.
+    // Актор на пути — урон, отталкивание, кастер остаётся на клетке перед ним и отскакивает.
     const actor = findActorAt(state, cellX, cellY);
     if (actor && isCombatEntity(caster) && isDamageable(actor)) {
       const dashFormula = damageFormulas['dash_bump'];
@@ -164,11 +184,25 @@ function predictDashIntents(state: GameState, caster: Entity, target: Position):
       }
 
       intents.push({ type: 'PUSH', entityId: actor.id, dx: stepX, dy: stepY, sourceEntityId: caster.id });
+      intents.push({
+        type: 'BUMP',
+        entityId: caster.id,
+        position: { x: currentX, y: currentY },
+        dx: stepX,
+        dy: stepY,
+      });
       break;
     }
 
-    // Любой другой непроходимый объект — рывок заканчивается на предыдущей клетке.
+    // Любой другой непроходимый объект — кастер остаётся на предыдущей клетке и отскакивает.
     if (isBlocked(state, cellX, cellY)) {
+      intents.push({
+        type: 'BUMP',
+        entityId: caster.id,
+        position: { x: currentX, y: currentY },
+        dx: stepX,
+        dy: stepY,
+      });
       break;
     }
 
@@ -184,6 +218,14 @@ function predictDashIntents(state: GameState, caster: Entity, target: Position):
   }
 
   return intents;
+}
+
+/**
+ * Превью рывка: тот же набор интентов, что и при исполнении,
+ * но без визуальных BUMP-эффектов (они не нужны для предпросмотра).
+ */
+function predictDashIntents(state: GameState, caster: Entity, target: Position): Intent[] {
+  return resolveDashIntents(state, caster, target).filter(intent => intent.type !== 'BUMP');
 }
 
 export const dashSkill: SkillExecutor = {
@@ -218,32 +260,6 @@ export const dashSkill: SkillExecutor = {
   resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {
     const target = targets[0];
     if (!target) return [];
-
-    const dx = target.x - caster.x;
-    const dy = target.y - caster.y;
-
-    // Рывок — только в одном из 8 направлений.
-    const stepX = Math.sign(dx);
-    const stepY = Math.sign(dy);
-    if (stepX === 0 && stepY === 0) {
-      return [];
-    }
-
-    // Валидация направления происходит через getValidTargets, но оставляем
-    // защиту и здесь, чтобы intent не создавался для заведомо недопустимого пути.
-    if (!isDashStartAllowed(state, caster, stepX, stepY)) {
-      return [];
-    }
-
-    // Один intent: executor сам разберётся со столкновениями и дистанцией.
-    return [
-      {
-        type: 'DASH',
-        entityId: caster.id,
-        dx: stepX,
-        dy: stepY,
-        distance: DASH_DISTANCE,
-      },
-    ];
+    return resolveDashIntents(state, caster, target);
   },
 };

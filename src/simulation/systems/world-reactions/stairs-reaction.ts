@@ -36,11 +36,10 @@ export const stairsTransitionReaction: WorldReaction = (
     if (direction === 'down' && state.floor >= MAX_FLOOR) return [];
     if (direction === 'up' && state.floor <= 1) return [];
 
-    // Порождаем событие-запрос; сам переход делает Action handler
-    builder.addChild(parent, {
-        type: 'STAIR_EXIT_TRIGGERED',
+    // Порождаем интент, который исполнителем создаст событие STAIR_EXIT_TRIGGERED.
+    // Сам переход между этажами выполняет Action handler DESCEND / ASCEND.
+    return [{
+        type: 'TRIGGER_STAIR_EXIT',
         direction,
-    });
-
-    return [];
+    }];
 };

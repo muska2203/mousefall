@@ -6,7 +6,6 @@ export type {
   Intent,
   MoveIntent,
   JumpIntent,
-  DashIntent,
   PushIntent,
   DamageIntent,
   DieIntent,
@@ -29,6 +28,11 @@ export type {
   OpenDoorIntent,
   CloseDoorIntent,
   BumpIntent,
+  TriggerStairExitIntent,
+  RestoreApIntent,
+  TickCooldownIntent,
+  TickCastIntent,
+  BeginTurnIntent,
 } from "@simulation/core-types.ts";
 
 export type OpenDoorIntentExecutor = IntentExecutor<OpenDoorIntent>;

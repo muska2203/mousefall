@@ -47,14 +47,14 @@ describe('stairsTransitionReaction — обнаружение лестницы',
     };
     const moveNode = builder.addChild(builder.root, moveEvent);
 
-    stairsTransitionReaction(state, moveEvent, builder, moveNode);
+    const intents = stairsTransitionReaction(state, moveEvent, builder, moveNode);
 
     // Состояние НЕ должно измениться
     expect(state.floor).toBe(1);
-    // Должно быть создано событие-запрос
-    expect(moveNode.children.some(c => c.event.type === 'STAIR_EXIT_TRIGGERED')).toBe(true);
-    const trigger = moveNode.children.find(c => c.event.type === 'STAIR_EXIT_TRIGGERED')!;
-    expect((trigger.event as any).direction).toBe('down');
+    // Реакция должна вернуть интент, порождающий событие-запрос
+    expect(intents).toEqual([{ type: 'TRIGGER_STAIR_EXIT', direction: 'down' }]);
+    // Дерево не мутируется напрямую реакцией
+    expect(moveNode.children.length).toBe(0);
   });
 
   it('не срабатывает, если на клетке нет лестницы', () => {
@@ -73,8 +73,9 @@ describe('stairsTransitionReaction — обнаружение лестницы',
     };
     const moveNode = builder.addChild(builder.root, moveEvent);
 
-    stairsTransitionReaction(state, moveEvent, builder, moveNode);
+    const intents = stairsTransitionReaction(state, moveEvent, builder, moveNode);
 
+    expect(intents).toEqual([]);
     expect(moveNode.children.length).toBe(0);
   });
 
@@ -94,8 +95,9 @@ describe('stairsTransitionReaction — обнаружение лестницы',
     };
     const moveNode = builder.addChild(builder.root, moveEvent);
 
-    stairsTransitionReaction(state, moveEvent, builder, moveNode);
+    const intents = stairsTransitionReaction(state, moveEvent, builder, moveNode);
 
+    expect(intents).toEqual([]);
     expect(moveNode.children.length).toBe(0);
   });
 
@@ -116,8 +118,9 @@ describe('stairsTransitionReaction — обнаружение лестницы',
     };
     const moveNode = builder.addChild(builder.root, moveEvent);
 
-    stairsTransitionReaction(state, moveEvent, builder, moveNode);
+    const intents = stairsTransitionReaction(state, moveEvent, builder, moveNode);
 
+    expect(intents).toEqual([]);
     expect(moveNode.children.length).toBe(0);
   });
 });

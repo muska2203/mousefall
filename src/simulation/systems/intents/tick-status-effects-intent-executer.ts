@@ -1,7 +1,6 @@
-import { GameState, StatusEffect } from '@simulation/types';
+import { GameState, StatusEffect, StatusEffectType } from '@simulation/types';
 import { TickStatusEffectsIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
 import { IntentExecutor } from '@simulation/systems/intents/types';
-import { executeDamage } from '@simulation/systems/damage/damage-processor';
 
 export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsIntent> = (
   state,
@@ -14,7 +13,7 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
 
   const intentPhase = intent.phase ?? 'environment';
   const holder = entity as unknown as { statusEffects: StatusEffect[] };
-  let damageNode: ExecutionNode | null = null;
+  const tickedEffectTypes: StatusEffectType[] = [];
 
   for (const effect of holder.statusEffects) {
     const effectPhase = effect.tickAfter ?? 'environment';
@@ -22,19 +21,19 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
 
     switch (effect.type) {
       case 'burning': {
-        const maxHp = 'maxHp' in entity ? entity.maxHp : 0;
-        const rawDamage = Math.max(1, Math.round(maxHp * 0.1));
-        const node = executeDamage(state, entity.id, rawDamage, 'fire', null, builder, damageNode ?? parent);
-        if (node) damageNode = node;
+        tickedEffectTypes.push('burning');
         effect.duration -= 1;
         break;
       }
       case 'stunned': {
-        // Оглушение тикает отдельно при пропуске хода актора,
+        // Оглушение тикает отдельно через интент SKIP_STUNNED_TURN,
         // чтобы гарантировать ровно один пропущенный ход.
         break;
       }
       default: {
+        if (!tickedEffectTypes.includes(effect.type)) {
+          tickedEffectTypes.push(effect.type);
+        }
         effect.duration -= 1;
         break;
       }
@@ -44,11 +43,10 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
   const expired = holder.statusEffects.filter(e => e.duration <= 0);
   holder.statusEffects = holder.statusEffects.filter(e => e.duration > 0);
 
-  const node = damageNode ?? parent;
-
-  builder.addChild(parent, {
+  const node = builder.addChild(parent, {
     type: 'STATUS_TICKED',
     entityId: entity.id,
+    effectTypes: tickedEffectTypes,
   });
 
   for (const effect of expired) {

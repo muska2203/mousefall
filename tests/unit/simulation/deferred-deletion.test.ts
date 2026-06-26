@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { executeDieIntent } from '../../../src/simulation/systems/intents/die-intent-executer';
 import { deathReaction } from '../../../src/simulation/systems/world-reactions/death-reaction';
-import { cleanupDeadEntities, findAttackableEntity, isBlocked } from '../../../src/simulation/state';
+import { findAttackableEntity, isBlocked } from '../../../src/simulation/state';
+import { executeCleanupDeadEntitiesIntent } from '../../../src/simulation/systems/intents/cleanup-dead-entities-intent-executor';
 import { ExecutionBuilder } from '../../../src/simulation/core-types';
 import { makeGameState, makeEnemy, makePlayer } from '../../fixtures/gameState';
 import { PLAYER_ID } from '../../../src/utils/constants';
@@ -60,14 +61,15 @@ describe('Deferred Deletion', () => {
     expect(found!.id).toBe(enemy.id);
   });
 
-  it('cleanupDeadEntities физически удаляет мёртвых', () => {
+  it('executeCleanupDeadEntitiesIntent физически удаляет мёртвых через интент', () => {
     const state = makeGameState();
     const aliveEnemy = makeEnemy({ id: 'alive_1', x: 3, y: 3, hp: 10, isAlive: true });
     const deadEnemy = makeEnemy({ id: 'dead_1', x: 4, y: 4, hp: 0, isAlive: false });
     state.entities.set(aliveEnemy.id, aliveEnemy);
     state.entities.set(deadEnemy.id, deadEnemy);
 
-    cleanupDeadEntities(state);
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 2, actorId: PLAYER_ID });
+    executeCleanupDeadEntitiesIntent(state, { type: 'CLEANUP_DEAD_ENTITIES' }, builder, builder.root);
 
     expect(state.entities.has(aliveEnemy.id)).toBe(true);
     expect(state.entities.has(deadEnemy.id)).toBe(false);

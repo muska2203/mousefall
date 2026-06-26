@@ -302,7 +302,7 @@ describe('buildAnimationTree', () => {
     state.entities.set('enemy1', { id: 'enemy1', x: 2, y: 2 } as any);
 
     const damaged = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'fire', position: { x: 2, y: 2 } });
-    const ticked = makeExecNode({ type: 'STATUS_TICKED', entityId: 'enemy1' }, [damaged]);
+    const ticked = makeExecNode({ type: 'STATUS_TICKED', entityId: 'enemy1', effectTypes: ['burning'] }, [damaged]);
     const result = makeResult([ticked]);
     const tree = buildAnimationTree(result, state);
 

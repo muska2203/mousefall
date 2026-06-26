@@ -11,7 +11,7 @@ export function tickEntityStatusEffects(entity: Entity, phase: 'player' | 'envir
   const holder = entity as unknown as StatusEffectHolder;
   if (holder.statusEffects.length === 0) return [];
 
-  // Оглушение тикает отдельно в skipStunnedActorTurn, здесь его пропускаем.
+  // Оглушение тикает отдельно через интент SKIP_STUNNED_TURN, здесь его пропускаем.
   const hasTickableEffect = holder.statusEffects.some(
     effect => effect.type !== 'stunned' && (effect.tickAfter ?? 'environment') === phase,
   );

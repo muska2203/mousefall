@@ -5,6 +5,10 @@ import {deathReaction} from "@simulation/systems/world-reactions/death-reaction.
 import {stairsTransitionReaction} from "@simulation/systems/world-reactions/stairs-reaction.ts";
 import {postDeathLootReaction} from "@simulation/systems/world-reactions/post-death-loot-reaction.ts";
 import {fireDamageReaction} from "@simulation/systems/world-reactions/fire-damage-reaction.ts";
+import {collisionDamageReaction} from "@simulation/systems/world-reactions/collision-damage-reaction.ts";
+import {collisionStunReaction} from "@simulation/systems/world-reactions/collision-stun-reaction.ts";
+import {displacementMoveReaction} from "@simulation/systems/world-reactions/displacement-move-reaction.ts";
+import {burningTickReaction} from "@simulation/systems/world-reactions/burning-tick-reaction.ts";
 
 // ─────────────────────────────────────────────
 // Хранилище реакций
@@ -62,6 +66,10 @@ export function runWorldReactions(
 // ─────────────────────────────────────────────
 
 registerReaction('ENTITY_MOVED', stairsTransitionReaction, 0);
+registerReaction('ENTITY_DISPLACED', displacementMoveReaction, 0);
+registerReaction('ENTITY_COLLIDED', collisionDamageReaction, 0);
+registerReaction('ENTITY_COLLIDED', collisionStunReaction, 1);
+registerReaction('STATUS_TICKED', burningTickReaction, 0);
 registerReaction('ENTITY_DAMAGED', fireDamageReaction, -1);
 registerReaction('ENTITY_DAMAGED', deathReaction, 0);
 registerReaction('ENTITY_DIED', postDeathLootReaction, 0);

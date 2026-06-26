@@ -56,4 +56,36 @@ describe('canActorAct блокирует действия во время кас
     expect(result.success).toBe(false);
     expectRejected(result, 'actor_cannot_act');
   });
+
+  it('каст игрока тикает через событие CAST_TICKED', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      maxAp: 2,
+      ap: 2,
+      activeCast: { abilityId: 'fireball', fixedTargets: [{ x: 6, y: 5 }], remainingTurns: 1 },
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
+
+    const ticked = result.phases
+      .flatMap(p => p.actions)
+      .flatMap(a => collectEvents(a))
+      .filter(e => e.type === 'CAST_TICKED' && e.entityId === 'player' && e.abilityId === 'fireball');
+
+    expect(ticked.length).toBe(1);
+    expect(ticked[0]).toMatchObject({ remainingTurns: 0 });
+  });
 });
+
+function collectEvents(node: import('../../../src/simulation/types').ExecutionNode): import('../../../src/simulation/types').GameEvent[] {
+  const events: import('../../../src/simulation/types').GameEvent[] = [node.event];
+  for (const child of node.children) {
+    events.push(...collectEvents(child));
+  }
+  return events;
+}

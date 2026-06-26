@@ -1,10 +1,20 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
-import type { Entity, EntityId } from '../../../../src/simulation/types';
+import type { Entity, EntityId, ExecutionNode, GameEvent } from '../../../../src/simulation/types';
 import { GameSimulation, defaultActionHandlerRegistry } from '../../../../src/simulation/simulation';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
+
+function findEvents(node: ExecutionNode, predicate: (event: GameEvent) => boolean): GameEvent[] {
+  const result: GameEvent[] = [];
+  const walk = (n: ExecutionNode) => {
+    if (predicate(n.event)) result.push(n.event);
+    n.children.forEach(walk);
+  };
+  walk(node);
+  return result;
+}
 
 beforeEach(() => {
   initSkillRegistry();
@@ -68,5 +78,83 @@ describe('stun: пропуск хода', () => {
     const enemyAfter = sim.getState().entities.get(enemy.id)!;
     expect('statusEffects' in enemyAfter && enemyAfter.statusEffects.some((e: { type: string }) => e.type === 'stunned')).toBe(false);
     expect(enemy.ap).toBe(0);
+  });
+
+  it('SKIP_STUNNED_TURN порождает корректное дерево событий для игрока', () => {
+    const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2, statusEffects: [{ type: 'stunned', duration: 1, value: 0, statModifiers: null }] });
+    const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
+    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+
+    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    expect(result.success).toBe(true);
+
+    const root = result.phases[0]!.actions[0]!;
+    const ticked = findEvents(root, e => e.type === 'STATUS_TICKED' && e.effectTypes.includes('stunned'));
+    const removed = findEvents(root, e => e.type === 'STATUS_REMOVED' && e.effectType === 'stunned');
+    const consumed = findEvents(root, e => e.type === 'RESOURCE_CONSUMED' && e.resource === 'ap' && e.remaining === 0);
+
+    expect(ticked.length).toBe(1);
+    expect(removed.length).toBe(1);
+    expect(consumed.length).toBe(1);
+  });
+
+  it('SKIP_STUNNED_TURN порождает корректное дерево событий для врага', () => {
+    const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
+    const enemy = makeEnemy({ id: 'enemy_stunned', x: 6, y: 5, hp: 20, maxHp: 20, maxAp: 3, ap: 3, statusEffects: [{ type: 'stunned', duration: 2, value: 0, statModifiers: null }] });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
+    });
+    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+
+    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    expect(result.success).toBe(true);
+
+    const envPhase = result.phases.find(p => p.side === 'ENVIRONMENT');
+    expect(envPhase).toBeDefined();
+
+    const ticked = envPhase!.actions.flatMap(a => findEvents(a, e => e.type === 'STATUS_TICKED' && e.effectTypes.includes('stunned')));
+    const consumed = envPhase!.actions.flatMap(a => findEvents(a, e => e.type === 'RESOURCE_CONSUMED' && e.resource === 'ap' && e.remaining === 0));
+
+    expect(ticked.length).toBe(1);
+    expect(consumed.length).toBe(1);
+  });
+
+  it('при оглушении врага с подготовленной способностью порождается ABILITY_PREPARED_CANCELLED', () => {
+    const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
+    const enemy = makeEnemy({
+      id: 'enemy_stunned',
+      x: 6,
+      y: 5,
+      hp: 20,
+      maxHp: 20,
+      statusEffects: [{ type: 'stunned', duration: 1, value: 0, statModifiers: null }],
+      aiState: {
+        strategy: 'hunter',
+        mode: 'idle',
+        targetX: null,
+        targetY: null,
+        homeX: 6,
+        homeY: 5,
+        alertTurns: 0,
+        preparedIntent: {
+          abilityId: 'dash',
+          fixedTargets: [{ x: 5, y: 5 }],
+          affectedPositions: [{ x: 5, y: 5 }],
+        },
+      },
+    });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
+    });
+    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+
+    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    const envPhase = result.phases.find(p => p.side === 'ENVIRONMENT');
+    expect(envPhase).toBeDefined();
+
+    const cancelled = envPhase!.actions.flatMap(a => findEvents(a, e => e.type === 'ABILITY_PREPARED_CANCELLED' && e.abilityId === 'dash'));
+    expect(cancelled.length).toBe(1);
   });
 });
