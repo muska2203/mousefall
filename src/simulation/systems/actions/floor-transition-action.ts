@@ -3,14 +3,17 @@
  *
  * WorldReaction stairsTransitionReaction только обнаруживает лестницу и порождает
  * STAIR_EXIT_TRIGGERED — решение о переходе принимает Presentation.
+ *
+ * Переход на другой этаж оркестрируется через атомарные интенты:
+ * FLOOR_CHANGED → SET_MAP → SET_ENTITIES → TELEPORT_ENTITY → BEGIN_TURN → RESTORE_AP → UPDATE_FOG.
  */
 
-import type { GameState, ValidationResult } from '@simulation/types';
+import type { GameState, ValidationResult, Entity, EntityId } from '@simulation/types';
 import { ActionHandler } from './types';
 import { executeIntent } from '@simulation/systems/intents/execute-intent';
 import { findStairsAt } from '@simulation/state';
 import { MAX_FLOOR } from '@utils/constants';
-import { performFloorTransition } from './floor-transition-logic';
+import { computeFloorTransition } from '@simulation/systems/floor-transition-planner';
 
 // ─────────────────────────────────────────────
 // Action handlers
@@ -38,19 +41,40 @@ export const descendAction: ActionHandler = {
     return { ok: true };
   },
 
-  resolve(): [{ type: 'CHANGE_FLOOR'; direction: 'down' }] {
-    return [{ type: 'CHANGE_FLOOR', direction: 'down' }];
+  resolve(): [] {
+    return [];
   },
 
   execute(
     state: GameState,
-    _action,
-    intents: [{ type: 'CHANGE_FLOOR'; direction: 'down' }],
+    action,
+    _intents,
     executionBuilder,
     parentNode,
   ): void {
-    for (const intent of intents) {
-      executeIntent(state, intent, executionBuilder, parentNode);
+    const direction = action.type === 'DESCEND' ? 'down' : 'up';
+    const plan = computeFloorTransition(state, direction);
+
+    // Номер этажа — мета-состояние перехода; сам факт фиксируется событием FLOOR_CHANGED.
+    state.floor = plan.to;
+
+    const floorNode = executionBuilder.addChild(parentNode, {
+      type: 'FLOOR_CHANGED',
+      from: plan.from,
+      to: plan.to,
+    });
+
+    const subIntents = [
+      { type: 'SET_MAP' as const, map: plan.map, explored: plan.explored },
+      { type: 'SET_ENTITIES' as const, entities: plan.entities as Map<EntityId, unknown> },
+      { type: 'TELEPORT_ENTITY' as const, entityId: 'player', x: plan.playerPosition.x, y: plan.playerPosition.y },
+      { type: 'BEGIN_TURN' as const, side: 'PLAYER' as const, round: plan.turn.round },
+      { type: 'RESTORE_AP' as const, entityId: 'player' },
+      { type: 'UPDATE_FOG' as const },
+    ] as const;
+
+    for (const subIntent of subIntents) {
+      executeIntent(state, subIntent, executionBuilder, floorNode);
     }
   },
 };
@@ -77,19 +101,39 @@ export const ascendAction: ActionHandler = {
     return { ok: true };
   },
 
-  resolve(): [{ type: 'CHANGE_FLOOR'; direction: 'up' }] {
-    return [{ type: 'CHANGE_FLOOR', direction: 'up' }];
+  resolve(): [] {
+    return [];
   },
 
   execute(
     state: GameState,
-    _action,
-    intents: [{ type: 'CHANGE_FLOOR'; direction: 'up' }],
+    action,
+    _intents,
     executionBuilder,
     parentNode,
   ): void {
-    for (const intent of intents) {
-      executeIntent(state, intent, executionBuilder, parentNode);
+    const direction = action.type === 'ASCEND' ? 'up' : 'down';
+    const plan = computeFloorTransition(state, direction);
+
+    state.floor = plan.to;
+
+    const floorNode = executionBuilder.addChild(parentNode, {
+      type: 'FLOOR_CHANGED',
+      from: plan.from,
+      to: plan.to,
+    });
+
+    const subIntents = [
+      { type: 'SET_MAP' as const, map: plan.map, explored: plan.explored },
+      { type: 'SET_ENTITIES' as const, entities: plan.entities as Map<EntityId, unknown> },
+      { type: 'TELEPORT_ENTITY' as const, entityId: 'player', x: plan.playerPosition.x, y: plan.playerPosition.y },
+      { type: 'BEGIN_TURN' as const, side: 'PLAYER' as const, round: plan.turn.round },
+      { type: 'RESTORE_AP' as const, entityId: 'player' },
+      { type: 'UPDATE_FOG' as const },
+    ] as const;
+
+    for (const subIntent of subIntents) {
+      executeIntent(state, subIntent, executionBuilder, floorNode);
     }
   },
 };

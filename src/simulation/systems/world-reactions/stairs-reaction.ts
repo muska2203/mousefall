@@ -21,6 +21,9 @@ export const stairsTransitionReaction: WorldReaction = (
 ) => {
     if (event.type !== 'ENTITY_MOVED') return [];
 
+    // Реагируем только на обычное перемещение игрока (не на телепорт при смене этажа).
+    if (event.movementType !== 'walk') return [];
+
     // Реагируем только на перемещение игрока
     if (event.entityId !== 'player') return [];
 

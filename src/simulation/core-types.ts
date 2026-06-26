@@ -318,7 +318,10 @@ export type Intent =
   | DamageIntent
   | DieIntent
   | ApplyStatusIntent
-  | ChangeFloorIntent
+  | SetMapIntent
+  | SetEntitiesIntent
+  | TeleportEntityIntent
+  | UpdateFogIntent
   | SetCooldownIntent
   | ConsumeApIntent
   | TickStatusEffectsIntent
@@ -350,7 +353,10 @@ export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: num
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect };
-export type ChangeFloorIntent = { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' };
+export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][] };
+export type SetEntitiesIntent = { type: 'SET_ENTITIES'; entities: Map<EntityId, unknown> };
+export type TeleportEntityIntent = { type: 'TELEPORT_ENTITY'; entityId: EntityId; x: number; y: number };
+export type UpdateFogIntent = { type: 'UPDATE_FOG' };
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };
 export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId; phase?: 'player' | 'environment' };
@@ -378,7 +384,7 @@ export type SkipStunnedTurnIntent = { type: 'SKIP_STUNNED_TURN'; entityId: Entit
 export type RestoreApIntent = { type: 'RESTORE_AP'; entityId: EntityId };
 export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; abilityId: string };
 export type TickCastIntent = { type: 'TICK_CAST'; entityId: EntityId };
-export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: 'PLAYER' | 'ENVIRONMENT' };
+export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: 'PLAYER' | 'ENVIRONMENT'; round?: number };
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 
 // ─────────────────────────────────────────────
@@ -399,6 +405,8 @@ export type GameEvent =
   | DoorClosedEvent
   | StairExitTriggeredEvent
   | FloorChangedEvent
+  | MapChangedEvent
+  | EntitiesReplacedEvent
   | TurnEndedEvent
   | PlayerDiedEvent
   | PlayerLeveledUpEvent
@@ -433,7 +441,7 @@ export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
 export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationError[] };
 
-export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' | 'dash' };
+export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' | 'dash' | 'teleport' };
 
 export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; damageType: DamageType; position: Position };
 
@@ -454,6 +462,10 @@ export type DoorClosedEvent = { type: 'DOOR_CLOSED'; position: Position };
 export type StairExitTriggeredEvent = { type: 'STAIR_EXIT_TRIGGERED'; direction: 'down' | 'up' };
 
 export type FloorChangedEvent = { type: 'FLOOR_CHANGED'; from: number; to: number };
+
+export type MapChangedEvent = { type: 'MAP_CHANGED'; width: number; height: number };
+
+export type EntitiesReplacedEvent = { type: 'ENTITIES_REPLACED'; entityIds: EntityId[] };
 
 export type TurnEndedEvent = { type: 'TURN_ENDED'; turnNumber: number };
 

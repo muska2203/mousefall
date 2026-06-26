@@ -1,9 +1,8 @@
 import {describe, expect, it, beforeEach, afterEach} from "vitest";
 import {makeGameState, makePlayer} from "../../fixtures/gameState.ts";
-import {performFloorTransition} from "@simulation/systems/actions/floor-transition-logic";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action";
 import {stairsTransitionReaction} from "@simulation/systems/world-reactions/stairs-reaction";
-import type {GameState, StairsEntity, EntityMovedEvent} from "@simulation/types.ts";
+import type {GameState, StairsEntity, EntityMovedEvent, GameEvent} from "@simulation/types.ts";
 import type {DoorTemplate} from "@content/schemas";
 import {initRegistry, resetRegistry} from "@content/registry";
 import {ExecutionBuilder} from "@simulation/systems/actions/types";
@@ -29,6 +28,13 @@ function addEntity(state: GameState, entity: import('@simulation/types').Entity)
   return state;
 }
 
+/**
+ * Хелпер: извлекает типы событий из дочерних узлов.
+ */
+function childEventTypes(node: { children: { event: GameEvent }[] }): string[] {
+  return node.children.map(child => child.event.type);
+}
+
 describe('stairsTransitionReaction — обнаружение лестницы', () => {
   it('порождает STAIR_EXIT_TRIGGERED при наступании на stairs_down', () => {
     const player = makePlayer({ x: 5, y: 5 });
@@ -49,11 +55,8 @@ describe('stairsTransitionReaction — обнаружение лестницы',
 
     const intents = stairsTransitionReaction(state, moveEvent, builder, moveNode);
 
-    // Состояние НЕ должно измениться
     expect(state.floor).toBe(1);
-    // Реакция должна вернуть интент, порождающий событие-запрос
     expect(intents).toEqual([{ type: 'TRIGGER_STAIR_EXIT', direction: 'down' }]);
-    // Дерево не мутируется напрямую реакцией
     expect(moveNode.children.length).toBe(0);
   });
 
@@ -162,7 +165,7 @@ describe('descendAction / ascendAction — валидация', () => {
   });
 });
 
-describe('performFloorTransition — спуск и подъём', () => {
+describe('descendAction.execute — переход на новый этаж', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
@@ -186,26 +189,49 @@ describe('performFloorTransition — спуск и подъём', () => {
     resetRegistry();
   });
 
-  it('генерирует новый этаж при спуске', () => {
+  it('генерирует новый этаж и строит дерево событий', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const state = makeGameState({ player, floor: 1 });
+    const stairsDown = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
+    const state = addEntity(makeGameState({ player, floor: 1 }), stairsDown);
     const oldMap = state.map;
 
-    performFloorTransition(state, 'down');
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'DESCEND', entityId: 'player' },
+    });
+
+    descendAction.execute(state, { type: 'DESCEND', entityId: 'player' }, [], builder, builder.root);
 
     expect(state.floor).toBe(2);
     expect(state.map).not.toBe(oldMap);
     expect(state.entities.has('player')).toBe(true);
     expect(state.player.ap).toBe(state.player.maxAp);
     expect(state.turn.activeSide).toBe('PLAYER');
+    expect(state.turn.round).toBe(1);
+
+    const floorNode = builder.root.children[0]!;
+    expect(floorNode.event.type).toBe('FLOOR_CHANGED');
+
+    const types = childEventTypes(floorNode);
+    expect(types).toContain('MAP_CHANGED');
+    expect(types).toContain('ENTITIES_REPLACED');
+    expect(types).toContain('ENTITY_MOVED');
+    expect(types).toContain('TURN_BEGAN');
+    expect(types).toContain('AP_RESTORED');
   });
 
   it('сохраняет текущий этаж в снапшот перед спуском', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const state = makeGameState({ player, floor: 1 });
+    const stairsDown = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
+    const state = addEntity(makeGameState({ player, floor: 1 }), stairsDown);
     state.explored[5]![5] = true;
 
-    performFloorTransition(state, 'down');
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'DESCEND', entityId: 'player' },
+    });
+
+    descendAction.execute(state, { type: 'DESCEND', entityId: 'player' }, [], builder, builder.root);
 
     expect(state.floorSnapshots[0]).toBeDefined();
     expect(state.floorSnapshots[0]!.floor).toBe(1);
@@ -214,16 +240,32 @@ describe('performFloorTransition — спуск и подъём', () => {
 
   it('восстанавливает снапшот при возвращении наверх', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const state = makeGameState({ player, floor: 1 });
+    const stairsDown = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
+    const state = addEntity(makeGameState({ player, floor: 1 }), stairsDown);
     const originalMap = state.map;
     state.explored[5]![5] = true;
 
-    performFloorTransition(state, 'down');
+    const descendBuilder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'DESCEND', entityId: 'player' },
+    });
+    descendAction.execute(state, { type: 'DESCEND', entityId: 'player' }, [], descendBuilder, descendBuilder.root);
     expect(state.floor).toBe(2);
 
-    performFloorTransition(state, 'up');
-    expect(state.floor).toBe(1);
+    const stairsUp = Array.from(state.entities.values()).find(
+      (e): e is StairsEntity => e.type === 'stairs' && e.templateId === 'stairs_up',
+    );
+    expect(stairsUp).toBeDefined();
+    state.player.x = stairsUp!.x;
+    state.player.y = stairsUp!.y;
 
+    const ascendBuilder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'ASCEND', entityId: 'player' },
+    });
+    ascendAction.execute(state, { type: 'ASCEND', entityId: 'player' }, [], ascendBuilder, ascendBuilder.root);
+
+    expect(state.floor).toBe(1);
     expect(state.map).toBe(originalMap);
     expect(state.explored[5]![5]).toBe(true);
   });
@@ -233,28 +275,32 @@ describe('performFloorTransition — спуск и подъём', () => {
     const stairsDown = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
     const state = addEntity(makeGameState({ player, floor: 1 }), stairsDown);
 
-    performFloorTransition(state, 'down');
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'DESCEND', entityId: 'player' },
+    });
+
+    descendAction.execute(state, { type: 'DESCEND', entityId: 'player' }, [], builder, builder.root);
+
     const floor2StairsUp = Array.from(state.entities.values()).find(
       (e): e is StairsEntity => e.type === 'stairs' && e.templateId === 'stairs_up',
     );
     expect(floor2StairsUp).toBeDefined();
     expect(state.player.x).toBe(floor2StairsUp!.x);
     expect(state.player.y).toBe(floor2StairsUp!.y);
-
-    performFloorTransition(state, 'up');
-    const floor1StairsDown = Array.from(state.entities.values()).find(
-      (e): e is StairsEntity => e.type === 'stairs' && e.templateId === 'stairs_down',
-    );
-    expect(floor1StairsDown).toBeDefined();
-    expect(state.player.x).toBe(floor1StairsDown!.x);
-    expect(state.player.y).toBe(floor1StairsDown!.y);
   });
 
   it('не теряет игрока при переходе', () => {
     const player = makePlayer({ x: 5, y: 5, hp: 77 });
-    const state = makeGameState({ player, floor: 1 });
+    const stairsDown = makeStairs({ templateId: 'stairs_down', x: 5, y: 5 });
+    const state = addEntity(makeGameState({ player, floor: 1 }), stairsDown);
 
-    performFloorTransition(state, 'down');
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'DESCEND', entityId: 'player' },
+    });
+
+    descendAction.execute(state, { type: 'DESCEND', entityId: 'player' }, [], builder, builder.root);
 
     expect(state.player.hp).toBe(77);
     expect(state.entities.get('player')).toBe(state.player);

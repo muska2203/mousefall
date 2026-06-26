@@ -1,5 +1,5 @@
 import {GameState} from "@simulation/types.ts";
-import {ExecutionBuilder, ExecutionNode, Intent, OpenDoorIntent, CloseDoorIntent} from "@simulation/core-types.ts";
+import {ExecutionBuilder, ExecutionNode, Intent, OpenDoorIntent, CloseDoorIntent, SetMapIntent, SetEntitiesIntent, TeleportEntityIntent, UpdateFogIntent} from "@simulation/core-types.ts";
 
 // Реэкспорт базовых типов для обратной совместимости потребителей
 export type {
@@ -10,7 +10,10 @@ export type {
   DamageIntent,
   DieIntent,
   ApplyStatusIntent,
-  ChangeFloorIntent,
+  SetMapIntent,
+  SetEntitiesIntent,
+  TeleportEntityIntent,
+  UpdateFogIntent,
   SetCooldownIntent,
   ConsumeApIntent,
   TickStatusEffectsIntent,
@@ -37,6 +40,10 @@ export type {
 
 export type OpenDoorIntentExecutor = IntentExecutor<OpenDoorIntent>;
 export type CloseDoorIntentExecutor = IntentExecutor<CloseDoorIntent>;
+export type SetMapIntentExecutor = IntentExecutor<SetMapIntent>;
+export type SetEntitiesIntentExecutor = IntentExecutor<SetEntitiesIntent>;
+export type TeleportEntityIntentExecutor = IntentExecutor<TeleportEntityIntent>;
+export type UpdateFogIntentExecutor = IntentExecutor<UpdateFogIntent>;
 
 export type IntentExecutor<T extends Intent> = (
   state: GameState,

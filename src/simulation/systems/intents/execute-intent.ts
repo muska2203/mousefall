@@ -9,7 +9,10 @@ import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types
 import {runWorldReactions} from "@simulation/systems/world-reactions/reactions.ts";
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
 import {executeApplyStatusIntent} from "@simulation/systems/intents/apply-status-intent-executer.ts";
-import {executeChangeFloorIntent} from "@simulation/systems/intents/change-floor-intent-executer.ts";
+import {executeSetMapIntent} from "@simulation/systems/intents/set-map-intent-executor.ts";
+import {executeSetEntitiesIntent} from "@simulation/systems/intents/set-entities-intent-executor.ts";
+import {executeTeleportEntityIntent} from "@simulation/systems/intents/teleport-entity-intent-executor.ts";
+import {executeUpdateFogIntent} from "@simulation/systems/intents/update-fog-intent-executor.ts";
 import {executeSetCooldownIntent} from "@simulation/systems/intents/set-cooldown-intent-executer.ts";
 import {executeConsumeApIntent} from "@simulation/systems/intents/consume-ap-intent-executer.ts";
 import {executeTickStatusEffectsIntent} from "@simulation/systems/intents/tick-status-effects-intent-executer.ts";
@@ -41,7 +44,10 @@ const intentExecutors = {
   DAMAGE: executeDamageIntent,
   DIE: executeDieIntent,
   APPLY_STATUS: executeApplyStatusIntent,
-  CHANGE_FLOOR: executeChangeFloorIntent,
+  SET_MAP: executeSetMapIntent,
+  SET_ENTITIES: executeSetEntitiesIntent,
+  TELEPORT_ENTITY: executeTeleportEntityIntent,
+  UPDATE_FOG: executeUpdateFogIntent,
   SET_COOLDOWN: executeSetCooldownIntent,
   CONSUME_AP: executeConsumeApIntent,
   TICK_STATUS_EFFECTS: executeTickStatusEffectsIntent,

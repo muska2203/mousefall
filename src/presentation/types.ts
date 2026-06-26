@@ -355,7 +355,6 @@ export type PresentationIntent =
   | { type: 'HEAL'; entityId: string; amount: number; position: Position }
   | { type: 'DIE'; entityId: string; position: Position }
   | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
-  | { type: 'CHANGE_FLOOR'; direction: 'down' | 'up' }
   | { type: 'SET_COOLDOWN'; entityId: string; abilityId: string; turns: number }
   | { type: 'CONSUME_AP'; entityId: string; amount: number }
   | { type: 'TICK_STATUS_EFFECTS'; entityId: string };
@@ -406,8 +405,6 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
       if (!entity) return null;
       return { type: 'APPLY_STATUS', entityId: intent.entityId, statusType: intent.status.type, duration: intent.status.duration, value: intent.status.value, position: { x: entity.x, y: entity.y } };
     }
-    case 'CHANGE_FLOOR':
-      return { type: 'CHANGE_FLOOR', direction: intent.direction };
     case 'SET_COOLDOWN':
       return { type: 'SET_COOLDOWN', entityId: intent.entityId, abilityId: intent.abilityId, turns: intent.turns };
     case 'CONSUME_AP':

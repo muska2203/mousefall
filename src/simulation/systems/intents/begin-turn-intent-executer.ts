@@ -18,7 +18,9 @@ export const executeBeginTurnIntent: IntentExecutor<BeginTurnIntent> = (
 ) => {
   state.turn.activeSide = intent.side;
 
-  if (intent.side === 'PLAYER') {
+  if (intent.round !== undefined) {
+    state.turn.round = intent.round;
+  } else if (intent.side === 'PLAYER') {
     state.turn.round += 1;
   }
 
