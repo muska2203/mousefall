@@ -15,6 +15,7 @@ import {FogRenderer} from './FogRenderer';
 import {FloatingTextRenderer} from './FloatingTextRenderer';
 import {TargetingRenderer} from './TargetingRenderer';
 import {DebugMapRenderer} from './DebugMapRenderer';
+import {UnitInfoRenderer} from './UnitInfoRenderer';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
 import {Vec2Tween, type TickerLike, runTickerTween, lerp} from '@utils/tween';
 
@@ -35,6 +36,7 @@ export class WorldRenderer {
   private fogRenderer = new FogRenderer();
   private floatingTextRenderer = new FloatingTextRenderer();
   private debugMapRenderer = new DebugMapRenderer();
+  public readonly unitInfoRenderer = new UnitInfoRenderer();
 
   private cameraAnimation: CameraAnimation | null = null;
   private lastInput: RenderInput | null = null;
@@ -55,6 +57,7 @@ export class WorldRenderer {
     this.root.addChild(this.targetingRenderer.overlayContainer);
     this.root.addChild(this.fogRenderer.container);
     this.root.addChild(this.entityRenderer.container);
+    this.root.addChild(this.unitInfoRenderer.container);
     this.root.addChild(this.targetingRenderer.previewContainer);
 
     this.textLayer.addChild(this.targetingRenderer.previewTextContainer);
@@ -104,6 +107,7 @@ export class WorldRenderer {
     this.targetingRenderer.update(input);
     this.entityRenderer.update(input);
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);
+    this.unitInfoRenderer.update(input, (id) => this.entityRenderer.getSprite(id));
 
     this.root.scale.set(scale);
     if (!this.cameraAnimation) {
@@ -159,7 +163,7 @@ export class WorldRenderer {
 
   /** Анимировать изменение заполнения полоски HP сущности. */
   animateHpChange(entityId: string, fromHp: number, toHp: number, maxHp: number, config: AnimationConfigEntry): Promise<void> {
-    return this.entityRenderer.animateHpChange(entityId, fromHp, toHp, maxHp, config);
+    return this.unitInfoRenderer.animateHpChange(entityId, fromHp, toHp, maxHp, config);
   }
 
   /** Анимировать отскок сущности при столкновении с препятствием. */
@@ -402,8 +406,9 @@ export class WorldRenderer {
   private onTick = (): void => {
     const now = performance.now();
     this.entityRenderer.updateAnimations(now);
-    this.entityRenderer.syncHealthBarPositions();
+    this.unitInfoRenderer.updateAnimations(now);
     this.floatingTextRenderer.update(now);
+    this.unitInfoRenderer.syncPositions((id) => this.entityRenderer.getSprite(id));
     this.updateCamera(now);
     this.syncTextLayer();
   };
@@ -457,6 +462,7 @@ export class WorldRenderer {
     this.entityRenderer.clear();
     this.fogRenderer.clear();
     this.floatingTextRenderer.clear();
+    this.unitInfoRenderer.destroy();
     this.cameraAnimation = null;
     this.lastInput = null;
     this.root.destroy({children: true});
