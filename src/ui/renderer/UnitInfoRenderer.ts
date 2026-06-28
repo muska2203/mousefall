@@ -6,7 +6,7 @@
  */
 
 import {Container, Graphics, Sprite, Texture} from 'pixi.js';
-import type {RenderInput, StatusEffect} from '@presentation/types';
+import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode} from '@presentation/types';
 import {Tween, lerp, clamp01} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
@@ -40,7 +40,9 @@ type UnitInfoWidget = {
   hpBarBg: Graphics;
   hpBarFill: Graphics;
   lastHpRatio: number;
-  /** Текущая высота содержимого виджета с учётом видимых слотов эффектов. */
+  /** Есть ли хотя бы один слот эффекта, независимо от загрузки текстуры. */
+  hasEffects: boolean;
+  /** Текущая высота содержимого виджета с учётом слотов эффектов. */
   contentHeight: number;
 };
 
@@ -54,6 +56,11 @@ export class UnitInfoRenderer {
   private widgets = new Map<string, UnitInfoWidget>();
   private hpChangeAnimations = new Map<string, ActiveAnimation>();
 
+  /** Снимок статус-эффектов на момент последнего idle-кадра.
+   *  Используется во время анимаций, чтобы новые эффекты (например, burning)
+   *  не появлялись в виджете раньше завершения анимации. */
+  private lastIdleStatusEffects = new Map<string, readonly StatusEffect[]>();
+
   constructor() {
     this.container.sortableChildren = true;
   }
@@ -62,6 +69,15 @@ export class UnitInfoRenderer {
   update(input: RenderInput, getSprite: (id: string) => Sprite | undefined): void {
     const state = input.state;
     const seen = new Set<string>();
+
+    // Во время анимаций показываем эффекты из последнего idle-кадра,
+    // чтобы спрайты статусов не появлялись до завершения анимации.
+    if (input.phase !== 'animating') {
+      this.lastIdleStatusEffects = this.cloneStatusEffects(input.statusEffectsByEntity);
+    }
+    const statusEffectsByEntity = input.phase === 'animating'
+      ? this.lastIdleStatusEffects
+      : input.statusEffectsByEntity;
 
     const processEntity = (id: string, entity: unknown) => {
       if (!hasHp(entity)) return;
@@ -77,12 +93,15 @@ export class UnitInfoRenderer {
         this.container.addChild(widget.container);
       }
 
-      const effects = input.statusEffectsByEntity.get(id) ?? [];
+      const effects = statusEffectsByEntity.get(id) ?? [];
       this.updateEffectSlots(widget, effects);
 
-      // Если идёт анимация HP, не сбрасываем заполнение текущим значением —
-      // иначе полоска будет мигать конечным HP во время tween.
-      if (!this.hpChangeAnimations.has(id)) {
+      // Не перезаписываем полоску текущим HP, если для сущности уже идёт
+      // анимация изменения HP или она запланирована в текущем кадре.
+      // Иначе полоска сначала резко падёт на итоговый уровень,
+      // а затем animateHpChange вернёт её к начальному значению.
+      const hasPlannedHpChange = this.hasPendingHpChange(input.animations, id);
+      if (!this.hpChangeAnimations.has(id) && !hasPlannedHpChange) {
         this.updateHpBar(widget, entity.hp, entity.maxHp);
       }
       this.syncWidgetPosition(widget, sprite);
@@ -120,10 +139,9 @@ export class UnitInfoRenderer {
         return;
       }
 
-      // Устанавливаем начальное заполнение до старта tween, чтобы избежать мигания.
-      this.updateHpBar(widget, fromHp, maxHp);
-
       // Прерываем предыдущую анимацию полоски для этой сущности, если есть.
+      // Делаем это до расчёта стартовой точки, чтобы взять актуальное
+      // визуальное значение, а не зафиксированное в состоянии fromHp.
       const prev = this.hpChangeAnimations.get(entityId);
       if (prev) {
         prev.tween.cancel();
@@ -131,11 +149,18 @@ export class UnitInfoRenderer {
         this.hpChangeAnimations.delete(entityId);
       }
 
+      // Начинаем tween от текущего отображаемого HP, а не от fromHp.
+      // Если несколько анимаций урона идут подряд, fromHp из шага
+      // отражает состояние до конкретного удара, но полоска в этот
+      // момент ещё догоняет предыдущую анимацию. Старт от визуального
+      // значения избавляет от рывка и «лишнего» уменьшения полоски.
+      const visualFromHp = widget.lastHpRatio * maxHp;
+
       const tween = new Tween({
         duration: config.duration,
         easing: config.easing,
         onUpdate: (p) => {
-          const hp = lerp(fromHp, toHp, p);
+          const hp = lerp(visualFromHp, toHp, p);
           this.updateHpBar(widget, hp, maxHp);
         },
         onComplete: () => {
@@ -171,6 +196,35 @@ export class UnitInfoRenderer {
     this.hpChangeAnimations.clear();
   }
 
+  private cloneStatusEffects(source: Map<string, readonly StatusEffect[]>): Map<string, readonly StatusEffect[]> {
+    const clone = new Map<string, readonly StatusEffect[]>();
+    for (const [id, effects] of source) {
+      clone.set(id, [...effects]);
+    }
+    return clone;
+  }
+
+  /** Проверить, есть ли в запланированных анимациях шаг HP_CHANGE для сущности. */
+  private hasPendingHpChange(phases: readonly AnimationPhase[] | null, entityId: string): boolean {
+    if (!phases) return false;
+    for (const phase of phases) {
+      for (const node of phase.nodes) {
+        if (this.findHpChangeInNode(node, entityId)) return true;
+      }
+    }
+    return false;
+  }
+
+  private findHpChangeInNode(node: AnimationNode, entityId: string): boolean {
+    if (node.step.type === 'HP_CHANGE' && node.step.entityId === entityId) {
+      return true;
+    }
+    for (const child of node.children) {
+      if (this.findHpChangeInNode(child, entityId)) return true;
+    }
+    return false;
+  }
+
   /** Освободить ресурсы. */
   destroy(): void {
     this.cancelAnimations();
@@ -203,6 +257,7 @@ export class UnitInfoRenderer {
       hpBarBg,
       hpBarFill,
       lastHpRatio: 1,
+      hasEffects: false,
       contentHeight: DEFAULT_CONTENT_HEIGHT,
     };
   }
@@ -218,12 +273,14 @@ export class UnitInfoRenderer {
     widget.circle.circle(circleX, circleY + CIRCLE_DIAMETER / 2, CIRCLE_DIAMETER / 2);
     widget.circle.fill({color: COLOR_SLOT_FILL});
 
-    // HP-бар
-    const hasVisibleSlots = widget.effectSlots.some((slot) => slot.visible);
-    const slotY = hasVisibleSlots
+    // HP-бар. Высота виджета зависит от наличия эффектов, а не от
+    // фактической видимости спрайта, чтобы асинхронная подгрузка текстуры
+    // не приводила к «прыжку» верстки.
+    const hasEffectSlots = widget.hasEffects;
+    const slotY = hasEffectSlots
       ? circleY + CIRCLE_DIAMETER + PADDING
       : circleY + CIRCLE_DIAMETER;
-    const barY = hasVisibleSlots
+    const barY = hasEffectSlots
       ? slotY + EFFECT_SIZE + PADDING
       : slotY + PADDING;
     const barWidth = BASE_WIDTH - 2 * PADDING;
@@ -239,6 +296,7 @@ export class UnitInfoRenderer {
 
   private updateEffectSlots(widget: UnitInfoWidget, effects: readonly StatusEffect[]): void {
     const hasEffects = effects.length > 0;
+    widget.hasEffects = hasEffects;
     const circleY = PADDING;
     const slotY = hasEffects
       ? circleY + CIRCLE_DIAMETER + PADDING

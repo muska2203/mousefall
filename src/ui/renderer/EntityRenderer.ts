@@ -525,9 +525,16 @@ export class EntityRenderer {
 
   /** Обновить позиции спрайтов по активным анимациям. Вызывается из ticker. */
   updateAnimations(now: number): void {
+    const completed: string[] = [];
     for (const [entityId, anim] of this.activeAnimations) {
       const finished = anim.tween.update(now);
       if (finished) {
+        completed.push(entityId);
+      }
+    }
+    for (const entityId of completed) {
+      const anim = this.activeAnimations.get(entityId);
+      if (anim) {
         this.activeAnimations.delete(entityId);
         anim.onComplete();
       }

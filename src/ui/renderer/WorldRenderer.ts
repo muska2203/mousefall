@@ -17,10 +17,10 @@ import {TargetingRenderer} from './TargetingRenderer';
 import {DebugMapRenderer} from './DebugMapRenderer';
 import {UnitInfoRenderer} from './UnitInfoRenderer';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-import {Vec2Tween, type TickerLike, runTickerTween, lerp} from '@utils/tween';
+import {Tween, type TickerLike, runTickerTween, lerp} from '@utils/tween';
 
 type CameraAnimation = {
-  tween: Vec2Tween;
+  tween: Tween;
 };
 
 export class WorldRenderer {
@@ -39,6 +39,10 @@ export class WorldRenderer {
   public readonly unitInfoRenderer = new UnitInfoRenderer();
 
   private cameraAnimation: CameraAnimation | null = null;
+  /** Базовая клетка камеры: начальная точка текущего/последнего движения игрока. */
+  private cameraBase: Position | null = null;
+  /** Текущая мировая позиция камеры (в пикселях тайлов), обновляется tween'ом. */
+  private cameraWorldPos: { x: number; y: number } | null = null;
   private lastInput: RenderInput | null = null;
 
   constructor(viewportWidth: number, viewportHeight: number) {
@@ -82,25 +86,60 @@ export class WorldRenderer {
 
   /**
    * Обновить отрисовку на основе текущего состояния игры.
-   * Если для игрока запланирована анимация MOVE — камера привязывается к
-   * начальной клетке анимации, чтобы избежать телепорта камеры в конечную
-   * позицию до старта анимации.
-   * Если камера уже анимируется, root-позицию не сбрасываем — позволяем tween
-   * обновлять её в ticker. Иначе любой повторный render() во время движения
-   * (ресайз, hover, таргетинг, toast) телепортировал бы камеру назад.
+   *
+   * Правила работы с камерой:
+   * - Если активна камерная анимация — root-позиция вычисляется из текущей
+   *   мировой позиции камеры (cameraWorldPos) и актуального zoom'а. Это
+   *   предотвращает телепорт при изменении масштаба/ресайзе во время движения.
+   * - Вне анимации камера центрируется на cameraBase. Пока анимация движения
+   *   игрока ещё не началась, cameraBase берётся из начальной клетки первого
+   *   MOVE/JUMP в плане, чтобы не показывать игрока в конечной позиции раньше
+   *   времени. После старта/завершения анимации база обновляется в animateCamera().
    */
   render(input: RenderInput): void {
     this.lastInput = input;
-    const cameraBase = this.findPlayerMoveFrom(input) ?? input.state.player;
-    const playerScreenX = cameraBase.x * TILE_SIZE;
-    const playerScreenY = cameraBase.y * TILE_SIZE;
 
     const scale = input.zoom;
     const viewW = this.viewportWidth / scale;
     const viewH = this.viewportHeight / scale;
 
-    const cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
-    const cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
+    let cameraX: number;
+    let cameraY: number;
+
+    this.root.scale.set(scale);
+
+    if (this.cameraAnimation && this.cameraWorldPos) {
+      // Пока активна камерная анимация, мировая позиция камеры управляется tween'ом.
+      // render() только применяет текущий zoom к уже вычисленным мировым координатам.
+      cameraX = this.cameraWorldPos.x;
+      cameraY = this.cameraWorldPos.y;
+      this.root.x = -cameraX * scale;
+      this.root.y = -cameraY * scale;
+    } else {
+      // База камеры: если для игрока ещё не началась анимация движения в текущей партии,
+      // берём начальную клетку из плана, чтобы не телепортировать камеру в конечную
+      // позицию до старта анимации. После старта/завершения анимации база обновляется
+      // в animateCamera().
+      if (!input.animations) {
+        this.cameraBase = null;
+      } else if (this.cameraBase === null) {
+        const plannedFrom = this.findPlayerMoveFrom(input);
+        if (plannedFrom) {
+          this.cameraBase = plannedFrom;
+        }
+      }
+
+      const cameraBase = this.cameraBase ?? input.state.player;
+      const playerScreenX = cameraBase.x * TILE_SIZE;
+      const playerScreenY = cameraBase.y * TILE_SIZE;
+
+      cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
+      cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
+
+      this.root.x = -cameraX * scale;
+      this.root.y = -cameraY * scale;
+      this.cameraWorldPos = { x: cameraX, y: cameraY };
+    }
 
     this.tileRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.debugMapRenderer.update(input);
@@ -108,12 +147,6 @@ export class WorldRenderer {
     this.entityRenderer.update(input);
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.unitInfoRenderer.update(input, (id) => this.entityRenderer.getSprite(id));
-
-    this.root.scale.set(scale);
-    if (!this.cameraAnimation) {
-      this.root.x = -cameraX * scale;
-      this.root.y = -cameraY * scale;
-    }
 
     this.syncTextLayer();
   }
@@ -366,32 +399,46 @@ export class WorldRenderer {
   /** Анимировать движение камеры между двумя тайлами. */
   animateCamera(fromTile: Position, toTile: Position, config: AnimationConfigEntry): Promise<void> {
     return new Promise((resolve) => {
-      const scale = this.root.scale.x || 1;
-      const viewW = this.viewportWidth / scale;
-      const viewH = this.viewportHeight / scale;
-
-      const fromX = fromTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
-      const fromY = fromTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2;
-      const toX = toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
-      const toY = toTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2;
-
-      // Если предыдущая камера-анимация ещё не завершена — мгновенно доводим
+      // Прерываем предыдущую камерную анимацию, чтобы старый onComplete не сбросил
+      // новый tween и чтобы камера плавно продолжила движение от текущей позиции.
       if (this.cameraAnimation) {
-        this.root.x = -toX * scale;
-        this.root.y = -toY * scale;
+        this.cameraAnimation.tween.cancel();
       }
 
-      const tween = new Vec2Tween({
-        from: { x: fromX, y: fromY },
-        to: { x: toX, y: toY },
+      this.cameraBase = fromTile;
+
+      // Анимируем прогресс от 0 до 1, а мировые координаты пересчитываем каждый кадр.
+      // Это корректно обрабатывает изменение zoom'а или ресайза во время движения камеры.
+      const tween = new Tween({
         duration: config.duration,
         easing: config.easing,
-        onUpdate: (x, y) => {
-          this.root.x = -x * scale;
-          this.root.y = -y * scale;
+        onUpdate: (p) => {
+          const scale = this.root.scale.x || 1;
+          const viewW = this.viewportWidth / scale;
+          const viewH = this.viewportHeight / scale;
+
+          const fromX = fromTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
+          const fromY = fromTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2;
+          const toX = toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
+          const toY = toTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2;
+
+          const x = lerp(fromX, toX, p);
+          const y = lerp(fromY, toY, p);
+
+          this.cameraWorldPos = { x, y };
         },
         onComplete: () => {
+          // Защита от устаревшего onComplete: старый tween мог быть отменён.
+          if (this.cameraAnimation?.tween !== tween) return;
           this.cameraAnimation = null;
+          this.cameraBase = toTile;
+          const scale = this.root.scale.x || 1;
+          const viewW = this.viewportWidth / scale;
+          const viewH = this.viewportHeight / scale;
+          this.cameraWorldPos = {
+            x: toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
+            y: toTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2,
+          };
           resolve();
         },
       });
@@ -414,11 +461,16 @@ export class WorldRenderer {
   };
 
   private updateCamera(now: number): void {
-    if (!this.cameraAnimation) return;
+    if (!this.cameraAnimation || !this.cameraWorldPos) return;
     const finished = this.cameraAnimation.tween.update(now);
     if (finished) {
       this.cameraAnimation = null;
     }
+    // Применяем текущий zoom к мировой позиции камеры. Это корректно обрабатывает
+    // изменение масштаба во время движения камеры.
+    const scale = this.root.scale.x || 1;
+    this.root.x = -this.cameraWorldPos.x * scale;
+    this.root.y = -this.cameraWorldPos.y * scale;
   }
 
   /** Преобразовать мировые координаты тайла в экранные координаты относительно viewport. */
@@ -464,6 +516,8 @@ export class WorldRenderer {
     this.floatingTextRenderer.clear();
     this.unitInfoRenderer.destroy();
     this.cameraAnimation = null;
+    this.cameraBase = null;
+    this.cameraWorldPos = null;
     this.lastInput = null;
     this.root.destroy({children: true});
     this.textLayer.destroy({children: true});

@@ -302,6 +302,60 @@ describe('UnitInfoRenderer', () => {
     expect(widget.lastHpRatio).toBe(0.5);
   });
 
+  it('starts chained HP change from current visual value, not from step fromHp', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.state.player.hp = 100;
+    input.state.player.maxHp = 100;
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    // Первая анимация 100 → 80, останавливаем на середине (90).
+    const first = renderer.animateHpChange('player', 100, 80, 100, {duration: 10, blocking: false, easing: (t) => t});
+    renderer.updateAnimations(performance.now() + 5);
+    expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
+
+    // Вторая анимация приходит до завершения первой: 80 → 60.
+    // Полоска не должна прыгать к 80, а продолжать плавно с текущего 90.
+    const second = renderer.animateHpChange('player', 80, 60, 100, {duration: 10, blocking: false, easing: (t) => t});
+    expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
+
+    renderer.updateAnimations(performance.now() + 20);
+    await Promise.all([first, second]);
+
+    expect(widget.lastHpRatio).toBe(0.6);
+  });
+
+  it('does not snap HP bar to final value when HP_CHANGE animation is planned', () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.state.player.hp = 5;
+    input.animations = [
+      {
+        side: 'PLAYER',
+        nodes: [
+          {
+            step: {type: 'HP_CHANGE', entityId: 'player', fromHp: 10, toHp: 5, maxHp: 10, position: {x: 0, y: 0}},
+            children: [],
+          },
+        ],
+      },
+    ];
+
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    // Полоска не должна резко упасть до 0.5: анимация сама установит начальное
+    // заполнение (fromHp) при старте.
+    expect(widget.lastHpRatio).toBe(1);
+  });
+
   it('hides effect slots when entity has no status effects', () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
@@ -338,5 +392,61 @@ describe('UnitInfoRenderer', () => {
     expect(widget.effectSlots[1].visible).toBe(true);
     expect(widget.effectSlots[2].visible).toBe(true);
     expect(widget.effectSlots[3].visible).toBe(true);
+  });
+
+  it('delays newly added status effect sprites until animations finish', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+    expect(widget.effectSlots.every((slot: Sprite) => !slot.visible)).toBe(true);
+
+    input.phase = 'animating';
+    input.statusEffectsByEntity = new Map([
+      ['player', [{type: 'burning', duration: 2, value: 1, statModifiers: null} as StatusEffect]],
+    ]);
+    renderer.update(input, (id) => sprites.get(id));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(widget.effectSlots.every((slot: Sprite) => !slot.visible)).toBe(true);
+
+    input.phase = 'idle';
+    renderer.update(input, (id) => sprites.get(id));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(widget.effectSlots[0].visible).toBe(true);
+  });
+
+  it('reserves layout space for status effects before their texture loads', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    // Виджет без эффектов компактный (54 = PADDING + круг + PADDING + бар + PADDING).
+    expect(widget.contentHeight).toBe(54);
+
+    input.statusEffectsByEntity = new Map([
+      ['player', [{type: 'burning', duration: 2, value: 1, statModifiers: null} as StatusEffect]],
+    ]);
+    renderer.update(input, (id) => sprites.get(id));
+
+    // Текстура ещё не подгружена, но место под слот уже зарезервировано.
+    expect(widget.effectSlots[0].visible).toBe(false);
+    expect(widget.effectSlots[0].y).toBe(40);
+    expect(widget.contentHeight).toBe(74);
+
+    await new Promise((resolve) => setImmediate(resolve));
+
+    // После загрузки текстуры спрайт появляется на том же месте.
+    expect(widget.effectSlots[0].visible).toBe(true);
+    expect(widget.effectSlots[0].y).toBe(40);
+    expect(widget.contentHeight).toBe(74);
   });
 });
