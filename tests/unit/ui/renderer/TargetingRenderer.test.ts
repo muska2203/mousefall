@@ -156,6 +156,7 @@ function makeRenderInput(
     inventory: [],
     hotbar: [],
     activeEffects: [],
+    statusEffectsByEntity: new Map(),
     runStats: {startTime: Date.now(), enemiesKilled: 0, chestsOpened: 0, itemsPickedUp: 0},
     fieldObjectPopover: null,
     interactionHint: null,

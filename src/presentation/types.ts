@@ -8,13 +8,13 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide } from '@simulation/types';
+import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide, StatusEffect } from '@simulation/types';
 import type { GameAction } from '@simulation/systems/actions/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { ItemDetailViewModel } from './itemDetailMapper';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
-export type { TileType, TurnSide } from '@simulation/types';
+export type { TileType, TurnSide, StatusEffect } from '@simulation/types';
 export type { AnimationConfigKey } from '@utils/animationConfig';
 
 export type Position = { x: number; y: number };
@@ -463,6 +463,11 @@ export type RenderInput = {
   hotbar: HotbarItemViewModel[];
   /** Активные статус-эффекты игрока. */
   activeEffects: ActiveEffectViewModel[];
+  /**
+   * Статус-эффекты всех видимых сущностей, отсортированные для отображения.
+   * Presentation отвечает за порядок, UI только рисует.
+   */
+  statusEffectsByEntity: Map<string, readonly StatusEffect[]>;
   /** Статистика текущего забега. */
   runStats: RunStats;
   /** Popover объекта под курсором на игровом поле (только в фазе хода игрока). */

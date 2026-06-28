@@ -418,9 +418,13 @@ export type Simulation = {
     hoveredTarget: import("@simulation/core-types.ts").Position | null,
   ): import("@simulation/core-types.ts").Intent[];
 
-  /** Возвращает все клетки, попадающие в зону действия способности. */
+  /**
+   * Возвращает все клетки, попадающие в зону действия способности,
+   * вычисленные от лица указанной сущности.
+   */
   getAbilityAffectedPositions(
     abilityId: string,
+    entityId: string,
     selectedTargets: import("@simulation/core-types.ts").Position[],
     hoveredTarget: import("@simulation/core-types.ts").Position | null,
   ): import("@simulation/core-types.ts").Position[];

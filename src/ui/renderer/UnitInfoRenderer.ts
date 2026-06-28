@@ -5,14 +5,18 @@
  * Ширина виджета масштабируется под ширину спрайта объекта.
  */
 
-import {Container, Graphics, Sprite} from 'pixi.js';
-import type {RenderInput} from '@presentation/types';
+import {Container, Graphics, Sprite, Texture} from 'pixi.js';
+import type {RenderInput, StatusEffect} from '@presentation/types';
 import {Tween, lerp, clamp01} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
+import {getStatusEffectSprite, getStatusOverflowSprite} from './spriteRegistry';
+import {getTexture, getTextureSync} from './TextureCache';
+
 
 const BASE_WIDTH = 80;
-const BASE_HEIGHT = 74;
+/** Начальная высота содержимого виджета до первого расчёта реальной высоты. */
+const DEFAULT_CONTENT_HEIGHT = 74;
 const PADDING = 6;
 const CIRCLE_DIAMETER = 28;
 const EFFECT_SIZE = 14;
@@ -24,15 +28,20 @@ const COLOR_SLOT_FILL = 0x222222;
 const COLOR_HP_BG = 0x333333;
 const COLOR_HP_FILL = 0xe74c3c;
 
+const MAX_VISIBLE_STATUS_SLOTS = 4;
+const OVERFLOW_SLOT_INDEX = 3;
+
 type HpEntity = {hp: number; maxHp: number};
 
 type UnitInfoWidget = {
   container: Container;
   circle: Graphics;
-  effectSlots: Graphics[];
+  effectSlots: Sprite[];
   hpBarBg: Graphics;
   hpBarFill: Graphics;
   lastHpRatio: number;
+  /** Текущая высота содержимого виджета с учётом видимых слотов эффектов. */
+  contentHeight: number;
 };
 
 type ActiveAnimation = {
@@ -68,10 +77,13 @@ export class UnitInfoRenderer {
         this.container.addChild(widget.container);
       }
 
+      const effects = input.statusEffectsByEntity.get(id) ?? [];
+      this.updateEffectSlots(widget, effects);
+
       // Если идёт анимация HP, не сбрасываем заполнение текущим значением —
       // иначе полоска будет мигать конечным HP во время tween.
       if (!this.hpChangeAnimations.has(id)) {
-        this.updateWidget(widget, entity.hp, entity.maxHp);
+        this.updateHpBar(widget, entity.hp, entity.maxHp);
       }
       this.syncWidgetPosition(widget, sprite);
     };
@@ -109,7 +121,7 @@ export class UnitInfoRenderer {
       }
 
       // Устанавливаем начальное заполнение до старта tween, чтобы избежать мигания.
-      this.updateWidget(widget, fromHp, maxHp);
+      this.updateHpBar(widget, fromHp, maxHp);
 
       // Прерываем предыдущую анимацию полоски для этой сущности, если есть.
       const prev = this.hpChangeAnimations.get(entityId);
@@ -124,10 +136,10 @@ export class UnitInfoRenderer {
         easing: config.easing,
         onUpdate: (p) => {
           const hp = lerp(fromHp, toHp, p);
-          this.updateWidget(widget, hp, maxHp);
+          this.updateHpBar(widget, hp, maxHp);
         },
         onComplete: () => {
-          this.updateWidget(widget, toHp, maxHp);
+          this.updateHpBar(widget, toHp, maxHp);
           this.hpChangeAnimations.delete(entityId);
           resolve();
         },
@@ -173,9 +185,11 @@ export class UnitInfoRenderer {
     const container = new Container();
 
     const circle = new Graphics();
-    const effectSlots: Graphics[] = [];
-    for (let i = 0; i < 4; i++) {
-      effectSlots.push(new Graphics());
+    const effectSlots: Sprite[] = [];
+    for (let i = 0; i < MAX_VISIBLE_STATUS_SLOTS; i++) {
+      const slot = new Sprite(Texture.EMPTY);
+      slot.anchor.set(0, 0);
+      effectSlots.push(slot);
     }
     const hpBarBg = new Graphics();
     const hpBarFill = new Graphics();
@@ -189,16 +203,14 @@ export class UnitInfoRenderer {
       hpBarBg,
       hpBarFill,
       lastHpRatio: 1,
+      contentHeight: DEFAULT_CONTENT_HEIGHT,
     };
   }
 
-  private updateWidget(widget: UnitInfoWidget, hp: number, maxHp: number): void {
+  private updateHpBar(widget: UnitInfoWidget, hp: number, maxHp: number): void {
     widget.circle.clear();
     widget.hpBarBg.clear();
     widget.hpBarFill.clear();
-    for (const slot of widget.effectSlots) {
-      slot.clear();
-    }
 
     // Круг-иконка вверху по центру
     const circleY = PADDING;
@@ -206,18 +218,14 @@ export class UnitInfoRenderer {
     widget.circle.circle(circleX, circleY + CIRCLE_DIAMETER / 2, CIRCLE_DIAMETER / 2);
     widget.circle.fill({color: COLOR_SLOT_FILL});
 
-    // Слоты эффектов в ряд
-    const totalSlotsWidth = 4 * EFFECT_SIZE + 3 * EFFECT_GAP;
-    let slotX = (BASE_WIDTH - totalSlotsWidth) / 2;
-    const slotY = circleY + CIRCLE_DIAMETER + PADDING;
-    for (const slot of widget.effectSlots) {
-      slot.rect(slotX, slotY, EFFECT_SIZE, EFFECT_SIZE);
-      slot.fill({color: COLOR_SLOT_FILL});
-      slotX += EFFECT_SIZE + EFFECT_GAP;
-    }
-
     // HP-бар
-    const barY = slotY + EFFECT_SIZE + PADDING;
+    const hasVisibleSlots = widget.effectSlots.some((slot) => slot.visible);
+    const slotY = hasVisibleSlots
+      ? circleY + CIRCLE_DIAMETER + PADDING
+      : circleY + CIRCLE_DIAMETER;
+    const barY = hasVisibleSlots
+      ? slotY + EFFECT_SIZE + PADDING
+      : slotY + PADDING;
     const barWidth = BASE_WIDTH - 2 * PADDING;
     const hpRatio = maxHp > 0 ? clamp01(hp / maxHp) : 0;
     widget.lastHpRatio = hpRatio;
@@ -225,6 +233,78 @@ export class UnitInfoRenderer {
     widget.hpBarBg.fill({color: COLOR_HP_BG});
     widget.hpBarFill.rect(PADDING, barY, barWidth * hpRatio, HP_BAR_HEIGHT);
     widget.hpBarFill.fill({color: COLOR_HP_FILL});
+
+    widget.contentHeight = barY + HP_BAR_HEIGHT + PADDING;
+  }
+
+  private updateEffectSlots(widget: UnitInfoWidget, effects: readonly StatusEffect[]): void {
+    const hasEffects = effects.length > 0;
+    const circleY = PADDING;
+    const slotY = hasEffects
+      ? circleY + CIRCLE_DIAMETER + PADDING
+      : circleY + CIRCLE_DIAMETER;
+    const totalSlotsWidth = MAX_VISIBLE_STATUS_SLOTS * EFFECT_SIZE + (MAX_VISIBLE_STATUS_SLOTS - 1) * EFFECT_GAP;
+    let slotX = (BASE_WIDTH - totalSlotsWidth) / 2;
+
+    // Сбрасываем все слоты
+    for (const slot of widget.effectSlots) {
+      slot.x = slotX;
+      slot.y = slotY;
+      slot.visible = false;
+      slot.texture = Texture.EMPTY;
+      slot.width = EFFECT_SIZE;
+      slot.height = EFFECT_SIZE;
+      slotX += EFFECT_SIZE + EFFECT_GAP;
+    }
+
+    // Первые слоты занимают реальные эффекты
+    for (let i = 0; i < OVERFLOW_SLOT_INDEX && i < effects.length; i++) {
+      const slot = widget.effectSlots[i];
+      const effect = effects[i];
+      if (!slot || !effect) continue;
+      this.applyStatusTexture(slot, effect.type);
+    }
+
+    // Если эффектов больше, чем влезает — последний слот показывает "..."
+    const overflowSlot = widget.effectSlots[OVERFLOW_SLOT_INDEX];
+    if (!overflowSlot) return;
+    if (effects.length > MAX_VISIBLE_STATUS_SLOTS) {
+      this.applyTexture(overflowSlot, getStatusOverflowSprite());
+    } else {
+      const fourthEffect = effects[OVERFLOW_SLOT_INDEX];
+      if (fourthEffect) {
+        this.applyStatusTexture(overflowSlot, fourthEffect.type);
+      }
+    }
+  }
+
+  private applyStatusTexture(slot: Sprite, statusType: string): void {
+    this.applyTexture(slot, getStatusEffectSprite(statusType));
+  }
+
+  private applyTexture(slot: Sprite, path: string): void {
+    const texture = getTextureSync(path);
+
+    if (texture) {
+      slot.texture = texture;
+      slot.visible = true;
+    } else {
+      // Текстура ещё не загружена — скрываем слот и подгружаем фоново.
+      slot.texture = Texture.EMPTY;
+      slot.visible = false;
+      getTexture(path)
+        .then((loaded) => {
+          if (slot.destroyed) return;
+          slot.texture = loaded;
+          slot.visible = true;
+          slot.width = EFFECT_SIZE;
+          slot.height = EFFECT_SIZE;
+        })
+        .catch(() => {});
+    }
+
+    slot.width = EFFECT_SIZE;
+    slot.height = EFFECT_SIZE;
   }
 
   private syncWidgetPosition(widget: UnitInfoWidget, sprite: Sprite): void {
@@ -235,7 +315,7 @@ export class UnitInfoRenderer {
     const topY = sprite.y - sprite.height * sprite.anchor.y;
 
     widget.container.x = centerX - (BASE_WIDTH * scale) / 2;
-    widget.container.y = topY - BASE_HEIGHT * scale - VERTICAL_OFFSET;
+    widget.container.y = topY - widget.contentHeight * scale - VERTICAL_OFFSET;
     widget.container.visible = sprite.visible;
     widget.container.zIndex = (sprite.zIndex ?? 0) + 1;
   }
@@ -244,3 +324,5 @@ export class UnitInfoRenderer {
 function hasHp(entity: unknown): entity is HpEntity {
   return typeof entity === 'object' && entity !== null && 'hp' in entity && 'maxHp' in entity;
 }
+
+

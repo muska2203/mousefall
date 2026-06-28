@@ -6,7 +6,7 @@ import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import { chebyshevDistance } from '../../../src/utils/math';
-import { createDefaultAIState } from '../../../src/simulation/ai/ai-state';
+import { createDefaultAIState, getAIOverlay } from '../../../src/simulation/ai/ai-state';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -71,6 +71,7 @@ describe('AI: simple-boss', () => {
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedIntent).not.toBeNull();
+    expect(getAIOverlay(enemyAfter)).toBe('prepared');
     expect(enemyAfter.aiState.preparedIntent?.abilityId).toBe('swoop');
 
     const target = enemyAfter.aiState.preparedIntent!.fixedTargets[0]!;
@@ -107,6 +108,7 @@ describe('AI: simple-boss', () => {
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.x).toBe(preparedTarget.x);
     expect(enemyAfter.y).toBe(preparedTarget.y);
+    expect(getAIOverlay(enemyAfter)).toBeNull();
     expect(chebyshevDistance(enemyAfter, { x: player.x, y: player.y })).toBeLessThanOrEqual(2);
   });
 

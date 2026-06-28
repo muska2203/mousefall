@@ -39,6 +39,16 @@ export function getItemSprite(templateId: string): string {
   return `/assets/items/${templateId}.png`;
 }
 
+/** Путь к спрайту статус-эффекта по типу. */
+export function getStatusEffectSprite(statusType: string): string {
+  return `/assets/statuses/${statusType}.png`;
+}
+
+/** Путь к спрайту "переполнения" слотов статусов (3 точки). */
+export function getStatusOverflowSprite(): string {
+  return '/assets/statuses/overflow.png';
+}
+
 /**
  * Fallback-путь к спрайту двери по templateId и состоянию.
  * Для кастомных openSpriteId используется RenderInput.doorSprites.

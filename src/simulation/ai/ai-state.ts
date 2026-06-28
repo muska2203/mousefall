@@ -13,13 +13,25 @@ import type { EnemyEntity } from '@simulation/types';
 export type AIMode = 'idle' | 'alert' | 'chase' | 'return';
 
 /**
+ * Временное состояние, перекрывающее базовый FSM.
+ * - stunned:  актор оглушён и пропускает ход
+ * - casting:  идёт кастование способности (activeCast)
+ * - prepared: есть подготовленное намерение на следующий ход
+ *
+ * Вычисляется на лету функцией getAIOverlay из источников правды
+ * (statusEffects, activeCast, preparedIntent) и не хранится в AIState,
+ * чтобы избежать дублирования и рассинхронизации.
+ */
+export type AIOverlay = 'stunned' | 'casting' | 'prepared';
+
+/**
  * Runtime-состояние конечного автомата ИИ-врага.
  * strategy: 'hunter' | 'simple-boss'.
  */
 export type AIState = {
   strategy: 'hunter' | 'simple-boss';
 
-  /** Текущее состояние поведения */
+  /** Базовое состояние поведения (FSM) */
   mode: AIMode;
 
   /** Последняя известная позиция игрока (для погони). null — неизвестна. */
@@ -37,8 +49,6 @@ export type AIState = {
   preparedIntent: {
     abilityId: string;
     fixedTargets: Position[];
-    /** Клетки, попадающие в зону действия подготовленного скилла (кэш для presentation-слоя). */
-    affectedPositions: Position[];
   } | null;
 };
 
@@ -47,6 +57,28 @@ export type AIState = {
  */
 export function isEnemyEntity(entity: { type: string; aiState?: unknown }): entity is EnemyEntity {
   return entity.type === 'enemy' && typeof (entity as { aiState?: unknown }).aiState === 'object';
+}
+
+/**
+ * Вычисляет временное AI-состояние (overlay) из источников правды.
+ * Не мутирует state и не хранит результат — вызывается в момент использования.
+ *
+ * Источники правды:
+ * - statusEffects.stunned → 'stunned'
+ * - activeCast            → 'casting'
+ * - aiState.preparedIntent → 'prepared'
+ */
+export function getAIOverlay(enemy: EnemyEntity): AIOverlay | null {
+  if (enemy.statusEffects.some(e => e.type === 'stunned')) {
+    return 'stunned';
+  }
+  if (enemy.activeCast) {
+    return 'casting';
+  }
+  if (enemy.aiState.preparedIntent) {
+    return 'prepared';
+  }
+  return null;
 }
 
 /**

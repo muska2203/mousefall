@@ -34,6 +34,7 @@ import {openDoorAction, closeDoorAction} from "@simulation/systems/actions/door-
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
+import { isEnemyEntity } from "@simulation/ai/ai-state.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import "@simulation/ai/simple-boss-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
@@ -540,7 +541,6 @@ export class GameSimulation implements Simulation {
             strategy.updateState?.(enemy, this.state);
 
             while (enemy.ap > 0) {
-
                 const action = strategy.decideAction(enemy, this.state);
 
                 if (!action) {
@@ -764,12 +764,16 @@ export class GameSimulation implements Simulation {
 
     getAbilityAffectedPositions(
         abilityId: string,
+        entityId: string,
         selectedTargets: Position[],
         hoveredTarget: Position | null,
     ) {
         const executor = getSkillExecutor(abilityId);
         if (!executor) return [];
-        return executor.getAffectedPositions(this.state, this.state.player, selectedTargets, hoveredTarget);
+        const entity = this.state.entities.get(entityId) ??
+            (entityId === this.state.player.id ? this.state.player : undefined);
+        if (!entity) return [];
+        return executor.getAffectedPositions(this.state, entity, selectedTargets, hoveredTarget);
     }
 
     getAbilityIntents(

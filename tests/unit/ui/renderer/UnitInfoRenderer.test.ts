@@ -17,6 +17,7 @@ vi.mock('pixi.js', () => {
     visible = true;
     width = 64;
     height = 64;
+    destroyed = false;
     texture = MockTexture.EMPTY;
     anchor = {
       x: 0.5,
@@ -67,17 +68,33 @@ vi.mock('pixi.js', () => {
     clear() { return this; }
     destroy() {}
   }
+  class MockAssets {
+    static load() {
+      return Promise.resolve(new MockTexture());
+    }
+  }
   return {
     Container: MockContainer,
     Sprite: MockSprite,
     Texture: MockTexture,
     Graphics: MockGraphics,
+    Assets: MockAssets,
+  };
+});
+
+vi.mock('../../../../src/ui/renderer/TextureCache', () => {
+  const fakeTexture = {url: 'fake'};
+  return {
+    getTextureSync: vi.fn(() => undefined),
+    getTexture: vi.fn(() => Promise.resolve(fakeTexture)),
+    hasTexture: vi.fn(() => false),
+    clearTextures: vi.fn(),
   };
 });
 
 import {UnitInfoRenderer} from '../../../../src/ui/renderer/UnitInfoRenderer';
 import {Sprite} from 'pixi.js';
-import type {RenderInput} from '../../../../src/presentation/types';
+import type {RenderInput, StatusEffect} from '../../../../src/presentation/types';
 
 function makeRenderInput(debugEnabled: boolean): RenderInput {
   const player = {
@@ -188,6 +205,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     inventory: [],
     hotbar: [],
     activeEffects: [],
+    statusEffectsByEntity: new Map(),
     runStats: {
       startTime: Date.now(),
       enemiesKilled: 0,
@@ -282,5 +300,43 @@ describe('UnitInfoRenderer', () => {
     await p;
 
     expect(widget.lastHpRatio).toBe(0.5);
+  });
+
+  it('hides effect slots when entity has no status effects', () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    expect(widget.effectSlots.every((slot: Sprite) => !slot.visible)).toBe(true);
+  });
+
+  it('shows effect sprites and overflow icon when there are more than 4 effects', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const effects: StatusEffect[] = [
+      {type: 'burning', duration: 2, value: 1, statModifiers: null},
+      {type: 'poisoned', duration: 3, value: 2, statModifiers: null},
+      {type: 'frozen', duration: 1, value: 0, statModifiers: null},
+      {type: 'parry', duration: 2, value: 0, statModifiers: null},
+      {type: 'regenerating', duration: 5, value: 1, statModifiers: null},
+    ];
+    input.statusEffectsByEntity.set('player', effects);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    // Дождаться асинхронной подгрузки текстур в applyTexture.
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const widget = (renderer as any).widgets.get('player');
+
+    expect(widget.effectSlots[0].visible).toBe(true);
+    expect(widget.effectSlots[1].visible).toBe(true);
+    expect(widget.effectSlots[2].visible).toBe(true);
+    expect(widget.effectSlots[3].visible).toBe(true);
   });
 });

@@ -89,6 +89,7 @@ export class TargetingController {
 
     const affectedPositions = simulation.getAbilityAffectedPositions(
       this.state.abilityId,
+      state.player.id,
       this.state.selectedTargets,
       hoveredPosition,
     );

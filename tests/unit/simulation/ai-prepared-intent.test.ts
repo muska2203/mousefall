@@ -6,6 +6,7 @@ import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import { tryPrepareAbility } from '../../../src/simulation/ai/ai-helpers';
+import { getAIOverlay } from '../../../src/simulation/ai/ai-state';
 import { getAbility } from '../../../src/content/registry';
 
 beforeEach(() => {
@@ -70,9 +71,18 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     const enemyAfterTurn = getEnemy(sim.getState());
     expect(enemyAfterTurn.aiState.preparedIntent).not.toBeNull();
+    expect(getAIOverlay(enemyAfterTurn)).toBe('prepared');
     expect(enemyAfterTurn.aiState.preparedIntent?.abilityId).toBe('fireball');
     expect(enemyAfterTurn.aiState.preparedIntent?.fixedTargets).toEqual([{ x: 5, y: 5 }]);
-    expect(enemyAfterTurn.aiState.preparedIntent?.affectedPositions).toEqual([
+
+    // Зона поражения не хранится в AIState, но доступна через публичный API Simulation.
+    const affectedPositions = sim.getAbilityAffectedPositions(
+      'fireball',
+      enemyAfterTurn.id,
+      [{ x: 5, y: 5 }],
+      { x: 5, y: 5 },
+    );
+    expect(affectedPositions).toEqual([
       { x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 },
       { x: 4, y: 5 }, { x: 5, y: 5 }, { x: 6, y: 5 },
       { x: 4, y: 6 }, { x: 5, y: 6 }, { x: 6, y: 6 },
@@ -104,6 +114,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(getAIOverlay(enemyAfter)).toBeNull();
     // Игрок получил урон от fireball
     expect(sim.getState().player.hp).toBeLessThan(100);
   });
@@ -129,13 +140,16 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     // Игрок оглушает врага (через APPLY_STATUS напрямую нельзя, но можно наложить статус перед ходом)
     const stunnedEnemy = getEnemy(sim.getState());
-    stunnedEnemy.statusEffects.push({ type: 'stunned', duration: 1, value: 0, statModifiers: null });
+    stunnedEnemy.statusEffects.push({ type: 'stunned', duration: 2, value: 0, statModifiers: null });
 
     const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
     expect(result.success).toBe(true);
 
+    const enemyAfter = getEnemy(sim.getState());
     // Подготовка сброшена
-    expect(getEnemy(sim.getState()).aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    // Overlay отражает оглушение
+    expect(getAIOverlay(enemyAfter)).toBe('stunned');
     // Скилл не выполнился — HP игрока не изменилось
     expect(sim.getState().player.hp).toBe(100);
   });

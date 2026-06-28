@@ -22,7 +22,7 @@
 import { registerStrategy } from './strategy-registry';
 import type { AiActor, EnemyEntity, GameState } from '@simulation/types';
 import { canSeePlayer, tryCastAbility, tryPrepareAbility, tryAttackOrMoveToward, wait } from './ai-helpers';
-import { isEnemyEntity } from './ai-state';
+import { isEnemyEntity, getAIOverlay } from './ai-state';
 
 registerStrategy('hunter', {
   updateState(actor, state) {
@@ -36,13 +36,10 @@ registerStrategy('hunter', {
     }
     const enemy = actor;
 
-    // Приоритет 1: завершение активного каста
-    if (enemy.activeCast) {
-      return wait(enemy);
-    }
-
-    // Приоритет 2: если уже есть подготовленное намерение — ждём до следующего хода
-    if (enemy.aiState.preparedIntent) {
+    // Приоритет 1–2: временные overlay-состояния (stunned, casting, prepared)
+    // требуют ожидания до их завершения.
+    const overlay = getAIOverlay(enemy);
+    if (overlay) {
       return wait(enemy);
     }
 
@@ -97,6 +94,9 @@ registerStrategy('hunter', {
  * Мутирует только enemy.aiState — никакие другие части state не трогаются.
  */
 function updateHunterState(enemy: EnemyEntity, state: GameState): void {
+  // Пока активно временное overlay-состояние, FSM не меняется.
+  if (getAIOverlay(enemy)) return;
+
   const seesPlayer = canSeePlayer(enemy, state);
   const player = state.player;
 

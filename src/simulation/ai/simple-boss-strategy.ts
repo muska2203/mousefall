@@ -15,7 +15,7 @@ import { registerStrategy } from './strategy-registry';
 import type { AiActor, GameState } from '@simulation/types';
 import type { GameAction } from '@simulation/systems/actions/types';
 import { canSeePlayer, tryPrepareAbility, wait } from './ai-helpers';
-import { isEnemyEntity } from './ai-state';
+import { isEnemyEntity, getAIOverlay } from './ai-state';
 
 registerStrategy('simple-boss', {
   updateState() {
@@ -28,13 +28,10 @@ registerStrategy('simple-boss', {
     }
     const enemy = actor;
 
-    // Приоритет 1: завершение активного каста.
-    if (enemy.activeCast) {
-      return wait(enemy);
-    }
-
-    // Приоритет 2: если уже есть подготовленное намерение — ждём до следующего хода.
-    if (enemy.aiState.preparedIntent) {
+    // Приоритет 1–2: временные overlay-состояния (stunned, casting, prepared)
+    // требуют ожидания до их завершения.
+    const overlay = getAIOverlay(enemy);
+    if (overlay) {
       return wait(enemy);
     }
 

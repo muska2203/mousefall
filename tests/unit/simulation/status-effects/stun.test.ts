@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
 import type { Entity, EntityId, ExecutionNode, GameEvent } from '../../../../src/simulation/types';
 import { GameSimulation, defaultActionHandlerRegistry } from '../../../../src/simulation/simulation';
+import { getAIOverlay } from '../../../../src/simulation/ai/ai-state';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
@@ -77,6 +78,7 @@ describe('stun: пропуск хода', () => {
     // Враг должен был пропустить ход и сбросить stunned.
     const enemyAfter = sim.getState().entities.get(enemy.id)!;
     expect('statusEffects' in enemyAfter && enemyAfter.statusEffects.some((e: { type: string }) => e.type === 'stunned')).toBe(false);
+    expect('aiState' in enemyAfter && getAIOverlay(enemyAfter)).toBeNull();
     expect(enemy.ap).toBe(0);
   });
 
@@ -140,7 +142,6 @@ describe('stun: пропуск хода', () => {
         preparedIntent: {
           abilityId: 'dash',
           fixedTargets: [{ x: 5, y: 5 }],
-          affectedPositions: [{ x: 5, y: 5 }],
         },
       },
     });

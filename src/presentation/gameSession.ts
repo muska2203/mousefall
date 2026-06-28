@@ -14,7 +14,7 @@
  */
 
 import { t } from '@i18n/t';
-import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnapshot, Position, ActionPreview} from '@simulation/types';
+import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect} from '@simulation/types';
 
 import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
@@ -54,6 +54,7 @@ import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
 import {TargetingController} from './targetingController';
+import {sortStatusEffects} from './statusSorting';
 
 // Реэкспорт типов для UI-слоя, чтобы UI не импортировал из simulation/ напрямую
 export type {CharacterConfig} from '@simulation/characterCreation';
@@ -391,6 +392,14 @@ export class GameSession {
       })
       .sort(compareInventoryItems);
 
+    const statusEffectsByEntity = new Map<string, readonly StatusEffect[]>();
+    statusEffectsByEntity.set(player.id, sortStatusEffects(player.statusEffects));
+    for (const entity of state.entities.values()) {
+      if ('statusEffects' in entity && entity.statusEffects.length > 0) {
+        statusEffectsByEntity.set(entity.id, sortStatusEffects(entity.statusEffects));
+      }
+    }
+
     const activeEffects: ActiveEffectViewModel[] = state.player.statusEffects.map(effect => {
       switch (effect.type) {
         case 'poisoned':
@@ -437,6 +446,7 @@ export class GameSession {
       inventory,
       hotbar: this.buildHotbar(state),
       activeEffects,
+      statusEffectsByEntity,
       runStats: state.runStats,
       fieldObjectPopover,
       interactionHint,
@@ -672,8 +682,8 @@ export class GameSession {
 
   /**
    * Собирает список подготовленных AI-намерений, видимых игроку.
-   * Зона поражения берётся из aiState (кэш, вычисленный при подготовке),
-   * чтобы не вычислять её повторно каждый кадр.
+   * Зона поражения вычисляется в Presentation через публичный API Simulation,
+   * чтобы Simulation не хранила derived-данные для отрисовки.
    * Интенты выполнения получаются через SkillExecutor, чтобы отображать
    * перемещение, урон, статусы и другие эффекты так же, как у пользовательских скиллов.
    */
@@ -700,13 +710,20 @@ export class GameSession {
         .map((intent) => toPresentationIntent(intent, state))
         .filter((intent): intent is PresentationIntent => intent !== null);
 
+      const affectedPositions = this.simulation.getAbilityAffectedPositions(
+        prepared.abilityId,
+        entity.id,
+        prepared.fixedTargets,
+        prepared.fixedTargets[0] ?? null,
+      );
+
       intents.push({
         entityId: entity.id,
         abilityId: prepared.abilityId,
         name: abilityTemplate?.name ?? prepared.abilityId,
         icon: abilityTemplate?.spriteId ? `/assets/skills/${abilityTemplate.spriteId}.png` : null,
         fixedTargets: prepared.fixedTargets,
-        affectedPositions: prepared.affectedPositions,
+        affectedPositions,
         intents: presentationIntents,
       });
     }

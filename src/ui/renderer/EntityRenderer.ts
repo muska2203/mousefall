@@ -5,7 +5,7 @@
  * Поддерживает Promise-based анимации передвижения, атаки и смерти.
  */
 
-import {Container, Sprite, Texture, Text, Graphics} from 'pixi.js';
+import {Container, Sprite, Texture, Text} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE, FOG_EXPLORED_SPRITE_ALPHA} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
@@ -29,7 +29,6 @@ export class EntityRenderer {
   private sprites = new Map<string, Sprite>();
   private activeAnimations = new Map<string, ActiveAnimation>();
   private castIndicators = new Map<string, Text>();
-  private statusIndicators = new Map<string, Text>();
   private preparedIndicators = new Map<string, Text>();
 
   constructor() {
@@ -148,7 +147,6 @@ export class EntityRenderer {
     }
 
     this.updateCastIndicators(input, existingIds);
-    this.updateStatusIndicators(input, existingIds);
     this.updatePreparedIndicators(input, existingIds);
   }
 
@@ -560,10 +558,6 @@ export class EntityRenderer {
       indicator.destroy();
     }
     this.castIndicators.clear();
-    for (const indicator of this.statusIndicators.values()) {
-      indicator.destroy();
-    }
-    this.statusIndicators.clear();
     for (const indicator of this.preparedIndicators.values()) {
       indicator.destroy();
     }
@@ -668,65 +662,6 @@ export class EntityRenderer {
         indicator.y = sprite.y - sprite.height - 2;
         indicator.visible = sprite.visible;
         indicator.zIndex = sprite.zIndex + 1;
-      }
-    }
-  }
-
-  private updateStatusIndicators(input: RenderInput, existingIds: Set<string>): void {
-    const state = input.state;
-    const entitiesWithStatus = new Map<string, string[]>();
-
-    const checkEntity = (id: string, effects: Array<{ type: string }> | undefined) => {
-      if (!effects || effects.length === 0) return;
-      const types = effects.map(e => e.type);
-      entitiesWithStatus.set(id, types);
-
-      let indicator = this.statusIndicators.get(id);
-      if (!indicator) {
-        indicator = new Text({
-          text: '',
-          style: {
-            fontSize: 12,
-            fill: 0xffffff,
-          },
-        });
-        indicator.anchor.set(0.5, 1);
-        this.container.addChild(indicator);
-        this.statusIndicators.set(id, indicator);
-      }
-
-      // Показываем эмодзи для известных статусов
-      const icons: Record<string, string> = {
-        burning: '🔥',
-        poisoned: '☠️',
-        frozen: '❄️',
-        stunned: '💫',
-        regenerating: '💚',
-      };
-      indicator.text = types.map(t => icons[t] ?? '').filter(Boolean).join('');
-
-      const sprite = this.sprites.get(id);
-      if (sprite) {
-        indicator.x = sprite.x;
-        indicator.y = sprite.y - sprite.height - 14;
-        indicator.visible = sprite.visible;
-        indicator.zIndex = sprite.zIndex + 1;
-      }
-    };
-
-    if ('statusEffects' in state.player) {
-      checkEntity(state.player.id, state.player.statusEffects);
-    }
-    for (const entity of state.entities.values()) {
-      if (entity.type === 'enemy' && 'statusEffects' in entity) {
-        checkEntity(entity.id, (entity as unknown as { statusEffects: Array<{ type: string }> }).statusEffects);
-      }
-    }
-
-    for (const [id, indicator] of this.statusIndicators) {
-      if (!entitiesWithStatus.has(id) || !existingIds.has(id)) {
-        indicator.destroy();
-        this.statusIndicators.delete(id);
       }
     }
   }
