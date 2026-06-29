@@ -23,7 +23,6 @@ import {executeEquipItemIntent} from "@simulation/systems/intents/equip-item-int
 import {executeUnequipItemIntent} from "@simulation/systems/intents/unequip-item-intent-executor.ts";
 import {executeGrantAbilityIntent} from "@simulation/systems/intents/grant-ability-intent-executor.ts";
 import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-ability-intent-executor.ts";
-import {executeBeginCastIntent} from "@simulation/systems/intents/begin-cast-intent-executor.ts";
 import {executePrepareAbilityIntent} from "@simulation/systems/intents/prepare-ability-intent-executor.ts";
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
@@ -33,7 +32,6 @@ import {executeTriggerStairExitIntent} from "@simulation/systems/intents/trigger
 import {executeSkipStunnedTurnIntent} from "@simulation/systems/intents/skip-stunned-turn-intent-executor.ts";
 import {executeRestoreApIntent} from "@simulation/systems/intents/restore-ap-intent-executer.ts";
 import {executeTickCooldownIntent} from "@simulation/systems/intents/tick-cooldown-intent-executer.ts";
-import {executeTickCastIntent} from "@simulation/systems/intents/tick-cast-intent-executer.ts";
 import {executeBeginTurnIntent} from "@simulation/systems/intents/begin-turn-intent-executer.ts";
 import {executeCleanupDeadEntitiesIntent} from "@simulation/systems/intents/cleanup-dead-entities-intent-executor.ts";
 
@@ -58,7 +56,6 @@ const intentExecutors = {
   UNEQUIP_ITEM: executeUnequipItemIntent,
   GRANT_ABILITY: executeGrantAbilityIntent,
   REVOKE_ABILITY: executeRevokeAbilityIntent,
-  BEGIN_CAST: executeBeginCastIntent,
   PREPARE_ABILITY: executePrepareAbilityIntent,
   HEAL: executeHealIntent,
   REMOVE_ITEM: executeRemoveItemIntent,
@@ -69,7 +66,6 @@ const intentExecutors = {
   SKIP_STUNNED_TURN: executeSkipStunnedTurnIntent,
   RESTORE_AP: executeRestoreApIntent,
   TICK_COOLDOWN: executeTickCooldownIntent,
-  TICK_CAST: executeTickCastIntent,
   BEGIN_TURN: executeBeginTurnIntent,
   CLEANUP_DEAD_ENTITIES: executeCleanupDeadEntitiesIntent,
 };

@@ -222,17 +222,16 @@ export class GameSession {
 
     const playerSkills: PlayerSkillViewModel[] = player.abilities.map(ability => {
       const template = this.getAbilityTemplate(ability.templateId, locale);
-      const isCasting = player.activeCast?.abilityId === ability.templateId;
       return {
         abilityId: ability.templateId,
         name: template?.name ?? ability.templateId,
         icon: template?.spriteId ? `/assets/skills/${template.spriteId}.png` : null,
         cooldown: ability.currentCooldown,
         maxCooldown: template?.cooldown ?? 0,
-        isAvailable: ability.currentCooldown === 0 && !isCasting,
+        isAvailable: ability.currentCooldown === 0,
         source: ability.source,
-        isCasting,
-        remainingCastTurns: isCasting ? player.activeCast!.remainingTurns : 0,
+        isCasting: false,
+        remainingCastTurns: 0,
       };
     });
 
@@ -667,7 +666,7 @@ export class GameSession {
   private getAbilityTemplate(
     abilityId: string,
     locale: Locale,
-  ): { name: string; description: string; spriteId: string | undefined; cooldown: number; apCost: number | 'all'; castTime: number } | null {
+  ): { name: string; description: string; spriteId: string | undefined; cooldown: number; apCost: number | 'all' } | null {
     const fromSim = this.simulation!.getAbilityInfo(abilityId);
     if (!fromSim) return null;
     const localized = tryGetLocalizedAbility(abilityId, locale);
@@ -1149,8 +1148,6 @@ export class GameSession {
     }
     this.notify();
 
-    // Автопропуск хода, если игрок кастует и нет активных анимаций
-    if (this.autoSkipTurnIfCasting()) return;
   }
 
   /** Превью действия (для подсветки пути, подсказок урона и т.д.) */
@@ -1254,27 +1251,11 @@ export class GameSession {
       return;
     }
 
-    // Автопропуск хода, если игрок кастует
-    if (this.autoSkipTurnIfCasting()) return;
-
     if (this.heldDirection && this.animation.phase === 'idle' && this.mode === 'playing') {
       this.moveOrAttack(this.heldDirection.dx, this.heldDirection.dy);
     } else if (hadAnimations) {
       this.notify();
     }
-  }
-
-  private autoSkipTurnIfCasting(): boolean {
-    if (!this.simulation || this.mode !== 'playing') return false;
-    if (this.animation.phase === 'animating') return false;
-    if (this.animation.pendingAutoTransition) return false;
-
-    const state = this.simulation.getState();
-    if (state.player.activeCast && state.player.ap > 0) {
-      this.dispatch({ type: 'WAIT', entityId: 'player' });
-      return true;
-    }
-    return false;
   }
 
   /**
@@ -1345,11 +1326,10 @@ export class GameSession {
         const runtimeAbility = abilityById.get(assignment.abilityId);
         const info = runtimeAbility ? this.simulation!.getAbilityInfo(assignment.abilityId) : null;
         const localized = info ? this.getAbilityTemplate(assignment.abilityId, this.locale) : null;
-        const isCasting = player.activeCast?.abilityId === assignment.abilityId;
         const cooldown = runtimeAbility?.currentCooldown ?? 0;
         const maxCooldown = info?.cooldown ?? 0;
-        const isAvailable = runtimeAbility !== undefined && cooldown === 0 && !isCasting;
-        const isActive = this.targeting.state?.abilityId === assignment.abilityId || isCasting;
+        const isAvailable = runtimeAbility !== undefined && cooldown === 0;
+        const isActive = this.targeting.state?.abilityId === assignment.abilityId;
         const resolvedApCost = info?.apCost === 'all'
           ? Math.min(player.ap, MAX_ABILITY_ALL_AP_COST)
           : (info?.apCost ?? 1);
@@ -1363,8 +1343,8 @@ export class GameSession {
           apCost: resolvedApCost,
           cooldown,
           maxCooldown,
-          isCasting,
-          remainingCastTurns: isCasting ? player.activeCast!.remainingTurns : 0,
+          isCasting: false,
+          remainingCastTurns: 0,
           isAvailable,
           isActive,
           tooltip: localized
@@ -1376,7 +1356,6 @@ export class GameSession {
                 cooldown,
                 maxCooldown,
                 apCost: info?.apCost ?? 1,
-                castTime: localized.castTime,
               }
             : undefined,
         };

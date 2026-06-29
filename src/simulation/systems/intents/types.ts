@@ -24,7 +24,6 @@ export type {
   UnequipItemIntent,
   GrantAbilityIntent,
   RevokeAbilityIntent,
-  BeginCastIntent,
   PrepareAbilityIntent,
   HealIntent,
   RemoveItemIntent,
@@ -34,7 +33,6 @@ export type {
   TriggerStairExitIntent,
   RestoreApIntent,
   TickCooldownIntent,
-  TickCastIntent,
   BeginTurnIntent,
 } from "@simulation/core-types.ts";
 

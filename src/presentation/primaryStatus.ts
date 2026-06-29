@@ -54,9 +54,6 @@ export function resolvePrimaryStatus(
     if (entity.statusEffects.some((e) => e.type === 'stunned')) {
       return 'stunned';
     }
-    if (entity.activeCast) {
-      return 'casting';
-    }
     return null;
   }
 

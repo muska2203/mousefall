@@ -31,7 +31,6 @@ import {
   Intent,
   GameEvent,
   RuntimeAbility,
-  ActiveCast,
   DamageType,
 } from "@simulation/core-types.ts";
 import type { AIState } from "./ai/ai-state";
@@ -59,7 +58,6 @@ export type {
   GameEvent,
   EntityMovedEvent,
   RuntimeAbility,
-  ActiveCast,
   DamageType,
 } from "@simulation/core-types.ts";
 export { ExecutionBuilder } from "@simulation/core-types.ts";
@@ -184,8 +182,6 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
   critMultiplier: number;
   /** Активные способности персонажа. */
   abilities: RuntimeAbility[];
-  /** Текущая подготовка способности (каст) или null. */
-  activeCast: ActiveCast | null;
 }
 
 /** Сущность врага на карте. */
@@ -217,8 +213,6 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   critMultiplier: number;
   /** Активные способности врага (innate + от экипировки). */
   abilities: RuntimeAbility[];
-  /** Текущая подготовка способности (каст) или null. */
-  activeCast: ActiveCast | null;
   /** Состояние конечного автомата ИИ (сохраняется вместе с сущностью). */
   aiState: AIState;
   /** Радиус обзора в клетках (евклидов, recursive shadowcasting). Копия из шаблона при спавне. */
@@ -437,7 +431,7 @@ export type Simulation = {
   ): import("@simulation/core-types.ts").Intent[];
 
   /** Возвращает базовую информацию о способности для отображения в UI. */
-  getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all'; castTime: number } | null;
+  getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all' } | null;
 
   /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
   getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number;

@@ -132,13 +132,6 @@ export type RuntimeAbility = {
   currentCooldown: number;
 };
 
-/** Активный каст (подготовка способности) у сущности-актора. */
-export type ActiveCast = {
-  abilityId: string;
-  fixedTargets: Position[];
-  remainingTurns: number;
-};
-
 // ─────────────────────────────────────────────
 // Валидация
 // ─────────────────────────────────────────────
@@ -332,7 +325,6 @@ export type Intent =
   | UnequipItemIntent
   | GrantAbilityIntent
   | RevokeAbilityIntent
-  | BeginCastIntent
   | PrepareAbilityIntent
   | HealIntent
   | RemoveItemIntent
@@ -343,7 +335,6 @@ export type Intent =
   | SkipStunnedTurnIntent
   | RestoreApIntent
   | TickCooldownIntent
-  | TickCastIntent
   | BeginTurnIntent
   | CleanupDeadEntitiesIntent;
 
@@ -372,7 +363,6 @@ export type EquipItemIntent = { type: 'EQUIP_ITEM'; entityId: EntityId; itemInst
 export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot: 'weapon' | 'armor' | 'amulet' };
 export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
 export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
-export type BeginCastIntent = { type: 'BEGIN_CAST'; entityId: EntityId; abilityId: string; targets: Position[]; turns: number };
 export type PrepareAbilityIntent = { type: 'PREPARE_ABILITY'; entityId: EntityId; abilityId: string; targets: Position[] };
 export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
@@ -383,7 +373,6 @@ export type TriggerStairExitIntent = { type: 'TRIGGER_STAIR_EXIT'; direction: 'd
 export type SkipStunnedTurnIntent = { type: 'SKIP_STUNNED_TURN'; entityId: EntityId };
 export type RestoreApIntent = { type: 'RESTORE_AP'; entityId: EntityId };
 export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; abilityId: string };
-export type TickCastIntent = { type: 'TICK_CAST'; entityId: EntityId };
 export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: 'PLAYER' | 'ENVIRONMENT'; round?: number };
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 
@@ -424,9 +413,6 @@ export type GameEvent =
   | ItemUnequippedEvent
   | AbilityGrantedEvent
   | AbilityRevokedEvent
-  | CastStartedEvent
-  | CastResolvedEvent
-  | CastCancelledEvent
   | EntityHealedEvent
   | EntityBumpedEvent
   | EntityCollidedEvent
@@ -434,7 +420,6 @@ export type GameEvent =
   | TurnBeganEvent
   | ApRestoredEvent
   | CooldownTickedEvent
-  | CastTickedEvent
   | DeadEntitiesCleanedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
@@ -502,10 +487,6 @@ export type ItemEquippedEvent = { type: 'ITEM_EQUIPPED'; entityId: EntityId; ite
 export type ItemUnequippedEvent = { type: 'ITEM_UNEQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
 export type AbilityGrantedEvent = { type: 'ABILITY_GRANTED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
 export type AbilityRevokedEvent = { type: 'ABILITY_REVOKED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
-export type CastStartedEvent = { type: 'CAST_STARTED'; entityId: EntityId; abilityId: string; turns: number; targets: Position[]; from: Position };
-export type CastResolvedEvent = { type: 'CAST_RESOLVED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
-export type CastCancelledEvent = { type: 'CAST_CANCELLED'; entityId: EntityId; abilityId: string; from: Position };
-
 export type EntityBumpedEvent = { type: 'ENTITY_BUMPED'; entityId: EntityId; position: Position; dx: number; dy: number };
 
 export type EntityCollidedEvent = {
@@ -548,13 +529,6 @@ export type CooldownTickedEvent = {
   entityId: EntityId;
   abilityId: string;
   remaining: number;
-};
-
-export type CastTickedEvent = {
-  type: 'CAST_TICKED';
-  entityId: EntityId;
-  abilityId: string;
-  remainingTurns: number;
 };
 
 export type EntityHealedEvent = {

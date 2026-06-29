@@ -74,10 +74,6 @@ export function SkillDetailPopover({ skill, visible, x, y }: Props) {
       }),
     );
   }
-  if ((skill.castTime ?? 0) > 0) {
-    details.push(t('hotbar.skillTooltipCastTime', { turns: skill.castTime }));
-  }
-
   return createPortal(
     <div ref={ref} className="skill-detail-popover" role="tooltip">
       <div className="skill-detail-card">

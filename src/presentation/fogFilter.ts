@@ -90,7 +90,6 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     case 'TURN_BEGAN':
     case 'AP_RESTORED':
     case 'COOLDOWN_TICKED':
-    case 'CAST_TICKED':
     case 'PLAYER_LEVELED_UP':
       return true;
     case 'RESOURCE_CONSUMED': {

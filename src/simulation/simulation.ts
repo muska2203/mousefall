@@ -52,7 +52,7 @@ import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.t
 import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
 import { getWeaponDamage as calcWeaponDamage, getWeaponDamageEntries as calcWeaponDamageEntries } from "@simulation/systems/stats/weapon-formulas.ts";
 import { initSkillRegistry } from "@simulation/skills/index.ts";
-import { tryGetAbility, getAbility, getItem } from "@content/registry";
+import { tryGetAbility, getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
 import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
@@ -473,15 +473,6 @@ export class GameSimulation implements Simulation {
                 }
             }
 
-            // Авто-резолв или тик каста врага
-            if (enemyEntity.activeCast) {
-                if (enemyEntity.activeCast.remainingTurns === 0) {
-                    this.resolveActiveCast(enemyEntity, setupBuilder, setupRoot);
-                } else {
-                    executeIntent(this.state, { type: 'TICK_CAST', entityId: enemy.id }, setupBuilder, setupRoot);
-                }
-            }
-
             actions.push(setupRoot);
 
             // Выполнение подготовленного намерения AI
@@ -587,15 +578,6 @@ export class GameSimulation implements Simulation {
 
         executeIntent(this.state, { type: 'BEGIN_TURN', side: 'PLAYER' }, setupBuilder, setupRoot);
 
-        // Авто-резолв или тик каста игрока
-        if (this.state.player.activeCast) {
-            if (this.state.player.activeCast.remainingTurns === 0) {
-                this.resolveActiveCast(this.state.player, setupBuilder, setupRoot);
-            } else {
-                executeIntent(this.state, { type: 'TICK_CAST', entityId: this.state.player.id }, setupBuilder, setupRoot);
-            }
-        }
-
         executeIntent(this.state, { type: 'RESTORE_AP', entityId: this.state.player.id }, setupBuilder, setupRoot);
 
         // Уменьшение cooldown скиллов игрока
@@ -634,56 +616,10 @@ export class GameSimulation implements Simulation {
     // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // =========================================================
 
-    private resolveActiveCast(
-        actor: Actor & { activeCast: { abilityId: string; fixedTargets: Position[]; remainingTurns: number } | null },
-        executionBuilder: ExecutionBuilder,
-        parentNode: ExecutionNode,
-    ): void {
-        const cast = actor.activeCast;
-        if (!cast) return;
-
-        const executor = getSkillExecutor(cast.abilityId);
-        const template = getAbility(cast.abilityId);
-
-        if (!executor) {
-            actor.activeCast = null;
-            return;
-        }
-
-        const intents = executor.resolve(this.state, actor as import('@simulation/types').Entity, cast.fixedTargets);
-
-        if (template.cooldown > 0) {
-            intents.push({ type: 'SET_COOLDOWN', entityId: actor.id, abilityId: cast.abilityId, turns: template.cooldown });
-        }
-
-        const castNode = executionBuilder.addChild(parentNode, {
-            type: 'CAST_RESOLVED',
-            entityId: actor.id,
-            abilityId: cast.abilityId,
-            targets: cast.fixedTargets,
-            from: { x: actor.x, y: actor.y },
-        });
-
-        for (const intent of intents) {
-            executeIntent(this.state, intent, executionBuilder, castNode);
-        }
-
-        actor.activeCast = null;
-    }
-
     private canActorAct(actor: Actor, action: GameAction, actionCost: number): boolean {
 
         // Действия с нулевой стоимостью (EQUIP/UNEQUIP) доступны даже при 0 AP.
         if (actor.ap <= 0 && actionCost > 0) {
-            return false;
-        }
-
-        const castingActor = actor as Actor & { activeCast: unknown };
-        if (castingActor.activeCast !== null && castingActor.activeCast !== undefined) {
-            // Во время каста разрешены только ожидание и отмена каста
-            if (action.type === 'WAIT') {
-                return true;
-            }
             return false;
         }
 
@@ -798,7 +734,6 @@ export class GameSimulation implements Simulation {
                 cooldown: template.cooldown,
                 currentCooldown: runtime?.currentCooldown ?? 0,
                 apCost: template.apCost,
-                castTime: template.castTime,
             };
         } catch {
             return null;

@@ -182,7 +182,6 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     critChance: 0,
     critMultiplier: 1.5,
     abilities,
-    activeCast: null,
   };
 
   const equipSlots = [

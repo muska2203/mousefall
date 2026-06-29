@@ -21,7 +21,7 @@
 
 import { registerStrategy } from './strategy-registry';
 import type { AiActor, EnemyEntity, GameState } from '@simulation/types';
-import { canSeePlayer, tryCastAbility, tryPrepareAbility, tryAttackOrMoveToward, wait } from './ai-helpers';
+import { canSeePlayer, tryPrepareAbility, tryAttackOrMoveToward, wait } from './ai-helpers';
 import { isEnemyEntity, getAIOverlay } from './ai-state';
 
 registerStrategy('hunter', {
@@ -50,12 +50,6 @@ registerStrategy('hunter', {
       if (prepareAction) {
         return prepareAction;
       }
-    }
-
-    // Приоритет 4: начать кастование способности
-    const castAction = tryCastAbility(enemy, state);
-    if (castAction) {
-      return castAction;
     }
 
     switch (enemy.aiState.mode) {

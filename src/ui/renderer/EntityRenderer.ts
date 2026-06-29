@@ -5,7 +5,7 @@
  * Поддерживает Promise-based анимации передвижения, атаки и смерти.
  */
 
-import {Container, Sprite, Texture, Text} from 'pixi.js';
+import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
 import {TILE_SIZE, FOG_EXPLORED_SPRITE_ALPHA} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
@@ -28,7 +28,6 @@ export class EntityRenderer {
   public readonly container = new Container();
   private sprites = new Map<string, Sprite>();
   private activeAnimations = new Map<string, ActiveAnimation>();
-  private castIndicators = new Map<string, Text>();
 
   constructor() {
     this.container.sortableChildren = true;
@@ -145,7 +144,6 @@ export class EntityRenderer {
       }
     }
 
-    this.updateCastIndicators(input, existingIds);
   }
 
   /** Анимация прыжка спрайта между тайлами.
@@ -559,10 +557,6 @@ export class EntityRenderer {
       sprite.destroy();
     }
     this.sprites.clear();
-    for (const indicator of this.castIndicators.values()) {
-      indicator.destroy();
-    }
-    this.castIndicators.clear();
     this.container.removeChildren();
   }
 
@@ -572,52 +566,6 @@ export class EntityRenderer {
       prev.tween.cancel();
       prev.onComplete();
       this.activeAnimations.delete(entityId);
-    }
-  }
-
-  private updateCastIndicators(input: RenderInput, existingIds: Set<string>): void {
-    const state = input.state;
-    const entitiesWithCast = new Set<string>();
-
-    const checkEntity = (id: string, activeCast: { abilityId: string; remainingTurns: number } | null) => {
-      if (!activeCast) return;
-      entitiesWithCast.add(id);
-      let indicator = this.castIndicators.get(id);
-      if (!indicator) {
-        indicator = new Text({
-          text: '',
-          style: {
-            fontSize: 10,
-            fill: 0xffffff,
-            stroke: { width: 2, color: 0x000000 },
-          },
-        });
-        indicator.anchor.set(0.5, 1);
-        this.container.addChild(indicator);
-        this.castIndicators.set(id, indicator);
-      }
-      indicator.text = String(activeCast.remainingTurns);
-      const sprite = this.sprites.get(id);
-      if (sprite) {
-        indicator.x = sprite.x;
-        indicator.y = sprite.y - sprite.height - 2;
-        indicator.visible = sprite.visible;
-        indicator.zIndex = sprite.zIndex + 1;
-      }
-    };
-
-    checkEntity(state.player.id, state.player.activeCast);
-    for (const entity of state.entities.values()) {
-      if (entity.type === 'enemy' && 'activeCast' in entity) {
-        checkEntity(entity.id, (entity as unknown as { activeCast: { abilityId: string; remainingTurns: number } | null }).activeCast);
-      }
-    }
-
-    for (const [id, indicator] of this.castIndicators) {
-      if (!entitiesWithCast.has(id) || !existingIds.has(id)) {
-        indicator.destroy();
-        this.castIndicators.delete(id);
-      }
     }
   }
 

@@ -78,7 +78,6 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     critChance: 0,
     critMultiplier: 1.5,
     abilities: [],
-    activeCast: null,
   };
 }
 

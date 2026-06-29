@@ -17,14 +17,13 @@ type EntityBumpedEvent = Extract<GameEvent, { type: 'ENTITY_BUMPED' }>;
 type ItemDroppedEvent = Extract<GameEvent, { type: 'ITEM_DROPPED' }>;
 type FogUpdatedEvent = Extract<GameEvent, { type: 'FOG_UPDATED' }>;
 type EntityHealedEvent = Extract<GameEvent, { type: 'ENTITY_HEALED' }>;
-type CastCancelledEvent = Extract<GameEvent, { type: 'CAST_CANCELLED' }>;
 type AbilityPreparedEvent = Extract<GameEvent, { type: 'ABILITY_PREPARED' }>;
 type AbilityPreparedCancelledEvent = Extract<GameEvent, { type: 'ABILITY_PREPARED_CANCELLED' }>;
 type StatusAppliedEvent = Extract<GameEvent, { type: 'STATUS_APPLIED' }>;
 type DoorOpenedEvent = Extract<GameEvent, { type: 'DOOR_OPENED' }>;
 type DoorClosedEvent = Extract<GameEvent, { type: 'DOOR_CLOSED' }>;
 type ActionAppliedEvent = Extract<GameEvent, { type: 'ACTION_APPLIED' }>;
-export type AbilityEvent = Extract<GameEvent, { type: 'ABILITY_USED' | 'CAST_RESOLVED' }>;
+export type AbilityEvent = Extract<GameEvent, { type: 'ABILITY_USED' }>;
 
 /** Type guard: сущность имеет HP-бар (не предмет/лестница). */
 export function isAttackableEntity(entity: Entity): entity is Extract<Entity, { hp: number }> {
@@ -258,16 +257,6 @@ export function healNode(event: EntityHealedEvent): AnimationNode {
     undefined,
     event.position,
     'heal',
-  );
-}
-
-/** Создать узел отмены каста. */
-export function castCancelledNode(event: CastCancelledEvent): AnimationNode {
-  return floatingTextNode(
-    undefined,
-    'system.animation.castInterrupted',
-    event.from,
-    'cast_cancel',
   );
 }
 

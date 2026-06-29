@@ -220,7 +220,6 @@ export type HotbarSkillTooltip = {
   cooldown: number;
   maxCooldown: number;
   apCost: number | 'all';
-  castTime?: number;
 };
 
 /** Тултип для расходника в хотбаре. */

@@ -17,7 +17,7 @@ import type { AiActor, EnemyEntity, GameState, Position } from '@simulation/type
 import { isBlocked } from '@simulation/state';
 import { chebyshevDistance, findPath } from '@utils/math';
 import { computeFOV } from '@simulation/systems/fov';
-import { getCastableAbilities, getPreparableAbilities } from './cast-helpers';
+import { getPreparableAbilities } from './cast-helpers';
 import { getSkillExecutor } from '@simulation/skills/skillExecutor';
 
 // ─────────────────────────────────────────────
@@ -182,31 +182,6 @@ function chooseAbilityTargets(
   );
   const best = candidates[0];
   return best ? [best] : null;
-}
-
-/**
- * Пытается начать кастование способности.
- * Возвращает USE_ABILITY, если нашлась подходящая способность с целью.
- * Иначе null.
- */
-export function tryCastAbility(enemy: EnemyEntity, state: GameState): GameAction | null {
-  const castAbilities = getCastableAbilities(enemy, state);
-  if (castAbilities.length === 0) {
-    return null;
-  }
-
-  const ability = castAbilities[0]!;
-  const chosenTargets = chooseAbilityTargets(state, enemy, ability.templateId);
-  if (!chosenTargets || chosenTargets.length === 0) {
-    return null;
-  }
-
-  return {
-    type: 'USE_ABILITY',
-    entityId: enemy.id,
-    abilityId: ability.templateId,
-    targets: chosenTargets,
-  };
 }
 
 // ─────────────────────────────────────────────

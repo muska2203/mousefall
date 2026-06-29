@@ -9,7 +9,7 @@ import { isStunned } from '@simulation/systems/stun-helper';
 /**
  * Хендлер действия "подготовить скилл на следующий ход".
  *
- * Используется AI для отложенного выполнения скилла с castTime = 0.
+ * Используется AI для отложенного выполнения preparable-скилла.
  * Само действие не тратит AP; стоимость списывается при выполнении
  * подготовленного скилла в начале следующего хода AI.
  */
@@ -30,10 +30,6 @@ export const prepareAbilityAction: ActionHandler = {
     const enemy = actor as EnemyEntity;
     if (enemy.aiState.preparedIntent) {
       return { ok: false, reasonCode: 'already_prepared' };
-    }
-
-    if ('activeCast' in actor && actor.activeCast !== null) {
-      return { ok: false, reasonCode: 'already_casting' };
     }
 
     const runtimeAbility = actor.abilities.find(a => a.templateId === action.abilityId);

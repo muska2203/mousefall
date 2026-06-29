@@ -14,15 +14,13 @@ export type AIMode = 'idle' | 'alert' | 'chase' | 'return';
 
 /**
  * Временное состояние, перекрывающее базовый FSM.
- * - stunned:  актор оглушён и пропускает ход
- * - casting:  идёт кастование способности (activeCast)
  * - prepared: есть подготовленное намерение на следующий ход
  *
- * Вычисляется на лету функцией getAIOverlay из источников правды
- * (statusEffects, activeCast, preparedIntent) и не хранится в AIState,
+ * Вычисляется на лету функцией getAIOverlay из источника правды
+ * (preparedIntent) и не хранится в AIState,
  * чтобы избежать дублирования и рассинхронизации.
  */
-export type AIOverlay = 'stunned' | 'casting' | 'prepared';
+export type AIOverlay = 'prepared';
 
 /**
  * Runtime-состояние конечного автомата ИИ-врага.
@@ -60,21 +58,13 @@ export function isEnemyEntity(entity: { type: string; aiState?: unknown }): enti
 }
 
 /**
- * Вычисляет временное AI-состояние (overlay) из источников правды.
+ * Вычисляет временное AI-состояние (overlay) из источника правды.
  * Не мутирует state и не хранит результат — вызывается в момент использования.
  *
- * Источники правды:
- * - statusEffects.stunned → 'stunned'
- * - activeCast            → 'casting'
+ * Источник правды:
  * - aiState.preparedIntent → 'prepared'
  */
 export function getAIOverlay(enemy: EnemyEntity): AIOverlay | null {
-  if (enemy.statusEffects.some(e => e.type === 'stunned')) {
-    return 'stunned';
-  }
-  if (enemy.activeCast) {
-    return 'casting';
-  }
   if (enemy.aiState.preparedIntent) {
     return 'prepared';
   }
