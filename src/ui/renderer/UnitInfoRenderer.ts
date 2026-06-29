@@ -6,12 +6,12 @@
  */
 
 import {Container, Graphics, Sprite, Texture} from 'pixi.js';
-import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode} from '@presentation/types';
-import type {PrimaryStatus} from '@presentation/primaryStatus';
+import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode, AIPreparedIntentViewModel} from '@presentation/types';
+import type {AIMode} from '@simulation/ai/ai-state';
 import {Tween, lerp, clamp01} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-import {getStatusEffectSprite, getStatusOverflowSprite, getPrimaryStatusSprite} from './spriteRegistry';
+import {getStatusEffectSprite, getStatusOverflowSprite, getAIModeSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 
 
@@ -63,9 +63,9 @@ export class UnitInfoRenderer {
    *  не появлялись в виджете раньше завершения анимации. */
   private lastIdleStatusEffects = new Map<string, readonly StatusEffect[]>();
 
-  /** Снимок главного статуса на момент последнего idle-кадра.
-   *  Аналогично lastIdleStatusEffects: не меняем иконку статуса посреди анимации. */
-  private lastIdlePrimaryStatus = new Map<string, PrimaryStatus | null>();
+  /** Снимок AI-режима на момент последнего idle-кадра.
+   *  Аналогично lastIdleStatusEffects: не меняем иконку режима посреди анимации. */
+  private lastIdleAIMode = new Map<string, AIMode | null>();
 
   constructor() {
     this.container.sortableChildren = true;
@@ -80,13 +80,13 @@ export class UnitInfoRenderer {
     // чтобы спрайты статусов не появлялись до завершения анимации.
     if (input.phase !== 'animating') {
       this.lastIdleStatusEffects = this.cloneStatusEffects(input.statusEffectsByEntity);
-      this.lastIdlePrimaryStatus = this.clonePrimaryStatus(input.primaryStatusByEntity);
+      this.lastIdleAIMode = this.clonePrimaryStatus(input.primaryStatusByEntity);
     }
     const statusEffectsByEntity = input.phase === 'animating'
       ? this.lastIdleStatusEffects
       : input.statusEffectsByEntity;
     const primaryStatusByEntity = input.phase === 'animating'
-      ? this.lastIdlePrimaryStatus
+      ? this.lastIdleAIMode
       : input.primaryStatusByEntity;
 
     const processEntity = (id: string, entity: unknown) => {
@@ -107,7 +107,10 @@ export class UnitInfoRenderer {
       this.updateEffectSlots(widget, effects);
 
       const primaryStatus = primaryStatusByEntity.get(id) ?? null;
-      this.updateStatusIcon(widget, primaryStatus);
+      const preparedIntent = primaryStatus === 'prepared'
+        ? (input.aiPreparedIntents.find((intent) => intent.entityId === id) ?? null)
+        : null;
+      this.updateStatusIcon(widget, primaryStatus, preparedIntent);
 
       // Не перезаписываем полоску текущим HP, если для сущности уже идёт
       // анимация изменения HP или она запланирована в текущем кадре.
@@ -217,8 +220,8 @@ export class UnitInfoRenderer {
     return clone;
   }
 
-  private clonePrimaryStatus(source: Map<string, PrimaryStatus | null>): Map<string, PrimaryStatus | null> {
-    return new Map<string, PrimaryStatus | null>(source);
+  private clonePrimaryStatus(source: Map<string, AIMode | null>): Map<string, AIMode | null> {
+    return new Map<string, AIMode | null>(source);
   }
 
   /** Проверить, есть ли в запланированных анимациях шаг HP_CHANGE для сущности. */
@@ -280,17 +283,23 @@ export class UnitInfoRenderer {
     };
   }
 
-  private updateStatusIcon(widget: UnitInfoWidget, status: PrimaryStatus | null): void {
+  private updateStatusIcon(
+    widget: UnitInfoWidget,
+    status: AIMode | null,
+    preparedIntent: AIPreparedIntentViewModel | null,
+  ): void {
     const iconY = PADDING;
     const iconX = BASE_WIDTH / 2;
 
     if (status) {
       widget.statusIcon.visible = false;
       let spritePath: string;
-      if (typeof status === 'string') {
-        spritePath = getPrimaryStatusSprite(status);
+      if (status === 'prepared' && preparedIntent?.icon) {
+        // Для подготовленного скилла показываем иконку самого скилла.
+        spritePath = preparedIntent.icon;
       } else {
-        spritePath = status.abilityIcon ?? getPrimaryStatusSprite('prepared');
+        // Для обычных AI-режимов используем спрайт режима.
+        spritePath = getAIModeSprite(status);
       }
       this.applyTexture(widget.statusIcon, spritePath, CIRCLE_DIAMETER);
       widget.statusIcon.x = iconX;

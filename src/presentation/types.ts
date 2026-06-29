@@ -12,7 +12,7 @@ import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, Turn
 import type { GameAction } from '@simulation/systems/actions/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { ItemDetailViewModel } from './itemDetailMapper';
-import type {PrimaryStatus} from './primaryStatus';
+import type {AIMode} from '@simulation/ai/ai-state';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
 export type { TileType, TurnSide, StatusEffect } from '@simulation/types';
@@ -469,11 +469,11 @@ export type RenderInput = {
    */
   statusEffectsByEntity: Map<string, readonly StatusEffect[]>;
   /**
-   * Главный статус каждой сущности для иконки над объектом.
-   * Overlay-статус (stunned / casting / prepared) перекрывает базовый AI-режим.
-   * null означает "нет специального статуса" — UI показывает fallback-подложку.
+   * AI-режим каждой сущности для иконки над объектом.
+   * Для врагов включает производный режим 'prepared' (при наличии preparedIntent).
+   * null означает "нет статуса" — UI показывает fallback-подложку.
    */
-  primaryStatusByEntity: Map<string, PrimaryStatus | null>;
+  primaryStatusByEntity: Map<string, AIMode | null>;
   /** Статистика текущего забега. */
   runStats: RunStats;
   /** Popover объекта под курсором на игровом поле (только в фазе хода игрока). */

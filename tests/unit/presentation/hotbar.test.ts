@@ -277,22 +277,6 @@ describe('GameSession hotbar', () => {
     expect(hotbar[1]!.apCost).toBe(1);
   });
 
-  it('shows active cast state on hotbar slot', () => {
-    const player = makePlayer({
-      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
-      activeCast: { abilityId: 'fireball', fixedTargets: [{ x: 6, y: 5 }], remainingTurns: 1 },
-    });
-    const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-
-    const session = new GameSession();
-    session.loadGame(state);
-
-    const slot = session.getViewModel().renderInput!.hotbar[0]!;
-    expect(slot.isCasting).toBe(true);
-    expect(slot.remainingCastTurns).toBe(1);
-    expect(slot.isActive).toBe(true);
-  });
-
   it('includes skill tooltip with ability details', () => {
     const player = makePlayer({
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],

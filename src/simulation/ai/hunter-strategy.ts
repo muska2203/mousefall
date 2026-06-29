@@ -22,7 +22,7 @@
 import { registerStrategy } from './strategy-registry';
 import type { AiActor, EnemyEntity, GameState } from '@simulation/types';
 import { canSeePlayer, tryPrepareAbility, tryAttackOrMoveToward, wait } from './ai-helpers';
-import { isEnemyEntity, getAIOverlay } from './ai-state';
+import { isEnemyEntity } from './ai-state';
 
 registerStrategy('hunter', {
   updateState(actor, state) {
@@ -36,14 +36,13 @@ registerStrategy('hunter', {
     }
     const enemy = actor;
 
-    // Приоритет 1–2: временные overlay-состояния (stunned, casting, prepared)
-    // требуют ожидания до их завершения.
-    const overlay = getAIOverlay(enemy);
-    if (overlay) {
+    // Приоритет 1: если есть подготовленное намерение — враг ждёт
+    // его выполнения в начале следующего хода.
+    if (enemy.aiState.preparedIntent) {
       return wait(enemy);
     }
 
-    // Приоритет 3: подготовить скилл к выполнению в следующий ход
+    // Приоритет 2: подготовить скилл к выполнению в следующий ход
     // Подготовка может прервать текущие действия, если враг видит игрока
     if (canSeePlayer(enemy, state)) {
       const prepareAction = tryPrepareAbility(enemy, state);
@@ -88,8 +87,8 @@ registerStrategy('hunter', {
  * Мутирует только enemy.aiState — никакие другие части state не трогаются.
  */
 function updateHunterState(enemy: EnemyEntity, state: GameState): void {
-  // Пока активно временное overlay-состояние, FSM не меняется.
-  if (getAIOverlay(enemy)) return;
+  // Пока есть подготовленное намерение, базовый FSM не меняется.
+  if (enemy.aiState.preparedIntent) return;
 
   const seesPlayer = canSeePlayer(enemy, state);
   const player = state.player;

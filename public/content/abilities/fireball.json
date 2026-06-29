@@ -2,6 +2,5 @@
   "id": "fireball",
   "spriteId": "fireball",
   "cooldown": 3,
-  "apCost": 2,
-  "aiPreparable": true
+  "apCost": 2
 }

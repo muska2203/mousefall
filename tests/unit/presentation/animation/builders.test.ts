@@ -13,7 +13,7 @@ import {itemDroppedBuilder} from '../../../../src/presentation/animation/builder
 import {doorOpenedBuilder} from '../../../../src/presentation/animation/builders/doorOpened';
 import {doorClosedBuilder} from '../../../../src/presentation/animation/builders/doorClosed';
 import {entityHealedBuilder} from '../../../../src/presentation/animation/builders/entityHealed';
-import {castCancelledBuilder} from '../../../../src/presentation/animation/builders/castCancelled';
+
 import {statusAppliedBuilder} from '../../../../src/presentation/animation/builders/statusApplied';
 import {statusTickedBuilder} from '../../../../src/presentation/animation/builders/statusTicked';
 import {statusStacksAdjustedBuilder} from '../../../../src/presentation/animation/builders/statusStacksAdjusted';
@@ -157,16 +157,6 @@ describe('entityHealedBuilder', () => {
   });
 });
 
-describe('castCancelledBuilder', () => {
-  it('creates UI_FLOATING_TEXT for cast interruption', () => {
-    const event: GameEvent = { type: 'CAST_CANCELLED', entityId: 'player', abilityId: 'fireball', from: { x: 0, y: 0 } };
-    const nodes = castCancelledBuilder(event, [], makeMockState());
-
-    expect(nodes).toHaveLength(1);
-    expect(nodes![0]!.step.type).toBe('UI_FLOATING_TEXT');
-    expect((nodes![0]!.step as any).textKey).toBe('system.animation.castInterrupted');
-  });
-});
 
 describe('status builders', () => {
   it('creates STATUS_BURST for STATUS_APPLIED', () => {

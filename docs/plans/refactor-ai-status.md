@@ -70,10 +70,13 @@
 - Если агент решит сделать `'prepared'` хранимым значением `mode`, потребуется дополнительное поле `baseMode` или логика восстановления режима после выполнения prepared-скилла. Это усложняет сериализацию и FSM. **Рекомендуется derived-подход.**
 
 **Критерий выполнения:**
-- `AIOverlay` и `getAIOverlay` удалены.
-- `AIMode` включает `'prepared'`.
-- AI-стратегии корректно ожидают при наличии `preparedIntent`.
-- `tsc --noEmit` для `src` проходит без ошибок.
+- [x] `AIOverlay` и `getAIOverlay` удалены.
+- [x] `AIMode` включает `'prepared'`.
+- [x] AI-стратегии корректно ожидают при наличии `preparedIntent`.
+- [x] `tsc --noEmit` для `src` проходит без ошибок.
+
+**Итог:**
+`prepared` стал производным (derived) AI-режимом через `getDerivedAIMode`: если у врага есть `preparedIntent`, режим считается `'prepared'`, иначе используется базовый `aiState.mode`. `AIOverlay` и `getAIOverlay` удалены. Hunter и simple-boss стратегии теперь проверяют `enemy.aiState.preparedIntent` вместо overlay. Базовый FSM-режим сохраняется при подготовке скилла, поэтому после выполнения prepared-скилла враг продолжает преследование/возврат. `src` компилируется (`tsc --noEmit`) без ошибок; тесты ещё не обновлены — это пункт 6.
 
 ---
 
@@ -94,8 +97,16 @@
 | `src/content/schemas.ts` | Уже сделано в пункте 1. Убедиться, что нет остатков `castTime`. |
 
 **Критерий выполнения:**
-- `grep -R "castTime" public/content/` не находит совпадений.
-- Все способности валидны по `AbilityTemplateSchema`.
+- [x] `grep -R "castTime" public/content/` не находит совпадений.
+- [x] Все способности валидны по `AbilityTemplateSchema`.
+
+**Итог:**
+Поле `castTime` отсутствует во всех JSON-файлах `public/content/abilities/` и в `src/content/schemas.ts`. Проверены все способности:
+- `fireball` — ранее многоходовой скилл игрока; теперь мгновенный, флаг `aiPreparable` убран (скилл доступен игроку через `common_school_wand`).
+- `swoop` и `magic_slap` — оставлены `aiPreparable: true`, используются врагами (`cat_mid`, `cat_big`) для подготовленных скиллов; конфликтующих флагов нет.
+- `dash` и `parry` — не имеют `aiPreparable`, корректны.
+
+Весь контент прошёл валидацию по Zod-схемам (`abilities`, `entities`, `players`, `items`, `maps`, `stairs`, `doors`). `tsc --noEmit` для `src` проходит без ошибок.
 
 ---
 
@@ -122,9 +133,12 @@
 | `src/presentation/logBuilder.ts` | Проверить, нет ли текста combat log для `CAST_*` событий. Если есть — удалить. |
 
 **Критерий выполнения:**
-- `PrimaryStatus` и `PreparedStatus` удалены.
-- `resolvePrimaryStatus` возвращает `AIMode | null`.
-- `tsc --noEmit` для `src` проходит без ошибок.
+- [x] `PrimaryStatus` и `PreparedStatus` удалены.
+- [x] `resolvePrimaryStatus` возвращает `AIMode | null`.
+- [x] `tsc --noEmit` для `src` проходит без ошибок.
+
+**Итог:**
+`PrimaryStatus` сведён к `AIMode`; `PreparedStatus` удалён. `resolvePrimaryStatus(entity)` теперь возвращает `AIMode | null`: для врагов — производный режим (`getDerivedAIMode`), для игрока и прочих объектов — `null`. `RenderInput.primaryStatusByEntity` типизирован как `Map<string, AIMode | null>`. В `gameSession.ts` убран резолвер иконки prepared-скилла. `logBuilder.ts` не содержал текстов для `CAST_*` событий. `UnitInfoRenderer.ts` адаптирован под новый тип: для режима `'prepared'` ищет prepared-интент в `input.aiPreparedIntents` и рисует иконку скилла, для остальных режимов — спрайт AI-режима. `tsc --noEmit` для `src` проходит без ошибок; тесты ещё не обновлены — это пункт 6.
 
 ---
 
@@ -149,9 +163,12 @@
 - Для получения иконки prepared-скилла лучше использовать `aiPreparedIntents.icon`, а не резолвить из контента напрямую.
 
 **Критерий выполнения:**
-- `UnitInfoRenderer` не использует `PrimaryStatus` / `PreparedStatus`.
-- Для врага в режиме `'prepared'` рисуется иконка скилла (если есть) или fallback.
-- `tsc --noEmit` для `src` проходит без ошибок.
+- [x] `UnitInfoRenderer` не использует `PrimaryStatus` / `PreparedStatus`.
+- [x] Для врага в режиме `'prepared'` рисуется иконка скилла (если есть) или fallback.
+- [x] `tsc --noEmit` для `src` проходит без ошибок.
+
+**Итог:**
+В `spriteRegistry.ts` функция `getPrimaryStatusSprite` переименована в `getAIModeSprite`. `UnitInfoRenderer.ts` обновлён: использует `AIMode | null` вместо старых статусных типов, для обычных режимов рисует спрайт режима через `getAIModeSprite`, для `'prepared'` берёт иконку из `input.aiPreparedIntents` (resolved в Presentation через `resolveAbilityIcon`) либо fallback на спрайт `'prepared'`. `UnitInfoRenderer` не импортирует из `simulation/`. `tsc --noEmit` для `src` проходит без ошибок.
 
 ---
 
@@ -184,8 +201,24 @@
 | `tests/integration/equipment-ability-cycle.test.ts` | Убрать `castTime` из фикстур способностей. |
 
 **Критерий выполнения:**
-- `npx tsc --noEmit` проходит без ошибок (включая тесты).
-- `npm run test` проходит без ошибок.
+- [x] `npx tsc --noEmit` проходит без ошибок (включая тесты).
+- [x] `npm run test` проходит без ошибок.
+
+**Итог:**
+Тесты обновлены под новую модель без `activeCast`/`castTime`/`CAST_*`:
+- Удалены файлы: `tests/integration/casting.test.ts`, `tests/unit/simulation/casting-mechanics.test.ts`, `tests/unit/simulation/intents/tick-cast-intent.test.ts`.
+- `tests/fixtures/gameState.ts`: убран `activeCast` из `makePlayer` и `makeEnemy`.
+- `use-ability-action.test.ts`: удалены тесты на `castTime`/`BEGIN_CAST`/`activeCast`.
+- `ap-system.test.ts`: убран `castTime` из `mockAbility`, удалён тест многоходового каста fireball.
+- `primaryStatus.test.ts`: переписан полностью под `AIMode` и `preparedIntent`.
+- `UnitInfoRenderer.test.ts`: убраны `activeCast`/`casting`, тест `prepared` теперь использует `'prepared'` (AIMode) и `aiPreparedIntents`.
+- `hotbar.test.ts`, `TargetingRenderer.test.ts`, `WorldRenderer.test.ts`, `EntityRenderer.test.ts`: убран `activeCast` из фикстур, удалён тест каста в хотбаре.
+- `animation/builders.test.ts`: убран `castCancelledBuilder` и тест `CAST_CANCELLED`.
+- `animation/skills.test.ts`: fallback-тест fireball теперь использует `ABILITY_USED` вместо `CAST_RESOLVED`.
+- `equipment-ability-cycle.test.ts`: убран `castTime` из `mockAbility`.
+- `ai-prepared-intent.test.ts`, `ai-simple-boss.test.ts`, `stun.test.ts`: `getAIOverlay` заменён на `getDerivedAIMode`, assertions скорректированы под новую модель.
+
+`npx tsc --noEmit` и `npm run test` проходят без ошибок (616 тестов).
 
 ---
 
@@ -195,9 +228,9 @@
 
 **Проверки:**
 
-- [ ] Запустить `npm run test`.
-- [ ] Запустить `npm run build`.
-- [ ] Запустить `npm run lint` (если есть).
+- [x] Запустить `npm run test`.
+- [x] Запустить `npm run build`.
+- [x] Запустить `npm run lint` (скрипт отсутствует в `package.json`, не требуется).
 - [ ] Ручная проверка в браузере:
   - Игрок может использовать мгновенный скилл (`fireball`) — эффект применяется сразу.
   - Враг с `aiPreparable` скиллом показывает иконку скилла в большом круге при режиме `'prepared'`.
@@ -207,7 +240,7 @@
 - [ ] Проверить баланс: мгновенные скиллы игрока не слишком сильны после удаления каста.
 
 **Итог:**
-_Краткое описание результата после выполнения пункта._
+Автоматизированные проверки пройдены успешно: `npm run test` — 85 файлов, 616 тестов, все зелёные; `npm run build` — сборка завершена без ошибок; `npm run typecheck` — проходит. Ручная проверка в браузере и балансировка требуют участия пользователя и не выполнялись в рамках CLI-агента.
 
 ---
 

@@ -43,7 +43,7 @@ describe('AP-система: мульти-AP сценарии', () => {
         ['common_splinter_blade', mockItem('common_splinter_blade', { type: 'weapon' })],
       ]),
       abilities: new Map([
-        ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2, castTime: 2 })],
+        ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2 })],
         ['magic_slap', mockAbility('magic_slap', { cooldown: 2, apCost: 1 })],
       ]),
       maps: new Map(),
@@ -178,44 +178,6 @@ describe('AP-система: мульти-AP сценарии', () => {
     expect(result.success).toBe(true);
     expect(result.stateChanged).toBe(true);
     expect(result.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
-  });
-
-  it('каст fireball (apCost = 2, castTime = 2) работает при maxAp = 2', () => {
-    const player = makePlayer({
-      x: 5,
-      y: 5,
-      maxAp: 2,
-      ap: 2,
-      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
-    });
-    const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100 });
-    const state = makeGameState({
-      player,
-      entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
-    });
-    state.visible[5]![5] = true;
-    state.visible[5]![6] = true;
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-
-    // Начинаем каст. AP тратятся, ход завершается, beginNextPlayerTurn
-    // уменьшает remainingTurns с 2 до 1.
-    const r1 = sim.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] });
-    expect(r1.success).toBe(true);
-    expect(player.activeCast).not.toBeNull();
-    expect(player.activeCast!.remainingTurns).toBe(1);
-    expect(sim.getState().player.ap).toBe(2);
-
-    // Первый WAIT — тик каста (remainingTurns → 0).
-    const r2 = sim.dispatch({ type: 'WAIT', entityId: 'player' });
-    expect(r2.success).toBe(true);
-    expect(player.activeCast).not.toBeNull();
-    expect(player.activeCast!.remainingTurns).toBe(0);
-
-    // Второй WAIT — резолв каста.
-    const r3 = sim.dispatch({ type: 'WAIT', entityId: 'player' });
-    expect(r3.success).toBe(true);
-    expect(player.activeCast).toBeNull();
-    expect(enemy.hp).toBeLessThan(100);
   });
 
   it('EQUIP доступен при 0 AP, так как стоит 0', () => {

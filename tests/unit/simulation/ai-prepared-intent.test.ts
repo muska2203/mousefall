@@ -6,7 +6,7 @@ import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import { tryPrepareAbility } from '../../../src/simulation/ai/ai-helpers';
-import { getAIOverlay } from '../../../src/simulation/ai/ai-state';
+import { getDerivedAIMode } from '../../../src/simulation/ai/ai-state';
 import { getAbility } from '../../../src/content/registry';
 
 beforeEach(() => {
@@ -71,7 +71,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     const enemyAfterTurn = getEnemy(sim.getState());
     expect(enemyAfterTurn.aiState.preparedIntent).not.toBeNull();
-    expect(getAIOverlay(enemyAfterTurn)).toBe('prepared');
+    expect(getDerivedAIMode(enemyAfterTurn)).toBe('prepared');
     expect(enemyAfterTurn.aiState.preparedIntent?.abilityId).toBe('fireball');
     expect(enemyAfterTurn.aiState.preparedIntent?.fixedTargets).toEqual([{ x: 5, y: 5 }]);
 
@@ -114,7 +114,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedIntent).toBeNull();
-    expect(getAIOverlay(enemyAfter)).toBeNull();
+    expect(getDerivedAIMode(enemyAfter)).toBe('chase');
     // Игрок получил урон от fireball
     expect(sim.getState().player.hp).toBeLessThan(100);
   });
@@ -148,8 +148,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     const enemyAfter = getEnemy(sim.getState());
     // Подготовка сброшена
     expect(enemyAfter.aiState.preparedIntent).toBeNull();
-    // Overlay отражает оглушение
-    expect(getAIOverlay(enemyAfter)).toBe('stunned');
+    // Оглушение сбросило подготовку; stunned отображается только в слотах эффектов.
+    expect(enemyAfter.statusEffects.some(e => e.type === 'stunned')).toBe(true);
     // Скилл не выполнился — HP игрока не изменилось
     expect(sim.getState().player.hp).toBe(100);
   });

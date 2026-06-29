@@ -401,13 +401,9 @@ export class GameSession {
     }
 
     const primaryStatusByEntity = new Map<string, ReturnType<typeof resolvePrimaryStatus>>();
-    const resolvePreparedIcon = (abilityId: string) => {
-      const abilityTemplate = tryGetLocalizedAbility(abilityId, locale);
-      return abilityTemplate?.spriteId ? resolveAbilityIcon(abilityTemplate.spriteId) : null;
-    };
-    primaryStatusByEntity.set(player.id, resolvePrimaryStatus(player, resolvePreparedIcon));
+    primaryStatusByEntity.set(player.id, resolvePrimaryStatus(player));
     for (const entity of state.entities.values()) {
-      primaryStatusByEntity.set(entity.id, resolvePrimaryStatus(entity, resolvePreparedIcon));
+      primaryStatusByEntity.set(entity.id, resolvePrimaryStatus(entity));
     }
 
     const activeEffects: ActiveEffectViewModel[] = state.player.statusEffects.map(effect => {

@@ -121,7 +121,6 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
-    activeCast: null,
     ...playerOverrides,
   };
 

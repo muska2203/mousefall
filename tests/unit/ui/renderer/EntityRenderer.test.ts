@@ -98,7 +98,6 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
-    activeCast: null,
     ...playerOverrides,
   };
 
@@ -280,7 +279,6 @@ describe('EntityRenderer', () => {
       aiStrategyId: 'melee',
       statusEffects: [],
       abilities: [],
-      activeCast: null,
     } as any);
 
     renderer.update(input);
@@ -310,7 +308,6 @@ describe('EntityRenderer', () => {
       aiStrategyId: 'melee',
       statusEffects: [],
       abilities: [],
-      activeCast: null,
     } as any);
     renderer.update(input);
     expect((renderer as any).sprites.has('enemy1')).toBe(true);
@@ -355,7 +352,6 @@ describe('EntityRenderer', () => {
       aiStrategyId: 'melee',
       statusEffects: [],
       abilities: [],
-      activeCast: null,
     } as any);
 
     renderer.update(input);

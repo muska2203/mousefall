@@ -102,70 +102,6 @@ describe('useAbilityAction', () => {
     expect(ability?.currentCooldown).toBe(3);
   });
 
-  it('блокирует использование способности во время другого каста', () => {
-    resetRegistry();
-    initRegistry({
-      entities: new Map(),
-      players: new Map(),
-      items: new Map(),
-      abilities: new Map([
-        ['fireball', mockAbility('fireball', { castTime: 2 })],
-      ]),
-      maps: new Map(),
-      doors: new Map(),
-      stairs: new Map(),
-    });
-    const state = makeGameState();
-    state.visible[5]![5] = true;
-    state.visible[5]![6] = true;
-    const player = makePlayer({
-      x: 5,
-      y: 5,
-      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
-      activeCast: { abilityId: 'fireball', fixedTargets: [{ x: 6, y: 5 }], remainingTurns: 1 },
-    });
-    state.player = player;
-    state.entities.set(player.id, player);
-
-    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
-    const result = useAbilityAction.validate(state, action);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reasonCode).toBe('already_casting');
-    }
-  });
-
-  it('не накладывает кулдаун при старте каста, используя BEGIN_CAST', () => {
-    resetRegistry();
-    initRegistry({
-      entities: new Map(),
-      players: new Map(),
-      items: new Map(),
-      abilities: new Map([
-        ['fireball', mockAbility('fireball', { castTime: 2 })],
-      ]),
-      maps: new Map(),
-      doors: new Map(),
-      stairs: new Map(),
-    });
-    const state = makeGameState();
-    state.visible[5]![5] = true;
-    state.visible[5]![6] = true;
-    const player = makePlayer({
-      x: 5,
-      y: 5,
-      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
-    });
-    state.player = player;
-    state.entities.set(player.id, player);
-
-    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
-    const intents = useAbilityAction.resolve(state, action);
-
-    expect(intents.some(i => i.type === 'SET_COOLDOWN')).toBe(false);
-    expect(intents.some(i => i.type === 'BEGIN_CAST')).toBe(true);
-  });
-
   it('помещает интенты как детей события ABILITY_USED в дереве выполнения', () => {
     const state = makeGameState();
     state.visible[5]![5] = true;
@@ -193,6 +129,6 @@ describe('useAbilityAction', () => {
     const abilityNode = builder.root.children[0]!;
     expect(abilityNode.children.length).toBeGreaterThan(0);
     const intentEventTypes = abilityNode.children.map(c => c.event.type);
-    expect(intentEventTypes.some(t => t === 'ENTITY_DAMAGED' || t === 'CAST_STARTED')).toBe(true);
+    expect(intentEventTypes.some(t => t === 'ENTITY_DAMAGED')).toBe(true);
   });
 });

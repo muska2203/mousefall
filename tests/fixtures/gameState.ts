@@ -88,7 +88,6 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     ap: 1,
     isAlive: true,
     abilities: [],
-    activeCast: null,
     ...overrides,
   };
 }
@@ -124,7 +123,6 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     ap: 1,
     isAlive: true,
     abilities: [],
-    activeCast: null,
     ...overrides,
   };
 }

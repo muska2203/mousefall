@@ -10,7 +10,6 @@ import type {GameEvent, GameState} from '../../../../src/simulation/types';
 import type {AnimationNode} from '../../../../src/presentation/types';
 
 type AbilityUsedEvent = Extract<GameEvent, { type: 'ABILITY_USED' }>;
-type CastResolvedEvent = Extract<GameEvent, { type: 'CAST_RESOLVED' }>;
 
 function makeMockState(): GameState {
   return {
@@ -41,8 +40,8 @@ describe('fireballComposer', () => {
   });
 
   it('falls back to ABILITY_CAST without target', () => {
-    const event: CastResolvedEvent = {
-      type: 'CAST_RESOLVED',
+    const event: AbilityUsedEvent = {
+      type: 'ABILITY_USED',
       entityId: 'player',
       abilityId: 'fireball',
       targets: [],

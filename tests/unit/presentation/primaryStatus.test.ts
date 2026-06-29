@@ -11,7 +11,6 @@ function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
     id: 'player',
     type: 'player',
     statusEffects: [],
-    activeCast: null,
     ...overrides,
   } as PlayerEntity;
 }
@@ -21,7 +20,6 @@ function makeEnemy(aiMode: 'idle' | 'alert' | 'chase' | 'return', overrides: Par
     id: 'enemy1',
     type: 'enemy',
     statusEffects: [],
-    activeCast: null,
     aiState: {
       strategy: 'hunter',
       mode: aiMode,
@@ -55,28 +53,14 @@ function makeDoor(): DoorEntity {
 }
 
 describe('resolvePrimaryStatus', () => {
-  it('returns AI mode for enemy when no overlay is active', () => {
+  it('returns AI mode for enemy when no prepared intent is active', () => {
     expect(resolvePrimaryStatus(makeEnemy('idle'))).toBe('idle');
     expect(resolvePrimaryStatus(makeEnemy('alert'))).toBe('alert');
     expect(resolvePrimaryStatus(makeEnemy('chase'))).toBe('chase');
     expect(resolvePrimaryStatus(makeEnemy('return'))).toBe('return');
   });
 
-  it('overlay stunned overrides AI mode for enemy', () => {
-    const enemy = makeEnemy('chase', {
-      statusEffects: [{type: 'stunned', duration: 2, value: 0, statModifiers: null}],
-    });
-    expect(resolvePrimaryStatus(enemy)).toBe('stunned');
-  });
-
-  it('overlay casting overrides AI mode for enemy', () => {
-    const enemy = makeEnemy('chase', {
-      activeCast: {abilityId: 'fireball', fixedTargets: [], remainingTurns: 2},
-    });
-    expect(resolvePrimaryStatus(enemy)).toBe('casting');
-  });
-
-  it('overlay prepared overrides AI mode for enemy', () => {
+  it('returns "prepared" for enemy with preparedIntent', () => {
     const enemy = makeEnemy('chase', {
       aiState: {
         strategy: 'hunter',
@@ -89,10 +73,10 @@ describe('resolvePrimaryStatus', () => {
         preparedIntent: {abilityId: 'swoop', fixedTargets: [{x: 0, y: 0}]},
       },
     });
-    expect(resolvePrimaryStatus(enemy)).toEqual({type: 'prepared', abilityIcon: null});
+    expect(resolvePrimaryStatus(enemy)).toBe('prepared');
   });
 
-  it('resolves prepared ability icon when resolver is provided', () => {
+  it('preserves base AI mode after prepared intent is cleared', () => {
     const enemy = makeEnemy('chase', {
       aiState: {
         strategy: 'hunter',
@@ -105,46 +89,17 @@ describe('resolvePrimaryStatus', () => {
         preparedIntent: {abilityId: 'swoop', fixedTargets: [{x: 0, y: 0}]},
       },
     });
-    expect(resolvePrimaryStatus(enemy, (id) => `/assets/skills/${id}.png`)).toEqual({
-      type: 'prepared',
-      abilityIcon: '/assets/skills/swoop.png',
-    });
+    expect(resolvePrimaryStatus(enemy)).toBe('prepared');
+
+    enemy.aiState.preparedIntent = null;
+    expect(resolvePrimaryStatus(enemy)).toBe('chase');
   });
 
-  it('stunned has priority over casting and prepared for enemy', () => {
-    const enemy = makeEnemy('chase', {
-      statusEffects: [{type: 'stunned', duration: 2, value: 0, statModifiers: null}],
-      activeCast: {abilityId: 'fireball', fixedTargets: [], remainingTurns: 2},
-      aiState: {
-        strategy: 'hunter',
-        mode: 'chase',
-        targetX: null,
-        targetY: null,
-        homeX: 0,
-        homeY: 0,
-        alertTurns: 0,
-        preparedIntent: {abilityId: 'swoop', fixedTargets: [{x: 0, y: 0}]},
-      },
-    });
-    expect(resolvePrimaryStatus(enemy)).toBe('stunned');
-  });
-
-  it('returns stunned for player when affected', () => {
-    const player = makePlayer({
-      statusEffects: [{type: 'stunned', duration: 2, value: 0, statModifiers: null}],
-    });
-    expect(resolvePrimaryStatus(player)).toBe('stunned');
-  });
-
-  it('returns casting for player when active cast exists', () => {
-    const player = makePlayer({
-      activeCast: {abilityId: 'fireball', fixedTargets: [], remainingTurns: 2},
-    });
-    expect(resolvePrimaryStatus(player)).toBe('casting');
-  });
-
-  it('returns null for player without overlay statuses', () => {
+  it('returns null for player regardless of status effects', () => {
     expect(resolvePrimaryStatus(makePlayer())).toBeNull();
+    expect(resolvePrimaryStatus(makePlayer({
+      statusEffects: [{type: 'stunned', duration: 2, value: 0, statModifiers: null}],
+    }))).toBeNull();
   });
 
   it('returns null for non-actor entities', () => {

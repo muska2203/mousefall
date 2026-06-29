@@ -105,7 +105,6 @@ function makeRenderInput(
         critMultiplier: 1.5,
         statusEffects: [],
         abilities: [],
-        activeCast: null,
       },
       visible: [],
       explored: [],

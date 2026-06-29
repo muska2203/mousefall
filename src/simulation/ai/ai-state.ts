@@ -10,17 +10,20 @@
 import type { Position } from '@simulation/core-types';
 import type { EnemyEntity } from '@simulation/types';
 
-export type AIMode = 'idle' | 'alert' | 'chase' | 'return';
-
 /**
- * Временное состояние, перекрывающее базовый FSM.
- * - prepared: есть подготовленное намерение на следующий ход
+ * Режимы ИИ врага.
+ * - idle:    стоит на месте, сканирует окружение.
+ * - alert:   1 ход на осмотр при обнаружении игрока.
+ * - chase:   движется к последней известной позиции игрока.
+ * - return:  возвращается к точке спавна.
+ * - prepared: есть подготовленное намерение на следующий ход.
  *
- * Вычисляется на лету функцией getAIOverlay из источника правды
- * (preparedIntent) и не хранится в AIState,
- * чтобы избежать дублирования и рассинхронизации.
+ * Режим 'prepared' не хранится в AIState напрямую — он выводится
+ * из aiState.preparedIntent функцией getDerivedAIMode. Базовый FSM-режим
+ * (idle/alert/chase/return) сохраняется в aiState.mode, чтобы после
+ * выполнения prepared-скилла враг мог продолжить прежнее поведение.
  */
-export type AIOverlay = 'prepared';
+export type AIMode = 'idle' | 'alert' | 'chase' | 'return' | 'prepared';
 
 /**
  * Runtime-состояние конечного автомата ИИ-врага.
@@ -29,8 +32,8 @@ export type AIOverlay = 'prepared';
 export type AIState = {
   strategy: 'hunter' | 'simple-boss';
 
-  /** Базовое состояние поведения (FSM) */
-  mode: AIMode;
+  /** Базовое состояние поведения (FSM). Не теряется при подготовке скилла. */
+  mode: Exclude<AIMode, 'prepared'>;
 
   /** Последняя известная позиция игрока (для погони). null — неизвестна. */
   targetX: number | null;
@@ -58,17 +61,18 @@ export function isEnemyEntity(entity: { type: string; aiState?: unknown }): enti
 }
 
 /**
- * Вычисляет временное AI-состояние (overlay) из источника правды.
- * Не мутирует state и не хранит результат — вызывается в момент использования.
+ * Возвращает производный AI-режим врага.
+ * Если есть подготовленное намерение (preparedIntent), режим считается 'prepared'.
+ * Иначе используется базовый FSM-режим из aiState.mode.
  *
- * Источник правды:
- * - aiState.preparedIntent → 'prepared'
+ * Это derived-значение: оно не хранится в AIState, чтобы избежать
+ * дублирования источника правды и рассинхронизации.
  */
-export function getAIOverlay(enemy: EnemyEntity): AIOverlay | null {
+export function getDerivedAIMode(enemy: EnemyEntity): AIMode {
   if (enemy.aiState.preparedIntent) {
     return 'prepared';
   }
-  return null;
+  return enemy.aiState.mode;
 }
 
 /**

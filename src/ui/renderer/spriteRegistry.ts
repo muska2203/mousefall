@@ -44,9 +44,9 @@ export function getStatusEffectSprite(statusType: string): string {
   return `/assets/statuses/${statusType}.png`;
 }
 
-/** Путь к спрайту главного статуса (AI-режим или overlay). */
-export function getPrimaryStatusSprite(statusType: string): string {
-  return `/assets/statuses/${statusType}.png`;
+/** Путь к спрайту AI-режима врага. */
+export function getAIModeSprite(mode: string): string {
+  return `/assets/statuses/${mode}.png`;
 }
 
 /** Путь к спрайту "переполнения" слотов статусов (3 точки). */

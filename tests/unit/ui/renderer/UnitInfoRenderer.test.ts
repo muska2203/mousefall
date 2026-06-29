@@ -129,7 +129,6 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
-    activeCast: null,
   };
 
   return {
@@ -270,7 +269,6 @@ describe('UnitInfoRenderer', () => {
       aiStrategyId: 'melee',
       statusEffects: [],
       abilities: [],
-      activeCast: null,
     } as any);
     const sprites = new Map<string, Sprite>();
     sprites.set('player', new Sprite());
@@ -531,7 +529,7 @@ describe('UnitInfoRenderer', () => {
     expect(widget.statusIcon.visible).toBe(false);
 
     input.phase = 'animating';
-    input.primaryStatusByEntity.set('player', 'casting');
+    input.primaryStatusByEntity.set('player', 'alert');
     renderer.update(input, (id) => sprites.get(id));
     await new Promise((resolve) => setImmediate(resolve));
 
@@ -547,7 +545,18 @@ describe('UnitInfoRenderer', () => {
   it('shows prepared ability icon as primary status when provided', async () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
-    input.primaryStatusByEntity.set('player', {type: 'prepared', abilityIcon: '/assets/skills/fireball.png'});
+    input.primaryStatusByEntity.set('player', 'prepared');
+    input.aiPreparedIntents = [
+      {
+        entityId: 'player',
+        abilityId: 'fireball',
+        name: 'Fireball',
+        icon: '/assets/skills/fireball.png',
+        fixedTargets: [{x: 1, y: 1}],
+        affectedPositions: [{x: 1, y: 1}],
+        intents: [],
+      },
+    ];
     const sprites = new Map<string, Sprite>();
     sprites.set('player', new Sprite());
 
