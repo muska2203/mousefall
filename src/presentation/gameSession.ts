@@ -55,6 +55,7 @@ import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
 import {TargetingController} from './targetingController';
 import {sortStatusEffects} from './statusSorting';
+import {resolvePrimaryStatus} from './primaryStatus';
 
 // Реэкспорт типов для UI-слоя, чтобы UI не импортировал из simulation/ напрямую
 export type {CharacterConfig} from '@simulation/characterCreation';
@@ -400,6 +401,16 @@ export class GameSession {
       }
     }
 
+    const primaryStatusByEntity = new Map<string, ReturnType<typeof resolvePrimaryStatus>>();
+    const resolvePreparedIcon = (abilityId: string) => {
+      const abilityTemplate = tryGetLocalizedAbility(abilityId, locale);
+      return abilityTemplate?.spriteId ? resolveAbilityIcon(abilityTemplate.spriteId) : null;
+    };
+    primaryStatusByEntity.set(player.id, resolvePrimaryStatus(player, resolvePreparedIcon));
+    for (const entity of state.entities.values()) {
+      primaryStatusByEntity.set(entity.id, resolvePrimaryStatus(entity, resolvePreparedIcon));
+    }
+
     const activeEffects: ActiveEffectViewModel[] = state.player.statusEffects.map(effect => {
       switch (effect.type) {
         case 'poisoned':
@@ -447,6 +458,7 @@ export class GameSession {
       hotbar: this.buildHotbar(state),
       activeEffects,
       statusEffectsByEntity,
+      primaryStatusByEntity,
       runStats: state.runStats,
       fieldObjectPopover,
       interactionHint,

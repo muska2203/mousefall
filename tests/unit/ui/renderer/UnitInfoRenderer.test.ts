@@ -206,6 +206,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     hotbar: [],
     activeEffects: [],
     statusEffectsByEntity: new Map(),
+    primaryStatusByEntity: new Map(),
     runStats: {
       startTime: Date.now(),
       enemiesKilled: 0,
@@ -356,6 +357,26 @@ describe('UnitInfoRenderer', () => {
     expect(widget.lastHpRatio).toBe(1);
   });
 
+  it('hides HP bar when HP is full and shows it when HP is not full', () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    expect(widget.hpBarBg.visible).toBe(false);
+    expect(widget.hpBarFill.visible).toBe(false);
+
+    input.state.player.hp = 5;
+    renderer.update(input, (id) => sprites.get(id));
+
+    expect(widget.hpBarBg.visible).toBe(true);
+    expect(widget.hpBarFill.visible).toBe(true);
+    expect(widget.lastHpRatio).toBe(0.5);
+  });
+
   it('hides effect slots when entity has no status effects', () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
@@ -429,8 +450,9 @@ describe('UnitInfoRenderer', () => {
     renderer.update(input, (id) => sprites.get(id));
     const widget = (renderer as any).widgets.get('player');
 
-    // Виджет без эффектов компактный (54 = PADDING + круг + PADDING + бар + PADDING).
-    expect(widget.contentHeight).toBe(54);
+    // Виджет без эффектов и с полным HP компактный
+    // (40 = PADDING + круг + PADDING, бар скрыт).
+    expect(widget.contentHeight).toBe(40);
 
     input.statusEffectsByEntity = new Map([
       ['player', [{type: 'burning', duration: 2, value: 1, statModifiers: null} as StatusEffect]],
@@ -438,15 +460,101 @@ describe('UnitInfoRenderer', () => {
     renderer.update(input, (id) => sprites.get(id));
 
     // Текстура ещё не подгружена, но место под слот уже зарезервировано.
+    // При полном HP бар скрыт, поэтому высота 60, а не 74.
     expect(widget.effectSlots[0].visible).toBe(false);
     expect(widget.effectSlots[0].y).toBe(40);
-    expect(widget.contentHeight).toBe(74);
+    expect(widget.contentHeight).toBe(60);
 
     await new Promise((resolve) => setImmediate(resolve));
 
     // После загрузки текстуры спрайт появляется на том же месте.
+    // При полном HP бар остаётся скрыт.
     expect(widget.effectSlots[0].visible).toBe(true);
     expect(widget.effectSlots[0].y).toBe(40);
-    expect(widget.contentHeight).toBe(74);
+    expect(widget.contentHeight).toBe(60);
+  });
+
+  it('does not draw fallback background when no primary status is provided', () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    expect(widget.statusIcon.visible).toBe(false);
+    expect(widget.statusBg).toBeUndefined();
+  });
+
+  it('shows primary status icon when provided', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.primaryStatusByEntity.set('player', 'idle');
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const widget = (renderer as any).widgets.get('player');
+    expect(widget.statusIcon.visible).toBe(true);
+  });
+
+  it('hides primary status icon when status is removed', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.primaryStatusByEntity.set('player', 'idle');
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const widget = (renderer as any).widgets.get('player');
+    expect(widget.statusIcon.visible).toBe(true);
+
+    input.primaryStatusByEntity.delete('player');
+    renderer.update(input, (id) => sprites.get(id));
+
+    expect(widget.statusIcon.visible).toBe(false);
+  });
+
+  it('delays newly added primary status until animations finish', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+    expect(widget.statusIcon.visible).toBe(false);
+
+    input.phase = 'animating';
+    input.primaryStatusByEntity.set('player', 'casting');
+    renderer.update(input, (id) => sprites.get(id));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(widget.statusIcon.visible).toBe(false);
+
+    input.phase = 'idle';
+    renderer.update(input, (id) => sprites.get(id));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(widget.statusIcon.visible).toBe(true);
+  });
+
+  it('shows prepared ability icon as primary status when provided', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.primaryStatusByEntity.set('player', {type: 'prepared', abilityIcon: '/assets/skills/fireball.png'});
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const widget = (renderer as any).widgets.get('player');
+    expect(widget.statusIcon.visible).toBe(true);
   });
 });

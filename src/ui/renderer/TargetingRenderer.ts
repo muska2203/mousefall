@@ -6,7 +6,7 @@
  * - Подсветка выбранных клеток (синий)
  * - Подсветка клетки под мышью (жёлтый)
  * - Подсветка зоны AoE (красный)
- * - Отображение preview-интентов: урон (число), движение (стрелка), статус, смерть
+ * - Отображение preview-интентов: урон (число), движение (стрелка), смерть
  */
 
 import {Container, Graphics, Text, TextStyle} from 'pixi.js';
@@ -84,7 +84,6 @@ export class TargetingRenderer {
     ];
 
     const damageByPos = new Map<string, number>();
-    const statusesByPos = new Map<string, Array<{ type: string; duration: number; value: number }>>();
     const moves: Array<{ from: Position; to: Position }> = [];
     const pushes: Array<{ from: Position; to: Position }> = [];
     const deaths: Position[] = [];
@@ -94,13 +93,6 @@ export class TargetingRenderer {
         case 'DAMAGE': {
           const key = `${intent.position.x},${intent.position.y}`;
           damageByPos.set(key, (damageByPos.get(key) ?? 0) + intent.damage);
-          break;
-        }
-        case 'APPLY_STATUS': {
-          const key = `${intent.position.x},${intent.position.y}`;
-          const list = statusesByPos.get(key) ?? [];
-          list.push({ type: intent.statusType, duration: intent.duration, value: intent.value });
-          statusesByPos.set(key, list);
           break;
         }
         case 'MOVE':
@@ -124,14 +116,6 @@ export class TargetingRenderer {
       const x = Number(parts[0]);
       const y = Number(parts[1]);
       this.drawDamageNumber({ x, y }, damage, zoom);
-    }
-    for (const [key, statuses] of statusesByPos) {
-      const parts = key.split(',');
-      const x = Number(parts[0]);
-      const y = Number(parts[1]);
-      for (const s of statuses) {
-        this.drawStatusIcon({ x, y }, s.type, s.duration, zoom);
-      }
     }
     for (const move of moves) {
       this.drawArrow(move.from, move.to, 0xffffff);
@@ -200,27 +184,6 @@ export class TargetingRenderer {
     g.stroke({ width: 2, color, alpha: 0.8 });
 
     this.previewContainer.addChild(g);
-  }
-
-  private drawStatusIcon(pos: Position, statusType: string, duration: number, zoom: number): void {
-    const icon = statusType === 'burning' ? '🔥' : statusType === 'poisoned' ? '☠' : statusType === 'frozen' ? '❄' : '✨';
-    const text = new Text({
-      text: `${icon}${duration}`,
-      style: new TextStyle({
-        fontFamily: FONT_PANEL_TITLE,
-        fontSize: Math.round(12 * zoom),
-        fill: '#ffaa00',
-        fontWeight: 'bold',
-        stroke: { width: Math.max(1, Math.round(2 * zoom)), color: '#000000' },
-      }),
-      resolution: window.devicePixelRatio || 1,
-    });
-    text.roundPixels = true;
-    text.anchor.set(0.5, 0);
-    text.x = pos.x * TILE_SIZE + TILE_SIZE / 2;
-    text.y = pos.y * TILE_SIZE + 2;
-    this.textWorldCoords.set(text, { worldX: text.x, worldY: text.y });
-    this.previewTextContainer.addChild(text);
   }
 
   private drawDeathMarker(pos: Position, zoom: number): void {

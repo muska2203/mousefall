@@ -7,10 +7,11 @@
 
 import {Container, Graphics, Sprite, Texture} from 'pixi.js';
 import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode} from '@presentation/types';
+import type {PrimaryStatus} from '@presentation/primaryStatus';
 import {Tween, lerp, clamp01} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-import {getStatusEffectSprite, getStatusOverflowSprite} from './spriteRegistry';
+import {getStatusEffectSprite, getStatusOverflowSprite, getPrimaryStatusSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 
 
@@ -35,7 +36,8 @@ type HpEntity = {hp: number; maxHp: number};
 
 type UnitInfoWidget = {
   container: Container;
-  circle: Graphics;
+  /** Иконка главного статуса (AI-режим или overlay). */
+  statusIcon: Sprite;
   effectSlots: Sprite[];
   hpBarBg: Graphics;
   hpBarFill: Graphics;
@@ -61,6 +63,10 @@ export class UnitInfoRenderer {
    *  не появлялись в виджете раньше завершения анимации. */
   private lastIdleStatusEffects = new Map<string, readonly StatusEffect[]>();
 
+  /** Снимок главного статуса на момент последнего idle-кадра.
+   *  Аналогично lastIdleStatusEffects: не меняем иконку статуса посреди анимации. */
+  private lastIdlePrimaryStatus = new Map<string, PrimaryStatus | null>();
+
   constructor() {
     this.container.sortableChildren = true;
   }
@@ -70,14 +76,18 @@ export class UnitInfoRenderer {
     const state = input.state;
     const seen = new Set<string>();
 
-    // Во время анимаций показываем эффекты из последнего idle-кадра,
+    // Во время анимаций показываем эффекты и главный статус из последнего idle-кадра,
     // чтобы спрайты статусов не появлялись до завершения анимации.
     if (input.phase !== 'animating') {
       this.lastIdleStatusEffects = this.cloneStatusEffects(input.statusEffectsByEntity);
+      this.lastIdlePrimaryStatus = this.clonePrimaryStatus(input.primaryStatusByEntity);
     }
     const statusEffectsByEntity = input.phase === 'animating'
       ? this.lastIdleStatusEffects
       : input.statusEffectsByEntity;
+    const primaryStatusByEntity = input.phase === 'animating'
+      ? this.lastIdlePrimaryStatus
+      : input.primaryStatusByEntity;
 
     const processEntity = (id: string, entity: unknown) => {
       if (!hasHp(entity)) return;
@@ -95,6 +105,9 @@ export class UnitInfoRenderer {
 
       const effects = statusEffectsByEntity.get(id) ?? [];
       this.updateEffectSlots(widget, effects);
+
+      const primaryStatus = primaryStatusByEntity.get(id) ?? null;
+      this.updateStatusIcon(widget, primaryStatus);
 
       // Не перезаписываем полоску текущим HP, если для сущности уже идёт
       // анимация изменения HP или она запланирована в текущем кадре.
@@ -204,6 +217,10 @@ export class UnitInfoRenderer {
     return clone;
   }
 
+  private clonePrimaryStatus(source: Map<string, PrimaryStatus | null>): Map<string, PrimaryStatus | null> {
+    return new Map<string, PrimaryStatus | null>(source);
+  }
+
   /** Проверить, есть ли в запланированных анимациях шаг HP_CHANGE для сущности. */
   private hasPendingHpChange(phases: readonly AnimationPhase[] | null, entityId: string): boolean {
     if (!phases) return false;
@@ -238,7 +255,8 @@ export class UnitInfoRenderer {
   private createWidget(): UnitInfoWidget {
     const container = new Container();
 
-    const circle = new Graphics();
+    const statusIcon = new Sprite(Texture.EMPTY);
+    statusIcon.anchor.set(0.5, 0.5);
     const effectSlots: Sprite[] = [];
     for (let i = 0; i < MAX_VISIBLE_STATUS_SLOTS; i++) {
       const slot = new Sprite(Texture.EMPTY);
@@ -248,11 +266,11 @@ export class UnitInfoRenderer {
     const hpBarBg = new Graphics();
     const hpBarFill = new Graphics();
 
-    container.addChild(circle, ...effectSlots, hpBarBg, hpBarFill);
+    container.addChild(statusIcon, ...effectSlots, hpBarBg, hpBarFill);
 
     return {
       container,
-      circle,
+      statusIcon,
       effectSlots,
       hpBarBg,
       hpBarFill,
@@ -262,36 +280,64 @@ export class UnitInfoRenderer {
     };
   }
 
+  private updateStatusIcon(widget: UnitInfoWidget, status: PrimaryStatus | null): void {
+    const iconY = PADDING;
+    const iconX = BASE_WIDTH / 2;
+
+    if (status) {
+      widget.statusIcon.visible = false;
+      let spritePath: string;
+      if (typeof status === 'string') {
+        spritePath = getPrimaryStatusSprite(status);
+      } else {
+        spritePath = status.abilityIcon ?? getPrimaryStatusSprite('prepared');
+      }
+      this.applyTexture(widget.statusIcon, spritePath, CIRCLE_DIAMETER);
+      widget.statusIcon.x = iconX;
+      widget.statusIcon.y = iconY + CIRCLE_DIAMETER / 2;
+    } else {
+      widget.statusIcon.texture = Texture.EMPTY;
+      widget.statusIcon.visible = false;
+    }
+  }
+
   private updateHpBar(widget: UnitInfoWidget, hp: number, maxHp: number): void {
-    widget.circle.clear();
     widget.hpBarBg.clear();
     widget.hpBarFill.clear();
 
-    // Круг-иконка вверху по центру
-    const circleY = PADDING;
-    const circleX = BASE_WIDTH / 2;
-    widget.circle.circle(circleX, circleY + CIRCLE_DIAMETER / 2, CIRCLE_DIAMETER / 2);
-    widget.circle.fill({color: COLOR_SLOT_FILL});
-
-    // HP-бар. Высота виджета зависит от наличия эффектов, а не от
-    // фактической видимости спрайта, чтобы асинхронная подгрузка текстуры
-    // не приводила к «прыжку» верстки.
-    const hasEffectSlots = widget.hasEffects;
-    const slotY = hasEffectSlots
-      ? circleY + CIRCLE_DIAMETER + PADDING
-      : circleY + CIRCLE_DIAMETER;
-    const barY = hasEffectSlots
-      ? slotY + EFFECT_SIZE + PADDING
-      : slotY + PADDING;
-    const barWidth = BASE_WIDTH - 2 * PADDING;
     const hpRatio = maxHp > 0 ? clamp01(hp / maxHp) : 0;
     widget.lastHpRatio = hpRatio;
-    widget.hpBarBg.rect(PADDING, barY, barWidth, HP_BAR_HEIGHT);
-    widget.hpBarBg.fill({color: COLOR_HP_BG});
-    widget.hpBarFill.rect(PADDING, barY, barWidth * hpRatio, HP_BAR_HEIGHT);
-    widget.hpBarFill.fill({color: COLOR_HP_FILL});
 
-    widget.contentHeight = barY + HP_BAR_HEIGHT + PADDING;
+    const isFull = hpRatio >= 1;
+    const hasEffectSlots = widget.hasEffects;
+    const iconBottomY = PADDING + CIRCLE_DIAMETER;
+    const slotY = hasEffectSlots
+      ? iconBottomY + PADDING
+      : iconBottomY;
+
+    // HP-бар показываем только при неполном HP.
+    widget.hpBarBg.visible = !isFull;
+    widget.hpBarFill.visible = !isFull;
+
+    if (!isFull) {
+      const barY = hasEffectSlots
+        ? slotY + EFFECT_SIZE + PADDING
+        : slotY + PADDING;
+      const barWidth = BASE_WIDTH - 2 * PADDING;
+      widget.hpBarBg.rect(PADDING, barY, barWidth, HP_BAR_HEIGHT);
+      widget.hpBarBg.fill({color: COLOR_HP_BG});
+      widget.hpBarFill.rect(PADDING, barY, barWidth * hpRatio, HP_BAR_HEIGHT);
+      widget.hpBarFill.fill({color: COLOR_HP_FILL});
+
+      widget.contentHeight = barY + HP_BAR_HEIGHT + PADDING;
+    } else {
+      // При полном HP бар скрыт, высота виджета заканчивается на слотах эффектов
+      // (или сразу под иконкой, если эффектов нет).
+      const contentBottomY = hasEffectSlots
+        ? slotY + EFFECT_SIZE
+        : slotY;
+      widget.contentHeight = contentBottomY + PADDING;
+    }
   }
 
   private updateEffectSlots(widget: UnitInfoWidget, effects: readonly StatusEffect[]): void {
@@ -340,7 +386,7 @@ export class UnitInfoRenderer {
     this.applyTexture(slot, getStatusEffectSprite(statusType));
   }
 
-  private applyTexture(slot: Sprite, path: string): void {
+  private applyTexture(slot: Sprite, path: string, size: number = EFFECT_SIZE): void {
     const texture = getTextureSync(path);
 
     if (texture) {
@@ -355,14 +401,14 @@ export class UnitInfoRenderer {
           if (slot.destroyed) return;
           slot.texture = loaded;
           slot.visible = true;
-          slot.width = EFFECT_SIZE;
-          slot.height = EFFECT_SIZE;
+          slot.width = size;
+          slot.height = size;
         })
         .catch(() => {});
     }
 
-    slot.width = EFFECT_SIZE;
-    slot.height = EFFECT_SIZE;
+    slot.width = size;
+    slot.height = size;
   }
 
   private syncWidgetPosition(widget: UnitInfoWidget, sprite: Sprite): void {

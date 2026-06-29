@@ -29,7 +29,6 @@ export class EntityRenderer {
   private sprites = new Map<string, Sprite>();
   private activeAnimations = new Map<string, ActiveAnimation>();
   private castIndicators = new Map<string, Text>();
-  private preparedIndicators = new Map<string, Text>();
 
   constructor() {
     this.container.sortableChildren = true;
@@ -147,7 +146,6 @@ export class EntityRenderer {
     }
 
     this.updateCastIndicators(input, existingIds);
-    this.updatePreparedIndicators(input, existingIds);
   }
 
   /** Анимация прыжка спрайта между тайлами.
@@ -565,10 +563,6 @@ export class EntityRenderer {
       indicator.destroy();
     }
     this.castIndicators.clear();
-    for (const indicator of this.preparedIndicators.values()) {
-      indicator.destroy();
-    }
-    this.preparedIndicators.clear();
     this.container.removeChildren();
   }
 
@@ -623,52 +617,6 @@ export class EntityRenderer {
       if (!entitiesWithCast.has(id) || !existingIds.has(id)) {
         indicator.destroy();
         this.castIndicators.delete(id);
-      }
-    }
-  }
-
-  private updatePreparedIndicators(input: RenderInput, existingIds: Set<string>): void {
-    const state = input.state;
-    const entitiesWithPrepared = new Map<string, string>();
-
-    for (const entity of state.entities.values()) {
-      if (entity.type !== 'enemy' || !('aiState' in entity)) continue;
-      const prepared = entity.aiState.preparedIntent;
-      if (!prepared) continue;
-      // Индикатор готовящегося скилла виден только на видимых клетках.
-      if (!input.debugEnabled && !isCellVisible(state, entity.x, entity.y)) continue;
-      entitiesWithPrepared.set(entity.id, prepared.abilityId);
-    }
-
-    for (const [id, indicator] of this.preparedIndicators) {
-      if (!entitiesWithPrepared.has(id) || !existingIds.has(id)) {
-        indicator.destroy();
-        this.preparedIndicators.delete(id);
-      }
-    }
-
-    for (const [id, abilityId] of entitiesWithPrepared) {
-      if (!existingIds.has(id)) continue;
-      let indicator = this.preparedIndicators.get(id);
-      if (!indicator) {
-        indicator = new Text({
-          text: '!',
-          style: {
-            fontSize: 16,
-            fill: 0xff8800,
-            stroke: { width: 2, color: 0x000000 },
-          },
-        });
-        indicator.anchor.set(0.5, 1);
-        this.container.addChild(indicator);
-        this.preparedIndicators.set(id, indicator);
-      }
-      const sprite = this.sprites.get(id);
-      if (sprite) {
-        indicator.x = sprite.x;
-        indicator.y = sprite.y - sprite.height - 2;
-        indicator.visible = sprite.visible;
-        indicator.zIndex = sprite.zIndex + 1;
       }
     }
   }
