@@ -4,7 +4,7 @@ import { Intent } from '@simulation/systems/intents/types';
 import { executeIntent } from '@simulation/systems/intents/execute-intent';
 import { getSkillExecutor } from '@simulation/skills/skillExecutor';
 import { validateAbilityTargets } from '@simulation/skills/target-validation';
-import { getAbility } from '@content/registry';
+import { tryGetAbility } from '@content/registry';
 
 export const useAbilityAction: ActionHandler = {
   validate(state: GameState, action: UseAbilityAction): ValidationResult {
@@ -19,6 +19,11 @@ export const useAbilityAction: ActionHandler = {
 
     const runtimeAbility = actor.abilities.find(a => a.templateId === action.abilityId);
     if (!runtimeAbility) {
+      return { ok: false, reasonCode: 'ability_not_found' };
+    }
+
+    const template = tryGetAbility(action.abilityId);
+    if (!template) {
       return { ok: false, reasonCode: 'ability_not_found' };
     }
 
@@ -39,7 +44,8 @@ export const useAbilityAction: ActionHandler = {
     if (!actor) return [];
     const executor = getSkillExecutor(action.abilityId);
     if (!executor) return [];
-    const template = getAbility(action.abilityId);
+    const template = tryGetAbility(action.abilityId);
+    if (!template) return [];
 
     const intents = executor.resolve(state, actor, action.targets);
 

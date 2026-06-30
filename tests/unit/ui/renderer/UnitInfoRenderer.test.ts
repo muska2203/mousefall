@@ -205,7 +205,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     hotbar: [],
     activeEffects: [],
     statusEffectsByEntity: new Map(),
-    primaryStatusByEntity: new Map(),
+    aiModeByEntity: new Map(),
     runStats: {
       startTime: Date.now(),
       enemiesKilled: 0,
@@ -488,7 +488,7 @@ describe('UnitInfoRenderer', () => {
   it('shows primary status icon when provided', async () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
-    input.primaryStatusByEntity.set('player', 'idle');
+    input.aiModeByEntity.set('player', 'idle');
     const sprites = new Map<string, Sprite>();
     sprites.set('player', new Sprite());
 
@@ -502,7 +502,7 @@ describe('UnitInfoRenderer', () => {
   it('hides primary status icon when status is removed', async () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
-    input.primaryStatusByEntity.set('player', 'idle');
+    input.aiModeByEntity.set('player', 'idle');
     const sprites = new Map<string, Sprite>();
     sprites.set('player', new Sprite());
 
@@ -512,7 +512,7 @@ describe('UnitInfoRenderer', () => {
     const widget = (renderer as any).widgets.get('player');
     expect(widget.statusIcon.visible).toBe(true);
 
-    input.primaryStatusByEntity.delete('player');
+    input.aiModeByEntity.delete('player');
     renderer.update(input, (id) => sprites.get(id));
 
     expect(widget.statusIcon.visible).toBe(false);
@@ -529,7 +529,7 @@ describe('UnitInfoRenderer', () => {
     expect(widget.statusIcon.visible).toBe(false);
 
     input.phase = 'animating';
-    input.primaryStatusByEntity.set('player', 'alert');
+    input.aiModeByEntity.set('player', 'alert');
     renderer.update(input, (id) => sprites.get(id));
     await new Promise((resolve) => setImmediate(resolve));
 
@@ -545,7 +545,7 @@ describe('UnitInfoRenderer', () => {
   it('shows prepared ability icon as primary status when provided', async () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
-    input.primaryStatusByEntity.set('player', 'prepared');
+    input.aiModeByEntity.set('player', 'prepared');
     input.aiPreparedIntents = [
       {
         entityId: 'player',

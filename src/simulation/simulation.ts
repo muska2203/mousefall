@@ -475,7 +475,14 @@ export class GameSimulation implements Simulation {
 
             actions.push(setupRoot);
 
-            // Выполнение подготовленного намерения AI
+            // Выполнение подготовленного намерения AI.
+            // Примечание: prepared-скилл исполняется до основного цикла while (ap > 0).
+            // Если maxAp > apCost подготовленной способности, у врага останется AP,
+            // и он сможет совершить дополнительные действия в том же ходу.
+            // Это текущее осознанное поведение, но оно требует геймдизайнерского решения.
+            // Возможно, ответственность за исполнение prepared-скилла стоит перенести
+            // в AI-стратегию, чтобы стратегия сама решала, выполнять ли prepared
+            // и что делать дальше.
             let preparedAbilityIdForCancel: string | null = null;
             let preparedTargetsForCancel: Position[] = [];
             if (enemyEntity.aiState.preparedIntent) {

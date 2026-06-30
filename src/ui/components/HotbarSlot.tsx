@@ -41,13 +41,9 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
   const isEmpty = item.kind === 'empty';
   const showCooldown =
     item.cooldown != null && item.cooldown > 0 && item.maxCooldown != null && item.maxCooldown > 0;
-  const showCasting =
-    item.isCasting === true &&
-    item.remainingCastTurns != null &&
-    item.remainingCastTurns >= 0;
   const showAp = formatApCost(item.apCost) !== '';
   const showQty = item.kind === 'consumable' && item.quantity !== undefined;
-  const isUnavailable = !isEmpty && !item.isAvailable && !item.isActive && !item.isCasting;
+  const isUnavailable = !isEmpty && !item.isAvailable && !item.isActive;
 
   const handleMouseEnter = () => setIsHovered(true);
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -60,7 +56,6 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
     item.isActive ? 'cm-quick-slot--active' : '',
     isEmpty ? 'cm-quick-slot--empty' : '',
     item.depleted ? 'cm-quick-slot--depleted' : '',
-    showCasting ? 'cm-quick-slot--preparing' : '',
     isUnavailable ? 'cm-quick-slot--unavailable' : '',
   ].join(' ');
 
@@ -135,10 +130,6 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
           <span className="cm-quick-slot__cooldown">
             <CircularCooldown value={item.cooldown!} max={item.maxCooldown!} />
           </span>
-        )}
-
-        {showCasting && (
-          <span className="cm-quick-slot__cast-indicator">{item.remainingCastTurns}</span>
         )}
       </button>
 

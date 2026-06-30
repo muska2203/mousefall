@@ -6,8 +6,7 @@
  */
 
 import {Container, Graphics, Sprite, Texture} from 'pixi.js';
-import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode, AIPreparedIntentViewModel} from '@presentation/types';
-import type {AIMode} from '@simulation/ai/ai-state';
+import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode, AIPreparedIntentViewModel, AIMode} from '@presentation/types';
 import {Tween, lerp, clamp01} from '@utils/tween';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
@@ -80,14 +79,14 @@ export class UnitInfoRenderer {
     // чтобы спрайты статусов не появлялись до завершения анимации.
     if (input.phase !== 'animating') {
       this.lastIdleStatusEffects = this.cloneStatusEffects(input.statusEffectsByEntity);
-      this.lastIdleAIMode = this.clonePrimaryStatus(input.primaryStatusByEntity);
+      this.lastIdleAIMode = this.cloneAIMode(input.aiModeByEntity);
     }
     const statusEffectsByEntity = input.phase === 'animating'
       ? this.lastIdleStatusEffects
       : input.statusEffectsByEntity;
-    const primaryStatusByEntity = input.phase === 'animating'
+    const aiModeByEntity = input.phase === 'animating'
       ? this.lastIdleAIMode
-      : input.primaryStatusByEntity;
+      : input.aiModeByEntity;
 
     const processEntity = (id: string, entity: unknown) => {
       if (!hasHp(entity)) return;
@@ -106,11 +105,11 @@ export class UnitInfoRenderer {
       const effects = statusEffectsByEntity.get(id) ?? [];
       this.updateEffectSlots(widget, effects);
 
-      const primaryStatus = primaryStatusByEntity.get(id) ?? null;
-      const preparedIntent = primaryStatus === 'prepared'
+      const aiMode = aiModeByEntity.get(id) ?? null;
+      const preparedIntent = aiMode === 'prepared'
         ? (input.aiPreparedIntents.find((intent) => intent.entityId === id) ?? null)
         : null;
-      this.updateStatusIcon(widget, primaryStatus, preparedIntent);
+      this.updateStatusIcon(widget, aiMode, preparedIntent);
 
       // Не перезаписываем полоску текущим HP, если для сущности уже идёт
       // анимация изменения HP или она запланирована в текущем кадре.
@@ -220,7 +219,7 @@ export class UnitInfoRenderer {
     return clone;
   }
 
-  private clonePrimaryStatus(source: Map<string, AIMode | null>): Map<string, AIMode | null> {
+  private cloneAIMode(source: Map<string, AIMode | null>): Map<string, AIMode | null> {
     return new Map<string, AIMode | null>(source);
   }
 

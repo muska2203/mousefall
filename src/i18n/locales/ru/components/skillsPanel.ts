@@ -5,5 +5,4 @@ export const ruSkillsPanel = {
   noSkills: 'Нет скиллов',
   equipmentSkillTooltip: 'Скилл от экипировки',
   levelupSkillTooltip: 'Скилл от прокачки',
-  castPrefix: 'Каст ',
 } as const satisfies ComponentsSkillsPanelTranslations;

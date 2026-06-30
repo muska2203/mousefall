@@ -139,7 +139,6 @@ export interface ComponentsSkillsPanelTranslations {
   noSkills: string;
   equipmentSkillTooltip: string;
   levelupSkillTooltip: string;
-  castPrefix: string;
 }
 
 export interface ComponentsEffectsPanelTranslations {
@@ -263,8 +262,6 @@ export interface ComponentsToastTranslations {
   invalidTargetMessage: string;
   wrongTargetCountTitle: string;
   wrongTargetCountMessage: string;
-  alreadyCastingTitle: string;
-  alreadyCastingMessage: string;
   abilityNotFoundTitle: string;
   abilityNotFoundMessage: string;
   itemNotFoundTitle: string;

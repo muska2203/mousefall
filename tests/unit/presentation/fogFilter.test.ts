@@ -105,6 +105,28 @@ describe('isEventVisible', () => {
     const state = makeState();
     expect(isEventVisible({ type: 'PLAYER_DIED' }, state)).toBe(true);
   });
+
+  it('ABILITY_PREPARED / ABILITY_PREPARED_CANCELLED: visible if from is visible', () => {
+    const state = makeState({
+      visible: [
+        [false, false, false],
+        [false, true, false],
+        [false, false, false],
+      ],
+    });
+
+    const visiblePrepared = { type: 'ABILITY_PREPARED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
+    expect(isEventVisible(visiblePrepared, state)).toBe(true);
+
+    const visibleCancelled = { type: 'ABILITY_PREPARED_CANCELLED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
+    expect(isEventVisible(visibleCancelled, state)).toBe(true);
+
+    const hiddenPrepared = { type: 'ABILITY_PREPARED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
+    expect(isEventVisible(hiddenPrepared, state)).toBe(false);
+
+    const hiddenCancelled = { type: 'ABILITY_PREPARED_CANCELLED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
+    expect(isEventVisible(hiddenCancelled, state)).toBe(false);
+  });
 });
 
 describe('filterByFOV', () => {

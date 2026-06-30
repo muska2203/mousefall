@@ -5,5 +5,4 @@ export const enSkillsPanel = {
   noSkills: 'No skills',
   equipmentSkillTooltip: 'Equipment skill',
   levelupSkillTooltip: 'Level-up skill',
-  castPrefix: 'Cast ',
 } as const satisfies ComponentsSkillsPanelTranslations;

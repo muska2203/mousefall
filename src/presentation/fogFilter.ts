@@ -98,6 +98,10 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     }
     case 'ACTION_REJECTED':
       return true;
+    case 'ABILITY_PREPARED':
+    case 'ABILITY_PREPARED_CANCELLED': {
+      return isPosVisible(event.from, state);
+    }
     default:
       return true;
   }

@@ -11,8 +11,6 @@ export const enToast = {
   invalidTargetMessage: 'The selected target is not valid for this ability.',
   wrongTargetCountTitle: 'Wrong Target Count',
   wrongTargetCountMessage: 'The number of selected targets does not match the ability.',
-  alreadyCastingTitle: 'Already Casting',
-  alreadyCastingMessage: 'The character is already preparing another ability.',
   abilityNotFoundTitle: 'Ability Not Found',
   abilityNotFoundMessage: 'The specified ability is not available to the character.',
   itemNotFoundTitle: 'Item Not Found',

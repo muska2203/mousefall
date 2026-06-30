@@ -11,6 +11,8 @@ import {initSkillRegistry} from '../../../src/simulation/skills/index';
 import type {AbilityTemplate} from '../../../src/content/schemas';
 import type {Entity, EntityId} from '../../../src/simulation/types';
 import {GameSimulation, defaultActionHandlerRegistry} from '../../../src/simulation/simulation';
+import {registerSkill} from '../../../src/simulation/skills/skillExecutor';
+import {testFireballSkill} from '../../helpers/test-skills';
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {id, cooldown: 0, apCost: 1, ...overrides} as AbilityTemplate;
@@ -18,6 +20,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
 
 beforeEach(() => {
   initSkillRegistry();
+  registerSkill(testFireballSkill);
 });
 
 describe('GameSession AI prepared intents', () => {
@@ -28,7 +31,7 @@ describe('GameSession AI prepared intents', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['fireball', mockAbility('fireball', {aiPreparable: true, apCost: 2})],
+        ['test-fireball', mockAbility('test-fireball', {aiPreparable: true, apCost: 2})],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -45,9 +48,9 @@ describe('GameSession AI prepared intents', () => {
     const enemy = makeEnemy({
       x: 6,
       y: 5,
-      maxAp: 1,
-      ap: 1,
-      abilities: [{templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0}],
+      maxAp: 2,
+      ap: 2,
+      abilities: [{templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0}],
     });
     const state = makeGameState({
       player,
@@ -65,7 +68,7 @@ describe('GameSession AI prepared intents', () => {
     expect(renderInput!.aiPreparedIntents.length).toBe(1);
 
     const aiIntent = renderInput!.aiPreparedIntents[0]!;
-    expect(aiIntent.abilityId).toBe('fireball');
+    expect(aiIntent.abilityId).toBe('test-fireball');
     expect(aiIntent.affectedPositions.length).toBeGreaterThan(0);
     expect(aiIntent.intents.length).toBeGreaterThan(0);
     expect(aiIntent.intents.some((i) => i.type === 'DAMAGE')).toBe(true);

@@ -198,7 +198,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     hotbar: [],
     activeEffects: [],
     statusEffectsByEntity: new Map(),
-    primaryStatusByEntity: new Map(),
+    aiModeByEntity: new Map(),
     runStats: {
       startTime: Date.now(),
       enemiesKilled: 0,

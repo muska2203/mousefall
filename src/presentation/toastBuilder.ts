@@ -51,11 +51,6 @@ const ERROR_MAP: Record<string, ErrorMapping> = {
     titleKey: 'wrongTargetCountTitle',
     messageKey: 'wrongTargetCountMessage',
   },
-  already_casting: {
-    kind: 'warning',
-    titleKey: 'alreadyCastingTitle',
-    messageKey: 'alreadyCastingMessage',
-  },
   ability_not_found: {
     kind: 'error',
     titleKey: 'abilityNotFoundTitle',

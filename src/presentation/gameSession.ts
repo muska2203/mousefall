@@ -55,7 +55,7 @@ import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
 import {TargetingController} from './targetingController';
 import {sortStatusEffects} from './statusSorting';
-import {resolvePrimaryStatus} from './primaryStatus';
+import {resolveAIMode} from './primaryStatus';
 
 // Реэкспорт типов для UI-слоя, чтобы UI не импортировал из simulation/ напрямую
 export type {CharacterConfig} from '@simulation/characterCreation';
@@ -230,8 +230,6 @@ export class GameSession {
         maxCooldown: template?.cooldown ?? 0,
         isAvailable: ability.currentCooldown === 0,
         source: ability.source,
-        isCasting: false,
-        remainingCastTurns: 0,
       };
     });
 
@@ -400,10 +398,10 @@ export class GameSession {
       }
     }
 
-    const primaryStatusByEntity = new Map<string, ReturnType<typeof resolvePrimaryStatus>>();
-    primaryStatusByEntity.set(player.id, resolvePrimaryStatus(player));
+    const aiModeByEntity = new Map<string, ReturnType<typeof resolveAIMode>>();
+    aiModeByEntity.set(player.id, resolveAIMode(player));
     for (const entity of state.entities.values()) {
-      primaryStatusByEntity.set(entity.id, resolvePrimaryStatus(entity));
+      aiModeByEntity.set(entity.id, resolveAIMode(entity));
     }
 
     const activeEffects: ActiveEffectViewModel[] = state.player.statusEffects.map(effect => {
@@ -453,7 +451,7 @@ export class GameSession {
       hotbar: this.buildHotbar(state),
       activeEffects,
       statusEffectsByEntity,
-      primaryStatusByEntity,
+      aiModeByEntity,
       runStats: state.runStats,
       fieldObjectPopover,
       interactionHint,
@@ -1339,8 +1337,6 @@ export class GameSession {
           apCost: resolvedApCost,
           cooldown,
           maxCooldown,
-          isCasting: false,
-          remainingCastTurns: 0,
           isAvailable,
           isActive,
           tooltip: localized

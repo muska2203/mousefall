@@ -11,8 +11,6 @@ export const ruToast = {
   invalidTargetMessage: 'Выбранная цель не подходит для этой способности.',
   wrongTargetCountTitle: 'Неверное количество целей',
   wrongTargetCountMessage: 'Количество выбранных целей не соответствует способности.',
-  alreadyCastingTitle: 'Идёт подготовка',
-  alreadyCastingMessage: 'Персонаж уже готовит другую способность.',
   abilityNotFoundTitle: 'Способность не найдена',
   abilityNotFoundMessage: 'Указанная способность отсутствует у персонажа.',
   itemNotFoundTitle: 'Предмет не найден',

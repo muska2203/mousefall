@@ -4,44 +4,114 @@
 
 ---
 
-## Поток хода игрока
+## Общая последовательность
 
-1. Создаётся `ExecutionBuilder` с событием `ACTION_APPLIED`.
+Ход игрока и ход окружения чередуются. Одно действие игрока — это один вызов `dispatch()`. Когда у игрока заканчиваются AP, в том же `dispatch()` автоматически запускается ход окружения и подготовка следующего хода игрока.
+
+```
+dispatch(action)
+  │
+  ▼
+PLAYER: ACTION_APPLIED (действие игрока) + FOV-обновление
+  │
+  ▼ (если игрок exhausted)
+STATUS_TICK (player)      ← тикают статусы игрока
+  │
+  ▼
+ENVIRONMENT: BEGIN_TURN + TURN_BEGAN + ходы всех AI-актёров
+  │
+  ▼
+PLAYER: beginNextPlayerTurn (CLEANUP_DEAD_ENTITIES, BEGIN_TURN, RESTORE_AP, TICK_COOLDOWN)
+  │
+  ▼
+STATUS_TICK (environment) ← тикают статусы врагов
+  │
+  ▼
+SimulationResult
+```
+
+---
+
+## Ход игрока
+
+1. Создаётся `ExecutionBuilder` с событием `ACTION_APPLIED { action }`.
 2. Определяется актёр (`resolveActionActor`) — для хода игрока это всегда игрок.
-3. Действие исполняется через `executeAction` (списываются AP).
-4. Корневой узел игрока добавляется в фазу `PLAYER` результата.
-5. Если у игрока закончились AP (`isPlayerExhausted`):
-   - Запускается `runEnvironmentTurn` — все живые AI-актёры делают ходы.
-   - Фаза `ENVIRONMENT` начинается с `BEGIN_TURN { side: 'ENVIRONMENT' }`.
-   - Для каждого врага порождается узел `TURN_BEGAN` с подготовкой хода: `RESTORE_AP`, `TICK_COOLDOWN`, `TICK_CAST`.
-   - Каждое действие врага получает собственный `ExecutionBuilder` и корневой узел `ACTION_APPLIED`; все они собираются в фазу `ENVIRONMENT`.
-   - Запускается `beginNextPlayerTurn` — фиксируется `BEGIN_TURN { side: 'PLAYER' }`, увеличивается раунд, тикает каст, восстанавливаются AP игрока, тикают кулдауны.
-6. Выполняется ASCII-рендер карты в консоль.
-7. Возвращается `{ success, stateChanged, phases }`, где `phases` — массив фаз хода в порядке выполнения.
+3. Действие валидируется и исполняется через `executeAction`:
+   - списываются AP (`CONSUME_AP` → `RESOURCE_CONSUMED { resource: 'ap' }`);
+   - handler порождает дочерние интенты (например, `MOVE`, `DAMAGE`);
+   - после каждого интента запускаются мировые реакции.
+4. Если действие отклонено — возвращается `success: false`.
+5. Если актёр — игрок, обновляется поле зрения (`updateFOV`), события добавляются как дети `ACTION_APPLIED`.
+6. Корневой узел игрока добавляется в фазу `PLAYER`.
+7. Если у игрока закончились AP (`isPlayerExhausted`), запускается `endPlayerTurn()`.
+
+---
+
+## endPlayerTurn — завершение хода игрока
+
+Вызывается внутри `dispatch()`, когда у игрока AP ≤ 0.
+
+1. **STATUS_TICK (player)** — тикают статусы, привязанные к фазе игрока (`burning`, `regeneration` и т.п.).
+2. **ENVIRONMENT**:
+   - `TURN_BEGAN { side: 'ENVIRONMENT' }` + `BEGIN_TURN` — фиксация начала хода окружения.
+   - `runEnvironmentTurn` — все живые AI-актёры делают ходы.
+3. **PLAYER (beginNextPlayerTurn)**:
+   - `CLEANUP_DEAD_ENTITIES` — физически удаляются мёртвые не-игроковые сущности.
+   - `BEGIN_TURN { side: 'PLAYER' }` — `turn.activeSide = 'PLAYER'`, `turn.round += 1`.
+   - `RESTORE_AP` — восстанавливаются AP игрока.
+   - `TICK_COOLDOWN` — уменьшаются кулдауны способностей игрока.
+4. **STATUS_TICK (environment)** — тикают статусы, привязанные к фазе окружения.
 
 ---
 
 ## Ход окружения (Environment Turn)
 
-Для каждого живого AI-актёра:
-- Создаётся корневой узел `TURN_BEGAN` для актора.
-- Восстанавливаются AP через интент `RESTORE_AP` → событие `AP_RESTORED`.
-- Тикают кулдауны способностей через `TICK_COOLDOWN` → `COOLDOWN_TICKED`.
-- Тикает подготовленный каст через `TICK_CAST` → `CAST_TICKED` (или сразу резолвится, если `remainingTurns === 0`).
-- Пока `ap > 0`: вызывается `enemy.aiStrategy.decideAction(enemy, state)`, результат исполняется.
-- Каждое успешное действие врага порождает отдельное дерево `ExecutionNode` (корень `ACTION_APPLIED`).
-- Если действие невозможно — ход прерывается.
+Для каждого живого AI-актёра (в порядке сортировки по ID):
+
+1. Создаётся корневой узел `TURN_BEGAN { side: 'ENVIRONMENT', actorId }`.
+2. Восстанавливаются AP через `RESTORE_AP` → `AP_RESTORED`.
+3. Тикают кулдауны способностей через `TICK_COOLDOWN` → `COOLDOWN_TICKED`.
+4. **Выполнение `preparedIntent`**, если оно есть:
+   - Актор не оглушён — исполняется `USE_ABILITY` → `ACTION_APPLIED` → `ABILITY_USED` и списываются AP.
+   - Актор оглушён — `preparedIntent` сбрасывается, эмитится `ABILITY_PREPARED_CANCELLED`.
+5. Основной цикл `while (ap > 0)`:
+   - Вызывается `aiStrategy.decideAction(actor, state)`.
+   - Результат исполняется через `executeAction`.
+   - Если действие невозможно — ход прерывается, `ap` обнуляется.
+
+> **Примечание по prepared-скиллам.** Подготовленный скилл исполняется *до* основного цикла `while (ap > 0)`.
+> Если `maxAp > apCost` способности, у врага останется AP, и он сможет сделать ещё одно или несколько действий в том же ходу.
+> Это текущее осознанное поведение, но оно требует геймдизайнерского решения.
+> Возможно, ответственность за исполнение `preparedIntent` стоит перенести в AI-стратегию,
+> чтобы стратегия сама решала, выполнять ли prepared-скилл и как распорядиться оставшимися AP.
 
 ---
 
-## Начало хода игрока
+## Prepared-скиллы
 
-- Создаётся корневой узел `TURN_BEGAN { side: 'PLAYER' }`.
-- Выполняется `CLEANUP_DEAD_ENTITIES` → физически удаляются мёртвые не-игроковые сущности, порождается `DEAD_ENTITIES_CLEANED`.
-- Выполняется `BEGIN_TURN` → устанавливается `turn.activeSide = 'PLAYER'`, увеличивается `turn.round`.
-- Тикает каст игрока (`TICK_CAST` / резолв).
-- Восстанавливаются AP игрока (`RESTORE_AP`).
-- Тикают кулдауны способностей игрока (`TICK_COOLDOWN`).
+### Подготовка
+
+- AI-стратегия может вернуть действие `PREPARE_ABILITY`.
+- `prepare-ability-action.ts` валидирует цели и флаг `aiPreparable` шаблона.
+- Интент `PREPARE_ABILITY` сохраняет в `enemy.aiState.preparedIntent`:
+  - `abilityId`;
+  - `fixedTargets` — зафиксированные позиции целей.
+- Событие: `ABILITY_PREPARED { entityId, abilityId, targets, from }`.
+- AP в момент подготовки **не тратятся**; стоимость списывается при исполнении.
+
+### Исполнение
+
+- Происходит в начале следующего хода AI, до основного цикла действий.
+- `USE_ABILITY` формируется из `preparedIntent` и исполняется через тот же `executeAction`.
+- После успешного исполнения `preparedIntent` очищается.
+- Если исполнение отклонено (например, не хватает AP или цель ушла), `preparedIntent` очищается без дополнительных событий — см. п. 3.3 ревью.
+
+### Отмена
+
+- При оглушении в момент хода AI `preparedIntent` сбрасывается и эмитится `ABILITY_PREPARED_CANCELLED`.
+- Сброс происходит в двух местах:
+  - `apply-status-intent-executer.ts` — если стан наложили во время хода игрока;
+  - `simulation.ts:runEnvironmentTurn` — если враг начинает ход в стане.
 
 ---
 
@@ -63,32 +133,37 @@ Simulation:
 Simulation обнаруживает: player.ap <= 0
     │
     ▼
-Simulation → runEnvironmentTurn
-  ┌─ TURN_BEGAN (ENVIRONMENT)
-  ├─ TURN_BEGAN (enemy_1)
+Simulation → endPlayerTurn
+  ┌─ STATUS_TICK (player)
+  │
+  ├─ ENVIRONMENT
+  │  ├─ TURN_BEGAN (ENVIRONMENT)
+  │  ├─ BEGIN_TURN (ENVIRONMENT)
+  │  ├─ TURN_BEGAN (enemy_1)
+  │  │  ├─ AP_RESTORED
+  │  │  ├─ COOLDOWN_TICKED
+  │  │  └─ ACTION_APPLIED (USE_ABILITY)  ← prepared-скилл, если есть
+  │  └─ AI решает действие (например, MOVE)
+  │     └─ ENTITY_MOVED (enemy_1, (3,3) → (4,4))
+  │
+  ├─ PLAYER (beginNextPlayerTurn)
+  │  ├─ CLEANUP_DEAD_ENTITIES
+  │  ├─ BEGIN_TURN (PLAYER)
   │  ├─ AP_RESTORED
-  │  ├─ COOLDOWN_TICKED
-  │  └─ CAST_TICKED
-  └─ AI решает действие (например, MOVE)
-     └─ ENTITY_MOVED (cat_mid_1, (3,3) → (4,4))
-    │
-    ▼
-Simulation → beginNextPlayerTurn
-  └─ TURN_BEGAN (PLAYER)
-     ├─ AP_RESTORED
-     └─ COOLDOWN_TICKED
+  │  └─ COOLDOWN_TICKED
+  │
+  └─ STATUS_TICK (environment)
     │
     ▼
 SimulationResult возвращается в Presentation:
-  rootEvent: ExecutionNode (всё дерево: ход игрока + ход AI)
+  phases: [PLAYER, STATUS_TICK, ENVIRONMENT, PLAYER, STATUS_TICK]
     │
     ▼
 Presentation:
-  - Обходит дерево
+  - Обходит дерево ExecutionNode
   - Формирует AnimationPlan:
       [ATTACK_ANIMATION, DAMAGE_NUMBER, DEATH_ANIMATION, MOVE_SPRITE]
-  - Формирует combatLog:
-      ["Вы ударили гоблина на 8 урона.", "Гоблин погиб.", "Орк двигается."]
+  - Формирует combatLog
   - Обновляет ViewModel
     │
     ▼

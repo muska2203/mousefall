@@ -1,9 +1,9 @@
 /**
- * Unit tests for primary status resolution.
+ * Unit tests for AI mode resolution.
  */
 
 import {describe, expect, it} from 'vitest';
-import {resolvePrimaryStatus} from '../../../src/presentation/primaryStatus';
+import {resolveAIMode} from '../../../src/presentation/primaryStatus';
 import type {PlayerEntity, EnemyEntity, DoorEntity} from '../../../src/simulation/types';
 
 function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
@@ -52,12 +52,12 @@ function makeDoor(): DoorEntity {
   } as DoorEntity;
 }
 
-describe('resolvePrimaryStatus', () => {
+describe('resolveAIMode', () => {
   it('returns AI mode for enemy when no prepared intent is active', () => {
-    expect(resolvePrimaryStatus(makeEnemy('idle'))).toBe('idle');
-    expect(resolvePrimaryStatus(makeEnemy('alert'))).toBe('alert');
-    expect(resolvePrimaryStatus(makeEnemy('chase'))).toBe('chase');
-    expect(resolvePrimaryStatus(makeEnemy('return'))).toBe('return');
+    expect(resolveAIMode(makeEnemy('idle'))).toBe('idle');
+    expect(resolveAIMode(makeEnemy('alert'))).toBe('alert');
+    expect(resolveAIMode(makeEnemy('chase'))).toBe('chase');
+    expect(resolveAIMode(makeEnemy('return'))).toBe('return');
   });
 
   it('returns "prepared" for enemy with preparedIntent', () => {
@@ -73,7 +73,7 @@ describe('resolvePrimaryStatus', () => {
         preparedIntent: {abilityId: 'swoop', fixedTargets: [{x: 0, y: 0}]},
       },
     });
-    expect(resolvePrimaryStatus(enemy)).toBe('prepared');
+    expect(resolveAIMode(enemy)).toBe('prepared');
   });
 
   it('preserves base AI mode after prepared intent is cleared', () => {
@@ -89,20 +89,20 @@ describe('resolvePrimaryStatus', () => {
         preparedIntent: {abilityId: 'swoop', fixedTargets: [{x: 0, y: 0}]},
       },
     });
-    expect(resolvePrimaryStatus(enemy)).toBe('prepared');
+    expect(resolveAIMode(enemy)).toBe('prepared');
 
     enemy.aiState.preparedIntent = null;
-    expect(resolvePrimaryStatus(enemy)).toBe('chase');
+    expect(resolveAIMode(enemy)).toBe('chase');
   });
 
   it('returns null for player regardless of status effects', () => {
-    expect(resolvePrimaryStatus(makePlayer())).toBeNull();
-    expect(resolvePrimaryStatus(makePlayer({
+    expect(resolveAIMode(makePlayer())).toBeNull();
+    expect(resolveAIMode(makePlayer({
       statusEffects: [{type: 'stunned', duration: 2, value: 0, statModifiers: null}],
     }))).toBeNull();
   });
 
   it('returns null for non-actor entities', () => {
-    expect(resolvePrimaryStatus(makeDoor())).toBeNull();
+    expect(resolveAIMode(makeDoor())).toBeNull();
   });
 });

@@ -39,6 +39,67 @@ describe('useAbilityAction', () => {
     resetRegistry();
   });
 
+  it('блокирует использование способности, отсутствующей в реестре шаблонов', () => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+    });
+
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
+    const result = useAbilityAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('ability_not_found');
+    }
+  });
+
+  it('resolve не падает, если шаблон способности отсутствует в реестре контента', () => {
+    // Executor зарегистрирован, но шаблон отсутствует.
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+    });
+
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
+    expect(() => useAbilityAction.resolve(state, action)).not.toThrow();
+    const intents = useAbilityAction.resolve(state, action);
+    expect(intents).toEqual([]);
+  });
+
   it('блокирует использование способности на кулдауне', () => {
     const state = makeGameState();
     const player = makePlayer({

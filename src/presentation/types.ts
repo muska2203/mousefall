@@ -16,6 +16,7 @@ import type {AIMode} from '@simulation/ai/ai-state';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
 export type { TileType, TurnSide, StatusEffect } from '@simulation/types';
+export type { AIMode } from '@simulation/ai/ai-state';
 export type { AnimationConfigKey } from '@utils/animationConfig';
 
 export type Position = { x: number; y: number };
@@ -172,10 +173,6 @@ export type PlayerSkillViewModel = {
   isAvailable: boolean;
   /** Откуда скилл: innate / levelup / equipment */
   source: 'innate' | 'levelup' | 'equipment';
-  /** true, если этот скилл сейчас кастуется */
-  isCasting: boolean;
-  /** Оставшиеся ходов подготовки (если isCasting) */
-  remainingCastTurns: number;
 };
 
 export type HeroStatViewModel = {
@@ -250,10 +247,6 @@ export type HotbarItemViewModel = {
   cooldown?: number;
   /** Максимальный кулдаун из шаблона (для skill). */
   maxCooldown?: number;
-  /** true, если скилл сейчас кастуется (для skill). */
-  isCasting?: boolean;
-  /** Оставшиеся ходов подготовки (для skill). */
-  remainingCastTurns?: number;
   /** Доступен ли слот к использованию прямо сейчас. */
   isAvailable: boolean;
   /** Активирован ли слот (таргетинг или каст). */
@@ -473,7 +466,7 @@ export type RenderInput = {
    * Для врагов включает производный режим 'prepared' (при наличии preparedIntent).
    * null означает "нет статуса" — UI показывает fallback-подложку.
    */
-  primaryStatusByEntity: Map<string, AIMode | null>;
+  aiModeByEntity: Map<string, AIMode | null>;
   /** Статистика текущего забега. */
   runStats: RunStats;
   /** Popover объекта под курсором на игровом поле (только в фазе хода игрока). */

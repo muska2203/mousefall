@@ -88,11 +88,6 @@ export function SkillsPanel({
                   {s.cooldown != null && s.cooldown > 0 && (
                     <span className="cm-skill__cooldown">{s.cooldown}</span>
                   )}
-                  {s.isCasting && (
-                    <span className="cm-skill__cast-indicator">
-                      {t('skillsPanel.castPrefix')}{s.remainingCastTurns}
-                    </span>
-                  )}
                 </li>
               );
             })

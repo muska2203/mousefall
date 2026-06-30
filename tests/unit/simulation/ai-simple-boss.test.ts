@@ -7,9 +7,12 @@ import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import { chebyshevDistance } from '../../../src/utils/math';
 import { createDefaultAIState, getDerivedAIMode } from '../../../src/simulation/ai/ai-state';
+import { registerSkill } from '../../../src/simulation/skills/skillExecutor';
+import { testFireballSkill } from '../../helpers/test-skills';
 
 beforeEach(() => {
   initSkillRegistry();
+  registerSkill(testFireballSkill);
 });
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
@@ -37,7 +40,7 @@ describe('AI: simple-boss', () => {
       items: new Map(),
       abilities: new Map([
         ['swoop', mockAbility('swoop', { cooldown: 2, apCost: 2, aiPreparable: true })],
-        ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2, aiPreparable: true })],
+        ['test-fireball', mockAbility('test-fireball', { cooldown: 3, apCost: 2, aiPreparable: true })],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -141,11 +144,11 @@ describe('AI: simple-boss', () => {
     const enemy = makeEnemy({
       x: 9,
       y: 5,
-      maxAp: 1,
-      ap: 1,
+      maxAp: 2,
+      ap: 2,
       aiStrategyId: 'simple-boss',
       aiState: createDefaultAIState('simple-boss'),
-      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+      abilities: [{ templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({
       player,
@@ -158,7 +161,7 @@ describe('AI: simple-boss', () => {
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedIntent).not.toBeNull();
-    expect(enemyAfter.aiState.preparedIntent?.abilityId).toBe('fireball');
+    expect(enemyAfter.aiState.preparedIntent?.abilityId).toBe('test-fireball');
   });
 
   it('не готовит налёт, если скилл на кулдауне', () => {
