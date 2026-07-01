@@ -12,11 +12,17 @@
 
 import type { AiActor, GameState } from '../types';
 import type { GameAction } from '../systems/actions/types';
+import type { ExecutionBuilder, ExecutionNode } from '../systems/actions/types';
 
 export type AIStrategy = {
   /** Обновить внутреннее состояние стратегии перед принятием решений (FSM-тики). */
   updateState?(actor: AiActor, state: GameState): void;
-  decideAction(actor: AiActor, state: GameState): GameAction;
+  decideAction(
+    actor: AiActor,
+    state: GameState,
+    builder: ExecutionBuilder,
+    parent: ExecutionNode,
+  ): GameAction;
 };
 
 const strategies: Record<string, AIStrategy> = {};

@@ -34,11 +34,11 @@ export function mapEnemyToPopover(enemy: EnemyEntity, locale: Locale): EnemyPopo
     };
   });
 
-  const preparingAbility = enemy.aiState.preparedIntent
+  const preparingAbility = enemy.aiState.preparedAbility
     ? (() => {
-        const abilityTemplate = tryGetLocalizedAbility(enemy.aiState.preparedIntent!.abilityId, locale);
+        const abilityTemplate = tryGetLocalizedAbility(enemy.aiState.preparedAbility!.abilityId, locale);
         return {
-          name: abilityTemplate?.name ?? enemy.aiState.preparedIntent!.abilityId,
+          name: abilityTemplate?.name ?? enemy.aiState.preparedAbility!.abilityId,
           icon: abilityTemplate?.spriteId ? resolveAbilityIcon(abilityTemplate.spriteId) : null,
         };
       })()

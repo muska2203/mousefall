@@ -21,6 +21,7 @@
 
 import { registerStrategy } from './strategy-registry';
 import type { AiActor, EnemyEntity, GameState } from '@simulation/types';
+import type { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
 import { canSeePlayer, tryPrepareAbility, tryAttackOrMoveToward, wait } from './ai-helpers';
 import { isEnemyEntity } from './ai-state';
 
@@ -30,24 +31,30 @@ registerStrategy('hunter', {
     updateHunterState(actor, state);
   },
 
-  decideAction(actor, state) {
+  decideAction(actor, state, builder, parent) {
     if (!isEnemyEntity(actor)) {
       return wait(actor);
     }
     const enemy = actor;
 
-    // Приоритет 1: если есть подготовленное намерение — враг ждёт
-    // его выполнения в начале следующего хода.
-    if (enemy.aiState.preparedIntent) {
-      return wait(enemy);
+    // Приоритет 1: выполнить подготовленную способность.
+    // Сама стратегия решает, когда использовать подготовленный скилл;
+    // GameSimulation больше не исполняет его автоматически.
+    if (enemy.aiState.preparedAbility) {
+      return {
+        type: 'USE_ABILITY',
+        entityId: enemy.id,
+        abilityId: enemy.aiState.preparedAbility.abilityId,
+        targets: enemy.aiState.preparedAbility.targets,
+      };
     }
 
-    // Приоритет 2: подготовить скилл к выполнению в следующий ход
-    // Подготовка может прервать текущие действия, если враг видит игрока
+    // Приоритет 2: подготовить скилл к выполнению в следующий ход.
+    // Подготовка — side-effect стратегии: она эмитит ABILITY_PREPARED
+    // и тратит оставшиеся AP через WAIT.
     if (canSeePlayer(enemy, state)) {
-      const prepareAction = tryPrepareAbility(enemy, state);
-      if (prepareAction) {
-        return prepareAction;
+      if (tryPrepareAbility(enemy, state, builder, parent)) {
+        return wait(enemy);
       }
     }
 
@@ -87,8 +94,8 @@ registerStrategy('hunter', {
  * Мутирует только enemy.aiState — никакие другие части state не трогаются.
  */
 function updateHunterState(enemy: EnemyEntity, state: GameState): void {
-  // Пока есть подготовленное намерение, базовый FSM не меняется.
-  if (enemy.aiState.preparedIntent) return;
+  // Базовый FSM обновляется независимо от наличия подготовленной способности.
+  // Derived режим 'prepared' перекрывает базовый режим только для отображения.
 
   const seesPlayer = canSeePlayer(enemy, state);
   const player = state.player;

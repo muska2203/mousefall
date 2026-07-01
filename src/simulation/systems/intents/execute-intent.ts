@@ -23,7 +23,6 @@ import {executeEquipItemIntent} from "@simulation/systems/intents/equip-item-int
 import {executeUnequipItemIntent} from "@simulation/systems/intents/unequip-item-intent-executor.ts";
 import {executeGrantAbilityIntent} from "@simulation/systems/intents/grant-ability-intent-executor.ts";
 import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-ability-intent-executor.ts";
-import {executePrepareAbilityIntent} from "@simulation/systems/intents/prepare-ability-intent-executor.ts";
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
 import {executeOpenDoorIntent, executeCloseDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
@@ -56,7 +55,6 @@ const intentExecutors = {
   UNEQUIP_ITEM: executeUnequipItemIntent,
   GRANT_ABILITY: executeGrantAbilityIntent,
   REVOKE_ABILITY: executeRevokeAbilityIntent,
-  PREPARE_ABILITY: executePrepareAbilityIntent,
   HEAL: executeHealIntent,
   REMOVE_ITEM: executeRemoveItemIntent,
   OPEN_DOOR: executeOpenDoorIntent,

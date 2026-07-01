@@ -5,7 +5,7 @@ import { GameSimulation, defaultActionHandlerRegistry } from '../../../src/simul
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
-import { tryPrepareAbility } from '../../../src/simulation/ai/ai-helpers';
+import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
 import { getDerivedAIMode } from '../../../src/simulation/ai/ai-state';
 import { getAbility } from '../../../src/content/registry';
 import { registerSkill } from '../../../src/simulation/skills/skillExecutor';
@@ -23,6 +23,17 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     apCost: 1,
     ...overrides,
   } as AbilityTemplate;
+}
+
+function findEvents(node: ExecutionNode, type: GameEvent['type']): ExecutionNode[] {
+  const results: ExecutionNode[] = [];
+  if (node.event.type === type) {
+    results.push(node);
+  }
+  for (const child of node.children) {
+    results.push(...findEvents(child, type));
+  }
+  return results;
 }
 
 function getEnemy(state: ReturnType<typeof makeGameState>): EnemyEntity {
@@ -71,7 +82,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     expect(result.success).toBe(true);
 
     const enemyAfterTurn = getEnemy(sim.getState());
-    expect(enemyAfterTurn.aiState.preparedIntent).toBeNull();
+    expect(enemyAfterTurn.aiState.preparedAbility).toBeNull();
     expect(getDerivedAIMode(enemyAfterTurn)).not.toBe('prepared');
   });
 
@@ -96,10 +107,27 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     expect(result.success).toBe(true);
 
     const enemyAfterTurn = getEnemy(sim.getState());
-    expect(enemyAfterTurn.aiState.preparedIntent).not.toBeNull();
+    expect(enemyAfterTurn.aiState.preparedAbility).not.toBeNull();
     expect(getDerivedAIMode(enemyAfterTurn)).toBe('prepared');
-    expect(enemyAfterTurn.aiState.preparedIntent?.abilityId).toBe('test-fireball');
-    expect(enemyAfterTurn.aiState.preparedIntent?.fixedTargets).toEqual([{ x: 5, y: 5 }]);
+    expect(enemyAfterTurn.aiState.preparedAbility?.abilityId).toBe('test-fireball');
+    expect(enemyAfterTurn.aiState.preparedAbility?.targets).toEqual([{ x: 5, y: 5 }]);
+
+    // Подготовка теперь — side-effect AI-стратегии: событие ABILITY_PREPARED
+    // эмитится как child события ACTION_APPLIED (WAIT), а не как отдельный ACTION_APPLIED.
+    const envPhase = result.phases.find((p) => p.side === 'ENVIRONMENT');
+    expect(envPhase).toBeDefined();
+    const waitNodes = envPhase!.actions.filter(
+      (a) => a.event.type === 'ACTION_APPLIED' && a.event.action.type === 'WAIT',
+    );
+    expect(waitNodes.length).toBeGreaterThan(0);
+    const preparedEvents = waitNodes.flatMap((n) => findEvents(n, 'ABILITY_PREPARED'));
+    expect(preparedEvents.length).toBe(1);
+    expect(preparedEvents[0]!.event).toMatchObject({
+      type: 'ABILITY_PREPARED',
+      entityId: enemyAfterTurn.id,
+      abilityId: 'test-fireball',
+      targets: [{ x: 5, y: 5 }],
+    });
 
     // Зона поражения не хранится в AIState, но доступна через публичный API Simulation.
     const affectedPositions = sim.getAbilityAffectedPositions(
@@ -132,14 +160,14 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     // Первый ход: подготовка
     sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(getEnemy(sim.getState()).aiState.preparedIntent).not.toBeNull();
+    expect(getEnemy(sim.getState()).aiState.preparedAbility).not.toBeNull();
 
     // Второй ход: выполнение
     const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).toBeNull();
     expect(getDerivedAIMode(enemyAfter)).toBe('chase');
     // Игрок получил урон от fireball
     expect(sim.getState().player.hp).toBeLessThan(100);
@@ -162,7 +190,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     // Подготовка
     sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(getEnemy(sim.getState()).aiState.preparedIntent).not.toBeNull();
+    expect(getEnemy(sim.getState()).aiState.preparedAbility).not.toBeNull();
 
     // Игрок оглушает врага (через APPLY_STATUS напрямую нельзя, но можно наложить статус перед ходом)
     const stunnedEnemy = getEnemy(sim.getState());
@@ -173,7 +201,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     const enemyAfter = getEnemy(sim.getState());
     // Подготовка сброшена
-    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).toBeNull();
     // Оглушение сбросило подготовку; stunned отображается только в слотах эффектов.
     expect(enemyAfter.statusEffects.some(e => e.type === 'stunned')).toBe(true);
     // Скилл не выполнился — HP игрока не изменилось
@@ -197,7 +225,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     // Подготовка
     sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(getEnemy(sim.getState()).aiState.preparedIntent).not.toBeNull();
+    expect(getEnemy(sim.getState()).aiState.preparedAbility).not.toBeNull();
 
     // Игрок уходит из зоны поражения
     sim.dispatch({ type: 'MOVE', entityId: player.id, dx: -1, dy: 0 });
@@ -209,7 +237,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).toBeNull();
     // Урон не нанесён, так как цель ушла
     expect(sim.getState().player.hp).toBe(100);
   });
@@ -247,7 +275,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     // Первый ход: подготовка.
     sim.dispatch({ type: 'WAIT', entityId: player.id });
     const enemyBeforeExecution = getEnemy(sim.getState());
-    expect(enemyBeforeExecution.aiState.preparedIntent).not.toBeNull();
+    expect(enemyBeforeExecution.aiState.preparedAbility).not.toBeNull();
     expect(enemyBeforeExecution.x).toBe(7);
 
     // Второй ход: выполнение prepared-скилла (2 AP) + дополнительный MOVE (1 AP).
@@ -255,7 +283,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).toBeNull();
     // Prepared-скилл стоил 2 AP, maxAp=3 — остался 1 AP на MOVE.
     expect(enemyAfter.ap).toBe(0);
     expect(enemyAfter.x).toBe(6);

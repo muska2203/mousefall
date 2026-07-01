@@ -463,7 +463,7 @@ export type RenderInput = {
   statusEffectsByEntity: Map<string, readonly StatusEffect[]>;
   /**
    * AI-режим каждой сущности для иконки над объектом.
-   * Для врагов включает производный режим 'prepared' (при наличии preparedIntent).
+   * Для врагов включает производный режим 'prepared' (при наличии preparedAbility).
    * null означает "нет статуса" — UI показывает fallback-подложку.
    */
   aiModeByEntity: Map<string, AIMode | null>;

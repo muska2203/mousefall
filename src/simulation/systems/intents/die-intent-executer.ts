@@ -22,7 +22,7 @@ export const executeDieIntent: IntentExecutor<DieIntent> = (
             entity.isAlive = false;
             entity.blocksMovement = false;
             if ('aiState' in entity && entity.aiState) {
-                entity.aiState.preparedIntent = null;
+                entity.aiState.preparedAbility = null;
             }
             if (entity.type === 'enemy') {
                 state.runStats.enemiesKilled++;

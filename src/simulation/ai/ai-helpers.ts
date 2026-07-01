@@ -12,7 +12,7 @@
  * - Все функции детерминированы при одинаковом state.
  */
 
-import type { GameAction } from '@simulation/systems/actions/types';
+import type { GameAction, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
 import type { AiActor, EnemyEntity, GameState, Position } from '@simulation/types';
 import { isBlocked } from '@simulation/state';
 import { chebyshevDistance, findPath } from '@utils/math';
@@ -189,28 +189,68 @@ function chooseAbilityTargets(
 // ─────────────────────────────────────────────
 
 /**
- * Пытается подготовить скилл к выполнению в начале следующего хода.
- * Возвращает PREPARE_ABILITY, если нашёлся подходящий preparable скилл с целью.
- * Иначе null.
+ * Сбрасывает подготовленную способность AI и возвращает её данные.
+ * Используется при оглушении или других отменах подготовки.
  */
-export function tryPrepareAbility(enemy: EnemyEntity, state: GameState): GameAction | null {
+export function cancelPreparedAbility(
+  enemy: EnemyEntity,
+): { abilityId: string; targets: Position[] } | null {
+  const prepared = enemy.aiState.preparedAbility;
+  if (!prepared) {
+    return null;
+  }
+  enemy.aiState.preparedAbility = null;
+  return prepared;
+}
+
+/**
+ * Подготавливает скилл к выполнению в следующий ход.
+ * Мутирует enemy.aiState.preparedAbility и эмитит событие ABILITY_PREPARED
+ * как дочернее к parent через builder.
+ */
+export function prepareAbility(
+  enemy: EnemyEntity,
+  abilityId: string,
+  targets: Position[],
+  builder: ExecutionBuilder,
+  parent: ExecutionNode,
+): void {
+  enemy.aiState.preparedAbility = { abilityId, targets };
+
+  builder.addChild(parent, {
+    type: 'ABILITY_PREPARED',
+    entityId: enemy.id,
+    abilityId,
+    targets,
+    from: { x: enemy.x, y: enemy.y },
+  });
+}
+
+/**
+ * Пытается подготовить скилл к выполнению в следующий ход.
+ * Возвращает true, если нашёлся подходящий preparable скилл с целью
+ * и подготовка была произведена как side-effect.
+ * Иначе false.
+ */
+export function tryPrepareAbility(
+  enemy: EnemyEntity,
+  state: GameState,
+  builder: ExecutionBuilder,
+  parent: ExecutionNode,
+): boolean {
   const preparableAbilities = getPreparableAbilities(enemy, state);
   if (preparableAbilities.length === 0) {
-    return null;
+    return false;
   }
 
   const ability = preparableAbilities[0]!;
   const chosenTargets = chooseAbilityTargets(state, enemy, ability.templateId);
   if (!chosenTargets || chosenTargets.length === 0) {
-    return null;
+    return false;
   }
 
-  return {
-    type: 'PREPARE_ABILITY',
-    entityId: enemy.id,
-    abilityId: ability.templateId,
-    targets: chosenTargets,
-  };
+  prepareAbility(enemy, ability.templateId, chosenTargets, builder, parent);
+  return true;
 }
 
 // ─────────────────────────────────────────────

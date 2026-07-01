@@ -701,7 +701,7 @@ export class GameSession {
       if (entity.type !== 'enemy') continue;
       if (!('aiState' in entity)) continue;
 
-      const prepared = entity.aiState.preparedIntent;
+      const prepared = entity.aiState.preparedAbility;
       if (!prepared) continue;
 
       // Показываем только видимых врагов
@@ -709,7 +709,7 @@ export class GameSession {
 
       const abilityTemplate = this.getAbilityTemplate(prepared.abilityId, this.locale);
 
-      const skillIntents = this.simulation.getAbilityIntents(prepared.abilityId, entity.id, prepared.fixedTargets);
+      const skillIntents = this.simulation.getAbilityIntents(prepared.abilityId, entity.id, prepared.targets);
 
       const presentationIntents: PresentationIntent[] = skillIntents
         .map((intent) => toPresentationIntent(intent, state))
@@ -718,8 +718,8 @@ export class GameSession {
       const affectedPositions = this.simulation.getAbilityAffectedPositions(
         prepared.abilityId,
         entity.id,
-        prepared.fixedTargets,
-        prepared.fixedTargets[0] ?? null,
+        prepared.targets,
+        prepared.targets[0] ?? null,
       );
 
       intents.push({
@@ -727,7 +727,7 @@ export class GameSession {
         abilityId: prepared.abilityId,
         name: abilityTemplate?.name ?? prepared.abilityId,
         icon: abilityTemplate?.spriteId ? `/assets/skills/${abilityTemplate.spriteId}.png` : null,
-        fixedTargets: prepared.fixedTargets,
+        fixedTargets: prepared.targets,
         affectedPositions,
         intents: presentationIntents,
       });

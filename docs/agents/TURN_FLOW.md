@@ -71,19 +71,19 @@ SimulationResult
 1. Создаётся корневой узел `TURN_BEGAN { side: 'ENVIRONMENT', actorId }`.
 2. Восстанавливаются AP через `RESTORE_AP` → `AP_RESTORED`.
 3. Тикают кулдауны способностей через `TICK_COOLDOWN` → `COOLDOWN_TICKED`.
-4. **Выполнение `preparedIntent`**, если оно есть:
-   - Актор не оглушён — исполняется `USE_ABILITY` → `ACTION_APPLIED` → `ABILITY_USED` и списываются AP.
-   - Актор оглушён — `preparedIntent` сбрасывается, эмитится `ABILITY_PREPARED_CANCELLED`.
+4. Если актор оглушён — подготовленная способность сбрасывается, эмитится `ABILITY_PREPARED_CANCELLED`, и ход пропускается (`SKIP_STUNNED_TURN`).
 5. Основной цикл `while (ap > 0)`:
-   - Вызывается `aiStrategy.decideAction(actor, state)`.
+   - Создаётся `ExecutionBuilder` с placeholder-событием `ACTION_APPLIED (WAIT)`.
+   - Вызывается `aiStrategy.decideAction(actor, state, builder, root)`.
+   - AI-стратегия может эмитить события как side-effect (например, `ABILITY_PREPARED`) до возврата действия.
+   - Корневое событие заменяется на реальное действие, возвращённое стратегией.
    - Результат исполняется через `executeAction`.
    - Если действие невозможно — ход прерывается, `ap` обнуляется.
 
-> **Примечание по prepared-скиллам.** Подготовленный скилл исполняется *до* основного цикла `while (ap > 0)`.
-> Если `maxAp > apCost` способности, у врага останется AP, и он сможет сделать ещё одно или несколько действий в том же ходу.
-> Это текущее осознанное поведение, но оно требует геймдизайнерского решения.
-> Возможно, ответственность за исполнение `preparedIntent` стоит перенести в AI-стратегию,
-> чтобы стратегия сама решала, выполнять ли prepared-скилл и как распорядиться оставшимися AP.
+> **Примечание по prepared-скиллам.** Исполнение подготовленного скилла теперь является решением AI-стратегии внутри основного цикла `while (ap > 0)`.
+> `GameSimulation` не содержит специальной фазы для prepared-скиллов; он только предоставляет стратегии доступное AP и вызывает `decideAction`.
+> Подготовка скилла — внутренний side-effect AI, а не отдельное действие игрового мира.
+> Если `maxAp > apCost` способности, у врага останется AP, и он сможет сделать дополнительные действия в том же ходу.
 
 ---
 
@@ -91,25 +91,25 @@ SimulationResult
 
 ### Подготовка
 
-- AI-стратегия может вернуть действие `PREPARE_ABILITY`.
-- `prepare-ability-action.ts` валидирует цели и флаг `aiPreparable` шаблона.
-- Интент `PREPARE_ABILITY` сохраняет в `enemy.aiState.preparedIntent`:
+- AI-стратегия принимает решение подготовить скилл как side-effect внутри `decideAction`.
+- Хелпер `tryPrepareAbility` (`src/simulation/ai/ai-helpers.ts`) выбирает первую доступную preparable-способность и валидные цели.
+- Хелпер `prepareAbility` сохраняет в `enemy.aiState.preparedAbility`:
   - `abilityId`;
-  - `fixedTargets` — зафиксированные позиции целей.
-- Событие: `ABILITY_PREPARED { entityId, abilityId, targets, from }`.
-- AP в момент подготовки **не тратятся**; стоимость списывается при исполнении.
+  - `targets` — зафиксированные позиции целей.
+- Событие `ABILITY_PREPARED { entityId, abilityId, targets, from }` эмитится как child текущего `ACTION_APPLIED`.
+- После подготовки стратегия возвращает `WAIT`, чтобы потратить оставшиеся AP и не использовать скилл в том же ходу.
 
 ### Исполнение
 
-- Происходит в начале следующего хода AI, до основного цикла действий.
-- `USE_ABILITY` формируется из `preparedIntent` и исполняется через тот же `executeAction`.
-- После успешного исполнения `preparedIntent` очищается.
-- Если исполнение отклонено (например, не хватает AP или цель ушла), `preparedIntent` очищается без дополнительных событий — см. п. 3.3 ревью.
+- Происходит, когда AI-стратегия решает вернуть `USE_ABILITY` для `preparedAbility` внутри основного цикла действий.
+- `USE_ABILITY` формируется из `preparedAbility` и исполняется через тот же `executeAction`.
+- `use-ability-action.ts` валидирует совпадение `abilityId` и `targets` с `preparedAbility`, а после успешного применения сбрасывает его.
+- Сами цели валидировались при подготовке; при исполнении они могли устареть (например, fireball промахнётся по старым координатам).
 
 ### Отмена
 
-- При оглушении в момент хода AI `preparedIntent` сбрасывается и эмитится `ABILITY_PREPARED_CANCELLED`.
-- Сброс происходит в двух местах:
+- При оглушении подготовленная способность сбрасывается и эмитится `ABILITY_PREPARED_CANCELLED`.
+- Сброс централизован в helper'е `cancelPreparedAbility` (`src/simulation/ai/ai-helpers.ts`) и вызывается из:
   - `apply-status-intent-executer.ts` — если стан наложили во время хода игрока;
   - `simulation.ts:runEnvironmentTurn` — если враг начинает ход в стане.
 
@@ -142,9 +142,10 @@ Simulation → endPlayerTurn
   │  ├─ TURN_BEGAN (enemy_1)
   │  │  ├─ AP_RESTORED
   │  │  ├─ COOLDOWN_TICKED
-  │  │  └─ ACTION_APPLIED (USE_ABILITY)  ← prepared-скилл, если есть
-  │  └─ AI решает действие (например, MOVE)
-  │     └─ ENTITY_MOVED (enemy_1, (3,3) → (4,4))
+  │  │  └─ ACTION_APPLIED (USE_ABILITY)  ← prepared-скилл, если стратегия решила выполнить
+  │  │     └─ ABILITY_USED / ENTITY_DAMAGED / ...
+  │  └─ ACTION_APPLIED (WAIT)             ← подготовка скилла
+  │     └─ ABILITY_PREPARED
   │
   ├─ PLAYER (beginNextPlayerTurn)
   │  ├─ CLEANUP_DEAD_ENTITIES

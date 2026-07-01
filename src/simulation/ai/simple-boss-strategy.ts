@@ -4,7 +4,7 @@
  * Поведение:
  * - Босс не перемещается и не использует обычную атаку.
  * - Если видит игрока, пытается подготовить одну из доступных
- *   preparable способностей (PREPARE_ABILITY) к выполнению в следующий ход.
+ *   preparable способностей к выполнению в следующий ход.
  * - Если подготовленное намерение уже есть — ждёт.
  *
  * Стратегия опирается на контент (флаг aiPreparable в шаблоне способности),
@@ -13,7 +13,7 @@
 
 import { registerStrategy } from './strategy-registry';
 import type { AiActor, GameState } from '@simulation/types';
-import type { GameAction } from '@simulation/systems/actions/types';
+import type { GameAction, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
 import { canSeePlayer, tryPrepareAbility, wait } from './ai-helpers';
 import { isEnemyEntity } from './ai-state';
 
@@ -22,23 +22,28 @@ registerStrategy('simple-boss', {
     // У simple-boss нет конечного автомата — состояние не меняется.
   },
 
-  decideAction(actor, state) {
+  decideAction(actor, state, builder, parent) {
     if (!isEnemyEntity(actor)) {
       return wait(actor);
     }
     const enemy = actor;
 
-    // Приоритет 1: если есть подготовленное намерение — босс ждёт
-    // его выполнения в начале следующего хода.
-    if (enemy.aiState.preparedIntent) {
-      return wait(enemy);
+    // Приоритет 1: выполнить подготовленную способность.
+    if (enemy.aiState.preparedAbility) {
+      return {
+        type: 'USE_ABILITY',
+        entityId: enemy.id,
+        abilityId: enemy.aiState.preparedAbility.abilityId,
+        targets: enemy.aiState.preparedAbility.targets,
+      };
     }
 
     // Приоритет 2: если видим игрока — готовим первую доступную preparable способность.
+    // Подготовка — side-effect стратегии: она эмитит ABILITY_PREPARED
+    // и тратит оставшиеся AP через WAIT.
     if (canSeePlayer(enemy, state)) {
-      const prepareAction = tryPrepareAbility(enemy, state);
-      if (prepareAction) {
-        return prepareAction;
+      if (tryPrepareAbility(enemy, state, builder, parent)) {
+        return wait(enemy);
       }
     }
 

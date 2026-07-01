@@ -191,7 +191,6 @@ export type GameAction =
   | DescendAction
   | AscendAction
   | UseAbilityAction
-  | PrepareAbilityAction
   | PickUpAction
   | EquipAction
   | UnequipAction
@@ -233,13 +232,6 @@ export type AscendAction = {
 
 export type UseAbilityAction = {
   type: 'USE_ABILITY';
-  entityId: EntityId;
-  abilityId: string;
-  targets: Position[];
-};
-
-export type PrepareAbilityAction = {
-  type: 'PREPARE_ABILITY';
   entityId: EntityId;
   abilityId: string;
   targets: Position[];
@@ -325,7 +317,6 @@ export type Intent =
   | UnequipItemIntent
   | GrantAbilityIntent
   | RevokeAbilityIntent
-  | PrepareAbilityIntent
   | HealIntent
   | RemoveItemIntent
   | OpenDoorIntent
@@ -363,7 +354,6 @@ export type EquipItemIntent = { type: 'EQUIP_ITEM'; entityId: EntityId; itemInst
 export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot: 'weapon' | 'armor' | 'amulet' };
 export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
 export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
-export type PrepareAbilityIntent = { type: 'PREPARE_ABILITY'; entityId: EntityId; abilityId: string; targets: Position[] };
 export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };

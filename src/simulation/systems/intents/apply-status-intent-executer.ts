@@ -1,7 +1,9 @@
-import { GameState, StatusEffectHolder } from '@simulation/types';
+import { GameState, StatusEffectHolder, EnemyEntity } from '@simulation/types';
 import { ApplyStatusIntent, IntentExecutor } from '@simulation/systems/intents/types';
 import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
 import { findEntity } from '@simulation/state';
+import { isEnemyEntity } from '@simulation/ai/ai-state';
+import { cancelPreparedAbility } from '@simulation/ai/ai-helpers';
 
 export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   state: GameState,
@@ -32,17 +34,19 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
     holder.statusEffects.push(intent.status);
   }
 
-  // Прерывание подготовки AI-намерения при стане
-  if (intent.status.type === 'stunned' && 'aiState' in target && target.aiState && target.aiState.preparedIntent) {
-    const { abilityId, fixedTargets } = target.aiState.preparedIntent;
-    target.aiState.preparedIntent = null;
-    builder.addChild(parent, {
-      type: 'ABILITY_PREPARED_CANCELLED',
-      entityId: intent.entityId,
-      abilityId,
-      targets: fixedTargets,
-      from: { x: target.x, y: target.y },
-    });
+  // Прерывание подготовки AI-способности при стане.
+  if (intent.status.type === 'stunned' && isEnemyEntity(target)) {
+    const enemy = target as unknown as EnemyEntity;
+    const prepared = cancelPreparedAbility(enemy);
+    if (prepared) {
+      builder.addChild(parent, {
+        type: 'ABILITY_PREPARED_CANCELLED',
+        entityId: intent.entityId,
+        abilityId: prepared.abilityId,
+        targets: prepared.targets,
+        from: { x: target.x, y: target.y },
+      });
+    }
   }
 
   return builder.addChild(parent, {

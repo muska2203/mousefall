@@ -19,7 +19,7 @@ import type { EnemyEntity } from '@simulation/types';
  * - prepared: есть подготовленное намерение на следующий ход.
  *
  * Режим 'prepared' не хранится в AIState напрямую — он выводится
- * из aiState.preparedIntent функцией getDerivedAIMode. Базовый FSM-режим
+ * из aiState.preparedAbility функцией getDerivedAIMode. Базовый FSM-режим
  * (idle/alert/chase/return) сохраняется в aiState.mode, чтобы после
  * выполнения prepared-скилла враг мог продолжить прежнее поведение.
  */
@@ -46,10 +46,10 @@ export type AIState = {
   /** Сколько ходов осталось в состоянии ALERT (осмотр перед погоней) */
   alertTurns: number;
 
-  /** Подготовленное намерение AI: скилл, который будет выполнен в начале следующего хода */
-  preparedIntent: {
+  /** Подготовленная способность AI: скилл и цели, которые будут использованы при следующем решении стратегии. */
+  preparedAbility: {
     abilityId: string;
-    fixedTargets: Position[];
+    targets: Position[];
   } | null;
 };
 
@@ -62,14 +62,14 @@ export function isEnemyEntity(entity: { type: string; aiState?: unknown }): enti
 
 /**
  * Возвращает производный AI-режим врага.
- * Если есть подготовленное намерение (preparedIntent), режим считается 'prepared'.
+ * Если есть подготовленная способность (preparedAbility), режим считается 'prepared'.
  * Иначе используется базовый FSM-режим из aiState.mode.
  *
  * Это derived-значение: оно не хранится в AIState, чтобы избежать
  * дублирования источника правды и рассинхронизации.
  */
 export function getDerivedAIMode(enemy: EnemyEntity): AIMode {
-  if (enemy.aiState.preparedIntent) {
+  if (enemy.aiState.preparedAbility) {
     return 'prepared';
   }
   return enemy.aiState.mode;
@@ -90,7 +90,7 @@ export function createDefaultAIState(strategyId: string): AIState {
         homeX: 0,
         homeY: 0,
         alertTurns: 0,
-        preparedIntent: null,
+        preparedAbility: null,
       };
     case 'simple-boss':
       return {
@@ -101,7 +101,7 @@ export function createDefaultAIState(strategyId: string): AIState {
         homeX: 0,
         homeY: 0,
         alertTurns: 0,
-        preparedIntent: null,
+        preparedAbility: null,
       };
     default:
       throw new Error(`Unknown AI strategy: ${strategyId}`);

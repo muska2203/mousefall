@@ -106,10 +106,10 @@ export class UnitInfoRenderer {
       this.updateEffectSlots(widget, effects);
 
       const aiMode = aiModeByEntity.get(id) ?? null;
-      const preparedIntent = aiMode === 'prepared'
+      const preparedAbility = aiMode === 'prepared'
         ? (input.aiPreparedIntents.find((intent) => intent.entityId === id) ?? null)
         : null;
-      this.updateStatusIcon(widget, aiMode, preparedIntent);
+      this.updateStatusIcon(widget, aiMode, preparedAbility);
 
       // Не перезаписываем полоску текущим HP, если для сущности уже идёт
       // анимация изменения HP или она запланирована в текущем кадре.
@@ -285,7 +285,7 @@ export class UnitInfoRenderer {
   private updateStatusIcon(
     widget: UnitInfoWidget,
     status: AIMode | null,
-    preparedIntent: AIPreparedIntentViewModel | null,
+    preparedAbility: AIPreparedIntentViewModel | null,
   ): void {
     const iconY = PADDING;
     const iconX = BASE_WIDTH / 2;
@@ -293,9 +293,9 @@ export class UnitInfoRenderer {
     if (status) {
       widget.statusIcon.visible = false;
       let spritePath: string;
-      if (status === 'prepared' && preparedIntent?.icon) {
+      if (status === 'prepared' && preparedAbility?.icon) {
         // Для подготовленного скилла показываем иконку самого скилла.
-        spritePath = preparedIntent.icon;
+        spritePath = preparedAbility.icon;
       } else {
         // Для обычных AI-режимов используем спрайт режима.
         spritePath = getAIModeSprite(status);

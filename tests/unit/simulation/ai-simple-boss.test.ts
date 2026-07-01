@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
 import type { Entity, EntityId, EnemyEntity } from '../../../src/simulation/types';
+import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
 import { GameSimulation, defaultActionHandlerRegistry } from '../../../src/simulation/simulation';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
@@ -22,6 +23,17 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     apCost: 2,
     ...overrides,
   } as AbilityTemplate;
+}
+
+function findEvents(node: ExecutionNode, type: GameEvent['type']): ExecutionNode[] {
+  const results: ExecutionNode[] = [];
+  if (node.event.type === type) {
+    results.push(node);
+  }
+  for (const child of node.children) {
+    results.push(...findEvents(child, type));
+  }
+  return results;
 }
 
 function getEnemy(state: ReturnType<typeof makeGameState>): EnemyEntity {
@@ -73,11 +85,27 @@ describe('AI: simple-boss', () => {
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).not.toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).not.toBeNull();
     expect(getDerivedAIMode(enemyAfter)).toBe('prepared');
-    expect(enemyAfter.aiState.preparedIntent?.abilityId).toBe('swoop');
+    expect(enemyAfter.aiState.preparedAbility?.abilityId).toBe('swoop');
 
-    const target = enemyAfter.aiState.preparedIntent!.fixedTargets[0]!;
+    // Подготовка теперь — side-effect AI-стратегии: событие ABILITY_PREPARED
+    // эмитится как child события ACTION_APPLIED (WAIT).
+    const envPhase = result.phases.find((p) => p.side === 'ENVIRONMENT');
+    expect(envPhase).toBeDefined();
+    const waitNodes = envPhase!.actions.filter(
+      (a) => a.event.type === 'ACTION_APPLIED' && a.event.action.type === 'WAIT',
+    );
+    expect(waitNodes.length).toBeGreaterThan(0);
+    const preparedEvents = waitNodes.flatMap((n) => findEvents(n, 'ABILITY_PREPARED'));
+    expect(preparedEvents.length).toBe(1);
+    expect(preparedEvents[0]!.event).toMatchObject({
+      type: 'ABILITY_PREPARED',
+      entityId: enemyAfter.id,
+      abilityId: 'swoop',
+    });
+
+    const target = enemyAfter.aiState.preparedAbility!.targets[0]!;
     expect(chebyshevDistance(target, { x: player.x, y: player.y })).toBeLessThanOrEqual(1);
   });
 
@@ -101,7 +129,7 @@ describe('AI: simple-boss', () => {
 
     // Первый ход: подготовка.
     sim.dispatch({ type: 'WAIT', entityId: player.id });
-    const preparedTarget = getEnemy(sim.getState()).aiState.preparedIntent!.fixedTargets[0]!;
+    const preparedTarget = getEnemy(sim.getState()).aiState.preparedAbility!.targets[0]!;
     expect(preparedTarget).toBeDefined();
 
     // Второй ход: выполнение скилла — босс прыгает в подготовленную точку.
@@ -136,7 +164,7 @@ describe('AI: simple-boss', () => {
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).toBeNull();
   });
 
   it('готовит дальнобойный preparable скилл, если игрок виден в зоне действия', () => {
@@ -160,8 +188,8 @@ describe('AI: simple-boss', () => {
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).not.toBeNull();
-    expect(enemyAfter.aiState.preparedIntent?.abilityId).toBe('test-fireball');
+    expect(enemyAfter.aiState.preparedAbility).not.toBeNull();
+    expect(enemyAfter.aiState.preparedAbility?.abilityId).toBe('test-fireball');
   });
 
   it('не готовит налёт, если скилл на кулдауне', () => {
@@ -185,7 +213,7 @@ describe('AI: simple-boss', () => {
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).toBeNull();
   });
 
   it('не готовит налёт, если нет прямой видимости на игрока', () => {
@@ -211,6 +239,6 @@ describe('AI: simple-boss', () => {
     expect(result.success).toBe(true);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.aiState.preparedIntent).toBeNull();
+    expect(enemyAfter.aiState.preparedAbility).toBeNull();
   });
 });

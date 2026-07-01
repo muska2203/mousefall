@@ -25,7 +25,6 @@ import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
 import {waitEntity} from "@simulation/systems/actions/wait-action.ts";
 import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
-import {prepareAbilityAction} from "@simulation/systems/actions/prepare-ability-action.ts";
 import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
@@ -35,6 +34,7 @@ import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import { isEnemyEntity } from "@simulation/ai/ai-state.ts";
+import { cancelPreparedAbility } from "@simulation/ai/ai-helpers.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import "@simulation/ai/simple-boss-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
@@ -475,59 +475,20 @@ export class GameSimulation implements Simulation {
 
             actions.push(setupRoot);
 
-            // Выполнение подготовленного намерения AI.
-            // Примечание: prepared-скилл исполняется до основного цикла while (ap > 0).
-            // Если maxAp > apCost подготовленной способности, у врага останется AP,
-            // и он сможет совершить дополнительные действия в том же ходу.
-            // Это текущее осознанное поведение, но оно требует геймдизайнерского решения.
-            // Возможно, ответственность за исполнение prepared-скилла стоит перенести
-            // в AI-стратегию, чтобы стратегия сама решала, выполнять ли prepared
-            // и что делать дальше.
-            let preparedAbilityIdForCancel: string | null = null;
-            let preparedTargetsForCancel: Position[] = [];
-            if (enemyEntity.aiState.preparedIntent) {
-                if (isStunned(enemy)) {
-                    preparedAbilityIdForCancel = enemyEntity.aiState.preparedIntent.abilityId;
-                    preparedTargetsForCancel = enemyEntity.aiState.preparedIntent.fixedTargets;
-                    enemyEntity.aiState.preparedIntent = null;
-                } else {
-                    const prepared = enemyEntity.aiState.preparedIntent;
-                    enemyEntity.aiState.preparedIntent = null;
-                    const action: GameAction = {
-                        type: 'USE_ABILITY',
-                        entityId: enemy.id,
-                        abilityId: prepared.abilityId,
-                        targets: prepared.fixedTargets,
-                    };
-                    const builder = new ExecutionBuilder({
-                        type: 'ACTION_APPLIED',
-                        action,
-                    });
-                    const success = this.executeAction(
-                        enemy,
-                        action,
-                        builder,
-                        builder.root,
-                    );
-                    if (success) {
-                        actions.push(builder.root);
-                    }
-                }
-            }
-
-            // Оглушённый враг пропускает ход.
+            // Оглушённый враг пропускает ход и сбрасывает подготовку.
             if (isStunned(enemy)) {
+                const prepared = cancelPreparedAbility(enemyEntity);
                 const stunBuilder = new ExecutionBuilder({
                     type: 'ACTION_APPLIED',
                     action: { type: 'WAIT', entityId: enemy.id },
                 });
                 const stunNode = executeIntent(this.state, { type: 'SKIP_STUNNED_TURN', entityId: enemy.id }, stunBuilder, stunBuilder.root);
-                if (preparedAbilityIdForCancel && stunNode) {
+                if (prepared && stunNode) {
                     stunBuilder.addChild(stunNode, {
                         type: 'ABILITY_PREPARED_CANCELLED',
                         entityId: enemy.id,
-                        abilityId: preparedAbilityIdForCancel,
-                        targets: preparedTargetsForCancel,
+                        abilityId: prepared.abilityId,
+                        targets: prepared.targets,
                         from: { x: enemy.x, y: enemy.y },
                     });
                 }
@@ -539,18 +500,20 @@ export class GameSimulation implements Simulation {
             strategy.updateState?.(enemy, this.state);
 
             while (enemy.ap > 0) {
-                const action = strategy.decideAction(enemy, this.state);
-
-                if (!action) {
-                    enemy.ap = 0;
-                    break;
-                }
-
+                // Builder создаётся до decideAction, потому что стратегия может
+                // эмитить события (например, ABILITY_PREPARED) как side-effect.
+                // Корневое событие заменяется на реальное действие после решения стратегии.
+                const placeholderAction: GameAction = { type: 'WAIT', entityId: enemy.id };
                 const builder = new ExecutionBuilder({
                     type: 'ACTION_APPLIED',
-                    action,
+                    action: placeholderAction,
                 });
                 const root = builder.root;
+
+                const action = strategy.decideAction(enemy, this.state, builder, root);
+
+                // Подменяем placeholder на реальное действие перед исполнением.
+                builder.root.event = { type: 'ACTION_APPLIED', action };
 
                 const success = this.executeAction(
                     enemy,
@@ -786,7 +749,6 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
     registry.register('DESCEND', descendAction);
     registry.register('ASCEND', ascendAction);
     registry.register('USE_ABILITY', useAbilityAction);
-    registry.register('PREPARE_ABILITY', prepareAbilityAction);
     registry.register('PICKUP', pickupEntity);
     registry.register('EQUIP', equipEntity);
     registry.register('UNEQUIP', unequipEntity);

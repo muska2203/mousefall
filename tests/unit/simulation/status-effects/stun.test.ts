@@ -139,9 +139,9 @@ describe('stun: пропуск хода', () => {
         homeX: 6,
         homeY: 5,
         alertTurns: 0,
-        preparedIntent: {
+        preparedAbility: {
           abilityId: 'dash',
-          fixedTargets: [{ x: 5, y: 5 }],
+          targets: [{ x: 5, y: 5 }],
         },
       },
     });

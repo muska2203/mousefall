@@ -28,7 +28,7 @@ function makeEnemy(aiMode: 'idle' | 'alert' | 'chase' | 'return', overrides: Par
       homeX: 0,
       homeY: 0,
       alertTurns: 0,
-      preparedIntent: null,
+      preparedAbility: null,
     },
     ...overrides,
   } as EnemyEntity;
@@ -60,7 +60,7 @@ describe('resolveAIMode', () => {
     expect(resolveAIMode(makeEnemy('return'))).toBe('return');
   });
 
-  it('returns "prepared" for enemy with preparedIntent', () => {
+  it('returns "prepared" for enemy with preparedAbility', () => {
     const enemy = makeEnemy('chase', {
       aiState: {
         strategy: 'hunter',
@@ -70,7 +70,7 @@ describe('resolveAIMode', () => {
         homeX: 0,
         homeY: 0,
         alertTurns: 0,
-        preparedIntent: {abilityId: 'swoop', fixedTargets: [{x: 0, y: 0}]},
+        preparedAbility: {abilityId: 'swoop', targets: [{x: 0, y: 0}]},
       },
     });
     expect(resolveAIMode(enemy)).toBe('prepared');
@@ -86,12 +86,12 @@ describe('resolveAIMode', () => {
         homeX: 0,
         homeY: 0,
         alertTurns: 0,
-        preparedIntent: {abilityId: 'swoop', fixedTargets: [{x: 0, y: 0}]},
+        preparedAbility: {abilityId: 'swoop', targets: [{x: 0, y: 0}]},
       },
     });
     expect(resolveAIMode(enemy)).toBe('prepared');
 
-    enemy.aiState.preparedIntent = null;
+    enemy.aiState.preparedAbility = null;
     expect(resolveAIMode(enemy)).toBe('chase');
   });
 
