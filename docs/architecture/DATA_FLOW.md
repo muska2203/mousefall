@@ -293,7 +293,10 @@ Presentation Layer
     │     entities,             // позиции, типы, spriteId
     │     player,               // HP, AP, позиция
     │     visible, explored,    // туман войны
-    │     highlightedPath,      // подсветка автопути
+    │     highlightedPath,              // подсветка автопути
+    │     highlightedPathCommitted,     // зафиксирован ли автопуть
+    │     highlightedPathTargetKind,    // вид цели автопути
+    │     highlightedPathTurnEndIndices, // индексы концов хода
     │     animations,           // AnimationPlan[]
     │     combatLog,            // строки лога
     │     phase, floor, round,  // мета-информация

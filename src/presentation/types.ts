@@ -413,12 +413,21 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
   }
 }
 
+/** Вид цели подсвеченного автопути для выбора цвета оверлея. */
+export type HighlightedPathTargetKind = 'none' | 'enemy' | 'interactable' | 'move';
+
 /** Полный вход renderer'а: состояние + анимации + метаданные. */
 export type RenderInput = {
   /** Readonly снимок игрового состояния от Simulation. */
   state: RenderState;
   /** Подсвеченный автопуть (если есть). */
   highlightedPath: Position[] | null;
+  /** True, если автопуть зафиксирован (клик), false — если это только preview при hover. */
+  highlightedPathCommitted: boolean;
+  /** Вид цели автопути: влияет на цвет подсветки при committed-пути. */
+  highlightedPathTargetKind: HighlightedPathTargetKind;
+  /** Индексы тайлов автопути, на которых заканчивается ход персонажа. */
+  highlightedPathTurnEndIndices: number[];
   /** Очередь анимаций в виде массива фаз. Каждая фаза привязана к стороне хода
    *  и содержит деревья анимаций; фазы между собой выполняются последовательно. */
   animations: AnimationPhase[] | null;

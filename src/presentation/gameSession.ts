@@ -18,12 +18,11 @@ import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnap
 
 import type {ExecutionNode} from '@simulation/systems/actions/types';
 import type {GameAction} from '@simulation/systems/actions/types';
-import {GameSimulation, findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt} from '@simulation/simulation';
-import {findDoorAt} from '@simulation/state';
+import {GameSimulation} from '@simulation/simulation';
 import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel, AIPreparedIntentViewModel, PresentationIntent} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel, AIPreparedIntentViewModel, PresentationIntent, HighlightedPathTargetKind} from './types';
 import {toPresentationIntent} from './types';
 import {
   getAllLocalizedPlayerTemplates,
@@ -54,6 +53,9 @@ import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
 import {TargetingController} from './targetingController';
+import {AutoPathController, type AutoPathQueries, type AutoPathStepResult} from './autoPathController';
+import {isTileExplored, findPathTowards} from './pathfinding';
+import type {AutoPathTarget, AutoPathTargetKind} from './pathfinding';
 import {sortStatusEffects} from './statusSorting';
 import {resolveAIMode} from './primaryStatus';
 
@@ -145,6 +147,7 @@ export class GameSession {
   private toasts = new ToastBuffer();
   private animation = new AnimationState();
   private targeting = new TargetingController();
+  private autoPath = new AutoPathController();
   private listeners = new Set<() => void>();
   private viewModelCache: GameViewModel | null = null;
   /** Монотонный счётчик партий анимаций. Инкрементируется при каждом dispatch, порождающем анимации. */
@@ -160,6 +163,11 @@ export class GameSession {
   private debugEnabled: boolean = false;
   /** Флаг debug-визуализации комнат и коридоров. Живёт только в Presentation. */
   private mapgenDebugEnabled: boolean = false;
+  /** Флаг подавления следующего клика по полю, если автопуть был отменён
+   *  вводом во время анимации. Предотвращает случайный новый автопуть при
+   *  отпускании кнопки мыши после отмены зажатием. */
+  private suppressNextFieldClick = false;
+
   /** Индекс выбранной опции взаимодействия (F / Tab). */
   private selectedInteractionIndex = 0;
   /** Ключ последнего набора опций взаимодействия, чтобы сбрасывать индекс при изменении. */
@@ -432,9 +440,42 @@ export class GameSession {
     const interactionHint = this.buildInteractionHint(state);
     const aiPreparedIntents = this.buildAIPreparedIntents(state);
 
+    // Preview-путь (не committed) не показываем во время анимации, чтобы
+    // не отвлекать игрока и не рисовать устаревший путь, пока камера/мышь
+    // не обновились. Зафиксированный автопуть показываем всегда.
+    let highlightedPath: Position[] | null = null;
+    if (this.autoPath.isActive()) {
+      const isCommitted = this.autoPath.isCommitted();
+      if (isCommitted || this.animation.phase !== 'animating') {
+        highlightedPath = this.autoPath.getPath();
+      }
+    }
+
+    // Во время анимации очередного шага зафиксированного автопути контроллер
+    // перестраивает путь только по завершении анимации. Пока анимация идёт,
+    // первый тайл пути совпадает с текущей позицией игрока (уже сделанный шаг),
+    // поэтому убираем его из отображаемого пути, чтобы превью не съезжало.
+    if (highlightedPath && highlightedPath.length > 0) {
+      const first = highlightedPath[0]!;
+      if (first.x === state.player.x && first.y === state.player.y) {
+        highlightedPath = highlightedPath.slice(1);
+      }
+    }
+
+    const highlightedPathTurnEndIndices = highlightedPath
+      ? this.computeTurnEndIndices(highlightedPath.length, ps.ap, ps.maxAp)
+      : [];
+
     return {
       state,
-      highlightedPath: null,
+      highlightedPath,
+      highlightedPathCommitted: this.autoPath.isCommitted(),
+      highlightedPathTargetKind: this.autoPath.isCommitted()
+        ? this.kindToRenderKind(this.autoPath.getTargetKind())
+        : this.autoPath.isActive()
+          ? 'move' // preview всегда белый, kind не влияет на цвет
+          : 'none',
+      highlightedPathTurnEndIndices,
       animations: this.lastResult ? buildAnimationTree(this.lastResult, state) : null,
       animationBatchId: this.animationBatchId,
       phase: this.animation.phase,
@@ -495,7 +536,10 @@ export class GameSession {
     }
 
     // Лестница вниз.
-    const stairsDown = findStairsAt(state, px, py, 'stairs_down');
+    const stairsDown = this.simulation!.findEntityAt(
+      {x: px, y: py},
+      (e) => e.type === 'stairs' && e.templateId === 'stairs_down',
+    );
     if (stairsDown) {
       const descendAction: GameAction = { type: 'DESCEND', entityId: player.id };
       if (canPerform(descendAction)) {
@@ -510,7 +554,10 @@ export class GameSession {
     }
 
     // Лестница вверх.
-    const stairsUp = findStairsAt(state, px, py, 'stairs_up');
+    const stairsUp = this.simulation!.findEntityAt(
+      {x: px, y: py},
+      (e) => e.type === 'stairs' && e.templateId === 'stairs_up',
+    );
     if (stairsUp) {
       const ascendAction: GameAction = { type: 'ASCEND', entityId: player.id };
       if (canPerform(ascendAction)) {
@@ -532,8 +579,11 @@ export class GameSession {
     for (const offset of neighborOffsets) {
       const x = px + offset.dx;
       const y = py + offset.dy;
-      const door = findDoorAt(state, x, y);
-      if (!door || door.isAlive === false) continue;
+      const door = this.simulation!.findEntityAt(
+        {x, y},
+        (e) => e.type === 'door' && e.isAlive !== false,
+      );
+      if (!door || door.type !== 'door') continue;
 
       if (door.isOpen) {
         const closeAction: GameAction = {
@@ -957,6 +1007,8 @@ export class GameSession {
    * Десериализация (JSON → GameState) — ответственность вызывающего (Presentation-level helper или UI).
    */
   loadGame(state: GameState): void {
+    this.autoPath.cancel();
+    this.suppressNextFieldClick = false;
     this.simulation = GameSimulation.loadSavedGame(state, this.debugEnabled);
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
@@ -1006,6 +1058,7 @@ export class GameSession {
       this.pushToastFromCode('ability_not_found');
       return;
     }
+    this.autoPath.cancel();
     this.targetingHover = null;
     this.fieldHover = null;
     this.notify();
@@ -1049,17 +1102,213 @@ export class GameSession {
     return this.targeting.phase === 'targeting';
   }
 
-  /** Установить клетку под мышью в обычном режиме (для popover объекта на поле). */
+  /** Установить клетку под мышью в обычном режиме (для popover объекта на поля). */
   setFieldHover(hoveredPosition: Position | null): void {
     const prevHover = this.fieldHover;
+    const prevPath = this.autoPath.getPath();
+
     const canShow =
       this.mode === 'playing' &&
-      this.animation.phase !== 'animating' &&
       this.targeting.phase !== 'targeting';
     this.fieldHover = canShow ? hoveredPosition : null;
-    if (this.fieldHover?.x !== prevHover?.x || this.fieldHover?.y !== prevHover?.y) {
+
+    this.refreshAutoPathPreview();
+
+    const hoverChanged =
+      this.fieldHover?.x !== prevHover?.x || this.fieldHover?.y !== prevHover?.y;
+    const pathChanged = !this.pathsEqual(prevPath, this.autoPath.getPath());
+
+    if (hoverChanged || pathChanged) {
       this.notify();
     }
+  }
+
+  /** Перестроить preview-путь по текущему fieldHover.
+   *  Ничего не делает, если условия для preview не выполнены (анимация,
+   *  таргетинг, committed-автопуть или игра не в режиме playing). */
+  private refreshAutoPathPreview(): void {
+    if (
+      this.mode !== 'playing' ||
+      this.targeting.phase === 'targeting' ||
+      !this.simulation ||
+      this.autoPath.isCommitted() ||
+      this.animation.phase !== 'idle'
+    ) {
+      return;
+    }
+
+    const state = this.simulation.getState();
+    const target = this.fieldHover
+      ? this.resolveAutoPathTarget(state, this.fieldHover)
+      : null;
+    this.autoPath.hover(target, state, this.getAutoPathQueries());
+  }
+
+  /** Сравнить два пути по значению. */
+  private pathsEqual(a: Position[] | null, b: Position[] | null): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    return a.every((p, i) => p.x === b[i]!.x && p.y === b[i]!.y);
+  }
+
+  /** Обработать клик по игровому полю (автопуть). */
+  handleFieldClick(pos: Position): void {
+    // Если автопуть только что был отменён вводом во время анимации,
+    // игнорируем клик, который следует за этой отменой (обычно отпускание
+    // кнопки мыши), чтобы не начинать новый автопуть случайно.
+    if (this.suppressNextFieldClick) {
+      this.suppressNextFieldClick = false;
+      return;
+    }
+
+    if (!this.simulation || this.mode !== 'playing' || this.animation.phase === 'animating') return;
+    if (this.targeting.phase === 'targeting') return;
+
+    const state = this.simulation.getState();
+
+    // Клик на клетку игрока — отменить автопуть.
+    if (pos.x === state.player.x && pos.y === state.player.y) {
+      this.autoPath.cancel();
+      this.notify();
+      return;
+    }
+
+    if (!isTileExplored(state, pos)) return;
+
+    const target = this.resolveAutoPathTarget(state, pos);
+    if (!target) {
+      this.autoPath.cancel();
+      this.notify();
+      return;
+    }
+
+    // Новый автопуть: сбрасываем старый, строим новый и фиксируем.
+    this.autoPath.cancel();
+    this.autoPath.hover(target, state, this.getAutoPathQueries());
+    const committed = this.autoPath.commit();
+    if (!committed) {
+      this.notify();
+      return;
+    }
+
+    const stepResult = this.autoPath.step(state, this.getAutoPathQueries());
+    if (stepResult.kind === 'action') {
+      this.dispatch(stepResult.action);
+    } else {
+      this.handleAutoPathCancel(stepResult);
+      this.autoPath.cancel();
+      this.notify();
+    }
+  }
+
+  /** Рассчитать индексы тайлов пути, на которых заканчивается ход. */
+  private computeTurnEndIndices(pathLength: number, ap: number, maxAp: number): number[] {
+    if (maxAp <= 0 || pathLength === 0) return [];
+    const indices: number[] = [];
+    let stepsUntilTurnEnd = ap > 0 ? ap : maxAp;
+    for (let i = 0; i < pathLength; i++) {
+      stepsUntilTurnEnd--;
+      if (stepsUntilTurnEnd === 0) {
+        indices.push(i);
+        stepsUntilTurnEnd = maxAp;
+      }
+    }
+    return indices;
+  }
+
+  /** Преобразует внутренний вид цели автопути в вид для renderer'а. */
+  private kindToRenderKind(kind: AutoPathTargetKind): HighlightedPathTargetKind {
+    switch (kind) {
+      case 'enemy':
+        return 'enemy';
+      case 'door':
+      case 'interactable':
+        return 'interactable';
+      case 'move':
+      default:
+        return 'move';
+    }
+  }
+
+  /** Возвращает query-функции для автопути из публичного API Simulation. */
+  private getAutoPathQueries(): AutoPathQueries {
+    const simulation = this.simulation!;
+    return {
+      isTileWalkable: (pos) => simulation.isTileWalkableForPlayer(pos),
+      findPathTowards: (start, target) => {
+        const isWalkable = (p: Position) => simulation.isTileWalkableForPlayer(p);
+        return findPathTowards(start, target, isWalkable);
+      },
+      findEntityAt: (pos, filter) => simulation.findEntityAt(pos, filter),
+      findEntitiesAt: (pos, filter) => simulation.findEntitiesAt(pos, filter),
+    };
+  }
+
+  /**
+   * Определяет цель автопути по клетке клика / hover.
+   * Приоритет: враг → дверь → лестница → предмет → пустой тайл.
+   * Возвращает null, если клетка не изведана.
+   */
+  private resolveAutoPathTarget(state: Readonly<GameState>, pos: Position): AutoPathTarget | null {
+    if (!isTileExplored(state, pos)) return null;
+
+    const simulation = this.simulation!;
+
+    const enemy = simulation.findEntityAt(
+      pos,
+      (e) => e.type === 'enemy' && e.isAlive !== false,
+    );
+    if (enemy && enemy.id !== state.player.id && state.visible[pos.y]?.[pos.x]) {
+      return { position: pos, kind: 'enemy', entityId: enemy.id };
+    }
+
+    const door = simulation.findEntityAt(
+      pos,
+      (e) => e.type === 'door' && e.isAlive !== false,
+    );
+    if (door) {
+      return { position: pos, kind: 'door', entityId: door.id };
+    }
+
+    const stairs = simulation.findEntityAt(
+      pos,
+      (e) => e.type === 'stairs',
+    );
+    if (stairs) {
+      return { position: pos, kind: 'interactable', entityId: stairs.id };
+    }
+
+    const item = simulation.findEntitiesAt(pos).find((e) => e.type === 'item');
+    if (item) {
+      return { position: pos, kind: 'interactable', entityId: item.id };
+    }
+
+    return { position: pos, kind: 'move', entityId: null };
+  }
+
+  /** Отменить автопуть (например, по нажатию клавиши или мыши).
+   *
+   *  @param blockFollowingClick — если true и отмена произошла во время
+   *    анимации, следующий клик по полю будет проигнорирован. Используется
+   *    UI при отмене зажатием мыши, чтобы отпускание кнопки не начинало
+   *    новый автопуть. */
+  cancelAutoPath(blockFollowingClick: boolean = false): void {
+    if (this.autoPath.isActive() || this.autoPath.isCommitted()) {
+      this.autoPath.cancel();
+      this.notify();
+    }
+    this.suppressNextFieldClick = blockFollowingClick && this.animation.phase === 'animating';
+  }
+
+  /** Активен ли автопуть (preview или committed). */
+  isAutoPathActive(): boolean {
+    return this.autoPath.isActive();
+  }
+
+  /** Зафиксирован ли автопуть. */
+  isAutoPathCommitted(): boolean {
+    return this.autoPath.isCommitted();
   }
 
   /** Превью при наведении на клетку в режиме таргетинга. */
@@ -1129,6 +1378,7 @@ export class GameSession {
         this.toasts.push(toast.kind, toast.title, toast.message, toast.duration);
       }
       this.lastResult = null;
+      this.autoPath.cancel();
     }
 
     // После каждого хода проверяем, не закончилась ли игра
@@ -1181,18 +1431,24 @@ export class GameSession {
     const targetX = state.player.x + dx;
     const targetY = state.player.y + dy;
 
-    const target = findFirstAttackableEntityAt(state, targetX, targetY);
+    const target = this.simulation.findEntityAt(
+      {x: targetX, y: targetY},
+      (e) => (e.type === 'enemy' || e.type === 'player') && e.isAlive !== false,
+    );
 
     let action: GameAction;
 
-    const doorAtTarget = findDoorAt(state, targetX, targetY);
+    const doorAtTarget = this.simulation.findEntityAt(
+      {x: targetX, y: targetY},
+      (e) => e.type === 'door' && e.isAlive !== false,
+    );
 
-    if (target && target.id !== state.player.id && target.type !== 'door') {
+    if (target && target.id !== state.player.id) {
       // Атака по врагу/другой не-дверной цели.
       // Если враг стоит на клетке с открытой дверью, атака всё равно должна
       // сработать в приоритете, а не превращаться в MOVE.
       action = {type: 'ATTACK', entityId: state.player.id, dx, dy};
-    } else if (doorAtTarget) {
+    } else if (doorAtTarget && doorAtTarget.type === 'door') {
       if (doorAtTarget.isOpen) {
         // Открытая дверь — просто заходим на её клетку.
         action = {type: 'MOVE', entityId: state.player.id, dx, dy};
@@ -1245,10 +1501,37 @@ export class GameSession {
       return;
     }
 
+    // Автопродолжение зафиксированного автопути.
+    if (this.autoPath.isCommitted() && this.animation.phase === 'idle' && this.mode === 'playing') {
+      const state = this.simulation!.getState();
+      if (state.turn.activeSide !== 'PLAYER' || state.player.ap <= 0) {
+        this.autoPath.cancel();
+        this.notify();
+        return;
+      }
+      const stepResult = this.autoPath.step(state, this.getAutoPathQueries());
+      if (stepResult.kind === 'action') {
+        this.dispatch(stepResult.action);
+        return;
+      }
+      // Путь больше не валиден — контроллер уже сбросился, нужно обновить UI.
+      this.handleAutoPathCancel(stepResult);
+      this.notify();
+      return;
+    }
+
     if (this.heldDirection && this.animation.phase === 'idle' && this.mode === 'playing') {
       this.moveOrAttack(this.heldDirection.dx, this.heldDirection.dy);
-    } else if (hadAnimations) {
-      this.notify();
+    } else {
+      // После завершения анимации перестраиваем preview-путь: во время
+      // анимации он не обновлялся, а fieldHover мог сместиться из-за
+      // движения камеры за игроком.
+      if (hadAnimations && this.animation.phase === 'idle' && this.mode === 'playing') {
+        this.refreshAutoPathPreview();
+      }
+      if (hadAnimations) {
+        this.notify();
+      }
     }
   }
 
@@ -1523,6 +1806,8 @@ export class GameSession {
 
   /** Возврат в главное меню. Уничтожает текущую симуляцию. */
   returnToMenu(): void {
+    this.autoPath.cancel();
+    this.suppressNextFieldClick = false;
     this.simulation = null;
     this.mode = 'mainMenu';
     this.lastResult = null;
@@ -1555,6 +1840,17 @@ export class GameSession {
     const toast = errorCodeToToast(code);
     this.toasts.push(toast.kind, toast.title, toast.message, toast.duration);
     this.notify();
+  }
+
+  /** Показать toast, если автопуть отменён по причине, требующей уведомления. */
+  private handleAutoPathCancel(stepResult: AutoPathStepResult): void {
+    if (stepResult.kind === 'cancelled' && stepResult.reason === 'new_enemy') {
+      this.toasts.push(
+        'warning',
+        t('components.toast.autoPathEnemyDetectedTitle'),
+        t('components.toast.autoPathEnemyDetectedMessage'),
+      );
+    }
   }
 
   /** Закрыть всплывающее уведомление по идентификатору. */

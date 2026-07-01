@@ -333,20 +333,27 @@ export class WorldRenderer {
   }
 
   /** Преобразовать экранные координаты в координаты тайла мира.
-   *  Использует ту же логику камеры, что и render(). */
+   *  Использует текущую мировую позицию камеры, вычисленную в render(). */
   screenToWorld(screenX: number, screenY: number): Position {
     const input = this.lastInput;
     if (!input) return { x: 0, y: 0 };
     const scale = input.zoom;
-    const playerScreenX = input.state.player.x * TILE_SIZE;
-    const playerScreenY = input.state.player.y * TILE_SIZE;
+    const cameraWorldPos = this.cameraWorldPos ?? this.computeCameraWorldPos(input);
+    return {
+      x: Math.floor((screenX / scale + cameraWorldPos.x) / TILE_SIZE),
+      y: Math.floor((screenY / scale + cameraWorldPos.y) / TILE_SIZE),
+    };
+  }
+
+  /** Вычислить мировую позицию камеры по состоянию (fallback до первого render()). */
+  private computeCameraWorldPos(input: RenderInput): { x: number; y: number } {
+    const scale = input.zoom;
     const viewW = this.viewportWidth / scale;
     const viewH = this.viewportHeight / scale;
-    const cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
-    const cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
+    const base = this.cameraBase ?? input.state.player;
     return {
-      x: Math.floor((screenX / scale + cameraX) / TILE_SIZE),
-      y: Math.floor((screenY / scale + cameraY) / TILE_SIZE),
+      x: base.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
+      y: base.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2,
     };
   }
 
@@ -473,21 +480,21 @@ export class WorldRenderer {
     this.root.y = -this.cameraWorldPos.y * scale;
   }
 
+  /** Возвращает true, если камера сейчас анимируется. */
+  isCameraAnimating(): boolean {
+    return this.cameraAnimation !== null;
+  }
+
   /** Преобразовать мировые координаты тайла в экранные координаты относительно viewport. */
   worldToScreen(worldPos: Position): { x: number; y: number } {
     if (!this.lastInput) {
       return { x: worldPos.x * TILE_SIZE, y: worldPos.y * TILE_SIZE };
     }
     const scale = this.lastInput.zoom;
-    const playerScreenX = this.lastInput.state.player.x * TILE_SIZE;
-    const playerScreenY = this.lastInput.state.player.y * TILE_SIZE;
-    const viewW = this.viewportWidth / scale;
-    const viewH = this.viewportHeight / scale;
-    const cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
-    const cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
+    const cameraWorldPos = this.cameraWorldPos ?? this.computeCameraWorldPos(this.lastInput);
     return {
-      x: (worldPos.x * TILE_SIZE - cameraX) * scale,
-      y: (worldPos.y * TILE_SIZE - cameraY) * scale,
+      x: (worldPos.x * TILE_SIZE - cameraWorldPos.x) * scale,
+      y: (worldPos.y * TILE_SIZE - cameraWorldPos.y) * scale,
     };
   }
 

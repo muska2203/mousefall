@@ -5,6 +5,7 @@
  * активных уведомлений. Не зависит от Simulation или UI.
  */
 
+import { getDefaultToastDuration } from './toastBuilder';
 import type { ToastItem, ToastKind } from './types';
 
 /** Максимальное количество одновременно отображаемых уведомлений. */
@@ -19,6 +20,9 @@ export class ToastBuffer {
    * При превышении лимита старые уведомления удаляются.
    */
   push(kind: ToastKind, title: string, message: string, duration?: number): void {
+    if (duration === undefined) {
+      duration = getDefaultToastDuration(kind);
+    }
     const item: ToastItem = {
       id: String(this.nextId++),
       kind,

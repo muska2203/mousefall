@@ -20,6 +20,9 @@ const COLORS = {
   hover: 0xffff44,
   affected: 0xff4444,
   aiPrepared: 0xff8800,
+  pathPreview: 0xffffff,  // белый — hover
+  pathMove: 0x44ff88,     // зелёный — движение / interactable
+  pathEnemy: 0xff4444,    // красный — враг
 };
 
 const ALPHAS = {
@@ -28,6 +31,9 @@ const ALPHAS = {
   hover: 0.15,
   affected: 0.15,
   aiPrepared: 0.25,
+  pathPreview: 0.35,
+  pathMove: 0.35,
+  pathEnemy: 0.35,
 };
 
 export class TargetingRenderer {
@@ -67,6 +73,40 @@ export class TargetingRenderer {
       }
       if (overlay.hover) {
         this.drawOverlay(overlay.hover, COLORS.hover, ALPHAS.hover);
+      }
+    }
+
+    // Подсветка автопути: контур целевой клетки + линия пути + отметки концов ходов.
+    // Промежуточные клетки не подсвечиваются.
+    // Preview (не зафиксирован) — белый; committed к врагу — красный;
+    // committed к интерактивному объекту или пустому тайлу — зелёный.
+    if (input.highlightedPath && input.highlightedPath.length > 0) {
+      const isPreview = !input.highlightedPathCommitted || input.highlightedPathTargetKind === 'none';
+      const color = isPreview
+        ? COLORS.pathPreview
+        : input.highlightedPathTargetKind === 'enemy'
+          ? COLORS.pathEnemy
+          : COLORS.pathMove;
+
+      const lastPos = input.highlightedPath[input.highlightedPath.length - 1]!;
+      this.drawTileOutline(lastPos, color);
+      this.drawPathLine(
+        input.highlightedPath,
+        color,
+        { x: input.state.player.x, y: input.state.player.y },
+      );
+
+      // Отметки тайлов, на которых закончится ход персонажа.
+      const turnEndIndices = input.highlightedPathTurnEndIndices;
+      for (const idx of turnEndIndices) {
+        const pos = input.highlightedPath[idx]!;
+        const prev = idx === 0
+          ? { x: input.state.player.x, y: input.state.player.y }
+          : input.highlightedPath[idx - 1]!;
+        const next = idx < input.highlightedPath.length - 1
+          ? input.highlightedPath[idx + 1] ?? null
+          : null;
+        this.drawTurnEndMarker(pos, prev, next, color);
       }
     }
 
@@ -136,6 +176,14 @@ export class TargetingRenderer {
     this.overlayContainer.addChild(g);
   }
 
+  /** Контур тайла без заливки — для целевой клетки автопути. */
+  private drawTileOutline(pos: Position, color: number): void {
+    const g = new Graphics();
+    g.rect(pos.x * TILE_SIZE, pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    g.stroke({ width: 2, color, alpha: 0.8 });
+    this.overlayContainer.addChild(g);
+  }
+
   private drawDamageNumber(pos: Position, damage: number, zoom: number): void {
     const text = new Text({
       text: String(damage),
@@ -184,6 +232,72 @@ export class TargetingRenderer {
     g.stroke({ width: 2, color, alpha: 0.8 });
 
     this.previewContainer.addChild(g);
+  }
+
+  private drawPathLine(path: Position[], color: number, from: Position): void {
+    if (path.length === 0) return;
+
+    const g = new Graphics();
+    let x = from.x * TILE_SIZE + TILE_SIZE / 2;
+    let y = from.y * TILE_SIZE + TILE_SIZE / 2;
+
+    g.moveTo(x, y);
+    for (const pos of path) {
+      x = pos.x * TILE_SIZE + TILE_SIZE / 2;
+      y = pos.y * TILE_SIZE + TILE_SIZE / 2;
+      g.lineTo(x, y);
+    }
+    g.stroke({ width: 2, color, alpha: 0.6 });
+
+    this.overlayContainer.addChild(g);
+  }
+
+  /** Нарисовать отметку конца хода — короткий перпендикулярный штрих на тайле. */
+  private drawTurnEndMarker(
+    pos: Position,
+    prev: Position,
+    next: Position | null,
+    color: number,
+  ): void {
+    const cx = pos.x * TILE_SIZE + TILE_SIZE / 2;
+    const cy = pos.y * TILE_SIZE + TILE_SIZE / 2;
+
+    let dirX = 0;
+    let dirY = 0;
+    let count = 0;
+
+    const addDir = (dx: number, dy: number) => {
+      const len = Math.hypot(dx, dy);
+      if (len > 0) {
+        dirX += dx / len;
+        dirY += dy / len;
+        count++;
+      }
+    };
+
+    addDir(pos.x - prev.x, pos.y - prev.y);
+    if (next) {
+      addDir(next.x - pos.x, next.y - pos.y);
+    }
+
+    if (count === 0) return;
+
+    const len = Math.hypot(dirX, dirY);
+    if (len === 0) return;
+    dirX /= len;
+    dirY /= len;
+
+    // Перпендикуляр к направлению пути (биссектрисе угла на тайле).
+    const perpX = -dirY;
+    const perpY = dirX;
+
+    const markerLen = 4;
+    const g = new Graphics();
+    g.moveTo(cx - perpX * markerLen, cy - perpY * markerLen);
+    g.lineTo(cx + perpX * markerLen, cy + perpY * markerLen);
+    g.stroke({ width: 2, color, alpha: 0.8 });
+
+    this.overlayContainer.addChild(g);
   }
 
   private drawDeathMarker(pos: Position, zoom: number): void {

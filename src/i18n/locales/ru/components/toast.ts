@@ -39,5 +39,7 @@ export const ruToast = {
   noTargetAtTileMessage: 'На этой клетке нет подходящей цели.',
   genericErrorTitle: 'Ошибка',
   genericErrorMessage: 'Произошла непредвиденная ошибка.',
+  autoPathEnemyDetectedTitle: 'Обнаружен враг',
+  autoPathEnemyDetectedMessage: 'Автоматические действия остановлены из-за появления нового врага в зоне видимости.',
   closeLabel: 'Закрыть уведомление',
 } as const satisfies ComponentsToastTranslations;

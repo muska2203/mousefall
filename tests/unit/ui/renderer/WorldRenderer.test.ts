@@ -159,6 +159,9 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       },
     },
     highlightedPath: null,
+    highlightedPathCommitted: false,
+    highlightedPathTargetKind: 'none',
+    highlightedPathTurnEndIndices: [],
     doorSprites: new Map(),
     animations: null,
     phase: 'idle' as const,
@@ -353,5 +356,50 @@ describe('WorldRenderer camera', () => {
     const toWorldX = 1 * TILE_SIZE + TILE_SIZE / 2 - 800 / scale / 2;
     expect(worldCameraX).toBeGreaterThan(Math.min(fromWorldX, toWorldX));
     expect(worldCameraX).toBeLessThan(Math.max(fromWorldX, toWorldX));
+  });
+
+  it('screenToWorld uses current camera position during animation', async () => {
+    const renderer = new WorldRenderer(64, 64);
+    const input = makeRenderInput();
+    input.state.player.x = 1;
+    input.state.player.y = 0;
+    input.animations = [
+      {
+        side: 'PLAYER',
+        nodes: [
+          {
+            step: {type: 'MOVE', entityId: 'player', from: {x: 0, y: 0}, to: {x: 1, y: 0}},
+            children: [],
+          },
+        ],
+      },
+    ];
+
+    renderer.render(input);
+
+    (renderer as any).animateCamera(
+      {x: 0, y: 0},
+      {x: 1, y: 0},
+      ANIMATION_CONFIG.MOVE,
+    );
+
+    // Центр viewport: в начале анимации под ним тайл (0,0),
+    // в конце — тайл (1,0).
+    const screenPos = {x: 32, y: 32};
+
+    // На старте камера у начальной клетки.
+    const startTile = renderer.screenToWorld(screenPos.x, screenPos.y);
+    expect(startTile).toEqual({x: 0, y: 0});
+
+    // Промежуточное обновление: камера сдвинулась, под тем же экранным пикселем
+    // теперь другой тайл.
+    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration / 2);
+    const midTile = renderer.screenToWorld(screenPos.x, screenPos.y);
+    expect(midTile).toEqual({x: 1, y: 0});
+
+    // После завершения камера у конечной клетки.
+    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration + 10);
+    const endTile = renderer.screenToWorld(screenPos.x, screenPos.y);
+    expect(endTile).toEqual({x: 1, y: 0});
   });
 });

@@ -217,12 +217,19 @@ utils/        → (nothing)
 │   "в этой фазе hover должен показать    │
 │    автопуть до этого тайла"             │
 │                                         │
-│ Вызывает utils/math.ts (pathfinding)    │
-│ или Simulation API (если pathfinding    │
-│ требует игровых правил)                 │
+│ Вызывает Simulation API для query       │
+│ (pathfinding, проходимость, сущности    │
+│ на тайле)                               │
 │                                         │
 │ Формирует ViewModel:                    │
-│   { highlightedPath: Position[] }       │
+│   {                                     │
+│     highlightedPath: Position[],        │
+│     highlightedPathCommitted: boolean,  │
+│     highlightedPathTargetKind:          │
+│       HighlightedPathTargetKind,        │
+│     highlightedPathTurnEndIndices:      │
+│       number[]                          │
+│   }                                     │
 └─────────────────────┬───────────────────┘
                       │
                       ▼

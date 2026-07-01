@@ -2,6 +2,7 @@ import {
     ActionPreview,
     Actor,
     EnemyEntity,
+    Entity,
     GameState,
     Intent,
     PlayerEntity,
@@ -56,6 +57,7 @@ import { tryGetAbility, getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
 import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
+import { findPath, posEqual } from "@utils/math.ts";
 
 export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
 
@@ -716,6 +718,47 @@ export class GameSimulation implements Simulation {
 
     getWeaponDamageEntries(player: PlayerEntity, weapon: ItemTemplate | null): ReturnType<typeof calcWeaponDamageEntries> {
         return calcWeaponDamageEntries(player, weapon);
+    }
+
+    /** Проверяет, может ли игрок переместиться на указанный тайл с учётом видимости.
+     *  Невидимые объекты не блокируют путь. */
+    isTileWalkableForPlayer(pos: Position): boolean {
+        const state = this.state;
+        if (pos.x < 0 || pos.x >= state.map.width || pos.y < 0 || pos.y >= state.map.height) return false;
+        const tile = state.map.tiles[pos.y]?.[pos.x];
+        if (tile === 'wall') return false;
+        if (!state.visible[pos.y]?.[pos.x]) return true;
+        return !findAllEntitiesAt(state, pos.x, pos.y).some((entity) => entity.blocksMovement);
+    }
+
+    /** Ищет кратчайший путь для игрока от start до target. */
+    findPathForPlayer(start: Position, target: Position): Position[] | null {
+        const MAX_PATH_STEPS = 500;
+        if (posEqual(start, target)) {
+            return this.isTileWalkableForPlayer(target) ? [] : null;
+        }
+        const path = findPath(
+            start,
+            target,
+            (pos) => this.isTileWalkableForPlayer(pos),
+            MAX_PATH_STEPS,
+            true,
+        );
+        if (!path) return null;
+        if (!this.isTileWalkableForPlayer(target)) return null;
+        return path;
+    }
+
+    /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
+    findEntityAt(pos: Position, filter?: (entity: Entity) => boolean): Entity | null {
+        const entities = findAllEntitiesAt(this.state, pos.x, pos.y);
+        return filter ? entities.find(filter) ?? null : entities[0] ?? null;
+    }
+
+    /** Возвращает все сущности на тайле, удовлетворяющие фильтру. */
+    findEntitiesAt(pos: Position, filter?: (entity: Entity) => boolean): Entity[] {
+        const entities = findAllEntitiesAt(this.state, pos.x, pos.y);
+        return filter ? entities.filter(filter) : entities;
     }
 }
 

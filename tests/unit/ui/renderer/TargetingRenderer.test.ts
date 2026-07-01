@@ -54,6 +54,7 @@ import type {RenderInput} from '../../../../src/presentation/types';
 function makeRenderInput(
   overlay: RenderInput['targetingOverlay'],
   aiPreparedIntents: RenderInput['aiPreparedIntents'],
+  highlightedPathTurnEndIndices: number[] = [],
 ): RenderInput {
   return {
     state: {
@@ -117,6 +118,9 @@ function makeRenderInput(
       runStats: {startTime: Date.now(), enemiesKilled: 0, chestsOpened: 0, itemsPickedUp: 0},
     },
     highlightedPath: null,
+    highlightedPathCommitted: false,
+    highlightedPathTargetKind: 'none',
+    highlightedPathTurnEndIndices,
     doorSprites: new Map(),
     animations: null,
     phase: 'idle' as const,
@@ -246,5 +250,133 @@ describe('TargetingRenderer', () => {
 
     // One arrow for the AI movement intent
     expect(renderer.previewContainer.children.length).toBe(1);
+  });
+
+  describe('autopath visualization', () => {
+    it('renders only the last tile of the path, but draws a path line', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, [], [2]);
+      input.highlightedPath = [{x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}];
+      input.highlightedPathCommitted = false;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input);
+
+      // Контур последнего тайла + линия пути + отметка конца хода на тайле (3,0).
+      expect(renderer.overlayContainer.children.length).toBe(3);
+    });
+
+    it('does not highlight intermediate tiles', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, [], [2]);
+      input.highlightedPath = [{x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}];
+      input.highlightedPathCommitted = true;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input);
+
+      // Контур последнего тайла + линия + отметка конца хода.
+      expect(renderer.overlayContainer.children.length).toBe(3);
+    });
+
+    it('renders preview path in white', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.highlightedPath = [{x: 1, y: 0}];
+      input.highlightedPathCommitted = false;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input);
+
+      // 1 overlay (последний тайл) + 1 линия пути.
+      expect(renderer.overlayContainer.children.length).toBe(2);
+    });
+
+    it('renders committed enemy path in red', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.highlightedPath = [{x: 1, y: 0}];
+      input.highlightedPathCommitted = true;
+      input.highlightedPathTargetKind = 'enemy';
+
+      renderer.update(input);
+
+      expect(renderer.overlayContainer.children.length).toBe(2);
+    });
+
+    it('renders committed interactable/move path in green', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.highlightedPath = [{x: 1, y: 0}];
+      input.highlightedPathCommitted = true;
+      input.highlightedPathTargetKind = 'interactable';
+
+      renderer.update(input);
+
+      expect(renderer.overlayContainer.children.length).toBe(2);
+    });
+
+    it('renders turn-end marker when path reaches current AP limit', () => {
+      const renderer = new TargetingRenderer();
+      // maxAp=3, ap=3 → отметка на 3-м шаге (индекс 2).
+      const input = makeRenderInput(null, [], [2]);
+      input.highlightedPath = [{x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}];
+      input.highlightedPathCommitted = false;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input);
+
+      // Контур + линия + 1 отметка конца хода.
+      expect(renderer.overlayContainer.children.length).toBe(3);
+    });
+
+    it('renders multiple turn-end markers for long paths', () => {
+      const renderer = new TargetingRenderer();
+      // maxAp=3, ap=3 → отметки на индексах 2 и 5.
+      const input = makeRenderInput(null, [], [2, 5]);
+      input.highlightedPath = [
+        {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0},
+        {x: 4, y: 0}, {x: 5, y: 0}, {x: 6, y: 0},
+      ];
+      input.highlightedPathCommitted = false;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input);
+
+      // Контур + линия + 2 отметки конца хода.
+      expect(renderer.overlayContainer.children.length).toBe(4);
+    });
+
+    it('does not render turn-end marker when path is shorter than remaining AP', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      // maxAp=3, ap=3, путь длиной 1 — отметка не нужна.
+      input.highlightedPath = [{x: 1, y: 0}];
+      input.highlightedPathCommitted = false;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input);
+
+      expect(renderer.overlayContainer.children.length).toBe(2);
+    });
+
+    it('renders turn-end markers starting from next turn when current AP is zero', () => {
+      const renderer = new TargetingRenderer();
+      // ap=0 → первый ход начнётся со следующего turn'а: отметки на индексах 2 и 5.
+      const input = makeRenderInput(null, [], [2, 5]);
+      input.playerStats.ap = 0;
+      input.playerStats.maxAp = 3;
+      input.highlightedPath = [
+        {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0},
+        {x: 4, y: 0}, {x: 5, y: 0}, {x: 6, y: 0},
+      ];
+      input.highlightedPathCommitted = false;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input);
+
+      // Контур + линия + 2 отметки конца хода.
+      expect(renderer.overlayContainer.children.length).toBe(4);
+    });
   });
 });

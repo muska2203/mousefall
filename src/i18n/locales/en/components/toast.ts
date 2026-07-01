@@ -39,5 +39,7 @@ export const enToast = {
   noTargetAtTileMessage: 'There is no valid target on this tile.',
   genericErrorTitle: 'Error',
   genericErrorMessage: 'An unexpected error occurred.',
+  autoPathEnemyDetectedTitle: 'Enemy Detected',
+  autoPathEnemyDetectedMessage: 'Automatic actions stopped because a new enemy entered the visible area.',
   closeLabel: 'Close notification',
 } as const satisfies ComponentsToastTranslations;

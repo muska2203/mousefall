@@ -180,6 +180,16 @@ export function GameScreen({session, onModeChange}: Props) {
     [session, isInputBlocked],
   );
 
+  const handleCameraHoverMove = useCallback(
+    (tile: {x: number; y: number}, screen: {screenX: number; screenY: number}) => {
+      if (session.getMode() !== 'playing') return;
+      setTileHoverPos(tile);
+      session.setFieldHover(tile);
+      setFieldHoverPos({x: screen.screenX, y: screen.screenY});
+    },
+    [session],
+  );
+
   const handleMouseLeave = useCallback(() => {
     session.setFieldHover(null);
     setFieldHoverPos(null);
@@ -197,9 +207,39 @@ export function GameScreen({session, onModeChange}: Props) {
         return;
       }
 
-      session.submitTarget(pos);
+      if (session.isTargeting()) {
+        session.submitTarget(pos);
+      } else {
+        session.handleFieldClick(pos);
+      }
     },
     [session, isInputBlocked, pendingDebugSpawn],
+  );
+
+  // Нажатие мыши отменяет только зафиксированный автопуть.
+  // Preview не трогаем, чтобы нажатия мыши не гасили превью.
+  // Если отмена происходит во время анимации, передаём blockFollowingClick=true,
+  // чтобы отпускание кнопки не начало новый автопуть. Если committed-пути нет,
+  // передаём false — это сбрасывает защиту и позволяет текущему клику сработать.
+  // Защита реализована в GameSession.handleFieldClick.
+  const handleMouseDown = useCallback(
+    (_pos: {x: number; y: number}, button: number) => {
+      if (session.getMode() !== 'playing') return;
+      // Средняя кнопка и прочие не обрабатываются.
+      if (button !== 0 && button !== 2) return;
+
+      const isCommitted = session.isAutoPathCommitted();
+
+      // Правая кнопка отменяет только зафиксированный автопуть.
+      // Preview не трогаем, чтобы случайный ПКМ не гасил превью.
+      if (button === 2) {
+        session.cancelAutoPath(isCommitted);
+        return;
+      }
+
+      session.cancelAutoPath(isCommitted);
+    },
+    [session],
   );
 
   // Синхронизация режима с App.tsx (важно при автоходе и смерти)
@@ -217,6 +257,17 @@ export function GameScreen({session, onModeChange}: Props) {
       if (e.key === 'Unidentified') return;
       const target = e.target as HTMLElement | null;
       if (target && INTERACTIVE_TAGS.has(target.tagName)) return;
+
+      // Клавиши отменяют только зафиксированный автопуть.
+      // Preview не трогаем, чтобы нажатия клавиш не гасили превью.
+      if (session.isAutoPathCommitted()) {
+        session.cancelAutoPath(false);
+        // Направления продолжают обрабатываться как ручное движение,
+        // остальные клавиши только отменяют автопуть.
+        if (!KEY_MAP[e.key]) {
+          return;
+        }
+      }
 
       // Отмена таргетинга или ожидания спавна
       if (e.key === 'Escape') {
@@ -332,7 +383,9 @@ export function GameScreen({session, onModeChange}: Props) {
         onZoomDelta={handleZoom}
         onMouseMove={handleMouseMove}
         onMouseClick={handleMouseClick}
+        onMouseDown={handleMouseDown}
         onMouseMoveScreen={handleMouseMoveScreen}
+        onCameraHoverMove={handleCameraHoverMove}
         onMouseLeave={handleMouseLeave}
         hotbarItems={renderInput.hotbar}
         onHotbarClick={handleHotbarClick}

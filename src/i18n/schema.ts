@@ -290,6 +290,8 @@ export interface ComponentsToastTranslations {
   noTargetAtTileMessage: string;
   genericErrorTitle: string;
   genericErrorMessage: string;
+  autoPathEnemyDetectedTitle: string;
+  autoPathEnemyDetectedMessage: string;
   closeLabel: string;
 }
 

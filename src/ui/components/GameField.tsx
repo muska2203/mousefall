@@ -37,7 +37,9 @@ interface Props {
   onZoomDelta: (delta: number) => void;
   onMouseMove?: (pos: {x: number; y: number}) => void;
   onMouseClick?: (pos: {x: number; y: number}) => void;
+  onMouseDown?: (pos: {x: number; y: number}, button: number) => void;
   onMouseMoveScreen?: (pos: {screenX: number; screenY: number}) => void;
+  onCameraHoverMove?: (tile: {x: number; y: number}, screen: {screenX: number; screenY: number}) => void;
   onMouseLeave?: () => void;
   hotbarSize?: number;
   hotbarItems?: HotbarItemViewModel[];
@@ -52,7 +54,9 @@ export function GameField({
   onZoomDelta,
   onMouseMove,
   onMouseClick,
+  onMouseDown,
   onMouseMoveScreen,
+  onCameraHoverMove,
   onMouseLeave,
   hotbarSize = 10,
   hotbarItems,
@@ -70,6 +74,13 @@ export function GameField({
   const sequencerRef = useRef<AnimationSequencer | null>(null);
   const inputRef = useRef(renderInput);
   const onCompleteRef = useRef(onAnimationsComplete);
+  const onMouseMoveRef = useRef(onMouseMove);
+  const lastMouseRef = useRef<{x: number; y: number; over: boolean}>({x: 0, y: 0, over: false});
+  const lastSentTileRef = useRef<{x: number; y: number} | null>(null);
+  const removeHoverTickerRef = useRef<(() => void) | null>(null);
+
+  // Синхронизируем ref callbacks для использования в ticker'е без пересоздания эффектов
+  onMouseMoveRef.current = onMouseMove;
 
   // Синхронизируем ref'ы для использования в ResizeObserver и callbacks
   inputRef.current = renderInput;
@@ -100,6 +111,29 @@ export function GameField({
       renderer.setTicker(pixi.app.ticker);
       pixi.app.stage.addChild(renderer.root);
       pixi.app.stage.addChild(renderer.textLayer);
+
+      // Пересчитываем ховер каждый кадр, пока мышь над полем. Если камера
+      // сдвинулась (с анимацией или мгновенно), тайл под курсором в мировых
+      // координатах изменится, и мы сообщим об этом UI. Сравнение с
+      // lastSentTileRef предотвращает лишние вызовы, когда камера стоит на месте.
+      const recomputeHoverOnTick = () => {
+        if (!lastMouseRef.current.over) return;
+
+        const { x: tileX, y: tileY } = renderer.screenToWorld(
+          lastMouseRef.current.x,
+          lastMouseRef.current.y,
+        );
+        const prev = lastSentTileRef.current;
+        if (!prev || prev.x !== tileX || prev.y !== tileY) {
+          lastSentTileRef.current = { x: tileX, y: tileY };
+          onCameraHoverMove?.(
+            { x: tileX, y: tileY },
+            { screenX: lastMouseRef.current.x, screenY: lastMouseRef.current.y },
+          );
+        }
+      };
+      pixi.app.ticker.add(recomputeHoverOnTick);
+      removeHoverTickerRef.current = () => pixi.app.ticker.remove(recomputeHoverOnTick);
 
       // Создаём AnimationSequencer
       const executors = [
@@ -152,6 +186,8 @@ export function GameField({
 
     return () => {
       cancelled = true;
+      removeHoverTickerRef.current?.();
+      removeHoverTickerRef.current = null;
       ro?.disconnect();
       sequencerRef.current?.cancelAll();
       if (rendererRef.current && pixiRef.current) {
@@ -244,13 +280,17 @@ export function GameField({
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
+      lastMouseRef.current = { x: mouseX, y: mouseY, over: true };
 
       const { x: tileX, y: tileY } = rendererRef.current.screenToWorld(mouseX, mouseY);
+      lastSentTileRef.current = { x: tileX, y: tileY };
       onMouseMove?.({ x: tileX, y: tileY });
       onMouseMoveScreen?.({ screenX: e.clientX, screenY: e.clientY });
     };
 
     const handleMouseLeave = () => {
+      lastMouseRef.current.over = false;
+      lastSentTileRef.current = null;
       onMouseLeave?.();
     };
 
@@ -265,15 +305,36 @@ export function GameField({
       onMouseClick?.({ x: tileX, y: tileY });
     };
 
+    // Отмена автопути по любому нажатию мыши должна срабатывать даже во время
+    // анимаций, чтобы игрок мог прервать committed-путь.
+    const handleMouseDown = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      if (!rendererRef.current) return;
+      const { x: tileX, y: tileY } = rendererRef.current.screenToWorld(mouseX, mouseY);
+      onMouseDown?.({ x: tileX, y: tileY }, e.button);
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      // Правая кнопка отменяет автопуть и не открывает контекстное меню браузера.
+      e.preventDefault();
+    };
+
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('click', handleClick);
+    container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('contextmenu', handleContextMenu);
     container.addEventListener('mouseleave', handleMouseLeave);
     return () => {
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('click', handleClick);
+      container.removeEventListener('mousedown', handleMouseDown);
+      container.removeEventListener('contextmenu', handleContextMenu);
       container.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [onMouseMove, onMouseClick]);
+  }, [onMouseMove, onMouseClick, onMouseDown]);
 
   return (
     <Panel title={t('gameField.floorTitle', { floor })} fill>

@@ -380,6 +380,9 @@ export type PlayerStatsSnapshot = {
   critMultiplier: number;
 };
 
+/** Фильтр сущностей для query-методов Simulation. */
+export type EntityFilter = (entity: Entity) => boolean;
+
 export type Simulation = {
   dispatch(action: GameAction): SimulationResult;
 
@@ -438,6 +441,19 @@ export type Simulation = {
 
   /** Возвращает записи урона оружия с типами. */
   getWeaponDamageEntries(player: PlayerEntity, weapon: ItemTemplate | null): Array<{ damage: number; damageType: import("@simulation/core-types.ts").DamageType }>;
+
+  /** Проверяет, может ли игрок переместиться на указанный тайл с учётом видимости.
+   *  Невидимые объекты не блокируют путь. */
+  isTileWalkableForPlayer(pos: Position): boolean;
+
+  /** Ищет кратчайший путь для игрока от start до target. */
+  findPathForPlayer(start: Position, target: Position): Position[] | null;
+
+  /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
+  findEntityAt(pos: Position, filter?: EntityFilter): Entity | null;
+
+  /** Возвращает все сущности на тайле, удовлетворяющие фильтру. */
+  findEntitiesAt(pos: Position, filter?: EntityFilter): Entity[];
 };
 
 export type ActionPreview = {
