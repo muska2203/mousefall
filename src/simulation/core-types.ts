@@ -197,6 +197,7 @@ export type GameAction =
   | UseItemAction
   | OpenDoorAction
   | CloseDoorAction
+  | InteractAction
   | DebugAddItemAction
   | DebugSpawnEntityAction
 ;
@@ -270,6 +271,12 @@ export type CloseDoorAction = {
   type: 'CLOSE_DOOR';
   entityId: EntityId;
   targetPosition: Position;
+};
+
+export type InteractAction = {
+  type: 'INTERACT';
+  entityId: EntityId;
+  targetId: EntityId;
 };
 
 export type DebugAddItemAction = {

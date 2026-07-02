@@ -41,6 +41,7 @@ function makeDoor(): DoorEntity {
     x: 0,
     y: 0,
     blocksMovement: true,
+    interactionKind: 'door',
     displayName: 'Door',
     templateId: 'wooden_door',
     hp: 10,

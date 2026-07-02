@@ -237,6 +237,7 @@ export function createStairs(
     displayName: templateId,
     templateId,
     blocksMovement: false,
+    interactionKind: 'stairs',
   };
 }
 
@@ -250,6 +251,7 @@ export function createDoor(state: GameState, templateId: string, x: number, y: n
     displayName: templateId,
     templateId,
     blocksMovement: true,
+    interactionKind: 'door',
     isOpen: false,
     hp: template.maxHp,
     maxHp: template.maxHp,

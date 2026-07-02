@@ -228,16 +228,25 @@ export interface ItemEntity extends BaseEntity, TemplateIdHolder {
   item: InventoryItem;
 }
 
+/** Виды интерактивных объектов. Расширяется по мере добавления новых типов взаимодействий. */
+export type InteractionKind =
+  | 'door'
+  | 'stairs'
+  | 'item'
+  | 'lever';
+
 /** Лестница — объект перехода между этажами. */
 export interface StairsEntity extends BaseEntity, TemplateIdHolder {
   type: 'stairs';
   blocksMovement: false;
+  interactionKind: 'stairs';
 }
 
 /** Дверь — объект, который может быть открыт или закрыт. Может быть разрушена атаками и получать статус-эффекты. */
 export interface DoorEntity extends BaseEntity, Attackable, StatusEffectHolder, TemplateIdHolder {
   type: 'door';
   blocksMovement: boolean;
+  interactionKind: 'door';
   /** true — дверь открыта, проходима и не блокирует обзор. */
   isOpen: boolean;
 }

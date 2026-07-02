@@ -1,4 +1,5 @@
 {
   "id": "stairs_down",
+  "interactionKind": "stairs",
   "renderScale": 1
 }

@@ -31,6 +31,7 @@ import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
 import {openDoorAction, closeDoorAction} from "@simulation/systems/actions/door-action.ts";
+import {interactAction} from "@simulation/systems/actions/interact-action.ts";
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
@@ -798,6 +799,7 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
     registry.register('USE_ITEM', useItemAction);
     registry.register('OPEN_DOOR', openDoorAction);
     registry.register('CLOSE_DOOR', closeDoorAction);
+    registry.register('INTERACT', interactAction);
     registry.register('DEBUG_ADD_ITEM', createDebugAddItemActionHandler(debugContext));
     registry.register('DEBUG_SPAWN_ENTITY', createDebugSpawnEntityActionHandler(debugContext));
     return registry;

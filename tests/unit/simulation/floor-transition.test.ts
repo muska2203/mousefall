@@ -15,6 +15,7 @@ function makeStairs(overrides: Partial<StairsEntity> & { templateId: 'stairs_dow
     id: `stairs_${overrides.templateId}_${overrides.x}_${overrides.y}`,
     type: 'stairs',
     blocksMovement: false,
+    interactionKind: 'stairs',
     displayName: 'Лестница',
     ...overrides,
   };

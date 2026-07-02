@@ -37,6 +37,7 @@ export class DefaultActionPointCostResolver
       case 'ASCEND':
       case 'OPEN_DOOR':
       case 'CLOSE_DOOR':
+      case 'INTERACT':
         return 1;
 
       case 'ATTACK':
