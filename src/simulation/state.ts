@@ -26,6 +26,7 @@ import type {
   DoorEntity,
   Position,
   TileType,
+  EntityInteractionKind,
 } from './types';
 import type { MapParams } from '@content/schemas';
 import {createRNG} from '../utils/rng';
@@ -175,7 +176,7 @@ export const TARGET_PRIORITY: Record<EntityType, number> = {
   player: 100,
   enemy: 90,
   door: 50,
-  item: 0,
+  floor_item_container: 0,
   stairs: 0,
 };
 
@@ -262,4 +263,28 @@ export function nextEntityId(state: GameState, prefix: string): EntityId {
  */
 export function isCombatEntity(e: Entity): e is PlayerEntity | EnemyEntity {
   return e.type === 'player' || e.type === 'enemy';
+}
+
+/**
+ * Type guard: проверяет, что сущность предоставляет взаимодействие.
+ */
+export function hasInteractionKind(entity: Entity): entity is Entity & { interactionKind: EntityInteractionKind } {
+  return 'interactionKind' in entity;
+}
+
+/**
+ * Возвращает все интерактивные сущности в радиусе от актора.
+ * Радиус измеряется по шахматному расстоянию (Chebyshev distance).
+ */
+export function findInteractableEntitiesAround(
+  state: GameState,
+  actor: Entity,
+  radius: number,
+): Entity[] {
+  return Array.from(state.entities.values()).filter((entity) => {
+    if (!hasInteractionKind(entity)) return false;
+    const dx = Math.abs(entity.x - actor.x);
+    const dy = Math.abs(entity.y - actor.y);
+    return Math.max(dx, dy) <= radius;
+  });
 }

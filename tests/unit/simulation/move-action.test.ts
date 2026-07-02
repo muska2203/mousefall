@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {
-    makeEnemy, makeFloorItem,
+    makeEnemy, makeFloorItemContainer,
     makeGameState,
     makePlayer,
     makeStateWithEnemy, makeStateWithEntity,
@@ -59,7 +59,7 @@ describe('moveEntity — player movement', () => {
 
     it('does move into movable entity', () => {
         const player = makePlayer({ x: 1, y: 1 });
-        const entity = makeFloorItem({ x: 2, y: 1 });
+        const entity = makeFloorItemContainer({ x: 2, y: 1 });
         const state = makeStateWithPlayerAndEntity(player, entity);
 
         const validationResult = moveEntity.validate(state, {type: 'MOVE', entityId: player.id, dx: 1, dy: 0});

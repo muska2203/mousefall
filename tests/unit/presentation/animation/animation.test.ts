@@ -123,6 +123,7 @@ describe('buildAnimationTree', () => {
       type: 'ITEM_DROPPED',
       dropperEntityId: 'enemy1',
       itemInstanceId: 'item_1',
+      containerId: 'floor_item_container_1',
       templateId: 'health_potion',
       position: { x: 3, y: 3 },
       from: { x: 2, y: 2 },
@@ -134,7 +135,7 @@ describe('buildAnimationTree', () => {
     expect(tree[0]!.nodes).toHaveLength(1);
     const step = tree[0]!.nodes[0]!.step as any;
     expect(step.type).toBe('ITEM_DROP');
-    expect(step.itemId).toBe('item_1');
+    expect(step.itemId).toBe('floor_item_container_1');
     expect(step.position).toEqual({ x: 3, y: 3 });
     expect(step.from).toEqual({ x: 2, y: 2 });
     expect(step.templateId).toBe('health_potion');

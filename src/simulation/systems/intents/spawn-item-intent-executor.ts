@@ -10,7 +10,8 @@ import type { SpawnItemIntent, IntentExecutor } from "@simulation/systems/intent
 import type { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
 import { findFreeTileNear } from "@simulation/systems/loot-spawn.ts";
 import { tryGetItem } from "@content/registry";
-import { createItemEntity } from "@simulation/systems/item-entity-factory.ts";
+import { createFloorItemContainer } from "@simulation/systems/item-entity-factory.ts";
+import { createInventoryItem } from "@simulation/systems/inventory-factory.ts";
 
 export const executeSpawnItemIntent: IntentExecutor<SpawnItemIntent> = (
     state: GameState,
@@ -23,16 +24,18 @@ export const executeSpawnItemIntent: IntentExecutor<SpawnItemIntent> = (
 
     const spawnPos = findFreeTileNear(state, intent.position);
 
-    const item = createItemEntity(state, intent.templateId, spawnPos.x, spawnPos.y);
+    const inventoryItem = createInventoryItem(state, intent.templateId);
+    const container = createFloorItemContainer(state, inventoryItem, spawnPos);
 
-    state.entities.set(item.id, item);
+    state.entities.set(container.id, container);
 
     const event = {
         type: 'ITEM_DROPPED' as const,
         dropperEntityId: intent.sourceEntityId,
-        itemInstanceId: item.id,
+        itemInstanceId: inventoryItem.instanceId,
+        containerId: container.id,
         templateId: intent.templateId,
-        position: { x: item.x, y: item.y },
+        position: { x: container.x, y: container.y },
         from: { x: intent.position.x, y: intent.position.y },
     };
 

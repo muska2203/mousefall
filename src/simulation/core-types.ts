@@ -107,6 +107,9 @@ export type DamageType =
   | 'poison'
   | 'frost';
 
+/** Сторона, чей ход активен в текущий момент. */
+export type TurnSide = 'PLAYER' | 'ENVIRONMENT' | 'STATUS_TICK';
+
 export type StatusEffect = {
   type: StatusEffectType;
   /** Оставшиеся ходы. */
@@ -188,15 +191,10 @@ export type GameAction =
   | MoveAction
   | AttackAction
   | WaitAction
-  | DescendAction
-  | AscendAction
   | UseAbilityAction
-  | PickUpAction
   | EquipAction
   | UnequipAction
   | UseItemAction
-  | OpenDoorAction
-  | CloseDoorAction
   | InteractAction
   | DebugAddItemAction
   | DebugSpawnEntityAction
@@ -221,26 +219,11 @@ export type WaitAction = {
   entityId: EntityId;
 };
 
-export type DescendAction = {
-  type: 'DESCEND';
-  entityId: EntityId;
-};
-
-export type AscendAction = {
-  type: 'ASCEND';
-  entityId: EntityId;
-};
-
 export type UseAbilityAction = {
   type: 'USE_ABILITY';
   entityId: EntityId;
   abilityId: string;
   targets: Position[];
-};
-
-export type PickUpAction = {
-  type: 'PICKUP';
-  entityId: EntityId;
 };
 
 export type EquipAction = {
@@ -259,18 +242,6 @@ export type UseItemAction = {
   type: 'USE_ITEM';
   entityId: EntityId;
   itemInstanceId: ItemInstanceId;
-};
-
-export type OpenDoorAction = {
-  type: 'OPEN_DOOR';
-  entityId: EntityId;
-  targetPosition: Position;
-};
-
-export type CloseDoorAction = {
-  type: 'CLOSE_DOOR';
-  entityId: EntityId;
-  targetPosition: Position;
 };
 
 export type InteractAction = {
@@ -328,13 +299,14 @@ export type Intent =
   | RemoveItemIntent
   | OpenDoorIntent
   | CloseDoorIntent
+  | FloorTransitionIntent
   | BumpIntent
-  | TriggerStairExitIntent
   | SkipStunnedTurnIntent
   | RestoreApIntent
   | TickCooldownIntent
   | BeginTurnIntent
-  | CleanupDeadEntitiesIntent;
+  | CleanupDeadEntitiesIntent
+  | ApplyFogEventsIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -365,8 +337,9 @@ export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
 export type CloseDoorIntent = { type: 'CLOSE_DOOR'; entityId: EntityId; targetPosition: Position };
+export type FloorTransitionIntent = { type: 'FLOOR_TRANSITION'; entityId: EntityId; direction: 'down' | 'up' };
 export type BumpIntent = { type: 'BUMP'; entityId: EntityId; position: Position; dx: number; dy: number };
-export type TriggerStairExitIntent = { type: 'TRIGGER_STAIR_EXIT'; direction: 'down' | 'up' };
+export type ApplyFogEventsIntent = { type: 'APPLY_FOG_EVENTS'; events: FogUpdatedEvent[] };
 export type SkipStunnedTurnIntent = { type: 'SKIP_STUNNED_TURN'; entityId: EntityId };
 export type RestoreApIntent = { type: 'RESTORE_AP'; entityId: EntityId };
 export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; abilityId: string };
@@ -389,7 +362,6 @@ export type GameEvent =
   | ItemUsedEvent
   | DoorOpenedEvent
   | DoorClosedEvent
-  | StairExitTriggeredEvent
   | FloorChangedEvent
   | MapChangedEvent
   | EntitiesReplacedEvent
@@ -433,7 +405,17 @@ export type EntityMissedEvent = { type: 'ENTITY_MISSED'; attackerId: EntityId; t
 
 export type ItemPickedUpEvent = { type: 'ITEM_PICKED_UP'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 
-export type ItemDroppedEvent = { type: 'ITEM_DROPPED'; dropperEntityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string; position: Position; from: Position };
+export type ItemDroppedEvent = {
+  type: 'ITEM_DROPPED';
+  dropperEntityId: EntityId;
+  /** ID инвентарного экземпляра предмета (консистентно с ITEM_PICKED_UP). */
+  itemInstanceId: ItemInstanceId;
+  /** ID сущности-контейнера на полу (используется анимацией и renderer'ом). */
+  containerId: EntityId;
+  templateId: string;
+  position: Position;
+  from: Position;
+};
 
 export type ItemUsedEvent = { type: 'ITEM_USED'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 
@@ -441,9 +423,34 @@ export type DoorOpenedEvent = { type: 'DOOR_OPENED'; position: Position };
 
 export type DoorClosedEvent = { type: 'DOOR_CLOSED'; position: Position };
 
-export type StairExitTriggeredEvent = { type: 'STAIR_EXIT_TRIGGERED'; direction: 'down' | 'up' };
+export type FloorChangedEvent = {
+  type: 'FLOOR_CHANGED';
+  from: number;
+  to: number;
+  plan: FloorTransitionPlan;
+};
 
-export type FloorChangedEvent = { type: 'FLOOR_CHANGED'; from: number; to: number };
+/** План перехода между этажами. Хранится в событии FLOOR_CHANGED для последующих реакций. */
+export type FloorTransitionPlan = {
+  /** Направление перехода. */
+  direction: 'down' | 'up';
+  /** Этаж, с которого уходим. */
+  from: number;
+  /** Этаж, на который приходим. */
+  to: number;
+  /** Карта целевого этажа. */
+  map: GameMap;
+  /** Сущности целевого этажа (включая игрока). */
+  entities: Map<EntityId, unknown>;
+  /** Позиция игрока после перехода. */
+  playerPosition: Position;
+  /** Состояние хода после перехода. */
+  turn: { activeSide: TurnSide; round: number };
+  /** Сетка исследованных клеток целевого этажа. */
+  explored: boolean[][];
+  /** События FOV, полученные после пересчёта на целевом состоянии. */
+  fovEvents: GameEvent[];
+};
 
 export type MapChangedEvent = { type: 'MAP_CHANGED'; width: number; height: number };
 

@@ -1,36 +1,33 @@
 /**
- * Фабрика создания ItemEntity — предмета на игровом поле.
+ * Фабрики создания сущностей предметов на игровом поле.
  *
- * Инкапсулирует инвариант: entity.id === item.instanceId.
- * Используется при генерации карты и спавне лута.
+ * `createFloorItemContainer` — контейнер предмета на полу, используемый в системе взаимодействий.
  */
 
-import type { GameState, ItemEntity } from '@simulation/types';
+import type { GameState, FloorItemContainerEntity, InventoryItem, Position } from '@simulation/types';
 import { getItem } from '@content/registry';
+import { nextEntityId } from '@simulation/state';
 import { createInventoryItem } from './inventory-factory';
 
 /**
- * Создаёт ItemEntity в указанной позиции.
+ * Создаёт FloorItemContainerEntity в указанной позиции.
  *
- * Гарантирует, что id сущности совпадает с instanceId инвентарного предмета.
+ * id контейнера генерируется отдельно от instanceId предмета.
  */
-export function createItemEntity(
+export function createFloorItemContainer(
   state: GameState,
-  templateId: string,
-  x: number,
-  y: number,
-): ItemEntity {
-  const template = getItem(templateId);
-  const inventoryItem = createInventoryItem(state, templateId);
-
+  item: InventoryItem,
+  position: Position,
+): FloorItemContainerEntity {
   return {
-    id: inventoryItem.instanceId,
-    type: 'item',
-    templateId,
-    x,
-    y,
-    displayName: template.id,
+    id: nextEntityId(state, 'floor_item_container'),
+    type: 'floor_item_container',
+    x: position.x,
+    y: position.y,
+    displayName: item.templateId,
+    interactionKind: 'item',
+    item,
     blocksMovement: false,
-    item: inventoryItem,
+    templateId: item.templateId,
   };
 }

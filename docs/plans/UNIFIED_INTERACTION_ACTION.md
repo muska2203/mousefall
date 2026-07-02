@@ -1,6 +1,6 @@
 # План: единый action взаимодействия с объектами
 
-> Статус: черновик плана, требует детальной проработки внедрения.
+> Статус: **выполнено**.
 >
 > Цель: объединить `PICKUP`, `OPEN_DOOR`, `CLOSE_DOOR`, `DESCEND`, `ASCEND` в один универсальный action `INTERACT`, чтобы упростить UI, AI и добавление новых интерактивных объектов.
 
@@ -226,21 +226,23 @@ UI получает готовый `labelKey` и вызывает `t(labelKey)`.
 
 ## 6. Пошаговый план миграции
 
-1. **Добавить `INTERACT` action** в `src/simulation/core-types.ts`.
-2. **Добавить `FLOOR_TRANSITION` intent** в `src/simulation/core-types.ts`.
-3. **Добавить `interactionKind` в сущности** дверей, лестниц и контейнеров предметов на полу.
-4. **Ввести сущность `FloorItemContainerEntity`** и заменить текущий `ItemEntity` на полу на контейнер.
-5. **Создать `resolveInteraction`** в `src/simulation/systems/interactions/`.
-6. **Создать `interact-action.ts` handler** и зарегистрировать его в `src/simulation/simulation.ts`.
-7. **Создать `executeFloorTransitionIntent`** и зарегистрировать его в `src/simulation/systems/intents/execute-intent.ts`.
-8. **Обновить `action-cost-resolver.ts`**: `INTERACT` стоит 1 AP.
-9. **Обновить `GameSession.buildInteractionOptions`** для генерации `INTERACT` options.
-10. **Обновить `AutoPathController`** для использования `INTERACT` вместо специфических action'ов. Открытые двери проходятся через `MOVE`, а не `INTERACT`.
-11. **Обновить `GameSession.moveOrAttack`** — шаг в закрытую дверь должен превращаться в `INTERACT`.
-12. **Удалить `stairsTransitionReaction`, `TRIGGER_STAIR_EXIT` intent и `STAIR_EXIT_TRIGGERED` event**.
-13. **Добавить i18n-ключи** для всех `interactionId`.
-14. **Написать тесты** для `resolveInteraction`, `interact-action`, `executeFloorTransitionIntent`, контейнера предметов.
-15. **Постепенно удалить старые action types** (`PICKUP`, `OPEN_DOOR`, `CLOSE_DOOR`, `DESCEND`, `ASCEND`) после полного перехода, но **оставить внутренние intent types** `OPEN_DOOR`, `CLOSE_DOOR`, `PICK_UP` для `Dash skill` и других внутренних механизмов.
+Все пункты выполнены:
+
+1. ✅ **Добавить `INTERACT` action** в `src/simulation/core-types.ts`.
+2. ✅ **Добавить `FLOOR_TRANSITION` intent** в `src/simulation/core-types.ts`.
+3. ✅ **Добавить `interactionKind` в сущности** дверей, лестниц и контейнеров предметов на полу.
+4. ✅ **Ввести сущность `FloorItemContainerEntity`** и заменить текущий `ItemEntity` на полу на контейнер.
+5. ✅ **Создать `resolveInteraction`** в `src/simulation/systems/interactions/`.
+6. ✅ **Создать `interact-action.ts` handler** и зарегистрировать его в `src/simulation/simulation.ts`.
+7. ✅ **Создать `executeFloorTransitionIntent`** и зарегистрировать его в `src/simulation/systems/intents/execute-intent.ts`.
+8. ✅ **Обновить `action-cost-resolver.ts`**: `INTERACT` стоит 1 AP.
+9. ✅ **Обновить `GameSession.buildInteractionOptions`** для генерации `INTERACT` options.
+10. ✅ **Обновить `AutoPathController`** для использования `INTERACT` вместо специфических action'ов. Открытые двери проходятся через `MOVE`, а не `INTERACT`.
+11. ✅ **Обновить `GameSession.moveOrAttack`** — шаг в закрытую дверь превращается в `INTERACT`.
+12. ✅ **Удалить `stairsTransitionReaction`, `TRIGGER_STAIR_EXIT` intent и `STAIR_EXIT_TRIGGERED` event**.
+13. ✅ **Добавить i18n-ключи** для всех `interactionId`.
+14. ✅ **Написать тесты** для `resolveInteraction`, `interact-action`, `executeFloorTransitionIntent`, контейнера предметов.
+15. ✅ **Удалить старые action types** (`PICKUP`, `OPEN_DOOR`, `CLOSE_DOOR`, `DESCEND`, `ASCEND`) после полного перехода. Внутренние intent types `OPEN_DOOR`, `CLOSE_DOOR`, `PICK_UP`, `FLOOR_TRANSITION` оставлены для `INTERACT` и `Dash skill`.
 
 ---
 
@@ -508,6 +510,6 @@ export const executeFloorTransitionIntent: IntentExecutor<FloorTransitionIntent>
 
 ---
 
-## 12. Следующий шаг
+## 12. Завершение
 
-Начать реализацию с этапа 1: добавить `INTERACT` action параллельно существующим, не удаляя их.
+План полностью реализован. Все объекты взаимодействия (двери, предметы на полу, лестницы) используют единый action `INTERACT`. Старые action types удалены, внутренние intent types сохранены. См. детальную декомпозицию в [`docs/plans/unified-interaction-action/INDEX.md`](./unified-interaction-action/INDEX.md).

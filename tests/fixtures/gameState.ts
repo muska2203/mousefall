@@ -15,7 +15,7 @@ import type {
   Entity,
   EntityId,
   GameState,
-  ItemEntity,
+  FloorItemContainerEntity,
   PlayerEntity,
   DoorEntity,
   StairsEntity,
@@ -127,17 +127,21 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
   };
 }
 
-export function makeFloorItem(overrides: Partial<ItemEntity> = {}): ItemEntity {
+export function makeFloorItemContainer(
+  overrides: Partial<FloorItemContainerEntity> = {},
+): FloorItemContainerEntity {
+  const instanceId = overrides.item?.instanceId ?? 'floor_item_test_1';
   return {
-    id: 'item_test_1',
-    type: 'item',
+    id: 'floor_container_test_1',
+    type: 'floor_item_container',
     displayName: 'Зелье здоровья',
     x: 4,
     y: 4,
     templateId: 'health_potion',
     blocksMovement: false,
+    interactionKind: 'item',
     item: {
-      instanceId: 'item_test_1',
+      instanceId,
       templateId: 'health_potion',
       quantity: 1,
       grantedAbilities: [],
@@ -167,14 +171,17 @@ export function makeDoor(overrides: Partial<DoorEntity> = {}): DoorEntity {
 }
 
 export function makeStairs(
-  templateId: 'stairs_down' | 'stairs_up',
+  templateId: 'stairs_down' | 'stairs_up' | string,
   overrides: Partial<StairsEntity> = {},
 ): StairsEntity {
+  const direction: 'up' | 'down' =
+    overrides.direction ?? (templateId === 'stairs_up' ? 'up' : 'down');
   return {
     id: `stairs_${templateId}_${overrides.x ?? 5}_${overrides.y ?? 5}`,
     type: 'stairs',
     displayName: 'Лестница',
     templateId,
+    direction,
     blocksMovement: false,
     interactionKind: 'stairs',
     x: 5,
@@ -273,7 +280,7 @@ export function makeStateWithEntity(entity: Entity): GameState {
  */
 export function makeStateWithItem(): GameState {
   const player = makePlayer({ x: 5, y: 5 });
-  const itemEntity = makeFloorItem({ x: 5, y: 5 });
+  const itemEntity = makeFloorItemContainer({ x: 5, y: 5 });
   return makeGameState({
     player: player,
     entities: new Map<EntityId, Entity>([[player.id, player], [itemEntity.id, itemEntity]]),

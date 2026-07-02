@@ -14,10 +14,7 @@
  */
 
 import { t } from '@i18n/t';
-import type {GameState, Simulation, SimulationResult, GameEvent, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect} from '@simulation/types';
-
-import type {ExecutionNode} from '@simulation/systems/actions/types';
-import type {GameAction} from '@simulation/systems/actions/types';
+import type {GameState, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, ExecutionNode, GameAction, FloorItemContainerEntity} from '@simulation/types';
 import {GameSimulation} from '@simulation/simulation';
 import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
@@ -55,6 +52,7 @@ import {AnimationState} from './animationState';
 import {TargetingController} from './targetingController';
 import {AutoPathController, type AutoPathQueries, type AutoPathStepResult} from './autoPathController';
 import {isTileExplored, findPathTowards} from './pathfinding';
+import {getInteractionHintKey, getInteractionPriority} from './interactionUtils';
 import type {AutoPathTarget, AutoPathTargetKind} from './pathfinding';
 import {sortStatusEffects} from './statusSorting';
 import {resolveAIMode} from './primaryStatus';
@@ -359,12 +357,12 @@ export class GameSession {
     ];
 
     const itemsOnFloor = Array.from(state.entities.values())
-      .filter(e => e.type === 'item')
+      .filter((e): e is FloorItemContainerEntity => e.type === 'floor_item_container')
       .map(e => ({
         id: e.id,
         x: e.x,
         y: e.y,
-        templateId: e.templateId,
+        templateId: e.item.templateId,
       }));
 
     // Предвычисляем пути к спрайтам дверей, чтобы UI не обращался к Content-реестру напрямую.
@@ -513,120 +511,41 @@ export class GameSession {
     if (!this.simulation) return [];
     const options: InteractionOption[] = [];
     const player = state.player;
-    const px = player.x;
-    const py = player.y;
 
-    const canPerform = (action: GameAction): boolean => {
-      const preview = this.simulation!.preview(action);
-      if (!preview.valid) return false;
-      const cost = this.simulation!.getActionCost(action);
-      return player.ap >= cost;
-    };
+    for (const entity of this.simulation.findInteractableEntitiesAround(player, 1)) {
+      const interaction = this.simulation.resolveInteraction(entity, player);
+      if (!interaction) continue;
 
-    // Предметы на клетке игрока — одна опция на все предметы (PICKUP поднимает первый).
-    const pickupAction: GameAction = { type: 'PICKUP', entityId: player.id };
-    if (canPerform(pickupAction)) {
+      const action: GameAction = {
+        type: 'INTERACT',
+        entityId: player.id,
+        targetId: entity.id,
+      };
+
+      const preview = this.simulation.preview(action);
+      if (!preview.valid) continue;
+
+      const cost = this.simulation.getActionCost(action);
+      if (player.ap < cost) continue;
+
       options.push({
-        kind: 'pickup',
-        action: pickupAction,
-        targetPosition: { x: px, y: py },
-        labelKey: 'components.interactionHint.pickup',
-        priority: 0,
+        interactionId: interaction.interactionId,
+        action,
+        targetPosition: { x: entity.x, y: entity.y },
+        labelKey: getInteractionHintKey(interaction.interactionId),
+        priority: getInteractionPriority(interaction.interactionId),
       });
-    }
-
-    // Лестница вниз.
-    const stairsDown = this.simulation!.findEntityAt(
-      {x: px, y: py},
-      (e) => e.type === 'stairs' && e.templateId === 'stairs_down',
-    );
-    if (stairsDown) {
-      const descendAction: GameAction = { type: 'DESCEND', entityId: player.id };
-      if (canPerform(descendAction)) {
-        options.push({
-          kind: 'descend',
-          action: descendAction,
-          targetPosition: { x: stairsDown.x, y: stairsDown.y },
-          labelKey: 'components.interactionHint.descend',
-          priority: 1,
-        });
-      }
-    }
-
-    // Лестница вверх.
-    const stairsUp = this.simulation!.findEntityAt(
-      {x: px, y: py},
-      (e) => e.type === 'stairs' && e.templateId === 'stairs_up',
-    );
-    if (stairsUp) {
-      const ascendAction: GameAction = { type: 'ASCEND', entityId: player.id };
-      if (canPerform(ascendAction)) {
-        options.push({
-          kind: 'ascend',
-          action: ascendAction,
-          targetPosition: { x: stairsUp.x, y: stairsUp.y },
-          labelKey: 'components.interactionHint.ascend',
-          priority: 1,
-        });
-      }
-    }
-
-    // Двери на соседних клетках.
-    const neighborOffsets = [
-      { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
-      { dx: 1, dy: 1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 },
-    ];
-    for (const offset of neighborOffsets) {
-      const x = px + offset.dx;
-      const y = py + offset.dy;
-      const door = this.simulation!.findEntityAt(
-        {x, y},
-        (e) => e.type === 'door' && e.isAlive !== false,
-      );
-      if (!door || door.type !== 'door') continue;
-
-      if (door.isOpen) {
-        const closeAction: GameAction = {
-          type: 'CLOSE_DOOR',
-          entityId: player.id,
-          targetPosition: { x, y },
-        };
-        if (canPerform(closeAction)) {
-          options.push({
-            kind: 'closeDoor',
-            action: closeAction,
-            targetPosition: { x, y },
-            labelKey: 'components.interactionHint.closeDoor',
-            priority: 2,
-          });
-        }
-      } else {
-        const openAction: GameAction = {
-          type: 'OPEN_DOOR',
-          entityId: player.id,
-          targetPosition: { x, y },
-        };
-        if (canPerform(openAction)) {
-          options.push({
-            kind: 'openDoor',
-            action: openAction,
-            targetPosition: { x, y },
-            labelKey: 'components.interactionHint.openDoor',
-            priority: 2,
-          });
-        }
-      }
     }
 
     return options.sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority;
-      return a.kind.localeCompare(b.kind);
+      return a.interactionId.localeCompare(b.interactionId);
     });
   }
 
   /** Сбросить выбранный индекс, если набор опций или позиция игрока изменились. */
   private maybeResetInteractionIndex(options: InteractionOption[], player: Readonly<GameState>['player']): void {
-    const key = `${player.x},${player.y}|` + options.map(o => `${o.kind}:${o.targetPosition.x}:${o.targetPosition.y}`).join('|');
+    const key = `${player.x},${player.y}|` + options.map(o => `${o.interactionId}:${o.targetPosition.x}:${o.targetPosition.y}`).join('|');
     if (key !== this.lastInteractionOptionsKey) {
       this.lastInteractionOptionsKey = key;
       this.selectedInteractionIndex = 0;
@@ -806,7 +725,7 @@ export class GameSession {
       if (entity.type === 'door' && !door) {
         door = entity;
       }
-      if (entity.type === 'item') {
+      if (entity.type === 'floor_item_container') {
         item = entity;
       }
       if (entity.type === 'stairs' && !stairs) {
@@ -824,11 +743,12 @@ export class GameSession {
       return { kind: 'door', data: mapDoorToPopover(door, currentLocale) };
     }
 
-    if (item) {
-      const template = tryGetLocalizedItem(item.item.templateId, currentLocale);
+    if (item && (item.type === 'floor_item_container' || item.type === 'item')) {
+      const inventoryItem = item.item;
+      const template = tryGetLocalizedItem(inventoryItem.templateId, currentLocale);
       if (template) {
         const detail = mapItemTemplateToDetail(template, {
-          stackCount: item.item.quantity,
+          stackCount: inventoryItem.quantity,
           rarity: template.rarity,
         }, currentLocale);
         return { kind: 'item', data: { ...detail, name: template.name, description: template.description } };
@@ -1279,7 +1199,9 @@ export class GameSession {
       return { position: pos, kind: 'interactable', entityId: stairs.id };
     }
 
-    const item = simulation.findEntitiesAt(pos).find((e) => e.type === 'item');
+    const item = simulation.findEntitiesAt(pos).find(
+      (e) => e.type === 'floor_item_container',
+    );
     if (item) {
       return { position: pos, kind: 'interactable', entityId: item.id };
     }
@@ -1349,27 +1271,11 @@ export class GameSession {
       this.logs.append(state, events, this.locale);
       this.logs.logs = this.logs.logs.slice(-30);
 
-      // Проверяем, не обнаружена ли лестница — нужен ли авто-переход
-      const stairTrigger = this.findStairExitTriggered(result);
-      if (stairTrigger) {
-        this.animation.pendingAutoTransition = stairTrigger;
-      }
-
       // Строим дерево анимаций из дерева событий
       const animations = buildAnimationTree(result, state);
       if (animations.length > 0) {
         this.animation.phase = 'animating';
         this.animationBatchId++;
-      } else if (this.animation.pendingAutoTransition) {
-        // Анимаций нет — можно сразу выполнить transition
-        const pending = this.animation.pendingAutoTransition;
-        this.animation.pendingAutoTransition = null;
-        const transitionAction: GameAction =
-          pending.direction === 'down'
-            ? {type: 'DESCEND', entityId: 'player'}
-            : {type: 'ASCEND', entityId: 'player'};
-        this.dispatch(transitionAction);
-        return;
       }
     } else {
       // При неудачном ходе показываем причины отказа и сбрасываем анимации
@@ -1453,13 +1359,13 @@ export class GameSession {
         // Открытая дверь — просто заходим на её клетку.
         action = {type: 'MOVE', entityId: state.player.id, dx, dy};
       } else {
-        // Закрытая дверь — открываем вместо атаки.
+        // Закрытая дверь — взаимодействуем вместо атаки.
         // Сбрасываем удерживаемое направление, чтобы при зажатой клавише
         // персонаж не зашёл на клетку двери автоматически в тот же ход.
         this.dispatch({
-          type: 'OPEN_DOOR',
+          type: 'INTERACT',
           entityId: state.player.id,
-          targetPosition: {x: targetX, y: targetY},
+          targetId: doorAtTarget.id,
         });
         this.clearHeldDirection();
         return;
@@ -1487,18 +1393,6 @@ export class GameSession {
     if (hadAnimations) {
       this.animation.phase = 'idle';
       this.lastResult = null; // сбрасываем анимации, чтобы не воспроизводить повторно
-    }
-
-    // Автоматический переход по лестнице после завершения анимаций
-    if (this.animation.pendingAutoTransition && this.animation.phase === 'idle' && this.mode === 'playing') {
-      const pending = this.animation.pendingAutoTransition;
-      this.animation.pendingAutoTransition = null;
-      const transitionAction: GameAction =
-        pending.direction === 'down'
-          ? {type: 'DESCEND', entityId: 'player'}
-          : {type: 'ASCEND', entityId: 'player'};
-      this.dispatch(transitionAction);
-      return;
     }
 
     // Автопродолжение зафиксированного автопути.
@@ -1857,32 +1751,6 @@ export class GameSession {
   dismissToast(id: string): void {
     this.toasts.remove(id);
     this.notify();
-  }
-
-  /**
-   * Ищет событие STAIR_EXIT_TRIGGERED в дереве ExecutionNode.
-   * Если найдено — возвращает направление для авто-перехода.
-   */
-  private findStairExitTriggered(result: SimulationResult): {direction: 'down' | 'up'} | null {
-    for (const phase of result.phases) {
-      for (const action of phase.actions) {
-        const found = this.findStairExitInNode(action);
-        if (found) return found;
-      }
-    }
-    return null;
-  }
-
-  private findStairExitInNode(node: ExecutionNode): {direction: 'down' | 'up'} | null {
-    const event = node.event as GameEvent;
-    if (event.type === 'STAIR_EXIT_TRIGGERED') {
-      return { direction: event.direction };
-    }
-    for (const child of node.children) {
-      const found = this.findStairExitInNode(child);
-      if (found) return found;
-    }
-    return null;
   }
 
 }

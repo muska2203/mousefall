@@ -36,19 +36,15 @@ export function getInteractionHintKey(interactionId: string): string {
 }
 ```
 
-### 2. Добавить функцию `findInteractableEntitiesAround`
+### 2. Использовать `Simulation.findInteractableEntitiesAround`
 
-Создать хелпер в Presentation (или Simulation, если он нужен и там), который находит все интерактивные сущности вокруг актора:
+Хелпер `findInteractableEntitiesAround` реализован в `@simulation/state` как чистая функция и доступен Presentation через публичный API `Simulation`:
 
 ```ts
-export function findInteractableEntitiesAround(
-  state: GameState,
-  actor: Entity,
-  radius: number,
-): Entity[];
+const interactables = this.simulation!.findInteractableEntitiesAround(player, 1);
 ```
 
-Функция перебирает сущности в радиусе и фильтрует по наличию `interactionKind`.
+Функция перебирает сущности в радиусе Чебышёва и фильтрует по наличию `interactionKind`. Реализация находится в Simulation, потому что хелпер используется как внутри слоя симуляции (например, для AI и вспомогательных query), так и через публичный API Presentation.
 
 ### 3. Переписать `GameSession.buildInteractionOptions`
 

@@ -7,15 +7,7 @@
  * - Стоимость AP не вычисляется здесь — она всегда 1 для `INTERACT`.
  */
 
-import type { GameState, Entity, DoorEntity, StairsEntity, InteractionKind } from '@simulation/types';
-
-/** Описание разрешённого взаимодействия. */
-export type ResolvedInteraction = {
-  /** Идентификатор взаимодействия, используемый Presentation для подсказок и i18n. */
-  interactionId: string;
-  /** true — действие доступно с соседней клетки; false — нужно стоять на той же клетке. */
-  usableFromAdjacent: boolean;
-};
+import type { GameState, Entity, DoorEntity, EntityInteractionKind, ResolvedInteraction } from '@simulation/types';
 
 /**
  * Возвращает разрешённое взаимодействие для целевой сущности от лица актора.
@@ -26,11 +18,21 @@ export function resolveInteraction(
   entity: Entity,
   _actor: Entity,
 ): ResolvedInteraction | null {
+  return resolveInteractionForEntity(entity);
+}
+
+/**
+ * Чистая функция разрешения взаимодействия.
+ * Не зависит от GameState, чтобы её можно было вынести в публичный API Simulation.
+ */
+export function resolveInteractionForEntity(
+  entity: Entity,
+): ResolvedInteraction | null {
   if (!('interactionKind' in entity)) {
     return null;
   }
 
-  const kind = entity.interactionKind as InteractionKind;
+  const kind = entity.interactionKind as EntityInteractionKind;
 
   switch (kind) {
     case 'door': {
@@ -45,13 +47,18 @@ export function resolveInteraction(
     }
 
     case 'stairs': {
-      const stairs = entity as StairsEntity;
-      return stairs.templateId === 'stairs_up'
+      if (entity.type !== 'stairs') {
+        return null;
+      }
+      return entity.direction === 'up'
         ? { interactionId: 'ascend', usableFromAdjacent: false }
         : { interactionId: 'descend', usableFromAdjacent: false };
     }
 
-    // 'item' и 'lever' будут добавлены в следующих блоках.
+    case 'item':
+      return { interactionId: 'pickup', usableFromAdjacent: false };
+
+    // 'lever' будет добавлен в следующих блоках.
     default:
       return null;
   }

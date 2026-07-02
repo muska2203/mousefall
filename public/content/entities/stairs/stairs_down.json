@@ -1,5 +1,6 @@
 {
   "id": "stairs_down",
   "interactionKind": "stairs",
+  "direction": "down",
   "renderScale": 1
 }

@@ -26,13 +26,14 @@ import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-abi
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
 import {executeOpenDoorIntent, executeCloseDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
+import {executeFloorTransitionIntent} from "@simulation/systems/intents/floor-transition-intent-executor.ts";
 import {executeBumpIntent} from "@simulation/systems/intents/bump-intent-executor.ts";
-import {executeTriggerStairExitIntent} from "@simulation/systems/intents/trigger-stair-exit-intent-executor.ts";
 import {executeSkipStunnedTurnIntent} from "@simulation/systems/intents/skip-stunned-turn-intent-executor.ts";
 import {executeRestoreApIntent} from "@simulation/systems/intents/restore-ap-intent-executer.ts";
 import {executeTickCooldownIntent} from "@simulation/systems/intents/tick-cooldown-intent-executer.ts";
 import {executeBeginTurnIntent} from "@simulation/systems/intents/begin-turn-intent-executer.ts";
 import {executeCleanupDeadEntitiesIntent} from "@simulation/systems/intents/cleanup-dead-entities-intent-executor.ts";
+import {executeApplyFogEventsIntent} from "@simulation/systems/intents/apply-fog-events-intent-executor.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
@@ -59,13 +60,14 @@ const intentExecutors = {
   REMOVE_ITEM: executeRemoveItemIntent,
   OPEN_DOOR: executeOpenDoorIntent,
   CLOSE_DOOR: executeCloseDoorIntent,
+  FLOOR_TRANSITION: executeFloorTransitionIntent,
   BUMP: executeBumpIntent,
-  TRIGGER_STAIR_EXIT: executeTriggerStairExitIntent,
   SKIP_STUNNED_TURN: executeSkipStunnedTurnIntent,
   RESTORE_AP: executeRestoreApIntent,
   TICK_COOLDOWN: executeTickCooldownIntent,
   BEGIN_TURN: executeBeginTurnIntent,
   CLEANUP_DEAD_ENTITIES: executeCleanupDeadEntitiesIntent,
+  APPLY_FOG_EVENTS: executeApplyFogEventsIntent,
 };
 
 export function executeIntent(

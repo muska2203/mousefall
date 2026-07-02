@@ -82,7 +82,8 @@ describe('computeFloorTransition', () => {
 
     const plan = computeFloorTransition(state, 'down');
 
-    const stairsUp = Array.from(plan.entities.values()).find(
+    const entities = plan.entities as Map<EntityId, Entity>;
+    const stairsUp = Array.from(entities.values()).find(
       (e): e is StairsEntity => e.type === 'stairs' && e.templateId === 'stairs_up',
     );
     expect(stairsUp).toBeDefined();

@@ -15,14 +15,14 @@
 Блок 1 → Блок 2 → Блок 3 → Блок 4 → Блок 5 → Блок 6
 ```
 
-| Блок | Название | Короткое описание |
-|---|---|---|
-| [BLOCK_01_BASE_ACTION](./BLOCK_01_BASE_ACTION.md) | Базовый action `INTERACT` | Добавить тип action, `interactionKind`, `resolveInteraction`, handler, регистрацию, AP cost. |
-| [BLOCK_02_FLOOR_ITEM_CONTAINER](./BLOCK_02_FLOOR_ITEM_CONTAINER.md) | Контейнер предмета на полу | Заменить `ItemEntity` на полу на `FloorItemContainerEntity`. |
-| [BLOCK_03_INTENT_EXECUTION](./BLOCK_03_INTENT_EXECUTION.md) | Выполнение intent'ов из `INTERACT` | Научить `INTERACT` порождать конкретные intent'ы и создать `FLOOR_TRANSITION`. |
-| [BLOCK_04_PRESENTATION](./BLOCK_04_PRESENTATION.md) | Presentation и UI | Перевести подсказки, автопуть и `moveOrAttack` на `INTERACT`. |
-| [BLOCK_05_REMOVE_AUTO_STAIR](./BLOCK_05_REMOVE_AUTO_STAIR.md) | Удаление авто-спуска по лестнице | Убрать `stairsTransitionReaction` и связанные intent/event. |
-| [BLOCK_06_CLEANUP](./BLOCK_06_CLEANUP.md) | Удаление старых action'ов | Удалить `PICKUP`, `OPEN_DOOR`, `CLOSE_DOOR`, `DESCEND`, `ASCEND` и обновить документацию. |
+| Блок | Название | Статус | Короткое описание |
+|---|---|---|---|
+| [BLOCK_01_BASE_ACTION](./BLOCK_01_BASE_ACTION.md) | Базовый action `INTERACT` | ✅ Выполнен | Добавить тип action, `interactionKind`, `resolveInteraction`, handler, регистрацию, AP cost. |
+| [BLOCK_02_FLOOR_ITEM_CONTAINER](./BLOCK_02_FLOOR_ITEM_CONTAINER.md) | Контейнер предмета на полу | ✅ Выполнен | Заменить `ItemEntity` на полу на `FloorItemContainerEntity`. |
+| [BLOCK_03_INTENT_EXECUTION](./BLOCK_03_INTENT_EXECUTION.md) | Выполнение intent'ов из `INTERACT` | ✅ Выполнен | Научить `INTERACT` порождать конкретные intent'ы и создать `FLOOR_TRANSITION`. |
+| [BLOCK_04_PRESENTATION](./BLOCK_04_PRESENTATION.md) | Presentation и UI | ✅ Выполнен | Перевести подсказки, автопуть и `moveOrAttack` на `INTERACT`. |
+| [BLOCK_05_REMOVE_AUTO_STAIR](./BLOCK_05_REMOVE_AUTO_STAIR.md) | Удаление авто-спуска по лестнице | ✅ Выполнен | Убрать `stairsTransitionReaction` и связанные intent/event. |
+| [BLOCK_06_CLEANUP](./BLOCK_06_CLEANUP.md) | Удаление старых action'ов | ✅ Выполнен | Удалить `PICKUP`, `OPEN_DOOR`, `CLOSE_DOOR`, `DESCEND`, `ASCEND` и обновить документацию. |
 
 ## Зависимости между блоками
 

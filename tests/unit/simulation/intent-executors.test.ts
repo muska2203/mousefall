@@ -5,7 +5,7 @@ import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-exe
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
 import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
-import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity, makeFloorItem} from "../../fixtures/gameState.ts";
+import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity, makeFloorItemContainer} from "../../fixtures/gameState.ts";
 import {PLAYER_ID} from "@utils/constants.ts";
 import {initRegistry, resetRegistry} from "../../../src/content/registry";
 
@@ -231,7 +231,7 @@ describe('executeIntent с мировыми реакциями', () => {
 describe('executePickUpIntent', () => {
     it('добавляет предмет в инвентарь игрока и удаляет с пола', () => {
         const player = makePlayer({x: 5, y: 5});
-        const item = makeFloorItem({x: 5, y: 5, id: 'potion_1', templateId: 'health_potion'});
+        const item = makeFloorItemContainer({x: 5, y: 5, id: 'potion_1', templateId: 'health_potion'});
         const state = makeStateWithPlayerAndEntity(player, item);
         const builder = makeBuilder();
 
@@ -270,7 +270,7 @@ describe('executePickUpIntent', () => {
 
     it('возвращает null, если актёр не является игроком', () => {
         const enemy = makeEnemy({x: 5, y: 5});
-        const item = makeFloorItem({x: 5, y: 5, id: 'potion_1', templateId: 'health_potion'});
+        const item = makeFloorItemContainer({x: 5, y: 5, id: 'potion_1', templateId: 'health_potion'});
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         state.entities.set(item.id, item);
         const builder = makeBuilder();

@@ -13,32 +13,12 @@
  *   (через генерацию карты) и `state.floorSnapshots`.
  */
 
-import type { GameState, StairsEntity, GameEvent, GameMap, Entity, EntityId, Position, TurnSide } from '@simulation/types';
+import type { GameState, StairsEntity, GameEvent, GameMap, Entity, EntityId, Position } from '@simulation/types';
+import type { FloorTransitionPlan, TurnSide } from '@simulation/core-types';
 import { createBoolGrid } from '@simulation/state';
 import { generateMap, createStairs } from '@simulation/systems/mapgen';
 import { updateFOV } from '@simulation/systems/fov';
 import { MAX_FLOOR } from '@utils/constants';
-
-export type FloorTransitionPlan = {
-  /** Направление перехода. */
-  direction: 'down' | 'up';
-  /** Этаж, с которого уходим. */
-  from: number;
-  /** Этаж, на который приходим. */
-  to: number;
-  /** Карта целевого этажа. */
-  map: GameMap;
-  /** Сущности целевого этажа (включая игрока). */
-  entities: Map<EntityId, Entity>;
-  /** Позиция игрока после перехода. */
-  playerPosition: Position;
-  /** Состояние хода после перехода. */
-  turn: { activeSide: TurnSide; round: number };
-  /** Сетка исследованных клеток целевого этажа. */
-  explored: boolean[][];
-  /** События FOV, полученные после пересчёта на целевом состоянии. */
-  fovEvents: GameEvent[];
-};
 
 /**
  * Вычисляет план перехода на другой этаж.
@@ -83,10 +63,10 @@ export function computeFloorTransition(
     ];
 
     if (generated.stairsDown && to < MAX_FLOOR) {
-      targetEntities.push(createStairs(state, 'stairs_down', generated.stairsDown.x, generated.stairsDown.y));
+      targetEntities.push(createStairs(state, 'stairs_down', 'down', generated.stairsDown.x, generated.stairsDown.y));
     }
     if (generated.stairsUp && to > 1) {
-      targetEntities.push(createStairs(state, 'stairs_up', generated.stairsUp.x, generated.stairsUp.y));
+      targetEntities.push(createStairs(state, 'stairs_up', 'up', generated.stairsUp.x, generated.stairsUp.y));
     }
 
     targetExplored = createBoolGrid(targetMap.width, targetMap.height, false);
@@ -100,8 +80,8 @@ export function computeFloorTransition(
   entities.set(state.player.id, state.player);
 
   // 4. Позиционирование игрока у противоположной лестницы.
-  const targetStairsTemplateId = direction === 'down' ? 'stairs_up' : 'stairs_down';
-  const stairs = findStairsInEntities(entities, targetStairsTemplateId);
+  const targetStairsDirection: 'up' | 'down' = direction === 'down' ? 'up' : 'down';
+  const stairs = findStairsInEntities(entities, targetStairsDirection);
 
   let playerPosition: Position;
   if (stairs) {
@@ -140,7 +120,7 @@ export function computeFloorTransition(
     from,
     to,
     map: targetMap,
-    entities,
+    entities: entities as Map<EntityId, unknown>,
     playerPosition,
     turn,
     explored: targetExplored,
@@ -150,9 +130,9 @@ export function computeFloorTransition(
 
 function findStairsInEntities(
   entities: Map<EntityId, Entity>,
-  templateId: string,
+  direction: 'up' | 'down',
 ): StairsEntity | undefined {
   return Array.from(entities.values()).find(
-    (e): e is StairsEntity => e.type === 'stairs' && e.templateId === templateId,
+    (e): e is StairsEntity => e.type === 'stairs' && e.direction === direction,
   );
 }

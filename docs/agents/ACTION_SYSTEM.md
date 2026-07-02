@@ -107,10 +107,12 @@ ACTION_APPLIED (ATTACK)
 
 ## Чеклист: добавление нового Action
 
-- [ ] Тип добавлен в `GameAction` (`src/simulation/types.ts`)
-- [ ] Handler создан в `src/simulation/systems/actions/handlers/`
-- [ ] Handler зарегистрирован в `action-registry.ts`
+- [ ] Тип добавлен в `GameAction` (`src/simulation/core-types.ts`)
+- [ ] Handler создан в `src/simulation/systems/actions/`
+- [ ] Handler зарегистрирован в `src/simulation/simulation.ts`
 - [ ] Тесты добавлены в `tests/unit/simulation/actions/`
+
+> **Примечание:** для объектных взаимодействий (двери, предметы на полу, лестницы, рычаги и т.п.) не добавляется отдельный action type. Вместо этого целевой объект получает `interactionKind`, а единый action `INTERACT` через `resolveInteraction` выбирает конкретный intent (`OPEN_DOOR`, `CLOSE_DOOR`, `PICK_UP`, `FLOOR_TRANSITION`).
 
 ## Чеклист: добавление нового Event
 

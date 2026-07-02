@@ -117,6 +117,7 @@ describe('itemDroppedBuilder', () => {
       type: 'ITEM_DROPPED',
       dropperEntityId: 'enemy1',
       itemInstanceId: 'item_1',
+      containerId: 'floor_item_container_1',
       templateId: 'health_potion',
       position: { x: 3, y: 3 },
       from: { x: 2, y: 2 },

@@ -183,6 +183,7 @@ export type MapParams = z.infer<typeof MapParamsSchema>;
 export const StairsTemplateSchema = z.object({
   id:             z.string().min(1).describe('Уникальный идентификатор лестницы'),
   interactionKind: z.enum(['stairs']).describe('Вид интерактивного объекта'),
+  direction:      z.enum(['up', 'down']).describe('Направление лестницы (up — вверх/на поверхность, down — вниз в подземелье)'),
   renderScale:    z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
 }).describe('Шаблон лестницы');
 

@@ -5,7 +5,7 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import '@i18n/config';
 import { GameSession } from '../../../src/presentation/gameSession';
-import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItem, makeStairs } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { Entity, EntityId } from '../../../src/simulation/types';
 
@@ -391,7 +391,7 @@ describe('GameSession interactions (F / Tab)', () => {
 
   it('shows pickup hint when an item is on player tile', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const item = makeFloorItem({ x: 5, y: 5 });
+    const item = makeFloorItemContainer({ x: 5, y: 5 });
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [item.id, item]]),
@@ -423,6 +423,54 @@ describe('GameSession interactions (F / Tab)', () => {
     expect(hint?.label).toContain('Спуститься');
   });
 
+  it('shows open door hint when adjacent to a closed door', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [door.id, door]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    expect(hint).toBeDefined();
+    expect(hint?.targetPosition).toEqual({ x: 5, y: 6 });
+    expect(hint?.label).toContain('Открыть дверь');
+  });
+
+  it('shows close door hint when adjacent to an open door', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6, isOpen: true, blocksMovement: false });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [door.id, door]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    expect(hint).toBeDefined();
+    expect(hint?.label).toContain('Закрыть дверь');
+  });
+
+  it('does not show interaction hint when player has no AP', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 0 });
+    const item = makeFloorItemContainer({ x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [item.id, item]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const hint = session.getViewModel().renderInput?.interactionHint;
+    expect(hint).toBeNull();
+  });
+
   it('shows ascend hint when stairs_up is on player tile above floor 1', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_up', { x: 5, y: 5 });
@@ -442,7 +490,7 @@ describe('GameSession interactions (F / Tab)', () => {
 
   it('prioritizes pickup over stairs when both are present', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const item = makeFloorItem({ x: 5, y: 5 });
+    const item = makeFloorItemContainer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
     const state = makeGameState({
       player,
@@ -464,7 +512,7 @@ describe('GameSession interactions (F / Tab)', () => {
 
   it('Tab cycles interaction options', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const item = makeFloorItem({ x: 5, y: 5 });
+    const item = makeFloorItemContainer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
     const state = makeGameState({
       player,
@@ -486,9 +534,9 @@ describe('GameSession interactions (F / Tab)', () => {
     expect(session.getViewModel().renderInput?.interactionHint?.label).toContain('Поднять');
   });
 
-  it('performSelectedInteraction dispatches PICKUP when item is selected', () => {
+  it('performSelectedInteraction dispatches INTERACT when item is selected', () => {
     const player = makePlayer({ x: 5, y: 5, ap: 1 });
-    const item = makeFloorItem({ x: 5, y: 5 });
+    const item = makeFloorItemContainer({ x: 5, y: 5 });
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [item.id, item]]),
@@ -503,7 +551,7 @@ describe('GameSession interactions (F / Tab)', () => {
     expect(session.getViewModel().renderInput?.inventory.length).toBe(1);
   });
 
-  it('performSelectedInteraction dispatches DESCEND when stairs_down is selected', () => {
+  it('performSelectedInteraction dispatches INTERACT for stairs_down and changes floor', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
     const state = makeGameState({
@@ -518,13 +566,13 @@ describe('GameSession interactions (F / Tab)', () => {
     session.performSelectedInteraction();
 
     expect(session.getViewModel().mode).toBe('playing');
-    // После DESCEND симуляция выполняет переход этажа.
+    // INTERACT с лестницей вниз выполняет переход на следующий этаж.
     expect(session.getViewModel().renderInput?.state.floor).toBe(2);
   });
 
   it('resets selected index when player moves', () => {
     const player = makePlayer({ x: 5, y: 5, ap: 1 });
-    const item = makeFloorItem({ x: 5, y: 5 });
+    const item = makeFloorItemContainer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
     const state = makeGameState({
       player,
@@ -549,6 +597,37 @@ describe('GameSession interactions (F / Tab)', () => {
     const hint = session.getViewModel().renderInput?.interactionHint;
     // На новой клетке взаимодействий нет — подсказка должна исчезнуть.
     expect(hint).toBeNull();
+  });
+
+  it('auto-path to stairs performs MOVE then INTERACT across turn boundary', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 1, maxAp: 1 });
+    const stairs = makeStairs('stairs_down', { x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [stairs.id, stairs],
+      ]),
+    });
+    state.explored[5]![5] = true;
+    state.explored[5]![6] = true;
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.handleFieldClick({ x: 6, y: 5 });
+
+    // Первый шаг автопути — MOVE на клетку лестницы, тратит последний AP.
+    // Simulation сразу завершает ход игрока, окружение ходит и восстанавливает AP.
+    expect(session.getViewModel().renderInput?.state.player.ap).toBe(1);
+    expect(session.getViewModel().renderInput?.state.turn.activeSide).toBe('PLAYER');
+    expect(session.getViewModel().renderInput?.state.player).toMatchObject({ x: 6, y: 5 });
+
+    session.onAnimationsComplete();
+
+    // Автопуть продолжается на новом ходу: выполняется INTERACT с лестницей.
+    expect(session.getViewModel().renderInput?.state.floor).toBe(2);
   });
 });
 

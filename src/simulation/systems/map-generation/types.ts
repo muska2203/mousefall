@@ -5,7 +5,7 @@
  * (GameSimulation, floor-transition-logic и т.д.).
  */
 
-import type { GameMap, EnemyEntity, ItemEntity, DoorEntity, GameState } from '@simulation/types';
+import type { GameMap, EnemyEntity, FloorItemContainerEntity, DoorEntity, GameState } from '@simulation/types';
 import type { MapParams } from '@content/schemas';
 
 /**
@@ -19,7 +19,7 @@ export type GeneratedMap = {
   stairsDown: { x: number; y: number } | null;
   stairsUp: { x: number; y: number } | null;
   enemies: EnemyEntity[];
-  items: ItemEntity[];
+  items: FloorItemContainerEntity[];
   doors: DoorEntity[];
 };
 

@@ -395,12 +395,13 @@ describe('EntityRenderer', () => {
 
     input.state.entities.set('item1', {
       id: 'item1',
-      type: 'item',
+      type: 'floor_item_container',
       x: 3,
       y: 3,
       templateId: 'health_potion',
       blocksMovement: false,
       displayName: 'Зелье',
+      interactionKind: 'item',
       item: {
         instanceId: 'item1',
         templateId: 'health_potion',
@@ -437,12 +438,13 @@ describe('EntityRenderer', () => {
 
     input.state.entities.set('item1', {
       id: 'item1',
-      type: 'item',
+      type: 'floor_item_container',
       x: 3,
       y: 3,
       templateId: 'health_potion',
       blocksMovement: false,
       displayName: 'Зелье',
+      interactionKind: 'item',
       item: {
         instanceId: 'item1',
         templateId: 'health_potion',

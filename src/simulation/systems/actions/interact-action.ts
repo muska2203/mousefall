@@ -4,14 +4,15 @@
  * Контракт:
  * - `INTERACT` принимает только целевую сущность (`targetId`).
  * - Действие, которое будет выполнено, вычисляется через `resolveInteraction`.
- * - validate проверяет расстояние и специфичные ограничения (например, границы этажей).
- * - resolve пока возвращает пустой массив; конкретные intent'ы добавятся в Блоке 3.
+ * - validate проверяет расстояние, состояние цели и специфичные ограничения
+ *   (границы этажей, препятствия при закрытии двери).
+ * - resolve порождает конкретный intent: OPEN_DOOR, CLOSE_DOOR, PICK_UP или FLOOR_TRANSITION.
  */
 
-import type { GameState, Position, ValidationResult } from '@simulation/types';
+import type { GameState, Position, ValidationResult, FloorItemContainerEntity } from '@simulation/types';
 import type { InteractAction, Intent } from '@simulation/core-types';
 import type { ActionHandler } from './types';
-import { findEntity } from '@simulation/state';
+import { findEntity, findDoorAt, findAllEntitiesAt } from '@simulation/state';
 import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
 import { resolveInteraction } from '@simulation/systems/interactions/resolve-interaction.ts';
 import { MAX_FLOOR } from '@utils/constants';
@@ -24,10 +25,19 @@ function isSameTile(a: Position, b: Position): boolean {
   return a.x === b.x && a.y === b.y;
 }
 
+type ResolvedContext =
+  | { ok: false; reasonCode: string }
+  | {
+      ok: true;
+      actor: NonNullable<ReturnType<typeof findEntity>>;
+      target: NonNullable<ReturnType<typeof findEntity>>;
+      interaction: NonNullable<ReturnType<typeof resolveInteraction>>;
+    };
+
 function resolveInteractContext(
   state: GameState,
   action: InteractAction,
-): { ok: false; reasonCode: string } | { ok: true; actor: NonNullable<ReturnType<typeof findEntity>>; target: NonNullable<ReturnType<typeof findEntity>>; interaction: NonNullable<ReturnType<typeof resolveInteraction>> } {
+): ResolvedContext {
   const actor = findEntity(state, action.entityId);
   if (!actor) {
     return { ok: false, reasonCode: 'entity_not_exists' };
@@ -67,6 +77,64 @@ function resolveInteractContext(
   return { ok: true, actor, target, interaction };
 }
 
+function validateInteractionSpecifics(
+  state: GameState,
+  actor: NonNullable<ReturnType<typeof findEntity>>,
+  target: NonNullable<ReturnType<typeof findEntity>>,
+  interaction: NonNullable<ReturnType<typeof resolveInteraction>>,
+): ValidationResult {
+  switch (interaction.interactionId) {
+    case 'open_door':
+    case 'close_door': {
+      const door = findDoorAt(state, target.x, target.y);
+      if (!door) {
+        return { ok: false, reasonCode: 'no_door_at_tile' };
+      }
+      if (door.isAlive === false) {
+        return { ok: false, reasonCode: 'door_destroyed' };
+      }
+      const expectedOpen = interaction.interactionId === 'close_door';
+      if (door.isOpen !== expectedOpen) {
+        return { ok: false, reasonCode: expectedOpen ? 'door_already_closed' : 'door_already_open' };
+      }
+      // При закрытии двери нельзя стоять на её клетке и на ней не должно быть других препятствий.
+      if (interaction.interactionId === 'close_door') {
+        if (actor.x === target.x && actor.y === target.y) {
+          return { ok: false, reasonCode: 'cannot_close_door_from_inside' };
+        }
+        const hasObstacle = findAllEntitiesAt(state, target.x, target.y).some(
+          (e) => e.id !== door.id && e.blocksMovement,
+        );
+        if (hasObstacle) {
+          return { ok: false, reasonCode: 'door_tile_blocked' };
+        }
+      }
+      return { ok: true };
+    }
+
+    case 'pickup': {
+      if (target.type !== 'floor_item_container') {
+        return { ok: false, reasonCode: 'not_an_item_container' };
+      }
+      return { ok: true };
+    }
+
+    case 'descend':
+    case 'ascend': {
+      if (actor.id !== 'player') {
+        return { ok: false, reasonCode: 'only_player_can_transition' };
+      }
+      if (target.type !== 'stairs') {
+        return { ok: false, reasonCode: 'not_stairs' };
+      }
+      return { ok: true };
+    }
+
+    default:
+      return { ok: false, reasonCode: 'unsupported_interaction' };
+  }
+}
+
 export const interactAction: ActionHandler = {
   validate(state: GameState, action): ValidationResult {
     if (action.type !== 'INTERACT') {
@@ -78,12 +146,57 @@ export const interactAction: ActionHandler = {
       return { ok: false, reasonCode: ctx.reasonCode };
     }
 
-    return { ok: true };
+    return validateInteractionSpecifics(state, ctx.actor, ctx.target, ctx.interaction);
   },
 
-  resolve(_state: GameState, _action): Intent[] {
-    // Блок 1: пока не порождаем конкретные intent'ы.
-    return [];
+  resolve(state: GameState, action): Intent[] {
+    if (action.type !== 'INTERACT') {
+      return [];
+    }
+
+    const ctx = resolveInteractContext(state, action);
+    if (!ctx.ok) {
+      return [];
+    }
+
+    const { target, interaction } = ctx;
+
+    switch (interaction.interactionId) {
+      case 'open_door':
+        return [{
+          type: 'OPEN_DOOR',
+          entityId: action.entityId,
+          targetPosition: { x: target.x, y: target.y },
+        }];
+
+      case 'close_door':
+        return [{
+          type: 'CLOSE_DOOR',
+          entityId: action.entityId,
+          targetPosition: { x: target.x, y: target.y },
+        }];
+
+      case 'pickup': {
+        const container = target as FloorItemContainerEntity;
+        return [{
+          type: 'PICK_UP',
+          entityId: action.entityId,
+          itemId: target.id,
+          templateId: container.item.templateId,
+        }];
+      }
+
+      case 'descend':
+      case 'ascend':
+        return [{
+          type: 'FLOOR_TRANSITION',
+          entityId: action.entityId,
+          direction: interaction.interactionId === 'descend' ? 'down' : 'up',
+        }];
+
+      default:
+        return [];
+    }
   },
 
   execute(state: GameState, _action, intents: Intent[], executionBuilder, parentNode) {

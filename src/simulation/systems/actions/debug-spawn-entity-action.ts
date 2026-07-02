@@ -8,7 +8,8 @@
 import { GameState } from '@simulation/types.ts';
 import { tryGetItem, tryGetEntity, tryGetDoor, tryGetStairs } from '@content/registry';
 import { findAllEntitiesAt } from '@simulation/state.ts';
-import { createItemEntity } from '@simulation/systems/item-entity-factory.ts';
+import { createFloorItemContainer } from '@simulation/systems/item-entity-factory.ts';
+import { createInventoryItem } from '@simulation/systems/inventory-factory.ts';
 import { createEnemy, createDoor, createStairs } from '@simulation/systems/mapgen.ts';
 import { ActionHandler, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types.ts';
 import { Intent } from '@simulation/systems/intents/types.ts';
@@ -89,9 +90,11 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
       let entity;
 
       switch (spawnType) {
-        case 'item':
-          entity = createItemEntity(state, templateId, x, y);
+        case 'item': {
+          const inventoryItem = createInventoryItem(state, templateId);
+          entity = createFloorItemContainer(state, inventoryItem, { x, y });
           break;
+        }
         case 'enemy':
           entity = createEnemy(state, templateId, x, y);
           break;
@@ -100,8 +103,8 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
           break;
         case 'stairs': {
           // В реестре лестниц ожидаются только stairs_down / stairs_up.
-          const direction = templateId === 'stairs_up' ? 'stairs_up' : 'stairs_down';
-          entity = createStairs(state, direction, x, y);
+          const direction = templateId === 'stairs_up' ? 'up' : 'down';
+          entity = createStairs(state, templateId, direction, x, y);
           break;
         }
         default:

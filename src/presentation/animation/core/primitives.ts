@@ -150,7 +150,7 @@ export function itemDropNode(event: ItemDroppedEvent, children: AnimationNode[])
   return {
     step: {
       type: 'ITEM_DROP',
-      itemId: event.itemInstanceId,
+      itemId: event.containerId,
       position: event.position,
       from: event.from,
       templateId: event.templateId,

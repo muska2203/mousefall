@@ -12,8 +12,7 @@
  * - Неанимированные события пропускаются; их дети поднимаются как сиблинги к ближайшему анимированному предку.
  */
 
-import type { SimulationResult, GameState, TurnSide } from '@simulation/types';
-import type { ExecutionNode } from '@simulation/systems/actions/types';
+import type { SimulationResult, GameState, TurnSide, ExecutionNode } from '@simulation/types';
 import type { AnimationNode, AnimationPhase, Position } from '@presentation/types';
 import { filterByFOV } from '@presentation/fogFilter';
 import { getAnimationBuilder } from './registry';

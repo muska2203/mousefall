@@ -98,11 +98,12 @@ export class EntityRenderer {
         }
         existingIds.add(entity.id);
       }
-      if (entity.type === 'item') {
-        const path = getItemSprite(entity.templateId);
+      if (entity.type === 'floor_item_container') {
+        const templateId = entity.item.templateId;
+        const path = getItemSprite(templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(entity.templateId, false);
+        const scale = getRenderScale(templateId, false);
         this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {

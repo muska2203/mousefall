@@ -6,6 +6,7 @@ export const ruInteractionHint = {
   ascend: 'Подняться',
   openDoor: 'Открыть дверь',
   closeDoor: 'Закрыть дверь',
+  unknown: 'Взаимодействовать',
   keyF: 'F',
   keyTab: 'Tab',
 } as const satisfies ComponentsInteractionHintTranslations;

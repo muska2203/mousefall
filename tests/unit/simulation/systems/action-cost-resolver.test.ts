@@ -52,12 +52,10 @@ describe('DefaultActionPointCostResolver', () => {
     resetRegistry();
   });
 
-  it('MOVE, PICKUP, DESCEND, ASCEND стоят 1 AP', () => {
+  it('MOVE и INTERACT стоят 1 AP', () => {
     const state = makeGameState();
     expect(resolver.getCost({ type: 'MOVE', entityId: 'player', dx: 1, dy: 0 }, state)).toBe(1);
-    expect(resolver.getCost({ type: 'PICKUP', entityId: 'player' }, state)).toBe(1);
-    expect(resolver.getCost({ type: 'DESCEND', entityId: 'player' }, state)).toBe(1);
-    expect(resolver.getCost({ type: 'ASCEND', entityId: 'player' }, state)).toBe(1);
+    expect(resolver.getCost({ type: 'INTERACT', entityId: 'player', targetId: 'door_1' }, state)).toBe(1);
   });
 
   it('ATTACK стоит 2 AP', () => {

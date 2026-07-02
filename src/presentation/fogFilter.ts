@@ -12,8 +12,7 @@
  *   что из него попадёт в анимации.
  */
 
-import type { GameState, SimulationResult, TurnPhase, GameEvent } from '@simulation/types';
-import type { ExecutionNode } from '@simulation/systems/actions/types';
+import type { GameState, SimulationResult, TurnPhase, GameEvent, ExecutionNode } from '@simulation/types';
 
 /** Отфильтровать SimulationResult, оставив только видимые игроку события. */
 export function filterByFOV(result: SimulationResult, state: GameState): SimulationResult {
@@ -84,7 +83,6 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     case 'ENTITY_BUMPED': {
       return isPosVisible(event.position, state);
     }
-    case 'STAIR_EXIT_TRIGGERED':
     case 'FLOOR_CHANGED':
     case 'TURN_ENDED':
     case 'TURN_BEGAN':

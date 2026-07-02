@@ -11,8 +11,7 @@
  */
 
 import { t } from '@i18n/t';
-import type { SimulationResult } from '@simulation/types';
-import type { ExecutionNode } from '@simulation/systems/actions/types';
+import type { SimulationResult, ExecutionNode } from '@simulation/types';
 import type { ToastItem, ToastKind } from './types';
 
 type ErrorMapping = {

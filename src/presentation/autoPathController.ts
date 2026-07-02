@@ -229,14 +229,19 @@ export class AutoPathController {
   }
 
   /** Формирует действие, когда игрок стоит на клетке с интерактивным объектом. */
-  private buildInteractAction(state: GameState, queries: AutoPathQueries): GameAction | null {
-    if (!this.target) return null;
-
-    if (this.target.kind === 'interactable') {
-      return this.resolveInteractableAction(state, this.target.position, queries);
+  private buildInteractAction(state: GameState, _queries: AutoPathQueries): GameAction | null {
+    if (!this.target || this.target.kind !== 'interactable' || !this.target.entityId) {
+      return null;
     }
 
-    return null;
+    const entity = state.entities.get(this.target.entityId);
+    if (!entity) return null;
+
+    return {
+      type: 'INTERACT',
+      entityId: state.player.id,
+      targetId: entity.id,
+    };
   }
 
   /** Формирует действие, когда игрок впритык к цели. */
@@ -263,21 +268,26 @@ export class AutoPathController {
           return { type: 'MOVE', entityId: state.player.id, dx, dy };
         }
         return {
-          type: 'OPEN_DOOR',
+          type: 'INTERACT',
           entityId: state.player.id,
-          targetPosition: { x: this.target.position.x, y: this.target.position.y },
+          targetId: door.id,
         };
       }
       case 'interactable': {
         const entity = this.target.entityId ? state.entities.get(this.target.entityId) : null;
+        if (!entity) return null;
         // Проходимые активируемые объекты (предметы, лестницы) требуют
         // сначала встать на их клетку, а уже потом активировать.
         // Возвращаем null, чтобы основная логика step сделала MOVE без
         // отмены автопути; активация произойдёт на следующем шаге.
-        if (entity && entity.blocksMovement === false) {
+        if (entity.blocksMovement === false) {
           return null;
         }
-        return this.resolveInteractableAction(state, this.target.position, queries);
+        return {
+          type: 'INTERACT',
+          entityId: state.player.id,
+          targetId: entity.id,
+        };
       }
       case 'move':
       default:
@@ -285,26 +295,4 @@ export class AutoPathController {
     }
   }
 
-  /** Определяет действие для интерактивного объекта на заданной клетке. */
-  private resolveInteractableAction(state: GameState, pos: Position, queries: AutoPathQueries): GameAction | null {
-    const stairs = queries.findEntityAt(
-      pos,
-      (e) => e.type === 'stairs',
-    );
-    if (stairs && stairs.type === 'stairs') {
-      return stairs.templateId === 'stairs_up'
-        ? { type: 'ASCEND', entityId: state.player.id }
-        : { type: 'DESCEND', entityId: state.player.id };
-    }
-
-    const items = queries.findEntitiesAt(
-      pos,
-      (e) => e.type === 'item',
-    );
-    if (items.length > 0) {
-      return { type: 'PICKUP', entityId: state.player.id };
-    }
-
-    return null;
-  }
 }

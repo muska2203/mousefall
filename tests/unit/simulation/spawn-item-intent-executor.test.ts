@@ -42,7 +42,7 @@ describe('executeSpawnItemIntent', () => {
         resetRegistry();
     });
 
-    it('создаёт ItemEntity и добавляет в state.entities', () => {
+    it('создаёт FloorItemContainerEntity и добавляет в state.entities', () => {
         const player = makePlayer({ x: 5, y: 5 });
         const state = makeStateWithPlayerAndEntity(player, makePlayer({ x: 8, y: 8, id: 'enemy_1', type: 'enemy' } as any));
         const builder = makeBuilder();
@@ -55,15 +55,15 @@ describe('executeSpawnItemIntent', () => {
         }, builder, builder.root);
 
         expect(node).not.toBeNull();
-        const itemId = node!.event.type === 'ITEM_DROPPED' ? node!.event.itemInstanceId : null;
-        expect(itemId).not.toBeNull();
-        expect(state.entities.has(itemId!)).toBe(true);
+        const containerId = node!.event.type === 'ITEM_DROPPED' ? node!.event.containerId : null;
+        expect(containerId).not.toBeNull();
+        expect(state.entities.has(containerId!)).toBe(true);
 
-        const item = state.entities.get(itemId!)!;
-        expect(item.type).toBe('item');
-        expect(item.templateId).toBe('test_item');
-        expect(item.displayName).toBe('test_item');
-        expect((item as import('../../../src/simulation/types').ItemEntity).item.quantity).toBe(1);
+        const container = state.entities.get(containerId!)!;
+        expect(container.type).toBe('floor_item_container');
+        expect(container.templateId).toBe('test_item');
+        expect(container.displayName).toBe('test_item');
+        expect((container as import('../../../src/simulation/types').FloorItemContainerEntity).item.quantity).toBe(1);
     });
 
     it('использует findFreeTileNear для занятой клетки', () => {
@@ -107,7 +107,7 @@ describe('executeSpawnItemIntent', () => {
             expect(event.templateId).toBe('test_item');
             expect(event.position).toEqual({ x: 7, y: 7 });
             expect(event.from).toEqual({ x: 7, y: 7 });
-            expect(event.itemInstanceId).toMatch(/^item_/);
+            expect(event.containerId).toMatch(/^floor_item_container_/);
         }
     });
 
@@ -127,18 +127,45 @@ describe('executeSpawnItemIntent', () => {
         expect(state.entities.size).toBe(entityCountBefore);
     });
 
+    it('ITEM_DROPPED содержит itemInstanceId контейнера и containerId сущности на полу', () => {
+        const player = makePlayer({ x: 5, y: 5 });
+        const state = makeStateWithPlayerAndEntity(player, makePlayer({ x: 8, y: 8, id: 'enemy_1', type: 'enemy' } as any));
+        const builder = makeBuilder();
+
+        const node = executeSpawnItemIntent(state, {
+            type: 'SPAWN_ITEM',
+            templateId: 'test_item',
+            position: { x: 7, y: 7 },
+            sourceEntityId: 'enemy_1',
+        }, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        const event = node!.event;
+        expect(event.type).toBe('ITEM_DROPPED');
+        if (event.type !== 'ITEM_DROPPED') return;
+
+        const container = state.entities.get(event.containerId);
+        expect(container).toBeDefined();
+        expect(container!.type).toBe('floor_item_container');
+
+        expect(event.itemInstanceId).toBe((container as import('../../../src/simulation/types').FloorItemContainerEntity).item.instanceId);
+        expect(event.containerId).toBe(container!.id);
+        expect(event.itemInstanceId).not.toBe(event.containerId);
+    });
+
     it('не спавнит предмет на клетку с другим предметом', () => {
         const player = makePlayer({ x: 5, y: 5 });
         const state = makeStateWithPlayerAndEntity(player, makePlayer({ x: 8, y: 8, id: 'enemy_1', type: 'enemy' } as any));
         // Добавим существующий предмет на (7,7)
         const existingItem = {
             id: 'existing_item',
-            type: 'item',
+            type: 'floor_item_container',
             templateId: 'test_item',
             x: 7,
             y: 7,
             blocksMovement: false,
             displayName: 'Существующий',
+            interactionKind: 'item',
             item: {
                 instanceId: 'existing_item',
                 templateId: 'test_item',

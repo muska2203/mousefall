@@ -19,18 +19,15 @@ import { getSkillExecutor } from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
-import {findAllAliveAiActors, isActor, createBoolGrid} from "@simulation/state.ts";
+import {findAllAliveAiActors, isActor, createBoolGrid, findInteractableEntitiesAround} from "@simulation/state.ts";
 import {isStunned} from "@simulation/systems/stun-helper.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
-import {descendAction, ascendAction} from "@simulation/systems/actions/floor-transition-action.ts";
 import {waitEntity} from "@simulation/systems/actions/wait-action.ts";
 import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
-import {pickupEntity} from "@simulation/systems/actions/pickup-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
-import {openDoorAction, closeDoorAction} from "@simulation/systems/actions/door-action.ts";
 import {interactAction} from "@simulation/systems/actions/interact-action.ts";
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
@@ -58,6 +55,7 @@ import { tryGetAbility, getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
 import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
+import { resolveInteraction } from "@simulation/systems/interactions/resolve-interaction.ts";
 import { findPath, posEqual } from "@utils/math.ts";
 
 export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
@@ -298,16 +296,12 @@ export class GameSimulation implements Simulation {
 
         // Лестницы
         if (generatedMap.stairsDown && this.state.floor < MAX_FLOOR) {
-            this.state.entities.set(
-                `stairs_down_${this.state.floor}`,
-                createStairs(this.state, 'stairs_down', generatedMap.stairsDown.x, generatedMap.stairsDown.y),
-            );
+            const stairsDown = createStairs(this.state, 'stairs_down', 'down', generatedMap.stairsDown.x, generatedMap.stairsDown.y);
+            this.state.entities.set(stairsDown.id, stairsDown);
         }
         if (generatedMap.stairsUp && this.state.floor > 1) {
-            this.state.entities.set(
-                `stairs_up_${this.state.floor}`,
-                createStairs(this.state, 'stairs_up', generatedMap.stairsUp.x, generatedMap.stairsUp.y),
-            );
+            const stairsUp = createStairs(this.state, 'stairs_up', 'up', generatedMap.stairsUp.x, generatedMap.stairsUp.y);
+            this.state.entities.set(stairsUp.id, stairsUp);
         }
 
         // Начальный расчёт поля зрения
@@ -761,6 +755,16 @@ export class GameSimulation implements Simulation {
         const entities = findAllEntitiesAt(this.state, pos.x, pos.y);
         return filter ? entities.filter(filter) : entities;
     }
+
+    /** Возвращает разрешённое взаимодействие для целевой сущности от лица актора. */
+    resolveInteraction(entity: Entity, actor: Entity) {
+        return resolveInteraction(this.state, entity, actor);
+    }
+
+    /** Возвращает все интерактивные сущности в радиусе от актора (Chebyshev distance). */
+    findInteractableEntitiesAround(actor: Entity, radius: number): Entity[] {
+        return findInteractableEntitiesAround(this.state, actor, radius);
+    }
 }
 
 export class ActionHandlerRegistry {
@@ -790,15 +794,10 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
     registry.register('MOVE', moveEntity);
     registry.register('ATTACK', attackEntity);
     registry.register('WAIT', waitEntity);
-    registry.register('DESCEND', descendAction);
-    registry.register('ASCEND', ascendAction);
     registry.register('USE_ABILITY', useAbilityAction);
-    registry.register('PICKUP', pickupEntity);
     registry.register('EQUIP', equipEntity);
     registry.register('UNEQUIP', unequipEntity);
     registry.register('USE_ITEM', useItemAction);
-    registry.register('OPEN_DOOR', openDoorAction);
-    registry.register('CLOSE_DOOR', closeDoorAction);
     registry.register('INTERACT', interactAction);
     registry.register('DEBUG_ADD_ITEM', createDebugAddItemActionHandler(debugContext));
     registry.register('DEBUG_SPAWN_ENTITY', createDebugSpawnEntityActionHandler(debugContext));

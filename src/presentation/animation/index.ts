@@ -48,5 +48,11 @@ registerAnimationBuilder('ABILITY_USED', abilityUsedBuilder);
 registerAnimationBuilder('ABILITY_PREPARED', abilityPreparedBuilder);
 registerAnimationBuilder('ABILITY_PREPARED_CANCELLED', abilityPreparedCancelledBuilder);
 
+// Примечание: FLOOR_CHANGED намеренно не регистрируется здесь.
+// Переход между этажами — это мгновенный сброс экрана: UI перестраивает
+// карту, сущности и туман войны по новому состоянию без промежуточной
+// анимации. Событие остаётся в дереве исполнения для журналирования и
+// корректного обновления FOV, но анимационный узел для него не требуется.
+
 export { buildAnimationTree } from './core/treeBuilder';
 export { registerAnimationBuilder } from './core/registry';

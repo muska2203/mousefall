@@ -76,12 +76,12 @@ describe('collision reactions', () => {
     expect(events.some((e: any) => e.type === 'ENTITY_MOVED')).toBe(true);
   });
 
-  it('pushing player onto stairs triggers stair exit reaction', () => {
+  it('pushing player onto stairs does not trigger auto transition', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 4 });
     state.player = player;
     state.entities.set(player.id, player);
-    state.entities.set('stairs_down_1', { type: 'stairs', id: 'stairs_down_1', templateId: 'stairs_down', x: 5, y: 3, blocksMovement: false } as any);
+    state.entities.set('stairs_down_1', { type: 'stairs', id: 'stairs_down_1', templateId: 'stairs_down', x: 5, y: 3, blocksMovement: false, interactionKind: 'stairs' } as any);
 
     const builder = makeBuilder(player.id);
     executeIntent(state, { type: 'PUSH', entityId: player.id, dx: 0, dy: -1, sourceEntityId: null }, builder, builder.root);
@@ -90,6 +90,7 @@ describe('collision reactions', () => {
     expect(player.y).toBe(3);
 
     const events = collectEvents(builder.root);
-    expect(events.some((e: any) => e.type === 'STAIR_EXIT_TRIGGERED')).toBe(true);
+    expect(events.some((e: any) => e.type === 'STAIR_EXIT_TRIGGERED')).toBe(false);
+    expect(events.some((e: any) => e.type === 'ENTITY_MOVED')).toBe(true);
   });
 });

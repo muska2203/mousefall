@@ -8,14 +8,13 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide, StatusEffect } from '@simulation/types';
-import type { GameAction } from '@simulation/systems/actions/types';
+import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide, StatusEffect, InteractionId, GameAction } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type { ItemDetailViewModel } from './itemDetailMapper';
 import type {AIMode} from '@simulation/ai/ai-state';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
-export type { TileType, TurnSide, StatusEffect } from '@simulation/types';
+export type { TileType, TurnSide, StatusEffect, InteractionId } from '@simulation/types';
 export type { AIMode } from '@simulation/ai/ai-state';
 export type { AnimationConfigKey } from '@utils/animationConfig';
 
@@ -313,12 +312,9 @@ export type FieldObjectPopoverViewModel =
   | { kind: 'stairs'; data: StairsPopoverViewModel }
   | { kind: 'door'; data: DoorPopoverViewModel };
 
-/** Вид взаимодействия, доступного персонажу на клетке рядом с объектом. */
-export type InteractionKind = 'pickup' | 'descend' | 'ascend' | 'openDoor' | 'closeDoor';
-
 /** Одна доступная опция взаимодействия на кнопку F. */
 export type InteractionOption = {
-  kind: InteractionKind;
+  interactionId: InteractionId;
   /** Готовое действие, которое нужно отправить в Simulation. */
   action: GameAction;
   /** Клетка объекта, с которым происходит взаимодействие. */

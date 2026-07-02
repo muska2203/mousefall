@@ -18,7 +18,7 @@ describe('executeSetEntitiesIntent', () => {
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'DESCEND', entityId: 'player' },
+      action: { type: 'WAIT', entityId: 'player' },
     });
 
     const node = executeSetEntitiesIntent(
@@ -43,7 +43,7 @@ describe('executeSetEntitiesIntent', () => {
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'DESCEND', entityId: 'player' },
+      action: { type: 'WAIT', entityId: 'player' },
     });
 
     const node = executeSetEntitiesIntent(

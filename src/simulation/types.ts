@@ -32,6 +32,7 @@ import {
   GameEvent,
   RuntimeAbility,
   DamageType,
+  TurnSide,
 } from "@simulation/core-types.ts";
 import type { AIState } from "./ai/ai-state";
 
@@ -59,6 +60,7 @@ export type {
   EntityMovedEvent,
   RuntimeAbility,
   DamageType,
+  TurnSide,
 } from "@simulation/core-types.ts";
 export { ExecutionBuilder } from "@simulation/core-types.ts";
 
@@ -80,12 +82,12 @@ export type InventoryItem = {
 export type Entity =
     | PlayerEntity
     | EnemyEntity
-    | ItemEntity
+    | FloorItemContainerEntity
     | StairsEntity
     | DoorEntity;
 
 
-export type EntityType = 'player' | 'enemy' | 'item' | 'stairs' | 'door';
+export type EntityType = 'player' | 'enemy' | 'floor_item_container' | 'stairs' | 'door';
 
 export interface BaseEntity {
   id: EntityId;
@@ -219,27 +221,50 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   aiSightRadius: number;
 }
 
-/** Предмет, лежащий на полу карты. */
-export interface ItemEntity extends BaseEntity, TemplateIdHolder {
-  type: 'item';
+/** Контейнер предмета, лежащего на полу карты.
+ *
+ *  Отделяет runtime-сущность на полу от инвентарного экземпляра предмета.
+ *  При поднятии предмета контейнер удаляется, а `item` перемещается в инвентарь актора.
+ */
+export interface FloorItemContainerEntity extends BaseEntity, TemplateIdHolder {
+  type: 'floor_item_container';
   blocksMovement: false;
   displayName: string;
-  /** Готовый экземпляр предмета. Создаётся один раз при спавне. */
+  interactionKind: 'item';
+  /** Готовый экземпляр предмета, хранящийся в контейнере. */
   item: InventoryItem;
 }
 
 /** Виды интерактивных объектов. Расширяется по мере добавления новых типов взаимодействий. */
-export type InteractionKind =
+export type EntityInteractionKind =
   | 'door'
   | 'stairs'
   | 'item'
   | 'lever';
+
+/** Идентификатор конкретного взаимодействия, разрешённого `resolveInteraction`. */
+export type InteractionId =
+  | 'open_door'
+  | 'close_door'
+  | 'pickup'
+  | 'descend'
+  | 'ascend';
+
+/** Описание разрешённого взаимодействия. */
+export type ResolvedInteraction = {
+  /** Идентификатор взаимодействия, используемый Presentation для подсказок и i18n. */
+  interactionId: InteractionId;
+  /** true — действие доступно с соседней клетки; false — нужно стоять на той же клетке. */
+  usableFromAdjacent: boolean;
+};
 
 /** Лестница — объект перехода между этажами. */
 export interface StairsEntity extends BaseEntity, TemplateIdHolder {
   type: 'stairs';
   blocksMovement: false;
   interactionKind: 'stairs';
+  /** Направление лестницы: 'up' — к поверхности, 'down' — глубже в подземелье. */
+  direction: 'up' | 'down';
 }
 
 /** Дверь — объект, который может быть открыт или закрыт. Может быть разрушена атаками и получать статус-эффекты. */
@@ -273,8 +298,6 @@ export type RNGState = {
 // ─────────────────────────────────────────────
 // Система ходов
 // ─────────────────────────────────────────────
-
-export type TurnSide = 'PLAYER' | 'ENVIRONMENT' | 'STATUS_TICK';
 
 type TurnState = {
   activeSide: TurnSide;
@@ -463,6 +486,12 @@ export type Simulation = {
 
   /** Возвращает все сущности на тайле, удовлетворяющие фильтру. */
   findEntitiesAt(pos: Position, filter?: EntityFilter): Entity[];
+
+  /** Возвращает разрешённое взаимодействие для целевой сущности от лица актора. */
+  resolveInteraction(entity: Entity, actor: Entity): ResolvedInteraction | null;
+
+  /** Возвращает все интерактивные сущности в радиусе от актора (Chebyshev distance). */
+  findInteractableEntitiesAround(actor: Entity, radius: number): Entity[];
 };
 
 export type ActionPreview = {

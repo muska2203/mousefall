@@ -69,7 +69,7 @@ describe('createDebugSpawnEntityActionHandler', () => {
     expect(handler.validate(state, action).ok).toBe(true);
     handler.execute(state, action, [], builder, builder.root);
 
-    const spawned = Array.from(state.entities.values()).find(e => e.type === 'item');
+    const spawned = Array.from(state.entities.values()).find(e => e.type === 'floor_item_container');
     expect(spawned).toBeDefined();
     expect(spawned?.x).toBe(3);
     expect(spawned?.y).toBe(3);

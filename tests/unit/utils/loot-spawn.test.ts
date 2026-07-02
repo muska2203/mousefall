@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { findFreeTileNear } from '../../../src/simulation/systems/loot-spawn';
-import { makeGameState, makeStateWithEnemy, makeEnemy, makeFloorItem } from '../../fixtures/gameState';
+import { makeGameState, makeStateWithEnemy, makeEnemy, makeFloorItemContainer } from '../../fixtures/gameState';
 
 describe('findFreeTileNear', () => {
   it('возвращает origin, если клетка свободна', () => {
@@ -76,7 +76,7 @@ describe('findFreeTileNear', () => {
       }
     }
     cellsToFill.forEach((pos, i) => {
-      const item = makeFloorItem({ id: `fill_${i}`, x: pos.x, y: pos.y });
+      const item = makeFloorItemContainer({ id: `fill_${i}`, x: pos.x, y: pos.y });
       state.entities.set(item.id, item);
     });
     // maxRadius=0: fallback не ищет вокруг, этап 1 на radius=0..2 не найдёт (всё занято items)
@@ -88,7 +88,7 @@ describe('findFreeTileNear', () => {
   it('избегает клеток, занятых другими предметами', () => {
     const state = makeGameState();
     // Добавим предмет на (4,5) — первая кандидатная клетка при radius=1
-    const item = makeFloorItem({ x: 4, y: 5 });
+    const item = makeFloorItemContainer({ x: 4, y: 5 });
     state.entities.set(item.id, item);
 
     // Игрок по умолчанию в (5,5) — origin занят
@@ -108,7 +108,7 @@ describe('findFreeTileNear', () => {
 
   it('ищет соседнюю клетку, если origin занята предметом', () => {
     const state = makeGameState();
-    const item = makeFloorItem({ x: 2, y: 2 });
+    const item = makeFloorItemContainer({ x: 2, y: 2 });
     state.entities.set(item.id, item);
 
     const origin = { x: 2, y: 2 };

@@ -8,13 +8,14 @@
  * - Утилиты спавна врагов/предметов.
  */
 
-import type { TileType, Room, GameState, RNGState, StairsEntity, DoorEntity, EnemyEntity, ItemEntity, RuntimeAbility } from '@simulation/types';
+import type { TileType, Room, GameState, RNGState, StairsEntity, DoorEntity, EnemyEntity, FloorItemContainerEntity, RuntimeAbility } from '@simulation/types';
 import type { MapParams } from '@content/schemas';
 import { rngInt, rngChance } from '@utils/rng';
 import { nextEntityId } from '@simulation/state';
 import { createDefaultAIState } from '@simulation/ai/ai-state';
 import { getEntity, getItem, getDoor } from '@content/registry';
-import { createItemEntity } from '@simulation/systems/item-entity-factory';
+import { createFloorItemContainer } from '@simulation/systems/item-entity-factory';
+import { createInventoryItem } from '@simulation/systems/inventory-factory';
 import { addModifier } from '@simulation/systems/stats/modifier-engine';
 import { recalculateActorStats } from '@simulation/systems/stats/recalculate';
 
@@ -71,9 +72,9 @@ export function spawnEnemiesAndItems(
   rooms: Room[],
   params: MapParams,
   state: GameState,
-): { enemies: EnemyEntity[]; items: ItemEntity[] } {
+): { enemies: EnemyEntity[]; items: FloorItemContainerEntity[] } {
   const enemies: EnemyEntity[] = [];
-  const items: ItemEntity[] = [];
+  const items: FloorItemContainerEntity[] = [];
   // Отслеживаем занятые тайлы, чтобы несколько врагов не спавнились в одной клетке.
   const occupied = new Set<string>();
 
@@ -219,13 +220,20 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
   return enemy;
 }
 
-export function createFloorItem(state: GameState, templateId: string, x: number, y: number): ItemEntity {
-  return createItemEntity(state, templateId, x, y);
+export function createFloorItem(
+  state: GameState,
+  templateId: string,
+  x: number,
+  y: number,
+): FloorItemContainerEntity {
+  const inventoryItem = createInventoryItem(state, templateId);
+  return createFloorItemContainer(state, inventoryItem, { x, y });
 }
 
 export function createStairs(
   state: GameState,
-  templateId: 'stairs_down' | 'stairs_up',
+  templateId: string,
+  direction: 'up' | 'down',
   x: number,
   y: number,
 ): StairsEntity {
@@ -236,6 +244,7 @@ export function createStairs(
     y,
     displayName: templateId,
     templateId,
+    direction,
     blocksMovement: false,
     interactionKind: 'stairs',
   };

@@ -24,7 +24,7 @@ export type ActionPointCostResolver = {
  * - USE_ABILITY — берётся из `apCost` шаблона способности, fallback = 1
  * - USE_ITEM — берётся из `apCost` шаблона предмета, fallback = 1
  * - EQUIP / UNEQUIP — 0 AP
- * - DESCEND / ASCEND / PICKUP — 1 AP
+ * - INTERACT — 1 AP
  */
 export class DefaultActionPointCostResolver
     implements ActionPointCostResolver {
@@ -32,11 +32,6 @@ export class DefaultActionPointCostResolver
   getCost(action: GameAction, state: GameState): number {
     switch (action.type) {
       case 'MOVE':
-      case 'PICKUP':
-      case 'DESCEND':
-      case 'ASCEND':
-      case 'OPEN_DOOR':
-      case 'CLOSE_DOOR':
       case 'INTERACT':
         return 1;
 

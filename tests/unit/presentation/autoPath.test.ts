@@ -4,7 +4,7 @@ import { GameSession } from '../../../src/presentation/gameSession';
 import { AutoPathController, type AutoPathQueries } from '../../../src/presentation/autoPathController';
 import { findPathTowards } from '../../../src/presentation/pathfinding';
 import { GameSimulation } from '../../../src/simulation/simulation';
-import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItem, makeStairs } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs } from '../../fixtures/gameState';
 import type { Entity, EnemyEntity, DoorEntity } from '../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 
@@ -413,7 +413,7 @@ describe('AutoPathController', () => {
     expect(controller.isActive()).toBe(false);
   });
 
-  it('step returns OPEN_DOOR when adjacent to closed door target and cancels path', () => {
+  it('step returns INTERACT when adjacent to closed door target and cancels path', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const door = makeDoor({ x: 5, y: 6 });
     const state = makeGameState({
@@ -430,9 +430,9 @@ describe('AutoPathController', () => {
     expect(result).toEqual({
       kind: 'action',
       action: {
-        type: 'OPEN_DOOR',
+        type: 'INTERACT',
         entityId: state.player.id,
-        targetPosition: { x: 5, y: 6 },
+        targetId: door.id,
       },
     });
     expect(controller.isActive()).toBe(false);
@@ -466,9 +466,9 @@ describe('AutoPathController', () => {
     expect(controller.isCommitted()).toBe(false);
   });
 
-  it('step returns PICKUP when standing on item target', () => {
+  it('step returns INTERACT when standing on item target', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const item = makeFloorItem({ x: 5, y: 5 });
+    const item = makeFloorItemContainer({ x: 5, y: 5 });
     const state = makeGameState({
       player,
       entities: new Map<string, Entity>([[player.id, player], [item.id, item]]),
@@ -483,14 +483,15 @@ describe('AutoPathController', () => {
     expect(result).toEqual({
       kind: 'action',
       action: {
-        type: 'PICKUP',
+        type: 'INTERACT',
         entityId: state.player.id,
+        targetId: item.id,
       },
     });
     expect(controller.isActive()).toBe(false);
   });
 
-  it('step returns DESCEND when standing on downstairs target', () => {
+  it('step returns INTERACT when standing on downstairs target', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
     const state = makeGameState({
@@ -507,8 +508,9 @@ describe('AutoPathController', () => {
     expect(result).toEqual({
       kind: 'action',
       action: {
-        type: 'DESCEND',
+        type: 'INTERACT',
         entityId: state.player.id,
+        targetId: stairs.id,
       },
     });
     expect(controller.isActive()).toBe(false);
@@ -516,7 +518,7 @@ describe('AutoPathController', () => {
 
   it('step moves onto adjacent item tile before pickup', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const item = makeFloorItem({ x: 5, y: 6 });
+    const item = makeFloorItemContainer({ x: 5, y: 6 });
     const state = makeGameState({
       player,
       entities: new Map<string, Entity>([[player.id, player], [item.id, item]]),
@@ -543,7 +545,7 @@ describe('AutoPathController', () => {
 
   it('step picks up item after moving onto its tile', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const item = makeFloorItem({ x: 5, y: 6 });
+    const item = makeFloorItemContainer({ x: 5, y: 6 });
     const state = makeGameState({
       player,
       entities: new Map<string, Entity>([[player.id, player], [item.id, item]]),
@@ -562,8 +564,9 @@ describe('AutoPathController', () => {
     expect(result).toEqual({
       kind: 'action',
       action: {
-        type: 'PICKUP',
+        type: 'INTERACT',
         entityId: state.player.id,
+        targetId: item.id,
       },
     });
     expect(controller.isActive()).toBe(false);
@@ -706,7 +709,7 @@ describe('GameSession auto-path integration', () => {
     expect(enemyAfter?.hp).toBeLessThan(enemy.maxHp);
   });
 
-  it('click on closed door commits, dispatches OPEN_DOOR and cancels path', () => {
+  it('click on closed door commits, dispatches INTERACT and cancels path', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const door = makeDoor({ x: 5, y: 6 });
     const state = makeGameState({

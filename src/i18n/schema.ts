@@ -207,6 +207,7 @@ export interface ComponentsInteractionHintTranslations {
   ascend: string;
   openDoor: string;
   closeDoor: string;
+  unknown: string;
   keyF: string;
   keyTab: string;
 }
@@ -414,12 +415,8 @@ export interface SystemGameSessionTranslations {
 export interface SystemActionValidationsTranslations {
   itemNotFound: string;
   itemCannotEquip: string;
-  onlyPlayerCanDescend: string;
-  noDescentHere: string;
-  bottomFloorReached: string;
-  onlyPlayerCanAscend: string;
-  noAscentHere: string;
-  alreadyOnSurface: string;
+  onlyPlayerCanTransition: string;
+  cannotCloseDoorFromInside: string;
   slotEmpty: string;
   itemCannotUse: string;
   itemEffectNotSupported: string;

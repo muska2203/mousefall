@@ -11,8 +11,7 @@
  */
 
 import { t } from '@i18n/t';
-import type {GameEvent, GameState, SimulationResult, TurnSide} from '@simulation/types';
-import type {ExecutionNode} from '@simulation/systems/actions/types';
+import type {GameEvent, GameState, SimulationResult, TurnSide, ExecutionNode} from '@simulation/types';
 import { getLocalizedItem, getLocalizedEntity, getLocalizedPlayerTemplate, tryGetLocalizedAbility } from '@content/registry';
 import type { Locale } from '@content/texts/lookup';
 

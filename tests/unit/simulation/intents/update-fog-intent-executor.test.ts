@@ -11,7 +11,7 @@ describe('executeUpdateFogIntent', () => {
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'DESCEND', entityId: 'player' },
+      action: { type: 'WAIT', entityId: 'player' },
     });
 
     const node = executeUpdateFogIntent(

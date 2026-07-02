@@ -43,7 +43,7 @@ export const fireballSkill: SkillExecutor = {
 
     for (const entity of affectedEntities) {
       // Предметы и лестницы не получают урона.
-      if (entity.type === 'item' || entity.type === 'stairs') continue;
+      if (entity.type === 'floor_item_container' || entity.type === 'stairs') continue;
       if (!isDamageable(entity)) continue;
       const isCenter = entity.x === center.x && entity.y === center.y;
       const formulaId = isCenter ? 'fireball_center' : 'fireball_aoe';

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GameSimulation, defaultActionHandlerRegistry } from '../../src/simulation/simulation';
 import { makeTestMap, makePlayer, makeEnemy } from '../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../src/content/registry';
-import type { GameState, EntityId, ItemEntity } from '../../src/simulation/types';
+import type { GameState, EntityId, FloorItemContainerEntity } from '../../src/simulation/types';
 import type { EntityTemplate, ItemTemplate } from '../../src/content/schemas';
 import { createRNG } from '../../src/utils/rng';
 import type { ExecutionNode } from '../../src/simulation/core-types';
@@ -193,7 +193,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     expect(droppedNode!.parent!.event.type).toBe('ENTITY_DIED');
   });
 
-  it('ItemEntity появляется в state.entities после хода', () => {
+  it('FloorItemContainerEntity появляется в state.entities после хода', () => {
     const state = makeLootGameState();
     const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
 
@@ -205,7 +205,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     });
 
     const items = Array.from(simulation.getState().entities.values())
-      .filter(e => e.type === 'item') as ItemEntity[];
+      .filter(e => e.type === 'floor_item_container') as FloorItemContainerEntity[];
 
     expect(items.length).toBe(1);
     expect(items[0]!).toBeDefined();
@@ -250,7 +250,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     expect(currentState.entities.has('test_enemy_1')).toBe(false);
 
     const items = Array.from(currentState.entities.values())
-      .filter(e => e.type === 'item') as ItemEntity[];
+      .filter(e => e.type === 'floor_item_container') as FloorItemContainerEntity[];
 
     expect(items.length).toBe(1);
     expect(items[0]!).toBeDefined();
@@ -288,7 +288,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     });
 
     const items = Array.from(simulation.getState().entities.values())
-      .filter(e => e.type === 'item') as ItemEntity[];
+      .filter(e => e.type === 'floor_item_container') as FloorItemContainerEntity[];
 
     expect(items.length).toBe(2);
 
@@ -300,37 +300,40 @@ describe('Интеграция: цикл выпадения лута', () => {
     resetRegistry();
   });
 
-  it('игрок поднимает предмет с пола по нажатию PICKUP', () => {
+  it('игрок поднимает предмет из FloorItemContainerEntity по нажатию PICKUP', () => {
     const state = makeLootGameState();
-    // Добавим предмет прямо под игроком
-    const item: ItemEntity = {
-      id: 'floor_potion',
-      type: 'item',
+    // Добавим контейнер с предметом прямо под игроком
+    const container: FloorItemContainerEntity = {
+      id: 'floor_potion_container',
+      type: 'floor_item_container',
       templateId: 'test_potion',
       x: 1,
       y: 1,
       blocksMovement: false,
       displayName: 'Тестовое зелье',
+      interactionKind: 'item',
       item: {
-        instanceId: 'floor_potion',
+        instanceId: 'floor_potion_instance',
         templateId: 'test_potion',
         quantity: 1,
         grantedAbilities: [],
       },
     };
-    state.entities.set(item.id, item);
+    state.entities.set(container.id, container);
 
     const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
 
     simulation.dispatch({
-      type: 'PICKUP',
+      type: 'INTERACT',
       entityId: 'player',
+      targetId: container.id,
     });
 
     const currentState = simulation.getState();
-    expect(currentState.entities.has('floor_potion')).toBe(false);
+    expect(currentState.entities.has('floor_potion_container')).toBe(false);
     expect(currentState.player.inventory.length).toBe(1);
     expect(currentState.player.inventory[0]).toMatchObject({
+      instanceId: 'floor_potion_instance',
       templateId: 'test_potion',
       quantity: 1,
       grantedAbilities: [],
