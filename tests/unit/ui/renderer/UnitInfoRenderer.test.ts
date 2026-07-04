@@ -532,7 +532,7 @@ describe('UnitInfoRenderer', () => {
     expect(widget.statusIcon.visible).toBe(false);
 
     input.phase = 'animating';
-    input.aiModeByEntity.set('player', 'alert');
+    input.aiModeByEntity.set('player', 'chase');
     renderer.update(input, (id) => sprites.get(id));
     await new Promise((resolve) => setImmediate(resolve));
 

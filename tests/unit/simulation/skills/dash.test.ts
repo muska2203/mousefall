@@ -6,6 +6,7 @@ import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
+import '@simulation/ai/hunter-strategy';
 import { ExecutionBuilder } from '@simulation/systems/actions/types';
 
 beforeEach(() => {

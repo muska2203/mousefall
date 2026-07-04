@@ -15,7 +15,7 @@ function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
   } as PlayerEntity;
 }
 
-function makeEnemy(aiMode: 'idle' | 'alert' | 'chase' | 'return', overrides: Partial<EnemyEntity> = {}): EnemyEntity {
+function makeEnemy(aiMode: 'idle' | 'chase' | 'return', overrides: Partial<EnemyEntity> = {}): EnemyEntity {
   return {
     id: 'enemy1',
     type: 'enemy',
@@ -27,7 +27,6 @@ function makeEnemy(aiMode: 'idle' | 'alert' | 'chase' | 'return', overrides: Par
       targetY: null,
       homeX: 0,
       homeY: 0,
-      alertTurns: 0,
       preparedAbility: null,
     },
     ...overrides,
@@ -56,7 +55,6 @@ function makeDoor(): DoorEntity {
 describe('resolveAIMode', () => {
   it('returns AI mode for enemy when no prepared intent is active', () => {
     expect(resolveAIMode(makeEnemy('idle'))).toBe('idle');
-    expect(resolveAIMode(makeEnemy('alert'))).toBe('alert');
     expect(resolveAIMode(makeEnemy('chase'))).toBe('chase');
     expect(resolveAIMode(makeEnemy('return'))).toBe('return');
   });
@@ -70,7 +68,6 @@ describe('resolveAIMode', () => {
         targetY: null,
         homeX: 0,
         homeY: 0,
-        alertTurns: 0,
         preparedAbility: {abilityId: 'swoop', targets: [{x: 0, y: 0}]},
       },
     });
@@ -86,7 +83,6 @@ describe('resolveAIMode', () => {
         targetY: null,
         homeX: 0,
         homeY: 0,
-        alertTurns: 0,
         preparedAbility: {abilityId: 'swoop', targets: [{x: 0, y: 0}]},
       },
     });

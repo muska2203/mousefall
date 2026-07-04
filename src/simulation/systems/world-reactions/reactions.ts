@@ -9,6 +9,7 @@ import {collisionStunReaction} from "@simulation/systems/world-reactions/collisi
 import {displacementMoveReaction} from "@simulation/systems/world-reactions/displacement-move-reaction.ts";
 import {burningTickReaction} from "@simulation/systems/world-reactions/burning-tick-reaction.ts";
 import {floorTransitionReaction} from "@simulation/systems/world-reactions/floor-transition-reaction.ts";
+import {aiPerceptionReaction} from "@simulation/systems/world-reactions/ai-perception-reaction.ts";
 
 // ─────────────────────────────────────────────
 // Хранилище реакций
@@ -73,3 +74,6 @@ registerReaction('ENTITY_DAMAGED', fireDamageReaction, -1);
 registerReaction('ENTITY_DAMAGED', deathReaction, 0);
 registerReaction('ENTITY_DIED', postDeathLootReaction, 0);
 registerReaction('FLOOR_CHANGED', floorTransitionReaction, 0);
+registerReaction('ENTITY_MOVED', aiPerceptionReaction, 0);
+registerReaction('DOOR_OPENED', aiPerceptionReaction, 0);
+registerReaction('DOOR_CLOSED', aiPerceptionReaction, 0);

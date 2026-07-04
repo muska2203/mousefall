@@ -271,6 +271,19 @@ export type TargetMode =
   | { type: 'area'; range: number; aoeRadius: number };
 
 // ─────────────────────────────────────────────
+// Изменения мира, заметные AI
+// ─────────────────────────────────────────────
+
+/**
+ * Описание изменения мира, которое AI-стратегия может обработать.
+ * Хранится в базовых типах, так как используется в Intent/GameEvent.
+ */
+export type WorldChange =
+  | { kind: 'entity_moved'; entityId: EntityId; from: Position; to: Position }
+  | { kind: 'door_opened'; position: Position }
+  | { kind: 'door_closed'; position: Position };
+
+// ─────────────────────────────────────────────
 // Интенты (Intents)
 // ─────────────────────────────────────────────
 
@@ -306,7 +319,8 @@ export type Intent =
   | TickCooldownIntent
   | BeginTurnIntent
   | CleanupDeadEntitiesIntent
-  | ApplyFogEventsIntent;
+  | ApplyFogEventsIntent
+  | NotifyAIIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -345,6 +359,7 @@ export type RestoreApIntent = { type: 'RESTORE_AP'; entityId: EntityId };
 export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; abilityId: string };
 export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: 'PLAYER' | 'ENVIRONMENT'; round?: number };
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
+export type NotifyAIIntent = { type: 'NOTIFY_AI'; entityId: EntityId; change: WorldChange };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -389,7 +404,8 @@ export type GameEvent =
   | TurnBeganEvent
   | ApRestoredEvent
   | CooldownTickedEvent
-  | DeadEntitiesCleanedEvent;
+  | DeadEntitiesCleanedEvent
+  | AiNotifiedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -546,4 +562,10 @@ export type EntityHealedEvent = {
 export type DeadEntitiesCleanedEvent = {
   type: 'DEAD_ENTITIES_CLEANED';
   removed: { entityId: EntityId; position: Position }[];
+};
+
+export type AiNotifiedEvent = {
+  type: 'AI_NOTIFIED';
+  entityId: EntityId;
+  change: WorldChange;
 };

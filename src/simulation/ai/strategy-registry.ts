@@ -13,10 +13,18 @@
 import type { AiActor, GameState } from '../types';
 import type { GameAction } from '../systems/actions/types';
 import type { ExecutionBuilder, ExecutionNode } from '../systems/actions/types';
+import type { WorldChange } from './perception-types';
 
 export type AIStrategy = {
   /** Обновить внутреннее состояние стратегии перед принятием решений (FSM-тики). */
   updateState?(actor: AiActor, state: GameState): void;
+  /**
+   * Уведомить стратегию об изменении мира.
+   * Вызывается для каждого заметного события (движение, двери),
+   * если актор потенциально может его воспринять (грубый фильтр по расстоянию).
+   * Стратегия сама решает, видит ли актор источник изменения, и реагирует.
+   */
+  onWorldChange?(actor: AiActor, state: GameState, change: WorldChange): void;
   decideAction(
     actor: AiActor,
     state: GameState,

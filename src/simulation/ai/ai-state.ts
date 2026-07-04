@@ -10,27 +10,27 @@
 import type { Position } from '@simulation/core-types';
 import type { EnemyEntity } from '@simulation/types';
 
+
 /**
  * Режимы ИИ врага.
  * - idle:    стоит на месте, сканирует окружение.
- * - alert:   1 ход на осмотр при обнаружении игрока.
  * - chase:   движется к последней известной позиции игрока.
  * - return:  возвращается к точке спавна.
  * - prepared: есть подготовленное намерение на следующий ход.
  *
  * Режим 'prepared' не хранится в AIState напрямую — он выводится
  * из aiState.preparedAbility функцией getDerivedAIMode. Базовый FSM-режим
- * (idle/alert/chase/return) сохраняется в aiState.mode, чтобы после
+ * (idle/chase/return) сохраняется в aiState.mode, чтобы после
  * выполнения prepared-скилла враг мог продолжить прежнее поведение.
  */
-export type AIMode = 'idle' | 'alert' | 'chase' | 'return' | 'prepared';
+export type AIMode = 'idle' | 'chase' | 'return' | 'prepared';
 
 /**
  * Runtime-состояние конечного автомата ИИ-врага.
- * strategy: 'hunter' | 'simple-boss'.
+ * strategy: строковый ID из strategy-registry.
  */
 export type AIState = {
-  strategy: 'hunter' | 'simple-boss';
+  strategy: string;
 
   /** Базовое состояние поведения (FSM). Не теряется при подготовке скилла. */
   mode: Exclude<AIMode, 'prepared'>;
@@ -42,9 +42,6 @@ export type AIState = {
   /** Точка спавна: куда возвращаться в режиме return */
   homeX: number;
   homeY: number;
-
-  /** Сколько ходов осталось в состоянии ALERT (осмотр перед погоней) */
-  alertTurns: number;
 
   /** Подготовленная способность AI: скилл и цели, которые будут использованы при следующем решении стратегии. */
   preparedAbility: {
@@ -79,31 +76,14 @@ export function getDerivedAIMode(enemy: EnemyEntity): AIMode {
  * Создаёт дефолтное AI-состояние для указанной стратегии.
  * @throws Если strategyId неизвестен.
  */
-export function createDefaultAIState(strategyId: string): AIState {
-  switch (strategyId) {
-    case 'hunter':
-      return {
-        strategy: 'hunter',
-        mode: 'idle',
-        targetX: null,
-        targetY: null,
-        homeX: 0,
-        homeY: 0,
-        alertTurns: 0,
-        preparedAbility: null,
-      };
-    case 'simple-boss':
-      return {
-        strategy: 'simple-boss',
-        mode: 'idle',
-        targetX: null,
-        targetY: null,
-        homeX: 0,
-        homeY: 0,
-        alertTurns: 0,
-        preparedAbility: null,
-      };
-    default:
-      throw new Error(`Unknown AI strategy: ${strategyId}`);
-  }
+export function createDefaultAIState(strategyId: string, home?: Position): AIState {
+  return {
+    strategy: strategyId,
+    mode: 'idle',
+    targetX: null,
+    targetY: null,
+    homeX: home?.x ?? 0,
+    homeY: home?.y ?? 0,
+    preparedAbility: null,
+  };
 }

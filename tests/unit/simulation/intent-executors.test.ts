@@ -5,6 +5,7 @@ import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-exe
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
 import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
+import '@simulation/ai/hunter-strategy';
 import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity, makeFloorItemContainer} from "../../fixtures/gameState.ts";
 import {PLAYER_ID} from "@utils/constants.ts";
 import {initRegistry, resetRegistry} from "../../../src/content/registry";
@@ -211,9 +212,9 @@ describe('executeIntent с мировыми реакциями', () => {
         expect(enemy.hp).toBe(7);
     });
 
-    it('перемещение не порождает дополнительных дочерних событий', () => {
+    it('перемещение не порождает дополнительных дочерних событий, если рядом нет AI-акторов', () => {
         const player = makePlayer({x: 5, y: 5});
-        const state = makeStateWithPlayerAndEntity(player, makeEnemy({x: 8, y: 8}));
+        const state = makeStateWithPlayerAndEntity(player, makeEnemy({x: 8, y: 8, aiSightRadius: 1}));
         const builder = makeBuilder();
 
         executeIntent(state, {type: 'MOVE', entityId: player.id, dx: 1, dy: 0}, builder, builder.root);
@@ -222,6 +223,21 @@ describe('executeIntent с мировыми реакциями', () => {
         const moveNode = builder.root.children[0]!;
         expect(moveNode.event.type).toBe('ENTITY_MOVED');
         expect(moveNode.children.length).toBe(0);
+    });
+
+    it('перемещение порождает AI_NOTIFIED для AI-актора в радиусе видимости', () => {
+        const player = makePlayer({x: 5, y: 5});
+        const enemy = makeEnemy({x: 6, y: 4, aiSightRadius: 3});
+        const state = makeStateWithPlayerAndEntity(player, enemy);
+        const builder = makeBuilder();
+
+        executeIntent(state, {type: 'MOVE', entityId: player.id, dx: 1, dy: 0}, builder, builder.root);
+
+        expect(builder.root.children.length).toBe(1);
+        const moveNode = builder.root.children[0]!;
+        expect(moveNode.event.type).toBe('ENTITY_MOVED');
+        expect(moveNode.children.length).toBe(1);
+        expect(moveNode.children[0]!.event.type).toBe('AI_NOTIFIED');
     });
 });
 

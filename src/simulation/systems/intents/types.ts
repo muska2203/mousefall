@@ -33,6 +33,7 @@ export type {
   RestoreApIntent,
   TickCooldownIntent,
   BeginTurnIntent,
+  NotifyAIIntent,
 } from "@simulation/core-types.ts";
 
 export type OpenDoorIntentExecutor = IntentExecutor<OpenDoorIntent>;

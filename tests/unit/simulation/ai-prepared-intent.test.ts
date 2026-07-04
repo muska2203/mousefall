@@ -6,8 +6,11 @@ import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
-import { getDerivedAIMode } from '../../../src/simulation/ai/ai-state';
-import { getAbility } from '../../../src/content/registry';
+import { getDerivedAIMode, createDefaultAIState } from '../../../src/simulation/ai/ai-state';
+import { registerStrategy } from '../../../src/simulation/ai/strategy-registry';
+import { tryPrepareAbility, wait } from '../../../src/simulation/ai/ai-helpers';
+import { closeCombat, findVisibleAttackTarget } from '../../../src/simulation/ai/tactics';
+import { isEnemyEntity } from '../../../src/simulation/ai/ai-state';
 import { registerSkill } from '../../../src/simulation/skills/skillExecutor';
 import { testFireballSkill } from '../../helpers/test-skills';
 
@@ -43,6 +46,49 @@ function getEnemy(state: ReturnType<typeof makeGameState>): EnemyEntity {
   throw new Error('Враг не найден в состоянии');
 }
 
+/**
+ * Тестовая стратегия, имитирующая старое поведение охотника со скиллами.
+ *
+ * Используется только в этом файле для проверки механики prepared-скиллов
+ * независимо от реальной hunter-стратегии, которая сейчас не использует скиллы.
+ */
+registerStrategy('prepared-test-hunter', {
+  updateState() {
+    // В тестах FSM не нужен.
+  },
+
+  decideAction(actor, state, builder, parent) {
+    if (!isEnemyEntity(actor)) return wait(actor);
+    const enemy = actor;
+
+    // Приоритет 1: выполнить подготовленную способность.
+    if (enemy.aiState.preparedAbility) {
+      return {
+        type: 'USE_ABILITY',
+        entityId: enemy.id,
+        abilityId: enemy.aiState.preparedAbility.abilityId,
+        targets: enemy.aiState.preparedAbility.targets,
+      };
+    }
+
+    // Приоритет 2: подготовить способность, если видим цель.
+    const visibleTarget = findVisibleAttackTarget(enemy, state);
+    if (visibleTarget) {
+      if (tryPrepareAbility(enemy, state, builder, parent)) {
+        return wait(enemy);
+      }
+
+      // Если подготовить не удалось — идём вплотную и атакуем.
+      const result = closeCombat(enemy, state, visibleTarget);
+      if (result.kind !== 'blocked') {
+        return result.action;
+      }
+    }
+
+    return wait(enemy);
+  },
+});
+
 describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
   beforeEach(() => {
     resetRegistry();
@@ -70,6 +116,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       y: 5,
       maxAp: 1,
       ap: 1,
+      aiStrategyId: 'prepared-test-hunter',
+      aiState: createDefaultAIState('prepared-test-hunter'),
       abilities: [{ templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({
@@ -93,6 +141,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       y: 5,
       maxAp: 2,
       ap: 2,
+      aiStrategyId: 'prepared-test-hunter',
+      aiState: createDefaultAIState('prepared-test-hunter'),
       abilities: [{ templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({
@@ -150,6 +200,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       y: 5,
       maxAp: 2,
       ap: 2,
+      aiStrategyId: 'prepared-test-hunter',
+      aiState: createDefaultAIState('prepared-test-hunter'),
       abilities: [{ templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({
@@ -168,7 +220,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).toBeNull();
-    expect(getDerivedAIMode(enemyAfter)).toBe('chase');
+    expect(getDerivedAIMode(enemyAfter)).toBe('idle');
     // Игрок получил урон от fireball
     expect(sim.getState().player.hp).toBeLessThan(100);
   });
@@ -180,6 +232,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       y: 5,
       maxAp: 2,
       ap: 2,
+      aiStrategyId: 'prepared-test-hunter',
+      aiState: createDefaultAIState('prepared-test-hunter'),
       abilities: [{ templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({
@@ -215,6 +269,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       y: 5,
       maxAp: 2,
       ap: 2,
+      aiStrategyId: 'prepared-test-hunter',
+      aiState: createDefaultAIState('prepared-test-hunter'),
       abilities: [{ templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({
@@ -264,6 +320,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       y: 5,
       maxAp: 3,
       ap: 3,
+      aiStrategyId: 'prepared-test-hunter',
+      aiState: createDefaultAIState('prepared-test-hunter'),
       abilities: [{ templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({

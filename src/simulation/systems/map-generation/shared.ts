@@ -171,7 +171,7 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     damageType: template.combat?.damageType ?? 'blunt',
     aiStrategyId: template.aiStrategyId ?? 'hunter',
     aiSightRadius: template.aiSightRadius,
-    aiState: createDefaultAIState(template.aiStrategyId ?? 'hunter'),
+    aiState: createDefaultAIState(template.aiStrategyId ?? 'hunter', { x, y }),
     baseStats: template.baseStats,
     baseMaxHp: template.health.max,
     statModifiers: [],

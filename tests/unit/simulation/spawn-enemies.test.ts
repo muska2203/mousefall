@@ -70,6 +70,23 @@ describe('spawnEnemiesAndItems', () => {
     expect(enemies.length).toBe(4);
   });
 
+  it('home-координаты врага совпадают с позицией спавна', () => {
+    const state = makeGameState();
+    const params = makeSpawnParams();
+    const rooms = [
+      { x: 1, y: 1, width: 4, height: 4 },
+      { x: 6, y: 1, width: 8, height: 8 },
+    ];
+
+    const { enemies } = spawnEnemiesAndItems(state.rng, rooms, params, state);
+
+    expect(enemies.length).toBeGreaterThan(0);
+    for (const enemy of enemies) {
+      expect(enemy.aiState.homeX).toBe(enemy.x);
+      expect(enemy.aiState.homeY).toBe(enemy.y);
+    }
+  });
+
   it('не спавнит врагов при density = 0', () => {
     const state = makeGameState();
     const params = makeSpawnParams({ enemyDensity: 0 });

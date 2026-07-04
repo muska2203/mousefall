@@ -6,6 +6,7 @@ import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import '@i18n/config';
 import {GameSession} from '../../../src/presentation/gameSession';
 import {makeGameState, makePlayer, makeEnemy} from '../../fixtures/gameState';
+import {createDefaultAIState} from '../../../src/simulation/ai/ai-state';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
 import {initSkillRegistry} from '../../../src/simulation/skills/index';
 import type {AbilityTemplate} from '../../../src/content/schemas';
@@ -50,6 +51,8 @@ describe('GameSession AI prepared intents', () => {
       y: 5,
       maxAp: 2,
       ap: 2,
+      aiStrategyId: 'simple-boss',
+      aiState: createDefaultAIState('simple-boss'),
       abilities: [{templateId: 'test-fireball', source: 'innate', level: 1, currentCooldown: 0}],
     });
     const state = makeGameState({
