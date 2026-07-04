@@ -352,7 +352,7 @@ describe('GameSession moveOrAttack with doors', () => {
     expect(updatedDoor.hp).toBe(door.hp);
     expect(newState.player.x).toBe(5);
     expect(newState.player.y).toBe(5);
-    expect(newState.player.ap).toBe(1);
+    expect(newState.player.ap).toBe(2);
   });
 });
 

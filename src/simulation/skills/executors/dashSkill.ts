@@ -96,9 +96,13 @@ function getSkillLevel(caster: Entity): number {
  * поэтому мировые реакции срабатывают корректно (смерть от урона,
  * отталкивание, оглушение, лестницы и т.д.).
  *
+ * Расстояние рывка ограничивается выбранной целью, а движение разбивается
+ * на пошаговые MOVE-интенты. Благодаря этому закрытая дверь открывается
+ * перед попыткой встать на её клетку.
+ *
  * Порядок интентов:
  * 1. OPEN_DOOR — если на пути закрытая дверь (перед движением через неё).
- * 2. MOVE — перемещение кастера на доступное расстояние.
+ * 2. MOVE — перемещение кастера на одну клетку.
  * 3. DAMAGE — урон акторам на пути.
  * 4. PUSH — отталкивание актора.
  * 5. BUMP — визуальный отскок кастера при столкновении.
@@ -120,11 +124,10 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position):
   const intents: Intent[] = [];
   let currentX = caster.x;
   let currentY = caster.y;
-  let totalDx = 0;
-  let totalDy = 0;
+  const maxSteps = Math.max(Math.abs(dx), Math.abs(dy));
   const skillLevel = getSkillLevel(caster);
 
-  for (let step = 1; step <= DASH_DISTANCE; step++) {
+  for (let step = 1; step <= maxSteps; step++) {
     const cellX = currentX + stepX;
     const cellY = currentY + stepY;
 
@@ -154,8 +157,7 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position):
         entityId: caster.id,
         targetPosition: { x: cellX, y: cellY },
       });
-      totalDx += stepX;
-      totalDy += stepY;
+      intents.push({ type: 'MOVE', entityId: caster.id, dx: stepX, dy: stepY });
       currentX += stepX;
       currentY += stepY;
       continue;
@@ -207,14 +209,9 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position):
     }
 
     // Пустая клетка — движение.
-    totalDx += stepX;
-    totalDy += stepY;
+    intents.push({ type: 'MOVE', entityId: caster.id, dx: stepX, dy: stepY });
     currentX += stepX;
     currentY += stepY;
-  }
-
-  if (totalDx !== 0 || totalDy !== 0) {
-    intents.unshift({ type: 'MOVE', entityId: caster.id, dx: totalDx, dy: totalDy });
   }
 
   return intents;
@@ -250,8 +247,9 @@ export const dashSkill: SkillExecutor = {
     const dy = hoveredTarget.y - caster.y;
     const stepX = Math.sign(dx);
     const stepY = Math.sign(dy);
+    const maxSteps = Math.max(Math.abs(dx), Math.abs(dy));
     const positions: Position[] = [];
-    for (let step = 1; step <= DASH_DISTANCE; step++) {
+    for (let step = 1; step <= maxSteps; step++) {
       positions.push({ x: caster.x + stepX * step, y: caster.y + stepY * step });
     }
     return positions;

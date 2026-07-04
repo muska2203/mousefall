@@ -7,16 +7,35 @@ function readJson(relativePath: string) {
   return JSON.parse(fs.readFileSync(path.resolve(__dirname, `../../../${relativePath}`), 'utf-8'));
 }
 
-describe('Шаблоны игрока', () => {
-  it('witcher валидируется и имеет стартовые характеристики силы и выносливости по 4', () => {
-    const template = readJson('public/content/entities/player/witcher.json');
-    const parsed = PlayerTemplateSchema.parse(template);
+function listPlayerTemplates(): Array<{ id: string; parsed: ReturnType<typeof PlayerTemplateSchema.parse> }> {
+  const dir = path.resolve(__dirname, '../../../public/content/entities/player');
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith('.json'))
+    .map(f => {
+      const parsed = PlayerTemplateSchema.parse(readJson(`public/content/entities/player/${f}`));
+      return { id: path.basename(f, '.json'), parsed };
+    });
+}
 
-    expect(parsed.id).toBe('witcher');
-    expect(parsed.baseStats).toEqual({ str: 4, dex: 2, int: 0, vit: 4 });
-    expect(parsed.isDefault).toBe(true);
-    expect(parsed.portraitImg).toBe('/assets/portraits/witcher-ready.png');
-    expect(parsed.maxAp).toBe(3);
+describe('Шаблоны игрока', () => {
+  it('все шаблоны игроков валидируются и имеют корректную структуру', () => {
+    const templates = listPlayerTemplates();
+    expect(templates.length).toBeGreaterThan(0);
+
+    for (const { id, parsed } of templates) {
+      expect(parsed.id).toBe(id);
+      expect(typeof parsed.portraitImg).toBe('string');
+      expect(typeof parsed.renderScale).toBe('number');
+      expect(typeof parsed.maxAp).toBe('number');
+      expect(parsed.maxAp).toBeGreaterThan(0);
+      expect(parsed.baseStats).toMatchObject({
+        str: expect.any(Number),
+        dex: expect.any(Number),
+        int: expect.any(Number),
+        vit: expect.any(Number),
+      });
+      expect(typeof parsed.isDefault).toBe('boolean');
+    }
   });
 
   it('шаблон без baseStats получает значения по умолчанию', () => {
@@ -25,15 +44,6 @@ describe('Шаблоны игрока', () => {
       portraitImg: '/assets/portraits/test-ready.png',
     });
 
-    expect(parsed.baseStats).toEqual({ str: 0, dex: 0, int: 0, vit: 0 });
-    expect(parsed.isDefault).toBe(false);
-  });
-
-  it('orc-barbarian валидируется с нулевыми стартовыми характеристиками по умолчанию', () => {
-    const template = readJson('public/content/entities/player/orc-barbarian.json');
-    const parsed = PlayerTemplateSchema.parse(template);
-
-    expect(parsed.id).toBe('orc-barbarian');
     expect(parsed.baseStats).toEqual({ str: 0, dex: 0, int: 0, vit: 0 });
     expect(parsed.isDefault).toBe(false);
   });

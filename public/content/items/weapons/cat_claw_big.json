@@ -6,7 +6,7 @@
   "maxStack": 1,
   "value": 12,
   "weapon": {
-    "baseDamage": 5,
+    "baseDamage": 4,
     "damageFormulaId": "dagger",
     "range": 1,
     "damageType": "slashing"

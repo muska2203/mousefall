@@ -14,7 +14,7 @@
  */
 
 import { t } from '@i18n/t';
-import type {GameState, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, ExecutionNode, GameAction, FloorItemContainerEntity} from '@simulation/types';
+import type {GameState, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, ExecutionNode, GameAction, FloorItemContainerEntity, DoorEntity} from '@simulation/types';
 import {GameSimulation} from '@simulation/simulation';
 import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
@@ -461,7 +461,7 @@ export class GameSession {
     }
 
     const highlightedPathTurnEndIndices = highlightedPath
-      ? this.computeTurnEndIndices(highlightedPath.length, ps.ap, ps.maxAp)
+      ? this.computeTurnEndIndices(highlightedPath, ps.ap, ps.maxAp, state)
       : [];
 
     return {
@@ -1122,19 +1122,96 @@ export class GameSession {
     }
   }
 
-  /** Рассчитать индексы тайлов пути, на которых заканчивается ход. */
-  private computeTurnEndIndices(pathLength: number, ap: number, maxAp: number): number[] {
-    if (maxAp <= 0 || pathLength === 0) return [];
+  /**
+   * Рассчитать индексы тайлов пути, на которых заканчивается ход.
+   *
+   * Учитывает реальную стоимость действий:
+   - MOVE — 1 AP;
+   - INTERACT (открытие двери) — 1 AP;
+   - ATTACK по врагу — 1 AP.
+   *
+   * Если действие не перемещает персонажа (открытие/атака), конец хода
+   * отмечается на предыдущем достигнутом тайле.
+   */
+  private computeTurnEndIndices(
+    path: Position[],
+    ap: number,
+    maxAp: number,
+    state: Readonly<GameState>,
+  ): number[] {
+    if (maxAp <= 0 || path.length === 0) return [];
+
+    const target = this.autoPath.getTarget();
     const indices: number[] = [];
-    let stepsUntilTurnEnd = ap > 0 ? ap : maxAp;
-    for (let i = 0; i < pathLength; i++) {
-      stepsUntilTurnEnd--;
-      if (stepsUntilTurnEnd === 0) {
-        indices.push(i);
-        stepsUntilTurnEnd = maxAp;
+    let remaining = ap;
+    let reachedIndex = -1;
+
+    for (let i = 0; i < path.length; i++) {
+      const pos = path[i]!;
+      const isFinalTargetTile =
+        target !== null && pos.x === target.position.x && pos.y === target.position.y;
+
+      // Собираем действия, которые нужны для прохождения/взаимодействия с тайлом.
+      const actions: Array<{ type: 'move' | 'interact' | 'attack'; pathIndex: number }> = [];
+
+      if (target?.kind === 'enemy' && isFinalTargetTile) {
+        actions.push({ type: 'attack', pathIndex: i });
+      } else if (target?.kind === 'door' && isFinalTargetTile) {
+        const door = this.findSingleClosedDoorAt(pos, state);
+        if (door) {
+          actions.push({ type: 'interact', pathIndex: i });
+        } else {
+          actions.push({ type: 'move', pathIndex: i });
+        }
+      } else {
+        const door = this.findSingleClosedDoorAt(pos, state);
+        if (door) {
+          actions.push({ type: 'interact', pathIndex: i });
+        }
+        actions.push({ type: 'move', pathIndex: i });
+      }
+
+      for (const action of actions) {
+        const cost = 1;
+        if (remaining < cost) {
+          return indices;
+        }
+
+        remaining -= cost;
+        if (action.type === 'move') {
+          reachedIndex = action.pathIndex;
+        }
+
+        if (remaining === 0) {
+          if (reachedIndex >= 0) {
+            indices.push(reachedIndex);
+          }
+          remaining = maxAp;
+          reachedIndex = -1;
+        }
+      }
+
+      // Автопуть к цели-двери завершается после одного действия.
+      if (target?.kind === 'door' && isFinalTargetTile) {
+        break;
       }
     }
+
     return indices;
+  }
+
+  /**
+   * Возвращает единственную закрытую дверь на тайле.
+   * Если на клетке есть другие блокираторы (враг, ещё одна дверь), возвращает null.
+   */
+  private findSingleClosedDoorAt(pos: Position, state: Readonly<GameState>): DoorEntity | null {
+    if (!this.simulation) return null;
+    const blockers = this.simulation.findEntitiesAt(pos).filter((e) => e.blocksMovement);
+    if (blockers.length !== 1) return null;
+
+    const door = blockers[0];
+    if (!door || door.type !== 'door' || door.isAlive === false || door.isOpen) return null;
+    return door;
   }
 
   /** Преобразует внутренний вид цели автопути в вид для renderer'а. */
@@ -1154,11 +1231,27 @@ export class GameSession {
   /** Возвращает query-функции для автопути из публичного API Simulation. */
   private getAutoPathQueries(): AutoPathQueries {
     const simulation = this.simulation!;
+
+    // Для построения автопути закрытая дверь считается условно проходимой:
+    // игрок подойдёт и откроет её. Если на клетке есть другой блокиратор
+    // (враг, ещё одна дверь), клетка остаётся непроходимой.
+    const isTilePassable = (pos: Position): boolean => {
+      if (simulation.isTileWalkableForPlayer(pos)) return true;
+
+      const blockers = simulation.findEntitiesAt(pos).filter((e) => e.blocksMovement);
+      if (blockers.length !== 1) return false;
+
+      const door = blockers[0];
+      if (!door) return false;
+      return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+    };
+
     return {
       isTileWalkable: (pos) => simulation.isTileWalkableForPlayer(pos),
+      isTilePassable,
       findPathTowards: (start, target) => {
         const isWalkable = (p: Position) => simulation.isTileWalkableForPlayer(p);
-        return findPathTowards(start, target, isWalkable);
+        return findPathTowards(start, target, isWalkable, isTilePassable);
       },
       findEntityAt: (pos, filter) => simulation.findEntityAt(pos, filter),
       findEntitiesAt: (pos, filter) => simulation.findEntitiesAt(pos, filter),

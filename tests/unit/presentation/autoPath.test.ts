@@ -5,7 +5,7 @@ import { AutoPathController, type AutoPathQueries } from '../../../src/presentat
 import { findPathTowards } from '../../../src/presentation/pathfinding';
 import { GameSimulation } from '../../../src/simulation/simulation';
 import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs } from '../../fixtures/gameState';
-import type { Entity, EnemyEntity, DoorEntity } from '../../../src/simulation/types';
+import type { Entity, EnemyEntity, DoorEntity, Position } from '../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 
 function initEmptyRegistry() {
@@ -27,9 +27,19 @@ function moveTarget(x: number, y: number) {
 
 function makeQueries(state: ReturnType<typeof makeGameState>): AutoPathQueries {
   const simulation = GameSimulation.loadSavedGame(state, false);
+  const isTileWalkable = (pos: Position) => simulation.isTileWalkableForPlayer(pos);
+  const isTilePassable = (pos: Position): boolean => {
+    if (isTileWalkable(pos)) return true;
+    const blockers = simulation.findEntitiesAt(pos).filter((e) => e.blocksMovement);
+    if (blockers.length !== 1) return false;
+    const door = blockers[0];
+    if (!door) return false;
+    return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+  };
   return {
-    isTileWalkable: (pos) => simulation.isTileWalkableForPlayer(pos),
-    findPathTowards: (start, target) => findPathTowards(start, target, (pos) => simulation.isTileWalkableForPlayer(pos)),
+    isTileWalkable,
+    isTilePassable,
+    findPathTowards: (start, target) => findPathTowards(start, target, isTileWalkable, isTilePassable),
     findEntityAt: (pos, filter) => simulation.findEntityAt(pos, filter),
     findEntitiesAt: (pos, filter) => simulation.findEntitiesAt(pos, filter),
   };
@@ -634,6 +644,140 @@ describe('AutoPathController', () => {
   });
 });
 
+describe('AutoPathController door passage', () => {
+  beforeEach(initEmptyRegistry);
+  afterEach(resetRegistry);
+
+  it('builds path through a closed door to a target beyond', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    const queries = makeQueries(state);
+
+    const path = queries.findPathTowards({ x: 5, y: 5 }, moveTarget(5, 7));
+
+    expect(path).toEqual([{ x: 5, y: 6 }, { x: 5, y: 7 }]);
+  });
+
+  it('step opens a closed door on the path and keeps the path committed', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    const { controller, queries } = setupController(state);
+    controller.hover(moveTarget(5, 7), state, queries);
+    controller.commit();
+
+    const result = controller.step(state, queries);
+
+    expect(result).toEqual({
+      kind: 'action',
+      action: {
+        type: 'INTERACT',
+        entityId: state.player.id,
+        targetId: door.id,
+      },
+    });
+    expect(controller.isActive()).toBe(true);
+    expect(controller.isCommitted()).toBe(true);
+  });
+
+  it('step continues movement after the door is opened', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    const { controller, queries } = setupController(state);
+    controller.hover(moveTarget(5, 7), state, queries);
+    controller.commit();
+
+    // Первый шаг открывает дверь.
+    controller.step(state, queries);
+    // Дверь открыта.
+    door.isOpen = true;
+    door.blocksMovement = false;
+
+    const result = controller.step(state, queries);
+
+    expect(result).toEqual({
+      kind: 'action',
+      action: {
+        type: 'MOVE',
+        entityId: state.player.id,
+        dx: 0,
+        dy: 1,
+      },
+    });
+    expect(controller.isActive()).toBe(true);
+    expect(controller.isCommitted()).toBe(true);
+  });
+
+  it('moves through an already open door on the path', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6, isOpen: true, blocksMovement: false });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    const { controller, queries } = setupController(state);
+    controller.hover(moveTarget(5, 7), state, queries);
+    controller.commit();
+
+    const result = controller.step(state, queries);
+
+    expect(result).toEqual({
+      kind: 'action',
+      action: {
+        type: 'MOVE',
+        entityId: state.player.id,
+        dx: 0,
+        dy: 1,
+      },
+    });
+    expect(controller.isActive()).toBe(true);
+    expect(controller.isCommitted()).toBe(true);
+  });
+
+  it('avoids door tile when an enemy stands on it', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const enemy = makeEnemy({ x: 5, y: 6, id: 'enemy_on_door' });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door], [enemy.id, enemy]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    const { controller, queries } = setupController(state);
+    controller.hover(moveTarget(5, 7), state, queries);
+
+    // Автопуть должен обойти клетку с врагом и дверью, а не пытаться пройти через неё.
+    expect(controller.commit()).toBe(true);
+    const path = controller.getPath();
+    expect(path).not.toBeNull();
+    expect(path!.some((p) => p.x === 5 && p.y === 6)).toBe(false);
+  });
+});
+
 describe('GameSession auto-path integration', () => {
   beforeEach(initEmptyRegistry);
   afterEach(resetRegistry);
@@ -934,5 +1078,127 @@ describe('GameSession auto-path integration', () => {
     expect(vm.renderInput?.phase).toBe('idle');
     expect(vm.renderInput?.state.player.y).toBe(6);
     expect(vm.renderInput?.highlightedPath).toEqual([{ x: 5, y: 7 }]);
+  });
+
+  it('click on tile behind closed door opens door and continues to target', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const item = makeFloorItemContainer({ x: 5, y: 7 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door], [item.id, item]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    state.visible[7]![5] = true;
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.handleFieldClick({ x: 5, y: 7 });
+
+    // Первый шаг — открытие двери.
+    let vm = session.getViewModel();
+    expect(vm.renderInput?.highlightedPathCommitted).toBe(true);
+    expect((vm.renderInput?.state.entities.get(door.id) as DoorEntity | undefined)?.isOpen).toBe(true);
+
+    // Автопродолжение: заходим на клетку двери.
+    session.onAnimationsComplete();
+    vm = session.getViewModel();
+    expect(vm.renderInput?.state.player.y).toBe(6);
+    expect(vm.renderInput?.highlightedPathCommitted).toBe(true);
+
+    // После восстановления AP продолжаем движение к цели.
+    session.onAnimationsComplete();
+    vm = session.getViewModel();
+    expect(vm.renderInput?.state.player.y).toBe(7);
+    expect(vm.renderInput?.highlightedPathCommitted).toBe(true);
+
+    // Последний шаг — поднятие предмета.
+    session.onAnimationsComplete();
+    vm = session.getViewModel();
+    expect(vm.renderInput?.highlightedPathCommitted).toBe(false);
+    expect(vm.renderInput?.state.player.inventory.length).toBe(1);
+  });
+
+  it('turn end indices account for opening a closed door on the path', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 3, maxAp: 3 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const item = makeFloorItemContainer({ x: 5, y: 7 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door], [item.id, item]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    state.visible[7]![5] = true;
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.handleFieldClick({ x: 5, y: 7 });
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([1]);
+  });
+
+  it('turn end indices stop before door when only enough AP to open it', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 1, maxAp: 2 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const item = makeFloorItemContainer({ x: 5, y: 7 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door], [item.id, item]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    state.visible[7]![5] = true;
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.handleFieldClick({ x: 5, y: 7 });
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([]);
+  });
+
+  it('turn end indices end on door tile when AP covers open + move', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const door = makeDoor({ x: 5, y: 6 });
+    const item = makeFloorItemContainer({ x: 5, y: 7 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door], [item.id, item]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    state.visible[6]![5] = true;
+    state.visible[7]![5] = true;
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.handleFieldClick({ x: 5, y: 7 });
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([0]);
+  });
+
+  it('turn end indices for open target door mark the door tile', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 1, maxAp: 1 });
+    const door = makeDoor({ x: 5, y: 6, isOpen: true, blocksMovement: false });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    state.explored[6]![5] = true;
+    const session = new GameSession();
+    session.loadGame(state);
+
+    // Hover до клика: путь виден и заканчивается на клетке двери.
+    session.setFieldHover({ x: 5, y: 6 });
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([0]);
   });
 });

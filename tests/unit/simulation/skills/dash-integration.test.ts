@@ -49,7 +49,7 @@ describe('dash integration', () => {
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
     const sim = new GameSimulation(state, defaultActionHandlerRegistry());
 
-    const dashResult = sim.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }] });
+    const dashResult = sim.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'dash', targets: [{ x: 7, y: 5 }] });
     expect(dashResult.success).toBe(true);
     expect(sim.getState().player.x).toBe(7);
     expect(sim.getState().player.y).toBe(5);
@@ -72,7 +72,7 @@ describe('dash integration', () => {
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
     const sim = new GameSimulation(state, defaultActionHandlerRegistry());
 
-    const dashResult = sim.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }] });
+    const dashResult = sim.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'dash', targets: [{ x: 7, y: 5 }] });
     expect(dashResult.success).toBe(true);
     // Dash исчерпал AP, запустился ход окружения, AP восстановились.
     expect(sim.getState().player.ap).toBe(1);

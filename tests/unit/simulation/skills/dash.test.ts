@@ -48,7 +48,7 @@ describe('dashSkill', () => {
     resetRegistry();
   });
 
-  it('resolves to atomic intents for empty path', () => {
+  it('resolves to atomic intent for single-cell target', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
@@ -57,7 +57,7 @@ describe('dashSkill', () => {
     const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
 
     expect(intents).toHaveLength(1);
-    expect(intents[0]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 2, dy: 0 });
+    expect(intents[0]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
   });
 
   it('moves caster 2 cells on empty path', () => {
@@ -66,7 +66,7 @@ describe('dashSkill', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const intents = dashSkill.resolve(state, player, [{ x: 7, y: 5 }]);
     const builder = makeBuilder(player.id);
 
     for (const intent of intents) {
@@ -115,7 +115,7 @@ describe('dashSkill', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const intents = dashSkill.resolve(state, player, [{ x: 7, y: 5 }]);
     const builder = makeBuilder(player.id);
 
     for (const intent of intents) {
@@ -130,10 +130,32 @@ describe('dashSkill', () => {
     expect(bumpEvents[0]).toMatchObject({ type: 'ENTITY_BUMPED', entityId: player.id, position: { x: 6, y: 5 }, dx: 1, dy: 0 });
   });
 
-  it('opens closed door and passes through', () => {
+  it('opens closed door and passes through when target is behind the door', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
     const door = makeDoor({ x: 6, y: 5, isOpen: false, blocksMovement: true });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(door.id, door);
+
+    const intents = dashSkill.resolve(state, player, [{ x: 7, y: 5 }]);
+    const builder = makeBuilder(player.id);
+
+    for (const intent of intents) {
+      executeIntent(state, intent, builder, builder.root);
+    }
+
+    expect(door.isOpen).toBe(true);
+    expect(door.blocksMovement).toBe(false);
+    expect(player.x).toBe(7);
+    expect(player.y).toBe(5);
+  });
+
+  it('opens closed door and stops on door cell when target is the door', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const door = makeDoor({ x: 6, y: 5, isOpen: false, blocksMovement: true });
+    state.map.tiles[5]![7] = 'wall';
     state.player = player;
     state.entities.set(player.id, player);
     state.entities.set(door.id, door);
@@ -147,7 +169,7 @@ describe('dashSkill', () => {
 
     expect(door.isOpen).toBe(true);
     expect(door.blocksMovement).toBe(false);
-    expect(player.x).toBe(7);
+    expect(player.x).toBe(6);
     expect(player.y).toBe(5);
   });
 
@@ -159,7 +181,7 @@ describe('dashSkill', () => {
     state.entities.set(player.id, player);
     state.entities.set(enemy.id, enemy);
 
-    const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const intents = dashSkill.resolve(state, player, [{ x: 7, y: 5 }]);
     const builder = makeBuilder(player.id);
 
     for (const intent of intents) {
@@ -182,7 +204,7 @@ describe('dashSkill', () => {
     state.entities.set(player.id, player);
     state.entities.set(enemy.id, enemy);
 
-    const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const intents = dashSkill.resolve(state, player, [{ x: 7, y: 5 }]);
     const builder = makeBuilder(player.id);
 
     for (const intent of intents) {
@@ -210,7 +232,7 @@ describe('dashSkill', () => {
     state.entities.set(enemy1.id, enemy1);
     state.entities.set(enemy2.id, enemy2);
 
-    const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const intents = dashSkill.resolve(state, player, [{ x: 7, y: 5 }]);
     const builder = makeBuilder(player.id);
 
     for (const intent of intents) {
@@ -262,17 +284,18 @@ describe('dashSkill', () => {
     expect(player.y).toBe(5);
   });
 
-  it('preview on empty path shows single MOVE intent for full distance', () => {
+  it('preview on empty path shows MOVE intents for full distance', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
     state.entities.set(player.id, player);
 
-    const intents = dashSkill.preview(state, player, [], { x: 6, y: 5 });
+    const intents = dashSkill.preview(state, player, [], { x: 7, y: 5 });
     const moveIntents = intents.filter(i => i.type === 'MOVE');
 
-    expect(moveIntents).toHaveLength(1);
-    expect(moveIntents[0]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 2, dy: 0 });
+    expect(moveIntents).toHaveLength(2);
+    expect(moveIntents[0]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
+    expect(moveIntents[1]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
   });
 
   it('preview with actor on second cell shows MOVE, PUSH and DAMAGE', () => {
@@ -283,7 +306,7 @@ describe('dashSkill', () => {
     state.entities.set(player.id, player);
     state.entities.set(enemy.id, enemy);
 
-    const intents = dashSkill.preview(state, player, [], { x: 6, y: 5 });
+    const intents = dashSkill.preview(state, player, [], { x: 7, y: 5 });
 
     expect(intents.some(i => i.type === 'MOVE' && i.entityId === player.id && i.dx === 1 && i.dy === 0)).toBe(true);
     expect(intents.some(i => i.type === 'PUSH' && i.entityId === enemy.id && i.dx === 1 && i.dy === 0)).toBe(true);

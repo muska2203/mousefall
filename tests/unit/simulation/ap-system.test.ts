@@ -75,7 +75,7 @@ describe('AP-система: мульти-AP сценарии', () => {
     expect(sim.getState().player.ap).toBe(2);
   });
 
-  it('ATTACK стоит 2 AP', () => {
+  it('ATTACK стоит 1 AP', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100 });
     const state = makeGameState({
@@ -86,25 +86,31 @@ describe('AP-система: мульти-AP сценарии', () => {
 
     const result = sim.dispatch({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 });
 
-    expect(result.success).toBe(false);
-    expect(result.stateChanged).toBe(false);
-    expectRejected(result, 'not_enough_ap');
+    expect(result.success).toBe(true);
+    expect(result.stateChanged).toBe(true);
+    expect(result.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
+    expect(sim.getState().player.ap).toBe(1);
   });
 
-  it('ATTACK стоит 2 AP: при ap = 1 доступен MOVE, но не ATTACK', () => {
-    const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 1 });
+  it('ATTACK стоит 1 AP: при ap = 1 доступен и MOVE, и ATTACK', () => {
     const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100 });
-    const state = makeGameState({
-      player,
-      entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
+
+    const playerAttack = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 1 });
+    const stateAttack = makeGameState({
+      player: playerAttack,
+      entities: new Map<EntityId, Entity>([[playerAttack.id, playerAttack], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simAttack = new GameSimulation(stateAttack, defaultActionHandlerRegistry());
+    const attackResult = simAttack.dispatch({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 });
+    expect(attackResult.success).toBe(true);
 
-    const attackResult = sim.dispatch({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 });
-    expect(attackResult.success).toBe(false);
-    expectRejected(attackResult, 'not_enough_ap');
-
-    const moveResult = sim.dispatch({ type: 'MOVE', entityId: 'player', dx: 0, dy: 1 });
+    const playerMove = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 1 });
+    const stateMove = makeGameState({
+      player: playerMove,
+      entities: new Map<EntityId, Entity>([[playerMove.id, playerMove]]),
+    });
+    const simMove = new GameSimulation(stateMove, defaultActionHandlerRegistry());
+    const moveResult = simMove.dispatch({ type: 'MOVE', entityId: 'player', dx: 0, dy: 1 });
     expect(moveResult.success).toBe(true);
   });
 
@@ -164,8 +170,8 @@ describe('AP-система: мульти-AP сценарии', () => {
     expectRejected(r2, 'not_enough_ap');
   });
 
-  it('при ap <= 0 автоматически запускается ход врагов', () => {
-    const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2 });
+  it('при исчерпании AP автоматически запускается ход врагов', () => {
+    const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100 });
     const state = makeGameState({
       player,
@@ -180,7 +186,7 @@ describe('AP-система: мульти-AP сценарии', () => {
     expect(result.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
   });
 
-  it('EQUIP доступен при 0 AP, так как стоит 0', () => {
+  it('EQUIP стоит 1 AP и недоступен при 0 AP', () => {
     const player = makePlayer({
       x: 5,
       y: 5,
@@ -192,7 +198,8 @@ describe('AP-система: мульти-AP сценарии', () => {
     const sim = new GameSimulation(state, defaultActionHandlerRegistry());
 
     const result = sim.dispatch({ type: 'EQUIP', entityId: 'player', itemInstanceId: 'w1' });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expectRejected(result, 'actor_cannot_act');
   });
 
   it('AP восстанавливается через событие AP_RESTORED', () => {

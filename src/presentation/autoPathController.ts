@@ -13,8 +13,8 @@
  * - Все решения о проходимости делегируются внешним query-функциям (публичный API Simulation).
  */
 
-import type { Entity, GameAction, GameState, Position } from '@simulation/types';
-import { chebyshevDistance } from '@utils/math';
+import type { DoorEntity, Entity, GameAction, GameState, Position } from '@simulation/types';
+import { chebyshevDistance, posEqual } from '@utils/math';
 import { findPathTowards, isTileExplored } from './pathfinding';
 import type { AutoPathTarget, AutoPathTargetKind } from './pathfinding';
 
@@ -22,6 +22,12 @@ import type { AutoPathTarget, AutoPathTargetKind } from './pathfinding';
 export type AutoPathQueries = {
   /** Проверяет проходимость тайла для игрока (с учётом видимости). */
   isTileWalkable: (pos: Position) => boolean;
+  /**
+   * Проверяет проходимость тайла для построения автопути.
+   * Может разрешать проход через объекты, которые игрок откроет по пути
+   * (например, закрытые двери).
+   */
+  isTilePassable: (pos: Position) => boolean;
   /** Ищет путь к целевой сущности. */
   findPathTowards: (start: Position, target: AutoPathTarget) => Position[] | null;
   /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
@@ -189,8 +195,24 @@ export class AutoPathController {
     }
 
     const next = newPath[0]!;
-    const dx = next.x - state.player.x;
-    const dy = next.y - state.player.y;
+
+    // Если следующий тайл — закрытая дверь на пути (не сама цель-дверь),
+    // открываем её, не отменяя автопуть. После открытия путь перестроится
+    // и движение продолжится.
+    const isTargetDoorItself = this.target.kind === 'door' && posEqual(next, this.target.position);
+    if (!isTargetDoorItself) {
+      const door = this.findClosedDoorOnPath(next, queries);
+      if (door) {
+        return {
+          kind: 'action',
+          action: {
+            type: 'INTERACT',
+            entityId: state.player.id,
+            targetId: door.id,
+          },
+        };
+      }
+    }
 
     // Если следующий шаг впритык к цели — заменяем ходьбу на взаимодействие.
     // Автопуть к активируемому/атакуемому объекту завершается после одного действия.
@@ -201,6 +223,9 @@ export class AutoPathController {
         return { kind: 'action', action };
       }
     }
+
+    const dx = next.x - state.player.x;
+    const dy = next.y - state.player.y;
 
     return {
       kind: 'action',
@@ -242,6 +267,20 @@ export class AutoPathController {
       entityId: state.player.id,
       targetId: entity.id,
     };
+  }
+
+  /**
+   * Возвращает закрытую дверь на указанном тайле, если она является
+   * единственным блокиратором. Если на клетке есть враг или другой объект,
+   * блокирующий движение, дверь не считается проходом на пути.
+   */
+  private findClosedDoorOnPath(pos: Position, queries: AutoPathQueries): DoorEntity | null {
+    const blockers = queries.findEntitiesAt(pos).filter((e) => e.blocksMovement);
+    if (blockers.length !== 1) return null;
+
+    const door = blockers[0];
+    if (!door || door.type !== 'door' || door.isAlive === false || door.isOpen) return null;
+    return door;
   }
 
   /** Формирует действие, когда игрок впритык к цели. */

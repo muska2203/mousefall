@@ -43,26 +43,35 @@ export function isTileExplored(state: GameState, pos: Position): boolean {
  * Проверяет, можно ли пройти через клетку при движении к целевой сущности.
  * Целевой тайл может быть непроходимым (враг, закрытая дверь), промежуточные — нет.
  * Для обычного движения по пустому тайлу целевая клетка тоже должна быть проходимой.
+ *
+ * `isTilePassable` используется для промежуточных клеток и может разрешать проход
+ * через объекты, которые автопуть умеет преодолевать (например, закрытые двери).
  */
 export function isWalkableTowards(
   pos: Position,
   target: AutoPathTarget,
   isTileWalkable: IsWalkableFn,
+  isTilePassable: IsWalkableFn,
 ): boolean {
   if (pos.x === target.position.x && pos.y === target.position.y) {
     return target.kind !== 'move';
   }
-  return isTileWalkable(pos);
+  return isTilePassable(pos);
 }
 
 /**
  * Ищет путь к целевой сущности, которая сама может занимать непроходимый тайл
  * (враг, дверь). Промежуточные клетки должны быть проходимы.
+ *
+ * `isTilePassable` позволяет строить путь через клетки, которые игрок может
+ * сделать проходимыми по ходу движения (закрытые двери). Если не передана,
+ * используется `isTileWalkable`.
  */
 export function findPathTowards(
   start: Position,
   target: AutoPathTarget,
   isTileWalkable: IsWalkableFn,
+  isTilePassable: IsWalkableFn = isTileWalkable,
 ): Position[] | null {
   if (posEqual(start, target.position)) {
     if (target.kind === 'move' && !isTileWalkable(target.position)) {
@@ -74,7 +83,7 @@ export function findPathTowards(
   const path = findPath(
     start,
     target.position,
-    (pos) => isWalkableTowards(pos, target, isTileWalkable),
+    (pos) => isWalkableTowards(pos, target, isTileWalkable, isTilePassable),
     MAX_PATH_STEPS,
     true,
   );

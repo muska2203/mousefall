@@ -58,15 +58,15 @@ describe('DefaultActionPointCostResolver', () => {
     expect(resolver.getCost({ type: 'INTERACT', entityId: 'player', targetId: 'door_1' }, state)).toBe(1);
   });
 
-  it('ATTACK стоит 2 AP', () => {
+  it('ATTACK стоит 1 AP', () => {
     const state = makeGameState();
-    expect(resolver.getCost({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 }, state)).toBe(2);
+    expect(resolver.getCost({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 }, state)).toBe(1);
   });
 
-  it('EQUIP и UNEQUIP стоят 0 AP', () => {
+  it('EQUIP и UNEQUIP стоят 1 AP', () => {
     const state = makeGameState();
-    expect(resolver.getCost({ type: 'EQUIP', entityId: 'player', itemInstanceId: 'w1' }, state)).toBe(0);
-    expect(resolver.getCost({ type: 'UNEQUIP', entityId: 'player', slot: 'weapon' }, state)).toBe(0);
+    expect(resolver.getCost({ type: 'EQUIP', entityId: 'player', itemInstanceId: 'w1' }, state)).toBe(1);
+    expect(resolver.getCost({ type: 'UNEQUIP', entityId: 'player', slot: 'weapon' }, state)).toBe(1);
   });
 
   it('WAIT стоит текущее количество AP актора', () => {

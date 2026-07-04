@@ -585,7 +585,7 @@ export class GameSimulation implements Simulation {
 
     private canActorAct(actor: Actor, action: GameAction, actionCost: number): boolean {
 
-        // Действия с нулевой стоимостью (EQUIP/UNEQUIP) доступны даже при 0 AP.
+        // Действия с нулевой стоимостью (DEBUG_*) доступны даже при 0 AP.
         if (actor.ap <= 0 && actionCost > 0) {
             return false;
         }

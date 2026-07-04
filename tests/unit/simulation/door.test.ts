@@ -114,7 +114,7 @@ describe('Door entity', () => {
   });
 
   it('is destroyed when melee attack reduces hp to zero', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10, baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 2, ap: 2 });
+    const player = makePlayer({ x: 3, y: 5, damage: 10, baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
     const door = makeDoor({ x: 4, y: 5, hp: 8, maxHp: 8, armor: 2 });
     const state = makeStateWithPlayerAndEntity(player, door);
 
