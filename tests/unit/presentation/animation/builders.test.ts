@@ -21,7 +21,7 @@ import type {GameEvent, GameState} from '../../../../src/simulation/types';
 
 function makeMockState(): GameState {
   return {
-    player: { id: 'player', x: 0, y: 0 } as any,
+    player: { id: 'player', x: 0, y: 0, hp: 20, maxHp: 25 } as any,
     entities: new Map([['enemy1', { id: 'enemy1', x: 3, y: 3, hp: 7, maxHp: 12 } as any]]),
   } as unknown as GameState;
 }
@@ -62,12 +62,14 @@ describe('actionAppliedBuilder', () => {
 });
 
 describe('entityDamagedBuilder', () => {
-  it('creates DAMAGE step', () => {
+  it('wraps HP_CHANGE inside DAMAGE for player with HP', () => {
     const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'player', damage: 5, damageType: 'blunt', position: { x: 0, y: 0 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('DAMAGE');
+    expect(nodes![0]!.children).toHaveLength(1);
+    expect(nodes![0]!.children[0]!.step.type).toBe('HP_CHANGE');
   });
 
   it('wraps HP_CHANGE inside DAMAGE for enemy with HP', () => {
@@ -78,6 +80,17 @@ describe('entityDamagedBuilder', () => {
     expect(nodes![0]!.step.type).toBe('DAMAGE');
     expect(nodes![0]!.children).toHaveLength(1);
     expect(nodes![0]!.children[0]!.step.type).toBe('HP_CHANGE');
+  });
+
+  it('creates only DAMAGE step for target without HP', () => {
+    const state = makeMockState();
+    state.entities.set('door1', { id: 'door1', x: 1, y: 1 } as any);
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'door1', damage: 5, damageType: 'blunt', position: { x: 1, y: 1 } };
+    const nodes = entityDamagedBuilder(event, [], state);
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('DAMAGE');
+    expect(nodes![0]!.children).toHaveLength(0);
   });
 });
 

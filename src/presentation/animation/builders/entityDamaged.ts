@@ -9,12 +9,13 @@ import { damageNode, hpChangeNode, isAttackableEntity } from '../core/primitives
 export const entityDamagedBuilder: AnimationBuilder = (event, children, state) => {
   if (event.type !== 'ENTITY_DAMAGED') return null;
 
-  // Полоска HP анимируется только для не-игрока и только если у цели есть HP.
+  // Полоска HP анимируется для любой цели с hp/maxHp.
   // Оборачиваем исходных детей (например, смерть) в HP_CHANGE,
   // который выполняется после всплывающего текста урона и перед смертью.
   // Это предотвращает уничтожение спрайта во время анимации полоски HP.
-  if (event.targetId !== state.player.id && event.damage > 0) {
-    const target = state.entities.get(event.targetId);
+  if (event.damage > 0) {
+    const target = state.entities.get(event.targetId) ??
+      (event.targetId === state.player.id ? state.player : undefined);
     if (target && isAttackableEntity(target)) {
       const toHp = target.hp;
       const fromHp = toHp + event.damage;
