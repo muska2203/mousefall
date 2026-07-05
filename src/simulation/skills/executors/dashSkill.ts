@@ -90,15 +90,38 @@ function getSkillLevel(caster: Entity): number {
 }
 
 /**
+ * Приводит выбранную цель к клетке на максимальном расстоянии рывка.
+ * Клетка на расстоянии 1 воспринимается как указание направления,
+ * поэтому скилл всегда стремится пройти полное расстояние.
+ */
+function normalizeDashTarget(caster: Entity, target: Position): Position {
+  const dx = target.x - caster.x;
+  const dy = target.y - caster.y;
+  const distance = Math.max(Math.abs(dx), Math.abs(dy));
+
+  if (distance === 0 || distance >= DASH_DISTANCE) {
+    return target;
+  }
+
+  const stepX = Math.sign(dx);
+  const stepY = Math.sign(dy);
+  return {
+    x: caster.x + stepX * DASH_DISTANCE,
+    y: caster.y + stepY * DASH_DISTANCE,
+  };
+}
+
+/**
  * Разрешает рывок в список атомарных интентов.
  *
  * Каждый интент в итоговом списке проходит через executeIntent,
  * поэтому мировые реакции срабатывают корректно (смерть от урона,
  * отталкивание, оглушение, лестницы и т.д.).
  *
- * Расстояние рывка ограничивается выбранной целью, а движение разбивается
- * на пошаговые MOVE-интенты. Благодаря этому закрытая дверь открывается
- * перед попыткой встать на её клетку.
+ * Выбранная цель воспринимается как направление: если игрок указал
+ * клетку на расстоянии 1, она нормализуется до клетки на расстоянии 2
+ * в том же направлении. Движение разбивается на пошаговые MOVE-интенты,
+ * чтобы закрытая дверь открывалась перед попыткой встать на её клетку.
  *
  * Порядок интентов:
  * 1. OPEN_DOOR — если на пути закрытая дверь (перед движением через неё).
@@ -108,8 +131,9 @@ function getSkillLevel(caster: Entity): number {
  * 5. BUMP — визуальный отскок кастера при столкновении.
  */
 function resolveDashIntents(state: GameState, caster: Entity, target: Position): Intent[] {
-  const dx = target.x - caster.x;
-  const dy = target.y - caster.y;
+  const normalizedTarget = normalizeDashTarget(caster, target);
+  const dx = normalizedTarget.x - caster.x;
+  const dy = normalizedTarget.y - caster.y;
   const stepX = Math.sign(dx);
   const stepY = Math.sign(dy);
 
@@ -243,8 +267,9 @@ export const dashSkill: SkillExecutor = {
 
   getAffectedPositions(_state: GameState, caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
     if (!hoveredTarget) return [];
-    const dx = hoveredTarget.x - caster.x;
-    const dy = hoveredTarget.y - caster.y;
+    const normalizedTarget = normalizeDashTarget(caster, hoveredTarget);
+    const dx = normalizedTarget.x - caster.x;
+    const dy = normalizedTarget.y - caster.y;
     const stepX = Math.sign(dx);
     const stepY = Math.sign(dy);
     const maxSteps = Math.max(Math.abs(dx), Math.abs(dy));

@@ -48,16 +48,21 @@ describe('dashSkill', () => {
     resetRegistry();
   });
 
-  it('resolves to atomic intent for single-cell target', () => {
+  it('resolves to full dash when single-cell target is chosen', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
     state.entities.set(player.id, player);
 
     const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const builder = makeBuilder(player.id);
 
-    expect(intents).toHaveLength(1);
-    expect(intents[0]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
+    for (const intent of intents) {
+      executeIntent(state, intent, builder, builder.root);
+    }
+
+    expect(player.x).toBe(7);
+    expect(player.y).toBe(5);
   });
 
   it('moves caster 2 cells on empty path', () => {
@@ -337,6 +342,45 @@ describe('dashSkill', () => {
     const intents = dashSkill.preview(state, player, [], { x: 6, y: 5 });
 
     expect(intents).toHaveLength(0);
+  });
+
+  it('normalizes single-cell target to full dash distance', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const moveIntents = intents.filter(i => i.type === 'MOVE');
+
+    expect(moveIntents).toHaveLength(2);
+    expect(moveIntents[0]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
+    expect(moveIntents[1]).toMatchObject({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
+  });
+
+  it('preview normalizes single-cell target to full dash distance', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const intents = dashSkill.preview(state, player, [], { x: 6, y: 5 });
+    const moveIntents = intents.filter(i => i.type === 'MOVE');
+
+    expect(moveIntents).toHaveLength(2);
+  });
+
+  it('getAffectedPositions normalizes single-cell target to full dash distance', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const positions = dashSkill.getAffectedPositions(state, player, [], { x: 6, y: 5 });
+
+    expect(positions).toHaveLength(2);
+    expect(positions).toContainEqual({ x: 6, y: 5 });
+    expect(positions).toContainEqual({ x: 7, y: 5 });
   });
 
   it('is registered in skill registry', () => {
