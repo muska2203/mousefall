@@ -12,7 +12,7 @@
  *   но в будущем может быть враг, спутник или ломаемый объект.
  */
 
-import type { EntityId, Position, MoveAction, AttackAction } from '@simulation/core-types';
+import type { EntityId, Position, MoveAction, AttackAction, InteractAction } from '@simulation/core-types';
 import type { Attackable } from '@simulation/types';
 
 /**
@@ -36,6 +36,7 @@ export type AttackTarget = {
 export type CloseCombatResult =
   | { kind: 'attack'; action: AttackAction }
   | { kind: 'move'; action: MoveAction }
+  | { kind: 'interact'; action: InteractAction }
   | { kind: 'blocked' };
 
 /**
@@ -46,4 +47,5 @@ export type CloseCombatResult =
  */
 export type MoveTowardResult =
   | { kind: 'move'; action: MoveAction }
+  | { kind: 'interact'; action: InteractAction }
   | { kind: 'blocked' };

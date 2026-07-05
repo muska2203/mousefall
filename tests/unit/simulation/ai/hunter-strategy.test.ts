@@ -119,6 +119,42 @@ describe('hunter strategy decideAction', () => {
     expect(action.type).toBe('MOVE');
     expect(action).toMatchObject({ dx: 0, dy: -1 });
   });
+
+  it('открывает закрытую дверь на пути к lastSeen', () => {
+    const map = makeMapWithHorizontalWall();
+    const playerEntity = makePlayer({ x: 5, y: 6 });
+    const enemyEntity = makeEnemy({
+      id: 'hunter_test',
+      x: 5,
+      y: 3,
+      aiSightRadius: 3,
+      aiState: {
+        strategy: 'hunter',
+        mode: 'chase',
+        targetX: 5,
+        targetY: 6,
+        homeX: 5,
+        homeY: 3,
+        preparedAbility: null,
+      },
+    });
+    // Дверь в проёме стены — единственный путь к target.
+    const door = makeDoor({ x: 5, y: 4, isOpen: false, blocksMovement: true });
+    const state = makeGameState({
+      player: playerEntity,
+      entities: new Map<EntityId, Entity>([
+        [playerEntity.id, playerEntity],
+        [enemyEntity.id, enemyEntity],
+        [door.id, door],
+      ]),
+      map,
+    });
+
+    const action = getStrategy('hunter').decideAction(enemyEntity, state, null as unknown as ExecutionBuilder, null as unknown as ExecutionNode);
+
+    expect(action.type).toBe('INTERACT');
+    expect(action).toMatchObject({ targetId: door.id });
+  });
 });
 
 describe('hunter strategy onWorldChange', () => {

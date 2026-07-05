@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { closeCombat, moveToward, attackTarget } from '@simulation/ai/tactics/movement';
-import { makeGameState, makeEnemy, makePlayer } from '../../../../fixtures/gameState';
+import { makeGameState, makeEnemy, makePlayer, makeDoor } from '../../../../fixtures/gameState';
 import type { GameMap, EntityId, Entity, Position } from '@simulation/types';
 
 describe('attackTarget', () => {
@@ -146,6 +146,44 @@ describe('moveToward', () => {
 
     expect(result.kind).toBe('blocked');
   });
+
+  it('открывает закрытую дверь на пути', () => {
+    const enemy = makeEnemy({ x: 2, y: 2 });
+    const door = makeDoor({ x: 3, y: 2, isOpen: false, blocksMovement: true });
+    const state = makeGameState({
+      entities: new Map<EntityId, Entity>([
+        [enemy.id, enemy],
+        [door.id, door],
+      ]),
+    });
+    const target: Position = { x: 5, y: 2 };
+
+    const result = moveToward(enemy, state, target);
+
+    expect(result.kind).toBe('interact');
+    if (result.kind !== 'interact') return;
+    expect(result.action.type).toBe('INTERACT');
+    expect(result.action.targetId).toBe(door.id);
+  });
+
+  it('проходит через открытую дверь как через обычную клетку', () => {
+    const enemy = makeEnemy({ x: 2, y: 2 });
+    const door = makeDoor({ x: 3, y: 2, isOpen: true, blocksMovement: false });
+    const state = makeGameState({
+      entities: new Map<EntityId, Entity>([
+        [enemy.id, enemy],
+        [door.id, door],
+      ]),
+    });
+    const target: Position = { x: 5, y: 2 };
+
+    const result = moveToward(enemy, state, target);
+
+    expect(result.kind).toBe('move');
+    if (result.kind !== 'move') return;
+    expect(result.action.dx).toBe(1);
+    expect(result.action.dy).toBe(0);
+  });
 });
 
 describe('closeCombat', () => {
@@ -249,5 +287,24 @@ describe('closeCombat', () => {
     const result = closeCombat(enemy, state, target);
 
     expect(result.kind).toBe('blocked');
+  });
+
+  it('открывает закрытую дверь на пути к цели', () => {
+    const enemy = makeEnemy({ x: 2, y: 2 });
+    const door = makeDoor({ x: 3, y: 2, isOpen: false, blocksMovement: true });
+    const state = makeGameState({
+      entities: new Map<EntityId, Entity>([
+        [enemy.id, enemy],
+        [door.id, door],
+      ]),
+    });
+    const target: Position = { x: 5, y: 2 };
+
+    const result = closeCombat(enemy, state, target);
+
+    expect(result.kind).toBe('interact');
+    if (result.kind !== 'interact') return;
+    expect(result.action.type).toBe('INTERACT');
+    expect(result.action.targetId).toBe(door.id);
   });
 });

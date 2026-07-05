@@ -69,7 +69,7 @@ registerStrategy('hunter', {
         // Нужно обязательно встать на эту клетку, чтобы FSM смог перейти
         // в return, а не пытаться атаковать пустую клетку рядом с ней.
         const result = moveToward(enemy, state, { x: tx, y: ty });
-        if (result.kind === 'move') {
+        if (result.kind === 'move' || result.kind === 'interact') {
           return result.action;
         }
         return endTurn(enemy);
@@ -78,7 +78,7 @@ registerStrategy('hunter', {
       case 'return': {
         const home: Position = { x: enemy.aiState.homeX, y: enemy.aiState.homeY };
         const result = moveToward(enemy, state, home);
-        if (result.kind === 'move') {
+        if (result.kind === 'move' || result.kind === 'interact') {
           return result.action;
         }
         return endTurn(enemy);

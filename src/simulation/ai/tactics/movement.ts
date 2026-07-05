@@ -11,9 +11,9 @@
  * - Не решают, кого атаковать — только выполняют команду стратегии.
  */
 
-import type { GameState, EnemyEntity, Position } from '@simulation/types';
-import type { MoveAction, AttackAction } from '@simulation/core-types';
-import { isBlocked } from '@simulation/state';
+import type { GameState, EnemyEntity, Position, DoorEntity } from '@simulation/types';
+import type { MoveAction, AttackAction, InteractAction } from '@simulation/core-types';
+import { isBlocked, findAllEntitiesAt, findDoorAt } from '@simulation/state';
 import { chebyshevDistance, findPath } from '@utils/math';
 import type { CloseCombatResult, MoveTowardResult } from './types';
 
@@ -52,10 +52,55 @@ export function attackTarget(actor: EnemyEntity, target: Position): AttackAction
 }
 
 /**
+ * Проверяет, может ли враг пройти клетку при поиске пути.
+ * Закрытые двери считаются проходимыми — враг откроет их по пути.
+ */
+function isTilePassableForEnemy(state: GameState, pos: Position): boolean {
+  if (pos.x < 0 || pos.x >= state.map.width || pos.y < 0 || pos.y >= state.map.height) {
+    return false;
+  }
+  if (state.map.tiles[pos.y]?.[pos.x] === 'wall') {
+    return false;
+  }
+
+  const blockers = findAllEntitiesAt(state, pos.x, pos.y).filter(e => e.blocksMovement);
+  if (blockers.length === 0) return true;
+  if (blockers.length !== 1) return false;
+
+  const door = blockers[0];
+  return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+}
+
+/**
+ * Возвращает закрытую дверь на клетке или null.
+ */
+function findClosedDoorAt(state: GameState, x: number, y: number): DoorEntity | null {
+  const door = findDoorAt(state, x, y);
+  if (door && door.isAlive !== false && !door.isOpen) {
+    return door;
+  }
+  return null;
+}
+
+/**
+ * Возвращает действие INTERACT для открытия закрытой двери.
+ */
+function openDoorAction(actor: EnemyEntity, door: DoorEntity): InteractAction {
+  return {
+    type: 'INTERACT',
+    entityId: actor.id,
+    targetId: door.id,
+  };
+}
+
+/**
  * Возвращает один шаг MOVE к указанной позиции по кратчайшему пути.
  *
- * Использует A* с диагональным движением. Если путь не найден —
- * возвращает 'blocked'.
+ * Использует A* с диагональным движением. Закрытые двери на пути
+ * считаются проходимыми: если следующий шаг приходится на закрытую дверь,
+ * возвращается действие INTERACT вместо MOVE.
+ *
+ * Если путь не найден — возвращает 'blocked'.
  */
 export function moveToward(
   actor: EnemyEntity,
@@ -65,7 +110,7 @@ export function moveToward(
   const path = findPath(
     { x: actor.x, y: actor.y },
     target,
-    (pos) => !isBlocked(state, pos.x, pos.y),
+    (pos) => isTilePassableForEnemy(state, pos),
     DEFAULT_PATHFINDING_LIMIT,
     DEFAULT_ALLOW_DIAGONAL,
   );
@@ -75,6 +120,14 @@ export function moveToward(
   }
 
   const step = path[0]!;
+
+  const door = findClosedDoorAt(state, step.x, step.y);
+  if (door) {
+    return {
+      kind: 'interact',
+      action: openDoorAction(actor, door),
+    };
+  }
 
   return {
     kind: 'move',
@@ -113,7 +166,7 @@ export function closeCombat(
 
   const moveResult = moveToward(actor, state, target);
 
-  if (moveResult.kind === 'move') {
+  if (moveResult.kind === 'move' || moveResult.kind === 'interact') {
     return moveResult;
   }
 
