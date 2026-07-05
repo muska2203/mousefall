@@ -26,7 +26,7 @@ function mockConsumable(
 }
 
 function makeBuilder() {
-  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'WAIT', entityId: 'any' } });
+  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 beforeEach(() => {

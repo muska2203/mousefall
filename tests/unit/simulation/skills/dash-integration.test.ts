@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../../src/simulation/simulation';
+import { createTestSimulation, advanceToPlayerTurn } from '../../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
@@ -47,7 +47,7 @@ describe('dash integration', () => {
       abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const dashResult = sim.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'dash', targets: [{ x: 7, y: 5 }] });
     expect(dashResult.success).toBe(true);
@@ -70,11 +70,16 @@ describe('dash integration', () => {
       abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const dashResult = sim.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'dash', targets: [{ x: 7, y: 5 }] });
     expect(dashResult.success).toBe(true);
-    // Dash исчерпал AP, запустился ход окружения, AP восстановились.
+    // Dash исчерпал AP, ход игрока завершён автоматически, но окружение не ходит внутри dispatch.
+    expect(sim.getState().player.ap).toBe(0);
+
+    // Явно завершаем ход и двигаемся к следующему раунду.
+    sim.dispatch({ type: 'END_TURN', entityId: 'player' });
+    advanceToPlayerTurn(sim);
     expect(sim.getState().player.ap).toBe(1);
 
     const moveResult = sim.dispatch({ type: 'MOVE', entityId: 'player', dx: 1, dy: 0 });

@@ -14,7 +14,7 @@
 import { registerStrategy } from './strategy-registry';
 import type { AiActor, GameState } from '@simulation/types';
 import type { GameAction, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { canSeePlayer, tryPrepareAbility, wait } from './ai-helpers';
+import { canSeePlayer, tryPrepareAbility, endTurn } from './ai-helpers';
 import { isEnemyEntity } from './ai-state';
 
 registerStrategy('simple-boss', {
@@ -24,7 +24,7 @@ registerStrategy('simple-boss', {
 
   decideAction(actor, state, builder, parent) {
     if (!isEnemyEntity(actor)) {
-      return wait(actor);
+      return endTurn(actor);
     }
     const enemy = actor;
 
@@ -40,14 +40,14 @@ registerStrategy('simple-boss', {
 
     // Приоритет 2: если видим игрока — готовим первую доступную preparable способность.
     // Подготовка — side-effect стратегии: она эмитит ABILITY_PREPARED
-    // и тратит оставшиеся AP через WAIT.
+    // и завершает ход через END_TURN.
     if (canSeePlayer(enemy, state)) {
       if (tryPrepareAbility(enemy, state, builder, parent)) {
-        return wait(enemy);
+        return endTurn(enemy);
       }
     }
 
-    // В остальных случаях босс стоит на месте.
-    return wait(enemy);
+    // В остальных случаях босс завершает ход.
+    return endTurn(enemy);
   },
 });

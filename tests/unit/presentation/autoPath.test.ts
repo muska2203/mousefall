@@ -4,6 +4,7 @@ import { GameSession } from '../../../src/presentation/gameSession';
 import { AutoPathController, type AutoPathQueries } from '../../../src/presentation/autoPathController';
 import { findPathTowards } from '../../../src/presentation/pathfinding';
 import { GameSimulation } from '../../../src/simulation/simulation';
+import { drainAnimations } from '../../helpers/simulation';
 import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs } from '../../fixtures/gameState';
 import type { Entity, EnemyEntity, DoorEntity, Position } from '../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
@@ -931,7 +932,8 @@ describe('GameSession auto-path integration', () => {
 
     const state = makeGameState();
     state.explored[6]![5] = true;
-    state.player.ap = 1;
+    state.player.ap = 2;
+    state.player.maxAp = 2;
     state.player.abilities = [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }];
     const session = new GameSession();
     session.loadGame(state);
@@ -939,8 +941,8 @@ describe('GameSession auto-path integration', () => {
     session.handleFieldClick({ x: 5, y: 6 });
     expect(session.isAutoPathCommitted()).toBe(true);
 
-    // Дожидаемся завершения анимаций, чтобы можно было начать таргетинг.
-    session.onAnimationsComplete();
+    // Дожидаемся завершения всех анимаций (включая ходы AI после END_TURN).
+    drainAnimations(session);
     session.beginTargeting('fireball');
 
     expect(session.isAutoPathActive()).toBe(false);
@@ -1049,6 +1051,8 @@ describe('GameSession auto-path integration', () => {
     state.explored[6]![5] = true;
     state.explored[7]![5] = true;
     state.explored[8]![5] = true;
+    state.player.ap = 2;
+    state.player.maxAp = 2;
 
     const session = new GameSession();
     session.loadGame(state);
@@ -1072,8 +1076,8 @@ describe('GameSession auto-path integration', () => {
     session.setFieldHover({ x: 5, y: 7 });
     expect(session.getViewModel().renderInput?.highlightedPath).toBeNull();
 
-    // Анимация завершена — preview должен перестроиться к актуальному hover.
-    session.onAnimationsComplete();
+    // Анимации завершены — preview должен перестроиться к актуальному hover.
+    drainAnimations(session);
     const vm = session.getViewModel();
     expect(vm.renderInput?.phase).toBe('idle');
     expect(vm.renderInput?.state.player.y).toBe(6);
@@ -1081,7 +1085,7 @@ describe('GameSession auto-path integration', () => {
   });
 
   it('click on tile behind closed door opens door and continues to target', () => {
-    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const player = makePlayer({ x: 5, y: 5, ap: 4, maxAp: 4 });
     const door = makeDoor({ x: 5, y: 6 });
     const item = makeFloorItemContainer({ x: 5, y: 7 });
     const state = makeGameState({
@@ -1097,26 +1101,12 @@ describe('GameSession auto-path integration', () => {
 
     session.handleFieldClick({ x: 5, y: 7 });
 
-    // Первый шаг — открытие двери.
-    let vm = session.getViewModel();
-    expect(vm.renderInput?.highlightedPathCommitted).toBe(true);
+    // Дожидаемся завершения всего автопути.
+    drainAnimations(session);
+
+    const vm = session.getViewModel();
     expect((vm.renderInput?.state.entities.get(door.id) as DoorEntity | undefined)?.isOpen).toBe(true);
-
-    // Автопродолжение: заходим на клетку двери.
-    session.onAnimationsComplete();
-    vm = session.getViewModel();
-    expect(vm.renderInput?.state.player.y).toBe(6);
-    expect(vm.renderInput?.highlightedPathCommitted).toBe(true);
-
-    // После восстановления AP продолжаем движение к цели.
-    session.onAnimationsComplete();
-    vm = session.getViewModel();
     expect(vm.renderInput?.state.player.y).toBe(7);
-    expect(vm.renderInput?.highlightedPathCommitted).toBe(true);
-
-    // Последний шаг — поднятие предмета.
-    session.onAnimationsComplete();
-    vm = session.getViewModel();
     expect(vm.renderInput?.highlightedPathCommitted).toBe(false);
     expect(vm.renderInput?.state.player.inventory.length).toBe(1);
   });

@@ -168,6 +168,7 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     maxAp: template.maxAp ?? 1,
     ap: template.maxAp ?? 1,
     isAlive: true,
+    factionId: 'enemies',
     damageType: template.combat?.damageType ?? 'blunt',
     aiStrategyId: template.aiStrategyId ?? 'hunter',
     aiSightRadius: template.aiSightRadius,

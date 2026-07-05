@@ -87,6 +87,7 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     maxAp: 1,
     ap: 1,
     isAlive: true,
+    factionId: 'player',
     abilities: [],
     ...overrides,
   };
@@ -122,6 +123,7 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     maxAp: 1,
     ap: 1,
     isAlive: true,
+    factionId: 'enemies',
     abilities: [],
     ...overrides,
   };
@@ -226,7 +228,7 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
     entities: new Map<EntityId, Entity>([[player.id, player]]),
     visible: boolGrid(map.width, map.height, false),
     explored: boolGrid(map.width, map.height, false),
-    turn: {activeSide: 'PLAYER', round: 0},
+    turn: {activeSide: 'player', round: 0},
     phase: 'playing',
     floor: 1,
     floorSnapshots: [],

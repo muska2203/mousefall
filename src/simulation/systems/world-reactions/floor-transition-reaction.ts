@@ -34,7 +34,7 @@ export const floorTransitionReaction: WorldReaction = (
       x: plan.playerPosition.x,
       y: plan.playerPosition.y,
     },
-    { type: 'BEGIN_TURN', side: 'PLAYER', round: plan.turn.round },
+    { type: 'BEGIN_TURN', side: 'player', round: plan.turn.round },
     { type: 'RESTORE_AP', entityId: 'player' },
     { type: 'APPLY_FOG_EVENTS', events: fovEvents },
   ];

@@ -59,7 +59,7 @@ AI в Mousefall построен по принципу **«стратегия р
 src/simulation/ai/
 ├── strategy-registry.ts      # Реестр стратегий
 ├── ai-state.ts               # JSON-сериализуемое состояние FSM
-├── ai-helpers.ts             # Общие helpers: зрение, prepareAbility, wait
+├── ai-helpers.ts             # Общие helpers: зрение, prepareAbility, endTurn
 ├── cast-helpers.ts           # Helpers для выбора preparable-способностей
 ├── *-strategy.ts             # Конкретные стратегии (hunter, simple-boss, ...)
 └── tactics/                  # Реестр тактических утилит
@@ -150,7 +150,7 @@ src/simulation/ai/
 
    - `updateState` — вызывается в начале хода актора для FSM-тиков.
    - `onWorldChange` — вызывается для каждого заметного события мира (движение, двери), пока ходит игрок.
-   - `decideAction` — вызывается в фазе окружения, возвращает `GameAction`.
+   - `decideAction` — вызывается один раз за `step()` в фазе `actor-turn`, возвращает одно `GameAction`.
 
 4. **Указать `aiStrategyId`** в JSON-шаблоне врага в `public/content/entities/enemies/`.
 
@@ -205,7 +205,7 @@ onWorldChange(actor, state, change) {
 
 ```ts
 import { registerStrategy } from './strategy-registry';
-import { wait } from './ai-helpers';
+import { endTurn } from './ai-helpers';
 import { findVisibleAttackTarget, closeCombat, moveToward } from './tactics';
 
 registerStrategy('hunter', {
@@ -220,11 +220,13 @@ registerStrategy('hunter', {
 
   decideAction(actor, state, builder, parent) {
     // Стратегия решает: если видим цель — идём в ближний бой.
+    // Эта функция вызывается один раз за step(); если у актора осталось AP,
+    // следующий step() вызовет её снова.
     const visibleTarget = findVisibleAttackTarget(actor, state);
     if (visibleTarget) {
       const result = closeCombat(actor, state, visibleTarget);
       if (result.kind !== 'blocked') return result.action;
-      return wait(actor);
+      return endTurn(actor);
     }
 
     // Иначе действуем по FSM...
@@ -261,6 +263,6 @@ export type AttackTarget = {
 
 ## См. также
 
-- [`docs/agents/TURN_FLOW.md`](./TURN_FLOW.md) — ход окружения и вызов стратегий
+- [`docs/agents/TURN_FLOW.md`](./TURN_FLOW.md) — фракционный ход и вызов стратегий
 - [`docs/agents/ACTION_SYSTEM.md`](./ACTION_SYSTEM.md) — Action / Intent / Event
 - [`src/simulation/AGENTS.md`](../../src/simulation/AGENTS.md) — правила слоя Simulation

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../fixtures/gameState';
 import type { Entity, EntityId, EnemyEntity, GameMap, GameState } from '@simulation/types';
 import type { ExecutionNode, GameEvent } from '@simulation/core-types';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../src/simulation/simulation';
+import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
 
@@ -21,7 +21,7 @@ function findEvents(node: ExecutionNode, type: GameEvent['type']): ExecutionNode
   return results;
 }
 
-function findAllEvents(result: ReturnType<GameSimulation['dispatch']>, type: GameEvent['type']): ExecutionNode[] {
+function findAllEvents(result: ReturnType<import('../../../src/simulation/simulation').GameSimulation['dispatch']>, type: GameEvent['type']): ExecutionNode[] {
   const nodes: ExecutionNode[] = [];
   for (const phase of result.phases) {
     for (const action of phase.actions) {
@@ -107,7 +107,7 @@ describe('AI perception integration', () => {
       map,
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const result = sim.dispatch({ type: 'INTERACT', entityId: player.id, targetId: door.id });
     expect(result.success).toBe(true);
@@ -150,7 +150,7 @@ describe('AI perception integration', () => {
       map,
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     // Открываем дверь — в этот момент враг видит игрока.
     const openResult = sim.dispatch({ type: 'INTERACT', entityId: player.id, targetId: door.id });
@@ -160,8 +160,11 @@ describe('AI perception integration', () => {
     const closeResult = sim.dispatch({ type: 'INTERACT', entityId: player.id, targetId: door.id });
     expect(closeResult.success).toBe(true);
 
-    // Ход окружения должен был запуститься.
-    const envPhase = closeResult.phases.find((p) => p.side === 'ENVIRONMENT');
+    // Ход фракции врагов запускается через advanceToPlayerTurn.
+    const results = advanceToPlayerTurn(sim);
+    const envPhase = results
+      .flatMap(r => r.phases)
+      .find((p) => p.side === 'enemies' && p.actions.some(a => a.event.type === 'ACTION_APPLIED'));
     expect(envPhase).toBeDefined();
 
     const enemyAfter = getEnemy(sim.getState());
@@ -170,7 +173,7 @@ describe('AI perception integration', () => {
     expect(enemyAfter.aiState.targetX).toBe(5);
     expect(enemyAfter.aiState.targetY).toBe(3);
 
-    // Враг должен был сделать ход (MOVE или WAIT если заблокирован).
+    // Враг должен был сделать ход (MOVE или END_TURN если заблокирован).
     const enemyActions = envPhase!.actions.filter(
       (a) => a.event.type === 'ACTION_APPLIED' && a.event.action.entityId === enemy.id,
     );

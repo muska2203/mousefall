@@ -12,11 +12,11 @@ function makeExecNode(event: GameEvent, children: ExecutionNode[] = []): Executi
 }
 
 function makeResult(actions: ExecutionNode[]): SimulationResult {
-  return { success: true, stateChanged: true, phases: [{ side: 'PLAYER', actions }] };
+  return { success: true, stateChanged: true, hasMoreSteps: false, phases: [{ side: 'player', actions }] };
 }
 
-function makeResultWithPhases(phases: { side: 'PLAYER' | 'ENVIRONMENT' | 'STATUS_TICK'; actions: ExecutionNode[] }[]): SimulationResult {
-  return { success: true, stateChanged: true, phases: phases as any };
+function makeResultWithPhases(phases: { side: 'player' | 'enemies' | 'status_tick'; actions: ExecutionNode[] }[]): SimulationResult {
+  return { success: true, stateChanged: true, hasMoreSteps: false, phases: phases as any };
 }
 
 /** Минимальный mock state, где все клетки видимы (чтобы FOV-фильтр не влиял на тесты). */
@@ -30,7 +30,7 @@ function makeMockState(): GameState {
     entities: new Map([['player', { id: 'player', x: 0, y: 0 } as any]]),
     player: { id: 'player', x: 0, y: 0 } as any,
     mapParams: {} as any,
-    turn: { activeSide: 'PLAYER', round: 1 } as any,
+    turn: { activeSide: 'player', round: 1 } as any,
     phase: 'playing' as any,
     floor: 1,
     floorSnapshots: [],
@@ -47,7 +47,7 @@ describe('buildAnimationTree', () => {
 
     expect(tree).toHaveLength(1);
     expect(tree[0]!.nodes).toHaveLength(1);
-    expect(tree[0]!.side).toBe('PLAYER');
+    expect(tree[0]!.side).toBe('player');
     expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
     expect(tree[0]!.nodes[0]!.children).toHaveLength(0);
   });
@@ -190,16 +190,16 @@ describe('buildAnimationTree', () => {
     ]);
     const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
     const result = makeResultWithPhases([
-      { side: 'PLAYER', actions: [playerMove] },
-      { side: 'ENVIRONMENT', actions: [enemyMove] },
+      { side: 'player', actions: [playerMove] },
+      { side: 'enemies', actions: [enemyMove] },
     ]);
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(2);
-    expect(tree[0]!.side).toBe('PLAYER');
+    expect(tree[0]!.side).toBe('player');
     expect(tree[0]!.nodes).toHaveLength(1);
     expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
-    expect(tree[1]!.side).toBe('ENVIRONMENT');
+    expect(tree[1]!.side).toBe('enemies');
     expect(tree[1]!.nodes).toHaveLength(1);
     expect(tree[1]!.nodes[0]!.step.type).toBe('MOVE');
     expect(tree[1]!.sequential).toBe(true);
@@ -209,7 +209,7 @@ describe('buildAnimationTree', () => {
     const firstMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
     const secondMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 4, y: 5 }, to: { x: 3, y: 5 } });
     const result = makeResultWithPhases([
-      { side: 'ENVIRONMENT', actions: [firstMove, secondMove] },
+      { side: 'enemies', actions: [firstMove, secondMove] },
     ]);
     const tree = buildAnimationTree(result, makeMockState());
 
@@ -283,16 +283,16 @@ describe('buildAnimationTree', () => {
     const enemyAMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemyA', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
     const enemyBMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemyB', from: { x: 3, y: 3 }, to: { x: 2, y: 3 } });
     const result = makeResultWithPhases([
-      { side: 'ENVIRONMENT', actions: [enemyAMove, enemyBMove] },
+      { side: 'enemies', actions: [enemyAMove, enemyBMove] },
     ]);
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(2);
-    expect(tree[0]!.side).toBe('ENVIRONMENT');
+    expect(tree[0]!.side).toBe('enemies');
     expect(tree[0]!.nodes).toHaveLength(1);
     expect((tree[0]!.nodes[0]!.step as any).entityId).toBe('enemyA');
     expect(tree[0]!.sequential).toBe(true);
-    expect(tree[1]!.side).toBe('ENVIRONMENT');
+    expect(tree[1]!.side).toBe('enemies');
     expect(tree[1]!.nodes).toHaveLength(1);
     expect((tree[1]!.nodes[0]!.step as any).entityId).toBe('enemyB');
     expect(tree[1]!.sequential).toBe(true);
@@ -357,18 +357,18 @@ describe('buildAnimationTree', () => {
     const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
     const tick = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'player', damage: 1, damageType: 'poison', position: { x: 0, y: 0 } });
     const result = makeResultWithPhases([
-      { side: 'PLAYER', actions: [playerMove] },
-      { side: 'ENVIRONMENT', actions: [enemyMove] },
-      { side: 'STATUS_TICK', actions: [tick] },
+      { side: 'player', actions: [playerMove] },
+      { side: 'enemies', actions: [enemyMove] },
+      { side: 'status_tick', actions: [tick] },
     ]);
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(3);
-    expect(tree[0]!.side).toBe('PLAYER');
+    expect(tree[0]!.side).toBe('player');
     expect(tree[0]!.nodes).toHaveLength(1);
-    expect(tree[1]!.side).toBe('ENVIRONMENT');
+    expect(tree[1]!.side).toBe('enemies');
     expect(tree[1]!.nodes).toHaveLength(1);
-    expect(tree[2]!.side).toBe('STATUS_TICK');
+    expect(tree[2]!.side).toBe('status_tick');
     expect(tree[2]!.nodes).toHaveLength(1);
     expect(tree[2]!.nodes[0]!.step.type).toBe('DAMAGE');
   });

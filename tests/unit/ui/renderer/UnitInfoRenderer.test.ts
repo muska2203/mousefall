@@ -129,6 +129,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
+    factionId: 'player' as const,
   };
 
   return {
@@ -152,7 +153,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
       player,
       visible: [],
       explored: [],
-      turn: {activeSide: 'PLAYER' as const, round: 1},
+      turn: {activeSide: 'player' as const, round: 1},
       phase: 'playing' as const,
       floor: 1,
       floorSnapshots: [],
@@ -218,6 +219,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     fieldObjectPopover: null,
     interactionHint: null,
     aiPreparedIntents: [],
+    currentTurnSide: 'player',
     debugEnabled,
     mapgenDebugEnabled: false,
   };
@@ -337,7 +339,7 @@ describe('UnitInfoRenderer', () => {
     input.state.player.hp = 5;
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'HP_CHANGE', entityId: 'player', fromHp: 10, toHp: 5, maxHp: 10, position: {x: 0, y: 0}},

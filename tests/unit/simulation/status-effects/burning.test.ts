@@ -6,6 +6,7 @@ import { executeIntent } from '../../../../src/simulation/systems/intents/execut
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
 import type { EntityDamagedEvent } from '../../../../src/simulation/core-types';
 import { GameSimulation } from '../../../../src/simulation/simulation';
+import { advanceToPlayerTurn } from '../../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 
 describe('burning status effect', () => {
@@ -93,8 +94,12 @@ describe('burning status effect', () => {
     initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map() });
     const sim = GameSimulation.loadSavedGame(state);
 
-    // Тикаем через beginNextPlayerTurn (вызывается после исчерпания AP игрока)
-    sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    // Завершаем ход игрока и запускаем ход фракции врагов.
+    // Останавливаемся перед ROUND_RECOVERY, чтобы мёртвый враг ещё был в entities.
+    sim.dispatch({ type: 'END_TURN', entityId: 'player' });
+    while ((sim as any).turnState.phase !== 'round-recovery') {
+      sim.step();
+    }
 
     // Enemy должен быть мёртв (isAlive = false), но ещё не удалён из entities
     const updatedEnemy = sim.getState().entities.get(enemy.id);

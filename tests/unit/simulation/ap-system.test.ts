@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
 import type { Entity, EntityId } from '../../../src/simulation/types';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../src/simulation/simulation';
+import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate, ItemTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
@@ -59,7 +59,7 @@ describe('AP-система: мульти-AP сценарии', () => {
   it('игрок с maxAp = 2 может сделать два MOVE за один ход', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const r1 = sim.dispatch({ type: 'MOVE', entityId: 'player', dx: 1, dy: 0 });
     expect(r1.success).toBe(true);
@@ -70,8 +70,12 @@ describe('AP-система: мульти-AP сценарии', () => {
     const r2 = sim.dispatch({ type: 'MOVE', entityId: 'player', dx: 1, dy: 0 });
     expect(r2.success).toBe(true);
     expect(r2.stateChanged).toBe(true);
-    // Второй MOVE исчерпал AP, поэтому запустился ход окружения и AP восстановились.
-    expect(r2.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
+    // Второй MOVE исчерпал AP, но ход окружения не запускается автоматически.
+    expect(sim.getState().player.ap).toBe(0);
+
+    // Явно завершаем ход и прокручиваем фазы до следующего хода игрока.
+    sim.dispatch({ type: 'END_TURN', entityId: 'player' });
+    advanceToPlayerTurn(sim);
     expect(sim.getState().player.ap).toBe(2);
   });
 
@@ -82,14 +86,14 @@ describe('AP-система: мульти-AP сценарии', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const result = sim.dispatch({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 });
 
     expect(result.success).toBe(true);
     expect(result.stateChanged).toBe(true);
-    expect(result.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
-    expect(sim.getState().player.ap).toBe(1);
+    expect(result.phases).toHaveLength(1);
+    expect(sim.getState().player.ap).toBe(0);
   });
 
   it('ATTACK стоит 1 AP: при ap = 1 доступен и MOVE, и ATTACK', () => {
@@ -100,7 +104,7 @@ describe('AP-система: мульти-AP сценарии', () => {
       player: playerAttack,
       entities: new Map<EntityId, Entity>([[playerAttack.id, playerAttack], [enemy.id, enemy]]),
     });
-    const simAttack = new GameSimulation(stateAttack, defaultActionHandlerRegistry());
+    const simAttack = createTestSimulation(stateAttack);
     const attackResult = simAttack.dispatch({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 });
     expect(attackResult.success).toBe(true);
 
@@ -109,27 +113,9 @@ describe('AP-система: мульти-AP сценарии', () => {
       player: playerMove,
       entities: new Map<EntityId, Entity>([[playerMove.id, playerMove]]),
     });
-    const simMove = new GameSimulation(stateMove, defaultActionHandlerRegistry());
+    const simMove = createTestSimulation(stateMove);
     const moveResult = simMove.dispatch({ type: 'MOVE', entityId: 'player', dx: 0, dy: 1 });
     expect(moveResult.success).toBe(true);
-  });
-
-  it('WAIT списывает все оставшиеся AP', () => {
-    const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2 });
-    const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-
-    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
-
-    expect(result.success).toBe(true);
-    expect(result.stateChanged).toBe(true);
-    // WAIT тратит все текущие AP; затем автоматически начинается следующий ход,
-    // поэтому проверяем стоимость в дереве событий, а не текущее AP.
-    const consumed = result.phases[0]?.actions[0]?.children.find(
-      c => c.event.type === 'RESOURCE_CONSUMED' && (c.event as { amount: number }).amount === 2,
-    );
-    expect(consumed).toBeDefined();
-    expect(result.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
   });
 
   it('apCost способности считывается из шаблона', () => {
@@ -144,12 +130,12 @@ describe('AP-система: мульти-AP сценарии', () => {
     const state1 = makeGameState({ player: player1, entities: new Map<EntityId, Entity>([[player1.id, player1]]) });
     state1.visible[5]![5] = true;
     state1.visible[5]![6] = true;
-    const sim1 = new GameSimulation(state1, defaultActionHandlerRegistry());
+    const sim1 = createTestSimulation(state1);
 
     const r1 = sim1.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] });
     expect(r1.success).toBe(true);
     expect(r1.stateChanged).toBe(true);
-    expect(r1.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
+    expect(sim1.getState().player.ap).toBe(0);
 
     // fireball стоит 2 AP — при ap = 1 использовать нельзя.
     const player2 = makePlayer({
@@ -162,7 +148,7 @@ describe('AP-система: мульти-AP сценарии', () => {
     const state2 = makeGameState({ player: player2, entities: new Map<EntityId, Entity>([[player2.id, player2]]) });
     state2.visible[5]![5] = true;
     state2.visible[5]![6] = true;
-    const sim2 = new GameSimulation(state2, defaultActionHandlerRegistry());
+    const sim2 = createTestSimulation(state2);
 
     const r2 = sim2.dispatch({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] });
     expect(r2.success).toBe(false);
@@ -170,20 +156,20 @@ describe('AP-система: мульти-AP сценарии', () => {
     expectRejected(r2, 'not_enough_ap');
   });
 
-  it('при исчерпании AP автоматически запускается ход врагов', () => {
+  it('при исчерпании AP автоматически завершается ход игрока', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({ x: 6, y: 5, hp: 100, maxHp: 100 });
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const result = sim.dispatch({ type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 });
 
     expect(result.success).toBe(true);
     expect(result.stateChanged).toBe(true);
-    expect(result.phases.some(p => p.side === 'ENVIRONMENT')).toBe(true);
+    expect(sim.getState().player.ap).toBe(0);
   });
 
   it('EQUIP стоит 1 AP и недоступен при 0 AP', () => {
@@ -195,28 +181,36 @@ describe('AP-система: мульти-AP сценарии', () => {
       inventory: [{ instanceId: 'w1', templateId: 'common_splinter_blade', quantity: 1, grantedAbilities: [] }],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const result = sim.dispatch({ type: 'EQUIP', entityId: 'player', itemInstanceId: 'w1' });
     expect(result.success).toBe(false);
     expectRejected(result, 'actor_cannot_act');
   });
 
-  it('AP восстанавливается через событие AP_RESTORED', () => {
+  it('AP восстанавливается в FACTION_SETUP следующего раунда', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
-    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
-    expect(result.success).toBe(true);
+    // Тратим 1 AP, чтобы восстановление имело смысл.
+    sim.dispatch({ type: 'MOVE', entityId: 'player', dx: 1, dy: 0 });
+    expect(sim.getState().player.ap).toBe(1);
 
-    const restored = result.phases
+    sim.dispatch({ type: 'END_TURN', entityId: 'player' });
+
+    // Прокручиваем фазы до возвращения хода игрока.
+    const results = advanceToPlayerTurn(sim);
+
+    const restored = results
+      .flatMap(r => r.phases)
       .flatMap(p => p.actions)
       .flatMap(a => collectEvents(a))
       .filter(e => e.type === 'AP_RESTORED' && e.entityId === 'player');
 
     expect(restored.length).toBe(1);
-    expect(restored[0]).toMatchObject({ amount: 2, remaining: 2 });
+    expect(restored[0]).toMatchObject({ amount: 1, remaining: 2 });
+    expect(sim.getState().player.ap).toBe(2);
   });
 });
 

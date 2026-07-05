@@ -12,7 +12,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     state.entities.set(aliveEnemy.id, aliveEnemy);
     state.entities.set(deadEnemy.id, deadEnemy);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },
@@ -33,7 +33,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     const player = makePlayer({ hp: 0, isAlive: false });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },
@@ -51,7 +51,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     const aliveEnemy = makeEnemy({ id: 'alive_1', x: 3, y: 3, hp: 10, isAlive: true });
     state.entities.set(aliveEnemy.id, aliveEnemy);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },
@@ -72,7 +72,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     state.entities.set(deadA.id, deadA);
     state.entities.set(deadM.id, deadM);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },

@@ -90,8 +90,6 @@ export interface ScreensEndingTranslations {
   boss2: string;
   boss3: string;
   boss4: string;
-  resultVictory: string;
-  resultDefeat: string;
   statStrength: string;
   statIntelligence: string;
   statDexterity: string;
@@ -149,6 +147,8 @@ export interface ComponentsEffectsPanelTranslations {
 
 export interface ComponentsEndingMetricsTranslations {
   title: string;
+  resultVictory: string;
+  resultDefeat: string;
 }
 
 export interface ComponentsEndingActionsTranslations {
@@ -184,8 +184,11 @@ export interface ComponentsGameFieldTranslations {
   floorTitle: string;
   skipTurnAriaLabel: string;
   playerPhaseLabel: string;
-  environmentPhaseLabel: string;
+  enemiesPhaseLabel: string;
+  alliesPhaseLabel: string;
+  neutralsPhaseLabel: string;
   statusTickPhaseLabel: string;
+  roundRecoveryPhaseLabel: string;
   skipTurnHoverLabel: string;
   gameFieldAriaLabel: string;
 }

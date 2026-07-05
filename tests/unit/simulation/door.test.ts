@@ -13,6 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { isBlocked, blocksLOS, findFirstAttackableEntityAt, findDoorAt } from '../../../src/simulation/state';
 import { attackEntity } from '../../../src/simulation/systems/actions/attack-action';
 import { GameSimulation } from '../../../src/simulation/simulation';
+import { advanceToPlayerTurn } from '../../helpers/simulation';
 import type { DoorEntity, EntityId, Entity } from '../../../src/simulation/types';
 import { makeGameState, makePlayer, makeEnemy, makeDoor, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
 
@@ -120,6 +121,8 @@ describe('Door entity', () => {
 
     const sim = GameSimulation.loadSavedGame(state);
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
+    // Мёртвые сущности удаляются в ROUND_RECOVERY.
+    advanceToPlayerTurn(sim);
 
     expect(sim.getState().entities.has(door.id)).toBe(false);
   });

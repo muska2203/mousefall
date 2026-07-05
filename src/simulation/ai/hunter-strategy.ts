@@ -17,7 +17,7 @@ import { registerStrategy } from './strategy-registry';
 import type { AiActor, EnemyEntity, GameState, Position } from '@simulation/types';
 import type { GameAction } from '@simulation/systems/actions/types';
 import type { WorldChange } from './perception-types';
-import { wait, canSeePlayer, canSeePosition } from './ai-helpers';
+import { endTurn, canSeePlayer, canSeePosition } from './ai-helpers';
 import { isEnemyEntity } from './ai-state';
 import { findVisibleAttackTarget, closeCombat, moveToward } from './tactics';
 
@@ -34,7 +34,7 @@ registerStrategy('hunter', {
 
   decideAction(actor, state, _builder, _parent) {
     if (!isEnemyEntity(actor)) {
-      return wait(actor);
+      return endTurn(actor);
     }
 
     const enemy = actor;
@@ -46,13 +46,13 @@ registerStrategy('hunter', {
       if (result.kind !== 'blocked') {
         return result.action;
       }
-      return wait(enemy);
+      return endTurn(enemy);
     }
 
     // Приоритет 2: действуем согласно текущему FSM-режиму.
     switch (enemy.aiState.mode) {
       case 'idle': {
-        return wait(enemy);
+        return endTurn(enemy);
       }
 
       case 'chase': {
@@ -62,7 +62,7 @@ registerStrategy('hunter', {
         if (tx === null || ty === null) {
           // Защита: target потерян — переключаемся в return.
           enemy.aiState.mode = 'return';
-          return wait(enemy);
+          return endTurn(enemy);
         }
 
         // targetX/Y — последняя известная позиция цели, а не сама цель.
@@ -72,7 +72,7 @@ registerStrategy('hunter', {
         if (result.kind === 'move') {
           return result.action;
         }
-        return wait(enemy);
+        return endTurn(enemy);
       }
 
       case 'return': {
@@ -81,7 +81,7 @@ registerStrategy('hunter', {
         if (result.kind === 'move') {
           return result.action;
         }
-        return wait(enemy);
+        return endTurn(enemy);
       }
     }
   },

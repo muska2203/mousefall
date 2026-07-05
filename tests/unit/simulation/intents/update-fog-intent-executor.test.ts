@@ -11,7 +11,7 @@ describe('executeUpdateFogIntent', () => {
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'WAIT', entityId: 'player' },
+      action: { type: 'END_TURN', entityId: 'player' },
     });
 
     const node = executeUpdateFogIntent(

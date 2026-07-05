@@ -10,7 +10,7 @@ describe('executeTickCooldownIntent', () => {
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 1, actorId: player.id });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: player.id });
     const node = executeTickCooldownIntent(state, { type: 'TICK_COOLDOWN', entityId: player.id, abilityId: 'fireball' }, builder, builder.root);
 
     expect(player.abilities[0]!.currentCooldown).toBe(1);
@@ -29,7 +29,7 @@ describe('executeTickCooldownIntent', () => {
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 1, actorId: player.id });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: player.id });
     executeTickCooldownIntent(state, { type: 'TICK_COOLDOWN', entityId: player.id, abilityId: 'fireball' }, builder, builder.root);
 
     expect(player.abilities[0]!.currentCooldown).toBe(0);
@@ -39,7 +39,7 @@ describe('executeTickCooldownIntent', () => {
     const player = makePlayer({ abilities: [] });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 1, actorId: player.id });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: player.id });
     const node = executeTickCooldownIntent(state, { type: 'TICK_COOLDOWN', entityId: player.id, abilityId: 'fireball' }, builder, builder.root);
 
     expect(node).toBeNull();

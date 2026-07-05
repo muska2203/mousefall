@@ -123,7 +123,6 @@ export class AnimationSequencer {
     };
 
     if (!executor) {
-      console.warn(`[AnimationSequencer] Нет executor для шага "${step.type}"`);
       try {
         await Promise.all(node.children.map((child) => this.runNode(child)));
       } finally {

@@ -40,7 +40,7 @@ utils/        → (ничего — чистые функции)
 - Использует seedable PRNG (`utils/rng.ts`) — никогда `Math.random()`.
 - Состояние мутируется напрямую внутри функций симуляции.
 - Функции возвращают дерево `GameEvent` через `ExecutionBuilder`, описывая, что произошло.
-- **Публичный API:** `dispatch(action)`, `preview(action)`, `getState()`, `generateMap()`.
+- **Публичный API:** `dispatch(action)`, `step()`, `preview(action)`, `getState()`, `isPlayerTurn()`, `generateMap()`.
 
 **Запрещено:** импортировать React, PixiJS, любые browser API. Обращаться к DOM. Импортировать из `presentation/` или `ui/`.
 

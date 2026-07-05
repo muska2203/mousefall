@@ -33,6 +33,7 @@ import {
   RuntimeAbility,
   DamageType,
   TurnSide,
+  FactionId,
 } from "@simulation/core-types.ts";
 import type { AIState } from "./ai/ai-state";
 
@@ -61,6 +62,7 @@ export type {
   RuntimeAbility,
   DamageType,
   TurnSide,
+  FactionId,
 } from "@simulation/core-types.ts";
 export { ExecutionBuilder } from "@simulation/core-types.ts";
 
@@ -118,6 +120,7 @@ export interface TemplateIdHolder {
 }
 
 export interface Actor extends BaseEntity, Attackable, Attacker {
+  factionId: FactionId;
   maxAp: number;
   ap: number;
 }
@@ -418,7 +421,13 @@ export type EntityFilter = (entity: Entity) => boolean;
 export type Simulation = {
   dispatch(action: GameAction): SimulationResult;
 
+  /** Выполняет следующую системную фазу или AI-действие. */
+  step(): SimulationResult;
+
   preview(action: GameAction): ActionPreview;
+
+  /** true, если сейчас ход игрока (ожидается ввод). */
+  isPlayerTurn(): boolean;
 
   /** Возвращает стоимость действия в AP. */
   getActionCost(action: GameAction): number;
@@ -526,6 +535,9 @@ export type SimulationResult = {
 
   /** Фазы хода в порядке выполнения */
   phases: TurnPhase[];
+
+  /** true, если ход ещё не вернулся к игроку */
+  hasMoreSteps: boolean;
 };
 
 

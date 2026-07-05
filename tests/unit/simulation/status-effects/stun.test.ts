@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
 import type { Entity, EntityId, ExecutionNode, GameEvent } from '../../../../src/simulation/types';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../../src/simulation/simulation';
+import { createTestSimulation, advanceToPlayerTurn } from '../../../helpers/simulation';
 import { getDerivedAIMode } from '../../../../src/simulation/ai/ai-state';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
@@ -50,15 +50,15 @@ describe('stun: пропуск хода', () => {
     resetRegistry();
   });
 
-  it('оглушённый игрок не может двигаться, но может нажать WAIT', () => {
+  it('оглушённый игрок не может двигаться, но может завершить ход (END_TURN)', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2, statusEffects: [{ type: 'stunned', duration: 1, value: 0, statModifiers: null }] });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const moveResult = sim.dispatch({ type: 'MOVE', entityId: 'player', dx: 1, dy: 0 });
     expect(moveResult.success).toBe(false);
 
-    const waitResult = sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    const waitResult = sim.dispatch({ type: 'END_TURN', entityId: 'player' });
     expect(waitResult.success).toBe(true);
     expect(sim.getState().player.statusEffects.some(e => e.type === 'stunned')).toBe(false);
   });
@@ -70,10 +70,11 @@ describe('stun: пропуск хода', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
-    // Игрок завершает ход, запускается ход окружения.
-    sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    // Игрок завершает ход, ход переходит к фракции врагов.
+    sim.dispatch({ type: 'END_TURN', entityId: 'player' });
+    advanceToPlayerTurn(sim);
 
     // Враг должен был пропустить ход и сбросить stunned.
     const enemyAfter = sim.getState().entities.get(enemy.id)!;
@@ -85,9 +86,9 @@ describe('stun: пропуск хода', () => {
   it('SKIP_STUNNED_TURN порождает корректное дерево событий для игрока', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2, statusEffects: [{ type: 'stunned', duration: 1, value: 0, statModifiers: null }] });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
-    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
+    const result = sim.dispatch({ type: 'END_TURN', entityId: 'player' });
     expect(result.success).toBe(true);
 
     const root = result.phases[0]!.actions[0]!;
@@ -107,12 +108,14 @@ describe('stun: пропуск хода', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
-    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
-    expect(result.success).toBe(true);
+    sim.dispatch({ type: 'END_TURN', entityId: 'player' });
+    const results = advanceToPlayerTurn(sim);
 
-    const envPhase = result.phases.find(p => p.side === 'ENVIRONMENT');
+    const envPhase = results
+      .flatMap(r => r.phases)
+      .find(p => p.side === 'enemies' && p.actions.some(a => a.event.type === 'ACTION_APPLIED'));
     expect(envPhase).toBeDefined();
 
     const ticked = envPhase!.actions.flatMap(a => findEvents(a, e => e.type === 'STATUS_TICKED' && e.effectTypes.includes('stunned')));
@@ -148,10 +151,13 @@ describe('stun: пропуск хода', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
-    const result = sim.dispatch({ type: 'WAIT', entityId: 'player' });
-    const envPhase = result.phases.find(p => p.side === 'ENVIRONMENT');
+    sim.dispatch({ type: 'END_TURN', entityId: 'player' });
+    const results = advanceToPlayerTurn(sim);
+    const envPhase = results
+      .flatMap(r => r.phases)
+      .find(p => p.side === 'enemies' && p.actions.some(a => a.event.type === 'ACTION_APPLIED'));
     expect(envPhase).toBeDefined();
 
     const cancelled = envPhase!.actions.flatMap(a => findEvents(a, e => e.type === 'ABILITY_PREPARED_CANCELLED' && e.abilityId === 'dash'));

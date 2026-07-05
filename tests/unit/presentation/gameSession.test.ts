@@ -8,6 +8,7 @@ import { GameSession } from '../../../src/presentation/gameSession';
 import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { Entity, EntityId } from '../../../src/simulation/types';
+import { drainAnimations } from '../../helpers/simulation';
 
 describe('GameSession debug mode', () => {
   beforeEach(() => {
@@ -197,7 +198,12 @@ describe('GameSession AP display during animations', () => {
     // а не финальное восстановленное значение.
     expect(vmDuringAnimation.renderInput?.playerStats.ap).toBe(0);
 
-    session.onAnimationsComplete();
+    drainAnimations(session);
+
+    // После завершения хода окружения и ROUND_RECOVERY сессия остаётся в idle,
+    // ожидая следующего вызова step() для входа в FACTION_SETUP нового раунда.
+    (session as any).step();
+    drainAnimations(session);
 
     const vmAfterAnimation = session.getViewModel();
     expect(vmAfterAnimation.renderInput?.phase).toBe('idle');
@@ -600,6 +606,39 @@ describe('GameSession interactions (F / Tab)', () => {
   });
 
   it('auto-path to stairs performs MOVE then INTERACT across turn boundary', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const stairs = makeStairs('stairs_down', { x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [stairs.id, stairs],
+      ]),
+    });
+    state.explored[5]![5] = true;
+    state.explored[5]![6] = true;
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.handleFieldClick({ x: 6, y: 5 });
+
+    // Первый шаг автопути — MOVE на клетку лестницы, тратит 1 AP.
+    expect(session.getViewModel().renderInput?.state.player.ap).toBe(1);
+    expect(session.getViewModel().renderInput?.state.turn.activeSide).toBe('player');
+    expect(session.getViewModel().renderInput?.state.player).toMatchObject({ x: 6, y: 5 });
+
+    drainAnimations(session);
+
+    // Автопуть завершается: выполняется INTERACT с лестницей.
+    expect(session.getViewModel().renderInput?.state.floor).toBe(2);
+  });
+
+  it('resumes committed auto-path after environment turn ends', () => {
+    // Игрок с 1 AP, рядом лестница. Автопуть к лестнице тратит AP,
+    // запускает ход окружения и должен автоматически продолжиться
+    // после восстановления AP в начале следующего хода игрока.
     const player = makePlayer({ x: 5, y: 5, ap: 1, maxAp: 1 });
     const stairs = makeStairs('stairs_down', { x: 6, y: 5 });
     const state = makeGameState({
@@ -618,16 +657,40 @@ describe('GameSession interactions (F / Tab)', () => {
 
     session.handleFieldClick({ x: 6, y: 5 });
 
-    // Первый шаг автопути — MOVE на клетку лестницы, тратит последний AP.
-    // Simulation сразу завершает ход игрока, окружение ходит и восстанавливает AP.
-    expect(session.getViewModel().renderInput?.state.player.ap).toBe(1);
-    expect(session.getViewModel().renderInput?.state.turn.activeSide).toBe('PLAYER');
+    expect(session.getViewModel().renderInput?.state.player).toMatchObject({ x: 6, y: 5 });
+    expect(session.isAutoPathCommitted()).toBe(true);
+
+    drainAnimations(session);
+
+    // После возвращения хода автопуть должен выполнить INTERACT с лестницей.
+    expect(session.getViewModel().renderInput?.state.floor).toBe(2);
+  });
+
+  it('resumes held movement direction after environment turn ends', () => {
+    // Игрок с 1 AP, зажата клавиша движения вправо. MOVE тратит AP,
+    // запускает ход окружения. Зажатое направление должно продолжить движение
+    // после восстановления AP.
+    const player = makePlayer({ x: 5, y: 5, ap: 1, maxAp: 1 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.setHeldDirection(1, 0);
+    session.moveOrAttack(1, 0);
+
     expect(session.getViewModel().renderInput?.state.player).toMatchObject({ x: 6, y: 5 });
 
+    // Завершаем анимации текущего хода и ход окружения.
+    // Зажатое направление должно автоматически продолжить движение
+    // после восстановления AP в начале следующего хода игрока.
     session.onAnimationsComplete();
 
-    // Автопуть продолжается на новом ходу: выполняется INTERACT с лестницей.
-    expect(session.getViewModel().renderInput?.state.floor).toBe(2);
+    expect(session.getViewModel().renderInput?.state.player).toMatchObject({ x: 7, y: 5 });
+    expect(session.getViewModel().renderInput?.state.player.ap).toBe(0);
   });
 });
 

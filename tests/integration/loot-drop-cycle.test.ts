@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../src/simulation/simulation';
+import { createTestSimulation } from '../helpers/simulation';
 import { makeTestMap, makePlayer, makeEnemy } from '../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../src/content/registry';
 import type { GameState, EntityId, FloorItemContainerEntity } from '../../src/simulation/types';
@@ -62,7 +62,7 @@ function makeLootGameState(): GameState {
     hp: 1,
     maxHp: 1,
     templateId: 'test_enemy',
-    aiStrategyId: 'stub_right',
+    aiStrategyId: 'hunter',
   });
 
   return {
@@ -88,7 +88,7 @@ function makeLootGameState(): GameState {
     ]),
     visible: boolGrid(map.width, map.height, false),
     explored: boolGrid(map.width, map.height, false),
-    turn: { activeSide: 'PLAYER', round: 1 },
+    turn: { activeSide: 'player', round: 1 },
     phase: 'playing',
     floor: 1,
     floorSnapshots: [],
@@ -140,7 +140,7 @@ describe('Интеграция: цикл выпадения лута', () => {
 
   it('атака убивает врага и порождает ITEM_DROPPED в дереве событий', () => {
     const state = makeLootGameState();
-    const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simulation = createTestSimulation(state);
 
     const result = simulation.dispatch({
       type: 'ATTACK',
@@ -152,7 +152,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     expect(result.success).toBe(true);
     expect(result.stateChanged).toBe(true);
 
-    const playerPhase = result.phases.find(p => p.side === 'PLAYER');
+    const playerPhase = result.phases.find(p => p.side === 'player');
     expect(playerPhase).toBeDefined();
     expect(playerPhase!.actions.length).toBe(1);
 
@@ -164,7 +164,7 @@ describe('Интеграция: цикл выпадения лута', () => {
 
   it('дерево событий содержит правильную цепочку ACTION_APPLIED → ENTITY_DAMAGED → ENTITY_DIED → ITEM_DROPPED', () => {
     const state = makeLootGameState();
-    const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simulation = createTestSimulation(state);
 
     const result = simulation.dispatch({
       type: 'ATTACK',
@@ -195,7 +195,7 @@ describe('Интеграция: цикл выпадения лута', () => {
 
   it('FloorItemContainerEntity появляется в state.entities после хода', () => {
     const state = makeLootGameState();
-    const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simulation = createTestSimulation(state);
 
     simulation.dispatch({
       type: 'ATTACK',
@@ -214,7 +214,7 @@ describe('Интеграция: цикл выпадения лута', () => {
 
   it('враг помечен isAlive=false, но ещё в entities до конца хода', () => {
     const state = makeLootGameState();
-    const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simulation = createTestSimulation(state);
 
     simulation.dispatch({
       type: 'ATTACK',
@@ -228,9 +228,9 @@ describe('Интеграция: цикл выпадения лута', () => {
     expect((enemy as any).isAlive).toBe(false);
   });
 
-  it('после beginNextPlayerTurn мёртвый враг удалён, а предмет остаётся', () => {
+  it('после завершения раунда мёртвый враг удалён, а предмет остаётся', () => {
     const state = makeLootGameState();
-    const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simulation = createTestSimulation(state);
 
     simulation.dispatch({
       type: 'ATTACK',
@@ -242,9 +242,13 @@ describe('Интеграция: цикл выпадения лута', () => {
     expect(simulation.getState().entities.has('test_enemy_1')).toBe(true);
 
     simulation.dispatch({
-      type: 'WAIT',
+      type: 'END_TURN',
       entityId: 'player',
     });
+    // Прокручиваем фазы до завершения раунда — мёртвые сущности удаляются в ROUND_RECOVERY.
+    while (simulation.step().hasMoreSteps) {
+      // пропускаем фазы AI
+    }
 
     const currentState = simulation.getState();
     expect(currentState.entities.has('test_enemy_1')).toBe(false);
@@ -278,7 +282,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     });
 
     const state = makeLootGameState();
-    const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simulation = createTestSimulation(state);
 
     simulation.dispatch({
       type: 'ATTACK',
@@ -321,7 +325,7 @@ describe('Интеграция: цикл выпадения лута', () => {
     };
     state.entities.set(container.id, container);
 
-    const simulation = new GameSimulation(state, defaultActionHandlerRegistry());
+    const simulation = createTestSimulation(state);
 
     simulation.dispatch({
       type: 'INTERACT',

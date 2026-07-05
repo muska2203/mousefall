@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../src/simulation/simulation';
+import { createTestSimulation } from '../../helpers/simulation';
 import { makeGameState, makePlayer } from '../../fixtures/gameState';
 
 describe('GameSimulation.dispatch — ACTION_REJECTED', () => {
   it('returns ACTION_REJECTED when moving into a wall', () => {
     const player = makePlayer({ x: 1, y: 1, ap: 1, maxAp: 1 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const result = sim.dispatch({ type: 'MOVE', entityId: player.id, dx: -1, dy: 0 });
 
@@ -25,7 +25,7 @@ describe('GameSimulation.dispatch — ACTION_REJECTED', () => {
   it('returns ACTION_REJECTED when actor cannot act (no AP)', () => {
     const player = makePlayer({ x: 5, y: 5, ap: 0, maxAp: 1 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const result = sim.dispatch({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
 
@@ -42,7 +42,7 @@ describe('GameSimulation.dispatch — ACTION_REJECTED', () => {
   it('succeeds and spends AP on valid move', () => {
     const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     const result = sim.dispatch({ type: 'MOVE', entityId: player.id, dx: 1, dy: 0 });
 

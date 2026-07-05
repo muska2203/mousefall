@@ -7,7 +7,7 @@ import { IntentExecutor } from '@simulation/systems/intents/types';
  *
  * Контракт:
  * - Устанавливает state.turn.activeSide.
- * - При side === 'PLAYER' увеличивает state.turn.round на 1.
+ * - При side === 'player' увеличивает state.turn.round на 1.
  * - Порождает событие TURN_BEGAN.
  */
 export const executeBeginTurnIntent: IntentExecutor<BeginTurnIntent> = (
@@ -20,7 +20,7 @@ export const executeBeginTurnIntent: IntentExecutor<BeginTurnIntent> = (
 
   if (intent.round !== undefined) {
     state.turn.round = intent.round;
-  } else if (intent.side === 'PLAYER') {
+  } else if (intent.side === 'player') {
     state.turn.round += 1;
   }
 

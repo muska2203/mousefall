@@ -118,7 +118,7 @@ describe('interactAction.validate', () => {
     const state = makeGameState();
 
     const validation = interactAction.validate(state, {
-      type: 'WAIT',
+      type: 'END_TURN',
       entityId: 'player',
     } as any);
 
@@ -332,7 +332,7 @@ describe('interactAction.validate', () => {
     const state = makeGameState();
 
     const intents = interactAction.resolve(state, {
-      type: 'WAIT',
+      type: 'END_TURN',
       entityId: 'player',
     } as any);
 

@@ -11,7 +11,7 @@ Action → validate() → resolve() → Intent[]
   → execute() → Events → World Reactions → дополнительные Intents / Events
 ```
 
-1. **Action (`GameAction`)** — высокоуровневое намерение игрока/врага (MOVE, ATTACK, WAIT).
+1. **Action (`GameAction`)** — высокоуровневое намерение игрока/врага (MOVE, ATTACK, END_TURN).
 2. **Intent (`Intent`)** — низкоуровневые операции после разрешения (MOVE, DAMAGE, DIE).
 3. **Event (`GameEvent`)** — неизменяемая запись о произошедшем, возвращается через дерево `ExecutionNode`.
 

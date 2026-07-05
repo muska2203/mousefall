@@ -69,13 +69,13 @@ describe('DefaultActionPointCostResolver', () => {
     expect(resolver.getCost({ type: 'UNEQUIP', entityId: 'player', slot: 'weapon' }, state)).toBe(1);
   });
 
-  it('WAIT стоит текущее количество AP актора', () => {
+  it('END_TURN стоит 0 AP', () => {
     const player = makePlayer({ maxAp: 3, ap: 3 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
-    expect(resolver.getCost({ type: 'WAIT', entityId: 'player' }, state)).toBe(3);
+    expect(resolver.getCost({ type: 'END_TURN', entityId: 'player' }, state)).toBe(0);
 
     player.ap = 1;
-    expect(resolver.getCost({ type: 'WAIT', entityId: 'player' }, state)).toBe(1);
+    expect(resolver.getCost({ type: 'END_TURN', entityId: 'player' }, state)).toBe(0);
   });
 
   it('USE_ABILITY берёт apCost из шаблона', () => {

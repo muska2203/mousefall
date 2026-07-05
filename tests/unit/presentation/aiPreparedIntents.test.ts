@@ -14,6 +14,7 @@ import type {Entity, EntityId} from '../../../src/simulation/types';
 import {GameSimulation, defaultActionHandlerRegistry} from '../../../src/simulation/simulation';
 import {registerSkill} from '../../../src/simulation/skills/skillExecutor';
 import {testFireballSkill} from '../../helpers/test-skills';
+import {createTestSimulation, advanceToPlayerTurn} from '../../helpers/simulation';
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {id, cooldown: 0, apCost: 1, ...overrides} as AbilityTemplate;
@@ -59,9 +60,14 @@ describe('GameSession AI prepared intents', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
+    // Для отображения подготовленного намерения враг должен быть видим игроку.
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-    sim.dispatch({type: 'WAIT', entityId: player.id});
+    const sim = createTestSimulation(state);
+    sim.dispatch({type: 'END_TURN', entityId: player.id});
+    // Запускаем ход фракции врагов, чтобы босс подготовил способность.
+    advanceToPlayerTurn(sim);
 
     const session = new GameSession();
     session.loadGame(sim.getState());

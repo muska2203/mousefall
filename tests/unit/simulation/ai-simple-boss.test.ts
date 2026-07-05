@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
 import type { Entity, EntityId, EnemyEntity } from '../../../src/simulation/types';
 import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../src/simulation/simulation';
+import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
@@ -80,24 +80,26 @@ describe('AI: simple-boss', () => {
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    const results = advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).not.toBeNull();
     expect(getDerivedAIMode(enemyAfter)).toBe('prepared');
     expect(enemyAfter.aiState.preparedAbility?.abilityId).toBe('swoop');
 
-    // Подготовка теперь — side-effect AI-стратегии: событие ABILITY_PREPARED
-    // эмитится как child события ACTION_APPLIED (WAIT).
-    const envPhase = result.phases.find((p) => p.side === 'ENVIRONMENT');
+    // Подготовка — side-effect AI-стратегии: событие ABILITY_PREPARED
+    // эмитится как child события ACTION_APPLIED (END_TURN).
+    const envPhase = results
+      .flatMap(r => r.phases)
+      .find(p => p.side === 'enemies' && p.actions.some(a => a.event.type === 'ACTION_APPLIED'));
     expect(envPhase).toBeDefined();
-    const waitNodes = envPhase!.actions.filter(
-      (a) => a.event.type === 'ACTION_APPLIED' && a.event.action.type === 'WAIT',
+    const endTurnNodes = envPhase!.actions.filter(
+      (a) => a.event.type === 'ACTION_APPLIED' && a.event.action.type === 'END_TURN',
     );
-    expect(waitNodes.length).toBeGreaterThan(0);
-    const preparedEvents = waitNodes.flatMap((n) => findEvents(n, 'ABILITY_PREPARED'));
+    expect(endTurnNodes.length).toBeGreaterThan(0);
+    const preparedEvents = endTurnNodes.flatMap((n) => findEvents(n, 'ABILITY_PREPARED'));
     expect(preparedEvents.length).toBe(1);
     expect(preparedEvents[0]!.event).toMatchObject({
       type: 'ABILITY_PREPARED',
@@ -125,16 +127,17 @@ describe('AI: simple-boss', () => {
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     // Первый ход: подготовка.
-    sim.dispatch({ type: 'WAIT', entityId: player.id });
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
     const preparedTarget = getEnemy(sim.getState()).aiState.preparedAbility!.targets[0]!;
     expect(preparedTarget).toBeDefined();
 
     // Второй ход: выполнение скилла — босс прыгает в подготовленную точку.
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.x).toBe(preparedTarget.x);
@@ -159,9 +162,9 @@ describe('AI: simple-boss', () => {
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).toBeNull();
@@ -183,9 +186,9 @@ describe('AI: simple-boss', () => {
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).not.toBeNull();
@@ -208,9 +211,9 @@ describe('AI: simple-boss', () => {
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).toBeNull();
@@ -234,9 +237,9 @@ describe('AI: simple-boss', () => {
     // Стена блокирует линию обзора между врагом и игроком.
     state.map.tiles[5]![6] = 'wall';
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).toBeNull();

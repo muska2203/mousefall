@@ -40,8 +40,10 @@
 ## Публичный API Simulation (единственное, от чего зависит Presentation)
 
 - `simulation.dispatch(action)`
+- `simulation.step()`
 - `simulation.preview(action)`
 - `simulation.getState()`
+- `simulation.isPlayerTurn()`
 - `simulation.generateMap()`
 
 ---

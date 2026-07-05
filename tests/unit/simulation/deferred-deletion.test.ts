@@ -13,7 +13,7 @@ describe('Deferred Deletion', () => {
     const enemy = makeEnemy({ id: 'enemy_1', x: 3, y: 3, hp: 1, isAlive: true });
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'WAIT', entityId: enemy.id } });
+    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: enemy.id } });
     const result = executeDieIntent(
       state,
       { type: 'DIE', entityId: enemy.id, position: { x: 3, y: 3 } },
@@ -29,7 +29,7 @@ describe('Deferred Deletion', () => {
 
   it('executeDieIntent помечает игрока isAlive=false и переводит phase в dead', () => {
     const state = makeGameState();
-    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'WAIT', entityId: PLAYER_ID } });
+    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: PLAYER_ID } });
     const result = executeDieIntent(
       state,
       { type: 'DIE', entityId: PLAYER_ID, position: { x: 5, y: 5 } },
@@ -68,7 +68,7 @@ describe('Deferred Deletion', () => {
     state.entities.set(aliveEnemy.id, aliveEnemy);
     state.entities.set(deadEnemy.id, deadEnemy);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
     executeCleanupDeadEntitiesIntent(state, { type: 'CLEANUP_DEAD_ENTITIES' }, builder, builder.root);
 
     expect(state.entities.has(aliveEnemy.id)).toBe(true);

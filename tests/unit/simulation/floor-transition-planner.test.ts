@@ -45,7 +45,7 @@ describe('computeFloorTransition', () => {
 
     expect(plan.map).toBeDefined();
     expect(plan.entities.has('player')).toBe(true);
-    expect(plan.turn).toEqual({ activeSide: 'PLAYER', round: 1 });
+    expect(plan.turn).toEqual({ activeSide: 'player', round: 1 });
   });
 
   it('генерирует новый этаж при отсутствии снапшота', () => {

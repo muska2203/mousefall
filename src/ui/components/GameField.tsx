@@ -32,7 +32,7 @@ import type {AnimationContext} from '@ui/animation/types';
 interface Props {
   floor: number;
   renderInput: RenderInput | null;
-  onWait: () => void;
+  onEndTurn: () => void;
   onAnimationsComplete: () => void;
   onZoomDelta: (delta: number) => void;
   onMouseMove?: (pos: {x: number; y: number}) => void;
@@ -49,7 +49,7 @@ interface Props {
 export function GameField({
   floor,
   renderInput,
-  onWait,
+  onEndTurn,
   onAnimationsComplete,
   onZoomDelta,
   onMouseMove,
@@ -66,7 +66,7 @@ export function GameField({
   const isInputBlocked = renderInput?.phase === 'animating';
   const [animationPhaseSide, setAnimationPhaseSide] = useState<TurnSide | null>(null);
   const [hintScreenPos, setHintScreenPos] = useState<{x: number; y: number} | null>(null);
-  const activeSide = renderInput?.state.turn.activeSide ?? 'PLAYER';
+  const activeSide = renderInput?.currentTurnSide ?? 'player';
   const displayedSide = isInputBlocked ? (animationPhaseSide ?? activeSide) : activeSide;
   const containerRef = useRef<HTMLDivElement>(null);
   const pixiRef = useRef<PixiApp | null>(null);
@@ -342,7 +342,7 @@ export function GameField({
       <div className="cm-field-wrap">
         <PhaseButton
           side={displayedSide}
-          onWait={onWait}
+          onEndTurn={onEndTurn}
         />
 
         <div className="cm-field" aria-label={t('gameField.gameFieldAriaLabel')} ref={containerRef}>
@@ -368,26 +368,42 @@ export function GameField({
 
 interface PhaseButtonProps {
   side: TurnSide;
-  onWait: () => void;
+  onEndTurn: () => void;
+}
+
+/** Локализованная метка для текущей фазы хода. */
+function getPhaseLabel(side: TurnSide, t: (key: string) => string): string {
+  switch (side) {
+    case 'player':
+      return t('gameField.playerPhaseLabel');
+    case 'enemies':
+      return t('gameField.enemiesPhaseLabel');
+    case 'allies':
+      return t('gameField.alliesPhaseLabel');
+    case 'neutrals':
+      return t('gameField.neutralsPhaseLabel');
+    case 'status_tick':
+      return t('gameField.statusTickPhaseLabel');
+    case 'round_recovery':
+      return t('gameField.roundRecoveryPhaseLabel');
+    default:
+      return t('gameField.statusTickPhaseLabel');
+  }
 }
 
 /** Плашка текущей фазы хода. Во время анимаций отображает сторону
  *  проигрываемой анимационной фазы; в idle — активную сторону из состояния. */
-function PhaseButton({ side, onWait }: PhaseButtonProps) {
+function PhaseButton({ side, onEndTurn }: PhaseButtonProps) {
   const { t } = useTranslation('components');
 
-  const isPlayerTurn = side === 'PLAYER';
-  const label = isPlayerTurn
-    ? t('gameField.playerPhaseLabel')
-    : side === 'ENVIRONMENT'
-      ? t('gameField.environmentPhaseLabel')
-      : t('gameField.statusTickPhaseLabel');
+  const isPlayerTurn = side === 'player';
+  const label = getPhaseLabel(side, t);
 
   return (
     <button
       type="button"
       className="cm-phase cm-phase--field cm-phase--skip-turn"
-      onClick={onWait}
+      onClick={onEndTurn}
       disabled={!isPlayerTurn}
       aria-label={label}
     >

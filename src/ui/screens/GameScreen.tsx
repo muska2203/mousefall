@@ -68,10 +68,12 @@ export function GameScreen({session, onModeChange}: Props) {
     [session, onModeChange, isInputBlocked],
   );
 
-  const handleWait = useCallback(() => {
+  const handleEndTurn = useCallback(() => {
     if (session.getMode() !== 'playing') return;
     if (isInputBlocked) return;
-    session.dispatch({type: 'WAIT', entityId: 'player'});
+    const playerId = session.getViewModel().renderInput?.state.player.id;
+    if (!playerId) return;
+    session.dispatch({type: 'END_TURN', entityId: playerId});
     onModeChange(session.getMode());
   }, [session, onModeChange, isInputBlocked]);
 
@@ -294,13 +296,13 @@ export function GameScreen({session, onModeChange}: Props) {
         return;
       }
 
-      // Пробел: WAIT (пропуск хода). В режиме таргетинга — отмена таргетинга.
+      // Пробел: END_TURN (завершение хода игрока). В режиме таргетинга — отмена таргетинга.
       if (e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
         if (session.isTargeting()) {
           session.cancelTargeting();
         } else {
-          handleWait();
+          handleEndTurn();
         }
         return;
       }
@@ -341,7 +343,7 @@ export function GameScreen({session, onModeChange}: Props) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [performMoveOrAttack, handleInteract, handleCycleInteraction, session]);
+  }, [performMoveOrAttack, handleInteract, handleCycleInteraction, handleEndTurn, session]);
 
   const { t } = useTranslation('screens');
 
@@ -378,7 +380,7 @@ export function GameScreen({session, onModeChange}: Props) {
       <GameField
         floor={renderInput.state.floor}
         renderInput={renderInput}
-        onWait={handleWait}
+        onEndTurn={handleEndTurn}
         onAnimationsComplete={() => session.onAnimationsComplete()}
         onZoomDelta={handleZoom}
         onMouseMove={handleMouseMove}

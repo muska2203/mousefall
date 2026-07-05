@@ -5,7 +5,8 @@ import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../../src/simulation/simulation';
+import { GameSimulation } from '../../../../src/simulation/simulation';
+import { createTestSimulation } from '../../../helpers/simulation';
 import { DefaultActionPointCostResolver } from '../../../../src/simulation/systems/action-cost-resolver';
 import { MAX_ABILITY_ALL_AP_COST } from '../../../../src/utils/constants';
 import type { Entity, EntityId } from '../../../../src/simulation/types';
@@ -167,7 +168,7 @@ describe('parry combat behavior', () => {
       ]),
     });
 
-    const sim = GameSimulation.loadSavedGame(state);
+    const sim = createTestSimulation(state);
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
     // Игрок должен получить урон от парирования, враг — нет.
@@ -196,10 +197,9 @@ describe('parry combat behavior', () => {
         [enemy.id, enemy],
       ]),
     });
-    // Ход окружения, чтобы враг мог атаковать.
-    state.turn.activeSide = 'ENVIRONMENT';
-
     const sim = GameSimulation.loadSavedGame(state);
+    // Переключаем ход на врага.
+    (sim as any).turnState = { phase: 'actor-turn', factionId: 'enemies', actorId: enemy.id };
     sim.dispatch({ type: 'ATTACK', entityId: enemy.id, dx: -1, dy: 0 });
 
     // Враг должен получить урон от парирования, игрок — нет.
@@ -223,7 +223,7 @@ describe('parry combat behavior', () => {
       ]),
     });
 
-    const sim = GameSimulation.loadSavedGame(state);
+    const sim = createTestSimulation(state);
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
     expect(enemy.hp).toBeLessThan(100);
@@ -262,7 +262,7 @@ describe('parry combat behavior', () => {
       ]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
     sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'magic_slap', targets: [{ x: 6, y: 5 }] });
 
     // Magic slap не является прямой атакой оружием, парирование не срабатывает.

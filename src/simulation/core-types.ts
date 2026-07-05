@@ -107,8 +107,11 @@ export type DamageType =
   | 'poison'
   | 'frost';
 
+/** Идентификатор фракции. */
+export type FactionId = 'player' | 'allies' | 'enemies' | 'neutrals';
+
 /** Сторона, чей ход активен в текущий момент. */
-export type TurnSide = 'PLAYER' | 'ENVIRONMENT' | 'STATUS_TICK';
+export type TurnSide = FactionId | 'status_tick' | 'round_recovery';
 
 export type StatusEffect = {
   type: StatusEffectType;
@@ -190,7 +193,7 @@ export class ExecutionBuilder {
 export type GameAction =
   | MoveAction
   | AttackAction
-  | WaitAction
+  | EndTurnAction
   | UseAbilityAction
   | EquipAction
   | UnequipAction
@@ -214,8 +217,8 @@ export type AttackAction = {
   dy: number;
 };
 
-export type WaitAction = {
-  type: 'WAIT';
+export type EndTurnAction = {
+  type: 'END_TURN';
   entityId: EntityId;
 };
 
@@ -357,7 +360,7 @@ export type ApplyFogEventsIntent = { type: 'APPLY_FOG_EVENTS'; events: FogUpdate
 export type SkipStunnedTurnIntent = { type: 'SKIP_STUNNED_TURN'; entityId: EntityId };
 export type RestoreApIntent = { type: 'RESTORE_AP'; entityId: EntityId };
 export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; abilityId: string };
-export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: 'PLAYER' | 'ENVIRONMENT'; round?: number };
+export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: TurnSide; round?: number };
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 export type NotifyAIIntent = { type: 'NOTIFY_AI'; entityId: EntityId; change: WorldChange };
 
@@ -532,7 +535,7 @@ export type EntityDisplacedEvent = {
 
 export type TurnBeganEvent = {
   type: 'TURN_BEGAN';
-  side: 'PLAYER' | 'ENVIRONMENT';
+  side: TurnSide;
   round: number;
   actorId: EntityId | null;
 };

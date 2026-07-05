@@ -4,7 +4,8 @@ import { tickEntityStatusEffects, tickAllStatusEffects } from '../../../../src/s
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
 import type { StatusEffect } from '../../../../src/simulation/core-types';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../../src/simulation/simulation';
+import { GameSimulation } from '../../../../src/simulation/simulation';
+import { advanceToPlayerTurn } from '../../../helpers/simulation';
 import type { Entity, EntityId } from '../../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 
@@ -93,7 +94,7 @@ describe('status effect tick phases', () => {
     expect(envIds).toEqual([player.id, enemyWithEnvPhase.id].sort());
   });
 
-  it('burning still ticks once per round after environment turn', () => {
+  it('burning still ticks once per round in FACTION_SETUP enemies', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({ id: 'burning_enemy', x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [makeEffect('burning', 3)] });
     const state = makeGameState({
@@ -104,10 +105,12 @@ describe('status effect tick phases', () => {
       ]),
     });
 
+    resetRegistry();
     initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map() });
     const sim = GameSimulation.loadSavedGame(state);
 
-    sim.dispatch({ type: 'WAIT', entityId: player.id });
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const updatedEnemy = sim.getState().entities.get(enemy.id);
     expect(updatedEnemy).toBeDefined();
@@ -115,9 +118,9 @@ describe('status effect tick phases', () => {
     resetRegistry();
   });
 
-  it('effect with tickAfter: player ticks after player turn and before environment turn', () => {
-    const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
-    const enemy = makeEnemy({ id: 'player_phase_enemy', x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [makeEffect('poisoned', 3, 'player')] });
+  it('effect with tickAfter: player ticks in FACTION_SETUP player of next round', () => {
+    const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1, statusEffects: [makeEffect('poisoned', 3, 'player')] });
+    const enemy = makeEnemy({ id: 'player_phase_enemy', x: 6, y: 5, hp: 100, maxHp: 100 });
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([
@@ -126,21 +129,15 @@ describe('status effect tick phases', () => {
       ]),
     });
 
+    resetRegistry();
     initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map() });
     const sim = GameSimulation.loadSavedGame(state);
 
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
-    // Фаза STATUS_TICK должна быть одна (только player-фаза) и идти перед ENVIRONMENT.
-    const phaseSides = result.phases.map(p => p.side);
-    const statusTickIndex = phaseSides.indexOf('STATUS_TICK');
-    const envIndex = phaseSides.indexOf('ENVIRONMENT');
-    expect(statusTickIndex).toBeGreaterThanOrEqual(0);
-    expect(statusTickIndex).toBeLessThan(envIndex);
-
-    const updatedEnemy = sim.getState().entities.get(enemy.id);
-    expect(updatedEnemy).toBeDefined();
-    expect('statusEffects' in updatedEnemy! && updatedEnemy.statusEffects.find(e => e.type === 'poisoned')?.duration).toBe(2);
+    const updatedPlayer = sim.getState().player;
+    expect(updatedPlayer.statusEffects.find(e => e.type === 'poisoned')?.duration).toBe(2);
     resetRegistry();
   });
 });

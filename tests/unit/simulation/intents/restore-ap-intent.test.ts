@@ -8,7 +8,7 @@ describe('executeRestoreApIntent', () => {
     const player = makePlayer({ ap: 0, maxAp: 3 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 1, actorId: player.id });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: player.id });
     const node = executeRestoreApIntent(state, { type: 'RESTORE_AP', entityId: player.id }, builder, builder.root);
 
     expect(state.player.ap).toBe(3);
@@ -25,7 +25,7 @@ describe('executeRestoreApIntent', () => {
     const player = makePlayer({ ap: 2, maxAp: 2 });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 1, actorId: player.id });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: player.id });
     executeRestoreApIntent(state, { type: 'RESTORE_AP', entityId: player.id }, builder, builder.root);
 
     expect(state.player.ap).toBe(2);
@@ -33,7 +33,7 @@ describe('executeRestoreApIntent', () => {
 
   it('возвращает null для несуществующей сущности', () => {
     const state = makeGameState();
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'PLAYER', round: 1, actorId: 'missing' });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: 'missing' });
     const node = executeRestoreApIntent(state, { type: 'RESTORE_AP', entityId: 'missing' }, builder, builder.root);
 
     expect(node).toBeNull();

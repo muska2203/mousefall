@@ -98,6 +98,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
+    factionId: 'player' as const,
     ...playerOverrides,
   };
 
@@ -122,7 +123,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       player,
       visible: visible ?? [],
       explored: visible ?? [],
-      turn: {activeSide: 'PLAYER' as const, round: 1},
+      turn: {activeSide: 'player' as const, round: 1},
       phase: 'playing' as const,
       floor: 1,
       floorSnapshots: [],
@@ -188,6 +189,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     fieldObjectPopover: null,
     interactionHint: null,
     aiPreparedIntents: [],
+    currentTurnSide: 'player',
     debugEnabled: false,
     mapgenDebugEnabled: false,
   };
@@ -319,7 +321,7 @@ describe('EntityRenderer', () => {
     input.state.entities.delete('enemy1');
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'DEATH', entityId: 'enemy1'},
@@ -370,7 +372,7 @@ describe('EntityRenderer', () => {
     });
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'MOVE', entityId: 'enemy1', from: {x: 1, y: 1}, to: {x: 3, y: 3}},
@@ -417,7 +419,7 @@ describe('EntityRenderer', () => {
     // Запланируем анимацию появления
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'ITEM_DROP', itemId: 'item1', position: {x: 3, y: 3}, from: {x: 2, y: 2}, templateId: 'health_potion'},

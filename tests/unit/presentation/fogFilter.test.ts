@@ -24,7 +24,7 @@ function makeNode(event: GameEvent, children: ExecutionNode[] = []): ExecutionNo
 }
 
 function makeResult(actions: ExecutionNode[]) {
-  return { success: true, stateChanged: true, phases: [{ side: 'PLAYER' as const, actions }] };
+  return { success: true, stateChanged: true, hasMoreSteps: false, phases: [{ side: 'player' as const, actions }] };
 }
 
 describe('isEventVisible', () => {

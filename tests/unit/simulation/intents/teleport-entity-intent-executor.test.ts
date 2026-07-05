@@ -13,7 +13,7 @@ describe('executeTeleportEntityIntent', () => {
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'WAIT', entityId: 'player' },
+      action: { type: 'END_TURN', entityId: 'player' },
     });
 
     const node = executeTeleportEntityIntent(
@@ -41,7 +41,7 @@ describe('executeTeleportEntityIntent', () => {
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'WAIT', entityId: 'player' },
+      action: { type: 'END_TURN', entityId: 'player' },
     });
 
     executeTeleportEntityIntent(
@@ -59,7 +59,7 @@ describe('executeTeleportEntityIntent', () => {
     const state = makeGameState();
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'WAIT', entityId: 'player' },
+      action: { type: 'END_TURN', entityId: 'player' },
     });
 
     const node = executeTeleportEntityIntent(

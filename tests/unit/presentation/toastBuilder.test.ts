@@ -13,7 +13,7 @@ function makeExecNode(event: GameEvent, children: ExecutionNode[] = []): Executi
 }
 
 function makeResult(actions: ExecutionNode[]): SimulationResult {
-  return { success: false, stateChanged: false, phases: [{ side: 'PLAYER', actions }] };
+  return { success: false, stateChanged: false, hasMoreSteps: false, phases: [{ side: 'player', actions }] };
 }
 
 describe('extractToasts', () => {

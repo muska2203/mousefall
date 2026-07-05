@@ -2,7 +2,7 @@
 
 | Термин | Определение |
 |--------|-------------|
-| **Action (`GameAction`)** | Высокоуровневое намерение (MOVE, ATTACK, WAIT). Что хотел сделать актёр. |
+| **Action (`GameAction`)** | Высокоуровневое намерение (MOVE, ATTACK, END_TURN). Что хотел сделать актёр. |
 | **Intent** | Низкоуровневая операция после разрешения Action (MOVE, DAMAGE, DIE). Что реально произойдёт. |
 | **Event (`GameEvent`)** | Неизменяемая запись о произошедшем. Организована в дерево `ExecutionNode`. |
 | **ExecutionNode** | Узел дерева событий. Содержит `GameEvent` + массив дочерних узлов. |
@@ -16,9 +16,9 @@
 | **RNG (`utils/rng.ts`)** | Seeded PRNG. Единственный источник случайности в Simulation. |
 | **GameState** | Единственный источник истины. Все поля JSON-serializable. |
 | **Phase** | Фаза игры: `playing` \| `dead` \| `victory`. |
-| **Turn / Round** | `turn.activeSide` — чья сейчас очередь (`PLAYER` / `ENVIRONMENT`). `turn.round` — номер раунда. |
+| **Turn / Round** | `turn.activeSide` — активная фракция или фаза (`player` \| `allies` \| `enemies` \| `neutrals` \| `round_recovery`). `turn.round` — номер раунда. |
 | **AP (Action Points)** | Очки действия. У игрока и у AI. Ход продолжается пока AP > 0. |
 | **World Reaction** | Реакция мира на событие (например, смерть при получении урона). Динамически регистрируется. |
-| **Environment Turn** | Ход всех AI-актёров после того, как у игрока закончились AP. |
+| **Faction Turn** | Ход всех акторов одной фракции в раунде (`player`, `allies`, `enemies`, `neutrals`). |
 | **Autosave** | Автоматическое сохранение в слот 0. Триггеры: после хода игрока, перед спуском, при game over. |
 | **Fail Fast** | Если контент невалиден или сохранение повреждено — игра немедленно падает с понятной ошибкой. |

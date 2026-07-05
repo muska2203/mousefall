@@ -113,7 +113,7 @@ export function computeFloorTransition(
   };
   const fovEvents = updateFOV(tempState);
 
-  const turn: { activeSide: TurnSide; round: number } = { activeSide: 'PLAYER', round: 1 };
+  const turn: { activeSide: TurnSide; round: number } = { activeSide: 'player', round: 1 };
 
   return {
     direction,

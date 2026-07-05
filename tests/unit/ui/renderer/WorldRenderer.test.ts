@@ -121,6 +121,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
+    factionId: 'player' as const,
     ...playerOverrides,
   };
 
@@ -145,7 +146,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       player,
       visible: visible ?? Array.from({length: 10}, () => Array(10).fill(true)),
       explored: visible ?? Array.from({length: 10}, () => Array(10).fill(true)),
-      turn: {activeSide: 'PLAYER' as const, round: 1},
+      turn: {activeSide: 'player' as const, round: 1},
       phase: 'playing' as const,
       floor: 1,
       floorSnapshots: [],
@@ -211,6 +212,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     fieldObjectPopover: null,
     interactionHint: null,
     aiPreparedIntents: [],
+    currentTurnSide: 'player',
     debugEnabled: false,
     mapgenDebugEnabled: false,
   };
@@ -240,7 +242,7 @@ describe('WorldRenderer camera', () => {
     input.state.player.y = 0;
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'MOVE', entityId: 'player', from: {x: 0, y: 0}, to: {x: 1, y: 0}},
@@ -264,7 +266,7 @@ describe('WorldRenderer camera', () => {
     input.state.player.y = 0;
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'MOVE', entityId: 'player', from: {x: 0, y: 0}, to: {x: 1, y: 0}},
@@ -302,7 +304,7 @@ describe('WorldRenderer camera', () => {
     input.state.player.y = 0;
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'MOVE', entityId: 'player', from: {x: 1, y: 0}, to: {x: 2, y: 0}},
@@ -328,7 +330,7 @@ describe('WorldRenderer camera', () => {
     input.zoom = 2;
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'MOVE', entityId: 'player', from: {x: 0, y: 0}, to: {x: 1, y: 0}},
@@ -365,7 +367,7 @@ describe('WorldRenderer camera', () => {
     input.state.player.y = 0;
     input.animations = [
       {
-        side: 'PLAYER',
+        side: 'player',
         nodes: [
           {
             step: {type: 'MOVE', entityId: 'player', from: {x: 0, y: 0}, to: {x: 1, y: 0}},

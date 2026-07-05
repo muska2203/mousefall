@@ -21,7 +21,7 @@ interface Props {
 
 export function EndingMetricsPanel({title, status, subtitle, metrics}: Props) {
   const { t } = useTranslation('components');
-  const statusText = status === 'victory' ? t('ending.resultVictory') : t('ending.resultDefeat');
+  const statusText = status === 'victory' ? t('endingMetrics.resultVictory') : t('endingMetrics.resultDefeat');
   const statusClass = status === 'victory' ? 'cm-ending-status--victory' : '';
 
   return (

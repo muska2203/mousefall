@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createNewGameState } from '@simulation/state';
 import { updateFOV, computeFOV } from '@simulation/systems/fov';
-import { GameSimulation, defaultActionHandlerRegistry } from '@simulation/simulation';
+import { createTestSimulation } from '../../helpers/simulation';
 import type { TileType, GameMap } from '@simulation/types';
 import type { MapParams } from '@content/schemas';
 
@@ -197,7 +197,7 @@ describe('FOV в GameSimulation.dispatch', () => {
     state.visible = Array.from({ length: 5 }, () => Array(5).fill(false));
     state.explored = Array.from({ length: 5 }, () => Array(5).fill(false));
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
     const result = sim.dispatch({ type: 'MOVE', entityId: state.player.id, dx: 0, dy: 1 });
 
     expect(result.success).toBe(true);
@@ -217,7 +217,7 @@ describe('FOV в GameSimulation.dispatch', () => {
     state.visible = Array.from({ length: 5 }, () => Array(5).fill(false));
     state.explored = Array.from({ length: 5 }, () => Array(5).fill(false));
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
     const result = sim.dispatch({ type: 'MOVE', entityId: state.player.id, dx: 0, dy: 1 });
 
     expect(result.success).toBe(false);

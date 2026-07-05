@@ -15,8 +15,6 @@ export const enEnding = {
   boss2: '👁 Blind Warden',
   boss3: '🦴 Bone Purrer',
   boss4: '👑 Lord of the Pantry',
-  resultVictory: 'Victory',
-  resultDefeat: 'Defeat',
   statStrength: 'Strength',
   statIntelligence: 'Intelligence',
   statDexterity: 'Dexterity',

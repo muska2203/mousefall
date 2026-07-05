@@ -59,7 +59,7 @@ describe('executeFloorTransitionIntent', () => {
     expect(state.map).not.toBe(oldMap);
     expect(state.entities.has('player')).toBe(true);
     expect(state.player.ap).toBe(state.player.maxAp);
-    expect(state.turn.activeSide).toBe('PLAYER');
+    expect(state.turn.activeSide).toBe('player');
     expect(state.turn.round).toBe(1);
 
     const floorNode = builder.root.children[0]!;

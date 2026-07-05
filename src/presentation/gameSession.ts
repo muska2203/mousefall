@@ -14,7 +14,7 @@
  */
 
 import { t } from '@i18n/t';
-import type {GameState, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, ExecutionNode, GameAction, FloorItemContainerEntity, DoorEntity} from '@simulation/types';
+import type {GameState, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, GameAction, FloorItemContainerEntity, DoorEntity} from '@simulation/types';
 import {GameSimulation} from '@simulation/simulation';
 import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
@@ -150,6 +150,11 @@ export class GameSession {
   private viewModelCache: GameViewModel | null = null;
   /** Монотонный счётчик партий анимаций. Инкрементируется при каждом dispatch, порождающем анимации. */
   private animationBatchId = 0;
+  /** Защита от бесконечного цикла пустых фаз в step(). */
+  private emptyStepCounter = 0;
+  /** Лимит подряд идущих пустых фаз (без анимаций) в одном вызове step(). */
+  private readonly EMPTY_STEP_WARNING_THRESHOLD = 20;
+  private readonly EMPTY_STEP_LIMIT = 200;
   private locale: Locale = 'ru';
   /** Клетка под мышью в режиме таргетинга. */
   private targetingHover: Position | null = null;
@@ -239,16 +244,7 @@ export class GameSession {
       };
     });
 
-    const currentPs = this.simulation!.getPlayerStats();
-    // Во время анимаций показываем AP игрока после его действия, но до восстановления
-    // в начале следующего хода. Presentation сама извлекает это значение из дерева
-    // событий, чтобы слой симуляции не знал про анимации/отображение.
-    const pendingAp = this.animation.phase === 'animating' && this.lastResult
-      ? this.extractPlayerApAfterAction(this.lastResult)
-      : undefined;
-    const ps = pendingAp !== undefined
-      ? { ...currentPs, ap: pendingAp }
-      : currentPs;
+    const ps = this.simulation!.getPlayerStats();
     const eq = equipment;
 
     const heroStats = [
@@ -495,6 +491,7 @@ export class GameSession {
       fieldObjectPopover,
       interactionHint,
       aiPreparedIntents,
+      currentTurnSide: this.simulation!.isPlayerTurn() ? 'player' : state.turn.activeSide,
       debugEnabled: this.debugEnabled,
       mapgenDebugEnabled: this.mapgenDebugEnabled,
     };
@@ -597,33 +594,6 @@ export class GameSession {
     const option = this.getSelectedOption(options);
     if (!option) return;
     this.dispatch(option.action);
-  }
-
-  /** Извлекает AP игрока после выполнения его действия, но до восстановления
-   *  в начале следующего хода. Ищет событие RESOURCE_CONSUMED с resource='ap'
-   *  в дереве фазы PLAYER. Возвращает undefined, если событие не найдено. */
-  private extractPlayerApAfterAction(result: SimulationResult): number | undefined {
-    const playerPhase = result.phases.find((phase) => phase.side === 'PLAYER');
-    if (!playerPhase) return undefined;
-
-    for (const action of playerPhase.actions) {
-      const remaining = this.findApConsumedRemaining(action);
-      if (remaining !== undefined) return remaining;
-    }
-
-    return undefined;
-  }
-
-  private findApConsumedRemaining(node: ExecutionNode): number | undefined {
-    const event = node.event;
-    if (event.type === 'RESOURCE_CONSUMED' && event.resource === 'ap') {
-      return event.remaining;
-    }
-    for (const child of node.children) {
-      const remaining = this.findApConsumedRemaining(child);
-      if (remaining !== undefined) return remaining;
-    }
-    return undefined;
   }
 
   private getAbilityTemplate(
@@ -1355,11 +1325,47 @@ export class GameSession {
       this.cancelTargeting();
     }
 
-    const result = this.simulation.dispatch(action);
-    this.lastResult = result;
+    const mainResult = this.dispatchAction(action);
+    let combinedResult = mainResult;
+
+    // Если AP игрока закончилось, автоматически завершаем ход.
+    // Не делаем этого, если игрок уже явно завершил ход (action.type === 'END_TURN').
+    if (mainResult.success && mainResult.stateChanged && action.type !== 'END_TURN') {
+      const state = this.simulation.getState();
+      if (state.player.ap <= 0 && state.player.isAlive !== false) {
+        const endTurnResult = this.dispatchAction({ type: 'END_TURN', entityId: state.player.id });
+        combinedResult = this.mergeResults(combinedResult, endTurnResult);
+      }
+    }
+
+    // Если авто END_TURN по какой-то причине не удался, сохраняем результат основного
+    // действия, чтобы анимация не потерялась и игра не зависла в animating без анимаций.
+    this.lastResult = combinedResult.success ? combinedResult : (mainResult.success ? mainResult : null);
+
+    // Явный END_TURN отменяет автопуть.
+    if (action.type === 'END_TURN') {
+      this.autoPath.cancel();
+    }
+
+    // После каждого хода проверяем, не закончилась ли игра
+    this.checkGameOver();
+
+
+    // Если фазы не породили анимаций, но ход не завершён — сразу идём дальше.
+    if (this.mode === 'playing' && this.animation.phase === 'idle' && this.lastResult?.hasMoreSteps) {
+      this.step();
+      return;
+    }
+
+    this.notify();
+  }
+
+  /** Выполнить одно действие в Simulation и обновить лог/анимации/toast'ы. */
+  private dispatchAction(action: GameAction): SimulationResult {
+    const result = this.simulation!.dispatch(action);
 
     if (result.success && result.stateChanged) {
-      const state = this.simulation.getState();
+      const state = this.simulation!.getState();
       const events = extractEvents(result);
       this.logs.append(state, events, this.locale);
       this.logs.logs = this.logs.logs.slice(-30);
@@ -1370,18 +1376,41 @@ export class GameSession {
         this.animation.phase = 'animating';
         this.animationBatchId++;
       }
-    } else {
-      // При неудачном ходе показываем причины отказа и сбрасываем анимации
+    } else if (!result.success) {
+      // При неудачном ходе показываем причины отказа и сбрасываем автопуть
       const rejectedToasts = extractToasts(result);
       for (const toast of rejectedToasts) {
         this.toasts.push(toast.kind, toast.title, toast.message, toast.duration);
       }
-      this.lastResult = null;
       this.autoPath.cancel();
     }
 
-    // После каждого хода проверяем, не закончилась ли игра
-    const state = this.simulation.getState();
+    return result;
+  }
+
+  /** Объединить два результата Simulation в один (используется при авто END_TURN). */
+  private mergeResults(a: SimulationResult, b: SimulationResult): SimulationResult {
+    if (!b.success) {
+      // Авто-END_TURN не выполнен: toasts уже извлечены в dispatchAction,
+      // но в merged-объекте причины ошибки теряются, поэтому логируем явно.
+      const rejectedToasts = extractToasts(b);
+      console.error(
+        '[GameSession] Автоматический END_TURN не выполнен',
+        rejectedToasts.length > 0 ? rejectedToasts : b,
+      );
+    }
+    const merged: SimulationResult = {
+      success: a.success && b.success,
+      stateChanged: a.stateChanged || b.stateChanged,
+      phases: [...a.phases, ...b.phases],
+      hasMoreSteps: a.hasMoreSteps || b.hasMoreSteps,
+    };
+    return merged;
+  }
+
+  /** Проверить, не перешла ли игра в состояние dead/victory. */
+  private checkGameOver(): void {
+    const state = this.simulation!.getState();
     if (state.phase === 'dead') {
       this.mode = 'gameOver';
       this.animation.phase = 'gameOver';
@@ -1389,8 +1418,73 @@ export class GameSession {
       this.mode = 'victory';
       this.animation.phase = 'gameOver';
     }
-    this.notify();
+  }
 
+  /** Выполнить следующую системную фазу или AI-действие. */
+  private step(): void {
+    if (!this.simulation || this.mode !== 'playing') {
+      return;
+    }
+
+    // Обрабатываем пустые фазы в цикле, чтобы избежать переполнения стека
+    // при большом количестве подряд идущих пустых шагов.
+    let running = true;
+    while (running) {
+      const result = this.simulation.step();
+      this.lastResult = result;
+
+      const state = this.simulation.getState();
+      const events = extractEvents(result);
+      this.logs.append(state, events, this.locale);
+      this.logs.logs = this.logs.logs.slice(-30);
+
+      const animations = buildAnimationTree(result, state);
+      if (animations.length > 0) {
+        this.animation.phase = 'animating';
+        this.animationBatchId++;
+        this.emptyStepCounter = 0;
+        running = false;
+      } else if (!result.hasMoreSteps) {
+        this.animation.phase = 'idle';
+        this.emptyStepCounter = 0;
+        running = false;
+      } else {
+        // Пустая фаза, но ход не закончен — продолжаем в том же цикле.
+        this.emptyStepCounter++;
+        if (this.emptyStepCounter > this.EMPTY_STEP_LIMIT) {
+          console.error(`[GameSession] Слишком много пустых фаз подряд (${this.emptyStepCounter}), прерываем цикл`);
+          this.animation.phase = 'idle';
+          this.emptyStepCounter = 0;
+          running = false;
+        } else if (this.emptyStepCounter === this.EMPTY_STEP_WARNING_THRESHOLD + 1) {
+          console.warn(
+            `[GameSession] Превышен порог пустых фаз (${this.EMPTY_STEP_WARNING_THRESHOLD}), ` +
+            `продолжаем до лимита ${this.EMPTY_STEP_LIMIT}`,
+          );
+        }
+      }
+    }
+
+    this.checkGameOver();
+
+    // Если очередь фаз завершилась без анимаций, UI не получит сигнал
+    // onAnimationsComplete. Обрабатываем автопродолжение здесь, не уведомляя
+    // UI повторно: единственное уведомление произойдёт либо сейчас
+    // (если продолжения нет), либо внутри dispatch/moveOrAttack.
+    const needsContinuation =
+      this.mode === 'playing' &&
+      this.animation.phase === 'idle' &&
+      this.lastResult &&
+      !this.lastResult.hasMoreSteps;
+
+    if (needsContinuation) {
+      const continued = this.onAnimationsComplete({skipNotify: true});
+      if (!continued) {
+        this.notify();
+      }
+    } else {
+      this.notify();
+    }
   }
 
   /** Превью действия (для подсветки пути, подсказок урона и т.д.) */
@@ -1480,8 +1574,19 @@ export class GameSession {
     this.heldDirection = null;
   }
 
-  /** Сигнал от UI: все анимации завершены. Разрешаем следующий ввод. */
-  onAnimationsComplete(): void {
+  /**
+   * Сигнал от UI: все анимации завершены. Разрешаем следующий ввод.
+   *
+   * @returns true, если управление передано в dispatch/moveOrAttack и
+   *   следующее уведомление UI произойдёт внутри этих методов.
+   */
+  onAnimationsComplete(options: {skipNotify?: boolean} = {}): boolean {
+    // Если в очереди остались фазы — продолжаем выполнение.
+    if (this.lastResult?.hasMoreSteps) {
+      this.step();
+      return true;
+    }
+
     const hadAnimations = this.animation.phase === 'animating';
     if (hadAnimations) {
       this.animation.phase = 'idle';
@@ -1491,35 +1596,42 @@ export class GameSession {
     // Автопродолжение зафиксированного автопути.
     if (this.autoPath.isCommitted() && this.animation.phase === 'idle' && this.mode === 'playing') {
       const state = this.simulation!.getState();
-      if (state.turn.activeSide !== 'PLAYER' || state.player.ap <= 0) {
+      const isPlayerTurn = this.simulation!.isPlayerTurn();
+      if (!isPlayerTurn || state.player.ap <= 0) {
         this.autoPath.cancel();
-        this.notify();
-        return;
+        if (!options.skipNotify) {
+          this.notify();
+        }
+        return false;
       }
       const stepResult = this.autoPath.step(state, this.getAutoPathQueries());
       if (stepResult.kind === 'action') {
         this.dispatch(stepResult.action);
-        return;
+        return true;
       }
       // Путь больше не валиден — контроллер уже сбросился, нужно обновить UI.
       this.handleAutoPathCancel(stepResult);
-      this.notify();
-      return;
+      if (!options.skipNotify) {
+        this.notify();
+      }
+      return false;
     }
 
     if (this.heldDirection && this.animation.phase === 'idle' && this.mode === 'playing') {
       this.moveOrAttack(this.heldDirection.dx, this.heldDirection.dy);
-    } else {
-      // После завершения анимации перестраиваем preview-путь: во время
-      // анимации он не обновлялся, а fieldHover мог сместиться из-за
-      // движения камеры за игроком.
-      if (hadAnimations && this.animation.phase === 'idle' && this.mode === 'playing') {
-        this.refreshAutoPathPreview();
-      }
-      if (hadAnimations) {
-        this.notify();
-      }
+      return true;
     }
+
+    // После завершения анимации перестраиваем preview-путь: во время
+    // анимации он не обновлялся, а fieldHover мог сместиться из-за
+    // движения камеры за игроком.
+    if (hadAnimations && this.animation.phase === 'idle' && this.mode === 'playing') {
+      this.refreshAutoPathPreview();
+    }
+    if (!options.skipNotify) {
+      this.notify();
+    }
+    return false;
   }
 
   /**

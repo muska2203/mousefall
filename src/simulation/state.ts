@@ -27,6 +27,7 @@ import type {
   Position,
   TileType,
   EntityInteractionKind,
+  FactionId,
 } from './types';
 import type { MapParams } from '@content/schemas';
 import {createRNG} from '../utils/rng';
@@ -70,6 +71,7 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     equippedArmorInstanceId: null,
     equippedAmuletInstanceId: null,
     isAlive: true,
+    factionId: 'player',
     ap: startingMaxAp,
     maxAp: startingMaxAp,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
@@ -118,7 +120,7 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
     player: player,
     visible: createBoolGrid(mapWidth, mapHeight, false),
     explored: createBoolGrid(mapWidth, mapHeight, false),
-    turn: {round: 1, activeSide: 'PLAYER'},
+    turn: {round: 1, activeSide: 'player'},
     phase: 'playing',
     floor: 1,
     floorSnapshots: [],
@@ -169,6 +171,16 @@ export function findAllAliveAiActors(state: GameState) {
       .map(e => e as AiActor)
       .filter(e => e.isAlive)
       // Детерминированный порядок обработки — важен для воспроизводимости.
+      .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * Возвращает всех живых акторов указанной фракции, отсортированных по id.
+ */
+export function findAllAliveActorsOfFaction(state: GameState, factionId: FactionId) {
+  return Array.from(state.entities.values())
+      .filter((e): e is Extract<Entity, Actor> => isActor(e))
+      .filter(actor => actor.isAlive !== false && actor.factionId === factionId)
       .sort((a, b) => a.id.localeCompare(b.id));
 }
 

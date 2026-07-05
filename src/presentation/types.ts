@@ -480,6 +480,9 @@ export type RenderInput = {
   interactionHint: InteractionHintViewModel | null;
   /** Подготовленные AI-намерения, видимые игроку (телеграфы скиллов). */
   aiPreparedIntents: AIPreparedIntentViewModel[];
+  /** Текущая сторона хода с точки зрения Simulation: игрок или нет.
+   *  UI не должен вычислять это самостоятельно через state.turn.activeSide. */
+  currentTurnSide: TurnSide;
   /** Включён ли debug-режим. Используется renderer'ом для отключения тумана войны. */
   debugEnabled: boolean;
   /** Включена ли debug-визуализация комнат и коридоров на карте. */

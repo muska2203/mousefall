@@ -18,7 +18,7 @@ function makeNode(step: AnimationStep, children: AnimationNode[] = []): Animatio
   return { step, children };
 }
 
-function makePhase(nodes: AnimationNode[], side: TurnSide = 'PLAYER', sequential?: boolean): AnimationPhase {
+function makePhase(nodes: AnimationNode[], side: TurnSide = 'player', sequential?: boolean): AnimationPhase {
   return { side, nodes, sequential };
 }
 
@@ -81,7 +81,7 @@ describe('AnimationSequencer', () => {
     const nodeA = makeNode({ type: 'ATTACK', attackerId: 'p1', dx: 1, dy: 0 });
     const nodeB = makeNode({ type: 'MOVE', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
 
-    const result = sequencer.run([makePhase([nodeA, nodeB], 'ENVIRONMENT', true)]);
+    const result = sequencer.run([makePhase([nodeA, nodeB], 'enemies', true)]);
     await result.allDone;
 
     expect(order).toEqual(['a', 'b']);
@@ -94,12 +94,12 @@ describe('AnimationSequencer', () => {
     const node = makeNode({ type: 'MOVE', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } });
     const sides: TurnSide[] = [];
     const result = sequencer.run(
-      [makePhase([node], 'PLAYER'), makePhase([node], 'ENVIRONMENT', true)],
+      [makePhase([node], 'player'), makePhase([node], 'enemies', true)],
       { onPhaseStart: (side) => sides.push(side) },
     );
     await result.allDone;
 
-    expect(sides).toEqual(['PLAYER', 'ENVIRONMENT']);
+    expect(sides).toEqual(['player', 'enemies']);
   });
 
   it('resolves blockingDone immediately if no blocking nodes', async () => {

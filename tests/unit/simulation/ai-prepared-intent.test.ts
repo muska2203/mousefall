@@ -1,14 +1,14 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
 import type { Entity, EntityId, EnemyEntity } from '../../../src/simulation/types';
-import { GameSimulation, defaultActionHandlerRegistry } from '../../../src/simulation/simulation';
+import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
 import { getDerivedAIMode, createDefaultAIState } from '../../../src/simulation/ai/ai-state';
 import { registerStrategy } from '../../../src/simulation/ai/strategy-registry';
-import { tryPrepareAbility, wait } from '../../../src/simulation/ai/ai-helpers';
+import { tryPrepareAbility, endTurn } from '../../../src/simulation/ai/ai-helpers';
 import { closeCombat, findVisibleAttackTarget } from '../../../src/simulation/ai/tactics';
 import { isEnemyEntity } from '../../../src/simulation/ai/ai-state';
 import { registerSkill } from '../../../src/simulation/skills/skillExecutor';
@@ -58,7 +58,7 @@ registerStrategy('prepared-test-hunter', {
   },
 
   decideAction(actor, state, builder, parent) {
-    if (!isEnemyEntity(actor)) return wait(actor);
+    if (!isEnemyEntity(actor)) return endTurn(actor);
     const enemy = actor;
 
     // Приоритет 1: выполнить подготовленную способность.
@@ -75,7 +75,7 @@ registerStrategy('prepared-test-hunter', {
     const visibleTarget = findVisibleAttackTarget(enemy, state);
     if (visibleTarget) {
       if (tryPrepareAbility(enemy, state, builder, parent)) {
-        return wait(enemy);
+        return endTurn(enemy);
       }
 
       // Если подготовить не удалось — идём вплотную и атакуем.
@@ -85,7 +85,7 @@ registerStrategy('prepared-test-hunter', {
       }
     }
 
-    return wait(enemy);
+    return endTurn(enemy);
   },
 });
 
@@ -125,9 +125,9 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfterTurn = getEnemy(sim.getState());
     expect(enemyAfterTurn.aiState.preparedAbility).toBeNull();
@@ -150,11 +150,11 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
 
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
-    // Игрок завершает ход, запускается ход окружения
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    // Игрок завершает ход, запускается ход фракции врагов.
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    const results = advanceToPlayerTurn(sim);
 
     const enemyAfterTurn = getEnemy(sim.getState());
     expect(enemyAfterTurn.aiState.preparedAbility).not.toBeNull();
@@ -162,15 +162,17 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     expect(enemyAfterTurn.aiState.preparedAbility?.abilityId).toBe('test-fireball');
     expect(enemyAfterTurn.aiState.preparedAbility?.targets).toEqual([{ x: 5, y: 5 }]);
 
-    // Подготовка теперь — side-effect AI-стратегии: событие ABILITY_PREPARED
-    // эмитится как child события ACTION_APPLIED (WAIT), а не как отдельный ACTION_APPLIED.
-    const envPhase = result.phases.find((p) => p.side === 'ENVIRONMENT');
+    // Подготовка — side-effect AI-стратегии: событие ABILITY_PREPARED
+    // эмитится как child события ACTION_APPLIED (END_TURN).
+    const envPhase = results
+      .flatMap(r => r.phases)
+      .find(p => p.side === 'enemies' && p.actions.some(a => a.event.type === 'ACTION_APPLIED'));
     expect(envPhase).toBeDefined();
-    const waitNodes = envPhase!.actions.filter(
-      (a) => a.event.type === 'ACTION_APPLIED' && a.event.action.type === 'WAIT',
+    const endTurnNodes = envPhase!.actions.filter(
+      (a) => a.event.type === 'ACTION_APPLIED' && a.event.action.type === 'END_TURN',
     );
-    expect(waitNodes.length).toBeGreaterThan(0);
-    const preparedEvents = waitNodes.flatMap((n) => findEvents(n, 'ABILITY_PREPARED'));
+    expect(endTurnNodes.length).toBeGreaterThan(0);
+    const preparedEvents = endTurnNodes.flatMap((n) => findEvents(n, 'ABILITY_PREPARED'));
     expect(preparedEvents.length).toBe(1);
     expect(preparedEvents[0]!.event).toMatchObject({
       type: 'ABILITY_PREPARED',
@@ -208,15 +210,16 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     // Первый ход: подготовка
-    sim.dispatch({ type: 'WAIT', entityId: player.id });
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
     expect(getEnemy(sim.getState()).aiState.preparedAbility).not.toBeNull();
 
     // Второй ход: выполнение
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).toBeNull();
@@ -240,18 +243,19 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     // Подготовка
-    sim.dispatch({ type: 'WAIT', entityId: player.id });
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
     expect(getEnemy(sim.getState()).aiState.preparedAbility).not.toBeNull();
 
     // Игрок оглушает врага (через APPLY_STATUS напрямую нельзя, но можно наложить статус перед ходом)
     const stunnedEnemy = getEnemy(sim.getState());
     stunnedEnemy.statusEffects.push({ type: 'stunned', duration: 2, value: 0, statModifiers: null });
 
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     // Подготовка сброшена
@@ -277,10 +281,11 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     // Подготовка
-    sim.dispatch({ type: 'WAIT', entityId: player.id });
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
     expect(getEnemy(sim.getState()).aiState.preparedAbility).not.toBeNull();
 
     // Игрок уходит из зоны поражения
@@ -289,8 +294,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
     expect(sim.getState().player.x).toBe(3);
 
     // Ход AI: выполняет скилл по старым координатам, промахивается
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).toBeNull();
@@ -328,17 +333,18 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),
     });
-    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+    const sim = createTestSimulation(state);
 
     // Первый ход: подготовка.
-    sim.dispatch({ type: 'WAIT', entityId: player.id });
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
     const enemyBeforeExecution = getEnemy(sim.getState());
     expect(enemyBeforeExecution.aiState.preparedAbility).not.toBeNull();
     expect(enemyBeforeExecution.x).toBe(7);
 
     // Второй ход: выполнение prepared-скилла (2 AP) + дополнительный MOVE (1 AP).
-    const result = sim.dispatch({ type: 'WAIT', entityId: player.id });
-    expect(result.success).toBe(true);
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
     expect(enemyAfter.aiState.preparedAbility).toBeNull();

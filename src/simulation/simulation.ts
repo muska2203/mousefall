@@ -1,8 +1,10 @@
 import {
     ActionPreview,
     Actor,
+    AiActor,
     EnemyEntity,
     Entity,
+    EntityId,
     GameState,
     Intent,
     PlayerEntity,
@@ -11,7 +13,8 @@ import {
     SimulationResult,
     TurnPhase,
     ValidationError,
-    ValidationResult
+    ValidationResult,
+    FactionId,
 } from "@simulation/types.ts";
 import {DefaultActionPointCostResolver, type ActionPointCostResolver} from "@simulation/systems/action-cost-resolver.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
@@ -19,11 +22,11 @@ import { getSkillExecutor } from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
-import {findAllAliveAiActors, isActor, createBoolGrid, findInteractableEntitiesAround} from "@simulation/state.ts";
+import {findAllAliveActorsOfFaction, isActor, createBoolGrid, findInteractableEntitiesAround} from "@simulation/state.ts";
 import {isStunned} from "@simulation/systems/stun-helper.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
-import {waitEntity} from "@simulation/systems/actions/wait-action.ts";
+import {endTurnEntity} from "@simulation/systems/actions/end-turn-action.ts";
 import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
@@ -53,12 +56,19 @@ import { getWeaponDamage as calcWeaponDamage, getWeaponDamageEntries as calcWeap
 import { initSkillRegistry } from "@simulation/skills/index.ts";
 import { tryGetAbility, getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
-import { tickAllStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
+import { tickEntityStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
 import { resolveInteraction } from "@simulation/systems/interactions/resolve-interaction.ts";
 import { findPath, posEqual } from "@utils/math.ts";
 
 export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
+
+/** Состояние конечного автомата хода. */
+type TurnState =
+  | { phase: 'idle' }
+  | { phase: 'faction-setup'; factionId: FactionId }
+  | { phase: 'actor-turn'; factionId: FactionId; actorId: EntityId }
+  | { phase: 'round-recovery' };
 
 export class GameSimulation implements Simulation {
 
@@ -69,12 +79,91 @@ export class GameSimulation implements Simulation {
         private readonly debugContext: DebugContext = { enabled: false },
     ) {}
 
+    /** Конечный автомат хода: фракционный сетап, ход актора или восстановление раунда. */
+    private turnState: TurnState = { phase: 'idle' };
+
+    /** Акторы, закончившие ход в текущем раунде. Сбрасывается в ROUND_RECOVERY. */
+    private actorsDoneThisRound: Set<EntityId> = new Set();
+
+    /** Счётчик глубины рекурсии для защиты от бесконечного цикла в step(). */
+    private stepDepth = 0;
+
+    /** Фиксированный порядок фракций в раунде. */
+    private readonly FACTION_ORDER: FactionId[] = ['player', 'allies', 'enemies', 'neutrals'];
+
     /**
      * Включить или выключить debug-режим для текущей симуляции.
      * Изменение применяется к уже зарегистрированным обработчикам.
      */
     setDebugEnabled(enabled: boolean): void {
         this.debugContext.enabled = enabled;
+    }
+
+    /**
+     * true, если сейчас ожидается ввод игрока.
+     */
+    isPlayerTurn(): boolean {
+        return this.turnState.phase === 'actor-turn' && this.turnState.actorId === this.state.player.id;
+    }
+
+    /**
+     * Инициализирует внутренний turnState для тестов.
+     * Только для тестов: не используйте в production-коде.
+     */
+    initializeTestTurnState(factionId: FactionId, actorId: EntityId): void {
+        this.turnState = { phase: 'actor-turn', factionId, actorId };
+        this.actorsDoneThisRound = new Set();
+    }
+
+    /**
+     * Возвращает живых акторов фракции, отсортированных по id.
+     */
+    private getAliveActorsOfFactionSorted(factionId: FactionId) {
+        return findAllAliveActorsOfFaction(this.state, factionId);
+    }
+
+    /**
+     * true, если актор уже закончил ход в текущем раунде.
+     */
+    private isActorDone(actorId: EntityId): boolean {
+        return this.actorsDoneThisRound.has(actorId);
+    }
+
+    /**
+     * Переходит к следующему актору текущей фракции или к следующей фракции.
+     */
+    private advanceActor(): void {
+        if (this.turnState.phase !== 'actor-turn') return;
+
+        const turnState = this.turnState;
+        const currentFactionId = turnState.factionId;
+        const currentActorId = turnState.actorId;
+        const actors = this.getAliveActorsOfFactionSorted(currentFactionId);
+        const currentIndex = actors.findIndex(a => a.id === currentActorId);
+        const nextActor = actors.slice(currentIndex + 1).find(a => !this.actorsDoneThisRound.has(a.id));
+
+        if (nextActor) {
+            this.turnState = { phase: 'actor-turn', factionId: currentFactionId, actorId: nextActor.id };
+        } else {
+            this.advanceFaction();
+        }
+    }
+
+    /**
+     * Переходит к следующей фракции или к фазе восстановления раунда.
+     */
+    private advanceFaction(): void {
+        if (this.turnState.phase !== 'actor-turn' && this.turnState.phase !== 'faction-setup') return;
+
+        const currentFactionId = this.turnState.factionId;
+        const currentIndex = this.FACTION_ORDER.indexOf(currentFactionId);
+        const nextFactionId = this.FACTION_ORDER[currentIndex + 1];
+
+        if (nextFactionId) {
+            this.turnState = { phase: 'faction-setup', factionId: nextFactionId };
+        } else {
+            this.turnState = { phase: 'round-recovery' };
+        }
     }
 
     /**
@@ -111,7 +200,16 @@ export class GameSimulation implements Simulation {
      */
     static loadSavedGame(state: GameState, debugEnabled: boolean = false): GameSimulation {
         const debugContext: DebugContext = { enabled: debugEnabled };
-        return new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
+        const simulation = new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
+        // Загруженная игра должна продолжаться с хода игрока, если он жив.
+        if (state.phase === 'playing' && state.player.isAlive !== false) {
+            simulation.turnState = {
+                phase: 'actor-turn',
+                factionId: 'player',
+                actorId: state.player.id,
+            };
+        }
+        return simulation;
     }
 
     /**
@@ -164,62 +262,395 @@ export class GameSimulation implements Simulation {
 
     dispatch(action: GameAction): SimulationResult {
 
-        const phases: TurnPhase[] = [];
+        if (this.state.phase !== 'playing') {
+            return this.reject('game_not_playing', action);
+        }
 
-        const executionBuilder = new ExecutionBuilder({
+        if (this.turnState.phase !== 'actor-turn') {
+            return this.reject('not_actor_turn', action);
+        }
+
+        if (this.turnState.actorId !== action.entityId) {
+            return this.reject('wrong_actor', action);
+        }
+
+        const actor = this.getActor(action.entityId);
+        if (!actor || actor.isAlive === false) {
+            return this.reject('actor_dead', action);
+        }
+
+        if (action.type === 'END_TURN') {
+            this.actorsDoneThisRound.add(actor.id);
+            const phase = this.buildEndTurnPhase(actor);
+            const result: SimulationResult = {
+                success: true,
+                // stateChanged зависит от наличия дочерних событий:
+                // оглушение добавляет SKIP_STUNNED_TURN, иначе только TURN_ENDED.
+                stateChanged: phase.actions[0]!.children.length > 0,
+                phases: [phase],
+                hasMoreSteps: true,
+            };
+            return result;
+        }
+
+        if (isStunned(actor)) {
+            return this.reject('actor_stunned', action);
+        }
+
+        const builder = new ExecutionBuilder({
             type: 'ACTION_APPLIED',
             action,
         });
 
-        const root = executionBuilder.root;
+        const result = this.executeActionInContext(actor, action, builder, builder.root);
+        return result;
+    }
 
-        const actor = this.resolveActionActor(action);
+    step(): SimulationResult {
+        // Сбрасываем счётчик глубины на каждый внешний вызов,
+        // чтобы защита от бесконечной рекурсии работала в рамках одной цепочки.
+        this.stepDepth = 0;
+        return this.runStep();
+    }
 
-        if (!actor) {
+    private runStep(): SimulationResult {
+        if (this.state.phase !== 'playing') {
             return {
-                success: false,
+                success: true,
                 stateChanged: false,
-                phases: [{ side: 'PLAYER', actions: [root] }],
+                phases: [],
+                hasMoreSteps: false,
             };
         }
 
-        const success = this.executeAction(
-            actor,
-            action,
-            executionBuilder,
-            root,
-        );
+        // Защита от бесконечной рекурсии: если step() вызывается слишком много раз
+        // без прогресса (например, при зацикленной очереди пустых фаз),
+        // прерываем цепочку и возвращаем пустой результат.
+        this.stepDepth++;
+        if (this.stepDepth > 50) {
+            return {
+                success: false,
+                stateChanged: false,
+                phases: [],
+                hasMoreSteps: false,
+            };
+        }
+
+        // Пропускаем мёртвых или уже закончивших ход акторов.
+        while (this.turnState.phase === 'actor-turn') {
+            const actor = this.getActor(this.turnState.actorId);
+            if (!actor || actor.isAlive === false || this.isActorDone(actor.id)) {
+                this.advanceActor();
+            } else {
+                break;
+            }
+        }
+
+        switch (this.turnState.phase) {
+            case 'idle': {
+                this.turnState = { phase: 'faction-setup', factionId: 'player' };
+                return this.runStep();
+            }
+
+            case 'faction-setup': {
+                const factionId = this.turnState.factionId;
+                const phase = this.runFactionSetup(factionId);
+                const actors = this.getAliveActorsOfFactionSorted(factionId);
+
+                if (actors.length > 0) {
+                    this.turnState = {
+                        phase: 'actor-turn',
+                        factionId,
+                        actorId: actors[0]!.id,
+                    };
+                } else {
+                    this.advanceFaction();
+                }
+
+                const nextActorIsPlayer = actors.length > 0 && actors[0]!.id === this.state.player.id;
+                const transitionedToRoundRecovery = this.isRoundOver();
+
+                const result: SimulationResult = {
+                    success: true,
+                    stateChanged: phase.actions.length > 0 && phase.actions.some(a => a.children.length > 0),
+                    phases: [phase],
+                    hasMoreSteps: transitionedToRoundRecovery || !nextActorIsPlayer,
+                };
+                return result;
+            }
+
+            case 'actor-turn': {
+                const actor = this.getActor(this.turnState.actorId);
+
+                if (!actor || actor.isAlive === false) {
+                    this.advanceActor();
+                    return this.runStep();
+                }
+
+                if (actor.id === this.state.player.id) {
+                    return {
+                        success: true,
+                        stateChanged: false,
+                        phases: [],
+                        hasMoreSteps: false,
+                    };
+                }
+
+                return this.runAiAction(actor);
+            }
+
+            case 'round-recovery': {
+                const phase = this.runRoundRecovery();
+                this.turnState = { phase: 'faction-setup', factionId: 'player' };
+                this.actorsDoneThisRound.clear();
+                // После восстановления раунда нужно ещё выполнить FACTION_SETUP игрока:
+                // восстановить AP, тикнуть статусы/кулдауны и перевести turnState в actor-turn.
+                const stateChanged = phase.actions[0]!.children.length > 0;
+                return {
+                    success: true,
+                    stateChanged,
+                    phases: [phase],
+                    hasMoreSteps: true,
+                };
+            }
+        }
+    }
+
+    /**
+     * true, если раунд завершён и симуляция перешла к восстановлению.
+     */
+    private isRoundOver(): boolean {
+        return this.turnState.phase === 'round-recovery';
+    }
+
+    getState(): Readonly<GameState> {
+        return this.state;
+    }
+
+    /**
+     * Выполняет одно действие актора в контексте переданного ExecutionBuilder.
+     * Используется dispatch для игрока и runAiAction для AI.
+     */
+    private executeActionInContext(
+        actor: Actor,
+        action: GameAction,
+        builder: ExecutionBuilder,
+        root: ExecutionNode,
+    ): SimulationResult {
+        const success = this.executeAction(actor, action, builder, root);
 
         if (!success) {
             return {
                 success: false,
                 stateChanged: false,
-                phases: [{ side: 'PLAYER', actions: [root] }],
+                phases: [{ side: actor.factionId, actions: [root] }],
+                hasMoreSteps: false,
             };
         }
 
         if (actor.id === this.state.player.id) {
             const fovEvents = updateFOV(this.state);
             for (const event of fovEvents) {
-                executionBuilder.addChild(root, event);
+                builder.addChild(root, event);
             }
         }
 
-        phases.push({ side: 'PLAYER', actions: [root] });
-
-        if (this.isPlayerExhausted()) {
-            this.endPlayerTurn(phases);
+        if (actor.ap <= 0 || action.type === 'END_TURN') {
+            this.actorsDoneThisRound.add(actor.id);
         }
 
         return {
             success: true,
             stateChanged: true,
-            phases,
+            phases: [{ side: actor.factionId, actions: [root] }],
+            hasMoreSteps: actor.id !== this.state.player.id,
         };
     }
 
-    getState(): Readonly<GameState> {
-        return this.state;
+    /**
+     * Возвращает фазу завершения хода актора.
+     * Для оглушённого актора дополнительно тикает stunned.
+     */
+    private buildEndTurnPhase(actor: Actor): TurnPhase {
+        const builder = new ExecutionBuilder({
+            type: 'ACTION_APPLIED',
+            action: { type: 'END_TURN', entityId: actor.id },
+        });
+        const root = builder.root;
+
+        if (isStunned(actor)) {
+            executeIntent(this.state, { type: 'SKIP_STUNNED_TURN', entityId: actor.id }, builder, root);
+        }
+
+        builder.addChild(root, {
+            type: 'TURN_ENDED',
+            turnNumber: this.state.turn.round,
+        });
+
+        return { side: actor.factionId, actions: [root] };
+    }
+
+    /**
+     * Выполняет сетап фракции в начале её хода: тик статусов, восстановление AP, тик кулдаунов.
+     */
+    private runFactionSetup(factionId: FactionId): TurnPhase {
+        // Временный placeholder-корень: реальное событие TURN_BEGAN создаётся
+        // единственный раз через BEGIN_TURN intent и заменяет корень фазы.
+        const builder = new ExecutionBuilder({
+            type: 'ACTION_APPLIED',
+            action: { type: 'END_TURN', entityId: factionId },
+        });
+        const turnBeganNode = executeIntent(this.state, { type: 'BEGIN_TURN', side: factionId }, builder, builder.root);
+        const root = turnBeganNode ?? builder.root;
+        if (turnBeganNode) {
+            turnBeganNode.parent = null;
+        }
+
+        const actors = this.getAliveActorsOfFactionSorted(factionId);
+
+        for (const actor of actors) {
+            const intents = tickEntityStatusEffects(
+                actor,
+                factionId === 'player' ? 'player' : 'environment',
+            );
+            for (const intent of intents) {
+                executeIntent(this.state, intent, builder, root);
+            }
+        }
+
+        for (const actor of actors) {
+            executeIntent(this.state, { type: 'RESTORE_AP', entityId: actor.id }, builder, root);
+        }
+
+        for (const actor of actors) {
+            if (!('abilities' in actor)) continue;
+            for (const ability of actor.abilities) {
+                if (ability.currentCooldown > 0) {
+                    executeIntent(
+                        this.state,
+                        { type: 'TICK_COOLDOWN', entityId: actor.id, abilityId: ability.templateId },
+                        builder,
+                        root,
+                    );
+                }
+            }
+        }
+
+        return { side: factionId, actions: [root] };
+    }
+
+    /**
+     * Выполняет восстановление раунда: удаление мёртвых сущностей.
+     * Счётчик раунда увеличивается в начале следующего хода игрока (BEGIN_TURN 'player').
+     */
+    private runRoundRecovery(): TurnPhase {
+        const builder = new ExecutionBuilder({
+            type: 'TURN_BEGAN',
+            side: 'round_recovery',
+            round: this.state.turn.round,
+            actorId: null,
+        });
+        const root = builder.root;
+
+        executeIntent(this.state, { type: 'CLEANUP_DEAD_ENTITIES' }, builder, root);
+
+        return { side: 'round_recovery', actions: [root] };
+    }
+
+    /**
+     * Выполняет одно действие AI-актора.
+     * Если актор оглушён — пропускает ход. Иначе запрашивает действие у стратегии.
+     */
+    private runAiAction(actor: Actor): SimulationResult {
+
+        if (isStunned(actor)) {
+            const action: GameAction = { type: 'END_TURN', entityId: actor.id };
+            const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action });
+            const root = builder.root;
+            const result = this.executeActionInContext(actor, action, builder, root);
+
+            if (isEnemyEntity(actor)) {
+                const prepared = cancelPreparedAbility(actor);
+                if (prepared) {
+                    builder.addChild(root, {
+                        type: 'ABILITY_PREPARED_CANCELLED',
+                        entityId: actor.id,
+                        abilityId: prepared.abilityId,
+                        targets: prepared.targets,
+                        from: { x: actor.x, y: actor.y },
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        const aiActor = actor as AiActor;
+        const strategy = getStrategy(aiActor.aiStrategyId);
+        strategy.updateState?.(aiActor, this.state);
+
+        // Builder создаётся до decideAction, потому что стратегия может
+        // эмитить события (например, ABILITY_PREPARED) как side-effect.
+        // Корневое событие заменяется на реальное действие после решения стратегии.
+        const builder = new ExecutionBuilder({
+            type: 'ACTION_APPLIED',
+            action: { type: 'END_TURN', entityId: actor.id },
+        });
+        const root = builder.root;
+
+        const action = strategy.decideAction(aiActor, this.state, builder, root);
+
+        // Подменяем placeholder на реальное действие перед исполнением.
+        builder.root.event = { type: 'ACTION_APPLIED', action };
+
+        const result = this.executeActionInContext(actor, action, builder, root);
+
+        // Fallback: если AI выбрала невыполнимое действие, завершаем ход.
+        if (!result.success) {
+            const endTurnBuilder = new ExecutionBuilder({
+                type: 'ACTION_APPLIED',
+                action: { type: 'END_TURN', entityId: actor.id },
+            });
+            return this.executeActionInContext(
+                actor,
+                { type: 'END_TURN', entityId: actor.id },
+                endTurnBuilder,
+                endTurnBuilder.root,
+            );
+        }
+
+        return result;
+    }
+
+    /**
+     * Возвращает актора по id или null, если сущность не является актором.
+     */
+    private getActor(actorId: EntityId): Actor | null {
+        const entity = this.state.entities.get(actorId);
+        if (!entity || !isActor(entity)) {
+            return null;
+        }
+        return entity;
+    }
+
+    /**
+     * Вспомогательный метод для формирования отказа в dispatch.
+     */
+    private reject(reasonCode: string, action: GameAction): SimulationResult {
+        const builder = new ExecutionBuilder({
+            type: 'ACTION_APPLIED',
+            action,
+        });
+        builder.addChild(builder.root, {
+            type: 'ACTION_REJECTED',
+            errors: [{ code: reasonCode }],
+        });
+        return {
+            success: false,
+            stateChanged: false,
+            phases: [{ side: 'player', actions: [builder.root] }],
+            hasMoreSteps: false,
+        };
     }
 
     preview(action: GameAction): ActionPreview {
@@ -287,9 +718,16 @@ export class GameSimulation implements Simulation {
         );
 
         this.state.turn = {
-            activeSide: 'PLAYER',
+            activeSide: 'player',
             round: 1,
         };
+
+        this.turnState = {
+            phase: 'actor-turn',
+            factionId: 'player',
+            actorId: this.state.player.id,
+        };
+
         generatedMap.enemies.forEach(e => this.state.entities.set(e.id, e));
         generatedMap.items.forEach(e => this.state.entities.set(e.id, e));
         generatedMap.doors.forEach(d => this.state.entities.set(d.id, d));
@@ -358,7 +796,7 @@ export class GameSimulation implements Simulation {
         }
 
         // Оглушённый актор пропускает ход: тикаем stunned и обнуляем AP.
-        // Разрешено только действие WAIT (см. canActorAct), остальные отклонены выше.
+        // Разрешено только действие END_TURN (см. canActorAct), остальные отклонены выше.
         if (isStunned(actor)) {
             executeIntent(this.state, { type: 'SKIP_STUNNED_TURN', entityId: actor.id }, executionBuilder, parentNode);
             return true;
@@ -397,189 +835,6 @@ export class GameSimulation implements Simulation {
     }
 
     // =========================================================
-    // ЗАВЕРШЕНИЕ ХОДА ИГРОКА
-    // =========================================================
-
-    private endPlayerTurn(
-        phases: TurnPhase[],
-    ): void {
-        const playerTickNodes = this.runStatusTicks('player');
-        if (playerTickNodes.length > 0) {
-            phases.push({ side: 'STATUS_TICK', actions: playerTickNodes });
-        }
-
-        const envActions: ExecutionNode[] = [];
-
-        // Фиксируем начало хода окружения.
-        const envBeginBuilder = new ExecutionBuilder({
-            type: 'TURN_BEGAN',
-            side: 'ENVIRONMENT',
-            round: this.state.turn.round,
-            actorId: null,
-        });
-        executeIntent(this.state, { type: 'BEGIN_TURN', side: 'ENVIRONMENT' }, envBeginBuilder, envBeginBuilder.root);
-        envActions.push(envBeginBuilder.root);
-
-        this.runEnvironmentTurn(envActions);
-        phases.push({ side: 'ENVIRONMENT', actions: envActions });
-
-        const playerCastNode = this.beginNextPlayerTurn();
-        if (playerCastNode) {
-            phases.push({ side: 'PLAYER', actions: [playerCastNode] });
-        }
-
-        const tickNodes = this.runStatusTicks('environment');
-        if (tickNodes.length > 0) {
-            phases.push({ side: 'STATUS_TICK', actions: tickNodes });
-        }
-    }
-
-    // =========================================================
-    // ХОД ОКРУЖЕНИЯ
-    // =========================================================
-
-    private runEnvironmentTurn(
-        actions: ExecutionNode[],
-    ): void {
-
-        const enemies = findAllAliveAiActors(this.state)
-
-        for (const enemy of enemies) {
-
-            const enemyEntity = enemy as EnemyEntity;
-
-            // Подготовка хода врага: восстановление AP, тики кулдаунов и каста.
-            const setupBuilder = new ExecutionBuilder({
-                type: 'TURN_BEGAN',
-                side: 'ENVIRONMENT',
-                round: this.state.turn.round,
-                actorId: enemy.id,
-            });
-            const setupRoot = setupBuilder.root;
-
-            executeIntent(this.state, { type: 'RESTORE_AP', entityId: enemy.id }, setupBuilder, setupRoot);
-
-            for (const ability of enemyEntity.abilities) {
-                if (ability.currentCooldown > 0) {
-                    executeIntent(
-                        this.state,
-                        { type: 'TICK_COOLDOWN', entityId: enemy.id, abilityId: ability.templateId },
-                        setupBuilder,
-                        setupRoot,
-                    );
-                }
-            }
-
-            actions.push(setupRoot);
-
-            // Оглушённый враг пропускает ход и сбрасывает подготовку.
-            if (isStunned(enemy)) {
-                const prepared = cancelPreparedAbility(enemyEntity);
-                const stunBuilder = new ExecutionBuilder({
-                    type: 'ACTION_APPLIED',
-                    action: { type: 'WAIT', entityId: enemy.id },
-                });
-                const stunNode = executeIntent(this.state, { type: 'SKIP_STUNNED_TURN', entityId: enemy.id }, stunBuilder, stunBuilder.root);
-                if (prepared && stunNode) {
-                    stunBuilder.addChild(stunNode, {
-                        type: 'ABILITY_PREPARED_CANCELLED',
-                        entityId: enemy.id,
-                        abilityId: prepared.abilityId,
-                        targets: prepared.targets,
-                        from: { x: enemy.x, y: enemy.y },
-                    });
-                }
-                actions.push(stunBuilder.root);
-                continue;
-            }
-
-            const strategy = getStrategy(enemy.aiStrategyId);
-            strategy.updateState?.(enemy, this.state);
-
-            while (enemy.ap > 0) {
-                // Builder создаётся до decideAction, потому что стратегия может
-                // эмитить события (например, ABILITY_PREPARED) как side-effect.
-                // Корневое событие заменяется на реальное действие после решения стратегии.
-                const placeholderAction: GameAction = { type: 'WAIT', entityId: enemy.id };
-                const builder = new ExecutionBuilder({
-                    type: 'ACTION_APPLIED',
-                    action: placeholderAction,
-                });
-                const root = builder.root;
-
-                const action = strategy.decideAction(enemy, this.state, builder, root);
-
-                // Подменяем placeholder на реальное действие перед исполнением.
-                builder.root.event = { type: 'ACTION_APPLIED', action };
-
-                const success = this.executeAction(
-                    enemy,
-                    action,
-                    builder,
-                    root,
-                );
-
-                if (success) {
-                    actions.push(root);
-                } else {
-                    enemy.ap = 0;
-                    break;
-                }
-            }
-        }
-    }
-
-    private beginNextPlayerTurn(): ExecutionNode | null {
-
-        // Подготовка хода игрока: смена стороны/раунда, тик каста, восстановление AP, тики кулдаунов.
-        // Очистка мёртвых сущностей происходит через канонический интент.
-        const setupBuilder = new ExecutionBuilder({
-            type: 'TURN_BEGAN',
-            side: 'PLAYER',
-            round: this.state.turn.round + 1,
-            actorId: this.state.player.id,
-        });
-        const setupRoot = setupBuilder.root;
-
-        executeIntent(this.state, { type: 'CLEANUP_DEAD_ENTITIES' }, setupBuilder, setupRoot);
-
-        executeIntent(this.state, { type: 'BEGIN_TURN', side: 'PLAYER' }, setupBuilder, setupRoot);
-
-        executeIntent(this.state, { type: 'RESTORE_AP', entityId: this.state.player.id }, setupBuilder, setupRoot);
-
-        // Уменьшение cooldown скиллов игрока
-        for (const ability of this.state.player.abilities) {
-            if (ability.currentCooldown > 0) {
-                executeIntent(
-                    this.state,
-                    { type: 'TICK_COOLDOWN', entityId: this.state.player.id, abilityId: ability.templateId },
-                    setupBuilder,
-                    setupRoot,
-                );
-            }
-        }
-
-        return setupRoot.children.length > 0 ? setupRoot : null;
-    }
-
-    private runStatusTicks(phase: 'player' | 'environment'): ExecutionNode[] {
-        const nodes: ExecutionNode[] = [];
-        const tickResults = tickAllStatusEffects(this.state, phase);
-        for (const { entity, intents } of tickResults) {
-            for (const intent of intents) {
-                const builder = new ExecutionBuilder({
-                    type: 'STATUS_TICKED',
-                    entityId: entity.id,
-                    effectTypes: [],
-                });
-                executeIntent(this.state, intent, builder, builder.root);
-                nodes.push(builder.root);
-            }
-        }
-        return nodes;
-    }
-
-    // =========================================================
     // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // =========================================================
 
@@ -591,35 +846,11 @@ export class GameSimulation implements Simulation {
         }
 
         if (isStunned(actor)) {
-            // Оглушённый актор может только завершить ход (WAIT).
-            return action.type === 'WAIT';
+            // Оглушённый актор может только явно завершить ход (END_TURN).
+            return action.type === 'END_TURN';
         }
 
-        if (this.state.turn.activeSide === 'PLAYER') {
-            return actor.id === this.state.player.id;
-        }
-
-        return actor.id !== this.state.player.id;
-    }
-
-    private isPlayerExhausted(): boolean {
-        return this.state.player.ap <= 0;
-    }
-
-    private resolveActionActor(
-        action: GameAction,
-    ): Actor | null {
-        const entityId = (action as { entityId?: string }).entityId;
-        if (!entityId) {
-            return null;
-        }
-
-        const entity = this.state.entities.get(entityId);
-        if (!entity || !isActor(entity)) {
-            return null;
-        }
-
-        return entity;
+        return true;
     }
 
     getPlayerStats() {
@@ -793,7 +1024,7 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
 
     registry.register('MOVE', moveEntity);
     registry.register('ATTACK', attackEntity);
-    registry.register('WAIT', waitEntity);
+    registry.register('END_TURN', endTurnEntity);
     registry.register('USE_ABILITY', useAbilityAction);
     registry.register('EQUIP', equipEntity);
     registry.register('UNEQUIP', unequipEntity);

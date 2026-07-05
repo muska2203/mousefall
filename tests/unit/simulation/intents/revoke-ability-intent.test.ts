@@ -4,7 +4,7 @@ import { executeRevokeAbilityIntent } from '../../../../src/simulation/systems/i
 import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
 
 function makeBuilder() {
-  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'WAIT', entityId: 'any' } });
+  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 describe('executeRevokeAbilityIntent', () => {

@@ -9,7 +9,7 @@ describe('executeSetMapIntent', () => {
     const newMap = makeTestMap(12, 8);
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'WAIT', entityId: 'player' },
+      action: { type: 'END_TURN', entityId: 'player' },
     });
 
     const node = executeSetMapIntent(
@@ -41,7 +41,7 @@ describe('executeSetMapIntent', () => {
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
-      action: { type: 'WAIT', entityId: 'player' },
+      action: { type: 'END_TURN', entityId: 'player' },
     });
 
     executeSetMapIntent(

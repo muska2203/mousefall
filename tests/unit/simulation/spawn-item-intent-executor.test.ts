@@ -6,7 +6,7 @@ import { ExecutionBuilder } from '../../../src/simulation/core-types';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 
 function makeBuilder() {
-    return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'WAIT', entityId: 'any' } });
+    return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 function makeTestItemTemplate(id: string): ItemTemplate {

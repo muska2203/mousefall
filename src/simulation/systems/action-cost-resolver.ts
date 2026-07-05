@@ -20,7 +20,7 @@ export type ActionPointCostResolver = {
  * Правила:
  * - MOVE — 1 AP
  * - ATTACK — 1 AP
- * - WAIT — все текущие AP актора (эффект завершения хода)
+ * - END_TURN — 0 AP
  * - USE_ABILITY — берётся из `apCost` шаблона способности, fallback = 1
  * - USE_ITEM — берётся из `apCost` шаблона предмета, fallback = 1
  * - EQUIP / UNEQUIP — 1 AP
@@ -36,13 +36,8 @@ export class DefaultActionPointCostResolver
       case 'ATTACK':
         return 1;
 
-      case 'WAIT': {
-        const actor = state.entities.get(action.entityId);
-        if (!actor || !('ap' in actor)) {
-          return 0;
-        }
-        return actor.ap;
-      }
+      case 'END_TURN':
+        return 0;
 
       case 'USE_ABILITY': {
         const apCost = tryGetAbility(action.abilityId)?.apCost ?? 1;

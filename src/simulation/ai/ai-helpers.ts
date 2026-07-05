@@ -4,7 +4,7 @@
  * Ответственность:
  * - Проверка зрения (радиус + LOS).
  * - Управление подготовленными способностями (prepare / cancel).
- * - Хелперы для генерации GameAction (wait).
+ * - Хелперы для генерации GameAction (endTurn).
  *
  * Правила:
  * - Никаких побочных эффектов, кроме мутации actor.aiState (часть GameState).
@@ -213,7 +213,7 @@ export function tryPrepareAbility(
 // Утилиты для GameAction
 // ─────────────────────────────────────────────
 
-/** Возвращает WAIT-действие для указанного AI-актора. */
-export function wait(actor: AiActor): GameAction {
-  return { type: 'WAIT', entityId: actor.id };
+/** Возвращает END_TURN-действие для указанного AI-актора. */
+export function endTurn(actor: AiActor): GameAction {
+  return { type: 'END_TURN', entityId: actor.id };
 }
