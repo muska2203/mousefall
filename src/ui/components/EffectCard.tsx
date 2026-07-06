@@ -9,10 +9,18 @@ interface Props {
   turns: number;
 }
 
-export function EffectCard({icon, name, desc, turns}: Props) {
+function EffectIcon({ icon }: { icon: string }) {
+  if (icon.startsWith('/')) {
+    return <img src={icon} alt="" className="cm-effect__icon" />;
+  }
+
+  return <div className="cm-effect__icon">{icon}</div>;
+}
+
+export function EffectCard({ icon, name, desc, turns }: Props) {
   return (
     <li className="cm-effect" role="listitem">
-      <div className="cm-effect__icon">{icon}</div>
+      <EffectIcon icon={icon} />
       <div className="cm-effect__main">
         <div className="cm-effect__name">{name}</div>
         <div className="cm-effect__desc">{desc}</div>

@@ -54,4 +54,56 @@ describe('apply-status-intent-executer', () => {
     expect(enemy.statusEffects[0]!.type).toBe('counterattack');
     expect(enemy.statusEffects[0]!.duration).toBe(2);
   });
+
+  it('cancels preparedAbility and emits ABILITY_PREPARED_CANCELLED when silenced is applied to enemy', () => {
+    const enemy = makeEnemy({
+      statusEffects: [],
+      aiState: {
+        strategy: 'hunter',
+        mode: 'idle',
+        targetX: null,
+        targetY: null,
+        homeX: 3,
+        homeY: 3,
+        preparedAbility: { abilityId: 'fireball', targets: [{ x: 5, y: 5 }] },
+      },
+    });
+    const state = makeGameState();
+    state.entities.set(enemy.id, enemy);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('silenced', 1) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('silenced', 1) }, builder, builder.root);
+
+    expect(enemy.statusEffects).toHaveLength(1);
+    expect(enemy.statusEffects[0]!.type).toBe('silenced');
+    expect(enemy.aiState.preparedAbility).toBeNull();
+
+    const cancelledEvent = builder.root.children.find(
+      c => c.event.type === 'ABILITY_PREPARED_CANCELLED',
+    );
+    expect(cancelledEvent).toBeDefined();
+    expect(cancelledEvent!.event).toMatchObject({
+      type: 'ABILITY_PREPARED_CANCELLED',
+      entityId: enemy.id,
+      abilityId: 'fireball',
+      targets: [{ x: 5, y: 5 }],
+    });
+  });
+
+  it('does not emit ABILITY_PREPARED_CANCELLED when silenced is applied to enemy without preparedAbility', () => {
+    const enemy = makeEnemy({ statusEffects: [] });
+    const state = makeGameState();
+    state.entities.set(enemy.id, enemy);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('silenced', 1) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('silenced', 1) }, builder, builder.root);
+
+    expect(enemy.statusEffects).toHaveLength(1);
+    expect(enemy.statusEffects[0]!.type).toBe('silenced');
+
+    const cancelledEvent = builder.root.children.find(
+      c => c.event.type === 'ABILITY_PREPARED_CANCELLED',
+    );
+    expect(cancelledEvent).toBeUndefined();
+  });
 });

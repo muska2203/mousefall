@@ -50,3 +50,10 @@ export function resolveDoorSprite(templateId: string, isOpen: boolean = false, o
 export function resolveAbilityIcon(spriteId: string): string {
   return `/assets/skills/${spriteId}.png`;
 }
+
+/**
+ * Возвращает путь к иконке статус-эффекта по типу.
+ */
+export function resolveStatusIcon(statusType: string): string {
+  return `/assets/statuses/${statusType}.png`;
+}

@@ -94,6 +94,7 @@ export type StatusEffectType =
   | 'burning'
   | 'frozen'
   | 'stunned'
+  | 'silenced'
   | 'regenerating'
   | 'counterattack';
 

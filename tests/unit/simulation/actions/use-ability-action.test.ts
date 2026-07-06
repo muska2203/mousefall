@@ -5,6 +5,8 @@ import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
+import { makeEnemy } from '../../../fixtures/gameState';
+import type { EntityId } from '../../../../src/simulation/types';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -191,5 +193,45 @@ describe('useAbilityAction', () => {
     expect(abilityNode.children.length).toBeGreaterThan(0);
     const intentEventTypes = abilityNode.children.map(c => c.event.type);
     expect(intentEventTypes.some(t => t === 'ENTITY_DAMAGED')).toBe(true);
+  });
+
+  it('отклоняет USE_ABILITY, если актор под silenced', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+      statusEffects: [{ type: 'silenced', duration: 1, value: 0, statModifiers: null }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
+    const result = useAbilityAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('actor_silenced');
+    }
+  });
+
+  it('отклоняет USE_ABILITY у врага, если он под silenced', () => {
+    const state = makeGameState();
+    const enemy = makeEnemy({
+      id: 'enemy_silenced',
+      x: 6,
+      y: 5,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+      statusEffects: [{ type: 'silenced', duration: 1, value: 0, statModifiers: null }],
+    });
+    state.entities.set(enemy.id, enemy);
+
+    const action = { type: 'USE_ABILITY' as const, entityId: enemy.id as EntityId, abilityId: 'fireball', targets: [{ x: 5, y: 5 }] };
+    const result = useAbilityAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('actor_silenced');
+    }
   });
 });

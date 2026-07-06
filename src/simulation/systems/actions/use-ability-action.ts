@@ -6,6 +6,7 @@ import { getSkillExecutor } from '@simulation/skills/skillExecutor';
 import { validateAbilityTargets } from '@simulation/skills/target-validation';
 import { tryGetAbility } from '@content/registry';
 import { isEnemyEntity } from '@simulation/ai/ai-state';
+import { isSilenced } from '@simulation/systems/silence-helper';
 
 export const useAbilityAction: ActionHandler = {
   validate(state: GameState, action: UseAbilityAction): ValidationResult {
@@ -30,6 +31,10 @@ export const useAbilityAction: ActionHandler = {
 
     if (runtimeAbility.currentCooldown > 0) {
       return { ok: false, reasonCode: 'ability_on_cooldown' };
+    }
+
+    if (isSilenced(actor)) {
+      return { ok: false, reasonCode: 'actor_silenced' };
     }
 
     // Если это подготовленная AI-способность — проверяем совпадение abilityId и targets.

@@ -43,8 +43,7 @@ import {mapEnemyToPopover} from './enemyDetailMapper';
 import {mapStairsToPopover} from './stairsDetailMapper';
 import {mapDoorToPopover} from './doorDetailMapper';
 import { tryGetDoor } from '@content/registry';
-import { resolveDoorSprite } from '@utils/assetResolver';
-import {resolveAbilityIcon, resolveItemIcon} from '@utils/assetResolver';
+import { resolveDoorSprite, resolveAbilityIcon, resolveItemIcon, resolveStatusIcon } from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
@@ -423,6 +422,13 @@ export class GameSession {
             icon: '⚔️',
             name: t('system.gameSession.effectCounterattack'),
             desc: t('system.gameSession.effectCounterattackDesc', { turns: effect.duration }),
+            turns: effect.duration,
+          };
+        case 'silenced':
+          return {
+            icon: resolveStatusIcon('silenced'),
+            name: t('system.gameSession.effectSilenced'),
+            desc: t('system.gameSession.effectSilencedDesc', { turns: effect.duration }),
             turns: effect.duration,
           };
         default:

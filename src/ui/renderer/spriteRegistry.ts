@@ -8,6 +8,7 @@
  */
 
 import type {TileType} from '@presentation/types';
+import { resolveStatusIcon } from '@utils/assetResolver';
 
 /** Путь к спрайту тайла. */
 export function getTileSprite(tile: TileType): string {
@@ -41,7 +42,7 @@ export function getItemSprite(templateId: string): string {
 
 /** Путь к спрайту статус-эффекта по типу. */
 export function getStatusEffectSprite(statusType: string): string {
-  return `/assets/statuses/${statusType}.png`;
+  return resolveStatusIcon(statusType);
 }
 
 /** Путь к спрайту AI-режима врага. */

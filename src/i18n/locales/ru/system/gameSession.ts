@@ -22,5 +22,7 @@ export const ruGameSession = {
   effectRegeneratingDesc: 'Восстановление {{value}} ХП в ход',
   effectCounterattack: 'Контратака',
   effectCounterattackDesc: '50% шанс ответить ударом, {{turns}} хода',
+  effectSilenced: 'Немота',
+  effectSilencedDesc: 'Нельзя использовать скиллы, {{turns}} ход',
   effectUnknown: 'Неизвестный эффект',
 } as const satisfies SystemGameSessionTranslations;

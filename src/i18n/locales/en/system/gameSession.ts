@@ -22,5 +22,7 @@ export const enGameSession = {
   effectRegeneratingDesc: 'Restore {{value}} HP per turn',
   effectCounterattack: 'Counterattack',
   effectCounterattackDesc: '50% chance to strike back, {{turns}} turns',
+  effectSilenced: 'Silenced',
+  effectSilencedDesc: 'Cannot use skills, {{turns}} turns',
   effectUnknown: 'Unknown effect',
 } as const satisfies SystemGameSessionTranslations;

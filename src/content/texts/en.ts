@@ -78,6 +78,10 @@ export const enContentTexts: ContentTexts = {
       name: 'Counterattack',
       description: 'For 2 turns, gain a 50% chance to strike back against each direct attack. Costs 2 AP, cooldown 4 turns.',
     },
+    sudden_strike: {
+      name: 'Sudden Strike',
+      description: 'A quick weapon attack against an adjacent enemy. If the target was preparing a skill, the preparation is interrupted and it is silenced for 1 turn.',
+    },
     swoop: {
       name: 'Swoop',
       description: 'Leap to a free cell within radius 2. The ground slam deals minor damage to all hp-bearing objects around the landing point and pushes them one cell away.',

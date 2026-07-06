@@ -413,6 +413,8 @@ export interface SystemGameSessionTranslations {
   effectRegeneratingDesc: string;
   effectCounterattack: string;
   effectCounterattackDesc: string;
+  effectSilenced: string;
+  effectSilencedDesc: string;
   effectUnknown: string;
 }
 

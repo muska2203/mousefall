@@ -16,6 +16,7 @@ const STATUS_DISPLAY_ORDER: Record<string, number> = {
   frozen: 3,
   counterattack: 4,
   regenerating: 5,
+  silenced: 6,
 };
 
 /** Сортирует эффекты по фиксированному порядку отображения. */

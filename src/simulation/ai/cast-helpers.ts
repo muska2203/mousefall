@@ -1,6 +1,7 @@
 import type { EnemyEntity, GameState } from '@simulation/types';
 import { getAbility } from '@content/registry';
 import { getSkillExecutor } from '@simulation/skills/skillExecutor';
+import { isSilenced } from '@simulation/systems/silence-helper';
 
 /**
  * Возвращает скиллы, которые AI может подготовить на следующий ход.
@@ -11,6 +12,8 @@ import { getSkillExecutor } from '@simulation/skills/skillExecutor';
  * - для способности зарегистрирован SkillExecutor.
  */
 export function getPreparableAbilities(enemy: EnemyEntity, _state: GameState) {
+  if (isSilenced(enemy)) return [];
+
   return enemy.abilities.filter((ability) => {
     if (ability.currentCooldown > 0) return false;
     const template = getAbility(ability.templateId);

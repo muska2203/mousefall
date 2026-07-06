@@ -34,8 +34,8 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
     holder.statusEffects.push(intent.status);
   }
 
-  // Прерывание подготовки AI-способности при стане.
-  if (intent.status.type === 'stunned' && isEnemyEntity(target)) {
+  // Прерывание подготовки AI-способности при стане или немоте.
+  if ((intent.status.type === 'stunned' || intent.status.type === 'silenced') && isEnemyEntity(target)) {
     const enemy = target as unknown as EnemyEntity;
     const prepared = cancelPreparedAbility(enemy);
     if (prepared) {
