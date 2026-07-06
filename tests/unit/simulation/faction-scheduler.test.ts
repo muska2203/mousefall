@@ -54,8 +54,15 @@ describe('Faction scheduler', () => {
     const sides = results.flatMap((r) => r.phases.map((p) => p.side));
     expect(sides).toContain('allies');
     expect(sides).toContain('enemies');
+    expect(sides).toContain('environment');
     expect(sides).toContain('round_recovery');
     expect(sides).toContain('player');
+
+    const envIndex = sides.indexOf('environment');
+    const recoveryIndex = sides.indexOf('round_recovery');
+    expect(envIndex).toBeGreaterThan(-1);
+    expect(recoveryIndex).toBeGreaterThan(-1);
+    expect(envIndex).toBeLessThan(recoveryIndex);
 
     expect(sim.getState().turn.round).toBeGreaterThan(0);
     expect(sim.isPlayerTurn()).toBe(true);
@@ -162,6 +169,7 @@ describe('Faction scheduler', () => {
     expect(sides).toContain('allies');
     expect(sides).toContain('enemies');
     expect(sides).toContain('neutrals');
+    expect(sides).toContain('environment');
     expect(sides).toContain('round_recovery');
     expect(sim.getState().turn.round).toBeGreaterThan(0);
     expect(sim.isPlayerTurn()).toBe(true);

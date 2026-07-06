@@ -9,6 +9,7 @@ export const enGameField = {
   neutralsPhaseLabel: 'Neutrals turn',
   statusTickPhaseLabel: 'Status tick',
   roundRecoveryPhaseLabel: 'Round recovery',
+  environmentPhaseLabel: 'Environment turn',
   skipTurnHoverLabel: 'Skip turn',
   gameFieldAriaLabel: 'Game field',
 } as const satisfies ComponentsGameFieldTranslations;

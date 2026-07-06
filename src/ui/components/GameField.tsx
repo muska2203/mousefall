@@ -386,6 +386,8 @@ function getPhaseLabel(side: TurnSide, t: (key: string) => string): string {
       return t('gameField.statusTickPhaseLabel');
     case 'round_recovery':
       return t('gameField.roundRecoveryPhaseLabel');
+    case 'environment':
+      return t('gameField.environmentPhaseLabel');
     default:
       return t('gameField.statusTickPhaseLabel');
   }

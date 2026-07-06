@@ -1,4 +1,4 @@
-import { GameState, Entity, StatusEffectHolder, FactionId } from '@simulation/types';
+import { GameState, Entity, StatusEffectHolder, TurnSide } from '@simulation/types';
 import { Intent } from '@simulation/systems/intents/types';
 
 /**
@@ -6,7 +6,7 @@ import { Intent } from '@simulation/systems/intents/types';
  * Не мутирует состояние — мутация происходит в IntentExecutor.
  * Если у сущности нет эффектов, подходящих под фазу, интент не возвращается.
  */
-export function tickEntityStatusEffects(entity: Entity, phase: FactionId): Intent[] {
+export function tickEntityStatusEffects(entity: Entity, phase: TurnSide): Intent[] {
   if (!('statusEffects' in entity)) return [];
   const holder = entity as unknown as StatusEffectHolder;
   if (holder.statusEffects.length === 0) return [];
@@ -28,7 +28,7 @@ export function tickEntityStatusEffects(entity: Entity, phase: FactionId): Inten
  */
 export function tickAllStatusEffects(
   state: GameState,
-  phase: FactionId,
+  phase: TurnSide,
 ): { entity: Entity; intents: Intent[] }[] {
   const results: { entity: Entity; intents: Intent[] }[] = [];
 

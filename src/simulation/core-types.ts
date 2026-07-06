@@ -111,7 +111,7 @@ export type DamageType =
 export type FactionId = 'player' | 'allies' | 'enemies' | 'neutrals';
 
 /** Сторона, чей ход активен в текущий момент. */
-export type TurnSide = FactionId | 'status_tick' | 'round_recovery';
+export type TurnSide = FactionId | 'status_tick' | 'round_recovery' | 'environment';
 
 export type StatusEffect = {
   type: StatusEffectType;
@@ -336,7 +336,7 @@ export type TeleportEntityIntent = { type: 'TELEPORT_ENTITY'; entityId: EntityId
 export type UpdateFogIntent = { type: 'UPDATE_FOG' };
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };
-export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId; phase: FactionId };
+export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId; phase: TurnSide };
 export type AdjustStatusStacksIntent = {
   type: 'ADJUST_STATUS_STACKS';
   entityId: EntityId;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
 import { tickEntityStatusEffects, tickAllStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
@@ -19,7 +19,7 @@ function makeEffect(type: StatusEffect['type'], duration: number): StatusEffect 
 }
 
 describe('status effect tick phases', () => {
-  it('tickEntityStatusEffects returns intent for any non-stunned status and passed faction', () => {
+  it('tickEntityStatusEffects returns intent for any non-stunned status and passed side', () => {
     const enemy = makeEnemy({
       statusEffects: [makeEffect('burning', 3)],
     });
@@ -30,6 +30,7 @@ describe('status effect tick phases', () => {
       phase: 'enemies',
     });
     expect(tickEntityStatusEffects(enemy, 'player')).toHaveLength(1);
+    expect(tickEntityStatusEffects(enemy, 'environment')).toHaveLength(1);
   });
 
   it('tickEntityStatusEffects returns empty for stunned-only', () => {
@@ -79,6 +80,23 @@ describe('status effect tick phases', () => {
     expect(results).toHaveLength(2);
     const ids = results.map(r => r.entity.id).sort();
     expect(ids).toEqual([player.id, enemyWithPoison.id].sort());
+  });
+
+  it('tickAllStatusEffects includes non-actor entities for environment side', () => {
+    const door = makeDoor({ statusEffects: [makeEffect('burning', 2)] });
+    const enemy = makeEnemy({ id: 'enemy_burn', statusEffects: [makeEffect('burning', 2)] });
+
+    const state = makeGameState({
+      entities: new Map<EntityId, Entity>([
+        [door.id, door],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const results = tickAllStatusEffects(state, 'environment');
+    expect(results).toHaveLength(2);
+    const ids = results.map(r => r.entity.id).sort();
+    expect(ids).toEqual([door.id, enemy.id].sort());
   });
 
   it('burning ticks once per round in FACTION_SETUP enemies', () => {

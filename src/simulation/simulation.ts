@@ -68,6 +68,7 @@ type TurnState =
   | { phase: 'idle' }
   | { phase: 'faction-setup'; factionId: FactionId }
   | { phase: 'actor-turn'; factionId: FactionId; actorId: EntityId }
+  | { phase: 'environment-turn' }
   | { phase: 'round-recovery' };
 
 export class GameSimulation implements Simulation {
@@ -162,7 +163,7 @@ export class GameSimulation implements Simulation {
         if (nextFactionId) {
             this.turnState = { phase: 'faction-setup', factionId: nextFactionId };
         } else {
-            this.turnState = { phase: 'round-recovery' };
+            this.turnState = { phase: 'environment-turn' };
         }
     }
 
@@ -399,6 +400,18 @@ export class GameSimulation implements Simulation {
                 return this.runAiAction(actor);
             }
 
+            case 'environment-turn': {
+                const phase = this.runEnvironmentTurn();
+                this.turnState = { phase: 'round-recovery' };
+                const stateChanged = phase.actions.length > 0 && phase.actions.some(a => a.children.length > 0);
+                return {
+                    success: true,
+                    stateChanged,
+                    phases: [phase],
+                    hasMoreSteps: true,
+                };
+            }
+
             case 'round-recovery': {
                 const phase = this.runRoundRecovery();
                 this.turnState = { phase: 'faction-setup', factionId: 'player' };
@@ -534,6 +547,38 @@ export class GameSimulation implements Simulation {
         }
 
         return { side: factionId, actions: [root] };
+    }
+
+    /**
+     * Выполняет ход окружения: тик статусов у всех живых не-акторов.
+     * Происходит после ходов всех фракций и перед восстановлением раунда.
+     */
+    private runEnvironmentTurn(): TurnPhase {
+        // Placeholder-корень: реальное событие TURN_BEGAN создаётся
+        // единственный раз через BEGIN_TURN intent и заменяет корень фазы.
+        const builder = new ExecutionBuilder({
+            type: 'ACTION_APPLIED',
+            action: { type: 'END_TURN', entityId: 'environment' },
+        });
+        const turnBeganNode = executeIntent(this.state, { type: 'BEGIN_TURN', side: 'environment' }, builder, builder.root);
+        const root = turnBeganNode ?? builder.root;
+        if (turnBeganNode) {
+            turnBeganNode.parent = null;
+        }
+
+        const entities = Array.from(this.state.entities.values()).sort((a, b) => a.id.localeCompare(b.id));
+        for (const entity of entities) {
+            if (!('statusEffects' in entity)) continue;
+            if (isActor(entity)) continue;
+            if ('isAlive' in entity && entity.isAlive === false) continue;
+
+            const intents = tickEntityStatusEffects(entity, 'environment');
+            for (const intent of intents) {
+                executeIntent(this.state, intent, builder, root);
+            }
+        }
+
+        return { side: 'environment', actions: [root] };
     }
 
     /**

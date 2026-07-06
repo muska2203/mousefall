@@ -189,6 +189,7 @@ export interface ComponentsGameFieldTranslations {
   neutralsPhaseLabel: string;
   statusTickPhaseLabel: string;
   roundRecoveryPhaseLabel: string;
+  environmentPhaseLabel: string;
   skipTurnHoverLabel: string;
   gameFieldAriaLabel: string;
 }

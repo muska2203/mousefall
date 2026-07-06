@@ -144,8 +144,8 @@ export function buildAnimationTree(result: SimulationResult, state: GameState): 
 
     // Ходы не-игроковских фракций разбиваем на подфазы по актёрам, чтобы
     // акторы ходили последовательно друг за другом, а не параллельно.
-    // Служебные фазы ('status_tick', 'round_recovery') идут как обычные фазы.
-    if (phase.side !== 'player' && phase.side !== 'status_tick' && phase.side !== 'round_recovery') {
+    // Служебные фазы ('status_tick', 'round_recovery', 'environment') идут как обычные фазы.
+    if (phase.side !== 'player' && phase.side !== 'status_tick' && phase.side !== 'round_recovery' && phase.side !== 'environment') {
       const subPhases = splitByActor(chainedNodes);
       for (const nodes of subPhases) {
         phases.push({ side: phase.side, nodes, sequential: true });

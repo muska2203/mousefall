@@ -28,7 +28,7 @@ export function extractEvents(result: SimulationResult): GameEvent[] {
 }
 
 function walkExecutionTree(node: ExecutionNode, out: GameEvent[], side: TurnSide): void {
-  if (side === 'player' || side === 'status_tick' || isEventRelevantToPlayer(node.event)) {
+  if (side === 'player' || side === 'status_tick' || side === 'environment' || isEventRelevantToPlayer(node.event)) {
     out.push(node.event);
   }
   for (const child of node.children) {

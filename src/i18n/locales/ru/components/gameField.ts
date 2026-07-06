@@ -9,6 +9,7 @@ export const ruGameField = {
   neutralsPhaseLabel: 'Ход нейтралов',
   statusTickPhaseLabel: 'Тик статусов',
   roundRecoveryPhaseLabel: 'Восстановление раунда',
+  environmentPhaseLabel: 'Ход окружения',
   skipTurnHoverLabel: 'Пропустить ход',
   gameFieldAriaLabel: 'Игровое поле',
 } as const satisfies ComponentsGameFieldTranslations;

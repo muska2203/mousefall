@@ -6,7 +6,7 @@
 
 ## Обзор
 
-Ход игры разбит на раунды. Каждый раунд состоит из фаз фракций в фиксированном порядке и завершается фазой восстановления.
+Ход игры разбит на раунды. Каждый раунд состоит из фаз фракций в фиксированном порядке, затем идёт ход окружения и завершается фазой восстановления.
 
 Публичный API для управления ходом:
 
@@ -42,6 +42,9 @@ faction-setup 'neutrals'
     │
     ▼
 actor-turn 'neutral_1' → END_TURN
+    │
+    ▼
+environment-turn              ← тик статусов и прочие действия не-акторов
     │
     ▼
 round-recovery                ← cleanup dead entities, сброс actorsDoneThisRound
@@ -85,12 +88,14 @@ type TurnState =
   | { phase: 'idle' }
   | { phase: 'faction-setup'; factionId: FactionId }
   | { phase: 'actor-turn'; factionId: FactionId; actorId: EntityId }
+  | { phase: 'environment-turn' }
   | { phase: 'round-recovery' };
 ```
 
 - `idle` — начальное состояние до первого вызова `step()`.
 - `faction-setup` — в начале хода фракции: тикают статусы, восстанавливается AP, тикают кулдауны.
 - `actor-turn` — текущий актор может совершать действия.
+- `environment-turn` — ход окружения: действия не-акторов (тик статусов дверей, ловушек и т.п.).
 - `round-recovery` — конец раунда: удаление мёртвых сущностей и сброс флагов.
 
 ### actorsDoneThisRound
@@ -184,6 +189,16 @@ switch (turnState.phase)
 2. Если текущий актор — игрок — возвращается пустой результат с `hasMoreSteps: false`. Ввод продолжается через `dispatch()`.
 3. Иначе выполняется `runAiAction(actor)`.
 
+### environment-turn
+
+1. Выполняется `runEnvironmentTurn()`:
+   - `BEGIN_TURN { side: 'environment' }` — устанавливает `state.turn.activeSide`, порождает событие `TURN_BEGAN`;
+   - для каждой живой не-акторской сущности со статусами выполняется `TICK_STATUS_EFFECTS` с `phase: 'environment'`.
+2. `turnState` переводится в `round-recovery`.
+3. Возвращается фаза с `hasMoreSteps: true`.
+
+> **Важно:** `environment-turn` не увеличивает счётчик раунда и не сбрасывает `actorsDoneThisRound`.
+
 ### round-recovery
 
 1. Выполняется `runRoundRecovery()`:
@@ -214,6 +229,14 @@ switch (turnState.phase)
 
 - **Игрок:** каждое действие — отдельная фаза. Игрок сам решает, когда вызвать `END_TURN` (клавиша Space) или дождаться автоматического `END_TURN` при `ap <= 0`.
 - **AI:** `runAiAction` вызывает `strategy.decideAction` **один раз** за `step()`. Стратегия возвращает одно действие (`MOVE`, `ATTACK`, `USE_ABILITY`, `END_TURN` и т.п.). Если решение — `END_TURN`, актор помечается закончившим ход.
+
+### environment-turn
+
+| Событие | Описание |
+|---------|----------|
+| `TURN_BEGAN` | Начало хода окружения. |
+| `BEGIN_TURN` | Установка `activeSide` в `'environment'`. |
+| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых не-акторских сущностей. Intent несёт `phase: 'environment'`. |
 
 ### round-recovery
 
@@ -397,6 +420,12 @@ actor-turn AI → step() → runAiAction
 ...
     │
     ▼
+environment-turn
+  ┌─ TURN_BEGAN
+  ├─ BEGIN_TURN
+  └─ TICK_STATUS_EFFECTS          ← для не-акторов
+    │
+    ▼
 round-recovery
   ┌─ CLEANUP_DEAD_ENTITIES
     │
@@ -422,4 +451,5 @@ actor-turn 'player' — ожидание ввода
 | Восстановление AP | `faction-setup` | В начале хода фракции. |
 | Тик кулдаунов | `faction-setup` | В начале хода фракции. |
 | Удаление мёртвых сущностей | `round-recovery` | В конце раунда. |
+| Тик статусов не-акторов | `environment-turn` | После всех фракций, перед `round-recovery`. |
 | Увеличение номера раунда | `faction-setup 'player'` | В `BEGIN_TURN` фракции `player`. |

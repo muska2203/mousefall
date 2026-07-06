@@ -124,6 +124,23 @@ describe('burning status effect', () => {
     });
     expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
+
+  it('damages door when burning ticks in environment phase', () => {
+    const state = makeGameState();
+    const door = makeDoor({ x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
+    state.entities.set(door.id, door);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [] });
+    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id, phase: 'environment' }, builder, builder.root);
+
+    const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');
+    expect(damagedEvents).toHaveLength(1);
+    expect(damagedEvents[0]).toMatchObject({
+      targetId: door.id,
+      damageType: 'fire',
+    });
+    expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
+  });
 });
 
 function collectEvents(node: any): any[] {
