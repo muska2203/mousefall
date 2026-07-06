@@ -37,7 +37,7 @@ utils/        → (ничего — чистые функции)
 - **Headless** — без браузерных API, без React, без PixiJS, без DOM.
 - **Детерминированный** — одинаковое состояние + одинаковые действия = одинаковый результат.
 - **Тестируется в Node.js** — все тесты работают без браузера.
-- Использует seedable PRNG (`utils/rng.ts`) — никогда `Math.random()`.
+- Использует seeded PRNG (`utils/rng.ts`) для генерации мира и runtime random (`utils/random.ts`) для игровой логики. Никакого `Math.random()` напрямую.
 - Состояние мутируется напрямую внутри функций симуляции.
 - Функции возвращают дерево `GameEvent` через `ExecutionBuilder`, описывая, что произошло.
 - **Публичный API:** `dispatch(action)`, `step()`, `preview(action)`, `getState()`, `isPlayerTurn()`, `generateMap(params)`, `regenerateMap()`, `getActionCost(action)`, `getPlayerStats()`, `setDebugEnabled(enabled)`, а также query-методы способностей, pathfinding'а и взаимодействий. Полный интерфейс — `src/simulation/types.ts` (`Simulation`).

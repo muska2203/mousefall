@@ -27,9 +27,9 @@ export const postDeathLootReaction: WorldReaction = (
     const lootTable = template.lootTable;
     if (!lootTable || lootTable.length === 0) return [];
 
-    const count = rollLootDropCount(template.lootDropTable ?? [], state.rng);
+    const count = rollLootDropCount(template.lootDropTable ?? []);
 
-    const drops = calculateLootDrops(lootTable, count, state.rng);
+    const drops = calculateLootDrops(lootTable, count);
 
     return drops.map(templateId => ({
         type: 'SPAWN_ITEM' as const,

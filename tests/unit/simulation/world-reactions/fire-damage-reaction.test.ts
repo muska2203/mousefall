@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireDamageReaction } from '../../../../src/simulation/systems/world-reactions/fire-damage-reaction';
 import { makePlayer, makeEnemy, makeStateWithPlayerAndEntity, makeGameState } from '../../../fixtures/gameState';
-import { createRNG } from '../../../../src/utils/rng';
+import * as randomModule from '../../../../src/utils/random';
 
 function makeEntityDamagedEvent(targetId: string, damageType: import('../../../../src/simulation/core-types').DamageType) {
   return {
@@ -14,10 +14,19 @@ function makeEntityDamagedEvent(targetId: string, damageType: import('../../../.
 }
 
 describe('fireDamageReaction', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('при огненном уроне с шансом 10% возвращает APPLY_STATUS с горением на 2 хода', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+
     const enemy = makeEnemy();
     const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-    state.rng = createRNG(7); // seed 7 даёт true для rngChance(10)
 
     const event = makeEntityDamagedEvent(enemy.id, 'fire');
     const result = fireDamageReaction(state, event, null as any, null as any);
@@ -36,9 +45,10 @@ describe('fireDamageReaction', () => {
   });
 
   it('при огненном уроне без шанса возвращает пустой массив', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(false);
+
     const enemy = makeEnemy();
     const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-    state.rng = createRNG(6); // seed 6 даёт false для rngChance(10)
 
     const event = makeEntityDamagedEvent(enemy.id, 'fire');
     const result = fireDamageReaction(state, event, null as any, null as any);
@@ -47,21 +57,24 @@ describe('fireDamageReaction', () => {
   });
 
   it('при не-огненном уроне возвращает пустой массив', () => {
+    const spy = vi.spyOn(randomModule, 'randomChance');
+
     const enemy = makeEnemy();
     const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-    state.rng = createRNG(7); // шанс сработал бы для огня
 
     const event = makeEntityDamagedEvent(enemy.id, 'blunt');
     const result = fireDamageReaction(state, event, null as any, null as any);
 
     expect(result).toEqual([]);
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('не накладывает горение, если оно уже есть с длительностью >= 2', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+
     const enemy = makeEnemy();
     enemy.statusEffects = [{ type: 'burning', duration: 3, value: 0, statModifiers: null }];
     const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-    state.rng = createRNG(7); // шанс сработал
 
     const event = makeEntityDamagedEvent(enemy.id, 'fire');
     const result = fireDamageReaction(state, event, null as any, null as any);
@@ -70,10 +83,11 @@ describe('fireDamageReaction', () => {
   });
 
   it('продлевает горение до 2 ходов, если текущая длительность меньше 2', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+
     const enemy = makeEnemy();
     enemy.statusEffects = [{ type: 'burning', duration: 1, value: 0, statModifiers: null }];
     const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-    state.rng = createRNG(7); // шанс сработал
 
     const event = makeEntityDamagedEvent(enemy.id, 'fire');
     const result = fireDamageReaction(state, event, null as any, null as any);
@@ -91,7 +105,6 @@ describe('fireDamageReaction', () => {
 
   it('возвращает пустой массив, если цель не найдена', () => {
     const state = makeGameState();
-    state.rng = createRNG(7);
 
     const event = makeEntityDamagedEvent('missing_entity', 'fire');
     const result = fireDamageReaction(state, event, null as any, null as any);

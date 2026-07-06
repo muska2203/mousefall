@@ -9,7 +9,7 @@ import { GameSimulation } from '../../../../src/simulation/simulation';
 import { createTestSimulation } from '../../../helpers/simulation';
 import { DefaultActionPointCostResolver } from '../../../../src/simulation/systems/action-cost-resolver';
 import type { Entity, EntityId } from '../../../../src/simulation/types';
-import * as rngModule from '../../../../src/utils/rng';
+import * as randomModule from '../../../../src/utils/random';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -134,7 +134,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('incoming damage goes through and counterattack triggers on 50% chance', () => {
-    vi.spyOn(rngModule, 'rngChance').mockReturnValue(true);
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
 
     const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, ap: 2, maxAp: 2, baseStats: { str: 5, dex: 0, int: 0, vit: 0 } });
     const enemy = makeEnemy({
@@ -169,7 +169,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('no counterattack damage when 50% chance fails', () => {
-    vi.spyOn(rngModule, 'rngChance').mockReturnValue(false);
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(false);
 
     const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, ap: 2, maxAp: 2, baseStats: { str: 5, dex: 0, int: 0, vit: 0 } });
     const enemy = makeEnemy({
@@ -201,7 +201,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('player counterattacks enemy when enemy attacks player with counterattack active', () => {
-    vi.spyOn(rngModule, 'rngChance').mockReturnValue(true);
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
 
     const player = makePlayer({
       x: 5,
@@ -248,7 +248,7 @@ describe('counterattack combat behavior', () => {
       stairs: new Map(),
     });
 
-    vi.spyOn(rngModule, 'rngChance').mockReturnValue(true);
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
 
     const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, ap: 3, maxAp: 3, abilities: [{ templateId: 'magic_slap', source: 'innate', level: 1, currentCooldown: 0 }] });
     const enemy = makeEnemy({

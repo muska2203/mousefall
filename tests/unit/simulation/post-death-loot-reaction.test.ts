@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { postDeathLootReaction } from '../../../src/simulation/systems/world-reactions/post-death-loot-reaction';
 import { makeGameState, makePlayer, makeStateWithPlayerAndEntity, makeEnemy } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
-import { createRNG } from '../../../src/utils/rng';
 import type { EntityTemplate } from '../../../src/content/schemas';
 
 function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTemplate {
@@ -128,7 +127,6 @@ describe('postDeathLootReaction', () => {
 
         const enemy = makeEnemy({ templateId: 'multi_loot_enemy' });
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-        state.rng = createRNG(12345);
         const event = { type: 'ENTITY_DIED' as const, entityId: enemy.id, position: { x: enemy.x, y: enemy.y } };
 
         const result = postDeathLootReaction(state, event, null as any, null as any);

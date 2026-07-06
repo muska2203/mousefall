@@ -7,7 +7,7 @@ import { rollItemAbility } from './item-ability-roll';
  * Фабрика создания экземпляра предмета в инвентаре.
  *
  * Генерирует уникальный instanceId через nextEntityId и роллит скилл из abilityPool.
- * Детерминирована благодаря seeded RNG в GameState.
+ * Ролл скилла использует runtime random и не зависит от seed мира.
  */
 export function createInventoryItem(
   state: GameState,
@@ -19,7 +19,7 @@ export function createInventoryItem(
     level: 1,
   }));
 
-  const rolled = rollItemAbility(template, state.rng);
+  const rolled = rollItemAbility(template);
   if (rolled) {
     grantedAbilities.push(rolled);
   }

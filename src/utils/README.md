@@ -12,7 +12,8 @@ Shared utility functions and constants used across the codebase. No game logic, 
 utils/
 ├── README.md
 ├── math.ts        # Grid math, distance, direction helpers
-├── rng.ts         # Seeded PRNG implementation (used by simulation)
+├── rng.ts         # Seeded PRNG implementation (used by map generation)
+├── random.ts      # Runtime random based on Math.random() (used by gameplay logic)
 └── constants.ts   # Game-wide constants (tile size, grid limits, etc.)
 ```
 
@@ -53,9 +54,9 @@ function findPath(
 
 ## `rng.ts`
 
-Seeded pseudo-random number generator. **This is the only source of randomness in the simulation.**
+Seeded pseudo-random number generator. **This is the source of seed determinism for map generation and anything that must be reproducible from a seed.**
 
-Uses a simple, fast, well-tested algorithm (Mulberry32 or xoshiro128**).
+Uses a simple, fast, well-tested algorithm (Mulberry32).
 
 ```typescript
 type RNGState = {
@@ -88,6 +89,38 @@ function rngChance(rng: RNGState, percent: number): boolean
 ```
 
 **Critical:** `rng.state` is mutated on every call. The RNG state is part of `GameState` and is serialized with saves. This ensures determinism across sessions.
+
+Use `rng.ts` only for:
+- Map generation (`systems/mapgen.ts`, `systems/map-generation/*`)
+- Floor transition snapshots (`systems/floor-transition-planner.ts`)
+
+## `random.ts`
+
+Runtime random based on `Math.random()`. **Use this for gameplay events that should not affect seed reproducibility.**
+
+```typescript
+// Random float in [0, 1)
+function randomFloat(): number
+
+// Random integer in [min, max] inclusive
+function randomInt(min: number, max: number): number
+
+// Pick a random element from an array
+function randomPick<T>(array: T[]): T
+
+// Shuffle an array in place (Fisher-Yates)
+function randomShuffle<T>(array: T[]): T[]
+
+// Roll a percentage chance (0-100)
+function randomChance(percent: number): boolean
+```
+
+Use `random.ts` for:
+- Combat RNG (counterattack chance, status proc chance)
+- Loot drops
+- Ability rolls on items
+
+**Do not use `random.ts` for map generation or anything that must be seed-deterministic.**
 
 ---
 

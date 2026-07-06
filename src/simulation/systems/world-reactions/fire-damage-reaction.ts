@@ -1,6 +1,6 @@
 import { WorldReaction } from './types';
 import { findEntity } from '@simulation/state';
-import { rngChance } from '@utils/rng';
+import { randomChance } from '@utils/random';
 
 /**
  * Реакция мира: огненный урон с шансом 10% вызывает горение на 2 хода
@@ -10,7 +10,7 @@ export const fireDamageReaction: WorldReaction = (state, event, _builder, _paren
   if (event.type !== 'ENTITY_DAMAGED') return [];
   if (event.damageType !== 'fire') return [];
 
-  if (!rngChance(state.rng, 10)) return [];
+  if (!randomChance(10)) return [];
 
   const target = findEntity(state, event.targetId);
   if (!target || !('statusEffects' in target)) return [];

@@ -4,7 +4,7 @@ import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 import { getEffectiveDamageEntries } from "@simulation/systems/stats/effective-stats.ts";
-import { rngChance } from "@utils/rng.ts";
+import { randomChance } from "@utils/random.ts";
 
 // ─────────────────────────────────────────────
 // Контекст атаки (устраняет дублирование поиска)
@@ -78,7 +78,7 @@ export const attackEntity: ActionHandler = {
     // Если у цели есть контратака — с шансом 50% она бьёт в ответ.
     // Входящий урон проходит как обычно.
     if (isCombatEntity(ctx.target) && hasCounterattack(ctx.target)) {
-      if (rngChance(state.rng, 50)) {
+      if (randomChance(50)) {
         intents.push({
           type: 'COUNTER_ATTACK',
           counterAttackerId: ctx.target.id,

@@ -371,7 +371,9 @@ UI Layer
 3. **Simulation не вызывает UI:** Simulation только мутирует state и возвращает `SimulationResult`
 4. **Renderer read-only:** Renderer никогда не пишет в game state
 5. **Content — только на load time:** Нет runtime-модификации контента
-6. **RNG — только через state:** Вся случайность из `state.rng`
+6. **RNG:**
+   - Генерация мира использует только `state.rng` (seeded PRNG).
+   - Игровые runtime-события используют `utils/random.ts` (`Math.random()`) и не мутируют `state.rng`.
 
 ---
 
@@ -387,8 +389,8 @@ UI Layer
 // ❌ FORBIDDEN: Simulation вызывает UI
 // Simulation не использует browser API и не вызывает рендеринг
 
-// ❌ FORBIDDEN: Math.random() в Simulation
-// Только seeded RNG из state.rng
+// ❌ FORBIDDEN: Прямой Math.random() в Simulation
+// Используй utils/rng.ts для mapgen и utils/random.ts для игровой логики
 
 // ❌ FORBIDDEN: Presentation импортирует UI
 // Presentation не зависит от способа отрисовки
@@ -399,6 +401,9 @@ UI Layer
 // ✅ CORRECT: Presentation вызывает Simulation
 // Presentation → simulation.dispatch(action)
 
-// ✅ CORRECT: Simulation использует seeded RNG
+// ✅ CORRECT: Генерация мира использует seeded RNG
 // rngInt(state.rng, 1, 10)
+
+// ✅ CORRECT: Игровые события используют runtime random
+// randomChance(50)
 ```

@@ -107,7 +107,7 @@ UI не знает о существовании Simulation. Content не зна
 - Обращаться к DOM
 - Делать сетевые запросы
 - Импортировать из `src/presentation/` или `src/ui/`
-- Использовать `Math.random()` (только seeded RNG)
+- Использовать `Math.random()` напрямую (только через `utils/random.ts` для runtime-игровой логики; генерация мира использует seeded RNG из `utils/rng.ts`)
 
 **Критическое правило:**
 > Любое прямое взаимодействие с игровым миром (вызов `dispatch`, чтение `getState`) из слоёв **UI** или **Content** считается архитектурной ошибкой.
@@ -333,11 +333,14 @@ UI Layer исполняет анимацию атаки.
 
 **Tradeoff:** Сложнее добавить replay/undo позже, но сейчас значительно проще.
 
-### 4. Seeded RNG in Simulation State
+### 4. RNG Separation
 
-Вся случайность через seeded PRNG, хранимый в `GameState`.
+Слой Simulation использует два источника случайности:
 
-**Tradeoff:** Чуть сложнее `Math.random()`, но критично для детерминизма.
+- **Seeded RNG (`utils/rng.ts`, `GameState.rng`)** — для генерации мира (`mapgen`, `map-generation/*`, `floor-transition-planner`). Этот PRNG хранит состояние в `GameState` и сериализуется вместе с сохранениями, обеспечивая seed-детерминизм.
+- **Runtime random (`utils/random.ts`, `Math.random()`)** — для игровых событий, которые не должны влиять на seed-репродуцируемость: контратака, шанс горения, выпадение лута, ролл скиллов предметов.
+
+**Tradeoff:** Два источника случайности вместо одного, но зато seed гарантирует только геометрию уровня и начальный спавн, а игровые события могут варьироваться между забегами с одним seed.
 
 ### 5. JSON Content with Runtime Validation
 
@@ -358,11 +361,12 @@ Presentation потребляет дерево `ExecutionNode` и превращ
 
 ## Determinism Contract
 
-Simulation layer **должна** быть детерминированной:
-- Одно начальное состояние + одна последовательность действий = один результат
-- Вся случайность только через seeded RNG
-- Нет `Date.now()`, `Math.random()`, async-операций в Simulation
-- Порядок обработки сущностей консистентен (сортировка по ID)
+Simulation layer **детерминирована относительно геометрии мира и начального спавна**:
+- Один seed + одинаковые параметры = одинаковая карта и начальные позиции сущностей.
+- Генерация мира использует только seeded RNG (`GameState.rng`).
+- Игровые runtime-события (контратака, горение, лут, ролл скиллов предметов) используют runtime random (`utils/random.ts`) и не гарантируют повторяемость между забегами.
+- Нет `Date.now()`, прямого `Math.random()`, async-операций в Simulation.
+- Порядок обработки сущностей консистентен (сортировка по ID).
 
 ---
 
@@ -425,7 +429,7 @@ public/content/entities/cat_small.json  # Content: lowercase
 - **Action/Intent/Event:** система полностью реализована (`systems/actions/`, `systems/intents/`, `systems/world-reactions/`)
 - **Content:** загрузка и валидация JSON через Zod (`content/loader.ts`, `content/registry.ts`)
 - **Map generation:** процедурная генерация подземелий (`systems/mapgen.ts`)
-- **RNG / Math:** seeded PRNG, сеточная математика, pathfinding (`utils/rng.ts`, `utils/math.ts`)
+- **RNG / Math:** seeded PRNG (`utils/rng.ts`), runtime random (`utils/random.ts`), сеточная математика, pathfinding (`utils/math.ts`)
 - **Presentation:** полностью реализован (`gameSession.ts`, `animation/`, `logBuilder.ts`, `types.ts`)
 - **UI Layer:** полностью реализован (`screens/`, `components/`, `input/`, `styles/`)
 - **Renderer (PixiJS):** полностью реализован (`ui/renderer/` — WorldRenderer, TileRenderer, EntityRenderer, FogRenderer и др.)

@@ -9,7 +9,8 @@ import { getItemAbilityEntries } from './ability-grant';
  * Создаёт стартовое снаряжение игрока и помещает его в инвентарь.
  *
  * Вызывается ТОЛЬКО из GameSimulation.createNewGame, где есть GameState.
- * Детерминирован: использует state.rng и nextEntityId.
+ * Геометрия уровня остаётся seed-детерминированной, а вот ролл скиллов
+ * предметов использует runtime random и не гарантирует повторяемость.
  * При авто-экипировке также добавляет скилл предмета и equipModifiers.
  */
 export function createStartingEquipment(

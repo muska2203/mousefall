@@ -1,16 +1,15 @@
 import type { ItemTemplate } from '@content/schemas';
-import type { RNGState } from '@simulation/types';
-import { rngFloat } from '@utils/rng';
+import { randomFloat } from '@utils/random';
 
 /**
- * Роллит скилл из abilityPool предмета с использованием seeded RNG.
+ * Роллит скилл из abilityPool предмета с использованием runtime random.
  *
- * Детерминирован: одинаковый seed + одинаковое состояние RNG = одинаковый результат.
+ * Результат не зависит от seed мира: одинаковый предмет в одинаковой геометрии
+ * уровня может получить разные скиллы между забегами.
  * Веса entries суммируются, roll нормализуется и выбирается entry по весу.
  */
 export function rollItemAbility(
   template: ItemTemplate,
-  rng: RNGState,
 ): { templateId: string; level: number } | null {
   const pool = template.abilityPool;
   if (!pool || pool.length === 0) {
@@ -18,7 +17,7 @@ export function rollItemAbility(
   }
 
   const totalWeight = pool.reduce((sum, entry) => sum + entry.weight, 0);
-  let roll = rngFloat(rng) * totalWeight;
+  let roll = randomFloat() * totalWeight;
 
   for (const entry of pool) {
     roll -= entry.weight;
