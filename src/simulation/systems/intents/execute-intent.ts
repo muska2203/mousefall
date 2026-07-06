@@ -35,6 +35,7 @@ import {executeBeginTurnIntent} from "@simulation/systems/intents/begin-turn-int
 import {executeCleanupDeadEntitiesIntent} from "@simulation/systems/intents/cleanup-dead-entities-intent-executor.ts";
 import {executeApplyFogEventsIntent} from "@simulation/systems/intents/apply-fog-events-intent-executor.ts";
 import {executeNotifyAIIntent} from "@simulation/systems/intents/notify-ai-intent-executor.ts";
+import {executeCounterAttackIntent} from "@simulation/systems/intents/counter-attack-intent-executor.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
@@ -70,6 +71,7 @@ const intentExecutors = {
   CLEANUP_DEAD_ENTITIES: executeCleanupDeadEntitiesIntent,
   APPLY_FOG_EVENTS: executeApplyFogEventsIntent,
   NOTIFY_AI: executeNotifyAIIntent,
+  COUNTER_ATTACK: executeCounterAttackIntent,
 };
 
 export function executeIntent(

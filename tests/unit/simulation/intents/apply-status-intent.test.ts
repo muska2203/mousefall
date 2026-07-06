@@ -28,18 +28,18 @@ describe('apply-status-intent-executer', () => {
     expect(enemy.statusEffects[0]!.stacks).toBeUndefined();
   });
 
-  it('adds stacks and updates duration when parry is reapplied', () => {
-    const enemy = makeEnemy({ statusEffects: [makeStatus('parry', 1, 2)] });
+  it('updates duration when counterattack is reapplied without stacks', () => {
+    const enemy = makeEnemy({ statusEffects: [makeStatus('counterattack', 1)] });
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('parry', 1, 3) });
-    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('parry', 1, 3) }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('counterattack', 2) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('counterattack', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
-    expect(enemy.statusEffects[0]!.type).toBe('parry');
-    expect(enemy.statusEffects[0]!.duration).toBe(1);
-    expect(enemy.statusEffects[0]!.stacks).toBe(5);
+    expect(enemy.statusEffects[0]!.type).toBe('counterattack');
+    expect(enemy.statusEffects[0]!.duration).toBe(2);
+    expect(enemy.statusEffects[0]!.stacks).toBeUndefined();
   });
 
   it('adds new effect if type does not exist', () => {
@@ -47,10 +47,11 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('parry', 1, 3) });
-    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('parry', 1, 3) }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('counterattack', 2) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('counterattack', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
-    expect(enemy.statusEffects[0]!.stacks).toBe(3);
+    expect(enemy.statusEffects[0]!.type).toBe('counterattack');
+    expect(enemy.statusEffects[0]!.duration).toBe(2);
   });
 });

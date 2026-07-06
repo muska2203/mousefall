@@ -67,8 +67,8 @@ function isTilePassableForEnemy(state: GameState, pos: Position): boolean {
   if (blockers.length === 0) return true;
   if (blockers.length !== 1) return false;
 
-  const door = blockers[0];
-  return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+  const door = findDoorAt(state, pos.x, pos.y);
+  return door !== undefined && door.isAlive !== false && !door.isOpen;
 }
 
 /**

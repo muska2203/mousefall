@@ -70,9 +70,9 @@ export const enContentTexts: ContentTexts = {
       name: 'Magic Slap',
       description: 'Three quick magic strikes on selected targets.',
     },
-    parry: {
-      name: 'Parry',
-      description: 'Prepare a parry for the next turn. Spends current AP (up to 3) and grants one parry per AP spent.',
+    counterattack: {
+      name: 'Counterattack',
+      description: 'For 2 turns, gain a 50% chance to strike back against each direct attack. Costs 2 AP, cooldown 4 turns.',
     },
     swoop: {
       name: 'Swoop',

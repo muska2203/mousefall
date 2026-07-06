@@ -22,7 +22,7 @@ describe('burning tick reaction', () => {
     state.entities.set(enemy.id, enemy);
 
     const builder = makeBuilder(enemy.id);
-    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
+    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     const events = collectEvents(builder.root);
     const damageEvents = events.filter((e: any) => e.type === 'ENTITY_DAMAGED');
@@ -37,7 +37,7 @@ describe('burning tick reaction', () => {
     state.entities.set(enemy.id, enemy);
 
     const builder = makeBuilder(enemy.id);
-    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
+    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     const events = collectEvents(builder.root);
     const damageEvents = events.filter((e: any) => e.type === 'ENTITY_DAMAGED');
@@ -51,7 +51,7 @@ describe('burning tick reaction', () => {
     state.entities.set(enemy.id, enemy);
 
     const builder = makeBuilder(enemy.id);
-    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
+    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     const events = collectEvents(builder.root);
     expect(events.some((e: any) => e.type === 'ENTITY_DIED')).toBe(true);

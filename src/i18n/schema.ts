@@ -338,7 +338,7 @@ export interface SystemLogBuilderTranslations {
   enemyNameFallback: string;
   doorOpened: string;
   doorClosed: string;
-  parryTriggered: string;
+  counterattackTriggered: string;
   abilityPrepared: string;
   abilityPreparedCancelled: string;
 }
@@ -410,8 +410,8 @@ export interface SystemGameSessionTranslations {
   effectStunnedDesc: string;
   effectRegenerating: string;
   effectRegeneratingDesc: string;
-  effectParry: string;
-  effectParryDesc: string;
+  effectCounterattack: string;
+  effectCounterattackDesc: string;
   effectUnknown: string;
 }
 

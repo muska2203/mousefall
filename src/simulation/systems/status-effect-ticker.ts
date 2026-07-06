@@ -1,4 +1,4 @@
-import { GameState, Entity, StatusEffectHolder } from '@simulation/types';
+import { GameState, Entity, StatusEffectHolder, FactionId } from '@simulation/types';
 import { Intent } from '@simulation/systems/intents/types';
 
 /**
@@ -6,14 +6,14 @@ import { Intent } from '@simulation/systems/intents/types';
  * Не мутирует состояние — мутация происходит в IntentExecutor.
  * Если у сущности нет эффектов, подходящих под фазу, интент не возвращается.
  */
-export function tickEntityStatusEffects(entity: Entity, phase: 'player' | 'environment' = 'environment'): Intent[] {
+export function tickEntityStatusEffects(entity: Entity, phase: FactionId): Intent[] {
   if (!('statusEffects' in entity)) return [];
   const holder = entity as unknown as StatusEffectHolder;
   if (holder.statusEffects.length === 0) return [];
 
   // Оглушение тикает отдельно через интент SKIP_STUNNED_TURN, здесь его пропускаем.
   const hasTickableEffect = holder.statusEffects.some(
-    effect => effect.type !== 'stunned' && (effect.tickAfter ?? 'environment') === phase,
+    effect => effect.type !== 'stunned',
   );
   if (!hasTickableEffect) return [];
 
@@ -28,7 +28,7 @@ export function tickEntityStatusEffects(entity: Entity, phase: 'player' | 'envir
  */
 export function tickAllStatusEffects(
   state: GameState,
-  phase: 'player' | 'environment' = 'environment',
+  phase: FactionId,
 ): { entity: Entity; intents: Intent[] }[] {
   const results: { entity: Entity; intents: Intent[] }[] = [];
 

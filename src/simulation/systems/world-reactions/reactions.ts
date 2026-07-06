@@ -10,6 +10,7 @@ import {displacementMoveReaction} from "@simulation/systems/world-reactions/disp
 import {burningTickReaction} from "@simulation/systems/world-reactions/burning-tick-reaction.ts";
 import {floorTransitionReaction} from "@simulation/systems/world-reactions/floor-transition-reaction.ts";
 import {aiPerceptionReaction} from "@simulation/systems/world-reactions/ai-perception-reaction.ts";
+import {counterAttackReaction} from "@simulation/systems/world-reactions/counter-attack-reaction.ts";
 
 // ─────────────────────────────────────────────
 // Хранилище реакций
@@ -77,3 +78,4 @@ registerReaction('FLOOR_CHANGED', floorTransitionReaction, 0);
 registerReaction('ENTITY_MOVED', aiPerceptionReaction, 0);
 registerReaction('DOOR_OPENED', aiPerceptionReaction, 0);
 registerReaction('DOOR_CLOSED', aiPerceptionReaction, 0);
+registerReaction('COUNTER_ATTACK_APPLIED', counterAttackReaction, 0);

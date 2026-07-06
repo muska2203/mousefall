@@ -91,12 +91,9 @@ export function gameEventToLog(
       return { text: t('system.logBuilder.doorOpened'), variant: 'info' };
     case 'DOOR_CLOSED':
       return { text: t('system.logBuilder.doorClosed'), variant: 'info' };
-    case 'STATUS_STACKS_ADJUSTED': {
-      if (event.statusType === 'parry') {
-        const name = getEntityDisplayName(state, event.entityId, locale);
-        return { text: t('system.logBuilder.parryTriggered', { name }), variant: 'info' };
-      }
-      return null;
+    case 'COUNTER_ATTACK_APPLIED': {
+      const name = getEntityDisplayName(state, event.attackerId, locale);
+      return { text: t('system.logBuilder.counterattackTriggered', { name }), variant: 'info' };
     }
     case 'ABILITY_PREPARED': {
       const name = getEntityDisplayName(state, event.entityId, locale);

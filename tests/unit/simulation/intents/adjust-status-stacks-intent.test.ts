@@ -16,14 +16,14 @@ function makeStatus(type: StatusEffect['type'], duration: number, stacks?: numbe
 
 describe('adjust-status-stacks-intent-executer', () => {
   it('decreases stacks and emits STATUS_STACKS_ADJUSTED', () => {
-    const enemy = makeEnemy({ statusEffects: [makeStatus('parry', 1, 3)] });
+    const enemy = makeEnemy({ statusEffects: [makeStatus('counterattack', 1, 3)] });
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', entityId: enemy.id, statusType: 'parry', stacks: 2 });
+    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', entityId: enemy.id, statusType: 'counterattack', stacks: 2 });
     const node = executeAdjustStatusStacksIntent(
       state,
-      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'parry', delta: -1 },
+      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },
       builder,
       builder.root,
     );
@@ -32,18 +32,18 @@ describe('adjust-status-stacks-intent-executer', () => {
     expect(enemy.statusEffects[0]!.stacks).toBe(2);
     expect(node).not.toBeNull();
     expect(node!.event.type).toBe('STATUS_STACKS_ADJUSTED');
-    expect(node!.event).toMatchObject({ entityId: enemy.id, statusType: 'parry', stacks: 2 });
+    expect(node!.event).toMatchObject({ entityId: enemy.id, statusType: 'counterattack', stacks: 2 });
   });
 
   it('removes status and emits STATUS_REMOVED when stacks reach 0', () => {
-    const enemy = makeEnemy({ statusEffects: [makeStatus('parry', 1, 1)] });
+    const enemy = makeEnemy({ statusEffects: [makeStatus('counterattack', 1, 1)] });
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', entityId: enemy.id, effectType: 'parry' });
+    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', entityId: enemy.id, effectType: 'counterattack' });
     const node = executeAdjustStatusStacksIntent(
       state,
-      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'parry', delta: -1 },
+      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },
       builder,
       builder.root,
     );
@@ -51,18 +51,18 @@ describe('adjust-status-stacks-intent-executer', () => {
     expect(enemy.statusEffects).toHaveLength(0);
     expect(node).not.toBeNull();
     expect(node!.event.type).toBe('STATUS_REMOVED');
-    expect(node!.event).toMatchObject({ entityId: enemy.id, effectType: 'parry' });
+    expect(node!.event).toMatchObject({ entityId: enemy.id, effectType: 'counterattack' });
   });
 
   it('treats missing stacks as 1', () => {
-    const enemy = makeEnemy({ statusEffects: [{ type: 'parry', duration: 1, value: 0, statModifiers: null }] });
+    const enemy = makeEnemy({ statusEffects: [{ type: 'counterattack', duration: 1, value: 0, statModifiers: null }] });
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', entityId: enemy.id, effectType: 'parry' });
+    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', entityId: enemy.id, effectType: 'counterattack' });
     executeAdjustStatusStacksIntent(
       state,
-      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'parry', delta: -1 },
+      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },
       builder,
       builder.root,
     );
@@ -75,10 +75,10 @@ describe('adjust-status-stacks-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', entityId: enemy.id, statusType: 'parry', stacks: 0 });
+    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', entityId: enemy.id, statusType: 'counterattack', stacks: 0 });
     const node = executeAdjustStatusStacksIntent(
       state,
-      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'parry', delta: -1 },
+      { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },
       builder,
       builder.root,
     );

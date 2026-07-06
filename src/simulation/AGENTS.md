@@ -24,18 +24,22 @@
 | Добавить реакцию мира | `systems/world-reactions/` |
 | Изменить ход | `simulation.ts`, метод `dispatch` |
 | Изменить генерацию карт | `systems/mapgen.ts` (диспетчер) → `systems/map-generation/*-strategy.ts` |
-| Добавить тип события | `types.ts` (union `GameEvent`) |
+| Добавить тип события | `core-types.ts` (union `GameEvent`) |
 
 ---
 
 ## Публичный API Simulation
 
 - `dispatch(action)` — выполнить действие
+- `step()` — выполнить следующую системную фазу или одно действие AI
 - `preview(action)` — превью действия (для подсветки и проверки доступности)
 - `getActionCost(action)` — получить стоимость действия в AP
 - `getState()` — получить текущее состояние (`Readonly<GameState>`)
-- `generateMap()` — сгенерировать новую карту
+- `generateMap(params)` — сгенерировать новую карту
+- `regenerateMap()` — перегенерировать текущий этаж (debug)
 - `setDebugEnabled(enabled)` — включить/выключить debug-режим для чит-действий
+- `getPlayerStats()` — рассчитанные характеристики игрока
+- query-методы способностей, pathfinding'а и взаимодействий
 
 Также из `@simulation/simulation` реэкспортируются read-only хелперы запросов к состоянию:
 `findFirstAttackableEntityAt`, `findAllEntitiesAt`, `findStairsAt`.

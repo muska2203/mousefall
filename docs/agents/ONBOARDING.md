@@ -65,7 +65,7 @@ src/
       actions/         # Обработчики действий
       intents/         # Исполнители интентов
       world-reactions/ # Реакции мира на события
-    ai/                # (устаревший слой)
+    ai/                # AI-стратегии и вспомогательные утилиты
   presentation/        # Слой-оркестратор между UI и Simulation
   ui/                  # React, PixiJS, ввод, отрисовка, анимация
     animation/
@@ -85,7 +85,13 @@ public/
     entities/
       enemies/
       player/
+      doors/
+      stairs/
     items/
+      weapons/
+      armor/
+      amulet/
+      consumables/
     maps/
 
 tests/
@@ -106,14 +112,14 @@ tests/
 |--------|------|
 | Понять форму состояния игры | `src/simulation/types.ts` |
 | Добавить новую игровую систему | `src/simulation/systems/` + `src/simulation/types.ts` |
-| Добавить новый тип действия | `src/simulation/systems/actions/types.ts` |
-| Добавить новый тип события | `src/simulation/types.ts` (union `GameEvent`) |
+| Добавить новый тип действия | `src/simulation/core-types.ts` (union `GameAction`) |
+| Добавить новый тип события | `src/simulation/core-types.ts` (union `GameEvent`) |
 | Добавить контент (враг, предмет, карта) | `public/content/` + `src/content/loader.ts` |
 | Изменить генерацию карт | `src/simulation/systems/mapgen.ts` |
 | Добавить тест | `tests/unit/simulation/` или `tests/integration/` |
 | Изучить схемы контента | `src/content/schemas.ts` |
-| Понять поток хода | `src/simulation/simulation.ts` (`DefaultTestSimulation.dispatch`) |
-| Понять переход между этажами | `src/simulation/systems/world-reactions/stairs-reaction.ts` |
+| Понять поток хода | `src/simulation/simulation.ts` (`GameSimulation.dispatch` / `GameSimulation.step`) |
+| Понять переход между этажами | `src/simulation/systems/world-reactions/floor-transition-reaction.ts` |
 | Добавить или изменить перевод | `src/i18n/schema.ts` + `src/i18n/locales/` |
 | Добавить текст врага/предмета | `src/content/texts/{ru,en}.ts` |
 

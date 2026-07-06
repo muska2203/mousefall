@@ -14,7 +14,7 @@ const STATUS_DISPLAY_ORDER: Record<string, number> = {
   burning: 1,
   poisoned: 2,
   frozen: 3,
-  parry: 4,
+  counterattack: 4,
   regenerating: 5,
 };
 

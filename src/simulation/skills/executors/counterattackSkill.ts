@@ -3,21 +3,19 @@ import { Intent } from '@simulation/systems/intents/types';
 import { TargetMode } from '@simulation/core-types';
 import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { isActor } from '@simulation/state';
-import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 
 /**
- * Скилл "Парирование".
+ * Скилл "Контратака".
  *
  * Механика:
  * - Цель — сам кастер (self).
- * - При касте тратятся текущие AP кастера, но не более MAX_ABILITY_ALL_AP_COST.
- * - Накладывает статус parry на 1 ход, количество стаков = потраченным AP.
- * - Статус тикает в зависимости от стороны кастера:
- *   - игрок кастует → tickAfter: 'environment' (активен во время хода врагов);
- *   - враг кастует → tickAfter: 'player' (активен во время хода игрока).
+ * - Фиксированная стоимость 2 AP, кулдаун 4 хода.
+ * - Накладывает статус counterattack на 2 хода.
+ * - Статус бинарный (без стаков).
+ * - Статус тикает перед ходом фракции его носителя (duration = число тиков).
  */
-export const parrySkill: SkillExecutor = {
-  id: 'parry',
+export const counterattackSkill: SkillExecutor = {
+  id: 'counterattack',
 
   getTargetMode(): TargetMode {
     return { type: 'self' };
@@ -41,20 +39,15 @@ export const parrySkill: SkillExecutor = {
       return [];
     }
 
-    const stacks = Math.min(caster.ap, MAX_ABILITY_ALL_AP_COST);
-    const tickAfter = caster.type === 'player' ? 'environment' : 'player';
-
     return [
       {
         type: 'APPLY_STATUS',
         entityId: caster.id,
         status: {
-          type: 'parry',
-          duration: 1,
+          type: 'counterattack',
+          duration: 2,
           value: 0,
           statModifiers: null,
-          stacks,
-          tickAfter,
         },
       },
     ];

@@ -509,10 +509,7 @@ export class GameSimulation implements Simulation {
         const actors = this.getAliveActorsOfFactionSorted(factionId);
 
         for (const actor of actors) {
-            const intents = tickEntityStatusEffects(
-                actor,
-                factionId === 'player' ? 'player' : 'environment',
-            );
+            const intents = tickEntityStatusEffects(actor, factionId);
             for (const intent of intents) {
                 executeIntent(this.state, intent, builder, root);
             }

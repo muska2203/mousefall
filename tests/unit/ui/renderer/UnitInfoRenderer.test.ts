@@ -399,7 +399,7 @@ describe('UnitInfoRenderer', () => {
       {type: 'burning', duration: 2, value: 1, statModifiers: null},
       {type: 'poisoned', duration: 3, value: 2, statModifiers: null},
       {type: 'frozen', duration: 1, value: 0, statModifiers: null},
-      {type: 'parry', duration: 2, value: 0, statModifiers: null},
+      {type: 'counterattack', duration: 2, value: 0, statModifiers: null},
       {type: 'regenerating', duration: 5, value: 1, statModifiers: null},
     ];
     input.statusEffectsByEntity.set('player', effects);

@@ -41,20 +41,27 @@ public/content/
 │   │   ├── cat_small.json
 │   │   ├── cat_mid.json
 │   │   └── cat_big.json
-│   └── player/
-│       └── witcher.json
+│   ├── player/
+│   │   └── witcher.json
+│   ├── doors/
+│   │   └── wooden_door.json
+│   └── stairs/
+│       └── stone_stairs.json
 ├── items/
 │   ├── weapons/
 │   │   ├── sword.json
 │   │   └── dagger.json
 │   ├── armor/
+│   ├── amulet/
 │   └── consumables/
 │       ├── health_potion.json
 │       └── scroll_of_fireball.json
 ├── abilities/
-│   ├── slash.json
+│   ├── counterattack.json
+│   ├── dash.json
 │   ├── fireball.json
-│   └── heal.json
+│   ├── magic_slap.json
+│   └── swoop.json
 └── maps/
     ├── dungeon_params.json
     └── boss_room.json
@@ -70,14 +77,12 @@ public/content/
 
 ## Content Schemas (Zod)
 
-Схемы валидации определены в `src/simulation/schemas/`:
+Схемы валидации определены в `src/content/schemas.ts`:
 
-- **Entity Template** — `contentSchemas.ts`
-  - Поля: id, name, symbol, health, combat, ai, lootTable, xpReward
-- **Item Template** — `contentSchemas.ts`
-  - Поля: id, name, type, stackable, weapon/armor/consumable stats
-- **Map Parameters** — `contentSchemas.ts`
-  - Поля: id, width, height, min/max rooms, enemy/item density, pools
+- **Entity Template** — поля: id, symbol, health, combat, ai, lootTable, xpReward, interactionKind и др.
+- **Item Template** — поля: id, type, stackable, weapon/armor/consumable/amulet stats.
+- **Ability Template** — поля: id, targetMode, apCost, cooldown, skillExecutor и др.
+- **Map Parameters** — поля: id, width, height, min/max rooms, enemy/item density, pools.
 
 Все схемы используют Zod для runtime-валидации.
 
@@ -89,11 +94,12 @@ public/content/
 
 Реестр контента загружает все JSON-файлы при старте и предоставляет интерфейс lookup:
 
-- `loadContent()` — асинхронная загрузка всех JSON-файлов
+- `loadAllContent(fetchJson)` — асинхронная загрузка всех JSON-файлов
 - `getEntityTemplate(id)` — получить шаблон сущности
 - `getItemTemplate(id)` — получить шаблон предмета
+- `getAbilityTemplate(id)` — получить шаблон способности
 
-Реализация: `src/simulation/content/registry.ts`.
+Реализация: `src/content/registry.ts`.
 
 ---
 
@@ -103,7 +109,7 @@ public/content/
 Игровой клиент инициализируется
     │
     ▼
-Presentation Layer вызывает loadContent()
+UI entry (`src/main.tsx`) вызывает loadAllContent(browserFetchJson)
     │
     ├── fetch all JSON files
     ├── validate each with Zod schema
@@ -145,7 +151,7 @@ The content registry automatically discovers all JSON files in the content direc
 - Путь к полю
 - Сообщение об ошибке Zod
 
-Реализация валидации: `src/simulation/content/loader.ts`.
+Реализация валидации: `src/content/loader.ts`.
 
 ---
 

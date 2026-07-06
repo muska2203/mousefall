@@ -170,8 +170,7 @@ switch (turnState.phase)
 ### faction-setup
 
 1. Выполняется `runFactionSetup(factionId)`:
-   - `TURN_BEGAN { side: factionId }`;
-   - `BEGIN_TURN { side: factionId }` — устанавливает `state.turn.activeSide`, для `player` увеличивает `state.turn.round`;
+   - `BEGIN_TURN { side: factionId }` — устанавливает `state.turn.activeSide`, для `player` увеличивает `state.turn.round`, порождает событие `TURN_BEGAN`;
    - тикают статусы всех живых акторов фракции (`TICK_STATUS_EFFECTS`);
    - восстанавливается AP (`RESTORE_AP`);
    - тикают кулдауны способностей (`TICK_COOLDOWN`).
@@ -205,7 +204,7 @@ switch (turnState.phase)
 |---------|----------|
 | `TURN_BEGAN` | Начало фазы фракции. |
 | `BEGIN_TURN` | Установка `activeSide`, для `player` — увеличение `round`. |
-| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых акторов фракции. Для `player` — фаза `'player'`, для остальных — `'environment'`. |
+| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых акторов фракции. Intent несёт `phase: FactionId` (идентификатор фракции). |
 | `RESTORE_AP` | Восстановление AP для каждого актора фракции. |
 | `TICK_COOLDOWN` | Уменьшение кулдаунов способностей. |
 
@@ -353,7 +352,7 @@ Simulation → result (hasMoreSteps: false)
     ▼
 Presentation:
   - Обходит дерево ExecutionNode
-  - Формирует AnimationPlan:
+  - Формирует AnimationPhase[]:
       [ATTACK_ANIMATION, DAMAGE_NUMBER, DEATH_ANIMATION]
   - Формирует combatLog
   - Обновляет ViewModel

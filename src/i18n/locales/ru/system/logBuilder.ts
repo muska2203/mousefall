@@ -13,7 +13,7 @@ export const ruLogBuilder = {
   enemyNameFallback: 'Враг',
   doorOpened: 'Дверь открыта',
   doorClosed: 'Дверь закрыта',
-  parryTriggered: '{{name}} паррирует',
+  counterattackTriggered: '{{name}} контратакует',
   abilityPrepared: '{{name}} готовит {{ability}}',
   abilityPreparedCancelled: '{{name}} прервал подготовку',
 } as const satisfies SystemLogBuilderTranslations;

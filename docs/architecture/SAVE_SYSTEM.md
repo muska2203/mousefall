@@ -29,7 +29,7 @@
 
 Сохранение — это метаданные + полный снапшот `GameState`.
 
-Структура определена в `src/simulation/types.ts` (тип `GameState`) и в `src/simulation/schemas/saveSchemas.ts` (Zod-схема валидации).
+Структура определена в `src/simulation/types.ts` (тип `GameState`). Zod-схема сохранений и модули миграции отсутствуют.
 
 **Важно:** timestamp сохранения — только метаданные для отображения. Simulation не использует wall-clock time.
 
@@ -55,7 +55,7 @@
 - Состояние Presentation (автопуть, анимационные планы)
 - Content registry (перезагружается из JSON при старте)
 
-Реализация: `src/simulation/serialization.ts` (сейчас закомментирован, в процессе рефактора).
+Реализация: **не реализована** (модуль `src/simulation/serialization.ts` удалён).
 
 ---
 
@@ -81,7 +81,7 @@
 - Export: JSON → Blob → download
 - Import: File → text → deserialize
 
-Реализация хранения — в UI Layer, сериализация/десериализация — в Simulation Layer.
+Реализация хранения планируется в UI Layer, сериализация/десериализация — в Simulation Layer.
 
 ---
 
@@ -124,7 +124,7 @@ raw save → migrateIfNeeded → Zod validation → GameState
 - Старые сохранения всегда должны загружаться
 - Миграция применяется **до** Zod-валидации
 
-Реализация миграций: `src/simulation/saveMigration.ts` (если потребуется).
+Реализация миграций: отсутствует (если потребуется при появлении сохранений).
 
 ---
 

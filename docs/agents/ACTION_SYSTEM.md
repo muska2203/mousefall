@@ -19,7 +19,7 @@ Action → validate() → resolve() → Intent[]
 
 ## ExecutionBuilder и ExecutionNode
 
-События организованы в дерево `ExecutionNode` (см. `src/simulation/systems/actions/types.ts`).
+События организованы в дерево `ExecutionNode` (каноническое определение — `src/simulation/core-types.ts`, реэкспорт в `src/simulation/types.ts` и `src/simulation/systems/actions/types.ts`).
 
 `ExecutionBuilder` создаёт корневое событие (`ACTION_APPLIED`) и позволяет присоединять дочерние узлы при порождении интентов и реакций.
 
@@ -38,10 +38,21 @@ Action → validate() → resolve() → Intent[]
 
 ## IntentExecutor<T>
 
-Исполнители интентов (`systems/intents/`) мутируют состояние и создают узлы событий:
+Исполнители интентов (`systems/intents/`) мутируют состояние и создают узлы событий. Примеры:
 - **MOVE** — обновляет `entity.x / entity.y`, порождает `ENTITY_MOVED`
-- **DAMAGE** — обновляет `target.hp`, порождает `ENTITY_DAMAGED`
+- **JUMP** / **PUSH** / **TELEPORT_ENTITY** — альтернативные перемещения
+- **DAMAGE** — обменный урон, порождает `ENTITY_DAMAGED` / `ENTITY_MISSED`
+- **HEAL** — восстановление HP, порождает `ENTITY_HEALED`
 - **DIE** — удаляет врага или переводит игрока в `phase: 'dead'`, порождает `ENTITY_DIED` / `PLAYER_DIED`
+- **APPLY_STATUS** / **ADJUST_STATUS_STACKS** — наложение и стаки статусов
+- **EQUIP_ITEM** / **UNEQUIP_ITEM** — экипировка предметов
+- **PICK_UP** / **SPAWN_ITEM** / **REMOVE_ITEM** — предметы
+- **OPEN_DOOR** / **CLOSE_DOOR** — двери
+- **FLOOR_TRANSITION** — переход между этажами
+- **USE_ABILITY** / **COUNTER_ATTACK** / **NOTIFY_AI** — способности, встречные удары, AI-уведомления
+- Системные: **CONSUME_AP**, **RESTORE_AP**, **SET_COOLDOWN**, **TICK_COOLDOWN**, **TICK_STATUS_EFFECTS**, **BEGIN_TURN**, **CLEANUP_DEAD_ENTITIES** и др.
+
+Полный список — `src/simulation/core-types.ts` (union `Intent`).
 
 ---
 
@@ -83,7 +94,16 @@ WorldReaction на ENTITY_COLLIDED
 
 После выполнения интента `runWorldReactions` проверяет зарегистрированные реакции.
 
-Сейчас реализована только `deathReaction`: при `ENTITY_DAMAGED`, если `hp <= 0`, порождается интент `DIE`.
+Реестр реакций (`src/simulation/systems/world-reactions/reactions.ts`) содержит:
+- `deathReaction` — при `ENTITY_DAMAGED`, если `hp <= 0`, порождает `DIE`;
+- `postDeathLootReaction` — при `ENTITY_DIED` дропает лут;
+- `fireDamageReaction` — дополнительный урон от огня;
+- `collisionDamageReaction` / `collisionStunReaction` — урон и стан от столкновений;
+- `displacementMoveReaction` — добивание отталкиванием;
+- `burningTickReaction` — урон от горения при тике статуса;
+- `floorTransitionReaction` — обработка смены этажа;
+- `aiPerceptionReaction` — уведомляет AI о `ENTITY_MOVED`, `DOOR_OPENED`, `DOOR_CLOSED`;
+- `counterAttackReaction` — встречный удар после `COUNTER_ATTACK_APPLIED`.
 
 ---
 
@@ -116,7 +136,7 @@ ACTION_APPLIED (ATTACK)
 
 ## Чеклист: добавление нового Event
 
-- [ ] Тип добавлен в union `GameEvent` (`src/simulation/types.ts`)
+- [ ] Тип добавлен в union `GameEvent` (`src/simulation/core-types.ts`, реэкспорт в `src/simulation/types.ts`)
 - [ ] Эмиссия добавлена в соответствующий `IntentExecutor` (`src/simulation/systems/intents/`)
 - [ ] Обработка добавлена в Presentation (перевод в анимацию / combat log)
 - [ ] Визуализация добавлена в UI (если требуется новый тип анимации)

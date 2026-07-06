@@ -25,6 +25,7 @@ import { statusStacksAdjustedBuilder } from './builders/statusStacksAdjusted';
 import { abilityUsedBuilder } from './builders/abilityUsed';
 import { abilityPreparedBuilder } from './builders/abilityPrepared';
 import { abilityPreparedCancelledBuilder } from './builders/abilityPreparedCancelled';
+import { counterAttackAppliedBuilder } from './builders/counterAttackApplied';
 
 // Регистрация скилловых composers (side-effect).
 import './skills/fireball';
@@ -47,6 +48,7 @@ registerAnimationBuilder('STATUS_STACKS_ADJUSTED', statusStacksAdjustedBuilder);
 registerAnimationBuilder('ABILITY_USED', abilityUsedBuilder);
 registerAnimationBuilder('ABILITY_PREPARED', abilityPreparedBuilder);
 registerAnimationBuilder('ABILITY_PREPARED_CANCELLED', abilityPreparedCancelledBuilder);
+registerAnimationBuilder('COUNTER_ATTACK_APPLIED', counterAttackAppliedBuilder);
 
 // Примечание: FLOOR_CHANGED намеренно не регистрируется здесь.
 // Переход между этажами — это мгновенный сброс экрана: UI перестраивает

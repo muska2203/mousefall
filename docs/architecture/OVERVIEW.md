@@ -96,7 +96,7 @@ UI не знает о существовании Simulation. Content не зна
 
 **Публичный API:**
 См. интерфейс `Simulation` в `src/simulation/types.ts`.
-Методы: `dispatch`, `preview`, `getState`, `generateMap`.
+Методы: `dispatch`, `step`, `preview`, `getState`, `isPlayerTurn`, `generateMap`, `regenerateMap`, `getActionCost`, `getPlayerStats`, `setDebugEnabled`, а также query-методы способностей, pathfinding'а и взаимодействий.
 
 **Разрешено зависеть от:**
 - `src/content/` (реестр контента)
@@ -399,7 +399,7 @@ public/content/entities/cat_small.json  # Content: lowercase
 ### Новый тип врага
 1. Добавить JSON-определение в `public/content/entities/`
 2. Добавить AI-стратегию (код поведения) в `src/simulation/ai/`
-3. Добавить спрайт в `src/ui/renderer/sprites/`
+3. Добавить спрайт в `public/assets/` (регистрация через `src/ui/renderer/spriteRegistry.ts` / `utils/assetResolver.ts`)
 4. Не требует изменений в Presentation и UI (если нет новых анимаций)
 
 ### Новая игровая механика
@@ -426,14 +426,11 @@ public/content/entities/cat_small.json  # Content: lowercase
 - **Content:** загрузка и валидация JSON через Zod (`content/loader.ts`, `content/registry.ts`)
 - **Map generation:** процедурная генерация подземелий (`systems/mapgen.ts`)
 - **RNG / Math:** seeded PRNG, сеточная математика, pathfinding (`utils/rng.ts`, `utils/math.ts`)
-- **Presentation:** полностью реализован (`gameSession.ts`, `animationPlanner.ts`, `logBuilder.ts`, `types.ts`)
+- **Presentation:** полностью реализован (`gameSession.ts`, `animation/`, `logBuilder.ts`, `types.ts`)
 - **UI Layer:** полностью реализован (`screens/`, `components/`, `input/`, `styles/`)
 - **Renderer (PixiJS):** полностью реализован (`ui/renderer/` — WorldRenderer, TileRenderer, EntityRenderer, FogRenderer и др.)
 - **World Reactions:** динамическая регистрация с приоритетами (`registerReaction`)
 
-### В рефакторе / закомментировано
-- `src/simulation/serialization.ts` — полностью закомментирован; save/load заблокирован
-- `src/simulation/turn.ts` — устаревший turn flow (не используется, на удаление)
-
-### Запланировано / не реализовано
-- **Save/Load UI** — зависит от восстановления `serialization.ts`
+### Удалено / не реализовано
+- **Save/Load** — модули `src/simulation/serialization.ts` и `src/simulation/turn.ts` удалены; сохранения не реализованы.
+- **Save/Load UI** — отсутствует, блокируется отсутствием сериализации.

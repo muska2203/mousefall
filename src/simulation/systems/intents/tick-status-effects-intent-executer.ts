@@ -11,14 +11,10 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
   const entity = state.entities.get(intent.entityId) ?? state.player;
   if (!entity || !('statusEffects' in entity)) return null;
 
-  const intentPhase = intent.phase ?? 'environment';
   const holder = entity as unknown as { statusEffects: StatusEffect[] };
   const tickedEffectTypes: StatusEffectType[] = [];
 
   for (const effect of holder.statusEffects) {
-    const effectPhase = effect.tickAfter ?? 'environment';
-    if (effectPhase !== intentPhase) continue;
-
     switch (effect.type) {
       case 'burning': {
         tickedEffectTypes.push('burning');

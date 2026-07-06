@@ -1,8 +1,9 @@
-# Аудит stub-данных в UI
+# Аудит stub-данных в UI [АРХИВНОЕ]
 
-> **Дата:** 2026-05-22
+> **Статус:** устарело. Описанные заглушки уже заменены реальными данными из Presentation / Simulation / Content.
+> **Дата аудита:** 2026-05-22
 > **Область:** `src/ui/screens/`, `src/ui/components/`
-> **Цель:** выявить захардкоженные данные и заглушки, которые должны замениться реальными данными из Presentation / Simulation / Content.
+> **Причина архивации:** HUD (HeroPanel, EquipmentPanel, EffectsPanel, InventoryPanel, Hotbar),EndingScreen и прочие компоненты теперь получают `RenderInput` от Presentation. Файл сохранён только для истории.
 
 ---
 

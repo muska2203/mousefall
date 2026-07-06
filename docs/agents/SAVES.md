@@ -92,5 +92,6 @@ raw save → migrateIfNeeded → Zod validation → GameState
 
 ## Статус реализации
 
-- `src/simulation/serialization.ts` — сейчас полностью закомментирован; save/load заблокирован.
-- Save/load UI — зависит от восстановления `serialization.ts`.
+- **Save/load не реализован.** Модули `src/simulation/serialization.ts` и `src/simulation/turn.ts` удалены.
+- Save/load UI — отсутствует, блокируется отсутствием сериализации.
+- При изменении `GameState` потребуется заново спроектировать схему сохранения и миграции.

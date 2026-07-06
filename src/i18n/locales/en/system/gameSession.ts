@@ -20,7 +20,7 @@ export const enGameSession = {
   effectStunnedDesc: 'Skip turn',
   effectRegenerating: 'Regenerating',
   effectRegeneratingDesc: 'Restore {{value}} HP per turn',
-  effectParry: 'Parry',
-  effectParryDesc: '{{stacks}} parries, {{turns}} turns',
+  effectCounterattack: 'Counterattack',
+  effectCounterattackDesc: '50% chance to strike back, {{turns}} turns',
   effectUnknown: 'Unknown effect',
 } as const satisfies SystemGameSessionTranslations;

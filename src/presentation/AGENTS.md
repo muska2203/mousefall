@@ -44,7 +44,10 @@
 - `simulation.preview(action)`
 - `simulation.getState()`
 - `simulation.isPlayerTurn()`
-- `simulation.generateMap()`
+- `simulation.generateMap(params)` / `simulation.regenerateMap()`
+- `simulation.getActionCost(action)` / `simulation.getPlayerStats()`
+- query-методы способностей, pathfinding'а и взаимодействий
+- `simulation.setDebugEnabled(enabled)`
 
 ---
 

@@ -10,10 +10,13 @@
 public/content/           # JSON-шаблоны: только механика (статы, пулы, ID)
 ├── entities/
 │   ├── enemies/
-│   └── player/
+│   ├── player/
+│   ├── doors/
+│   └── stairs/
 ├── items/
 │   ├── weapons/
 │   ├── armor/
+│   ├── amulet/
 │   └── consumables/
 ├── abilities/
 └── maps/
@@ -40,7 +43,7 @@ src/content/texts/        # Пользовательские тексты: name,
 
 ## Реестр контента
 
-- `loadContent()` — асинхронная загрузка всех JSON-файлов
+- `loadAllContent(fetchJson)` — асинхронная загрузка всех JSON-файлов
 - `getEntityTemplate(id)` — получить шаблон сущности
 - `getItemTemplate(id)` — получить шаблон предмета
 

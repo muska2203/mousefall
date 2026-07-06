@@ -418,11 +418,11 @@ export class GameSession {
           return {icon: '💫', name: t('system.gameSession.effectStunned'), desc: t('system.gameSession.effectStunnedDesc'), turns: effect.duration};
         case 'regenerating':
           return {icon: '✨', name: t('system.gameSession.effectRegenerating'), desc: t('system.gameSession.effectRegeneratingDesc', { value: effect.value }), turns: effect.duration};
-        case 'parry':
+        case 'counterattack':
           return {
             icon: '⚔️',
-            name: t('system.gameSession.effectParry'),
-            desc: t('system.gameSession.effectParryDesc', { stacks: effect.stacks ?? 1, turns: effect.duration }),
+            name: t('system.gameSession.effectCounterattack'),
+            desc: t('system.gameSession.effectCounterattackDesc', { turns: effect.duration }),
             turns: effect.duration,
           };
         default:

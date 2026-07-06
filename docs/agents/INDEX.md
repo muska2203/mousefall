@@ -45,7 +45,7 @@
 
 | Функциональность | Файл |
 |------------------|------|
-| Автопуть: взаимодействия, атаки, визуализация | [`../plans/AUTO_PATH_INTERACTIONS_AND_VISUALS.md`](../plans/AUTO_PATH_INTERACTIONS_AND_VISUALS.md) |
+| Разделение игрового и визуального рандома | [`../plans/GAME_RANDOM_SEPARATION.md`](../plans/GAME_RANDOM_SEPARATION.md) |
 
 ---
 

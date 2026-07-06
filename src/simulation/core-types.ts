@@ -95,7 +95,7 @@ export type StatusEffectType =
   | 'frozen'
   | 'stunned'
   | 'regenerating'
-  | 'parry';
+  | 'counterattack';
 
 /** Тип урона. */
 export type DamageType =
@@ -120,8 +120,6 @@ export type StatusEffect = {
   /** Величина эффекта (урон в ход, лечение в ход и т.д.). */
   value: number;
   statModifiers: StatModifier[] | null;
-  /** Фаза, после которой эффект должен тикать. По умолчанию 'environment'. */
-  tickAfter?: 'player' | 'environment';
   /** Количество стаков (только для стакующихся статусов). */
   stacks?: number;
 };
@@ -323,7 +321,8 @@ export type Intent =
   | BeginTurnIntent
   | CleanupDeadEntitiesIntent
   | ApplyFogEventsIntent
-  | NotifyAIIntent;
+  | NotifyAIIntent
+  | CounterAttackIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -337,7 +336,7 @@ export type TeleportEntityIntent = { type: 'TELEPORT_ENTITY'; entityId: EntityId
 export type UpdateFogIntent = { type: 'UPDATE_FOG' };
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };
-export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId; phase?: 'player' | 'environment' };
+export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId; phase: FactionId };
 export type AdjustStatusStacksIntent = {
   type: 'ADJUST_STATUS_STACKS';
   entityId: EntityId;
@@ -363,6 +362,7 @@ export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; ab
 export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: TurnSide; round?: number };
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 export type NotifyAIIntent = { type: 'NOTIFY_AI'; entityId: EntityId; change: WorldChange };
+export type CounterAttackIntent = { type: 'COUNTER_ATTACK'; counterAttackerId: EntityId; targetId: EntityId; dx: number; dy: number };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -408,7 +408,8 @@ export type GameEvent =
   | ApRestoredEvent
   | CooldownTickedEvent
   | DeadEntitiesCleanedEvent
-  | AiNotifiedEvent;
+  | AiNotifiedEvent
+  | CounterAttackAppliedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -571,4 +572,12 @@ export type AiNotifiedEvent = {
   type: 'AI_NOTIFIED';
   entityId: EntityId;
   change: WorldChange;
+};
+
+export type CounterAttackAppliedEvent = {
+  type: 'COUNTER_ATTACK_APPLIED';
+  attackerId: EntityId;
+  targetId: EntityId;
+  dx: number;
+  dy: number;
 };

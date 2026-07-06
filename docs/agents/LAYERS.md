@@ -40,7 +40,7 @@ utils/        → (ничего — чистые функции)
 - Использует seedable PRNG (`utils/rng.ts`) — никогда `Math.random()`.
 - Состояние мутируется напрямую внутри функций симуляции.
 - Функции возвращают дерево `GameEvent` через `ExecutionBuilder`, описывая, что произошло.
-- **Публичный API:** `dispatch(action)`, `step()`, `preview(action)`, `getState()`, `isPlayerTurn()`, `generateMap()`.
+- **Публичный API:** `dispatch(action)`, `step()`, `preview(action)`, `getState()`, `isPlayerTurn()`, `generateMap(params)`, `regenerateMap()`, `getActionCost(action)`, `getPlayerStats()`, `setDebugEnabled(enabled)`, а также query-методы способностей, pathfinding'а и взаимодействий. Полный интерфейс — `src/simulation/types.ts` (`Simulation`).
 
 **Запрещено:** импортировать React, PixiJS, любые browser API. Обращаться к DOM. Импортировать из `presentation/` или `ui/`.
 
@@ -62,6 +62,11 @@ utils/        → (ничего — чистые функции)
 
 **Запрещено:** мутировать игровое состояние напрямую. Содержать игровую логику. Импортировать из `src/simulation/` напрямую.
 
+**Разрешено зависеть от:**
+- `src/presentation/` (получение ViewModel, отправка событий ввода)
+- `src/utils/constants.ts` (TILE_SIZE и визуальные константы)
+- `src/utils/animationConfig.ts`, `src/utils/tween.ts`, `src/utils/assetResolver.ts` (визуальные утилиты и ассеты)
+
 ---
 
 ## Запрещённые зависимости
@@ -80,7 +85,7 @@ utils/        → (ничего — чистые функции)
 ### Новый тип врага
 1. JSON-определение в `public/content/entities/`
 2. AI-стратегия (код поведения) в `src/simulation/ai/`
-3. Спрайт в `src/ui/renderer/sprites/`
+3. Спрайт в `public/assets/` (регистрация через `src/ui/renderer/spriteRegistry.ts` / `utils/assetResolver.ts`)
 4. Не требует изменений в Presentation и UI (если нет новых анимаций)
 
 ### Новая игровая механика
@@ -92,7 +97,7 @@ utils/        → (ничего — чистые функции)
 6. Обновить UI: визуализация новых анимаций при необходимости
 
 ### Новый UI-экран
-1. React-компонент в `src/ui/components/`
+1. React-компонент/экран в `src/ui/components/` или `src/ui/screens/`
 2. Сессионное состояние экрана в Presentation
 3. Обработка событий экрана в Presentation
 4. Не требует изменений в Simulation
