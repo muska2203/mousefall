@@ -23,6 +23,7 @@ import {HpChangeAnimationExecutor} from '@ui/animation/hpChangeExecutor';
 import {SkillAnimationExecutor} from '@ui/animation/skillExecutor';
 import {ProjectileAnimationExecutor} from '@ui/animation/projectileExecutor';
 import {ExplosionAnimationExecutor} from '@ui/animation/explosionExecutor';
+import {SlashArcExecutor} from '@ui/animation/slashArcExecutor';
 import {StatusBurstAnimationExecutor} from '@ui/animation/statusBurstExecutor';
 import {BounceAnimationExecutor} from '@ui/animation/bounceExecutor';
 import {TileShakeExecutor} from '@ui/animation/tileShakeExecutor';
@@ -144,6 +145,7 @@ export function GameField({
         new SkillAnimationExecutor(),
         new ProjectileAnimationExecutor(),
         new ExplosionAnimationExecutor(),
+        new SlashArcExecutor(),
         new StatusBurstAnimationExecutor(),
         new BounceAnimationExecutor(),
         new TileShakeExecutor(),

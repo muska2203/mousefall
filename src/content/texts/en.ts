@@ -58,6 +58,10 @@ export const enContentTexts: ContentTexts = {
     },
   },
   abilities: {
+    cleave: {
+      name: 'Cleave',
+      description: 'A sweeping melee slash that damages the target and adjacent enemies.',
+    },
     dash: {
       name: 'Dash',
       description: 'Dash 2 cells forward. Breaks through closed doors, pushes enemies, and may stun them.',

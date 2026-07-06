@@ -31,6 +31,7 @@ import { counterAttackAppliedBuilder } from './builders/counterAttackApplied';
 import './skills/fireball';
 import './skills/dash';
 import './skills/swoop';
+import './skills/cleave';
 
 registerAnimationBuilder('ENTITY_MOVED', entityMovedBuilder);
 registerAnimationBuilder('ACTION_APPLIED', actionAppliedBuilder);

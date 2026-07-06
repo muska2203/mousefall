@@ -6,6 +6,7 @@ import {describe, expect, it} from 'vitest';
 import {fireballComposer} from '../../../../src/presentation/animation/skills/fireball';
 import {dashComposer} from '../../../../src/presentation/animation/skills/dash';
 import {swoopComposer} from '../../../../src/presentation/animation/skills/swoop';
+import {cleaveComposer} from '../../../../src/presentation/animation/skills/cleave';
 import type {GameEvent, GameState} from '../../../../src/simulation/types';
 import type {AnimationNode} from '../../../../src/presentation/types';
 
@@ -159,5 +160,97 @@ describe('swoopComposer', () => {
     const types = nodes!.map((n) => n.step.type);
     expect(types).toContain('EXPLOSION');
     expect(types).toContain('TILE_SHAKE');
+  });
+});
+
+
+describe('cleaveComposer', () => {
+  it('builds ABILITY_CAST → SLASH_ARC with sorted positions for orthogonal direction', () => {
+    const event: AbilityUsedEvent = {
+      type: 'ABILITY_USED',
+      entityId: 'player',
+      abilityId: 'cleave',
+      targets: [{ x: 6, y: 5 }],
+      from: { x: 5, y: 5 },
+    };
+    const nodes = cleaveComposer(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('ABILITY_CAST');
+    expect(nodes![0]!.children[0]!.step.type).toBe('SLASH_ARC');
+
+    const slashArcStep = nodes![0]!.children[0]!.step as Extract<AnimationNode['step'], { type: 'SLASH_ARC' }>;
+    expect(slashArcStep.positions).toHaveLength(3);
+    // Центральная клетка должна быть посередине, боковые — отсортированы против часовой стрелки.
+    expect(slashArcStep.positions).toEqual([
+      { x: 6, y: 4 },
+      { x: 6, y: 5 },
+      { x: 6, y: 6 },
+    ]);
+  });
+
+  it('builds ABILITY_CAST → SLASH_ARC with sorted positions for diagonal direction', () => {
+    const event: AbilityUsedEvent = {
+      type: 'ABILITY_USED',
+      entityId: 'player',
+      abilityId: 'cleave',
+      targets: [{ x: 6, y: 4 }],
+      from: { x: 5, y: 5 },
+    };
+    const nodes = cleaveComposer(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.children[0]!.step.type).toBe('SLASH_ARC');
+
+    const slashArcStep = nodes![0]!.children[0]!.step as Extract<AnimationNode['step'], { type: 'SLASH_ARC' }>;
+    expect(slashArcStep.positions).toHaveLength(3);
+    expect(slashArcStep.positions).toEqual([
+      { x: 5, y: 4 },
+      { x: 6, y: 4 },
+      { x: 6, y: 5 },
+    ]);
+  });
+
+  it('falls back to ABILITY_CAST without target', () => {
+    const event: AbilityUsedEvent = {
+      type: 'ABILITY_USED',
+      entityId: 'player',
+      abilityId: 'cleave',
+      targets: [],
+      from: { x: 5, y: 5 },
+    };
+    const nodes = cleaveComposer(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('ABILITY_CAST');
+  });
+
+  it('формирует 3 клетки с целью посередине для всех 8 направлений', () => {
+    const directions = [
+      { x: 5, y: 4 },
+      { x: 6, y: 4 },
+      { x: 6, y: 5 },
+      { x: 6, y: 6 },
+      { x: 5, y: 6 },
+      { x: 4, y: 6 },
+      { x: 4, y: 5 },
+      { x: 4, y: 4 },
+    ];
+
+    for (const target of directions) {
+      const event: AbilityUsedEvent = {
+        type: 'ABILITY_USED',
+        entityId: 'player',
+        abilityId: 'cleave',
+        targets: [target],
+        from: { x: 5, y: 5 },
+      };
+      const nodes = cleaveComposer(event, [], makeMockState());
+
+      expect(nodes![0]!.step.type).toBe('ABILITY_CAST');
+      const slashArcStep = nodes![0]!.children[0]!.step as Extract<AnimationNode['step'], { type: 'SLASH_ARC' }>;
+      expect(slashArcStep.positions).toHaveLength(3);
+      expect(slashArcStep.positions[1]).toEqual(target);
+    }
   });
 });

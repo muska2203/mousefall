@@ -16,7 +16,8 @@
   "grantedAbilities": [
     "dash",
     "counterattack",
-    "swoop"
+    "swoop",
+    "cleave"
   ],
   "equipModifiers": []
 }

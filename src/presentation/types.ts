@@ -101,6 +101,11 @@ export type AnimationStep =
       to: Position;
     }
   | {
+      type: 'SLASH_ARC';
+      from: Position;
+      positions: Position[];
+    }
+  | {
       type: 'EXPLOSION';
       center: Position;
       radius: number;

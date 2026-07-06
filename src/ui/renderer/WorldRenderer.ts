@@ -214,6 +214,70 @@ export class WorldRenderer {
     return this.entityRenderer.animateCast(entityId, config);
   }
 
+  /** Анимировать дугу рассечения от кастера к нескольким клеткам.
+   *  Рисует одну красную дугу, центр которой совпадает с клеткой кастующего.
+   *  Дуга строится вокруг центральной клетки positions[1] и охватывает 90°.
+   *  Быстро «взмахивает» и затухает.
+   *  Использует runTickerTween, чтобы tween обновлялся через PixiJS ticker. */
+  animateSlashArc(from: Position, positions: Position[], config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
+    const centerX = from.x * TILE_SIZE + TILE_SIZE / 2;
+    const centerY = from.y * TILE_SIZE + TILE_SIZE / 2;
+    const radius = TILE_SIZE * Math.SQRT2;
+    const color = 0xe74c3c;
+    const lineWidth = TILE_SIZE / 3;
+
+    const target = positions[1];
+    if (!target) {
+      return Promise.resolve();
+    }
+
+    const midAngle = Math.atan2(
+      target.y * TILE_SIZE + TILE_SIZE / 2 - centerY,
+      target.x * TILE_SIZE + TILE_SIZE / 2 - centerX,
+    );
+    const startAngle = midAngle - Math.PI / 4;
+    const endAngle = midAngle + Math.PI / 4;
+
+    const g = new Graphics();
+    g.x = centerX;
+    g.y = centerY;
+    g.alpha = 0;
+    this.root.addChild(g);
+
+    return new Promise((resolve) => {
+      runTickerTween({
+        duration: config.duration,
+        easing: config.easing,
+        onUpdate: (p) => {
+          let currentEndAngle: number;
+          let alpha: number;
+
+          if (p <= 0.5) {
+            // Первая половина: дуга «разворачивается» от начального угла к конечному
+            // и одновременно появляется из прозрачности.
+            const t = p * 2;
+            currentEndAngle = lerp(startAngle, endAngle, t);
+            alpha = lerp(0, 0.9, t);
+          } else {
+            // Вторая половина: полная дуга быстро затухает.
+            currentEndAngle = endAngle;
+            const t = (p - 0.5) * 2;
+            alpha = lerp(0.9, 0, t);
+          }
+
+          g.clear();
+          g.arc(0, 0, radius, startAngle, currentEndAngle, false);
+          g.stroke({ width: lineWidth, color });
+          g.alpha = alpha;
+        },
+        onComplete: () => {
+          g.destroy();
+          resolve();
+        },
+      }, ticker);
+    });
+  }
+
   /** Анимировать полёт снаряда от кастера до цели.
    *  Рисует красный круг, который движется по прямой между центрами тайлов.
    *  Использует runTickerTween, чтобы tween обновлялся через PixiJS ticker. */

@@ -208,6 +208,18 @@ export function projectileNode(
   };
 }
 
+/** Создать узел дуги рассечения. */
+export function slashArcNode(
+  from: Position,
+  positions: Position[],
+  children: AnimationNode[],
+): AnimationNode {
+  return {
+    step: { type: 'SLASH_ARC', from, positions },
+    children,
+  };
+}
+
 /** Создать узел взрыва. */
 export function explosionNode(
   center: Position,

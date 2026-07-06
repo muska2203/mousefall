@@ -28,6 +28,7 @@ export const ANIMATION_CONFIG = {
   UI_FLOATING_TEXT: { duration: 600, blocking: false, easing: Easing.linear },
   ABILITY_CAST: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
   PROJECTILE: { duration: 300, blocking: true, easing: Easing.easeOutQuad },
+  SLASH_ARC: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
   EXPLOSION: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
   STATUS_BURST: { duration: 400, blocking: false, easing: Easing.easeOutQuad },
   ITEM_DROP: { duration: 200, blocking: false, easing: Easing.easeOutQuad },
