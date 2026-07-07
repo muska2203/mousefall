@@ -294,6 +294,7 @@ describe('GameSession hotbar', () => {
     expect(tooltip.name).toBe('Огненный шар');
     expect(tooltip.maxCooldown).toBe(2);
     expect(tooltip.apCost).toBe(2);
+    expect(tooltip.tags).toEqual([]);
   });
 
   it('includes consumable tooltip with item details', () => {
@@ -314,5 +315,6 @@ describe('GameSession hotbar', () => {
     if (tooltip?.kind !== 'consumable') return;
     expect(tooltip.item.name).toBe('Зелье здоровья');
     expect(tooltip.item.stackCount).toBe(3);
+    expect(tooltip.item.tags).toEqual([]);
   });
 });

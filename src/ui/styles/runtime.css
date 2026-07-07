@@ -1326,3 +1326,88 @@
 .skill-detail-list-item + .skill-detail-list-item {
   margin-top: 3px;
 }
+
+/* ───────────────────────────────────────────── */
+/* Игровые теги (attack, target, delivery...)   */
+/* ───────────────────────────────────────────── */
+
+.cm-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.cm-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--bronze-dark);
+  background: rgba(20, 14, 11, 0.7);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.cm-tag-badge--attack {
+  color: #ff9e8a;
+  border-color: rgba(180, 75, 55, 0.85);
+  background: rgba(40, 14, 10, 0.78);
+}
+
+.cm-tag-badge--target {
+  color: #9ecfff;
+  border-color: rgba(70, 120, 160, 0.85);
+  background: rgba(12, 22, 35, 0.78);
+}
+
+.cm-tag-badge--delivery {
+  color: #d8a8ff;
+  border-color: rgba(140, 80, 170, 0.85);
+  background: rgba(28, 14, 38, 0.78);
+}
+
+.cm-tag-badge--effect {
+  color: #ffb56a;
+  border-color: rgba(180, 100, 30, 0.85);
+  background: rgba(38, 20, 6, 0.78);
+}
+
+.cm-tag-badge--buff {
+  color: #9fe095;
+  border-color: rgba(70, 130, 70, 0.85);
+  background: rgba(14, 30, 14, 0.78);
+}
+
+.cm-tag-badge--other {
+  color: var(--text-muted);
+  border-color: var(--bronze-dark);
+  background: rgba(20, 14, 11, 0.7);
+}
+
+.item-detail-tags {
+  margin-top: 10px;
+}
+
+.skill-detail-tags {
+  margin-top: 10px;
+}
+
+/* ───────────────────────────────────────────── */
+/* Inline-ссылки на игровые теги                 */
+/* ───────────────────────────────────────────── */
+
+.cm-tag-link {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: default;
+}
+
+.cm-tag-link--attack { color: #ff9e9e; }
+.cm-tag-link--target { color: #9ecfff; }
+.cm-tag-link--delivery { color: #d4aaff; }
+.cm-tag-link--effect { color: #ffbc6e; }
+.cm-tag-link--buff { color: #9ee6a0; }
+.cm-tag-link--other { color: var(--gold); }

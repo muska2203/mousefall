@@ -4,6 +4,7 @@ import { TargetMode } from '@simulation/core-types';
 import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { isCombatEntity, isDamageable, isActor, findDoorAt, isBlocked } from '@simulation/state';
+import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
 
 /**
  * Базовый урон при столкновении рывка с актором.
@@ -130,7 +131,7 @@ function normalizeDashTarget(caster: Entity, target: Position): Position {
  * 4. PUSH — отталкивание актора.
  * 5. BUMP — визуальный отскок кастера при столкновении.
  */
-function resolveDashIntents(state: GameState, caster: Entity, target: Position): Intent[] {
+function resolveDashIntents(state: GameState, caster: Entity, target: Position, skillId: string): Intent[] {
   const normalizedTarget = normalizeDashTarget(caster, target);
   const dx = normalizedTarget.x - caster.x;
   const dy = normalizedTarget.y - caster.y;
@@ -205,6 +206,7 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position):
             sourceEntityId: caster.id,
             damage: entry.damage,
             damageType: entry.damageType,
+            tags: getAbilityTags(skillId),
           });
         }
       }
@@ -245,8 +247,8 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position):
  * Превью рывка: тот же набор интентов, что и при исполнении,
  * но без визуальных BUMP-эффектов (они не нужны для предпросмотра).
  */
-function predictDashIntents(state: GameState, caster: Entity, target: Position): Intent[] {
-  return resolveDashIntents(state, caster, target).filter(intent => intent.type !== 'BUMP');
+function predictDashIntents(state: GameState, caster: Entity, target: Position, skillId: string): Intent[] {
+  return resolveDashIntents(state, caster, target, skillId).filter(intent => intent.type !== 'BUMP');
 }
 
 export const dashSkill: SkillExecutor = {
@@ -262,7 +264,7 @@ export const dashSkill: SkillExecutor = {
 
   preview(state: GameState, caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
     if (!hoveredTarget) return [];
-    return predictDashIntents(state, caster, hoveredTarget);
+    return predictDashIntents(state, caster, hoveredTarget, this.id);
   },
 
   getAffectedPositions(_state: GameState, caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
@@ -283,6 +285,6 @@ export const dashSkill: SkillExecutor = {
   resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {
     const target = targets[0];
     if (!target) return [];
-    return resolveDashIntents(state, caster, target);
+    return resolveDashIntents(state, caster, target, this.id);
   },
 };

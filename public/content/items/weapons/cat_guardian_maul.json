@@ -11,7 +11,8 @@
     "baseDamage": 8,
     "damageFormulaId": "club",
     "range": 1,
-    "damageType": "blunt"
+    "damageType": "blunt",
+    "tags": ["attack.melee", "target.single", "delivery.weapon"]
   },
   "grantedAbilities": [],
   "equipModifiers": []

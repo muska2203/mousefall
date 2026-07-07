@@ -22,6 +22,7 @@
     "damageFormulaId": "staff",
     "range": 1,
     "damageType": "blunt",
+    "tags": ["attack.melee", "target.single", "delivery.weapon"],
     "damageEntries": [
       {
         "damageType": "blunt",

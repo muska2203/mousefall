@@ -9,6 +9,8 @@ import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@i18n/hooks';
 import type { HotbarSkillTooltip } from '@presentation/types';
+import { TagList } from './TagList';
+import { RichDescription } from './RichDescription';
 
 interface Props {
   /** Данные скилла для отображения (готовый ViewModel). */
@@ -90,7 +92,11 @@ export function SkillDetailPopover({ skill, visible, x, y }: Props) {
           <span className="skill-detail-title">{skill.name}</span>
         </div>
 
-        {skill.description && <p className="skill-detail-desc">{skill.description}</p>}
+        {skill.description && (
+          <p className="skill-detail-desc">
+            <RichDescription text={skill.description} />
+          </p>
+        )}
 
         {details.length > 0 && (
           <div className="skill-detail-section">
@@ -101,6 +107,12 @@ export function SkillDetailPopover({ skill, visible, x, y }: Props) {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {skill.tags.length > 0 && (
+          <div className="skill-detail-tags">
+            <TagList tags={skill.tags} />
           </div>
         )}
       </div>

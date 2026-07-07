@@ -63,7 +63,7 @@ describe('buildAnimationTree', () => {
   });
 
   it('converts ENTITY_DAMAGED to DAMAGE step', () => {
-    const node = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } });
+    const node = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } });
     const result = makeResult([node]);
     const tree = buildAnimationTree(result, makeMockState());
 
@@ -76,7 +76,7 @@ describe('buildAnimationTree', () => {
     const state = makeMockState();
     state.entities.set('enemy1', { id: 'enemy1', x: 3, y: 3, hp: 7, maxHp: 12 } as any);
 
-    const node = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } });
+    const node = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } });
     const result = makeResult([node]);
     const tree = buildAnimationTree(result, state);
 
@@ -95,7 +95,7 @@ describe('buildAnimationTree', () => {
 
   it('preserves parent-child structure', () => {
     const child = makeExecNode({ type: 'ENTITY_DIED', entityId: 'enemy1', position: { x: 2, y: 2 } });
-    const parent = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 2, y: 2 } }, [child]);
+    const parent = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 2, y: 2 } }, [child]);
     const result = makeResult([parent]);
     const tree = buildAnimationTree(result, makeMockState());
 
@@ -244,7 +244,7 @@ describe('buildAnimationTree', () => {
     const casterFirstMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } });
     const casterSecondMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
     const enemyPushMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } });
-    const enemyDamage = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'blunt', position: { x: 6, y: 5 } });
+    const enemyDamage = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 6, y: 5 } });
     const abilityUsed = makeExecNode({ type: 'ABILITY_USED', entityId: 'player', abilityId: 'dash', targets: [{ x: 6, y: 5 }], from: { x: 5, y: 5 } }, [
       casterFirstMove,
       enemyDamage,
@@ -302,7 +302,7 @@ describe('buildAnimationTree', () => {
     const state = makeMockState();
     state.entities.set('enemy1', { id: 'enemy1', x: 2, y: 2 } as any);
 
-    const damaged = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 5, damageType: 'fire', position: { x: 2, y: 2 } });
+    const damaged = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: [], damage: 5, damageType: 'fire', position: { x: 2, y: 2 } });
     const ticked = makeExecNode({ type: 'STATUS_TICKED', entityId: 'enemy1', effectTypes: ['burning'] }, [damaged]);
     const result = makeResult([ticked]);
     const tree = buildAnimationTree(result, state);
@@ -334,7 +334,7 @@ describe('buildAnimationTree', () => {
       from: { x: 5, y: 5 },
     }, [
       makeExecNode({ type: 'ENTITY_MOVED', movementType: 'jump', entityId: 'player', from: { x: 5, y: 5 }, to: target }),
-      makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', damage: 8, damageType: 'blunt', position: { x: 7, y: 6 } }),
+      makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: [], damage: 8, damageType: 'blunt', position: { x: 7, y: 6 } }),
       makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 7, y: 6 }, to: { x: 7, y: 7 } }),
     ]);
 
@@ -355,7 +355,7 @@ describe('buildAnimationTree', () => {
       makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }),
     ]);
     const enemyMove = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'enemy1', from: { x: 5, y: 5 }, to: { x: 4, y: 5 } });
-    const tick = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'player', damage: 1, damageType: 'poison', position: { x: 0, y: 0 } });
+    const tick = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'player', sourceEntityId: null, tags: [], damage: 1, damageType: 'poison', position: { x: 0, y: 0 } });
     const result = makeResultWithPhases([
       { side: 'player', actions: [playerMove] },
       { side: 'enemies', actions: [enemyMove] },

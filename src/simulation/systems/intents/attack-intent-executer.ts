@@ -29,6 +29,8 @@ export const executeDamageIntent: IntentExecutor<DamageIntent> = (
     damage: finalDamage,
     damageType: intent.damageType,
     targetId: target.id,
+    sourceEntityId: intent.sourceEntityId,
     position: { x: target.x, y: target.y },
+    tags: intent.tags,
   });
 };

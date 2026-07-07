@@ -73,6 +73,7 @@ registerReaction('ENTITY_COLLIDED', collisionStunReaction, 1);
 registerReaction('STATUS_TICKED', burningTickReaction, 0);
 registerReaction('ENTITY_DAMAGED', fireDamageReaction, -1);
 registerReaction('ENTITY_DAMAGED', deathReaction, 0);
+registerReaction('ENTITY_DAMAGED', counterAttackReaction, 1);
 registerReaction('ENTITY_DIED', postDeathLootReaction, 0);
 registerReaction('FLOOR_CHANGED', floorTransitionReaction, 0);
 registerReaction('ENTITY_MOVED', aiPerceptionReaction, 0);

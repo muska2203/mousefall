@@ -5,7 +5,7 @@ import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { isCombatEntity, findAllEntitiesAt } from '@simulation/state';
 import { isEnemyEntity } from '@simulation/ai/ai-state';
 import { getEffectiveDamageEntries } from '@simulation/systems/stats/effective-stats';
-import { randomChance } from '@utils/random';
+import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
 
 /**
  * Восемь соседних смещений вокруг клетки кастующего.
@@ -20,13 +20,6 @@ const NEIGHBOR_OFFSETS: Array<{ ox: number; oy: number }> = [
   { ox: -1, oy: 1 },
   { ox: -1, oy: -1 },
 ];
-
-/**
- * Проверяет, есть ли у боевой сущности активный статус контратаки.
- */
-function hasCounterattack(entity: { statusEffects: Array<{ type: string }> }): boolean {
-  return entity.statusEffects.some(e => e.type === 'counterattack');
-}
 
 export const suddenStrikeSkill: SkillExecutor = {
   id: 'sudden_strike',
@@ -90,20 +83,8 @@ export const suddenStrikeSkill: SkillExecutor = {
       sourceEntityId: caster.id,
       damage: entry.damage,
       damageType: entry.damageType,
+      tags: getAbilityTags(this.id),
     }));
-
-    // Если у цели есть контратака — с шансом 50% она бьёт в ответ.
-    if (isCombatEntity(target) && hasCounterattack(target)) {
-      if (randomChance(50)) {
-        intents.push({
-          type: 'COUNTER_ATTACK',
-          counterAttackerId: target.id,
-          targetId: caster.id,
-          dx: caster.x - target.x,
-          dy: caster.y - target.y,
-        });
-      }
-    }
 
     // Если цель — враг с подготовленной способностью, накладываем немоту.
     if (isEnemyEntity(target) && target.aiState.preparedAbility) {

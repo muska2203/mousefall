@@ -7,6 +7,8 @@
 
 import { useTranslation } from '@i18n/hooks';
 import type { ItemDetailViewModel } from '@presentation/itemDetailMapper';
+import { TagList } from './TagList';
+import { RichDescription } from './RichDescription';
 
 interface Props {
   item: ItemDetailViewModel;
@@ -93,7 +95,9 @@ export function ItemDetailCard({ item }: Props) {
                 <div className="item-detail-ability__info">
                   <span className="item-detail-ability__name">{ability.name}</span>
                   {ability.description && (
-                    <span className="item-detail-ability__desc">{ability.description}</span>
+                    <span className="item-detail-ability__desc">
+                      <RichDescription text={ability.description} />
+                    </span>
                   )}
                 </div>
               </li>
@@ -122,13 +126,21 @@ export function ItemDetailCard({ item }: Props) {
           return (
             <div className="item-detail-section" key={index}>
               <h4 className="item-detail-section-title">{t('itemDetail.descriptionTitle')}</h4>
-              <p className="item-detail-desc">{section.text}</p>
+              <p className="item-detail-desc">
+                <RichDescription text={section.text} />
+              </p>
             </div>
           );
         }
 
         return null;
       })}
+
+      {item.tags.length > 0 && (
+        <div className="item-detail-tags">
+          <TagList tags={item.tags} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,10 @@
-import {findAttacker, findFirstAttackableEntityAt, isCombatEntity} from "@simulation/state.ts";
+import {findAttacker, findFirstAttackableEntityAt} from "@simulation/state.ts";
 import {GameState} from "@simulation/types.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 import { getEffectiveDamageEntries } from "@simulation/systems/stats/effective-stats.ts";
-import { randomChance } from "@utils/random.ts";
+import { getWeaponTags } from "@simulation/systems/tags/weapon-tags.ts";
 
 // ─────────────────────────────────────────────
 // Контекст атаки (устраняет дублирование поиска)
@@ -29,13 +29,6 @@ function resolveAttackContext(state: GameState, action: AttackAction): AttackCon
   }
 
   return { ok: true, attacker, target };
-}
-
-/**
- * Проверяет, есть ли у боевой сущности активный статус контратаки.
- */
-function hasCounterattack(entity: { statusEffects: Array<{ type: string }> }): boolean {
-  return entity.statusEffects.some(e => e.type === 'counterattack');
 }
 
 // ─────────────────────────────────────────────
@@ -73,21 +66,8 @@ export const attackEntity: ActionHandler = {
       sourceEntityId: ctx.attacker.id,
       damage: entry.damage,
       damageType: entry.damageType,
+      tags: getWeaponTags(ctx.attacker),
     }));
-
-    // Если у цели есть контратака — с шансом 50% она бьёт в ответ.
-    // Входящий урон проходит как обычно.
-    if (isCombatEntity(ctx.target) && hasCounterattack(ctx.target)) {
-      if (randomChance(50)) {
-        intents.push({
-          type: 'COUNTER_ATTACK',
-          counterAttackerId: ctx.target.id,
-          targetId: ctx.attacker.id,
-          dx: ctx.attacker.x - ctx.target.x,
-          dy: ctx.attacker.y - ctx.target.y,
-        });
-      }
-    }
 
     return intents;
   },

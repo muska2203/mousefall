@@ -5,6 +5,7 @@ import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { getDamageablePositionsWithinRange } from '@simulation/skills/targeting';
 import { isCombatEntity, isDamageable } from '@simulation/state';
+import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
 
 export const magicSlapSkill: SkillExecutor = {
   id: 'magic_slap',
@@ -57,7 +58,14 @@ export const magicSlapSkill: SkillExecutor = {
       });
 
       for (const entry of damageEntries) {
-        intents.push({ type: 'DAMAGE', entityId: entity.id, sourceEntityId: caster.id, damage: entry.damage, damageType: entry.damageType });
+        intents.push({
+          type: 'DAMAGE',
+          entityId: entity.id,
+          sourceEntityId: caster.id,
+          damage: entry.damage,
+          damageType: entry.damageType,
+          tags: getAbilityTags(this.id),
+        });
       }
     }
 

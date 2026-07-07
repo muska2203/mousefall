@@ -24,6 +24,9 @@ export type EntityId = string;
 /** Уникальный идентификатор экземпляра предмета. */
 export type ItemInstanceId = string;
 
+/** Игровой тег классификации (например, attack.melee, target.aoe). */
+export type GameplayTag = string;
+
 // ─────────────────────────────────────────────
 // Карта / Мир
 // ─────────────────────────────────────────────
@@ -325,12 +328,12 @@ export type Intent =
   | NotifyAIIntent
   | CounterAttackIntent;
 
-export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number };
+export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
 export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null };
-export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType };
+export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType; tags: GameplayTag[] };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
-export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect };
+export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect; tags?: GameplayTag[] };
 export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][] };
 export type SetEntitiesIntent = { type: 'SET_ENTITIES'; entities: Map<EntityId, unknown> };
 export type TeleportEntityIntent = { type: 'TELEPORT_ENTITY'; entityId: EntityId; x: number; y: number };
@@ -350,7 +353,7 @@ export type EquipItemIntent = { type: 'EQUIP_ITEM'; entityId: EntityId; itemInst
 export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot: 'weapon' | 'armor' | 'amulet' };
 export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
 export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
-export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number };
+export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number; tags?: GameplayTag[] };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
 export type CloseDoorIntent = { type: 'CLOSE_DOOR'; entityId: EntityId; targetPosition: Position };
@@ -418,7 +421,7 @@ export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationE
 
 export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' | 'dash' | 'teleport' };
 
-export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; damage: number; damageType: DamageType; position: Position };
+export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType; position: Position; tags: GameplayTag[] };
 
 export type EntityDiedEvent = { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
 

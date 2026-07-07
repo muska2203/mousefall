@@ -20,6 +20,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     id,
     cooldown: 0,
     apCost: 1,
+    tags: [],
     ...overrides,
   } as AbilityTemplate;
 }
@@ -32,7 +33,7 @@ describe('counterattackSkill', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2 })],
+        ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2, tags: ['target.self', 'buff.reactive'] })],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -119,8 +120,11 @@ describe('counterattack combat behavior', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2 })],
-        ['magic_slap', mockAbility('magic_slap', { cooldown: 0, apCost: 1 })],
+        ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2, tags: ['target.self', 'buff.reactive'] })],
+        ['sudden_strike', mockAbility('sudden_strike', { cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.single', 'delivery.weapon'] })],
+        ['magic_slap', mockAbility('magic_slap', { cooldown: 2, apCost: 1, tags: ['attack.ranged', 'target.multi', 'delivery.spell'] })],
+        ['cleave', mockAbility('cleave', { cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.aoe', 'delivery.weapon'] })],
+        ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2, tags: ['attack.ranged', 'target.aoe', 'delivery.projectile', 'delivery.spell', 'effect.burn'] })],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -233,24 +237,19 @@ describe('counterattack combat behavior', () => {
     expect(player.statusEffects.some(e => e.type === 'counterattack')).toBe(true);
   });
 
-  it('counterattack does not trigger on skill damage', () => {
-    resetRegistry();
-    initRegistry({
-      entities: new Map(),
-      players: new Map(),
-      items: new Map(),
-      abilities: new Map([
-        ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2 })],
-        ['magic_slap', mockAbility('magic_slap', { cooldown: 0, apCost: 1 })],
-      ]),
-      maps: new Map(),
-      doors: new Map(),
-      stairs: new Map(),
-    });
-
+  it('counterattack triggers on sudden_strike melee single-target weapon damage', () => {
     vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
 
-    const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, ap: 3, maxAp: 3, abilities: [{ templateId: 'magic_slap', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      hp: 100,
+      maxHp: 100,
+      ap: 3,
+      maxAp: 3,
+      baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      abilities: [{ templateId: 'sudden_strike', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
     const enemy = makeEnemy({
       id: 'enemy_1',
       x: 6,
@@ -270,10 +269,133 @@ describe('counterattack combat behavior', () => {
     });
 
     const sim = createTestSimulation(state);
-    sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'magic_slap', targets: [{ x: 6, y: 5 }] });
+    sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'sudden_strike', targets: [{ x: 6, y: 5 }] });
 
-    // Урон от скилла не считается прямой атакой — контратака не срабатывает.
+    // Враг получает урон от скилла.
+    expect(enemy.hp).toBeLessThan(100);
+    // Игрок получает урон от контратаки.
+    expect(player.hp).toBeLessThan(100);
+  });
+
+  it('counterattack does not trigger on ranged spell damage from magic_slap', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      hp: 100,
+      maxHp: 100,
+      ap: 3,
+      maxAp: 3,
+      baseStats: { str: 5, dex: 0, int: 5, vit: 0 },
+      abilities: [{ templateId: 'magic_slap', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    const enemyCounter = makeEnemy({
+      id: 'enemy_counter',
+      x: 6,
+      y: 5,
+      hp: 100,
+      maxHp: 100,
+      armor: 0,
+      baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
+    });
+    const enemyExtra1 = makeEnemy({ id: 'enemy_extra_1', x: 5, y: 6, hp: 100, maxHp: 100, armor: 0 });
+    const enemyExtra2 = makeEnemy({ id: 'enemy_extra_2', x: 4, y: 5, hp: 100, maxHp: 100, armor: 0 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemyCounter.id, enemyCounter],
+        [enemyExtra1.id, enemyExtra1],
+        [enemyExtra2.id, enemyExtra2],
+      ]),
+    });
+
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'magic_slap', targets: [{ x: 6, y: 5 }, { x: 5, y: 6 }, { x: 4, y: 5 }] });
+
+    // Урон от ranged-скилла не считается подходящей атакой — контратака не срабатывает.
+    expect(enemyCounter.hp).toBeLessThan(100);
     expect(player.hp).toBe(100);
-    expect(enemy.statusEffects.some(e => e.type === 'counterattack')).toBe(true);
+    expect(enemyCounter.statusEffects.some(e => e.type === 'counterattack')).toBe(true);
+  });
+
+  it('counterattack does not trigger on cleave AoE melee damage', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      hp: 100,
+      maxHp: 100,
+      ap: 3,
+      maxAp: 3,
+      baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      abilities: [{ templateId: 'cleave', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    const enemy = makeEnemy({
+      id: 'enemy_1',
+      x: 6,
+      y: 5,
+      hp: 100,
+      maxHp: 100,
+      armor: 0,
+      baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
+    });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] });
+
+    // AoE-урон не считается одиночной целью — контратака не срабатывает.
+    expect(enemy.hp).toBeLessThan(100);
+    expect(player.hp).toBe(100);
+  });
+
+  it('counterattack does not trigger on fireball ranged AoE damage', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      hp: 100,
+      maxHp: 100,
+      ap: 4,
+      maxAp: 4,
+      baseStats: { str: 5, dex: 0, int: 5, vit: 0 },
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    const enemy = makeEnemy({
+      id: 'enemy_1',
+      x: 7,
+      y: 5,
+      hp: 100,
+      maxHp: 100,
+      armor: 0,
+      baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
+    });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const sim = createTestSimulation(state);
+    sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 7, y: 5 }] });
+
+    // Дальний AoE-урон не провоцирует контратаку.
+    expect(enemy.hp).toBeLessThan(100);
+    expect(player.hp).toBe(100);
   });
 });

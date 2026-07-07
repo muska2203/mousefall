@@ -2,5 +2,6 @@
   "id": "counterattack",
   "spriteId": "counterattack",
   "cooldown": 4,
-  "apCost": 2
+  "apCost": 2,
+  "tags": ["target.self", "buff.reactive"]
 }

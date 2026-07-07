@@ -21,5 +21,6 @@ export const burningTickReaction: WorldReaction = (state, event) => {
     sourceEntityId: null,
     damage: rawDamage,
     damageType: 'fire',
+    tags: [],
   }];
 };

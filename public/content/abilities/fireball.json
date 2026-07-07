@@ -2,5 +2,6 @@
   "id": "fireball",
   "spriteId": "fireball",
   "cooldown": 3,
-  "apCost": 2
+  "apCost": 2,
+  "tags": ["attack.ranged", "target.aoe", "delivery.projectile", "delivery.spell", "effect.burn"]
 }

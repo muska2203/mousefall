@@ -3,5 +3,6 @@
   "spriteId": "magic_slap",
   "cooldown": 2,
   "apCost": 1,
-  "aiPreparable": true
+  "aiPreparable": true,
+  "tags": ["attack.ranged", "target.multi", "delivery.spell"]
 }

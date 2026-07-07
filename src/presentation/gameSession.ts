@@ -19,7 +19,7 @@ import {GameSimulation} from '@simulation/simulation';
 import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel, AIPreparedIntentViewModel, PresentationIntent, HighlightedPathTargetKind} from './types';
+import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel, AIPreparedIntentViewModel, PresentationIntent, HighlightedPathTargetKind, GameplayTag} from './types';
 import {toPresentationIntent} from './types';
 import {
   getAllLocalizedPlayerTemplates,
@@ -240,6 +240,7 @@ export class GameSession {
         maxCooldown: template?.cooldown ?? 0,
         isAvailable: ability.currentCooldown === 0,
         source: ability.source,
+        tags: template?.tags ?? [],
       };
     });
 
@@ -290,12 +291,14 @@ export class GameSession {
             fallbackIcon: '?',
             stackCount: invItem.quantity,
             sections: [],
+            tags: [],
           };
       const grantedAbilities = invItem.grantedAbilities.map((ability) => {
         const abilityTemplate = this.getAbilityTemplate(ability.templateId, locale);
         return {
           templateId: ability.templateId,
           name: abilityTemplate?.name ?? ability.templateId,
+          description: abilityTemplate?.description ?? '',
           level: ability.level,
           icon: abilityTemplate?.spriteId ? resolveAbilityIcon(abilityTemplate.spriteId) : null,
         };
@@ -605,13 +608,13 @@ export class GameSession {
   private getAbilityTemplate(
     abilityId: string,
     locale: Locale,
-  ): { name: string; description: string; spriteId: string | undefined; cooldown: number; apCost: number | 'all' } | null {
+  ): { name: string; description: string; spriteId: string | undefined; cooldown: number; apCost: number | 'all'; tags: GameplayTag[] } | null {
     const fromSim = this.simulation!.getAbilityInfo(abilityId);
     if (!fromSim) return null;
     const localized = tryGetLocalizedAbility(abilityId, locale);
     return localized
-      ? { ...fromSim, name: localized.name, description: localized.description }
-      : { ...fromSim, name: abilityId, description: '' };
+      ? { ...fromSim, name: localized.name, description: localized.description, tags: localized.tags }
+      : { ...fromSim, name: abilityId, description: '', tags: [] };
   }
 
   private buildTargetingOverlay(state: Readonly<GameState>): RenderInput['targetingOverlay'] {
@@ -1736,6 +1739,7 @@ export class GameSession {
                 cooldown,
                 maxCooldown,
                 apCost: info?.apCost ?? 1,
+                tags: localized.tags ?? [],
               }
             : undefined,
         };

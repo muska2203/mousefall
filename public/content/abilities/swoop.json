@@ -3,5 +3,6 @@
   "spriteId": "swoop",
   "cooldown": 2,
   "apCost": 2,
-  "aiPreparable": true
+  "aiPreparable": true,
+  "tags": ["delivery.movement", "attack.melee", "target.aoe", "effect.knockback"]
 }

@@ -7,6 +7,8 @@ function makeEntityDamagedEvent(targetId: string, damageType: import('../../../.
   return {
     type: 'ENTITY_DAMAGED' as const,
     targetId,
+    sourceEntityId: null,
+    tags: [],
     damage: 5,
     damageType,
     position: { x: 0, y: 0 },

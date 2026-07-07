@@ -5,6 +5,7 @@ import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { getEntitiesInRadius } from '@simulation/skills/targeting';
 import { isCombatEntity, isDamageable, isBlocked } from '@simulation/state';
+import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
 
 /**
  * Радиус выбора точки приземления относительно кастера.
@@ -81,7 +82,7 @@ function isValidJumpTarget(state: GameState, caster: Entity, target: Position): 
 /**
  * Разрешает способность в набор интентов.
  */
-function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position[]): Intent[] {
+function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position[], skillId: string): Intent[] {
   if (!isCombatEntity(caster)) return [];
 
   const target = targets[0];
@@ -122,6 +123,7 @@ function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position
           sourceEntityId: caster.id,
           damage: entry.damage,
           damageType: entry.damageType,
+          tags: getAbilityTags(skillId),
         });
       }
     }
@@ -157,7 +159,7 @@ export const swoopSkill: SkillExecutor = {
 
   preview(state: GameState, caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
     if (!hoveredTarget) return [];
-    return resolveSwoopIntents(state, caster, [hoveredTarget]);
+    return resolveSwoopIntents(state, caster, [hoveredTarget], this.id);
   },
 
   getAffectedPositions(_state: GameState, _caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
@@ -173,6 +175,6 @@ export const swoopSkill: SkillExecutor = {
   },
 
   resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {
-    return resolveSwoopIntents(state, caster, targets);
+    return resolveSwoopIntents(state, caster, targets, this.id);
   },
 };

@@ -2,5 +2,6 @@
   "id": "cleave",
   "spriteId": "cleave",
   "cooldown": 2,
-  "apCost": 1
+  "apCost": 1,
+  "tags": ["attack.melee", "target.aoe", "delivery.weapon"]
 }

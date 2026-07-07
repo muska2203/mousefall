@@ -9,6 +9,10 @@ const textsByLocale: Record<Locale, ContentTexts> = {
   en: enContentTexts,
 };
 
+export function getTagText(tag: string, locale: Locale): ContentText {
+  return getContentText('tags', tag, locale);
+}
+
 export function getContentText(
   category: keyof ContentTexts,
   id: string,

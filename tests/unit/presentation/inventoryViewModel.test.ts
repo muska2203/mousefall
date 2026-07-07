@@ -54,6 +54,7 @@ describe('Inventory ViewModel', () => {
     expect(inv[0]!.templateId).toBe('health_potion');
     expect(inv[0]!.quantity).toBe(3);
     expect(inv[0]!.detail.name).toBe('Зелье здоровья');
+    expect(inv[0]!.detail.tags).toEqual([]);
   });
 
   it('uses fallback for missing item template', () => {

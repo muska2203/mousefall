@@ -2,5 +2,6 @@
   "id": "dash",
   "spriteId": "dash",
   "cooldown": 4,
-  "apCost": 1
+  "apCost": 1,
+  "tags": ["delivery.movement", "attack.melee", "target.single", "effect.knockback"]
 }

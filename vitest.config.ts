@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     // Симуляция безголовая — работает в Node, без браузерных API
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     coverage: {
       provider: 'v8',
       // Измерять покрытие только для слоя симуляции

@@ -12,7 +12,6 @@ import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-import * as randomModule from '../../../../src/utils/random';
 import type { EntityId } from '../../../../src/simulation/types';
 
 beforeEach(() => {
@@ -23,6 +22,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     cooldown: 2,
+    tags: [],
     ...overrides,
   } as AbilityTemplate;
 }
@@ -35,7 +35,7 @@ describe('suddenStrikeSkill', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['sudden_strike', mockAbility('sudden_strike', { cooldown: 2, apCost: 1 })],
+        ['sudden_strike', mockAbility('sudden_strike', { cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.single', 'delivery.weapon'] })],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -129,62 +129,24 @@ describe('suddenStrikeSkill', () => {
     expect(damageIntents[0]!.damageType).toBe('blunt');
   });
 
-  it('resolve adds COUNTER_ATTACK when target has counterattack and randomChance succeeds', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
-
+  it('resolve produces DAMAGE intent with correct melee single-target weapon tags', () => {
     const state = makeGameState();
     const player = makePlayer({
       x: 5,
       y: 5,
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
     });
-    const enemy = makeEnemy({
-      id: 'enemy_counter',
-      x: 6,
-      y: 5,
-      hp: 50,
-      maxHp: 50,
-      armor: 0,
-      statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
-    });
+    const enemy = makeEnemy({ id: 'enemy_tags', x: 6, y: 5, hp: 50, maxHp: 50, armor: 0 });
     state.player = player;
     state.entities.set(player.id, player);
     state.entities.set(enemy.id, enemy);
 
     const intents = suddenStrikeSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    const counterIntents = intents.filter(i => i.type === 'COUNTER_ATTACK');
+    const damageIntent = intents.find(i => i.type === 'DAMAGE');
 
-    expect(counterIntents).toHaveLength(1);
-    expect(counterIntents[0]).toMatchObject({
-      type: 'COUNTER_ATTACK',
-      counterAttackerId: enemy.id,
-      targetId: player.id,
-      dx: -1,
-      dy: 0,
-    });
-  });
-
-  it('resolve does not add COUNTER_ATTACK when randomChance fails', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(false);
-
-    const state = makeGameState();
-    const player = makePlayer({ x: 5, y: 5, baseStats: { str: 5, dex: 0, int: 0, vit: 0 } });
-    const enemy = makeEnemy({
-      id: 'enemy_counter',
-      x: 6,
-      y: 5,
-      hp: 50,
-      maxHp: 50,
-      armor: 0,
-      statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
-    });
-    state.player = player;
-    state.entities.set(player.id, player);
-    state.entities.set(enemy.id, enemy);
-
-    const intents = suddenStrikeSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-
-    expect(intents.some(i => i.type === 'COUNTER_ATTACK')).toBe(false);
+    expect(damageIntent).toBeDefined();
+    expect(damageIntent!.type).toBe('DAMAGE');
+    expect(damageIntent!.tags).toEqual(['attack.melee', 'target.single', 'delivery.weapon']);
   });
 
   it('resolve applies silenced only when enemy has preparedAbility', () => {
@@ -222,7 +184,7 @@ describe('suddenStrikeSkill', () => {
     expect(statusIntents[0]).toMatchObject({
       type: 'APPLY_STATUS',
       entityId: enemy.id,
-      status: { type: 'silenced', duration: 1, value: 0, statModifiers: null },
+      status: { type: 'silenced', duration: 2, value: 0, statModifiers: null },
     });
   });
 

@@ -4,6 +4,7 @@ import { TargetMode } from '@simulation/core-types';
 import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { isDamageable } from '@simulation/state';
 import { getEffectiveDamageEntries } from '@simulation/systems/stats/effective-stats';
+import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
 
 /**
  * Восемь соседних смещений вокруг клетки кастующего.
@@ -100,6 +101,7 @@ export const cleaveSkill: SkillExecutor = {
             sourceEntityId: caster.id,
             damage: entry.damage,
             damageType: entry.damageType,
+            tags: getAbilityTags(this.id),
           });
         }
       }

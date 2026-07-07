@@ -10,6 +10,7 @@
  */
 
 import type { LocalizedItemTemplate } from '@content/registry';
+import type { GameplayTag } from './types';
 import { tryGetLocalizedAbility } from '@content/registry';
 import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
 import type { Locale } from '@content/texts/lookup';
@@ -37,6 +38,7 @@ export interface ItemDetailViewModel {
   grantedAbilities?: Array<{
     templateId: string;
     name: string;
+    description: string;
     level: number;
     icon: string | null;
   }> | null;
@@ -48,6 +50,8 @@ export interface ItemDetailViewModel {
     icon: string | null;
     weight: number;
   }> | null;
+  /** Теги классификации предмета (обычно оружия). */
+  tags: GameplayTag[];
 }
 
 export interface MapItemDetailOptions {
@@ -167,5 +171,6 @@ export function mapItemTemplateToDetail(
     stackCount: opts?.stackCount,
     sections,
     abilityPool,
+    tags: template.weapon?.tags ?? [],
   };
 }

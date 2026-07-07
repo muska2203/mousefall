@@ -11,7 +11,8 @@
     "baseDamage": 4,
     "damageFormulaId": "sword",
     "range": 1,
-    "damageType": "slashing"
+    "damageType": "slashing",
+    "tags": ["attack.melee", "target.single", "delivery.weapon"]
   },
   "grantedAbilities": [
     "dash",

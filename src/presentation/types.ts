@@ -17,6 +17,8 @@ import type {AIMode} from '@simulation/ai/ai-state';
 export type { TileType, TurnSide, StatusEffect, InteractionId } from '@simulation/types';
 export type { AIMode } from '@simulation/ai/ai-state';
 export type { AnimationConfigKey } from '@utils/animationConfig';
+import type { GameplayTag as CoreGameplayTag } from '@simulation/core-types';
+export type GameplayTag = CoreGameplayTag;
 
 export type Position = { x: number; y: number };
 
@@ -177,6 +179,8 @@ export type PlayerSkillViewModel = {
   isAvailable: boolean;
   /** Откуда скилл: innate / levelup / equipment */
   source: 'innate' | 'levelup' | 'equipment';
+  /** Теги классификации способности. */
+  tags: GameplayTag[];
 };
 
 export type HeroStatViewModel = {
@@ -221,6 +225,8 @@ export type HotbarSkillTooltip = {
   cooldown: number;
   maxCooldown: number;
   apCost: number | 'all';
+  /** Теги классификации способности. */
+  tags: GameplayTag[];
 };
 
 /** Тултип для расходника в хотбаре. */

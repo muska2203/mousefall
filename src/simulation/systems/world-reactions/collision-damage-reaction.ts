@@ -31,6 +31,7 @@ export const collisionDamageReaction: WorldReaction = (state, event) => {
     sourceEntityId: event.sourceEntityId,
     damage: PUSH_BUMP_DAMAGE,
     damageType: PUSH_DAMAGE_TYPE,
+    tags: ['delivery.movement'],
   });
 
   if (event.collisionType === 'actor' && event.targetId) {
@@ -42,6 +43,7 @@ export const collisionDamageReaction: WorldReaction = (state, event) => {
         sourceEntityId: event.sourceEntityId,
         damage: PUSH_BUMP_DAMAGE,
         damageType: PUSH_DAMAGE_TYPE,
+        tags: ['delivery.movement'],
       });
     }
   }

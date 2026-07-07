@@ -5,6 +5,7 @@ import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { getEntitiesInRadius, getVisiblePositionsWithinRange } from '@simulation/skills/targeting';
 import { isCombatEntity, isDamageable } from '@simulation/state';
+import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
 
 export const fireballSkill: SkillExecutor = {
   id: 'fireball',
@@ -62,7 +63,14 @@ export const fireballSkill: SkillExecutor = {
       });
 
       for (const entry of damageEntries) {
-        intents.push({ type: 'DAMAGE', entityId: entity.id, sourceEntityId: caster.id, damage: entry.damage, damageType: entry.damageType });
+        intents.push({
+          type: 'DAMAGE',
+          entityId: entity.id,
+          sourceEntityId: caster.id,
+          damage: entry.damage,
+          damageType: entry.damageType,
+          tags: getAbilityTags(this.id),
+        });
       }
 
       const burning: StatusEffect = {
