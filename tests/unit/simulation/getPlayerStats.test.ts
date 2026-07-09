@@ -40,7 +40,7 @@ describe('GameSimulation.getPlayerStats', () => {
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',
-          weapon: {baseDamage: 5, damageFormulaId: 'sword', range: 1, damageType: 'slashing', tags: []},
+          weapon: {baseDamage: 5, damageFormulaId: 'sword', range: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: []},
         })],
         ['test_armor', mockItem('test_armor', {
           type: 'armor',

@@ -79,7 +79,7 @@ export function damageNode(event: EntityDamagedEvent, children: AnimationNode[])
       type: 'DAMAGE',
       targetId: event.targetId,
       amount: event.damage,
-      damageType: event.damageType,
+      tags: event.tags,
       position: event.position,
     },
     children,

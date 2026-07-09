@@ -20,7 +20,6 @@ export const burningTickReaction: WorldReaction = (state, event) => {
     entityId: event.entityId,
     sourceEntityId: null,
     damage: rawDamage,
-    damageType: 'fire',
     tags: ['damage.magical.fire'],
   }];
 };

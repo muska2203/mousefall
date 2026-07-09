@@ -35,3 +35,33 @@ export function hasAllTags(tags: readonly GameplayTag[], required: readonly Game
 export function hasAnyTag(tags: readonly GameplayTag[], candidates: readonly GameplayTag[]): boolean {
   return candidates.some((tag) => hasTag(tags, tag));
 }
+
+/**
+ * Объединяет теги, гарантируя ровно один damage.*-тег.
+ * Используется для формирования DAMAGE-интентов.
+ *
+ * Сохраняет порядок и удаляет дубликаты non-damage тегов.
+ * Приоритет у первого встреченного damage-тега; все последующие игнорируются.
+ */
+export function mergeDamageIntentTags(...arrays: readonly GameplayTag[][]): GameplayTag[] {
+  const result: GameplayTag[] = [];
+  const seen = new Set<GameplayTag>();
+  let damageTagSet = false;
+
+  for (const arr of arrays) {
+    for (const tag of arr) {
+      const isDamageTag = tag === 'damage' || tag.startsWith('damage.');
+      if (isDamageTag) {
+        if (damageTagSet) {
+          continue;
+        }
+        damageTagSet = true;
+      }
+      if (!seen.has(tag)) {
+        seen.add(tag);
+        result.push(tag);
+      }
+    }
+  }
+  return result;
+}

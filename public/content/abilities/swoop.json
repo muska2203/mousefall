@@ -4,5 +4,6 @@
   "cooldown": 2,
   "apCost": 2,
   "aiPreparable": true,
-  "tags": ["delivery.movement", "attack.melee", "target.aoe", "effect.knockback", "damage.physical.blunt"]
+  "damageTag": "damage.physical.blunt",
+  "tags": ["delivery.movement", "attack.melee", "target.aoe", "effect.knockback"]
 }

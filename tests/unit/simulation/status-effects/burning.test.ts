@@ -73,7 +73,7 @@ describe('burning status effect', () => {
     expect(damagedEvents).toHaveLength(1);
     expect(damagedEvents[0]).toMatchObject({
       targetId: enemy.id,
-      damageType: 'fire',
+      tags: expect.arrayContaining(['damage.magical.fire']),
     });
     expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
@@ -120,7 +120,7 @@ describe('burning status effect', () => {
     expect(damagedEvents).toHaveLength(1);
     expect(damagedEvents[0]).toMatchObject({
       targetId: door.id,
-      damageType: 'fire',
+      tags: expect.arrayContaining(['damage.magical.fire']),
     });
     expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
@@ -137,7 +137,7 @@ describe('burning status effect', () => {
     expect(damagedEvents).toHaveLength(1);
     expect(damagedEvents[0]).toMatchObject({
       targetId: door.id,
-      damageType: 'fire',
+      tags: expect.arrayContaining(['damage.magical.fire']),
     });
     expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });

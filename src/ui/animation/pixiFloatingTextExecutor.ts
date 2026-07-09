@@ -13,11 +13,12 @@ import {ANIMATION_CONFIG} from '@utils/animationConfig';
 import type {AnimationConfigKey} from '@utils/animationConfig';
 import {TILE_SIZE} from '@utils/constants';
 import { t } from '@i18n/t';
+import type { DamageFamily } from '@presentation/damageFamily';
+import { getDamageFamily } from '@presentation/damageFamily';
 
 type DamageAnimationStep = Extract<AnimationStep, { type: 'DAMAGE' }>;
-type DamageType = DamageAnimationStep['damageType'];
 
-const DAMAGE_COLORS: Record<DamageType, string> = {
+const DAMAGE_COLORS: Record<DamageFamily, string> = {
   piercing: '#ff4444',
   slashing: '#ff4444',
   blunt: '#ff4444',
@@ -25,6 +26,7 @@ const DAMAGE_COLORS: Record<DamageType, string> = {
   electric: '#ffdd00',
   poison: '#44ff44',
   frost: '#88ddff',
+  physical: '#ff4444',
 };
 
 const STAGGER_MS = 150;
@@ -44,7 +46,7 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
     const config = ANIMATION_CONFIG[step.type as AnimationConfigKey];
     const pos = step.type === 'DAMAGE' ? step.position : {x: step.x, y: step.y};
     const text = step.type === 'DAMAGE' ? String(step.amount) : (step.textKey ? t(step.textKey) : step.text ?? '');
-    const color = step.type === 'DAMAGE' ? DAMAGE_COLORS[step.damageType] : '#ffffff';
+    const color = step.type === 'DAMAGE' ? DAMAGE_COLORS[getDamageFamily(step.tags)] : '#ffffff';
 
     // Мировые пиксели: центр по X, верх тайла по Y
     const worldX = pos.x * TILE_SIZE + TILE_SIZE / 2;

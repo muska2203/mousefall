@@ -27,7 +27,7 @@
 | Изменить генерацию карт | `systems/mapgen.ts` (диспетчер) → `systems/map-generation/*-strategy.ts` |
 | Добавить тип события | `core-types.ts` (union `GameEvent`) |
 | Добавить/изменить игровой тег | `src/simulation/systems/tags/` (`tag-helpers.ts`, `tag-hierarchy.ts`, `weapon-tags.ts`) |
-| Добавить/изменить тип урона | `src/simulation/systems/damage/damage-type-handlers.ts` + `core-types.ts` (`DamageType`) |
+| Добавить/изменить тип урона | `src/simulation/systems/damage/damage-handlers.ts` + `src/simulation/systems/tags/weapon-tags.ts` + `src/simulation/systems/stats/effective-stats.ts` + `src/content/schemas.ts` |
 | Добавить исполнитель способности | `src/simulation/skills/` |
 | Добавить обработчик входящего урона | `src/simulation/systems/world-reactions/` (проверяй теги через `hasTag`) |
 
@@ -54,14 +54,45 @@
 ## Теговая классификация и типы урона
 
 - Игровые теги — это иерархические строки вида `a.b.c`. Родительские теги выводятся автоматически: `damage.physical.slashing` удовлетворяет проверке `damage.physical` и `damage`.
-- Канонический способ классифицировать урон, доставку и эффекты — **теги**, а не `DamageType`.
-- Основные хелперы: `hasTag`, `hasAllTags`, `hasAnyTag` (`systems/tags/tag-helpers.ts`); `expandTag`, `expandTags` (`systems/tags/tag-hierarchy.ts`).
-- Теги оружия возвращает `getWeaponTags` (`systems/tags/weapon-tags.ts`). Безоружная атака имеет теги `attack.melee`, `target.single`, `delivery.unarmed`, `damage.physical.blunt`.
-- **Тип урона (`DamageType` в `core-types.ts`) устаревает** и сохраняется для совместимости с существующими схемами контента и интентами. Новые механики должны опираться на теги:
-  - физический урон — `damage.physical.{piercing,slashing,blunt}`;
-  - магический урон — `damage.magical.{fire,electric,poison,frost}`.
+- Канонический способ классифицировать урон, доставку и эффекты — **теги**. Тип урона задаётся только через иерархические теги (`damage.physical.*`, `damage.magical.*`).
+- Основные хелперы: `hasTag`, `hasAllTags`, `hasAnyTag`, `mergeDamageIntentTags` (`systems/tags/tag-helpers.ts`); `expandTag`, `expandTags` (`systems/tags/tag-hierarchy.ts`). `mergeDamageIntentTags` объединяет теги, гарантируя ровно один damage.*-тег, — используется для формирования DAMAGE-интентов; приоритет у первого встреченного damage-тега.
+- Теги оружия возвращает `getWeaponTags` (`systems/tags/weapon-tags.ts`). Безоружная атака имеет теги `attack.melee`, `target.single`, `delivery.weapon`, `delivery.unarmed`; её единственный тип урона — `damage.physical.blunt` (через `UNARMED_DAMAGE_DISTRIBUTION`).
+
+### Распределение урона по оружию
+
+Каждое оружие описывает распределение типов урона через массив `damageDistribution` в `WeaponStatsSchema`. Каждая запись содержит:
+
+```ts
+{ damageTag: GameplayTag; weight: number }
+```
+
+- `damageTag` — полный тег типа урона, например `damage.physical.slashing` или `damage.magical.fire`.
+- `weight` — множитель веса этого типа. Веса не нормализуются; запись с максимальным весом считается основным типом оружия.
+- Как минимум одна запись должна иметь `weight > 0`.
+
+### Хелперы урона
+
+Расположены в `systems/tags/weapon-tags.ts` и `systems/stats/effective-stats.ts`:
+
+- `getEffectiveWeaponDamage(entity: Entity): number` — итоговый урон экипированного оружия после модификаторов.
+- `getWeaponDamageDistribution(entity: Entity): Array<{ damageTag: GameplayTag; weight: number }>` — распределение типов урона экипированного оружия (для безоружной атаки возвращает `damage.physical.blunt` с весом 1.0).
+- `getPrimaryDamageTag(entity: Entity): GameplayTag` — основной тег урона оружия, запись с максимальным `weight`.
+- `getWeaponWeightForTag(entity: Entity, tag: GameplayTag): number` — вес указанного тега урона для экипированного оружия; если тег отсутствует — возвращает 0.
+
+### Физический и магический урон
+
+- Физический урон — `damage.physical.{piercing,slashing,blunt}`.
+- Магический урон — `damage.magical.{fire,electric,poison,frost}`.
 - Броня применяется только к физическому урону (тег `damage.physical`). Магический урон игнорирует броню, если в обработчике не указано иное.
-- Реакции мира (горение, контратака и др.) проверяют теги события, а не `damageType`.
+- Реакции мира (горение, контратака и др.) проверяют теги события.
+
+### Способности и требования к оружию
+
+- `damageTag` в шаблоне способности задаёт тип урона для ability-based скиллов (например, `damage.magical.fire` у `fireball`).
+- `requiredWeaponTags` проверяет теги экипированного оружия в `validate` `useAbilityAction` (`systems/actions/use-ability-action.ts`). Если оружие не удовлетворяет требованиям, скилл недоступен.
+- Weapon-based скиллы обычно используют `getEffectiveWeaponDamage` и/или `getPrimaryDamageTag`/`getWeaponWeightForTag` для расчёта урона от текущего оружия.
+
+---
 
 ## Детерминизм
 

@@ -10,17 +10,24 @@
  */
 
 import type { LocalizedItemTemplate } from '@content/registry';
-import type { GameplayTag, ItemDetailSection, ItemDetailViewModel } from './types';
+import type { ItemDetailSection, ItemDetailViewModel } from './types';
 import { tryGetLocalizedAbility } from '@content/registry';
 import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
 import type { Locale } from '@content/texts/lookup';
+import { getTagText } from '@content/texts/lookup';
+import type { GameplayTag } from '@simulation/core-types';
 import { t } from '@i18n/t';
-import { damageTypeLabel } from './localizationHelpers';
 
 export interface MapItemDetailOptions {
   stackCount?: number;
   rarity?: ItemDetailViewModel['rarity'];
   fallbackIcon?: string;
+  /** Effective урон по каждому типу урона (для оружия). Если не передан — показывается базовый урон. */
+  effectiveDamageByTag?: Record<GameplayTag, number>;
+}
+
+function formatDamage(value: number): number {
+  return Math.round(value);
 }
 
 function typeLabel(type: string): string {
@@ -62,21 +69,23 @@ export function mapItemTemplateToDetail(
 
   if (template.weapon) {
     const stats: Array<{ label: string; value: string | number }> = [];
-    const entries = template.weapon.damageEntries;
-    if (entries && entries.length > 0) {
-      for (const entry of entries) {
+    const effectiveByTag = opts?.effectiveDamageByTag;
+    for (const entry of template.weapon.damageDistribution) {
+      // Локализованное название типа урона из контентных текстов.
+      const tagText = getTagText(entry.damageTag, locale);
+      if (effectiveByTag && entry.damageTag in effectiveByTag) {
         stats.push({
-          label: t('system.itemMapper.weaponDamageLabel', { damageType: damageTypeLabel(entry.damageType) }),
-          value: entry.baseDamage,
+          label: tagText.name,
+          value: formatDamage(effectiveByTag[entry.damageTag]!),
+        });
+      } else {
+        const baseDamage = template.weapon.baseDamage ?? 0;
+        stats.push({
+          label: `${tagText.name} (${t('system.itemMapper.baseDamageLabel')})`,
+          value: formatDamage(baseDamage * entry.weight),
         });
       }
-    } else {
-      stats.push({
-        label: t('system.itemMapper.weaponBaseDamageLabel', { damageType: damageTypeLabel(template.weapon.damageType) }),
-        value: template.weapon.baseDamage ?? 0,
-      });
     }
-    stats.push({ label: t('system.itemMapper.weaponFormulaLabel'), value: template.weapon.damageFormulaId ?? t('system.itemMapper.weaponFormulaFallback') });
     sections.push({
       kind: 'stat-list',
       title: t('system.itemMapper.combatParamsTitle'),

@@ -52,8 +52,8 @@ describe('isEventVisible', () => {
       ],
     });
 
-    expect(isEventVisible({ type: 'ENTITY_DAMAGED', targetId: 'e1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 1, y: 1 } }, state)).toBe(true);
-    expect(isEventVisible({ type: 'ENTITY_DAMAGED', targetId: 'e1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 0, y: 0 } }, state)).toBe(false);
+    expect(isEventVisible({ type: 'ENTITY_DAMAGED', targetId: 'e1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } }, state)).toBe(true);
+    expect(isEventVisible({ type: 'ENTITY_DAMAGED', targetId: 'e1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 0, y: 0 } }, state)).toBe(false);
   });
 
   it('ABILITY_USED: visible if from OR any target is visible', () => {
@@ -171,7 +171,7 @@ describe('filterByFOV', () => {
     });
 
     // Невидимый родитель (from и targets в тумане), но ребёнок — урон на видимой клетке
-    const child = makeNode({ type: 'ENTITY_DAMAGED', targetId: 'player', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 1, y: 1 } });
+    const child = makeNode({ type: 'ENTITY_DAMAGED', targetId: 'player', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } });
     const parent = makeNode({ type: 'ABILITY_USED', entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 0, y: 0 } }, [child]);
     const result = makeResult([parent]);
     const filtered = filterByFOV(result, state);

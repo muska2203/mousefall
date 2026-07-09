@@ -48,7 +48,7 @@ describe('magicSlapSkill', () => {
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
     expect(damageIntents).toHaveLength(3);
     expect(damageIntents.every(i => i.entityId === enemy.id)).toBe(true);
-    expect(damageIntents.every(i => i.damageType === 'electric')).toBe(true);
+    expect(damageIntents.every(i => i.tags.includes('damage.magical.electric'))).toBe(true);
   });
 
   it('deals damage to 3 different targets', () => {
@@ -87,7 +87,7 @@ describe('magicSlapSkill', () => {
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(door.id);
-    expect(damageIntents[0]!.damageType).toBe('electric');
+    expect(damageIntents[0]!.tags).toContain('damage.magical.electric');
   });
 
   it('can target enemy in line of sight', () => {

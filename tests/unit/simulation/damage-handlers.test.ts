@@ -1,17 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { getDamageTypeHandler } from '../../../src/simulation/systems/damage/damage-type-handlers';
+import { getDamageHandler } from '../../../src/simulation/systems/damage/damage-handlers';
 import { makeEnemy, makeDoor } from '../../fixtures/gameState';
 
-describe('getDamageTypeHandler', () => {
+describe('getDamageHandler', () => {
   it('уменьшает физический урон на броню цели', () => {
     const target = makeEnemy({
       statModifiers: [{ stat: 'armor', value: 3, op: 'add', source: 'test' }],
     });
-    const handler = getDamageTypeHandler('blunt');
+    const handler = getDamageHandler(['damage.physical.blunt']);
 
     const damage = handler.calculateDamage({
       rawDamage: 5,
-      damageType: 'blunt',
       sourceEntityId: null,
       target,
       tags: ['damage.physical.blunt'],
@@ -24,11 +23,10 @@ describe('getDamageTypeHandler', () => {
     const target = makeEnemy({
       statModifiers: [{ stat: 'armor', value: 100, op: 'add', source: 'test' }],
     });
-    const handler = getDamageTypeHandler('fire');
+    const handler = getDamageHandler(['damage.magical.fire']);
 
     const damage = handler.calculateDamage({
       rawDamage: 5,
-      damageType: 'fire',
       sourceEntityId: null,
       target,
       tags: ['damage.magical.fire'],
@@ -39,11 +37,10 @@ describe('getDamageTypeHandler', () => {
 
   it('ограничивает физический урон минимумом 1, даже если броня выше урона', () => {
     const target = makeDoor({ armor: 10 });
-    const handler = getDamageTypeHandler('blunt');
+    const handler = getDamageHandler(['damage.physical.blunt']);
 
     const damage = handler.calculateDamage({
       rawDamage: 5,
-      damageType: 'blunt',
       sourceEntityId: null,
       target,
       tags: ['damage.physical.blunt'],

@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import {
   makeGameState,
   makePlayer,
@@ -9,7 +9,7 @@ import {
 } from '../../../fixtures/gameState';
 import { cleaveSkill } from '../../../../src/simulation/skills/executors/cleaveSkill';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate } from '../../../../src/content/schemas';
+import type { AbilityTemplate, ItemTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 
@@ -21,9 +21,30 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     cooldown: 2,
+    damageTag: 'damage.physical.slashing',
     ...overrides,
   } as AbilityTemplate;
 }
+
+const mockSword: ItemTemplate = {
+  id: 'mock_sword',
+  type: 'weapon',
+  value: 10,
+  rarity: 'common',
+  stackable: false,
+  maxStack: 1,
+  equipModifiers: [],
+  abilityPool: [],
+  grantedAbilities: [],
+  apCost: 1,
+  weapon: {
+    baseDamage: 4,
+    damageFormulaId: 'sword',
+    range: 1,
+    damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+    tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+  },
+};
 
 describe('cleaveSkill', () => {
   beforeEach(() => {
@@ -31,7 +52,9 @@ describe('cleaveSkill', () => {
     initRegistry({
       entities: new Map(),
       players: new Map(),
-      items: new Map(),
+      items: new Map([
+        ['mock_sword', mockSword],
+      ]),
       abilities: new Map([
         ['cleave', mockAbility('cleave', { cooldown: 2, apCost: 1 })],
       ]),
@@ -118,6 +141,7 @@ describe('cleaveSkill', () => {
       x: 5,
       y: 5,
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      equippedWeaponId: 'mock_sword',
       abilities: [{ templateId: 'cleave', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const enemy = makeEnemy({ id: 'enemy_center', x: 6, y: 5, hp: 50, maxHp: 50, armor: 0 });
@@ -131,7 +155,7 @@ describe('cleaveSkill', () => {
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
     expect(damageIntents[0]!.damage).toBeGreaterThan(0);
-    expect(damageIntents[0]!.damageType).toBe('blunt');
+    expect(damageIntents[0]!.tags).toContain('damage.physical.slashing');
   });
 
   it('resolve deals damage to two targets in arc', () => {
@@ -189,6 +213,7 @@ describe('cleaveSkill', () => {
       x: 5,
       y: 5,
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      equippedWeaponId: 'mock_sword',
       abilities: [{ templateId: 'cleave', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const door = makeDoor({ id: 'door_1', x: 6, y: 5, hp: 50, maxHp: 50, armor: 0 });
@@ -226,5 +251,46 @@ describe('cleaveSkill', () => {
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
 
     expect(intents.some(i => i.type === 'COUNTER_ATTACK')).toBe(false);
+  });
+
+  it('использует damageTag из JSON и не падает без него с fallback', () => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map([
+        ['mock_sword', mockSword],
+      ]),
+      abilities: new Map([
+        ['cleave', mockAbility('cleave', { damageTag: undefined })],
+      ]),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+    });
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      equippedWeaponId: 'mock_sword',
+      abilities: [{ templateId: 'cleave', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    const enemy = makeEnemy({ id: 'enemy_1', x: 6, y: 5, hp: 50, maxHp: 50, armor: 0 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(enemy.id, enemy);
+
+    const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+
+    expect(damageIntents).toHaveLength(1);
+    expect(damageIntents[0]!.tags).toContain('damage.physical.slashing');
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('damageTag'));
+
+    warnSpy.mockRestore();
   });
 });

@@ -4,5 +4,6 @@
   "cooldown": 2,
   "apCost": 1,
   "aiPreparable": true,
-  "tags": ["attack.ranged", "target.multi", "delivery.spell", "damage.magical.electric"]
+  "damageTag": "damage.magical.electric",
+  "tags": ["attack.ranged", "target.single", "delivery.spell"]
 }

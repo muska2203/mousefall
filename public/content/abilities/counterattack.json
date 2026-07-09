@@ -3,5 +3,6 @@
   "spriteId": "counterattack",
   "cooldown": 4,
   "apCost": 2,
-  "tags": ["target.self", "buff.reactive"]
+  "requiredWeaponTags": ["attack.melee"],
+  "tags": ["attack.melee", "target.single", "delivery.weapon", "reaction.counter"]
 }

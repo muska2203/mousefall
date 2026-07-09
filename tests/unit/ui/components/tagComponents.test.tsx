@@ -39,7 +39,7 @@ describe('TagList', () => {
       <TagList tags={['attack.melee', 'target.single']} locale="ru" />,
     );
     expect(html).toContain('Ближний бой');
-    expect(html).toContain('Одиночная цель');
+    expect(html).toContain('Точный');
   });
 
   it('returns null for empty tags', () => {

@@ -63,7 +63,7 @@ describe('actionAppliedBuilder', () => {
 
 describe('entityDamagedBuilder', () => {
   it('wraps HP_CHANGE inside DAMAGE for player with HP', () => {
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'player', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 0, y: 0 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'player', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 0, y: 0 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -73,7 +73,7 @@ describe('entityDamagedBuilder', () => {
   });
 
   it('wraps HP_CHANGE inside DAMAGE for enemy with HP', () => {
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 3, y: 3 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -85,7 +85,7 @@ describe('entityDamagedBuilder', () => {
   it('creates only DAMAGE step for target without HP', () => {
     const state = makeMockState();
     state.entities.set('door1', { id: 'door1', x: 1, y: 1 } as any);
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'door1', sourceEntityId: null, tags: [], damage: 5, damageType: 'blunt', position: { x: 1, y: 1 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'door1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } };
     const nodes = entityDamagedBuilder(event, [], state);
 
     expect(nodes).toHaveLength(1);

@@ -116,7 +116,7 @@ describe('swoopSkill', () => {
 
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.damageType).toBe('blunt');
+    expect(damageIntents[0]!.tags).toContain('damage.physical.blunt');
     expect(damageIntents[0]!.damage).toBeGreaterThan(0);
     expect(pushIntents).toHaveLength(1);
     expect(pushIntents[0]).toMatchObject({ type: 'PUSH', entityId: enemy.id, dx: 0, dy: 1 });
@@ -149,7 +149,7 @@ describe('swoopSkill', () => {
     const damageIntents = intents.filter(i => i.type === 'DAMAGE').filter(i => i.entityId === door.id);
 
     expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.damageType).toBe('blunt');
+    expect(damageIntents[0]!.tags).toContain('damage.physical.blunt');
   });
 
   it('returns no intents when target is a wall', () => {

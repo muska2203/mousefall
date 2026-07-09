@@ -31,7 +31,7 @@ import {
   Intent,
   GameEvent,
   RuntimeAbility,
-  DamageType,
+  GameplayTag,
   TurnSide,
   FactionId,
 } from "@simulation/core-types.ts";
@@ -60,7 +60,7 @@ export type {
   GameEvent,
   EntityMovedEvent,
   RuntimeAbility,
-  DamageType,
+  GameplayTag,
   TurnSide,
   FactionId,
 } from "@simulation/core-types.ts";
@@ -194,8 +194,6 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   /** Активные эффекты статуса. */
   type: 'enemy';
   blocksMovement: boolean;
-  /** Тип урона врага (fallback при отсутствии экипированного оружия). */
-  damageType: DamageType;
   /** Базовые характеристики. */
   baseStats: BaseStats;
   /** Базовое значение maxHp (из шаблона; для пересчёта через vit). */
@@ -475,13 +473,26 @@ export type Simulation = {
   ): import("@simulation/core-types.ts").Intent[];
 
   /** Возвращает базовую информацию о способности для отображения в UI. */
-  getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all' } | null;
+  getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all'; tags: import("@simulation/core-types.ts").GameplayTag[] } | null;
 
   /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
-  getWeaponDamage(player: PlayerEntity, weapon: ItemTemplate | null): number;
+  getWeaponDamage(player: PlayerEntity): number;
 
-  /** Возвращает записи урона оружия с типами. */
-  getWeaponDamageEntries(player: PlayerEntity, weapon: ItemTemplate | null): Array<{ damage: number; damageType: import("@simulation/core-types.ts").DamageType }>;
+  /** Возвращает распределение типов урона экипированного оружия с весами. */
+  getWeaponDamageDistribution(player: PlayerEntity): Array<{ damageTag: GameplayTag; weight: number }>;
+
+  /** Возвращает итоговый урон оружия для конкретного тега урона. */
+  getWeaponDamageByTag(player: PlayerEntity, tag: GameplayTag): number;
+
+  /**
+   * Считает effective урон для конкретного шаблона оружия и конкретного типа урона.
+   * Формула: базовый урон по формуле предмета × вес типа × модификаторы актора.
+   */
+  getEffectiveWeaponDamageForTemplate(
+    actor: StatActor,
+    template: ItemTemplate,
+    tag: GameplayTag,
+  ): number;
 
   /** Проверяет, может ли игрок переместиться на указанный тайл с учётом видимости.
    *  Невидимые объекты не блокируют путь. */

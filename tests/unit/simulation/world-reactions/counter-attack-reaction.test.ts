@@ -15,7 +15,6 @@ function makeEntityDamagedEvent(
     targetId,
     sourceEntityId,
     damage: 5,
-    damageType: 'blunt',
     position,
     tags,
   };

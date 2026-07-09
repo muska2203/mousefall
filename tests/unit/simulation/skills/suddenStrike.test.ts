@@ -126,7 +126,7 @@ describe('suddenStrikeSkill', () => {
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
     // Без оружия формула unarmed: max(0, round(1 + str * 1.0)) = 6.
     expect(damageIntents[0]!.damage).toBe(6);
-    expect(damageIntents[0]!.damageType).toBe('blunt');
+    expect(damageIntents[0]!.tags).toContain('damage.physical.blunt');
   });
 
   it('resolve produces DAMAGE intent with correct melee single-target weapon tags', () => {
@@ -146,7 +146,13 @@ describe('suddenStrikeSkill', () => {
 
     expect(damageIntent).toBeDefined();
     expect(damageIntent!.type).toBe('DAMAGE');
-    expect(damageIntent!.tags).toEqual(['attack.melee', 'target.single', 'delivery.weapon']);
+    expect(damageIntent!.tags).toEqual([
+      'damage.physical.blunt',
+      'attack.melee',
+      'target.single',
+      'delivery.weapon',
+      'delivery.unarmed',
+    ]);
   });
 
   it('resolve applies silenced only when enemy has preparedAbility', () => {

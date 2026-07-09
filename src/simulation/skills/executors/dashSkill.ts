@@ -4,7 +4,9 @@ import { TargetMode } from '@simulation/core-types';
 import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { isCombatEntity, isDamageable, isActor, findDoorAt, isBlocked } from '@simulation/state';
-import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
+import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
+import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import { tryGetAbility } from '@content/registry';
 
 /**
  * Базовый урон при столкновении рывка с актором.
@@ -50,7 +52,7 @@ function isDashStartAllowed(state: GameState, caster: Entity, dx: number, dy: nu
 
 /**
  * Возвращает клетки для выбора направления рывка.
- * Направление включаётся в список целей только если первая клетка пути свободна
+ * Направление включается в список целей только если первая клетка пути свободна
  * (либо это закрытая дверь). Для каждого допустимого направления добавляются
  * клетки на расстоянии 1 и 2.
  */
@@ -151,6 +153,9 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position, 
   let currentY = caster.y;
   const maxSteps = Math.max(Math.abs(dx), Math.abs(dy));
   const skillLevel = getSkillLevel(caster);
+  const ability = tryGetAbility(skillId);
+  const damageTag = getSkillDamageTag(ability);
+  const abilityTags = getAbilityTags(skillId);
 
   for (let step = 1; step <= maxSteps; step++) {
     const cellX = currentX + stepX;
@@ -200,13 +205,13 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position, 
           baseDamage: DASH_BUMP_BASE_DAMAGE,
         });
         for (const entry of damageEntries) {
+          const tags = mergeDamageIntentTags(entry.tags, abilityTags);
           intents.push({
             type: 'DAMAGE',
             entityId: actor.id,
             sourceEntityId: caster.id,
             damage: entry.damage,
-            damageType: entry.damageType,
-            tags: getAbilityTags(skillId),
+            tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
           });
         }
       }

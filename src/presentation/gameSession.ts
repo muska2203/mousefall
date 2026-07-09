@@ -24,6 +24,7 @@ import {toPresentationIntent} from './types';
 import {
   getAllLocalizedPlayerTemplates,
   tryGetPlayerTemplate,
+  tryGetItem,
   tryGetLocalizedItem,
   tryGetLocalizedAbility,
   getAllLocalizedItems,
@@ -270,11 +271,21 @@ export class GameSession {
 
     const buildItemDetail = (invItem: typeof player.inventory[0]) => {
       const template = tryGetLocalizedItem(invItem.templateId, locale);
+      const rawTemplate = tryGetItem(invItem.templateId);
+      const effectiveDamageByTag = rawTemplate?.type === 'weapon' && rawTemplate.weapon
+        ? Object.fromEntries(
+            rawTemplate.weapon.damageDistribution.map(entry => [
+              entry.damageTag,
+              this.simulation!.getEffectiveWeaponDamageForTemplate(state.player, rawTemplate, entry.damageTag),
+            ])
+          ) as Record<GameplayTag, number>
+        : undefined;
       const detail = template
         ? {
             ...mapItemTemplateToDetail(template, {
               stackCount: invItem.quantity,
               rarity: template.rarity,
+              effectiveDamageByTag,
             }, locale),
             name: template.name,
             description: template.description,
@@ -379,9 +390,12 @@ export class GameSession {
       .filter(invItem => !equippedIds.has(invItem.instanceId))
       .map(invItem => {
         const detail = buildItemDetail(invItem);
-        const template = tryGetLocalizedItem(invItem.templateId, locale);
-        const damage = template?.type === 'weapon' && template.weapon
-          ? this.simulation!.getWeaponDamage(state.player, template)
+        const rawTemplate = tryGetItem(invItem.templateId);
+        const damage = rawTemplate?.type === 'weapon' && rawTemplate.weapon
+          ? rawTemplate.weapon.damageDistribution.reduce(
+              (sum, entry) => sum + this.simulation!.getEffectiveWeaponDamageForTemplate(state.player, rawTemplate, entry.damageTag),
+              0,
+            )
           : null;
 
         return {
@@ -613,7 +627,7 @@ export class GameSession {
     if (!fromSim) return null;
     const localized = tryGetLocalizedAbility(abilityId, locale);
     return localized
-      ? { ...fromSim, name: localized.name, description: localized.description, tags: localized.tags }
+      ? { ...fromSim, name: localized.name, description: localized.description, tags: fromSim.tags }
       : { ...fromSim, name: abilityId, description: '', tags: [] };
   }
 

@@ -1,17 +1,16 @@
 import { Entity } from '@simulation/types';
-import { DamageType, GameplayTag } from '@simulation/core-types';
+import type { GameplayTag } from '@simulation/core-types';
 import { getEffectiveArmor } from '@simulation/systems/stats/effective-stats';
 import { hasTag } from '@simulation/systems/tags/tag-helpers';
 
 export type DamageCalculationContext = {
   rawDamage: number;
-  damageType: DamageType;
   sourceEntityId: string | null;
   target: Entity;
   tags: GameplayTag[];
 };
 
-export type DamageTypeHandler = {
+export type DamageHandler = {
   /** Вычисляет итоговый урон после всех модификаторов типа */
   calculateDamage: (ctx: DamageCalculationContext) => number;
 };
@@ -23,20 +22,26 @@ const defaultCalculateDamage = ({ rawDamage, target, tags }: DamageCalculationCo
   return Math.max(1, Math.round(rawDamage - armor));
 };
 
-const damageTypeHandlers: Record<DamageType, DamageTypeHandler> = {
-  blunt: { calculateDamage: defaultCalculateDamage },
-  slashing: { calculateDamage: defaultCalculateDamage },
-  piercing: { calculateDamage: defaultCalculateDamage },
-  fire: { calculateDamage: defaultCalculateDamage },
-  electric: { calculateDamage: defaultCalculateDamage },
-  poison: { calculateDamage: defaultCalculateDamage },
-  frost: { calculateDamage: defaultCalculateDamage },
-};
+const defaultHandler: DamageHandler = { calculateDamage: defaultCalculateDamage };
 
-export function getDamageTypeHandler(type: DamageType): DamageTypeHandler {
-  return damageTypeHandlers[type] ?? damageTypeHandlers.blunt;
+const damageHandlers: Array<{ predicate: (tags: GameplayTag[]) => boolean; handler: DamageHandler }> = [];
+
+/**
+ * Регистрирует обработчик урона, срабатывающий по предикату над тегами.
+ */
+export function registerDamageHandler(predicate: (tags: GameplayTag[]) => boolean, handler: DamageHandler): void {
+  damageHandlers.push({ predicate, handler });
 }
 
-export function registerDamageTypeHandler(type: DamageType, handler: DamageTypeHandler): void {
-  damageTypeHandlers[type] = handler;
+/**
+ * Возвращает первый обработчик, чей предикат соответствует тегам, или стандартный.
+ */
+export function getDamageHandler(tags: GameplayTag[]): DamageHandler {
+  for (const { predicate, handler } of damageHandlers) {
+    if (predicate(tags)) {
+      return handler;
+    }
+  }
+  return defaultHandler;
 }
+

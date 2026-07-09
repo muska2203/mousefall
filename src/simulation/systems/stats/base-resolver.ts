@@ -14,10 +14,9 @@
 import type { StatActor } from '@simulation/types.ts';
 import { getItem } from '@content/registry';
 import { PLAYER_BASE_MAX_HP, BASE_CRIT_MULTIPLIER } from '@utils/constants.ts';
-import { getWeaponDamage, getWeaponDamageEntries } from './weapon-formulas.ts';
+import { getWeaponDamage } from './weapon-formulas.ts';
 import { getEffectiveBaseStats } from './effective-base-stats.ts';
 import type { EffectiveBaseStats } from './effective-base-stats.ts';
-import type { WeaponDamageEntry } from './weapon-formulas.ts';
 
 // ─────────────────────────────────────────────
 // Effective базовые статы (с учётом +str, +dex и т.д. от экипировки)
@@ -52,17 +51,6 @@ export function getBaseDamage(actor: StatActor): number {
   return getWeaponDamage(actor, null);
 }
 
-export function getBaseDamageEntries(actor: StatActor): WeaponDamageEntry[] {
-  if (actor.equippedWeaponId) {
-    const weaponTemplate = getItem(actor.equippedWeaponId);
-    if (weaponTemplate.type === 'weapon') {
-      return getWeaponDamageEntries(actor, weaponTemplate);
-    }
-  }
-  // Без оружия
-  return getWeaponDamageEntries(actor, null);
-}
-
 export function getBaseArmor(actor: StatActor): number {
   if (actor.equippedArmorId) {
     const armorTemplate = getItem(actor.equippedArmorId);
@@ -74,7 +62,7 @@ export function getBaseArmor(actor: StatActor): number {
 }
 
 // ─────────────────────────────────────────────
-// Вторичные характеристики
+// Вторичные характеристики (рассчитываются для StatActor)
 // ─────────────────────────────────────────────
 
 export function getBaseDodgeChance(actor: StatActor): number {

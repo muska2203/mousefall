@@ -26,7 +26,8 @@
     "/content/items/weapons/cat_claw_small.json",
     "/content/items/weapons/cat_guardian_maul.json",
     "/content/items/weapons/common_school_wand.json",
-    "/content/items/weapons/common_splinter_blade.json"
+    "/content/items/weapons/common_splinter_blade.json",
+    "/content/items/weapons/unarmed.json"
   ],
   "abilities": [
     "/content/abilities/cleave.json",

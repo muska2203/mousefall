@@ -67,7 +67,7 @@ describe('fireballSkill', () => {
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.damage).toBeGreaterThan(0);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.damageType).toBe('fire');
+    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
     expect(statusIntents).toHaveLength(1);
     expect(statusIntents[0]!.status.type).toBe('burning');
     expect(statusIntents[0]!.status.duration).toBe(3);
@@ -88,7 +88,7 @@ describe('fireballSkill', () => {
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.damageType).toBe('fire');
+    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
   });
 
   it('hits multiple enemies in aoe', () => {
@@ -148,7 +148,7 @@ describe('fireballSkill', () => {
 
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(door.id);
-    expect(damageIntents[0]!.damageType).toBe('fire');
+    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
     expect(statusIntents).toHaveLength(1);
     expect(statusIntents[0]!.entityId).toBe(door.id);
     expect(statusIntents[0]!.status.type).toBe('burning');
@@ -169,7 +169,7 @@ describe('fireballSkill', () => {
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(door.id);
-    expect(damageIntents[0]!.damageType).toBe('fire');
+    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
   });
 
   it('can target tile with enemy in line of sight', () => {

@@ -16,10 +16,8 @@ import {
   getBaseAccuracy,
   getBaseCritChance,
   getBaseCritMultiplier,
-  getBaseDamageEntries,
 } from './base-resolver.ts';
 import { applyModifiers } from './modifier-engine.ts';
-import type { WeaponDamageEntry } from './weapon-formulas.ts';
 
 // ─────────────────────────────────────────────
 // Type guards
@@ -34,28 +32,12 @@ export function isStatActor(entity: Entity): entity is Entity & StatActor {
 // Урон и броня (полиморфные)
 // ─────────────────────────────────────────────
 
-export function getEffectiveDamage(entity: Entity): number {
+export function getEffectiveWeaponDamage(entity: Entity): number {
   if (isStatActor(entity)) {
     const base = getBaseDamage(entity);
     return Math.round(applyModifiers(entity, 'damage', base).total);
   }
   return 0;
-}
-
-export function getEffectiveDamageEntries(entity: Entity): WeaponDamageEntry[] {
-  if (isStatActor(entity)) {
-    const baseEntries = getBaseDamageEntries(entity);
-    // Модификаторы урона применяем пропорционально к каждой записи
-    const totalBase = baseEntries.reduce((sum, e) => sum + e.damage, 0);
-    if (totalBase === 0) return [];
-    const modifiedTotal = Math.round(applyModifiers(entity, 'damage', totalBase).total);
-    const ratio = modifiedTotal / totalBase;
-    return baseEntries.map(e => ({
-      damage: Math.max(0, Math.round(e.damage * ratio)),
-      damageType: e.damageType,
-    }));
-  }
-  return [];
 }
 
 export function getEffectiveArmor(entity: Entity): number {
@@ -80,7 +62,7 @@ export function getEffectiveMaxHp(actor: StatActor): number {
 }
 
 // ─────────────────────────────────────────────
-// Вторичные характеристики (только игрок)
+// Вторичные характеристики (рассчитываются для StatActor)
 // ─────────────────────────────────────────────
 
 export function getEffectiveDodgeChance(actor: StatActor): number {

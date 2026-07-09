@@ -5,7 +5,9 @@ import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { getEntitiesInRadius } from '@simulation/skills/targeting';
 import { isCombatEntity, isDamageable, isBlocked } from '@simulation/state';
-import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
+import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
+import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import { tryGetAbility } from '@content/registry';
 
 /**
  * Радиус выбора точки приземления относительно кастера.
@@ -91,6 +93,9 @@ function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position
 
   const intents: Intent[] = [];
   const skillLevel = getSkillLevel(caster);
+  const ability = tryGetAbility(skillId);
+  const damageTag = getSkillDamageTag(ability);
+  const abilityTags = getAbilityTags(skillId);
 
   // Прыжок в выбранную точку.
   intents.push({
@@ -117,13 +122,13 @@ function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position
       });
 
       for (const entry of damageEntries) {
+        const tags = mergeDamageIntentTags(entry.tags, abilityTags);
         intents.push({
           type: 'DAMAGE',
           entityId: entity.id,
           sourceEntityId: caster.id,
           damage: entry.damage,
-          damageType: entry.damageType,
-          tags: getAbilityTags(skillId),
+          tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
         });
       }
     }

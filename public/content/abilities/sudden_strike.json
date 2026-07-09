@@ -3,5 +3,6 @@
   "spriteId": "sudden_strike",
   "cooldown": 4,
   "apCost": 1,
-  "tags": ["attack.melee", "target.single", "delivery.weapon", "damage.physical.blunt"]
+  "requiredWeaponTags": ["attack.melee"],
+  "tags": ["attack.melee", "target.single", "delivery.weapon"]
 }

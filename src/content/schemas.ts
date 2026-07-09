@@ -25,7 +25,6 @@ const HealthSchema = z.object({
 const CombatSchema = z.object({
   damage: z.number().int().nonnegative().describe('Базовый урон за атаку'),
   armor:  z.number().int().nonnegative().default(0).describe('Плоское снижение урона'),
-  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).optional().describe('Тип урона врага'),
 }).describe('Боевые характеристики');
 
 const BaseStatsSchema = z.object({
@@ -86,7 +85,17 @@ const WeaponStatsSchema = z.object({
   baseDamage: z.number().int().nonnegative().describe('Базовый урон оружия'),
   damageFormulaId: z.string().min(1).describe('ID формулы урона в коде'),
   range: z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
-  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).default('blunt').describe('Тип урона оружия'),
+  damageDistribution: z.array(
+    z.object({
+      damageTag: z.string().min(1),
+      weight: z.number().min(0),
+    })
+  )
+  .refine(arr => arr.some(e => e.weight > 0), {
+    message: 'Как минимум один вес должен быть > 0',
+  })
+  .default([{ damageTag: 'damage.physical.blunt', weight: 1.0 }])
+  .describe('Распределение типов урона оружия по тегам'),
   tags: TagsSchema.describe('Теги классификации оружия (attack.melee, target.aoe и т.д.)'),
 }).describe('Характеристики оружия');
 
@@ -144,6 +153,10 @@ export const AbilityTemplateSchema = z.object({
   apCost: z.union([z.number().int().nonnegative(), z.literal('all')]).default(1)
     .describe('Стоимость использования в очках действий (AP). Число или "all" — все текущие AP актора.'),
   aiPreparable: z.boolean().default(false).describe('AI может подготавливать этот скилл на следующий ход'),
+  damageTag: z.string().min(1).optional()
+    .describe('Тег урона способности (для ability-based скиллов)'),
+  requiredWeaponTags: z.array(z.string().min(1)).default([])
+    .describe('Требования к тегам экипированного оружия'),
   tags: TagsSchema.describe('Теги классификации способности (attack.melee, target.aoe и т.д.)'),
 }).describe('Шаблон активной способности');
 

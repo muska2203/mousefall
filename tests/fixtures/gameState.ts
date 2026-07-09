@@ -104,7 +104,6 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     maxHp: 20,
     damage: 5,
     armor: 0,
-    damageType: 'blunt',
     templateId: 'cat_small',
     baseStats: { str: 1, dex: 1, int: 0, vit: 0 },
     statModifiers: [],

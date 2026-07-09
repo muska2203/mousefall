@@ -1,0 +1,18 @@
+{
+  "id": "unarmed",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 0,
+  "weapon": {
+    "baseDamage": 0,
+    "damageFormulaId": "unarmed",
+    "range": 1,
+    "damageDistribution": [
+      { "damageTag": "damage.physical.blunt", "weight": 1.0 }
+    ],
+    "tags": ["attack.melee", "target.single", "delivery.weapon", "delivery.unarmed"]
+  },
+  "grantedAbilities": [],
+  "equipModifiers": []
+}

@@ -10,7 +10,6 @@ import { tryGetLocalizedEntity, tryGetLocalizedItem, tryGetLocalizedAbility } fr
 import { resolveEnemySprite, resolveItemIcon, resolveAbilityIcon } from '@utils/assetResolver';
 import type { EnemyPopoverViewModel } from './types';
 import type { Locale } from '@content/texts/lookup';
-import { damageTypeLabel } from './localizationHelpers';
 
 export function mapEnemyToPopover(enemy: EnemyEntity, locale: Locale): EnemyPopoverViewModel {
   const currentLocale = locale;
@@ -49,8 +48,6 @@ export function mapEnemyToPopover(enemy: EnemyEntity, locale: Locale): EnemyPopo
     sprite: resolveEnemySprite(enemy.templateId),
     flavorText: template?.flavorText ?? '',
     damage: enemy.damage,
-    damageType: enemy.damageType,
-    damageTypeLabel: damageTypeLabel(enemy.damageType),
     hp: enemy.hp,
     maxHp: enemy.maxHp,
     skills,

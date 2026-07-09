@@ -123,7 +123,7 @@ describe('counterattack combat behavior', () => {
         ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2, tags: ['target.self', 'buff.reactive'] })],
         ['sudden_strike', mockAbility('sudden_strike', { cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.single', 'delivery.weapon'] })],
         ['magic_slap', mockAbility('magic_slap', { cooldown: 2, apCost: 1, tags: ['attack.ranged', 'target.multi', 'delivery.spell'] })],
-        ['cleave', mockAbility('cleave', { cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.aoe', 'delivery.weapon'] })],
+        ['cleave', mockAbility('cleave', { cooldown: 2, apCost: 1, damageTag: 'damage.physical.slashing', tags: ['attack.melee', 'target.aoe', 'delivery.weapon'] })],
         ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2, tags: ['attack.ranged', 'target.aoe', 'delivery.projectile', 'delivery.spell', 'effect.burn'] })],
       ]),
       maps: new Map(),

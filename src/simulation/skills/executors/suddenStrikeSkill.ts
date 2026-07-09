@@ -4,8 +4,10 @@ import { TargetMode } from '@simulation/core-types';
 import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { isCombatEntity, findAllEntitiesAt } from '@simulation/state';
 import { isEnemyEntity } from '@simulation/ai/ai-state';
-import { getEffectiveDamageEntries } from '@simulation/systems/stats/effective-stats';
+import { getEffectiveWeaponDamage } from '@simulation/systems/stats/effective-stats';
 import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
+import { getPrimaryDamageTag, getWeaponTags } from '@simulation/systems/tags/weapon-tags';
+import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
 
 /**
  * Восемь соседних смещений вокруг клетки кастующего.
@@ -77,14 +79,17 @@ export const suddenStrikeSkill: SkillExecutor = {
       .find(e => isCombatEntity(e) && e.isAlive !== false);
     if (!target) return [];
 
-    const intents: Intent[] = getEffectiveDamageEntries(caster).map(entry => ({
+    const damage = getEffectiveWeaponDamage(caster);
+    const primaryTag = getPrimaryDamageTag(caster);
+    const tags = mergeDamageIntentTags([primaryTag], getAbilityTags(this.id), getWeaponTags(caster));
+
+    const intents: Intent[] = [{
       type: 'DAMAGE' as const,
       entityId: target.id,
       sourceEntityId: caster.id,
-      damage: entry.damage,
-      damageType: entry.damageType,
-      tags: getAbilityTags(this.id),
-    }));
+      damage,
+      tags,
+    }];
 
     // Если цель — враг с подготовленной способностью, накладываем немоту.
     if (isEnemyEntity(target) && target.aiState.preparedAbility) {

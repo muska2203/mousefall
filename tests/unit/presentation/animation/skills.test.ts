@@ -90,7 +90,7 @@ describe('dashComposer', () => {
     };
     const children: AnimationNode[] = [
       makeNode({ type: 'MOVE', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 6, y: 5 } }),
-      makeNode({ type: 'DAMAGE', targetId: 'enemy1', amount: 5, damageType: 'blunt', position: { x: 6, y: 5 } }),
+      makeNode({ type: 'DAMAGE', targetId: 'enemy1', amount: 5, tags: ['damage.physical.blunt'], position: { x: 6, y: 5 } }),
       makeNode({ type: 'MOVE', entityId: 'enemy1', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } }),
       makeNode({ type: 'MOVE', entityId: 'player', from: { x: 6, y: 5 }, to: { x: 7, y: 5 } }),
     ];
@@ -132,7 +132,7 @@ describe('swoopComposer', () => {
     };
     const children: AnimationNode[] = [
       makeNode({ type: 'JUMP', entityId: 'player', from: { x: 5, y: 5 }, to: { x: 7, y: 5 } }),
-      makeNode({ type: 'DAMAGE', targetId: 'enemy1', amount: 8, damageType: 'blunt', position: { x: 7, y: 6 } }),
+      makeNode({ type: 'DAMAGE', targetId: 'enemy1', amount: 8, tags: ['damage.physical.blunt'], position: { x: 7, y: 6 } }),
       makeNode({ type: 'MOVE', entityId: 'enemy1', from: { x: 7, y: 6 }, to: { x: 7, y: 7 } }),
     ];
     const nodes = swoopComposer(event, children, makeMockState());

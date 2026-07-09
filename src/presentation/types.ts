@@ -8,7 +8,7 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide, StatusEffect, InteractionId, GameAction } from '@simulation/types';
+import type { GameState, PlayerStatsSnapshot, Intent, RunStats, TurnSide, StatusEffect, InteractionId, GameAction } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
 import type {AIMode} from '@simulation/ai/ai-state';
 
@@ -94,7 +94,7 @@ export type AnimationStep =
       type: 'DAMAGE';
       targetId: string;
       amount: number;
-      damageType: DamageType;
+      tags: GameplayTag[];
       position: Position;
     }
   | {
@@ -318,8 +318,6 @@ export type EnemyPopoverViewModel = {
   sprite: string;
   flavorText: string;
   damage: number;
-  damageType: DamageType;
-  damageTypeLabel: string;
   hp: number;
   maxHp: number;
   skills: Array<{ name: string; icon: string | null; cooldown: number; maxCooldown: number }>;
@@ -389,7 +387,7 @@ export type PresentationIntent =
   | { type: 'MOVE'; entityId: string; dx: number; dy: number; from: Position; to: Position }
   | { type: 'JUMP'; entityId: string; dx: number; dy: number; from: Position; to: Position }
   | { type: 'PUSH'; entityId: string; dx: number; dy: number; from: Position; to: Position }
-  | { type: 'DAMAGE'; entityId: string; damage: number; damageType: import('@simulation/core-types').DamageType; position: Position }
+  | { type: 'DAMAGE'; entityId: string; damage: number; tags: GameplayTag[]; position: Position }
   | { type: 'HEAL'; entityId: string; amount: number; position: Position }
   | { type: 'DIE'; entityId: string; position: Position }
   | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
@@ -426,7 +424,7 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
     case 'DAMAGE': {
       const entity = state.entities.get(intent.entityId);
       if (!entity) return null;
-      return { type: 'DAMAGE', entityId: intent.entityId, damage: intent.damage, damageType: intent.damageType, position: { x: entity.x, y: entity.y } };
+      return { type: 'DAMAGE', entityId: intent.entityId, damage: intent.damage, tags: intent.tags, position: { x: entity.x, y: entity.y } };
     }
     case 'HEAL': {
       const entity = state.entities.get(intent.entityId);

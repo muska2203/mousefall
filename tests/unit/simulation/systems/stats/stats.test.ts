@@ -18,7 +18,7 @@ import {
   consumeCharge,
 } from '@simulation/systems/stats/modifier-engine.ts';
 import {
-  getEffectiveDamage,
+  getEffectiveWeaponDamage,
   getEffectiveArmor,
   getEffectiveMaxHp,
 } from '@simulation/systems/stats/effective-stats.ts';
@@ -44,7 +44,7 @@ describe('stats system', () => {
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',
-          weapon: { baseDamage: 5, damageFormulaId: 'sword', range: 1, damageType: 'slashing', tags: [] },
+          weapon: { baseDamage: 5, damageFormulaId: 'sword', range: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: [] },
         })],
         ['test_armor', mockItem('test_armor', {
           type: 'armor',
@@ -215,13 +215,13 @@ describe('stats system', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 0, vit: 0 } });
       // unarmed: 1 + 0 = 1
       player.statModifiers = [{ stat: 'damage', value: 4, op: 'add', source: 'buff' }];
-      expect(getEffectiveDamage(player)).toBe(5);
+      expect(getEffectiveWeaponDamage(player)).toBe(5);
     });
 
     it('returns derived damage for enemies with baseStats', () => {
       // unarmed: 1 + str * 1.0 = 1 + 2 = 3
       const enemy = makeEnemy({ baseStats: { str: 2, dex: 0, int: 0, vit: 0 }, equippedWeaponId: null });
-      expect(getEffectiveDamage(enemy)).toBe(3);
+      expect(getEffectiveWeaponDamage(enemy)).toBe(3);
     });
 
     it('returns base armor + modifiers for player', () => {

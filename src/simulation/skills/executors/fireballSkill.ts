@@ -5,7 +5,9 @@ import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { getEntitiesInRadius, getVisiblePositionsWithinRange } from '@simulation/skills/targeting';
 import { isCombatEntity, isDamageable } from '@simulation/state';
-import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
+import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
+import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import { tryGetAbility } from '@content/registry';
 
 export const fireballSkill: SkillExecutor = {
   id: 'fireball',
@@ -41,6 +43,9 @@ export const fireballSkill: SkillExecutor = {
 
     const intents: Intent[] = [];
     const affectedEntities = getEntitiesInRadius(state, center, 1);
+    const ability = tryGetAbility(this.id);
+    const damageTag = getSkillDamageTag(ability);
+    const abilityTags = getAbilityTags(this.id);
 
     for (const entity of affectedEntities) {
       // Предметы и лестницы не получают урона.
@@ -61,15 +66,14 @@ export const fireballSkill: SkillExecutor = {
         skillLevel,
         baseDamage,
       });
-
       for (const entry of damageEntries) {
+        const tags = mergeDamageIntentTags(entry.tags, abilityTags);
         intents.push({
           type: 'DAMAGE',
           entityId: entity.id,
           sourceEntityId: caster.id,
           damage: entry.damage,
-          damageType: entry.damageType,
-          tags: getAbilityTags(this.id),
+          tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
         });
       }
 

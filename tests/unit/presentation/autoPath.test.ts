@@ -924,6 +924,7 @@ describe('GameSession auto-path integration', () => {
         cooldown: 0,
         apCost: 1,
         aiPreparable: false,
+        requiredWeaponTags: [],
         tags: [],
       }]]),
       maps: new Map(),

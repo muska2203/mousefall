@@ -53,7 +53,9 @@ describe('Шаблон босса cat_guardian', () => {
     expect(parsedWeapon.type).toBe('weapon');
     expect(parsedWeapon.weapon).toBeDefined();
     expect(typeof parsedWeapon.weapon?.baseDamage).toBe('number');
-    expect(typeof parsedWeapon.weapon?.damageType).toBe('string');
+    expect(parsedWeapon.weapon?.damageDistribution).toBeInstanceOf(Array);
+    expect(parsedWeapon.weapon?.damageDistribution.length).toBeGreaterThan(0);
+    expect(typeof parsedWeapon.weapon?.damageDistribution[0]?.damageTag).toBe('string');
 
     expect(parsedArmor.type).toBe('armor');
     expect(parsedArmor.armor).toBeDefined();

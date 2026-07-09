@@ -3,8 +3,9 @@ import {GameState} from "@simulation/types.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
-import { getEffectiveDamageEntries } from "@simulation/systems/stats/effective-stats.ts";
-import { getWeaponTags } from "@simulation/systems/tags/weapon-tags.ts";
+import { getEffectiveWeaponDamage } from "@simulation/systems/stats/effective-stats.ts";
+import { getPrimaryDamageTag, getWeaponTags } from "@simulation/systems/tags/weapon-tags.ts";
+import { mergeDamageIntentTags } from "@simulation/systems/tags/tag-helpers.ts";
 
 // ─────────────────────────────────────────────
 // Контекст атаки (устраняет дублирование поиска)
@@ -60,14 +61,17 @@ export const attackEntity: ActionHandler = {
       return [];
     }
 
-    const intents: Intent[] = getEffectiveDamageEntries(ctx.attacker).map(entry => ({
+    const damage = getEffectiveWeaponDamage(ctx.attacker);
+    const primaryTag = getPrimaryDamageTag(ctx.attacker);
+    const tags = mergeDamageIntentTags([primaryTag], getWeaponTags(ctx.attacker));
+
+    const intents: Intent[] = [{
       type: 'DAMAGE' as const,
       entityId: ctx.target.id,
       sourceEntityId: ctx.attacker.id,
-      damage: entry.damage,
-      damageType: entry.damageType,
-      tags: getWeaponTags(ctx.attacker),
-    }));
+      damage,
+      tags,
+    }];
 
     return intents;
   },

@@ -361,16 +361,13 @@ export interface SystemItemMapperTranslations {
   rarityCommon: string;
   rarityRare: string;
   rarityUnique: string;
-  weaponDamageLabel: string;
-  weaponBaseDamageLabel: string;
-  weaponFormulaLabel: string;
-  weaponFormulaFallback: string;
   combatParamsTitle: string;
   armorTitle: string;
   armorRatingLabel: string;
   consumableTitle: string;
   effectTypeLabel: string;
   effectValueLabel: string;
+  baseDamageLabel: string;
 }
 
 export interface SystemEnemyMapperTranslations {

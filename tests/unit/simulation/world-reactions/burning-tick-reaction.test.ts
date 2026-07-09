@@ -27,7 +27,7 @@ describe('burning tick reaction', () => {
     const events = collectEvents(builder.root);
     const damageEvents = events.filter((e: any) => e.type === 'ENTITY_DAMAGED');
     expect(damageEvents).toHaveLength(1);
-    expect(damageEvents[0]).toMatchObject({ targetId: enemy.id, damageType: 'fire' });
+    expect(damageEvents[0]).toMatchObject({ targetId: enemy.id, tags: expect.arrayContaining(['damage.magical.fire']) });
     expect(enemy.hp).toBeLessThan(100);
   });
 

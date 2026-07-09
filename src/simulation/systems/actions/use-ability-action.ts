@@ -7,6 +7,7 @@ import { validateAbilityTargets } from '@simulation/skills/target-validation';
 import { tryGetAbility } from '@content/registry';
 import { isEnemyEntity } from '@simulation/ai/ai-state';
 import { isSilenced } from '@simulation/systems/silence-helper';
+import { meetsWeaponRequirements } from '@simulation/systems/abilities/ability-requirements';
 
 export const useAbilityAction: ActionHandler = {
   validate(state: GameState, action: UseAbilityAction): ValidationResult {
@@ -35,6 +36,11 @@ export const useAbilityAction: ActionHandler = {
 
     if (isSilenced(actor)) {
       return { ok: false, reasonCode: 'actor_silenced' };
+    }
+
+    // Проверяем требования к экипированному оружию.
+    if (!meetsWeaponRequirements(actor, runtimeAbility)) {
+      return { ok: false, reasonCode: 'weapon_tags_mismatch' };
     }
 
     // Если это подготовленная AI-способность — проверяем совпадение abilityId и targets.

@@ -5,7 +5,9 @@ import { SkillExecutor } from '@simulation/skills/skillExecutor';
 import { damageFormulas } from '@simulation/skills/damageFormula';
 import { getDamageablePositionsWithinRange } from '@simulation/skills/targeting';
 import { isCombatEntity, isDamageable } from '@simulation/state';
-import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
+import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
+import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import { tryGetAbility } from '@content/registry';
 
 export const magicSlapSkill: SkillExecutor = {
   id: 'magic_slap',
@@ -40,6 +42,9 @@ export const magicSlapSkill: SkillExecutor = {
     const skillLevel = caster.type === 'player'
       ? (caster.abilities.find(a => a.templateId === 'magic_slap')?.level ?? 1)
       : 1;
+    const ability = tryGetAbility(this.id);
+    const damageTag = getSkillDamageTag(ability);
+    const abilityTags = getAbilityTags(this.id);
 
     for (const targetPos of effectiveTargets) {
       const entity = Array.from(state.entities.values()).find(
@@ -58,13 +63,13 @@ export const magicSlapSkill: SkillExecutor = {
       });
 
       for (const entry of damageEntries) {
+        const tags = mergeDamageIntentTags(entry.tags, abilityTags);
         intents.push({
           type: 'DAMAGE',
           entityId: entity.id,
           sourceEntityId: caster.id,
           damage: entry.damage,
-          damageType: entry.damageType,
-          tags: getAbilityTags(this.id),
+          tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
         });
       }
     }

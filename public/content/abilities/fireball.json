@@ -3,5 +3,6 @@
   "spriteId": "fireball",
   "cooldown": 3,
   "apCost": 2,
-  "tags": ["attack.ranged", "target.aoe", "delivery.projectile", "delivery.spell", "effect.burn", "damage.magical.fire"]
+  "damageTag": "damage.magical.fire",
+  "tags": ["attack.ranged", "target.aoe", "delivery.projectile", "delivery.spell", "effect.burn"]
 }

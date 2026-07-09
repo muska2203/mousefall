@@ -11,6 +11,7 @@ function mockAbility(id: string): AbilityTemplate {
     cooldown: 3,
     apCost: 1,
     aiPreparable: false,
+    requiredWeaponTags: [],
     tags: [],
   };
 }
@@ -27,7 +28,7 @@ function mockItem(id: string): ItemTemplate {
     equipModifiers: [],
     grantedAbilities: [],
     apCost: 1,
-    weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2, damageType: 'blunt', tags: [] },
+    weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2, damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }], tags: [] },
   };
 }
 

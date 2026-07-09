@@ -1,9 +1,9 @@
 import { WorldReaction } from './types';
 import { findEntity } from '@simulation/state';
-import { getEffectiveDamageEntries } from '@simulation/systems/stats/effective-stats';
+import { getEffectiveWeaponDamage } from '@simulation/systems/stats/effective-stats';
 import { Intent } from '@simulation/core-types';
-import { hasAllTags } from '@simulation/systems/tags/tag-helpers';
-import { getWeaponTags } from '@simulation/systems/tags/weapon-tags';
+import { hasAllTags, hasTag, mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import { getPrimaryDamageTag, getWeaponTags } from '@simulation/systems/tags/weapon-tags';
 import { randomChance } from '@utils/random';
 
 /**
@@ -13,6 +13,15 @@ const COUNTER_TRIGGER_TAGS = [
   'attack.melee',
   'target.single',
   'delivery.weapon',
+] as const;
+
+/**
+ * Теги целевого типа, исключающие контратаку (AoE/множественные цели
+ * не считаются одиночной атакой в ближнем бою).
+ */
+const COUNTER_EXCLUDE_TARGET_TAGS = [
+  'target.aoe',
+  'target.multi',
 ] as const;
 
 /**
@@ -29,6 +38,7 @@ export const counterAttackReaction: WorldReaction = (state, event) => {
     }
 
     if (!hasAllTags(event.tags, COUNTER_TRIGGER_TAGS)) return [];
+    if (COUNTER_EXCLUDE_TARGET_TAGS.some(tag => hasTag(event.tags, tag))) return [];
 
     if (!event.sourceEntityId) return [];
     const source = findEntity(state, event.sourceEntityId);
@@ -59,18 +69,17 @@ export const counterAttackReaction: WorldReaction = (state, event) => {
     if (!('hp' in counterAttacker) || counterAttacker.hp <= 0 || counterAttacker.isAlive === false) return [];
     if (!('hp' in target) || target.hp <= 0 || target.isAlive === false) return [];
 
-    const intents: Intent[] = [];
-    const counterTags = [...getWeaponTags(counterAttacker), 'reaction.counter'];
-    for (const entry of getEffectiveDamageEntries(counterAttacker)) {
-      intents.push({
-        type: 'DAMAGE',
-        entityId: target.id,
-        sourceEntityId: counterAttacker.id,
-        damage: entry.damage,
-        damageType: entry.damageType,
-        tags: counterTags,
-      });
-    }
+    const damage = getEffectiveWeaponDamage(counterAttacker);
+    const primaryTag = getPrimaryDamageTag(counterAttacker);
+    const tags = mergeDamageIntentTags([primaryTag], getWeaponTags(counterAttacker), ['reaction.counter']);
+
+    const intents: Intent[] = [{
+      type: 'DAMAGE',
+      entityId: target.id,
+      sourceEntityId: counterAttacker.id,
+      damage,
+      tags,
+    }];
 
     return intents;
   }

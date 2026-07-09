@@ -9,8 +9,10 @@
     "baseDamage": 1,
     "damageFormulaId": "dagger",
     "range": 1,
-    "damageType": "piercing",
-    "tags": ["attack.melee", "target.single", "delivery.weapon", "damage.physical.piercing"]
+    "damageDistribution": [
+      { "damageTag": "damage.physical.piercing", "weight": 1.0 }
+    ],
+    "tags": ["attack.melee", "target.single", "delivery.weapon"]
   },
   "grantedAbilities": [],
   "equipModifiers": []

@@ -101,16 +101,6 @@ export type StatusEffectType =
   | 'regenerating'
   | 'counterattack';
 
-/** Тип урона. */
-export type DamageType =
-  | 'piercing'
-  | 'slashing'
-  | 'blunt'
-  | 'fire'
-  | 'electric'
-  | 'poison'
-  | 'frost';
-
 /** Идентификатор фракции. */
 export type FactionId = 'player' | 'allies' | 'enemies' | 'neutrals';
 
@@ -331,7 +321,7 @@ export type Intent =
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
 export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null };
-export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType; tags: GameplayTag[] };
+export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect; tags?: GameplayTag[] };
 export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][] };
@@ -421,7 +411,7 @@ export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationE
 
 export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' | 'dash' | 'teleport' };
 
-export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; sourceEntityId: EntityId | null; damage: number; damageType: DamageType; position: Position; tags: GameplayTag[] };
+export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; sourceEntityId: EntityId | null; damage: number; position: Position; tags: GameplayTag[] };
 
 export type EntityDiedEvent = { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
 

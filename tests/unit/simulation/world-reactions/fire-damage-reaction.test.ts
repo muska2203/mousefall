@@ -3,14 +3,13 @@ import { fireDamageReaction } from '../../../../src/simulation/systems/world-rea
 import { makePlayer, makeEnemy, makeStateWithPlayerAndEntity, makeGameState } from '../../../fixtures/gameState';
 import * as randomModule from '../../../../src/utils/random';
 
-function makeEntityDamagedEvent(targetId: string, damageType: import('../../../../src/simulation/core-types').DamageType) {
+function makeEntityDamagedEvent(targetId: string, kind: 'fire' | 'blunt') {
   return {
     type: 'ENTITY_DAMAGED' as const,
     targetId,
     sourceEntityId: null,
-    tags: damageType === 'fire' ? ['damage.magical.fire'] : [],
+    tags: kind === 'fire' ? ['damage.magical.fire'] : ['damage.physical.blunt'],
     damage: 5,
-    damageType,
     position: { x: 0, y: 0 },
   };
 }
