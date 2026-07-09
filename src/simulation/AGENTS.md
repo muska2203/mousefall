@@ -26,6 +26,10 @@
 | Изменить ход | `simulation.ts`, метод `dispatch` |
 | Изменить генерацию карт | `systems/mapgen.ts` (диспетчер) → `systems/map-generation/*-strategy.ts` |
 | Добавить тип события | `core-types.ts` (union `GameEvent`) |
+| Добавить/изменить игровой тег | `src/simulation/systems/tags/` (`tag-helpers.ts`, `tag-hierarchy.ts`, `weapon-tags.ts`) |
+| Добавить/изменить тип урона | `src/simulation/systems/damage/damage-type-handlers.ts` + `core-types.ts` (`DamageType`) |
+| Добавить исполнитель способности | `src/simulation/skills/` |
+| Добавить обработчик входящего урона | `src/simulation/systems/world-reactions/` (проверяй теги через `hasTag`) |
 
 ---
 
@@ -46,6 +50,18 @@
 `findFirstAttackableEntityAt`, `findAllEntitiesAt`, `findStairsAt`.
 
 ---
+
+## Теговая классификация и типы урона
+
+- Игровые теги — это иерархические строки вида `a.b.c`. Родительские теги выводятся автоматически: `damage.physical.slashing` удовлетворяет проверке `damage.physical` и `damage`.
+- Канонический способ классифицировать урон, доставку и эффекты — **теги**, а не `DamageType`.
+- Основные хелперы: `hasTag`, `hasAllTags`, `hasAnyTag` (`systems/tags/tag-helpers.ts`); `expandTag`, `expandTags` (`systems/tags/tag-hierarchy.ts`).
+- Теги оружия возвращает `getWeaponTags` (`systems/tags/weapon-tags.ts`). Безоружная атака имеет теги `attack.melee`, `target.single`, `delivery.unarmed`, `damage.physical.blunt`.
+- **Тип урона (`DamageType` в `core-types.ts`) устаревает** и сохраняется для совместимости с существующими схемами контента и интентами. Новые механики должны опираться на теги:
+  - физический урон — `damage.physical.{piercing,slashing,blunt}`;
+  - магический урон — `damage.magical.{fire,electric,poison,frost}`.
+- Броня применяется только к физическому урону (тег `damage.physical`). Магический урон игнорирует броню, если в обработчике не указано иное.
+- Реакции мира (горение, контратака и др.) проверяют теги события, а не `damageType`.
 
 ## Детерминизм
 

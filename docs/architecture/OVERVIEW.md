@@ -149,9 +149,13 @@ UI не знает о существовании Simulation. Content не зна
 **Структура внутри UI:**
 ```
 src/ui/
+  ├── animation/      # Исполнители анимационных планов от Presentation
+  ├── components/     # React — HUD, меню, панели, инвентарь, теговые компоненты
+  ├── input/          # Обработчики ввода
   ├── renderer/       # PixiJS — отрисовка мира, спрайтов, тайлов
-  ├── components/     # React — HUD, меню, панели, инвентарь
-  └── input/          # Обработчики ввода
+  ├── screens/        # Полноэкранные React-экраны
+  ├── store/          # Локальное состояние UI (настройки и пр.)
+  └── styles/         # CSS-константы и глобальные стили
 ```
 
 > Renderer (PixiJS) — **не отдельный архитектурный слой**, а техническая подсистема внутри UI.
@@ -160,6 +164,9 @@ src/ui/
 **Разрешено зависеть от:**
 - `src/presentation/` (получение ViewModel, отправка событий ввода)
 - `src/utils/constants.ts` (TILE_SIZE и визуальные константы)
+- `src/utils/animationConfig.ts` (конфигурация анимаций)
+- `src/utils/tween.ts` (визуальные твины)
+- `src/utils/assetResolver.ts` (разрешение путей к ассетам)
 
 **Запрещено:**
 - Мутировать игровое состояние напрямую
@@ -172,7 +179,7 @@ src/ui/
 ## Dependency Rules (Strict)
 
 ```
-ui/           → presentation/, utils/constants.ts
+ui/           → presentation/, utils/constants.ts, utils/animationConfig.ts, utils/tween.ts, utils/assetResolver.ts
 presentation/ → simulation/ (только публичный API), content/, utils/
 simulation/   → content/, utils/
 content/      → (nothing)
@@ -351,7 +358,7 @@ UI Layer исполняет анимацию атаки.
 ### 6. Action → Intent → Event Tree
 
 Simulation использует трёхфазную систему:
-- **Action** — высокоуровневое намерение (MOVE, ATTACK, WAIT)
+- **Action** — высокоуровневое намерение (MOVE, ATTACK, END_TURN)
 - **Intent** — низкоуровневые операции после разрешения (MOVE, DAMAGE, DIE)
 - **Event** — неизменяемая запись о произошедшем, организованная в дерево `ExecutionNode`
 

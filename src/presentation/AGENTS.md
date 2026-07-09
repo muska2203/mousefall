@@ -34,6 +34,8 @@
 | Добавить сессионное состояние | `gameSession.ts` / `types.ts` |
 | Изменить ViewModel | `types.ts` (тип `ViewModel`) + формирующий код |
 | Добавить обработку UI-события | `gameSession.ts` |
+| Добавить локализацию типа урона | `src/presentation/localizationHelpers.ts` + `src/content/texts/{ru,en}.ts` |
+| Добавить отображение тегов предмета/врага | `src/presentation/itemDetailMapper.ts` / `src/presentation/enemyDetailMapper.ts` + `src/content/texts/{ru,en}.ts` |
 
 ---
 

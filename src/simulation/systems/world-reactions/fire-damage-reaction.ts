@@ -1,5 +1,6 @@
 import { WorldReaction } from './types';
 import { findEntity } from '@simulation/state';
+import { hasTag } from '@simulation/systems/tags/tag-helpers';
 import { randomChance } from '@utils/random';
 
 /**
@@ -8,7 +9,7 @@ import { randomChance } from '@utils/random';
  */
 export const fireDamageReaction: WorldReaction = (state, event, _builder, _parent) => {
   if (event.type !== 'ENTITY_DAMAGED') return [];
-  if (event.damageType !== 'fire') return [];
+  if (!hasTag(event.tags, 'damage.magical.fire')) return [];
 
   if (!randomChance(10)) return [];
 

@@ -10,49 +10,12 @@
  */
 
 import type { LocalizedItemTemplate } from '@content/registry';
-import type { GameplayTag } from './types';
+import type { GameplayTag, ItemDetailSection, ItemDetailViewModel } from './types';
 import { tryGetLocalizedAbility } from '@content/registry';
 import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
 import type { Locale } from '@content/texts/lookup';
 import { t } from '@i18n/t';
 import { damageTypeLabel } from './localizationHelpers';
-
-export type ItemDetailSection =
-  | { kind: 'stat-list'; title: string; stats: Array<{ label: string; value: string | number }> }
-  | { kind: 'description'; text: string };
-
-export interface ItemDetailViewModel {
-  name: string;
-  description: string;
-  rarity: 'common' | 'rare' | 'unique';
-  rarityLabel: string;
-  typeLabel: string;
-  /** Тип предмета: weapon, armor, amulet, consumable, key, gold */
-  type: string;
-  icon: string;
-  frameUrl: string;
-  fallbackIcon?: string;
-  stackCount?: number;
-  sections: ItemDetailSection[];
-  /** Все способности экземпляра предмета (фиксированные + ролленные) */
-  grantedAbilities?: Array<{
-    templateId: string;
-    name: string;
-    description: string;
-    level: number;
-    icon: string | null;
-  }> | null;
-  /** Пул скиллов, из которого роллится способность при создании экземпляра */
-  abilityPool?: Array<{
-    abilityId: string;
-    name: string;
-    description: string;
-    icon: string | null;
-    weight: number;
-  }> | null;
-  /** Теги классификации предмета (обычно оружия). */
-  tags: GameplayTag[];
-}
 
 export interface MapItemDetailOptions {
   stackCount?: number;

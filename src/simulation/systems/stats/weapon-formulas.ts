@@ -8,7 +8,7 @@
 import type { StatActor } from '@simulation/types.ts';
 import type { ItemTemplate } from '@content/schemas';
 import type { DamageType } from '@simulation/core-types.ts';
-import { getEffectiveBaseStats } from './base-resolver.ts';
+import { getEffectiveBaseStats } from './effective-base-stats.ts';
 
 export type WeaponDamageEntry = {
   damage: number;
@@ -57,33 +57,11 @@ const weaponFormulas: Record<string, WeaponFormula> = {
 };
 
 /**
- * Вычисляет записи урона для оружия по формуле.
+ * Вычисляет запись урона для оружия по формуле.
+ * Каждое оружие наносит урон только одного типа.
  * Если formulaId не найден — используется unarmed.
  */
 export function getWeaponDamageEntries(owner: StatActor, weapon: ItemTemplate | null): WeaponDamageEntry[] {
-  const entries = weapon?.weapon?.damageEntries;
-  if (entries && entries.length > 0) {
-    const result: WeaponDamageEntry[] = [];
-    for (const entry of entries) {
-      if (!weapon.weapon) continue;
-      const formulaId = entry.damageFormulaId ?? weapon.weapon.damageFormulaId ?? 'unarmed';
-      const formula = weaponFormulas[formulaId] ?? weaponFormulas.unarmed;
-      if (!formula) continue;
-      // Формула возвращает массив, но для кастомных damageEntries
-      // мы применяем формулу к baseDamage конкретной записи.
-      const tempWeapon: ItemTemplate = {
-        ...weapon,
-        weapon: { ...weapon.weapon, baseDamage: entry.baseDamage },
-      };
-      const computed = formula(owner, tempWeapon);
-      // Если формула вернула один элемент с тем же типом — используем его,
-      // иначе берем сумму и перезаписываем тип.
-      const totalDamage = computed.reduce((sum, e) => sum + e.damage, 0);
-      result.push({ damage: totalDamage, damageType: entry.damageType });
-    }
-    return result;
-  }
-
   const formulaId = weapon?.weapon?.damageFormulaId ?? 'unarmed';
   const formula = weaponFormulas[formulaId] ?? weaponFormulas.unarmed;
   if (!formula) return [];

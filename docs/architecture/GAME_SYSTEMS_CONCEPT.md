@@ -5,6 +5,41 @@
 
 ---
 
+## Статус концепта и соответствие коду
+
+Этот файл — **черновик / концепт**. Не все описанные здесь эффекты и комбо реализованы.
+
+### Уже реализованные статусы
+
+Реализованные в коде (`StatusEffectType` в `src/simulation/core-types.ts`):
+
+- `poisoned` — Отравление
+- `burning` — Горение
+- `frozen` — Заморозка
+- `stunned` — Оглушение
+- `silenced` — Безмолвие
+- `regenerating` — Регенерация
+- `counterattack` — Эффект контратаки
+
+Остальные эффекты (`panic`, `bleeding`, `barrier`, `rage`, `wet`, `oil`, `sleep` и др.) пока не реализованы и описаны как план.
+
+### Классификация урона: от `DamageType` к тегам
+
+Согласованный переход типа урона из enum/union в **иерархические игровые теги**:
+
+- Физический урон: `damage.physical.piercing`, `damage.physical.slashing`, `damage.physical.blunt`
+- Магический урон: `damage.magical.fire`, `damage.magical.electric`, `damage.magical.poison`, `damage.magical.frost`
+
+Теги проверяются через `hasTag` / `hasAllTags` / `hasAnyTag` (`src/simulation/systems/tags/tag-helpers.ts`). Родительские теги выводятся автоматически: `damage.physical.slashing` удовлетворяет `damage.physical`.
+
+`DamageType` в `src/simulation/core-types.ts` и поле `damageType` в JSON-шаблонах сохраняются для совместимости с интентами и событиями, но новые механики должны опираться на теги.
+
+### Броня
+
+Броня применяется только к физическому урону (тег `damage.physical`). Магический урон игнорирует броню, если в обработчике не указано иное.
+
+---
+
 ## Система активных эффектов (Status Effects)
 
 Активные эффекты — временные или постоянные состояния, дающие актёру преимущества и недостатки.

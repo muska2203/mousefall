@@ -19,6 +19,7 @@ export const executeDamageIntent: IntentExecutor<DamageIntent> = (
     damageType: intent.damageType,
     sourceEntityId: intent.sourceEntityId,
     target,
+    tags: intent.tags,
   };
 
   const finalDamage = handler.calculateDamage(ctx);

@@ -19,6 +19,7 @@
 src/i18n/
   config.ts        # Инициализация i18next
   schema.ts        # Единая схема типов (источник truth для TS)
+  i18next.d.ts     # Расширение типов i18next для type-safe переводов
   t.ts             # Wrapper i18next.t для кода вне React
   hooks.ts         # React hook wrapper
   locales/

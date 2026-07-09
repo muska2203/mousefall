@@ -10,7 +10,7 @@
     "damageFormulaId": "dagger",
     "range": 1,
     "damageType": "slashing",
-    "tags": ["attack.melee", "target.single", "delivery.weapon"]
+    "tags": ["attack.melee", "target.single", "delivery.weapon", "damage.physical.slashing"]
   },
   "grantedAbilities": [],
   "equipModifiers": []

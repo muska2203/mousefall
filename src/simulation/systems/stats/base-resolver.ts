@@ -15,28 +15,16 @@ import type { StatActor } from '@simulation/types.ts';
 import { getItem } from '@content/registry';
 import { PLAYER_BASE_MAX_HP, BASE_CRIT_MULTIPLIER } from '@utils/constants.ts';
 import { getWeaponDamage, getWeaponDamageEntries } from './weapon-formulas.ts';
-import { applyModifiers } from './modifier-engine.ts';
+import { getEffectiveBaseStats } from './effective-base-stats.ts';
+import type { EffectiveBaseStats } from './effective-base-stats.ts';
 import type { WeaponDamageEntry } from './weapon-formulas.ts';
 
 // ─────────────────────────────────────────────
 // Effective базовые статы (с учётом +str, +dex и т.д. от экипировки)
 // ─────────────────────────────────────────────
 
-export type EffectiveBaseStats = {
-  str: number;
-  dex: number;
-  int: number;
-  vit: number;
-};
-
-export function getEffectiveBaseStats(actor: StatActor): EffectiveBaseStats {
-  return {
-    str: applyModifiers(actor, 'str', actor.baseStats.str).total,
-    dex: applyModifiers(actor, 'dex', actor.baseStats.dex).total,
-    int: applyModifiers(actor, 'int', actor.baseStats.int).total,
-    vit: applyModifiers(actor, 'vit', actor.baseStats.vit).total,
-  };
-}
+export type { EffectiveBaseStats };
+export { getEffectiveBaseStats };
 
 // ─────────────────────────────────────────────
 // Жизнь

@@ -3,6 +3,7 @@ import { findEntity } from '@simulation/state';
 import { getEffectiveDamageEntries } from '@simulation/systems/stats/effective-stats';
 import { Intent } from '@simulation/core-types';
 import { hasAllTags } from '@simulation/systems/tags/tag-helpers';
+import { getWeaponTags } from '@simulation/systems/tags/weapon-tags';
 import { randomChance } from '@utils/random';
 
 /**
@@ -59,6 +60,7 @@ export const counterAttackReaction: WorldReaction = (state, event) => {
     if (!('hp' in target) || target.hp <= 0 || target.isAlive === false) return [];
 
     const intents: Intent[] = [];
+    const counterTags = [...getWeaponTags(counterAttacker), 'reaction.counter'];
     for (const entry of getEffectiveDamageEntries(counterAttacker)) {
       intents.push({
         type: 'DAMAGE',
@@ -66,7 +68,7 @@ export const counterAttackReaction: WorldReaction = (state, event) => {
         sourceEntityId: counterAttacker.id,
         damage: entry.damage,
         damageType: entry.damageType,
-        tags: ['reaction.counter'],
+        tags: counterTags,
       });
     }
 

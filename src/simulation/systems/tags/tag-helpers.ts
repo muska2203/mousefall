@@ -9,11 +9,15 @@ import type { GameplayTag } from '@simulation/core-types.ts';
 
 export type { GameplayTag };
 
+export { expandTag, expandTags } from './tag-hierarchy.ts';
+
 /**
- * Проверяет, содержит ли массив тегов указанный тег.
+ * Проверяет, содержит ли массив тегов указанный тег или любой его потомок.
+ *
+ * Пример: hasTag(['damage.physical.blunt'], 'damage.physical') === true.
  */
 export function hasTag(tags: readonly GameplayTag[], tag: GameplayTag): boolean {
-  return tags.includes(tag);
+  return tags.some((t) => t === tag || t.startsWith(`${tag}.`));
 }
 
 /**
@@ -21,7 +25,7 @@ export function hasTag(tags: readonly GameplayTag[], tag: GameplayTag): boolean 
  * Если required пустой — возвращает true.
  */
 export function hasAllTags(tags: readonly GameplayTag[], required: readonly GameplayTag[]): boolean {
-  return required.every((tag) => tags.includes(tag));
+  return required.every((tag) => hasTag(tags, tag));
 }
 
 /**
@@ -29,5 +33,5 @@ export function hasAllTags(tags: readonly GameplayTag[], required: readonly Game
  * Если candidates пустой — возвращает false.
  */
 export function hasAnyTag(tags: readonly GameplayTag[], candidates: readonly GameplayTag[]): boolean {
-  return candidates.some((tag) => tags.includes(tag));
+  return candidates.some((tag) => hasTag(tags, tag));
 }

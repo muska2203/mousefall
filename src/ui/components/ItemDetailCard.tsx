@@ -6,7 +6,7 @@
  */
 
 import { useTranslation } from '@i18n/hooks';
-import type { ItemDetailViewModel } from '@presentation/itemDetailMapper';
+import type { ItemDetailViewModel } from '@presentation/types';
 import { TagList } from './TagList';
 import { RichDescription } from './RichDescription';
 

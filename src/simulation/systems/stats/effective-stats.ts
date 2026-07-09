@@ -25,7 +25,8 @@ import type { WeaponDamageEntry } from './weapon-formulas.ts';
 // Type guards
 // ─────────────────────────────────────────────
 
-function isStatActor(entity: Entity): entity is Entity & StatActor {
+/** Type guard: сущность имеет базовые характеристики (StatActor). */
+export function isStatActor(entity: Entity): entity is Entity & StatActor {
   return 'baseStats' in entity;
 }
 

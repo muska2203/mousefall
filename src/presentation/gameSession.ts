@@ -838,7 +838,7 @@ export class GameSession {
     name: string;
     icon: string;
     fallback: string;
-    detail: import('./itemDetailMapper').ItemDetailViewModel | undefined;
+    detail: import('./types').ItemDetailViewModel | undefined;
   } {
     const info = GameSession.getItemInfo(id, locale);
     const template = tryGetLocalizedItem(id, locale);

@@ -6,7 +6,7 @@
 
 import {useState} from 'react';
 import { useTranslation } from '@i18n/hooks';
-import type {ItemDetailViewModel} from '@presentation/itemDetailMapper';
+import type {ItemDetailViewModel} from '@presentation/types';
 import {Panel} from './Panel';
 import {EquipSlot} from './EquipSlot';
 import {ItemDetailPopover} from './ItemDetailPopover';

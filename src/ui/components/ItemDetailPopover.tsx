@@ -18,7 +18,7 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { ItemDetailViewModel } from '@presentation/itemDetailMapper';
+import type { ItemDetailViewModel } from '@presentation/types';
 import { ItemDetailCard } from './ItemDetailCard';
 
 interface Props {

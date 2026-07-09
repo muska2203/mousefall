@@ -19,9 +19,13 @@
 
 ```
 src/ui/
+  ├── animation/      # Исполнители анимаций от Presentation (bounce, projectile, skill и т.д.)
+  ├── components/     # React — HUD, меню, панели, инвентарь, теговые компоненты
+  ├── input/          # Обработчики ввода
   ├── renderer/       # PixiJS — отрисовка мира, спрайтов, тайлов
-  ├── components/     # React — HUD, меню, панели, инвентарь
-  └── input/          # Обработчики ввода
+  ├── screens/        # Полноэкранные React-экраны (меню, игра, конец)
+  ├── store/          # Локальное состояние UI (настройки и пр.)
+  └── styles/         # CSS-константы и глобальные стили
 ```
 
 > Renderer (PixiJS) — **не отдельный архитектурный слой**, а техническая подсистема внутри UI.
@@ -44,8 +48,11 @@ src/ui/
 | Добавить React-компонент | `components/` |
 | Добавить экран | `screens/` |
 | Добавить анимацию спрайта | `renderer/` или `animation/` |
+| Добавить анимационный план | `animation/` |
 | Добавить обработку ввода | `input/` |
 | Изменить стили | `styles/` |
+| Добавить/изменить настройки UI | `store/` |
+| Добавить теговый компонент | `components/` (`TagBadge`, `TagLink`, `TagList`, `RichDescription`) |
 
 ---
 
@@ -53,6 +60,9 @@ src/ui/
 
 - `src/presentation/` (получение ViewModel, отправка событий ввода)
 - `src/utils/constants.ts` (TILE_SIZE и визуальные константы)
+- `src/utils/animationConfig.ts` (конфигурация анимаций)
+- `src/utils/tween.ts` (визуальные твины)
+- `src/utils/assetResolver.ts` (разрешение путей к ассетам)
 
 ---
 

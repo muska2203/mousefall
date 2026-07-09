@@ -4,14 +4,22 @@ import { findEntity, isActor } from '@simulation/state';
 /**
  * Базовый урон при столкновении отталкиваемого актора с препятствием или другим актором.
  */
-const PUSH_BUMP_DAMAGE = 5;
+import type { DamageType, GameplayTag } from '@simulation/core-types';
 
-import type { DamageType } from '@simulation/core-types';
+/**
+ * Базовый урон при столкновении отталкиваемого актора с препятствием или другим актором.
+ */
+const PUSH_BUMP_DAMAGE = 5;
 
 /**
  * Тип урона при толчке.
  */
 const PUSH_DAMAGE_TYPE: DamageType = 'blunt';
+
+/**
+ * Теги урона при толчке: физический дробящий урон, наносимый через движение.
+ */
+const PUSH_DAMAGE_TAGS: GameplayTag[] = ['delivery.movement', 'damage.physical.blunt'];
 
 /**
  * Реакция мира: столкновение от толчка наносит урон отталкиваемому актору.
@@ -31,7 +39,7 @@ export const collisionDamageReaction: WorldReaction = (state, event) => {
     sourceEntityId: event.sourceEntityId,
     damage: PUSH_BUMP_DAMAGE,
     damageType: PUSH_DAMAGE_TYPE,
-    tags: ['delivery.movement'],
+    tags: PUSH_DAMAGE_TAGS,
   });
 
   if (event.collisionType === 'actor' && event.targetId) {
@@ -43,7 +51,7 @@ export const collisionDamageReaction: WorldReaction = (state, event) => {
         sourceEntityId: event.sourceEntityId,
         damage: PUSH_BUMP_DAMAGE,
         damageType: PUSH_DAMAGE_TYPE,
-        tags: ['delivery.movement'],
+        tags: PUSH_DAMAGE_TAGS,
       });
     }
   }

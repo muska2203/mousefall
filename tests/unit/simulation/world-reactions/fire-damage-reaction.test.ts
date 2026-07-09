@@ -8,7 +8,7 @@ function makeEntityDamagedEvent(targetId: string, damageType: import('../../../.
     type: 'ENTITY_DAMAGED' as const,
     targetId,
     sourceEntityId: null,
-    tags: [],
+    tags: damageType === 'fire' ? ['damage.magical.fire'] : [],
     damage: 5,
     damageType,
     position: { x: 0, y: 0 },

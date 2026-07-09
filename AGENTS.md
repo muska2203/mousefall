@@ -23,6 +23,7 @@
 | `src/presentation/` | [`src/presentation/AGENTS.md`](./src/presentation/AGENTS.md) |
 | `src/ui/` | [`src/ui/AGENTS.md`](./src/ui/AGENTS.md) |
 | `src/content/` | [`src/content/AGENTS.md`](./src/content/AGENTS.md) |
+| `src/i18n/` | [`src/i18n/AGENTS.md`](./src/i18n/AGENTS.md) |
 
 ---
 

@@ -100,7 +100,7 @@ describe('executeDamageIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt', tags: []}, builder, builder.root);
+        executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt', tags: ['damage.physical.blunt']}, builder, builder.root);
 
         expect(enemy.hp).toBe(18); // 5 - 3 = 2 урона
     });
@@ -110,13 +110,23 @@ describe('executeDamageIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt', tags: []}, builder, builder.root);
+        const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'blunt', tags: ['damage.physical.blunt']}, builder, builder.root);
 
         expect(enemy.hp).toBe(19);
         expect(node!.event.type).toBe('ENTITY_DAMAGED');
         if (node!.event.type === 'ENTITY_DAMAGED') {
             expect(node!.event.damage).toBe(1);
         }
+    });
+
+    it('магический урон игнорирует броню цели', () => {
+        const enemy = makeEnemy({hp: 20, statModifiers: [{ stat: 'armor', value: 100, op: 'add', source: 'test' }]});
+        const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
+        const builder = makeBuilder();
+
+        executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, damageType: 'fire', tags: ['damage.magical.fire']}, builder, builder.root);
+
+        expect(enemy.hp).toBe(15);
     });
 
     it('возвращает null, если цель не найдена', () => {

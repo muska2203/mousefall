@@ -51,6 +51,10 @@ const LootDropTableEntrySchema = z.object({
   weight: z.number().int().nonnegative().describe('Вес вероятности'),
 });
 
+const TagsSchema = z.array(z.string().min(1))
+  .default([])
+  .describe('Иерархические игровые теги (например, damage.physical.slashing). Родительские теги выводятся через hasTag при проверках');
+
 // ─────────────────────────────────────────────
 // Шаблон сущности
 // ─────────────────────────────────────────────
@@ -78,24 +82,12 @@ export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
 // Шаблон предмета
 // ─────────────────────────────────────────────
 
-const WeaponDamageEntrySchema = z.object({
-  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).describe('Тип урона'),
-  baseDamage: z.number().int().nonnegative().describe('Базовый урон данного типа'),
-  damageFormulaId: z.string().min(1).optional().describe('ID формулы урона для данного типа (если отличается от общей)'),
-}).describe('Запись урона оружия');
-
 const WeaponStatsSchema = z.object({
-  baseDamage: z.number().int().nonnegative().optional().describe('Базовый урон оружия (устаревшее, используйте damageEntries)'),
-  damageFormulaId: z.string().min(1).optional().describe('ID формулы урона в коде (устаревшее, используйте damageEntries)'),
+  baseDamage: z.number().int().nonnegative().describe('Базовый урон оружия'),
+  damageFormulaId: z.string().min(1).describe('ID формулы урона в коде'),
   range: z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
-  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).default('blunt').describe('Тип урона (fallback при отсутствии damageEntries)'),
-  damageEntries: z.array(WeaponDamageEntrySchema).optional().describe('Несколько видов урона за атаку'),
-  tags: z.array(z.string().min(1)).default([]).describe('Теги классификации оружия (attack.melee, target.aoe и т.д.)'),
-}).refine((data) => {
-  if (data.damageEntries && data.damageEntries.length > 0) return true;
-  return data.baseDamage !== undefined && data.damageFormulaId !== undefined;
-}, {
-  message: 'Необходимо указать либо baseDamage + damageFormulaId, либо damageEntries',
+  damageType: z.enum(['piercing', 'slashing', 'blunt', 'fire', 'electric', 'poison', 'frost']).default('blunt').describe('Тип урона оружия'),
+  tags: TagsSchema.describe('Теги классификации оружия (attack.melee, target.aoe и т.д.)'),
 }).describe('Характеристики оружия');
 
 const ArmorStatsSchema = z.object({
@@ -152,7 +144,7 @@ export const AbilityTemplateSchema = z.object({
   apCost: z.union([z.number().int().nonnegative(), z.literal('all')]).default(1)
     .describe('Стоимость использования в очках действий (AP). Число или "all" — все текущие AP актора.'),
   aiPreparable: z.boolean().default(false).describe('AI может подготавливать этот скилл на следующий ход'),
-  tags: z.array(z.string().min(1)).default([]).describe('Теги классификации способности (attack.melee, target.aoe и т.д.)'),
+  tags: TagsSchema.describe('Теги классификации способности (attack.melee, target.aoe и т.д.)'),
 }).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;

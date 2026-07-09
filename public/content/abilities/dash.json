@@ -3,5 +3,5 @@
   "spriteId": "dash",
   "cooldown": 4,
   "apCost": 1,
-  "tags": ["delivery.movement", "attack.melee", "target.single", "effect.knockback"]
+  "tags": ["delivery.movement", "attack.melee", "target.single", "effect.knockback", "damage.physical.blunt"]
 }

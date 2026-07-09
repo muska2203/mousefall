@@ -10,7 +10,6 @@
 
 import type { GameState, PlayerStatsSnapshot, Intent, RunStats, DamageType, TurnSide, StatusEffect, InteractionId, GameAction } from '@simulation/types';
 import type { AnimationConfigKey } from '@utils/animationConfig';
-import type { ItemDetailViewModel } from './itemDetailMapper';
 import type {AIMode} from '@simulation/ai/ai-state';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
@@ -19,6 +18,45 @@ export type { AIMode } from '@simulation/ai/ai-state';
 export type { AnimationConfigKey } from '@utils/animationConfig';
 import type { GameplayTag as CoreGameplayTag } from '@simulation/core-types';
 export type GameplayTag = CoreGameplayTag;
+
+/** Одна секция детальной карточки предмета. */
+export type ItemDetailSection =
+  | { kind: 'stat-list'; title: string; stats: Array<{ label: string; value: string | number }> }
+  | { kind: 'description'; text: string };
+
+/** Полный ViewModel для отображения детальной информации о предмете. */
+export interface ItemDetailViewModel {
+  name: string;
+  description: string;
+  rarity: 'common' | 'rare' | 'unique';
+  rarityLabel: string;
+  typeLabel: string;
+  /** Тип предмета: weapon, armor, amulet, consumable, key, gold */
+  type: string;
+  icon: string;
+  frameUrl: string;
+  fallbackIcon?: string;
+  stackCount?: number;
+  sections: ItemDetailSection[];
+  /** Все способности экземпляра предмета (фиксированные + ролленные) */
+  grantedAbilities?: Array<{
+    templateId: string;
+    name: string;
+    description: string;
+    level: number;
+    icon: string | null;
+  }> | null;
+  /** Пул скиллов, из которого роллится способность при создании экземпляра */
+  abilityPool?: Array<{
+    abilityId: string;
+    name: string;
+    description: string;
+    icon: string | null;
+    weight: number;
+  }> | null;
+  /** Теги классификации предмета (обычно оружия). */
+  tags: GameplayTag[];
+}
 
 export type Position = { x: number; y: number };
 
@@ -419,6 +457,7 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
       return null;
   }
 }
+
 
 /** Вид цели подсвеченного автопути для выбора цвета оверлея. */
 export type HighlightedPathTargetKind = 'none' | 'enemy' | 'interactable' | 'move';

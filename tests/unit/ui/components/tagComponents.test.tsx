@@ -6,7 +6,7 @@ import { TagList } from '../../../../src/ui/components/TagList';
 import { SkillDetailPopover } from '../../../../src/ui/components/SkillDetailPopover';
 import { ItemDetailCard } from '../../../../src/ui/components/ItemDetailCard';
 import type { HotbarSkillTooltip } from '../../../../src/presentation/types';
-import type { ItemDetailViewModel } from '../../../../src/presentation/itemDetailMapper';
+import type { ItemDetailViewModel } from '../../../../src/presentation/types';
 
 vi.mock('react-dom', async (importOriginal) => {
   const mod = await importOriginal<typeof import('react-dom')>();

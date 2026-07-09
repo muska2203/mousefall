@@ -3,5 +3,5 @@
   "spriteId": "cleave",
   "cooldown": 2,
   "apCost": 1,
-  "tags": ["attack.melee", "target.aoe", "delivery.weapon"]
+  "tags": ["attack.melee", "target.aoe", "delivery.weapon", "damage.physical.blunt"]
 }

@@ -9,9 +9,9 @@
 Content is **data-driven**: game entities, items, abilities, and map parameters are defined in JSON files. The simulation layer reads these definitions at startup and uses them to create game objects.
 
 This means:
-- Adding a new enemy type requires **no code changes**
 - Balance tweaks require **no rebuild**
 - Content can be modded by editing JSON files
+- Adding a new enemy type requires **no code changes** if it reuses an existing AI strategy; new behavior requires an AI strategy in `src/simulation/ai/`
 
 ---
 
@@ -135,11 +135,16 @@ To mod the game, replace or add files in `public/content/`:
 public/content/entities/enemies/my_custom_enemy.json
 ```
 
-The content registry automatically discovers all JSON files in the content directories. No code changes required.
+Then add the new file path to `public/content/manifest.json`. The content loader reads files strictly from the manifest (`src/content/loader.ts`). To regenerate the manifest from the current file tree, run:
+
+```bash
+npm run generate-manifest
+```
 
 **Mod constraints:**
 - Must pass Zod schema validation
 - IDs must be unique across all content
+- File must be listed in `public/content/manifest.json`
 - Cannot override core game logic (only data)
 
 ---

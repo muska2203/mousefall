@@ -2,9 +2,10 @@
  * Хелперы для получения тегов экипированного оружия сущности.
  */
 
-import type { Entity, StatActor } from '@simulation/types.ts';
+import type { Entity } from '@simulation/types.ts';
 import { tryGetItem } from '@content/registry';
 import type { GameplayTag } from '@simulation/core-types.ts';
+import { isStatActor } from '@simulation/systems/stats/effective-stats';
 
 /** Теги рукопашной безоружной атаки по умолчанию. */
 const UNARMED_TAGS: GameplayTag[] = [
@@ -12,16 +13,8 @@ const UNARMED_TAGS: GameplayTag[] = [
   'target.single',
   'delivery.weapon',
   'delivery.unarmed',
+  'damage.physical.blunt',
 ];
-
-/**
- * Type guard: проверяет, что сущность имеет derived-статы и экипировку.
- * В проекте аналогичная функция существует в effective-stats.ts, но не экспортирована,
- * поэтому здесь используется локальная копия для изоляции модуля тегов.
- */
-function isStatActor(entity: Entity): entity is Entity & StatActor {
-  return 'baseStats' in entity;
-}
 
 /**
  * Возвращает теги оружия, экипированного сущностью.
