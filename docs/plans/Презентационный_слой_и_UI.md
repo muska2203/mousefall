@@ -165,9 +165,11 @@ ACTION_APPLIED(USE_ABILITY fireball)
     ├── ENTITY_DAMAGED(enemy-1, damage: 12, position: (3,5), tags: [damage.magical.fire])
     │   ├── STATUS_APPLIED(enemy-1, burning, duration: 3)   // кольцо "огненный урон → горение"
     │   └── (анимация HP_CHANGE выводится из события)
-    ├── TILE_EFFECT_SPAWNED((3,5), fire)
-    │   ├── TILE_EFFECT_SPAWNED((4,5), fire)                // масло в радиусе 1 загорелось
-    │   └── STATUS_APPLIED(enemy-1, burning, duration: 3)   // горение от стояния в огне
+    ├── TILE_EFFECT_CHANGED((3,5), oil, ignited=true)       // масло подожжено
+    │   ├── EXPLOSION_TRIGGERED((3,5), radius: 1)
+    │   │   ├── ENTITY_DAMAGED(enemy-1, damage: 6, tags: [damage.magical.fire, effect.explosion])
+    │   │   └── TILE_EFFECT_CHANGED((4,5), oil, ignited=true) // распространение на соседнее масло
+    │   └── STATUS_APPLIED(enemy-1, burning, duration: 3)   // горение от стояния в горящем масле
     └── COOLDOWN_SET(player, fireball, turns: 3)
 ```
 
@@ -190,15 +192,25 @@ PresentationNode {
         animation: STATUS_BURST(enemy-1, burning)
       }
 └── PresentationNode {
-     event: TILE_EFFECT_SPAWNED((3,5), fire)
-     patch: { tileEffects.(3,5): add fire }
-     animation: TILE_EFFECT_APPEAR((3,5), fire)
+     event: TILE_EFFECT_CHANGED((3,5), oil, ignited=true)
+     patch: { tileEffects.(3,5).oil.ignited: false → true }
+     animation: TILE_EFFECT_IGNITE((3,5), oil)
    }
    └── PresentationNode {
-        event: TILE_EFFECT_SPAWNED((4,5), fire)
-        patch: { tileEffects.(4,5): add fire }
-        animation: TILE_EFFECT_APPEAR((4,5), fire)
+        event: EXPLOSION_TRIGGERED((3,5), radius: 1)
+        patch: { — }
+        animation: EXPLOSION((3,5), radius: 1)
       }
+      └── PresentationNode {
+           event: ENTITY_DAMAGED(enemy-1, 6)
+           patch: { entities.enemy-1.hp: 8 → 2 }
+           animation: DAMAGE(enemy-1, 6) + HP_CHANGE(enemy-1, 8→2)
+         }
+      └── PresentationNode {
+           event: TILE_EFFECT_CHANGED((4,5), oil, ignited=true)
+           patch: { tileEffects.(4,5).oil.ignited: false → true }
+           animation: TILE_EFFECT_IGNITE((4,5), oil)
+         }
    └── PresentationNode {
         event: STATUS_APPLIED(enemy-1, burning)
         patch: { entities.enemy-1.statusEffects: refresh burning }
@@ -214,7 +226,7 @@ PresentationNode {
 | T1 | AP 2, кулдаун fireball | Игрок кастует огненный шар |
 | T2 | Враг 8/20 | Всплывает `-12`, полоска HP падает |
 | T3 | Враг горит | Партиклы огня, иконка burning |
-| T4 | (3,5) и (4,5) в огне | Плавное появление огня на клетках |
+| T4 | (3,5) и (4,5) горящее масло | Поджог масла, вспышка пламени |
 | T5 | Горение обновлено | Второй STATUS_BURST или refresh |
 
 Важно: игрок видит **последовательность**, а не мгновенный финал.
@@ -317,7 +329,7 @@ DisplayState := applyPatch(DisplayState, patch)
 { type: "HP_CHANGE", entityId: "enemy-1", delta: -12 }
 { type: "ADD_STATUS", entityId: "enemy-1", status: "burning", duration: 3 }
 { type: "MOVE_ENTITY", entityId: "enemy-1", from: (2,3), to: (3,3) }
-{ type: "SPAWN_TILE_EFFECT", position: (3,5), effect: "fire" }
+{ type: "UPDATE_TILE_EFFECT", position: (3,5), effect: "oil", field: "ignited", value: true }
 { type: "CONSUME_AP", entityId: "player", amount: 4 }
 { type: "UPDATE_FOG", newlyVisible: [...] }
 ```
@@ -451,8 +463,8 @@ Presentation отвечает только за:
 
 - Нужно ли обогащать события display-контекстом (например, `position`
   в `STATUS_APPLIED`) или достаточно данных, уже есть в `GameEvent`?
-- Как именно анимировать появление tile-эффектов (`fire`, `water`, `oil`,
-  `fog`)? Нужен ли отдельный `TILE_EFFECT_SPAWNED`/`TILE_EFFECT_CHANGED`
+- Как именно анимировать появление tile-эффектов (`water`, `oil` с состоянием
+  `ignited`, `fog`)? Нужен ли отдельный `TILE_EFFECT_SPAWNED`/`TILE_EFFECT_CHANGED`
   тип события?
 - Как показывать изменения HUD (HP/AP/кулдауны) — мгновенно по патчу
   или с небольшой анимацией?
