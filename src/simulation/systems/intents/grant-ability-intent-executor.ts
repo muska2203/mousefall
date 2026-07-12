@@ -4,9 +4,10 @@
  * Добавляет способность в массив abilities актёра.
  */
 
-import { GameState } from "@simulation/types.ts";
+import { GameState, Actor } from "@simulation/types.ts";
 import { IntentExecutor, GrantAbilityIntent } from "@simulation/systems/intents/types.ts";
 import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
+import { addActiveRulesForAbility } from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeGrantAbilityIntent: IntentExecutor<GrantAbilityIntent> = (
   state: GameState,
@@ -18,6 +19,7 @@ export const executeGrantAbilityIntent: IntentExecutor<GrantAbilityIntent> = (
   if (!actor || actor.type !== 'player') return null;
 
   actor.abilities.push(intent.ability);
+  addActiveRulesForAbility(actor as Actor, intent.ability);
 
   return builder.addChild(parent, {
     type: 'ABILITY_GRANTED',
