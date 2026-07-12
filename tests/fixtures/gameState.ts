@@ -89,6 +89,7 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     isAlive: true,
     factionId: 'player',
     abilities: [],
+    activeRules: [],
     ...overrides,
   };
 }
@@ -124,6 +125,7 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     isAlive: true,
     factionId: 'enemies',
     abilities: [],
+    activeRules: [],
     ...overrides,
   };
 }

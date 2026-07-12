@@ -9,6 +9,7 @@ import { IntentExecutor, UnequipItemIntent } from "@simulation/systems/intents/t
 import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
 import { removeModifiersBySource } from "@simulation/systems/stats/modifier-engine.ts";
 import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
+import { removeActiveRulesForItem } from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeUnequipItemIntent: IntentExecutor<UnequipItemIntent> = (
   state: GameState,
@@ -37,6 +38,7 @@ export const executeUnequipItemIntent: IntentExecutor<UnequipItemIntent> = (
   }
 
   removeModifiersBySource(player, `item_${itemInstanceId}`);
+  removeActiveRulesForItem(player, itemInstanceId);
   recalculateActorStats(player);
 
   return builder.addChild(parent, {

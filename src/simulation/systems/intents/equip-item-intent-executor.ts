@@ -10,6 +10,7 @@ import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/typ
 import { getItem } from "@content/registry";
 import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
 import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
+import { addActiveRulesForItem } from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
   state: GameState,
@@ -40,6 +41,8 @@ export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
   }
 
   recalculateActorStats(player);
+
+  addActiveRulesForItem(player, item.instanceId, template.ruleIds);
 
   return builder.addChild(parent, {
     type: 'ITEM_EQUIPPED',

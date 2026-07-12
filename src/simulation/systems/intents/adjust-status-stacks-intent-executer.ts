@@ -1,7 +1,8 @@
 import { GameState, StatusEffectHolder } from '@simulation/types';
 import { AdjustStatusStacksIntent, IntentExecutor } from '@simulation/systems/intents/types';
 import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { findEntity } from '@simulation/state';
+import { findEntity, isActor } from '@simulation/state';
+import { removeActiveRulesForStatus } from '@simulation/systems/rules/active-rule-lifecycle';
 
 /**
  * Изменяет количество стаков указанного статуса на сущности.
@@ -25,6 +26,9 @@ export const executeAdjustStatusStacksIntent: IntentExecutor<AdjustStatusStacksI
   const newStacks = currentStacks + intent.delta;
 
   if (newStacks <= 0) {
+    if (isActor(entity)) {
+      removeActiveRulesForStatus(entity, effect.instanceId ?? effect.type);
+    }
     holder.statusEffects.splice(index, 1);
     return builder.addChild(parent, {
       type: 'STATUS_REMOVED',

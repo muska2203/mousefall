@@ -1,8 +1,9 @@
 import { GameState, StatusEffectHolder, EnemyEntity } from '@simulation/types';
 import { ApplyStatusIntent, IntentExecutor } from '@simulation/systems/intents/types';
 import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { findEntity } from '@simulation/state';
+import { findEntity, isActor, nextEntityId } from '@simulation/state';
 import { isEnemyEntity } from '@simulation/ai/ai-state';
+import { addActiveRulesForStatus } from '@simulation/systems/rules/active-rule-lifecycle';
 import { cancelPreparedAbility } from '@simulation/ai/ai-helpers';
 
 export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
@@ -18,6 +19,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
 
   // Проверяем дубликаты: если эффект того же типа уже есть — обновляем duration.
   // Для стакующихся статусов суммируем стаки.
+  // При обновлении длительности activeRules не трогаем.
   const existingIndex = holder.statusEffects.findIndex((e: { type: string }) => e.type === intent.status.type);
   if (existingIndex >= 0) {
     const existing = holder.statusEffects[existingIndex]!;
@@ -31,7 +33,12 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
       ...(newStacks !== undefined ? { stacks: newStacks } : {}),
     };
   } else {
+    intent.status.instanceId = nextEntityId(state, 'status');
     holder.statusEffects.push(intent.status);
+
+    if (isActor(target)) {
+      addActiveRulesForStatus(target, intent.status.instanceId, intent.status.type);
+    }
   }
 
   // Прерывание подготовки AI-способности при стане или немоте.
