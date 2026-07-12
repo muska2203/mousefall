@@ -20,6 +20,7 @@ function makeTestItemTemplate(id: string): ItemTemplate {
         equipModifiers: [],
         abilityPool: [],
         grantedAbilities: [],
+        ruleIds: [],
         apCost: 1,
     };
 }
@@ -35,7 +36,8 @@ describe('executeSpawnItemIntent', () => {
             maps: new Map(),
             doors: new Map(),
             stairs: new Map(),
-        });
+    statuses: new Map(),
+});
     });
 
     afterEach(() => {

@@ -28,7 +28,8 @@ describe('GameSession targeting', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {

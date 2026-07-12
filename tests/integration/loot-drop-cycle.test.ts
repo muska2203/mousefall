@@ -37,6 +37,7 @@ function makeItemTemplate(partial: Partial<ItemTemplate> = {}): ItemTemplate {
     equipModifiers: [],
     abilityPool: [],
     grantedAbilities: [],
+    ruleIds: [],
     apCost: 1,
     ...partial,
   };
@@ -131,7 +132,8 @@ describe('Интеграция: цикл выпадения лута', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -279,7 +281,8 @@ describe('Интеграция: цикл выпадения лута', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const state = makeLootGameState();
     const simulation = createTestSimulation(state);

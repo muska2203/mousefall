@@ -32,7 +32,8 @@ describe('getPreparableAbilities', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {

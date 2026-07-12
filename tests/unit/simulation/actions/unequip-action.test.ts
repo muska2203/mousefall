@@ -16,6 +16,7 @@ function mockItem(id: string, type: ItemTemplate['type']): ItemTemplate {
     abilityPool: [],
     equipModifiers: [],
     grantedAbilities: [],
+    ruleIds: [],
     apCost: 1,
   };
 }
@@ -37,7 +38,8 @@ beforeEach(() => {
     maps: new Map(),
     doors: new Map(),
     stairs: new Map(),
-  });
+    statuses: new Map(),
+});
 });
 
 afterEach(() => {

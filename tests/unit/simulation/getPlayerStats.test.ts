@@ -57,7 +57,8 @@ describe('GameSimulation.getPlayerStats', () => {
         } as DoorTemplate],
       ]),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {

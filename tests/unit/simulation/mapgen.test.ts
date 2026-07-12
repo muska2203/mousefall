@@ -46,7 +46,8 @@ describe('createEnemy', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const state = makeGameState();
     const enemy = createEnemy(state, 'test_cat', 5, 5);
@@ -71,7 +72,8 @@ describe('createEnemy', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const state = makeGameState();
     const enemy = createEnemy(state, 'test_cat', 5, 5);

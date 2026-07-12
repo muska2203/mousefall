@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './i18n/config';
 import App from './ui/App';
-import { loadAllContent, browserFetchJson } from '@content/loader';
+import { bootstrapContent } from './bootstrap';
 
 import './ui/styles/game-screen.css';
 import './ui/styles/welcome.css';
@@ -11,7 +11,7 @@ import './ui/styles/ending.css';
 import './ui/styles/toasts.css';
 
 async function bootstrap() {
-  await loadAllContent(browserFetchJson);
+  await bootstrapContent();
 
   const rootElement = document.getElementById('app');
   if (!rootElement) {

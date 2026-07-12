@@ -54,6 +54,14 @@ const TagsSchema = z.array(z.string().min(1))
   .default([])
   .describe('Иерархические игровые теги (например, damage.physical.slashing). Родительские теги выводятся через hasTag при проверках');
 
+/** Список ID декларативных контентных правил. Дубликаты внутри одного шаблона запрещены. */
+const RuleIdsSchema = z.array(z.string().min(1))
+  .default([])
+  .refine(ids => new Set(ids).size === ids.length, {
+    message: 'ruleIds не должны содержать дубликатов',
+  })
+  .describe('ID декларативных контентных правил, применяемых шаблоном');
+
 // ─────────────────────────────────────────────
 // Шаблон сущности
 // ─────────────────────────────────────────────
@@ -136,6 +144,7 @@ export const ItemTemplateSchema = z.object({
   grantedAbilities: z.array(
     z.string().min(1).describe('ID способности, которая гарантированно выдаётся при экипировке')
   ).default([]).describe('Обязательные способности предмета, выдаются всегда (в отличие от abilityPool)'),
+  ruleIds: RuleIdsSchema,
   apCost: z.number().int().nonnegative().default(1)
     .describe('Стоимость использования предмета в очках действий (AP) через действие USE_ITEM'),
 }).describe('Шаблон предмета');
@@ -158,9 +167,21 @@ export const AbilityTemplateSchema = z.object({
   requiredWeaponTags: z.array(z.string().min(1)).default([])
     .describe('Требования к тегам экипированного оружия'),
   tags: TagsSchema.describe('Теги классификации способности (attack.melee, target.aoe и т.д.)'),
+  ruleIds: RuleIdsSchema,
 }).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;
+
+// ─────────────────────────────────────────────
+// Шаблон статуса
+// ─────────────────────────────────────────────
+
+export const StatusTemplateSchema = z.object({
+  id: z.string().min(1).describe('Уникальный идентификатор статуса (совпадает с именем файла)'),
+  ruleIds: RuleIdsSchema,
+}).describe('Шаблон статусного эффекта');
+
+export type StatusTemplate = z.output<typeof StatusTemplateSchema>;
 
 // ─────────────────────────────────────────────
 // Параметры карты
@@ -239,6 +260,7 @@ export type LoadedContent = {
   players:   Map<string, PlayerTemplate>;
   items:     Map<string, ItemTemplate>;
   abilities: Map<string, AbilityTemplate>;
+  statuses:  Map<string, StatusTemplate>;
   maps:      Map<string, MapParams>;
   stairs:    Map<string, StairsTemplate>;
   doors:     Map<string, DoorTemplate>;

@@ -45,7 +45,8 @@ describe('DefaultActionPointCostResolver', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -98,7 +99,8 @@ describe('DefaultActionPointCostResolver', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
     expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'counterattack', targets: [] }, state)).toBe(2);
 
     player.ap = 5;

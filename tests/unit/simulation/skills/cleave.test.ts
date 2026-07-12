@@ -36,6 +36,7 @@ const mockSword: ItemTemplate = {
   equipModifiers: [],
   abilityPool: [],
   grantedAbilities: [],
+  ruleIds: [],
   apCost: 1,
   weapon: {
     baseDamage: 4,
@@ -61,7 +62,8 @@ describe('cleaveSkill', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -267,7 +269,8 @@ describe('cleaveSkill', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

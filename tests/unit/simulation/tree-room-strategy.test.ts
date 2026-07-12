@@ -98,7 +98,8 @@ describe('treeRoomStrategy', () => {
         } as DoorTemplate],
       ]),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {

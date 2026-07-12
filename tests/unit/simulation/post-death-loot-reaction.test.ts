@@ -41,7 +41,8 @@ describe('postDeathLootReaction', () => {
             maps: new Map(),
             doors: new Map(),
             stairs: new Map(),
-        });
+    statuses: new Map(),
+});
 
         const enemy = makeEnemy({ templateId: 'no_loot_enemy' });
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
@@ -66,7 +67,8 @@ describe('postDeathLootReaction', () => {
             maps: new Map(),
             doors: new Map(),
             stairs: new Map(),
-        });
+    statuses: new Map(),
+});
 
         const enemy = makeEnemy({ templateId: 'loot_enemy' });
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
@@ -91,7 +93,8 @@ describe('postDeathLootReaction', () => {
             maps: new Map(),
             doors: new Map(),
             stairs: new Map(),
-        });
+    statuses: new Map(),
+});
 
         const player = makePlayer();
         const state = makeStateWithPlayerAndEntity(player, makePlayer({ x: 3, y: 3, id: 'other_player' } as any));
@@ -123,7 +126,8 @@ describe('postDeathLootReaction', () => {
             maps: new Map(),
             doors: new Map(),
             stairs: new Map(),
-        });
+    statuses: new Map(),
+});
 
         const enemy = makeEnemy({ templateId: 'multi_loot_enemy' });
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);

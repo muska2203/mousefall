@@ -38,6 +38,15 @@
     "/content/abilities/sudden_strike.json",
     "/content/abilities/swoop.json"
   ],
+  "statuses": [
+    "/content/statuses/burning.json",
+    "/content/statuses/counterattack.json",
+    "/content/statuses/frozen.json",
+    "/content/statuses/poisoned.json",
+    "/content/statuses/regenerating.json",
+    "/content/statuses/silenced.json",
+    "/content/statuses/stunned.json"
+  ],
   "maps": [
     "/content/maps/default.json",
     "/content/maps/floor_1.json",

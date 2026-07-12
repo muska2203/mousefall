@@ -13,6 +13,7 @@ function mockAbility(id: string): AbilityTemplate {
     aiPreparable: false,
     requiredWeaponTags: [],
     tags: [],
+    ruleIds: [],
   };
 }
 
@@ -27,6 +28,7 @@ function mockItem(id: string): ItemTemplate {
     abilityPool: [{ abilityId: 'fireball', weight: 1 }],
     equipModifiers: [],
     grantedAbilities: [],
+    ruleIds: [],
     apCost: 1,
     weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2, damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }], tags: [] },
   };
@@ -66,7 +68,8 @@ beforeEach(() => {
       } as DoorTemplate],
     ]),
     stairs: new Map(),
-  });
+    statuses: new Map(),
+});
 });
 
 afterEach(() => {

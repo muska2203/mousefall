@@ -18,6 +18,7 @@ import { createFloorItemContainer } from '@simulation/systems/item-entity-factor
 import { createInventoryItem } from '@simulation/systems/inventory-factory';
 import { addModifier } from '@simulation/systems/stats/modifier-engine';
 import { recalculateActorStats } from '@simulation/systems/stats/recalculate';
+import { rebuildActiveRules } from '@simulation/systems/rules/active-rule-lifecycle';
 
 // ─────────────────────────────────────────────
 // Вырезание тайлов
@@ -183,6 +184,7 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     critChance: 0,
     critMultiplier: 1.5,
     abilities,
+    activeRules: [],
   };
 
   const equipSlots = [
@@ -216,6 +218,8 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
 
   recalculateActorStats(enemy);
   enemy.hp = enemy.maxHp;
+
+  rebuildActiveRules(enemy);
 
   return enemy;
 }

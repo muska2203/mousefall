@@ -36,6 +36,7 @@ import {
   FactionId,
 } from "@simulation/core-types.ts";
 import type { AIState } from "./ai/ai-state";
+import type { ActiveRule } from "./content-rules/types";
 
 // Реэкспорт базовых типов из core-types для обратной совместимости потребителей
 export type {
@@ -123,6 +124,8 @@ export interface Actor extends BaseEntity, Attackable, Attacker {
   factionId: FactionId;
   maxAp: number;
   ap: number;
+  /** Производной кэш активных декларативных правил. */
+  activeRules: ActiveRule[];
 }
 
 export interface AiActor extends Actor {

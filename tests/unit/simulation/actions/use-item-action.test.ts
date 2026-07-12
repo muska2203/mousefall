@@ -20,6 +20,7 @@ function mockConsumable(
     abilityPool: [],
     equipModifiers: [],
     grantedAbilities: [],
+    ruleIds: [],
     apCost: 1,
     consumable: { effect, value },
   };
@@ -47,6 +48,7 @@ beforeEach(() => {
         abilityPool: [],
         equipModifiers: [],
         grantedAbilities: [],
+        ruleIds: [],
         apCost: 1,
       } as unknown as ItemTemplate],
     ]),
@@ -54,7 +56,8 @@ beforeEach(() => {
     maps: new Map(),
     doors: new Map(),
     stairs: new Map(),
-  });
+    statuses: new Map(),
+});
 });
 
 afterEach(() => {

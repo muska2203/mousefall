@@ -139,7 +139,8 @@ describe('interactAction.validate', () => {
         ['stairs_down', mockStairsTemplate('stairs_down')],
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -393,7 +394,8 @@ describe('interactAction.resolve', () => {
         ['stairs_down', mockStairsTemplate('stairs_down')],
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -517,7 +519,8 @@ describe('interactAction.validate — дополнительные провер�
         ['stairs_down', mockStairsTemplate('stairs_down')],
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -579,7 +582,8 @@ describe('INTERACT — полные flow', () => {
         ['stairs_down', mockStairsTemplate('stairs_down')],
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -678,7 +682,8 @@ describe('авто-спуск по лестнице удалён', () => {
         ['stairs_down', mockStairsTemplate('stairs_down')],
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {

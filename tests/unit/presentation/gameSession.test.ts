@@ -44,7 +44,8 @@ describe('GameSession debug mode', () => {
       stairs: new Map([
         ['stairs_down', {id: 'stairs_down'} as any],
       ]),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -165,7 +166,8 @@ describe('GameSession AP display during animations', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -252,7 +254,8 @@ describe('GameSession moveOrAttack with doors', () => {
         ['wooden_door', {id: 'wooden_door', maxHp: 30, armor: 0} as any],
       ]),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -388,7 +391,8 @@ describe('GameSession interactions (F / Tab)', () => {
         ['stairs_down', {id: 'stairs_down'} as any],
         ['stairs_up', {id: 'stairs_up'} as any],
       ]),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -738,7 +742,8 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const templates = GameSession.getAvailablePlayerTemplates('ru');
 

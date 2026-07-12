@@ -33,6 +33,7 @@ import type { MapParams } from '@content/schemas';
 import {createRNG} from '../utils/rng';
 import {PLAYER_ID} from '../utils/constants';
 import { tryGetPlayerTemplate } from '@content/registry';
+import { rebuildActiveRules } from './systems/rules/active-rule-lifecycle.ts';
 
 // ─────────────────────────────────────────────
 // Фабрика начального состояния
@@ -48,7 +49,7 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
   // Fallback совпадает со значением по умолчанию в PlayerTemplateSchema.
   const startingMaxAp = template?.maxAp ?? 2;
 
-  return {
+  const player: PlayerEntity = {
     id: PLAYER_ID,
     type: 'player',
     blocksMovement: true,
@@ -81,7 +82,11 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     critChance: 0,
     critMultiplier: 1.5,
     abilities: [],
+    activeRules: [],
   };
+
+  rebuildActiveRules(player);
+  return player;
 }
 
 /**

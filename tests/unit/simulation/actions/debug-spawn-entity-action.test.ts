@@ -46,7 +46,8 @@ beforeEach(() => {
       ['stairs_down', {id: 'stairs_down'} as any],
       ['stairs_up', {id: 'stairs_up'} as any],
     ]),
-  });
+    statuses: new Map(),
+});
 });
 
 afterEach(() => {

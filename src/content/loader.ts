@@ -18,6 +18,7 @@ import {
   PlayerTemplateSchema,
   ItemTemplateSchema,
   AbilityTemplateSchema,
+  StatusTemplateSchema,
   MapParamsSchema,
   StairsTemplateSchema,
   DoorTemplateSchema,
@@ -41,6 +42,7 @@ const ManifestSchema = z.object({
   players: z.array(z.string()),
   items: z.array(z.string()),
   abilities: z.array(z.string()),
+  statuses: z.array(z.string()),
   maps: z.array(z.string()),
   stairs: z.array(z.string()),
   doors: z.array(z.string()),
@@ -74,11 +76,12 @@ export async function browserFetchJson(path: string): Promise<unknown> {
 export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
   const manifest = await loadManifest(fetchJson);
 
-  const [entities, players, items, abilities, maps, stairs, doors] = await Promise.all([
+  const [entities, players, items, abilities, statuses, maps, stairs, doors] = await Promise.all([
     loadCategory(manifest.entities, EntityTemplateSchema, fetchJson),
     loadCategory(manifest.players, PlayerTemplateSchema, fetchJson),
     loadCategory(manifest.items, ItemTemplateSchema, fetchJson),
     loadCategory(manifest.abilities, AbilityTemplateSchema, fetchJson),
+    loadCategory(manifest.statuses, StatusTemplateSchema, fetchJson),
     loadCategory(manifest.maps, MapParamsSchema, fetchJson),
     loadCategory(manifest.stairs, StairsTemplateSchema, fetchJson),
     loadCategory(manifest.doors, DoorTemplateSchema, fetchJson),
@@ -89,6 +92,7 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
     players:   new Map(players.map(p => [p.id, p])),
     items:     new Map(items.map(i => [i.id, i])),
     abilities: new Map(abilities.map(a => [a.id, a])),
+    statuses:  new Map(statuses.map(s => [s.id, s])),
     maps:      new Map(maps.map(m => [m.id, m])),
     stairs:    new Map(stairs.map(s => [s.id, s])),
     doors:     new Map(doors.map(d => [d.id, d])),

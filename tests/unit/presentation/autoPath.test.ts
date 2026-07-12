@@ -19,7 +19,8 @@ function initEmptyRegistry() {
     maps: new Map(),
     doors: new Map(),
     stairs: new Map(),
-  });
+    statuses: new Map(),
+});
 }
 
 function moveTarget(x: number, y: number) {
@@ -926,11 +927,13 @@ describe('GameSession auto-path integration', () => {
         aiPreparable: false,
         requiredWeaponTags: [],
         tags: [],
+        ruleIds: [],
       }]]),
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const state = makeGameState();
     state.explored[6]![5] = true;

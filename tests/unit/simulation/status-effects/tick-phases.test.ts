@@ -111,7 +111,9 @@ describe('status effect tick phases', () => {
     });
 
     resetRegistry();
-    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map() });
+    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map(),
+    statuses: new Map(),
+});
     const sim = GameSimulation.loadSavedGame(state);
 
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
@@ -135,7 +137,9 @@ describe('status effect tick phases', () => {
     });
 
     resetRegistry();
-    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map() });
+    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map(),
+    statuses: new Map(),
+});
     const sim = GameSimulation.loadSavedGame(state);
 
     sim.dispatch({ type: 'END_TURN', entityId: player.id });

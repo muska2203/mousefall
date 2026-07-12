@@ -22,7 +22,8 @@ describe('computeFloorTransition', () => {
         } as DoorTemplate],
       ]),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {

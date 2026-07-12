@@ -34,7 +34,8 @@ describe('useAbilityAction', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -51,7 +52,8 @@ describe('useAbilityAction', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const state = makeGameState();
     state.visible[5]![5] = true;
@@ -83,7 +85,8 @@ describe('useAbilityAction', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const state = makeGameState();
     state.visible[5]![5] = true;

@@ -102,7 +102,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
   });
 
   afterEach(() => {
@@ -317,7 +318,8 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    });
+    statuses: new Map(),
+});
 
     const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({

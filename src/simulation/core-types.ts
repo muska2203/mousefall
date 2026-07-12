@@ -116,6 +116,8 @@ export type StatusEffect = {
   statModifiers: StatModifier[] | null;
   /** Количество стаков (только для стакующихся статусов). */
   stacks?: number;
+  /** Стабильный ID экземпляра статуса. Заполняется при первом наложении. */
+  instanceId?: EntityId;
 };
 
 export type RuntimeAbility = {

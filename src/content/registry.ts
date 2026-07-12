@@ -87,7 +87,7 @@ export function resetRegistry(): void {
 // Методы доступа
 // ─────────────────────────────────────────────
 
-function getRegistry(): LoadedContent {
+export function getRegistry(): LoadedContent {
   if (_registry === null) {
     throw new Error('Content registry not initialized. Call initRegistry() first.');
   }
