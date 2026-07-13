@@ -2,6 +2,7 @@ import { WorldReaction } from './types';
 import { findEntity } from '@simulation/state';
 import { hasTag } from '@simulation/systems/tags/tag-helpers';
 import { randomChance } from '@utils/random';
+import { isContentRulesEnabled } from '@simulation/content-rules/feature-flags.ts';
 
 /**
  * Реакция мира: огненный урон с шансом 10% вызывает горение на 2 хода
@@ -10,6 +11,8 @@ import { randomChance } from '@utils/random';
 export const fireDamageReaction: WorldReaction = (state, event, _builder, _parent) => {
   if (event.type !== 'ENTITY_DAMAGED') return [];
   if (!hasTag(event.tags, 'damage.magical.fire')) return [];
+
+  if (isContentRulesEnabled(state)) return [];
 
   if (!randomChance(10)) return [];
 

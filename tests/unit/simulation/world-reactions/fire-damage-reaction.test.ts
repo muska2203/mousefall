@@ -112,4 +112,17 @@ describe('fireDamageReaction', () => {
 
     expect(result).toEqual([]);
   });
+
+  it('обходит старую реакцию, когда включены контентные правила', () => {
+    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+
+    const enemy = makeEnemy();
+    const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
+    state.featureFlags.contentRulesEnabled = true;
+
+    const event = makeEntityDamagedEvent(enemy.id, 'fire');
+    const result = fireDamageReaction(state, event, null as any, null as any);
+
+    expect(result).toEqual([]);
+  });
 });

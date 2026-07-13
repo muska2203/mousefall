@@ -2,14 +2,23 @@
  * Интеграционные тесты подключения контентных правил к боевому циклу.
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ExecutionBuilder, ExecutionNode } from '@simulation/core-types.ts';
 import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
+import { getContentRule } from '../../../../src/simulation/content-rules/registry';
+import * as randomModule from '../../../../src/utils/random';
 import {
   makePlayer,
   makeEnemy,
   makeStateWithPlayerAndEntity,
 } from '../../../fixtures/gameState';
+
+vi.mock('../../../../src/utils/rng', () => ({
+  createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
+  rngChance: vi.fn(),
+}));
+
+import { rngChance } from '../../../../src/utils/rng';
 
 function findNodeByEventType(root: ExecutionNode, eventType: string): ExecutionNode | null {
   if (root.event.type === eventType) return root;
@@ -21,6 +30,14 @@ function findNodeByEventType(root: ExecutionNode, eventType: string): ExecutionN
 }
 
 describe('executeIntent + content rules integration', () => {
+  beforeEach(() => {
+    vi.mocked(rngChance).mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('при включённом флаге', () => {
     it('модификатор увеличивает DAMAGE-интент (world_global_damage_multiply ×1.1)', () => {
       const player = makePlayer({ x: 5, y: 5 });
@@ -51,39 +68,99 @@ describe('executeIntent + content rules integration', () => {
       expect(enemy.hp).toBe(89);
     });
 
-    it('реакция на огненный урон накладывает горение (world_global_fire_bonus)', () => {
-      const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(1);
+    it('реакция на огненный урон накладывает горение (fire_damage_ignites)', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.featureFlags.contentRulesEnabled = true;
 
-      try {
-        const player = makePlayer({ x: 5, y: 5 });
-        const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
-        const state = makeStateWithPlayerAndEntity(player, enemy);
-        state.featureFlags.contentRulesEnabled = true;
+      const builder = new ExecutionBuilder({
+        type: 'ACTION_APPLIED',
+        action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
+      });
 
-        const builder = new ExecutionBuilder({
-          type: 'ACTION_APPLIED',
-          action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
-        });
+      executeIntent(
+        state,
+        {
+          type: 'DAMAGE',
+          entityId: enemy.id,
+          sourceEntityId: player.id,
+          damage: 10,
+          tags: ['damage.magical.fire'],
+        },
+        builder,
+        builder.root,
+      );
 
-        executeIntent(
-          state,
-          {
-            type: 'DAMAGE',
-            entityId: enemy.id,
-            sourceEntityId: player.id,
-            damage: 10,
-            tags: ['damage.magical.fire'],
-          },
-          builder,
-          builder.root,
-        );
+      const burning = enemy.statusEffects.find((e) => e.type === 'burning');
+      expect(burning).toBeDefined();
+      expect(burning!.duration).toBe(3);
+    });
 
-        const burning = enemy.statusEffects.find((e) => e.type === 'burning');
-        expect(burning).toBeDefined();
-        expect(burning!.duration).toBe(1);
-      } finally {
-        randomSpy.mockRestore();
-      }
+    it('пилотный модификатор огня ×1.5 комбинируется с мировым модификатором', () => {
+      vi.mocked(rngChance).mockReturnValue(false);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      player.activeRules.push({
+        ...getContentRule('item_fire_damage_multiplier'),
+        ownerContext: { type: 'entity', entityId: 'test_fire_item' },
+      });
+
+      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.featureFlags.contentRulesEnabled = true;
+
+      const builder = new ExecutionBuilder({
+        type: 'ACTION_APPLIED',
+        action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
+      });
+
+      executeIntent(
+        state,
+        {
+          type: 'DAMAGE',
+          entityId: enemy.id,
+          sourceEntityId: player.id,
+          damage: 10,
+          tags: ['damage.magical.fire'],
+        },
+        builder,
+        builder.root,
+      );
+
+      const damageEvent = findNodeByEventType(builder.root, 'ENTITY_DAMAGED');
+      expect(damageEvent?.event).toMatchObject({ damage: 17 });
+      expect(enemy.hp).toBe(83);
+      expect(enemy.statusEffects.some((e) => e.type === 'burning')).toBe(false);
+    });
+
+    it('при провале шанса реакции горение не накладывается', () => {
+      vi.mocked(rngChance).mockReturnValue(false);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.featureFlags.contentRulesEnabled = true;
+
+      const builder = new ExecutionBuilder({
+        type: 'ACTION_APPLIED',
+        action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
+      });
+
+      executeIntent(
+        state,
+        {
+          type: 'DAMAGE',
+          entityId: enemy.id,
+          sourceEntityId: player.id,
+          damage: 10,
+          tags: ['damage.magical.fire'],
+        },
+        builder,
+        builder.root,
+      );
+
+      expect(enemy.statusEffects.some((e) => e.type === 'burning')).toBe(false);
     });
   });
 
@@ -122,6 +199,43 @@ describe('executeIntent + content rules integration', () => {
       } finally {
         randomSpy.mockRestore();
       }
+    });
+
+    it('пилотный модификатор не срабатывает при выключенном флаге', () => {
+      vi.spyOn(randomModule, 'randomChance').mockReturnValue(false);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      player.activeRules.push({
+        ...getContentRule('item_fire_damage_multiplier'),
+        ownerContext: { type: 'entity', entityId: 'test_fire_item' },
+      });
+
+      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      // featureFlags по умолчанию выключен
+
+      const builder = new ExecutionBuilder({
+        type: 'ACTION_APPLIED',
+        action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
+      });
+
+      executeIntent(
+        state,
+        {
+          type: 'DAMAGE',
+          entityId: enemy.id,
+          sourceEntityId: player.id,
+          damage: 10,
+          tags: ['damage.magical.fire'],
+        },
+        builder,
+        builder.root,
+      );
+
+      const damageEvent = findNodeByEventType(builder.root, 'ENTITY_DAMAGED');
+      expect(damageEvent?.event).toMatchObject({ damage: 10 });
+      expect(enemy.hp).toBe(90);
+      expect(enemy.statusEffects.some((e) => e.type === 'burning')).toBe(false);
     });
   });
 });

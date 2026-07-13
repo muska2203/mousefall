@@ -70,6 +70,7 @@ import {
   ensureFeatureFlags,
   setContentRulesEnabled as setContentRulesEnabledFlag,
 } from "@simulation/content-rules/feature-flags.ts";
+import { ensureRuntimeRng } from "@simulation/content-rules/runtime-rng.ts";
 import { findPath, posEqual } from "@utils/math.ts";
 
 export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
@@ -219,6 +220,7 @@ export class GameSimulation implements Simulation {
      */
     static loadSavedGame(state: GameState, debugEnabled: boolean = false): GameSimulation {
         ensureFeatureFlags(state);
+        ensureRuntimeRng(state);
         const debugContext: DebugContext = { enabled: debugEnabled };
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
         // Загруженная игра должна продолжаться с хода игрока, если он жив.

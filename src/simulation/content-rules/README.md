@@ -33,6 +33,7 @@
 | `reaction/content-rule-reaction.ts` | `runContentRuleReactions` — сбор, фильтрация, условия, селекторы и генерация интентов. |
 | `modifiers/apply-intent-modifiers.ts` | `applyIntentModifiers` — изменение `DAMAGE`-интентов (multiply/add, теги). |
 | `feature-flags.ts` | Работа с флагом `contentRulesEnabled`. |
+| `runtime-rng.ts` | Управление `GameState.runtimeRng` для детерминированных шансов правил. |
 | `intent-modifiers.ts` | Точка врезки `applyIntentModifiersIfEnabled`. |
 | `event-reactions.ts` | Точка врезки `runContentRuleReactionsIfEnabled`. |
 | `README.md` | Этот файл. |
@@ -45,7 +46,7 @@
 
 **Условия (`RuleCondition`):**
 
-- `chance` — константа или параметризованная вероятность;
+- `chance` — константа или параметризованная вероятность (использует `state.runtimeRng`, см. раздел ниже);
 - `hasStatus` — проверка статуса у `self` / `target` / `candidate`;
 - `and` / `or` / `not` — логические комбинации;
 - `targetConditions` — фильтрация целей после их разрешения.
@@ -88,6 +89,7 @@
     event: 'ENTITY_DAMAGED',
     tags: ['damage.magical.fire'],
   },
+  conditions: [{ type: 'chance', probability: 30 }],
   effect: {
     type: 'applyStatus',
     statusType: 'burning',
@@ -95,6 +97,8 @@
   },
   target: { type: 'eventTarget' },
   priority: 0,
+  ownerContext: { type: 'world' },
+  worldLayer: 'global',
 }
 ```
 
@@ -121,15 +125,16 @@
 
 ```typescript
 {
-  id: 'world_global_fire_bonus',
+  id: 'fire_damage_ignites',
   trigger: {
     event: 'ENTITY_DAMAGED',
     tags: ['damage.magical.fire'],
   },
+  conditions: [{ type: 'chance', probability: 30 }],
   effect: {
     type: 'applyStatus',
     statusType: 'burning',
-    duration: 1,
+    duration: 3,
   },
   target: { type: 'eventTarget' },
   priority: 0,
@@ -137,6 +142,18 @@
   worldLayer: 'global',
 }
 ```
+
+---
+
+## Детерминированные шансы и `runtimeRng`
+
+Условие `chance` использует `GameState.runtimeRng` (Mulberry32) вместо `Math.random()`.
+Это гарантирует, что одно и то же начальное состояние + одна последовательность действий
+дают один и тот же результат шансовых правил, при этом runtime-шансы не мутируют
+`state.rng`, отвечающий за генерацию мира.
+
+`runtimeRng` создаётся в `createNewGameState`, сериализуется в сохранениях,
+а при загрузке старых сейвов восстанавливается через `ensureRuntimeRng`.
 
 ---
 

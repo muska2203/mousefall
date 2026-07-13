@@ -22,7 +22,8 @@ import type {
 import type { Actor, GameState } from '@simulation/types.ts';
 import { findEntity, isActor } from '@simulation/state.ts';
 import { hasAllTags } from '@simulation/systems/tags/tag-helpers.ts';
-import { randomChance } from '@utils/random.ts';
+import { rngChance } from '@utils/rng.ts';
+import { ensureRuntimeRng } from '../runtime-rng.ts';
 import { WORLD_CONTENT_RULES } from '../rules.ts';
 import { buildRuleContext, type RuleContext } from '../rule-context.ts';
 import type {
@@ -66,6 +67,7 @@ export function runContentRuleReactions(
   builder: ExecutionBuilder,
   parent: ExecutionNode,
 ): Intent[] {
+  ensureRuntimeRng(state);
   const ctx = buildRuleContext(state, event);
   const layeredRules = collectRules(ctx);
   const triggered = filterRulesByTrigger(layeredRules, event.type, ctx.eventTags);
@@ -219,7 +221,7 @@ function evaluateCondition(
   switch (condition.type) {
     case 'chance': {
       const probability = resolveParametrizedValue(condition.probability, ctx);
-      return randomChance(probability);
+      return rngChance(ctx.state.runtimeRng, probability);
     }
     case 'hasStatus': {
       const subjectId = resolveSubjectId(condition.subject, selfId, ctx, candidateId);

@@ -13,11 +13,12 @@ import { ExecutionBuilder } from '../../../../../src/simulation/core-types';
 import type { GameEvent, Intent } from '../../../../../src/simulation/core-types';
 import type { ActiveRule } from '../../../../../src/simulation/content-rules/types';
 
-vi.mock('../../../../../src/utils/random', () => ({
-  randomChance: vi.fn(),
+vi.mock('../../../../../src/utils/rng', () => ({
+  createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
+  rngChance: vi.fn(),
 }));
 
-import { randomChance } from '../../../../../src/utils/random';
+import { rngChance } from '../../../../../src/utils/rng';
 
 function makeActiveRule(overrides: Partial<ActiveRule> = {}): ActiveRule {
   return {
@@ -38,7 +39,7 @@ function runReactions(state: ReturnType<typeof makeStateWithPlayerAndEntity>, ev
 
 describe('runContentRuleReactions', () => {
   beforeEach(() => {
-    vi.mocked(randomChance).mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -213,7 +214,7 @@ describe('runContentRuleReactions', () => {
       .filter((intent) => intent.type === 'APPLY_STATUS')
       .map((intent) => intent.status.type);
 
-    // source (burning), target (poisoned), world (burning от world_global_fire_bonus), radius (frozen)
+    // source (burning), target (poisoned), world (burning от fire_damage_ignites), radius (frozen)
     expect(statusTypes).toEqual(['burning', 'poisoned', 'burning', 'frozen']);
   });
 
@@ -355,14 +356,14 @@ describe('runContentRuleReactions', () => {
       (intent) =>
         intent.type === 'APPLY_STATUS' &&
         intent.status.type === 'burning' &&
-        intent.status.duration === 1,
+        intent.status.duration === 3,
     );
 
     expect(worldIntent).toBeDefined();
     expect(worldIntent).toMatchObject({
       type: 'APPLY_STATUS',
       entityId: enemy.id,
-      status: { type: 'burning', duration: 1, value: 0, statModifiers: null },
+      status: { type: 'burning', duration: 3, value: 0, statModifiers: null },
     });
   });
 
@@ -393,10 +394,10 @@ describe('runContentRuleReactions', () => {
       tags: [],
     };
 
-    vi.mocked(randomChance).mockReturnValue(false);
+    vi.mocked(rngChance).mockReturnValue(false);
     expect(runReactions(state, event)).toHaveLength(0);
 
-    vi.mocked(randomChance).mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
     expect(runReactions(state, event)).toHaveLength(1);
   });
 });

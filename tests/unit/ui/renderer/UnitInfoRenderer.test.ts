@@ -159,6 +159,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
       floor: 1,
       floorSnapshots: [],
       rng: {seed: 1, state: 1},
+      runtimeRng: {seed: 1, state: 1},
       nextEntityCounter: 0,
       runStats: {
         startTime: Date.now(),

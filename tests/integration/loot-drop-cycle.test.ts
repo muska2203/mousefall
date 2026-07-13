@@ -94,6 +94,7 @@ function makeLootGameState(): GameState {
     floor: 1,
     floorSnapshots: [],
     rng: createRNG(12345),
+    runtimeRng: createRNG(12345),
     nextEntityCounter: 0,
     runStats: {
       startTime: Date.now(),

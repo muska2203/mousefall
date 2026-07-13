@@ -15,20 +15,6 @@ import type { ContentRule, WorldContentRule } from './types';
  */
 export const CONTENT_RULES: readonly ContentRule[] = [
   {
-    id: 'fire_damage_ignites',
-    trigger: {
-      event: 'ENTITY_DAMAGED',
-      tags: ['damage.magical.fire'],
-    },
-    effect: {
-      type: 'applyStatus',
-      statusType: 'burning',
-      duration: 3,
-    },
-    target: { type: 'eventTarget' },
-    priority: 0,
-  },
-  {
     id: 'slashing_weapon_bleed',
     trigger: {
       event: 'ENTITY_DAMAGED',
@@ -82,15 +68,16 @@ export const CONTENT_RULES: readonly ContentRule[] = [
  */
 export const WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
   {
-    id: 'world_global_fire_bonus',
+    id: 'fire_damage_ignites',
     trigger: {
       event: 'ENTITY_DAMAGED',
       tags: ['damage.magical.fire'],
     },
+    conditions: [{ type: 'chance', probability: 30 }],
     effect: {
       type: 'applyStatus',
       statusType: 'burning',
-      duration: 1,
+      duration: 3,
     },
     target: { type: 'eventTarget' },
     priority: 0,

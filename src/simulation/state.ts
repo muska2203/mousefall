@@ -130,6 +130,7 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
     floor: 1,
     floorSnapshots: [],
     rng: createRNG(seed),
+    runtimeRng: createRNG(seed),
     nextEntityCounter: 0,
     runStats: {
       startTime: Date.now(),
@@ -138,7 +139,7 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
       itemsPickedUp: 0,
     },
     featureFlags: {
-      contentRulesEnabled: false,
+      contentRulesEnabled: true,
     },
   };
 }

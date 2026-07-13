@@ -202,4 +202,25 @@ describe('fireballSkill', () => {
   it('is registered in skill registry', () => {
     expect(getSkillExecutor('fireball')).toBeDefined();
   });
+
+  it('does not apply burning status when content rules are enabled', () => {
+    const state = makeGameState();
+    state.visible[8]![8] = true;
+    state.visible[6]![6] = true;
+    state.featureFlags.contentRulesEnabled = true;
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(enemy.id, enemy);
+
+    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
+    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    const statusIntents = intents.filter(i => i.type === 'APPLY_STATUS');
+
+    expect(damageIntents).toHaveLength(1);
+    expect(damageIntents[0]!.entityId).toBe(enemy.id);
+    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
+    expect(statusIntents).toHaveLength(0);
+  });
 });
