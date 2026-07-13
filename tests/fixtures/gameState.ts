@@ -241,6 +241,9 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
       chestsOpened: 0,
       itemsPickedUp: 0,
     },
+    featureFlags: {
+      contentRulesEnabled: false,
+    },
     ...overrides,
   };
 }

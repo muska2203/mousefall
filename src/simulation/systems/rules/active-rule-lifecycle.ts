@@ -154,7 +154,7 @@ export function removeActiveRulesForStatus(actor: Actor, statusInstanceId: strin
  * - innate / levelup: `entityId` = `abilityId`;
  * - equipment: `entityId` = `abilityId:sourceItemInstanceId`.
  */
-function abilityOwnerContext(ability: RuntimeAbility): OwnerContext {
+function abilityOwnerContext(ability: RuntimeAbility): Extract<OwnerContext, { type: 'entity' }> {
   const entityId =
     ability.source === 'equipment' && ability.sourceItemInstanceId
       ? `${ability.templateId}:${ability.sourceItemInstanceId}`

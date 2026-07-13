@@ -121,6 +121,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
+    activeRules: [],
     factionId: 'player' as const,
     ...playerOverrides,
   };
@@ -157,6 +158,9 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
         enemiesKilled: 0,
         chestsOpened: 0,
         itemsPickedUp: 0,
+      },
+      featureFlags: {
+        contentRulesEnabled: false,
       },
     },
     highlightedPath: null,

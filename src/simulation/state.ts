@@ -137,6 +137,9 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
       chestsOpened: 0,
       itemsPickedUp: 0,
     },
+    featureFlags: {
+      contentRulesEnabled: false,
+    },
   };
 }
 

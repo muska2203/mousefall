@@ -36,6 +36,9 @@ import {executeCleanupDeadEntitiesIntent} from "@simulation/systems/intents/clea
 import {executeApplyFogEventsIntent} from "@simulation/systems/intents/apply-fog-events-intent-executor.ts";
 import {executeNotifyAIIntent} from "@simulation/systems/intents/notify-ai-intent-executor.ts";
 import {executeCounterAttackIntent} from "@simulation/systems/intents/counter-attack-intent-executor.ts";
+import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
+import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
+import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
@@ -74,23 +77,42 @@ const intentExecutors = {
   COUNTER_ATTACK: executeCounterAttackIntent,
 };
 
+/** Максимальное количество реакций в одной цепочке защиты от бесконечного цикла. */
+const MAX_REACTION_DEPTH = 1000;
+
 export function executeIntent(
-  state: GameState,
-  intent: Intent,
-  builder: ExecutionBuilder,
-  parent: ExecutionNode,
+    state: GameState,
+    intent: Intent,
+    builder: ExecutionBuilder,
+    parent: ExecutionNode,
+    reactionDepth: number = 0,
 ): ExecutionNode | null {
-    const executor = intentExecutors[intent.type] as IntentExecutor<any>;
+    if (reactionDepth > MAX_REACTION_DEPTH) {
+        // eslint-disable-next-line no-console
+        console.error('[executeIntent] превышен лимит глубины реакций (%d)', MAX_REACTION_DEPTH);
+        return null;
+    }
+
+    const intentContext = buildRuleContext(state, intent);
+    const modifiedIntent = applyIntentModifiersIfEnabled(state, intent, intentContext);
+
+    const executor = intentExecutors[modifiedIntent.type] as IntentExecutor<any>;
     const resultNode = executor(
         state,
-        intent,
+        modifiedIntent,
         builder,
         parent,
     );
+
     if (resultNode !== null) {
+        const contentReactionIntents = runContentRuleReactionsIfEnabled(state, resultNode.event, builder, resultNode);
+        for (const reactionIntent of contentReactionIntents) {
+            executeIntent(state, reactionIntent, builder, resultNode, reactionDepth + 1);
+        }
+
         const reactionIntents = runWorldReactions(state, builder, resultNode);
         for (const reactionIntent of reactionIntents) {
-            executeIntent(state, reactionIntent, builder, resultNode);
+            executeIntent(state, reactionIntent, builder, resultNode, reactionDepth + 1);
         }
     }
     return resultNode;

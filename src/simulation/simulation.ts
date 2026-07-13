@@ -66,6 +66,10 @@ import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
 import { tickEntityStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
 import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
 import { resolveInteraction } from "@simulation/systems/interactions/resolve-interaction.ts";
+import {
+  ensureFeatureFlags,
+  setContentRulesEnabled as setContentRulesEnabledFlag,
+} from "@simulation/content-rules/feature-flags.ts";
 import { findPath, posEqual } from "@utils/math.ts";
 
 export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
@@ -105,6 +109,13 @@ export class GameSimulation implements Simulation {
      */
     setDebugEnabled(enabled: boolean): void {
         this.debugContext.enabled = enabled;
+    }
+
+    /**
+     * Включает или выключает новую систему декларативных контентных правил.
+     */
+    setContentRulesEnabled(enabled: boolean): void {
+        setContentRulesEnabledFlag(this.state, enabled);
     }
 
     /**
@@ -207,6 +218,7 @@ export class GameSimulation implements Simulation {
      * Оборачивает десериализованное состояние в симуляцию без повторной генерации карты.
      */
     static loadSavedGame(state: GameState, debugEnabled: boolean = false): GameSimulation {
+        ensureFeatureFlags(state);
         const debugContext: DebugContext = { enabled: debugEnabled };
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
         // Загруженная игра должна продолжаться с хода игрока, если он жив.

@@ -5,6 +5,7 @@
  */
 
 import { GameState, Actor } from "@simulation/types.ts";
+import { isActor } from "@simulation/state.ts";
 import { IntentExecutor, GrantAbilityIntent } from "@simulation/systems/intents/types.ts";
 import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
 import { addActiveRulesForAbility } from "@simulation/systems/rules/active-rule-lifecycle.ts";
@@ -16,7 +17,7 @@ export const executeGrantAbilityIntent: IntentExecutor<GrantAbilityIntent> = (
   parent: ExecutionNode,
 ) => {
   const actor = state.entities.get(intent.entityId);
-  if (!actor || actor.type !== 'player') return null;
+  if (!actor || !isActor(actor)) return null;
 
   actor.abilities.push(intent.ability);
   addActiveRulesForAbility(actor as Actor, intent.ability);

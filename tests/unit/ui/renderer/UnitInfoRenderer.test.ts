@@ -129,6 +129,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     critMultiplier: 1.5,
     statusEffects: [],
     abilities: [],
+    activeRules: [],
     factionId: 'player' as const,
   };
 
@@ -164,6 +165,9 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
         enemiesKilled: 0,
         chestsOpened: 0,
         itemsPickedUp: 0,
+      },
+      featureFlags: {
+        contentRulesEnabled: false,
       },
     },
     highlightedPath: null,

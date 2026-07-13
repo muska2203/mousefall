@@ -2,6 +2,11 @@
  * Исполнитель интента REVOKE_ABILITY.
  *
  * Удаляет из массива abilities актёра запись с указанным sourceItemInstanceId.
+ *
+ * Ограничение: этот интент предназначен только для способностей, полученных от
+ * предмета (source === 'equipment' и заполнен sourceItemInstanceId). Innate- и
+ * levelup-способности не имеют sourceItemInstanceId, поэтому их отзыв через этот
+ * интент не поддерживается.
  */
 
 import { GameState, Actor } from "@simulation/types.ts";
@@ -17,6 +22,10 @@ export const executeRevokeAbilityIntent: IntentExecutor<RevokeAbilityIntent> = (
 ) => {
   const actor = state.entities.get(intent.entityId);
   if (!actor || (actor.type !== 'player' && actor.type !== 'enemy')) return null;
+
+  // REVOKE_ABILITY работает только со способностями, привязанными к экземпляру предмета.
+  // Способности без sourceItemInstanceId (innate / levelup) нельзя отозвать этим интентом.
+  if (!intent.sourceItemInstanceId) return null;
 
   const ability = actor.abilities.find(a => a.sourceItemInstanceId === intent.sourceItemInstanceId);
   if (!ability) return null;

@@ -372,6 +372,13 @@ export type GameState = {
   // ── Run Statistics ─────────────────────────────────────────────────
   /** Статистика текущего забега. Сериализуется вместе с сохранением. */
   runStats: RunStats;
+
+  // ── Feature Flags ──────────────────────────────────────────────────
+  /** Флаги включения экспериментальных систем. Сериализуются с сохранением. */
+  featureFlags: {
+    /** Включена ли новая система декларативных контентных правил. */
+    contentRulesEnabled: boolean;
+  };
 };
 
 // ─────────────────────────────────────────────
@@ -441,6 +448,9 @@ export type Simulation = {
   regenerateMap(): void;
 
   setDebugEnabled(enabled: boolean): void;
+
+  /** Включает или выключает новую систему контентных правил. */
+  setContentRulesEnabled(enabled: boolean): void;
 
   getPlayerStats(): Readonly<PlayerStatsSnapshot>;
 

@@ -5,7 +5,7 @@
  * доступ по id и базовую защиту от дубликатов.
  */
 
-import { CONTENT_RULES } from './rules';
+import { CONTENT_RULES, WORLD_CONTENT_RULES } from './rules';
 import type { ContentRule } from './types';
 
 const RULES_BY_ID: ReadonlyMap<string, ContentRule> = buildRulesMap();
@@ -17,6 +17,13 @@ function buildRulesMap(): Map<string, ContentRule> {
   const map = new Map<string, ContentRule>();
 
   for (const rule of CONTENT_RULES) {
+    if (map.has(rule.id)) {
+      throw new Error(`Дублирующийся id контентного правила: "${rule.id}"`);
+    }
+    map.set(rule.id, rule);
+  }
+
+  for (const rule of WORLD_CONTENT_RULES) {
     if (map.has(rule.id)) {
       throw new Error(`Дублирующийся id контентного правила: "${rule.id}"`);
     }
@@ -48,7 +55,7 @@ export function tryGetContentRule(id: string): ContentRule | undefined {
  * Возвращает все зарегистрированные контентные правила.
  */
 export function getAllContentRules(): readonly ContentRule[] {
-  return CONTENT_RULES;
+  return [...CONTENT_RULES, ...WORLD_CONTENT_RULES];
 }
 
 /**

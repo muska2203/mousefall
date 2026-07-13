@@ -7,14 +7,14 @@
 
 ## Общий прогресс
 
-Фаза 2 выполнена на **~33%** (2 из 6 шагов).
+Фаза 2 выполнена на **100%** (6 из 6 шагов).
 
 - ✅ Шаг 2.1 — Реестр декларативных правил
 - ✅ Шаг 2.2 — Построитель `RuleContext`
-- ⏳ Шаг 2.3 — Жизненный цикл `activeRules`
-- ⏳ Шаг 2.4 — Каркас `ContentRuleReaction`
-- ⏳ Шаг 2.5 — Каркас модификаторов на интенте
-- ⏳ Шаг 2.6 — Флаги и точки включения
+- ✅ Шаг 2.3 — Жизненный цикл `activeRules`
+- ✅ Шаг 2.4 — Каркас `ContentRuleReaction`
+- ✅ Шаг 2.5 — Каркас модификаторов на интенте
+- ✅ Шаг 2.6 — Флаги и точки включения
 
 ---
 
@@ -60,68 +60,105 @@
 
 - `tests/unit/simulation/content-rules/rule-context.test.ts` (18 тестов).
 
----
-
-## ⏳ Оставшиеся шаги
-
 ### Шаг 2.3. Жизненный цикл `activeRules`
 
-**Задачи:**
+**Статус:** завершён.
 
-- Добавить поле `activeRules: ActiveRule[]` в интерфейс `Actor` (`src/simulation/types.ts`).
-- Добавить `instanceId` в `StatusEffect` (`src/simulation/core-types.ts`).
-- Создать модуль `src/simulation/systems/rules/active-rule-lifecycle.ts` с хелперами добавления/удаления правил.
-- Интегрировать в исполнители:
+**Что сделано:**
+
+- Добавлено поле `activeRules: ActiveRule[]` в интерфейс `Actor` (`src/simulation/types.ts`).
+- Добавлено поле `instanceId` в `StatusEffect` (`src/simulation/core-types.ts`).
+- Создан `src/simulation/systems/rules/active-rule-lifecycle.ts`:
+  - `addActiveRules` / `removeActiveRulesByOwnerContext`;
+  - `addActiveRulesForItem` / `removeActiveRulesForItem`;
+  - `addActiveRulesForStatus` / `removeActiveRulesForStatus`;
+  - `addActiveRulesForAbility` / `removeActiveRulesForAbility`;
+  - `rebuildActiveRules` для полной пересборки кэша.
+- Интегрировано в исполнители:
   - `executeEquipItemIntent` / `executeUnequipItemIntent`;
-  - `executeApplyStatusIntent` и места удаления статуса (`tick-status-effects`, `adjust-status-stacks`, `skip-stunned-turn`);
+  - `executeApplyStatusIntent`, `tick-status-effects`, `adjust-status-stacks`, `skip-stunned-turn`;
   - `executeGrantAbilityIntent` / `executeRevokeAbilityIntent`.
-- Инициализировать `activeRules: []` во всех местах создания актора.
-- Добавить тесты.
+- `activeRules: []` инициализировано во всех местах создания актора.
+- Добавлены unit-тесты.
 
-**Блокируется ли чем-то:** нет, может выполняться после шагов 2.1–2.2.
+**Тесты:**
+
+- `tests/unit/simulation/rules/active-rule-lifecycle.test.ts`
 
 ### Шаг 2.4. Каркас `ContentRuleReaction`
 
-**Задачи:**
+**Статус:** завершён.
 
-- Создать `src/simulation/content-rules/reaction/content-rule-reaction.ts`.
-- Реализовать сбор правил по слоям `source → target → world → radius`.
-- Реализовать фильтрацию по событию/тегам.
-- Реализовать базовые условия (`chance`, `hasStatus`, `and`/`or`/`not`).
-- Реализовать селекторы целей (`eventTarget`, `eventSource`, `self`, `collisionTarget`, базовый `allInRadius`).
-- Реализовать генерацию интентов (`applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`).
-- Добавить тесты.
+**Что сделано:**
 
-**Блокируется ли чем-то:** зависит от шага 2.3 (`activeRules`).
+- Создан `src/simulation/content-rules/reaction/content-rule-reaction.ts`.
+- Реализован сбор правил по слоям `source → target → world → radius`.
+- Реализована фильтрация по событию и обязательным тегам.
+- Реализованы базовые условия: `chance`, `hasStatus`, `and` / `or` / `not`, а также `targetConditions`.
+- Реализованы селекторы целей: `eventTarget`, `eventSource`, `self`, `collisionTarget`, `allInRadius`, `nearestEnemy`.
+- Реализована генерация интентов: `applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`.
+- Эффект `modifyDamage` в реакции распознаётся, но не порождает отдельных интентов (его обработка — в слое модификаторов).
+- Добавлены unit-тесты.
+
+**Тесты:**
+
+- `tests/unit/simulation/content-rules/reaction/content-rule-reaction.test.ts`
 
 ### Шаг 2.5. Каркас модификаторов на интенте
 
-**Задачи:**
+**Статус:** завершён.
 
-- Создать `src/simulation/content-rules/modifiers/apply-intent-modifiers.ts`.
-- Реализовать сбор модифицирующих правил по слоям.
-- Реализовать порядок применения: `multiply` → `add` внутри каждого слоя.
-- Реализовать `MODIFY_DAMAGE` с константами и базовыми параметризованными значениями.
-- Добавить тесты.
+**Что сделано:**
 
-**Блокируется ли чем-то:** зависит от шага 2.3 (`activeRules`).
+- Создан `src/simulation/content-rules/modifiers/apply-intent-modifiers.ts`.
+- Реализован сбор модифицирующих правил по слоям `source → target → world → radius`.
+- Реализован порядок применения внутри каждого слоя: сначала `multiply`, затем `add`.
+- Реализован `MODIFY_DAMAGE` для `DAMAGE`-интентов с константными и базовыми параметризованными значениями (`eventDamage`, `eventAmount`, `eventDuration`, `eventStacks`).
+- Поддержано добавление тегов через `addTags`.
+- Модификатор не мутирует входной интент и не обращается к `state` для записи.
+- Добавлены unit-тесты.
+
+**Тесты:**
+
+- `tests/unit/simulation/content-rules/modifiers/apply-intent-modifiers.test.ts`
 
 ### Шаг 2.6. Флаги и точки включения
 
-**Задачи:**
+**Статус:** завершён.
 
-- Добавить `featureFlags.contentRulesEnabled` в `GameState`.
-- Создать `src/simulation/content-rules/feature-flags.ts`.
-- Создать заглушки:
-  - `src/simulation/content-rules/intent-modifiers.ts`;
-  - `src/simulation/content-rules/event-reactions.ts`.
-- Изменить `src/simulation/systems/intents/execute-intent.ts`:
-  - точка врезки модификаторов перед `IntentExecutor`;
-  - точка врезки контентных реакций перед `runWorldReactions`.
-- Убедиться, что при выключенном флаге новая система не вызывается и все guardian tests проходят.
-- Добавить тесты.
+**Что сделано:**
 
-**Блокируется ли чем-то:** зависит от шагов 2.4–2.5.
+- Добавлен `featureFlags.contentRulesEnabled` в `GameState` (`src/simulation/types.ts`).
+- Создан `src/simulation/content-rules/feature-flags.ts`:
+  - `isContentRulesEnabled`;
+  - `setContentRulesEnabled`;
+  - `ensureFeatureFlags` для обратной совместимости со старыми сохранениями.
+- Созданы точки врезки:
+  - `src/simulation/content-rules/intent-modifiers.ts` — `applyIntentModifiersIfEnabled`;
+  - `src/simulation/content-rules/event-reactions.ts` — `runContentRuleReactionsIfEnabled`.
+- Изменён `src/simulation/systems/intents/execute-intent.ts`:
+  - модификаторы применяются перед `IntentExecutor`;
+  - контентные реакции запускаются после `IntentExecutor`, перед системными `runWorldReactions`.
+- При выключенном флаге новая система не вызывается; все guardian tests проходят.
+- Добавлены интеграционные и unit-тесты.
+
+**Тесты:**
+
+- `tests/unit/simulation/content-rules/feature-flags.test.ts`
+- `tests/unit/simulation/content-rules/execute-intent-integration.test.ts`
+
+---
+
+## Принятые архитектурные решения
+
+- **Слой `world` на фазе 2 содержит только глобальные правила (`worldLayer: 'global'`).**
+  Тайловые эффекты (`tileEffect`) и встроенные свойства тайла (`tileIntrinsic`) отложены до фазы работы с картой.
+
+- **Слой `radius` охватывает всех живых акторов в радиусе 1 от `eventPosition`.**
+  Используется расстояние Чебышёва (`Chebyshev`). Source и target исключаются из этого слоя, чтобы не дублировать их `activeRules`.
+
+- **Feature flag новой системы хранится в `GameState.featureFlags.contentRulesEnabled`.**
+  По умолчанию флаг выключен (`false`), поэтому старый боевой цикл работает без изменений. Включение происходит явно — в тестах или в пилотном сценарии фазы 3.
 
 ---
 
@@ -129,11 +166,16 @@
 
 | Проверка | Результат | Дата |
 |---|---|---|
-| `npm test` | ✅ 114 файлов, 909 тестов | 2026-07-13 |
+| `npm test` | ✅ 119 файлов, 939 тестов | 2026-07-13 |
 | `npm run build` | ✅ успешно | 2026-07-13 |
 
 ---
 
 ## Следующее действие
 
-Перейти к **шагу 2.3 — Жизненный цикл `activeRules`**.
+Перейти к **фазе 3 — Пилот**:
+
+1. Реализовать пилотную реакцию «огненный урон → горение» через `ContentRuleReaction`.
+2. Реализовать пилотный модификатор «огненный урон ×1,5».
+3. Временно изолировать или отключить старую `fireDamageReaction`, чтобы избежать дублирования.
+4. Покрыть пилотные сценарии тестами с включённым `contentRulesEnabled`.
