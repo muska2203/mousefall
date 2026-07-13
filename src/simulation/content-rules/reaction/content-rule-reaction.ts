@@ -24,7 +24,7 @@ import { findEntity, isActor } from '@simulation/state.ts';
 import { hasAllTags } from '@simulation/systems/tags/tag-helpers.ts';
 import { rngChance } from '@utils/rng.ts';
 import { ensureRuntimeRng } from '../runtime-rng.ts';
-import { WORLD_CONTENT_RULES } from '../rules.ts';
+import { getWorldContentRules } from '../rules.ts';
 import { buildRuleContext, type RuleContext } from '../rule-context.ts';
 import type {
   ActiveRule,
@@ -136,7 +136,7 @@ function collectRules(ctx: RuleContext): LayeredRule[] {
   }
 
   // ── Слой world ────────────────────────────────────────────────────────────
-  for (const rule of WORLD_CONTENT_RULES) {
+  for (const rule of getWorldContentRules()) {
     result.push({
       layer: 'world',
       rule: toActiveRule(rule, { type: 'world' }),
@@ -418,7 +418,8 @@ function buildIntents(
       return targetIds.map((entityId) => ({
         type: 'DAMAGE',
         entityId,
-        sourceEntityId: selfId,
+        // Для мировых правил selfId === null, поэтому сохраняем источника из контекста события.
+        sourceEntityId: selfId ?? ctx.sourceEntityId,
         damage: amount,
         tags: effect.tags ?? [],
       }));

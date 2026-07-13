@@ -542,15 +542,17 @@ export class GameSimulation implements Simulation {
 
         const actors = this.getAliveActorsOfFactionSorted(factionId);
 
+        // Сначала восстанавливаем AP, затем тикаем статусы.
+        // Это нужно, чтобы эффект `dazed` (−1 AP при восстановлении) ещё был активен.
+        for (const actor of actors) {
+            executeIntent(this.state, { type: 'RESTORE_AP', entityId: actor.id }, builder, root);
+        }
+
         for (const actor of actors) {
             const intents = tickEntityStatusEffects(actor, factionId);
             for (const intent of intents) {
                 executeIntent(this.state, intent, builder, root);
             }
-        }
-
-        for (const actor of actors) {
-            executeIntent(this.state, { type: 'RESTORE_AP', entityId: actor.id }, builder, root);
         }
 
         for (const actor of actors) {

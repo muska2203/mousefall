@@ -2,7 +2,13 @@
  * Unit-тесты `applyIntentModifiers`.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import {
+  testWorldDamageMultiplier,
+  testWorldAddTag,
+  setWorldContentRulesOverride,
+  getWorldContentRules,
+} from '../../../../fixtures/content-rules';
 import { applyIntentModifiers } from '../../../../../src/simulation/content-rules/modifiers/apply-intent-modifiers';
 import { buildRuleContext } from '../../../../../src/simulation/content-rules/rule-context';
 import {
@@ -49,6 +55,18 @@ function runDamageModifiers(
 ): Extract<Intent, { type: 'DAMAGE' }> {
   return runModifiers(state, intent) as Extract<Intent, { type: 'DAMAGE' }>;
 }
+
+beforeEach(() => {
+  setWorldContentRulesOverride([
+    ...getWorldContentRules(),
+    testWorldDamageMultiplier,
+    testWorldAddTag,
+  ]);
+});
+
+afterEach(() => {
+  setWorldContentRulesOverride(null);
+});
 
 describe('applyIntentModifiers', () => {
   it('множитель источника увеличивает урон', () => {

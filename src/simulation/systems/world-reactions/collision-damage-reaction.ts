@@ -1,6 +1,7 @@
 import { WorldReaction } from './types';
 import { findEntity, isActor } from '@simulation/state';
 import type { GameplayTag } from '@simulation/core-types';
+import { isContentRulesEnabled } from '@simulation/content-rules/feature-flags.ts';
 
 /**
  * Базовый урон при столкновении отталкиваемого актора с препятствием или другим актором.
@@ -17,6 +18,7 @@ const PUSH_DAMAGE_TAGS: GameplayTag[] = ['delivery.movement', 'damage.physical.b
  * При столкновении с другим актором урон получают оба.
  */
 export const collisionDamageReaction: WorldReaction = (state, event) => {
+  if (isContentRulesEnabled(state)) return [];
   if (event.type !== 'ENTITY_COLLIDED') return [];
 
   const pushed = findEntity(state, event.entityId);

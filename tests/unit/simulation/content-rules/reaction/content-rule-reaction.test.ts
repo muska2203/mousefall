@@ -274,6 +274,7 @@ describe('runContentRuleReactions', () => {
       position: { x: 6, y: 5 },
       dx: 1,
       dy: 0,
+      tags: [],
     };
 
     const intents = runReactions(state, event);
@@ -399,5 +400,85 @@ describe('runContentRuleReactions', () => {
 
     vi.mocked(rngChance).mockReturnValue(true);
     expect(runReactions(state, event)).toHaveLength(1);
+  });
+
+  describe('мировые правила столкновений', () => {
+    it('столкновение со стеной наносит урон и накладывает dazed на отталкиваемого актора', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_COLLIDED',
+        entityId: enemy.id,
+        targetId: null,
+        collisionType: 'wall',
+        sourceEntityId: player.id,
+        position: { x: 6, y: 5 },
+        dx: 1,
+        dy: 0,
+        tags: ['displacement.push', 'collision.wall'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(2);
+
+      const damage = intents.find((intent) => intent.type === 'DAMAGE');
+      expect(damage).toMatchObject({
+        entityId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        tags: ['delivery.movement', 'damage.physical.blunt'],
+      });
+
+      const dazed = intents.find(
+        (intent) => intent.type === 'APPLY_STATUS' && intent.status.type === 'dazed',
+      );
+      expect(dazed).toMatchObject({
+        entityId: enemy.id,
+        status: { type: 'dazed', duration: 1, value: 0, statModifiers: null },
+      });
+    });
+
+    it('столкновение с другим актором затрагивает оба актора', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const pushed = makeEnemy({ id: 'enemy_pushed', x: 6, y: 5 });
+      const target = makeEnemy({ id: 'enemy_target', x: 7, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, pushed);
+      state.entities.set(target.id, target);
+
+      const event: GameEvent = {
+        type: 'ENTITY_COLLIDED',
+        entityId: pushed.id,
+        targetId: target.id,
+        collisionType: 'actor',
+        sourceEntityId: player.id,
+        position: { x: 6, y: 5 },
+        dx: 1,
+        dy: 0,
+        tags: ['displacement.push', 'collision.actor'],
+      };
+
+      const intents = runReactions(state, event);
+
+      const damageIntents = intents.filter(
+        (intent): intent is Extract<Intent, { type: 'DAMAGE' }> => intent.type === 'DAMAGE',
+      );
+      expect(damageIntents).toHaveLength(2);
+      expect(damageIntents.map((intent) => intent.entityId).sort()).toEqual(
+        [pushed.id, target.id].sort(),
+      );
+      expect(damageIntents.every((intent) => intent.sourceEntityId === player.id)).toBe(true);
+
+      const dazedIntents = intents.filter(
+        (intent): intent is Extract<Intent, { type: 'APPLY_STATUS' }> =>
+          intent.type === 'APPLY_STATUS' && intent.status.type === 'dazed',
+      );
+      expect(dazedIntents).toHaveLength(2);
+      expect(dazedIntents.map((intent) => intent.entityId).sort()).toEqual(
+        [pushed.id, target.id].sort(),
+      );
+    });
   });
 });

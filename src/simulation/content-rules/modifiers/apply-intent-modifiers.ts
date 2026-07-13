@@ -16,7 +16,7 @@ import type { EntityId, Intent } from '@simulation/core-types.ts';
 import { findEntity, isActor } from '@simulation/state.ts';
 import { hasAllTags, mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers.ts';
 import { chebyshevDistance } from '@utils/math.ts';
-import { WORLD_CONTENT_RULES } from '../rules.ts';
+import { getWorldContentRules } from '../rules.ts';
 import type { RuleContext } from '../rule-context.ts';
 import type { ActiveRule, ParametrizedValue } from '../types.ts';
 
@@ -132,7 +132,7 @@ function collectDamageModifiers(state: GameState, ctx: RuleContext): LayeredRule
   }
 
   // ── Слой world ────────────────────────────────────────────────────────────
-  for (const rule of WORLD_CONTENT_RULES) {
+  for (const rule of getWorldContentRules()) {
     if (rule.worldLayer === 'global' && rule.effect.type === 'modifyDamage') {
       result.push({
         layer: 'world',

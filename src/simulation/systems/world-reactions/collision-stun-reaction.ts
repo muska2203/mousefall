@@ -1,5 +1,6 @@
 import { WorldReaction } from './types';
 import { findEntity, isActor } from '@simulation/state';
+import { isContentRulesEnabled } from '@simulation/content-rules/feature-flags.ts';
 
 /**
  * Создаёт эффект оглушения длительностью 1 ход.
@@ -19,6 +20,7 @@ function createStunEffect() {
  * Оглушение применяется только к акторам, чтобы избежать зависших статусов на не-акторах.
  */
 export const collisionStunReaction: WorldReaction = (state, event) => {
+  if (isContentRulesEnabled(state)) return [];
   if (event.type !== 'ENTITY_COLLIDED') return [];
 
   const pushed = findEntity(state, event.entityId);

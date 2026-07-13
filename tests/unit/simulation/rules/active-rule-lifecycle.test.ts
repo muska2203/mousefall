@@ -63,7 +63,7 @@ beforeEach(() => {
       ['test_item', mockItem('test_item', ['fire_damage_ignites'])],
     ]),
     abilities: new Map([
-      ['test_ability', mockAbility('test_ability', ['slashing_weapon_bleed'])],
+      ['test_ability', mockAbility('test_ability', ['item_fire_damage_multiplier'])],
     ]),
     statuses: new Map([
       ['burning', mockStatus('burning', ['fire_damage_ignites'])],
@@ -126,7 +126,7 @@ describe('active-rule-lifecycle', () => {
     addActiveRulesForAbility(player, ability);
 
     expect(player.activeRules).toHaveLength(1);
-    expect(player.activeRules[0]!.id).toBe('slashing_weapon_bleed');
+    expect(player.activeRules[0]!.id).toBe('item_fire_damage_multiplier');
     expect(player.activeRules[0]!.ownerContext).toEqual({
       type: 'entity',
       entityId: 'test_ability',

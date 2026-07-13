@@ -3,6 +3,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  testWorldDamageMultiplier,
+  setWorldContentRulesOverride,
+  getWorldContentRules,
+} from '../../../fixtures/content-rules';
 import { ExecutionBuilder, ExecutionNode } from '@simulation/core-types.ts';
 import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
 import { getContentRule } from '../../../../src/simulation/content-rules/registry';
@@ -32,10 +37,15 @@ function findNodeByEventType(root: ExecutionNode, eventType: string): ExecutionN
 describe('executeIntent + content rules integration', () => {
   beforeEach(() => {
     vi.mocked(rngChance).mockReturnValue(true);
+    setWorldContentRulesOverride([
+      ...getWorldContentRules(),
+      testWorldDamageMultiplier,
+    ]);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    setWorldContentRulesOverride(null);
   });
 
   describe('при включённом флаге', () => {

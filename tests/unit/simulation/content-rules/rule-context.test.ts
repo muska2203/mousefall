@@ -90,6 +90,7 @@ describe('buildRuleContext', () => {
         position: { x: 6, y: 5 },
         dx: 1,
         dy: 0,
+        tags: ['displacement.push', 'collision.actor'],
       };
 
       expectContext(buildRuleContext(state, event), {
@@ -322,6 +323,7 @@ describe('buildRuleContext', () => {
         position: { x: 6, y: 5 },
         dx: 0,
         dy: 0,
+        tags: ['displacement.push', 'collision.actor'],
       };
 
       // Собственная position задана, поэтому fallback не применяется.

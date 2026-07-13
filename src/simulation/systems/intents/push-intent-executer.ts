@@ -1,7 +1,20 @@
 import { GameState } from '@simulation/types';
 import { PushIntent, IntentExecutor } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
+import { ExecutionBuilder, ExecutionNode, GameplayTag } from '@simulation/core-types';
 import { findEntity, isBlocked, isActor, findAllEntitiesAt } from '@simulation/state';
+
+/**
+ * Формирует теги события столкновения без дублирования.
+ *
+ * Всегда добавляет `displacement.push` и тег типа столкновения.
+ * Учитывает дополнительные теги, переданные через интент.
+ */
+function buildCollisionTags(
+  intent: PushIntent,
+  collisionType: 'wall' | 'actor' | 'blocking-object',
+): GameplayTag[] {
+  return [...new Set([...(intent.tags ?? []), 'displacement.push', `collision.${collisionType}`])];
+}
 
 /**
  * Исполняет интент отталкивания PUSH.
@@ -44,6 +57,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
       position: from,
       dx: intent.dx,
       dy: intent.dy,
+      tags: buildCollisionTags(intent, 'wall'),
     });
   }
 
@@ -61,6 +75,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
       position: from,
       dx: intent.dx,
       dy: intent.dy,
+      tags: buildCollisionTags(intent, 'actor'),
     });
   }
 
@@ -75,6 +90,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
       position: from,
       dx: intent.dx,
       dy: intent.dy,
+      tags: buildCollisionTags(intent, 'blocking-object'),
     });
   }
 

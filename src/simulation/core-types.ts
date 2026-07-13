@@ -97,6 +97,7 @@ export type StatusEffectType =
   | 'burning'
   | 'frozen'
   | 'stunned'
+  | 'dazed'
   | 'silenced'
   | 'regenerating'
   | 'counterattack';
@@ -322,7 +323,7 @@ export type Intent =
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
-export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null };
+export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null; tags?: GameplayTag[] };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect; tags?: GameplayTag[] };
@@ -518,6 +519,7 @@ export type EntityCollidedEvent = {
   position: Position;
   dx: number;
   dy: number;
+  tags: GameplayTag[];
 };
 
 export type EntityDisplacedEvent = {
