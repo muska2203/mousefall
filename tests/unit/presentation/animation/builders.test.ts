@@ -182,7 +182,7 @@ describe('status builders', () => {
   });
 
   it('creates STATUS_BURST for STATUS_TICKED', () => {
-    const event: GameEvent = { type: 'STATUS_TICKED', entityId: 'enemy1', effectTypes: ['burning'] };
+    const event: GameEvent = { type: 'STATUS_TICKED', entityId: 'enemy1', effectTypes: ['burning'], tags: ['status.burning'] };
     const nodes = statusTickedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);

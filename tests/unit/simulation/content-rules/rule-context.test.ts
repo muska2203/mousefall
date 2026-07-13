@@ -123,6 +123,23 @@ describe('buildRuleContext', () => {
       });
     });
 
+    it('STATUS_TICKED: заполняет target, position, maxHp и теги статуса', () => {
+      const event: GameEvent = {
+        type: 'STATUS_TICKED',
+        entityId: enemy.id,
+        effectTypes: ['burning'],
+        tags: ['status.burning'],
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: null,
+        targetEntityId: enemy.id,
+        eventPosition: { x: 6, y: 5 },
+        eventMaxHp: enemy.maxHp,
+        eventTags: ['status.burning'],
+      });
+    });
+
     it('ABILITY_USED: заполняет source, target, abilityTargetPosition, abilityTargets и eventPosition', () => {
       const event: GameEvent = {
         type: 'ABILITY_USED',

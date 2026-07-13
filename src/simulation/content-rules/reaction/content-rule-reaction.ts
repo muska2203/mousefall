@@ -26,11 +26,11 @@ import { rngChance } from '@utils/rng.ts';
 import { ensureRuntimeRng } from '../runtime-rng.ts';
 import { getWorldContentRules } from '../rules.ts';
 import { buildRuleContext, type RuleContext } from '../rule-context.ts';
+import { resolveParametrizedValue } from '../value-resolver.ts';
 import type {
   ActiveRule,
   ContentRule,
   OwnerContext,
-  ParametrizedValue,
   RuleCondition,
   RuleEffect,
   TargetSelector,
@@ -267,22 +267,6 @@ function hasStatus(entityId: EntityId, statusType: string, ctx: RuleContext): bo
   const entity = findEntity(ctx.state, entityId);
   if (!entity || !('statusEffects' in entity)) return false;
   return entity.statusEffects.some((effect) => effect.type === statusType);
-}
-
-/**
- * Разрешает параметризованное числовое значение в конкретное число.
- */
-function resolveParametrizedValue(value: number | ParametrizedValue, ctx: RuleContext): number {
-  if (typeof value === 'number') return value;
-
-  switch (value.type) {
-    case 'literal':
-      return value.value;
-    case 'context':
-      return ctx[value.field] ?? 0;
-    default:
-      return 0;
-  }
 }
 
 /**

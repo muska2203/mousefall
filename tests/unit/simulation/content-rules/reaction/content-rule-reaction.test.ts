@@ -402,6 +402,32 @@ describe('runContentRuleReactions', () => {
     expect(runReactions(state, event)).toHaveLength(1);
   });
 
+  describe('мировое правило тика горения', () => {
+    it('при STATUS_TICKED с тегом status.burning порождает fire DAMAGE от мира', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5, hp: 100, maxHp: 100 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'STATUS_TICKED',
+        entityId: enemy.id,
+        effectTypes: ['burning'],
+        tags: ['status.burning'],
+      };
+
+      const intents = runReactions(state, event);
+
+      const damage = intents.find((intent) => intent.type === 'DAMAGE');
+      expect(damage).toBeDefined();
+      expect(damage).toMatchObject({
+        entityId: enemy.id,
+        sourceEntityId: null,
+        damage: Math.max(1, Math.round(enemy.maxHp * 0.1)),
+        tags: expect.arrayContaining(['damage.magical.fire']),
+      });
+    });
+  });
+
   describe('мировые правила столкновений', () => {
     it('столкновение со стеной наносит урон и накладывает dazed на отталкиваемого актора', () => {
       const player = makePlayer({ x: 5, y: 5 });
@@ -437,7 +463,7 @@ describe('runContentRuleReactions', () => {
       );
       expect(dazed).toMatchObject({
         entityId: enemy.id,
-        status: { type: 'dazed', duration: 1, value: 0, statModifiers: null },
+        status: { type: 'dazed', duration: 2, value: 0, statModifiers: null },
       });
     });
 

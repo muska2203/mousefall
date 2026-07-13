@@ -51,7 +51,14 @@ export type RuleTrigger = {
  */
 export type ParametrizedValue =
   | { type: 'literal'; value: number }
-  | { type: 'context'; field: 'eventDamage' | 'eventAmount' | 'eventDuration' | 'eventStacks' };
+  | {
+      // TODO(4.4): заменить eventMaxHp на общий stat-based resolver (targetStat/selfStat), см. Концепт боевой системы.md
+      type: 'context';
+      field: 'eventDamage' | 'eventAmount' | 'eventDuration' | 'eventStacks' | 'eventMaxHp';
+      multiply?: number;
+      min?: number;
+      round?: boolean;
+    };
 
 /**
  * Условие срабатывания правила.

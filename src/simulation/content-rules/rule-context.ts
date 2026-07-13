@@ -39,6 +39,7 @@ export type RuleContext = {
   eventAmount: number | null;
   eventDuration: number | null;
   eventStacks: number | null;
+  eventMaxHp: number | null;
 };
 
 /**
@@ -80,6 +81,7 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     eventAmount: null,
     eventDuration: null,
     eventStacks: null,
+    eventMaxHp: null,
   };
 
   switch (event.type) {
@@ -109,6 +111,15 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     case 'STATUS_APPLIED': {
       base.targetEntityId = event.entityId;
       base.eventDuration = event.effect.duration;
+      break;
+    }
+
+    case 'STATUS_TICKED': {
+      base.targetEntityId = event.entityId;
+      base.eventTags = event.tags;
+
+      const entity = findEntity(state, event.entityId);
+      base.eventMaxHp = entity && 'maxHp' in entity ? (entity.maxHp as number) : null;
       break;
     }
 

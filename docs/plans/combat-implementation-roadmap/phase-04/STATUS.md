@@ -7,10 +7,10 @@
 
 ## Общий прогресс
 
-Фаза 4 выполнена на **14%** (1 из 7 шагов).
+Фаза 4 выполнена на **28%** (2 из 7 шагов).
 
 - ✅ Шаг 4.1 — Перенос физики столкновений
-- ⬜ Шаг 4.2 — Перенос тиковых эффектов
+- ✅ Шаг 4.2 — Перенос тиковых эффектов
 - ⬜ Шаг 4.3 — Подключение тайловых эффектов
 - ⬜ Шаг 4.4 — Расширение `RuleContext` на остальные события
 - ⬜ Шаг 4.5 — Подключение источников правил: экипировка, статусы, таланты
@@ -51,6 +51,32 @@
 - `tests/unit/simulation/content-rules/modifiers/apply-intent-modifiers.test.ts`
 - `tests/unit/simulation/rules/active-rule-lifecycle.test.ts`
 
+### Шаг 4.2. Перенос тиковых эффектов
+
+**Статус:** завершён.
+
+**Что сделано:**
+
+- `StatusTickedEvent` теперь требует обязательное поле `tags: GameplayTag[]`.
+- Добавлено глобальное мировое правило `burning_tick_damage`:
+  - срабатывает на `STATUS_TICKED` с тегом `status.burning`;
+  - наносит `round(maxHp * 0.1)` огненного урона (минимум 1);
+  - теги интента: `damage.magical.fire`;
+  - источник урона (`sourceEntityId`) равен `null`.
+- Старая реакция `burningTickReaction` отключается при `contentRulesEnabled === true`.
+- Исполнитель `TICK_STATUS_EFFECTS` заполняет `tags` события `STATUS_TICKED` как `status.<тип>` для каждого затикавшего эффекта.
+- `RuleContext` для `STATUS_TICKED` предоставляет `targetEntityId`, `eventPosition`, `eventMaxHp` и `eventTags`.
+
+**Тесты:**
+
+- `tests/unit/simulation/world-reactions/burning-tick-reaction.test.ts` — параметризованы по `contentRulesEnabled`; проверка урона 10% maxHp, тега `damage.magical.fire` и `tags: ['status.burning']` в новой системе.
+- `tests/unit/simulation/content-rules/reaction/content-rule-reaction.test.ts` — раздел «мировое правило тика горения»; исправлено ожидание `dazed.duration: 2`.
+- `tests/unit/simulation/content-rules/rule-context.test.ts` — тест контекста `STATUS_TICKED`.
+- `tests/unit/presentation/animation/animation.test.ts` — добавлены `tags` в `STATUS_TICKED`.
+- `tests/unit/presentation/animation/builders.test.ts` — добавлены `tags` в `STATUS_TICKED`.
+- `tests/unit/simulation/status-effects/burning.test.ts` — добавлены `tags` в `STATUS_TICKED`.
+- `tests/unit/simulation/status-effects/tick-phases.test.ts` — добавлены `tags` в `STATUS_TICKED`.
+
 ---
 
 ## Принятые архитектурные решения
@@ -66,15 +92,11 @@
 
 | Проверка | Результат | Дата |
 |---|---|---|
-| `npm test` | ✅ 121 файл, 952 теста | 2026-07-13 |
+| `npm test` | ✅ 121 файл, 957 тестов | 2026-07-13 |
 | `npm run typecheck` | ✅ успешно | 2026-07-13 |
 
 ---
 
 ## Следующее действие
 
-Перейти к **шагу 4.2 — Перенос тиковых эффектов**:
-
-1. Создать мировое правило `burning_tick_damage` на `STATUS_TICKED` + `burning`.
-2. Сохранить поведение старой `burningTickReaction` при выключенном флаге.
-3. Покрыть перенос тестами с включённым `contentRulesEnabled`.
+Перейти к **шагу 4.3 — Подключение тайловых эффектов**.

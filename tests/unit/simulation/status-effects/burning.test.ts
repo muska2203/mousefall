@@ -22,15 +22,15 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder1 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    const builder1 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder1, builder1.root);
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder2 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    const builder2 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder2, builder2.root);
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder3 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    const builder3 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder3, builder3.root);
     expect(enemy.statusEffects).toHaveLength(0);
   });
@@ -40,7 +40,7 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
     expect(enemy.statusEffects).toHaveLength(0);
   });
@@ -50,7 +50,7 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     const node = executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     expect(node).not.toBeNull();
@@ -66,7 +66,7 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');
@@ -115,7 +115,7 @@ describe('burning status effect', () => {
     const door = makeDoor({ x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
     state.entities.set(door.id, door);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [], tags: [] });
     executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id, phase: 'enemies' }, builder, builder.root);
 
     const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');
@@ -132,7 +132,7 @@ describe('burning status effect', () => {
     const door = makeDoor({ x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
     state.entities.set(door.id, door);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [], tags: [] });
     executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id, phase: 'environment' }, builder, builder.root);
 
     const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');

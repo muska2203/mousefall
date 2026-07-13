@@ -58,6 +58,22 @@ export const WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
     worldLayer: 'global',
   },
   {
+    id: 'burning_tick_damage',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.burning'],
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: { type: 'context', field: 'eventMaxHp', multiply: 0.1, min: 1, round: true },
+      tags: ['damage.magical.fire'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
     id: 'collision_damage',
     trigger: {
       event: 'ENTITY_COLLIDED',

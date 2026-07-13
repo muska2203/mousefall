@@ -52,6 +52,7 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
     type: 'STATUS_TICKED',
     entityId: entity.id,
     effectTypes: tickedEffectTypes,
+    tags: tickedEffectTypes.map((t) => `status.${t}`),
   });
 
   for (const effect of expired) {

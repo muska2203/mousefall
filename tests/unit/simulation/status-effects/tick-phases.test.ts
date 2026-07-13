@@ -53,7 +53,7 @@ describe('status effect tick phases', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     const poisoned = enemy.statusEffects.find(e => e.type === 'poisoned');

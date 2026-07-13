@@ -18,7 +18,8 @@ import { hasAllTags, mergeDamageIntentTags } from '@simulation/systems/tags/tag-
 import { chebyshevDistance } from '@utils/math.ts';
 import { getWorldContentRules } from '../rules.ts';
 import type { RuleContext } from '../rule-context.ts';
-import type { ActiveRule, ParametrizedValue } from '../types.ts';
+import { resolveParametrizedValue } from '../value-resolver.ts';
+import type { ActiveRule } from '../types.ts';
 
 /** Слой происхождения правила-модификатора. */
 type RuleLayer = 'source' | 'target' | 'world' | 'radius';
@@ -222,23 +223,4 @@ function sortModifiers(rules: LayeredRule[]): LayeredRule[] {
   });
 }
 
-/**
- * Разрешает параметризованное числовое значение в конкретное число.
- */
-function resolveParametrizedValue(
-  value: number | ParametrizedValue,
-  ctx: RuleContext,
-): number {
-  if (typeof value === 'number') {
-    return value;
-  }
 
-  switch (value.type) {
-    case 'literal':
-      return value.value;
-    case 'context':
-      return ctx[value.field] ?? 0;
-    default:
-      return 0;
-  }
-}

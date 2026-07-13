@@ -485,7 +485,7 @@ export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; e
 
 export type StatusRemovedEvent = { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
 
-export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId; effectTypes: StatusEffectType[] };
+export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId; effectTypes: StatusEffectType[]; tags: GameplayTag[] };
 
 export type StatusStacksAdjustedEvent = {
   type: 'STATUS_STACKS_ADJUSTED';

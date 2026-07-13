@@ -33,6 +33,7 @@ export const executeSkipStunnedTurnIntent: IntentExecutor<SkipStunnedTurnIntent>
     type: 'STATUS_TICKED',
     entityId: entity.id,
     effectTypes: ['stunned'],
+    tags: ['status.stunned'],
   });
 
   if (effect.duration <= 0) {
