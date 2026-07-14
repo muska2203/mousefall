@@ -389,6 +389,7 @@ function buildIntents(
       return targetIds.map((entityId) => ({
         type: 'APPLY_STATUS',
         entityId,
+        sourceEntityId: selfId ?? ctx.sourceEntityId,
         status: {
           type: effect.statusType,
           duration,

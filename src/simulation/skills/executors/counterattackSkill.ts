@@ -43,6 +43,7 @@ export const counterattackSkill: SkillExecutor = {
       {
         type: 'APPLY_STATUS',
         entityId: caster.id,
+        sourceEntityId: caster.id,
         status: {
           type: 'counterattack',
           duration: 2,

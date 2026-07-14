@@ -85,7 +85,7 @@ export const fireballSkill: SkillExecutor = {
           value: Math.max(1, Math.round(entity.maxHp * 0.1)),
           statModifiers: null,
         };
-        intents.push({ type: 'APPLY_STATUS', entityId: entity.id, status: burning });
+        intents.push({ type: 'APPLY_STATUS', entityId: entity.id, sourceEntityId: caster.id, status: burning });
       }
     }
 

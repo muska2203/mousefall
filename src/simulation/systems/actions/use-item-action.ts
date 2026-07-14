@@ -70,6 +70,7 @@ export const useItemAction: ActionHandler = {
         intents.push({
           type: 'APPLY_STATUS',
           entityId: action.entityId,
+          sourceEntityId: action.entityId,
           status: {
             type: 'regenerating',
             duration: effect.duration ?? 3,

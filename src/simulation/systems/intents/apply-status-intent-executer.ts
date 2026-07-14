@@ -59,6 +59,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   return builder.addChild(parent, {
     type: 'STATUS_APPLIED',
     entityId: intent.entityId,
+    sourceEntityId: intent.sourceEntityId ?? null,
     effect: intent.status,
   });
 };

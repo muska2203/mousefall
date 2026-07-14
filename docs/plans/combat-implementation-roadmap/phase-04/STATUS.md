@@ -1,25 +1,52 @@
 # Фаза 4. Параллельный перенос — текущий статус
 
 > Актуальный статус реализации фазы 4. Обновляется по мере прохождения шагов.
-> Дата последнего обновления: 2026-07-13.
+> Дата последнего обновления: 2026-07-14.
 
 ---
 
 ## Общий прогресс
 
-Фаза 4 выполнена на **28%** (2 из 7 шагов).
+Фаза 4 выполнена на **50%** (3 из 6 шагов).
+
+> **Примечание:** шаг «Подключение тайловых эффектов» вынесен из фазы 4 и из MVP. Он будет реализован отдельно — после окончательного перехода на новый концепт (фаза 7 «Тайловые эффекты и окружение»).
 
 - ✅ Шаг 4.1 — Перенос физики столкновений
 - ✅ Шаг 4.2 — Перенос тиковых эффектов
-- ⬜ Шаг 4.3 — Подключение тайловых эффектов
-- ⬜ Шаг 4.4 — Расширение `RuleContext` на остальные события
-- ⬜ Шаг 4.5 — Подключение источников правил: экипировка, статусы, таланты
-- ⬜ Шаг 4.6 — Модуль глобальных мировых контентных правил
-- ⬜ Шаг 4.7 — Поддержка мультитаргетных селекторов
+- ✅ Шаг 4.3 — Расширение `RuleContext` на остальные события
+- ⬜ Шаг 4.4 — Подключение источников правил: экипировка, статусы, таланты
+- ⬜ Шаг 4.5 — Модуль глобальных мировых контентных правил
+- ⬜ Шаг 4.6 — Поддержка мультитаргетных селекторов
 
 ---
 
 ## ✅ Выполненные шаги
+
+### Шаг 4.3. Расширение `RuleContext` на остальные события
+
+**Статус:** завершён.
+
+**Что сделано:**
+
+- `RuleContext` теперь разрешает следующие события MVP:
+  - `STATUS_REMOVED` → `targetEntityId`;
+  - `STATUS_STACKS_ADJUSTED` → `targetEntityId`, `eventStacks`;
+  - `RESOURCE_CONSUMED` → `sourceEntityId`, `eventAmount`;
+  - `ENTITY_DISPLACED` → `sourceEntityId`, `targetEntityId`, `eventPosition` = `to`;
+  - `COUNTER_ATTACK_APPLIED` → `sourceEntityId` (атакующий), `targetEntityId`;
+  - `ENTITY_MOVED` → `sourceEntityId`, `eventPosition` = `to`.
+- Добавлено обязательное поле `sourceEntityId: EntityId | null` в `ApplyStatusIntent` и `StatusAppliedEvent`.
+- `executeApplyStatusIntent` передаёт `sourceEntityId` из интента в событие `STATUS_APPLIED`.
+- `buildRuleContext` для `STATUS_APPLIED` и `APPLY_STATUS` заполняет `sourceEntityId`.
+- Все места создания интента `APPLY_STATUS` в `src/` обновлены с указанием `sourceEntityId` (скиллы, мировые реакции, использование предмета, контентные правила).
+
+**Тесты:**
+
+- `tests/unit/simulation/content-rules/rule-context.test.ts` — новые тесты для `STATUS_REMOVED`, `STATUS_STACKS_ADJUSTED`, `RESOURCE_CONSUMED`, `ENTITY_DISPLACED`, `COUNTER_ATTACK_APPLIED`, `ENTITY_MOVED`; обновлены `STATUS_APPLIED` и `APPLY_STATUS` на проверку `sourceEntityId`.
+- `tests/unit/simulation/intents/apply-status-intent.test.ts` — добавлен `sourceEntityId` в интенты и события.
+- `tests/unit/simulation/content-rules/reaction/content-rule-reaction.test.ts` — обновлено ожидание `sourceEntityId` в `APPLY_STATUS` от правил.
+- `tests/unit/simulation/rules/active-rule-lifecycle.test.ts` — добавлен `sourceEntityId` в `APPLY_STATUS`.
+- `tests/unit/presentation/animation/builders.test.ts` — добавлен `sourceEntityId` в `STATUS_APPLIED`.
 
 ### Шаг 4.1. Перенос физики столкновений
 
@@ -85,6 +112,7 @@
 - **Actor-on-actor реализован через два отдельных правила** с селекторами `eventTarget` и `collisionTarget`, чтобы не расширять движок правил на этом шаге.
 - **Тег `displacement.push` ставит исполнитель `PUSH`, а не скилл.** Это упрощает миграцию: старые скиллы (`dash`, `swoop`, тесты) продолжают работать без изменений, но при необходимости скиллы могут передать свои теги через `PushIntent.tags`.
 - **`dazed` применяет штраф к AP при восстановлении**, а не через отдельный `CONSUME_AP`. Для этого изменён порядок фазы установки: AP восстанавливаются до тика статусов.
+- **Тайловые эффекты (`water`, `oil`, `fog`) и правила окружения вынесены из фазы 4 и из MVP.** Они будут реализованы отдельно после окончательного перехода на новый концепт.
 
 ---
 
@@ -92,11 +120,11 @@
 
 | Проверка | Результат | Дата |
 |---|---|---|
-| `npm test` | ✅ 121 файл, 957 тестов | 2026-07-13 |
-| `npm run typecheck` | ✅ успешно | 2026-07-13 |
+| `npm test` | ✅ 121 файл, 963 теста | 2026-07-14 |
+| `npm run typecheck` | ✅ успешно | 2026-07-14 |
 
 ---
 
 ## Следующее действие
 
-Перейти к **шагу 4.3 — Подключение тайловых эффектов**.
+Перейти к **шагу 4.4 — Подключение источников правил: экипировка, статусы, таланты**.

@@ -221,6 +221,7 @@ describe('active-rule-lifecycle', () => {
       {
         type: 'APPLY_STATUS',
         entityId: player.id,
+        sourceEntityId: null,
         status: {
           type: 'burning',
           duration: 3,
@@ -247,6 +248,7 @@ describe('active-rule-lifecycle', () => {
       {
         type: 'APPLY_STATUS',
         entityId: player.id,
+        sourceEntityId: null,
         status: {
           type: 'burning',
           duration: 5,

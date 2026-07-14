@@ -28,6 +28,7 @@ export const fireDamageReaction: WorldReaction = (state, event, _builder, _paren
   return [{
     type: 'APPLY_STATUS',
     entityId: event.targetId,
+    sourceEntityId: event.sourceEntityId,
     status: {
       type: 'burning',
       duration: 2,

@@ -326,7 +326,7 @@ export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: num
 export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null; tags?: GameplayTag[] };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
-export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; status: StatusEffect; tags?: GameplayTag[] };
+export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; sourceEntityId: EntityId | null; status: StatusEffect; tags?: GameplayTag[] };
 export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][] };
 export type SetEntitiesIntent = { type: 'SET_ENTITIES'; entities: Map<EntityId, unknown> };
 export type TeleportEntityIntent = { type: 'TELEPORT_ENTITY'; entityId: EntityId; x: number; y: number };
@@ -481,7 +481,7 @@ export type PlayerLeveledUpEvent = { type: 'PLAYER_LEVELED_UP'; newLevel: number
 
 export type FogUpdatedEvent = { type: 'FOG_UPDATED'; newlyVisible: Position[] };
 
-export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; effect: StatusEffect };
+export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; sourceEntityId: EntityId | null; effect: StatusEffect };
 
 export type StatusRemovedEvent = { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
 

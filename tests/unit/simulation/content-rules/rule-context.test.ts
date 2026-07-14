@@ -101,7 +101,7 @@ describe('buildRuleContext', () => {
       });
     });
 
-    it('STATUS_APPLIED: заполняет target, duration и позицию сущности', () => {
+    it('STATUS_APPLIED: заполняет source, target, duration и позицию сущности', () => {
       const status: StatusEffect = {
         type: 'poisoned',
         duration: 3,
@@ -111,14 +111,118 @@ describe('buildRuleContext', () => {
       const event: GameEvent = {
         type: 'STATUS_APPLIED',
         entityId: enemy.id,
+        sourceEntityId: player.id,
         effect: status,
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: player.id,
+        targetEntityId: enemy.id,
+        eventPosition: { x: 6, y: 5 },
+        eventDuration: 3,
+        eventTags: [],
+      });
+    });
+
+    it('STATUS_REMOVED: заполняет target и позицию сущности', () => {
+      const event: GameEvent = {
+        type: 'STATUS_REMOVED',
+        entityId: enemy.id,
+        effectType: 'poisoned',
       };
 
       expectContext(buildRuleContext(state, event), {
         sourceEntityId: null,
         targetEntityId: enemy.id,
         eventPosition: { x: 6, y: 5 },
-        eventDuration: 3,
+        eventTags: [],
+      });
+    });
+
+    it('STATUS_STACKS_ADJUSTED: заполняет target, stacks и позицию сущности', () => {
+      const event: GameEvent = {
+        type: 'STATUS_STACKS_ADJUSTED',
+        entityId: enemy.id,
+        statusType: 'poisoned',
+        stacks: 3,
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: null,
+        targetEntityId: enemy.id,
+        eventPosition: { x: 6, y: 5 },
+        eventStacks: 3,
+        eventTags: [],
+      });
+    });
+
+    it('RESOURCE_CONSUMED: заполняет source, amount и позицию сущности', () => {
+      const event: GameEvent = {
+        type: 'RESOURCE_CONSUMED',
+        entityId: player.id,
+        resource: 'ap',
+        amount: 2,
+        remaining: 1,
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: player.id,
+        targetEntityId: null,
+        eventPosition: { x: 5, y: 5 },
+        eventAmount: 2,
+        eventTags: [],
+      });
+    });
+
+    it('ENTITY_DISPLACED: заполняет source, target и позицию назначения', () => {
+      const event: GameEvent = {
+        type: 'ENTITY_DISPLACED',
+        entityId: enemy.id,
+        sourceEntityId: player.id,
+        from: { x: 6, y: 5 },
+        to: { x: 7, y: 5 },
+        dx: 1,
+        dy: 0,
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: player.id,
+        targetEntityId: enemy.id,
+        eventPosition: { x: 7, y: 5 },
+        eventTags: [],
+      });
+    });
+
+    it('COUNTER_ATTACK_APPLIED: заполняет source, target и позицию цели', () => {
+      const event: GameEvent = {
+        type: 'COUNTER_ATTACK_APPLIED',
+        attackerId: player.id,
+        targetId: enemy.id,
+        dx: 1,
+        dy: 0,
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: player.id,
+        targetEntityId: enemy.id,
+        eventPosition: { x: 6, y: 5 },
+        eventTags: [],
+      });
+    });
+
+    it('ENTITY_MOVED: заполняет source и позицию назначения', () => {
+      const event: GameEvent = {
+        type: 'ENTITY_MOVED',
+        entityId: player.id,
+        from: { x: 5, y: 5 },
+        to: { x: 6, y: 5 },
+        movementType: 'walk',
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: player.id,
+        targetEntityId: null,
+        eventPosition: { x: 6, y: 5 },
         eventTags: [],
       });
     });
@@ -248,7 +352,7 @@ describe('buildRuleContext', () => {
       });
     });
 
-    it('APPLY_STATUS: заполняет target и позицию цели', () => {
+    it('APPLY_STATUS: заполняет source, target и позицию цели', () => {
       const status: StatusEffect = {
         type: 'burning',
         duration: 2,
@@ -258,11 +362,12 @@ describe('buildRuleContext', () => {
       const intent: Intent = {
         type: 'APPLY_STATUS',
         entityId: enemy.id,
+        sourceEntityId: player.id,
         status,
       };
 
       expectContext(buildRuleContext(state, intent), {
-        sourceEntityId: null,
+        sourceEntityId: player.id,
         targetEntityId: enemy.id,
         eventPosition: { x: 6, y: 5 },
       });
@@ -317,6 +422,7 @@ describe('buildRuleContext', () => {
       const intent: Intent = {
         type: 'APPLY_STATUS',
         entityId: enemy.id,
+        sourceEntityId: null,
         status: {
           type: 'poisoned',
           duration: 1,

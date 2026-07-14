@@ -99,7 +99,7 @@ export const suddenStrikeSkill: SkillExecutor = {
         value: 0,
         statModifiers: null,
       };
-      intents.push({ type: 'APPLY_STATUS', entityId: target.id, status: silenced });
+      intents.push({ type: 'APPLY_STATUS', entityId: target.id, sourceEntityId: caster.id, status: silenced });
     }
 
     return intents;

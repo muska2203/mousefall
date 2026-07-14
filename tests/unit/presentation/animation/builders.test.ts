@@ -174,7 +174,7 @@ describe('entityHealedBuilder', () => {
 
 describe('status builders', () => {
   it('creates STATUS_BURST for STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'STATUS_APPLIED', entityId: 'enemy1', effect: { type: 'poisoned', duration: 3, value: 2 } as any };
+    const event: GameEvent = { type: 'STATUS_APPLIED', entityId: 'enemy1', sourceEntityId: null, effect: { type: 'poisoned', duration: 3, value: 2 } as any };
     const nodes = statusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);

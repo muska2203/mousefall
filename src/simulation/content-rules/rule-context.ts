@@ -109,8 +109,45 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     }
 
     case 'STATUS_APPLIED': {
+      base.sourceEntityId = event.sourceEntityId ?? null;
       base.targetEntityId = event.entityId;
       base.eventDuration = event.effect.duration;
+      break;
+    }
+
+    case 'STATUS_REMOVED': {
+      base.targetEntityId = event.entityId;
+      break;
+    }
+
+    case 'STATUS_STACKS_ADJUSTED': {
+      base.targetEntityId = event.entityId;
+      base.eventStacks = event.stacks;
+      break;
+    }
+
+    case 'RESOURCE_CONSUMED': {
+      base.sourceEntityId = event.entityId;
+      base.eventAmount = event.amount;
+      break;
+    }
+
+    case 'ENTITY_DISPLACED': {
+      base.sourceEntityId = event.sourceEntityId;
+      base.targetEntityId = event.entityId;
+      base.eventPosition = event.to;
+      break;
+    }
+
+    case 'COUNTER_ATTACK_APPLIED': {
+      base.sourceEntityId = event.attackerId;
+      base.targetEntityId = event.targetId;
+      break;
+    }
+
+    case 'ENTITY_MOVED': {
+      base.sourceEntityId = event.entityId;
+      base.eventPosition = event.to;
       break;
     }
 
@@ -165,6 +202,7 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     }
 
     case 'APPLY_STATUS': {
+      base.sourceEntityId = event.sourceEntityId ?? null;
       base.targetEntityId = event.entityId;
       break;
     }

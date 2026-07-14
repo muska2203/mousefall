@@ -31,6 +31,7 @@ export const collisionStunReaction: WorldReaction = (state, event) => {
   intents.push({
     type: 'APPLY_STATUS' as const,
     entityId: event.entityId,
+    sourceEntityId: event.sourceEntityId,
     status: createStunEffect(),
   });
 
@@ -40,6 +41,7 @@ export const collisionStunReaction: WorldReaction = (state, event) => {
       intents.push({
         type: 'APPLY_STATUS' as const,
         entityId: event.targetId,
+        sourceEntityId: event.sourceEntityId,
         status: createStunEffect(),
       });
     }

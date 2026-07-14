@@ -79,6 +79,7 @@ describe('runContentRuleReactions', () => {
     expect(intents[0]).toEqual({
       type: 'APPLY_STATUS',
       entityId: enemy.id,
+      sourceEntityId: enemy.id,
       status: { type: 'poisoned', duration: 2, value: 0, statModifiers: null },
     });
   });

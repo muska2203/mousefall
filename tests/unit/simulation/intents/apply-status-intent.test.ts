@@ -20,8 +20,8 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('frozen', 3) });
-    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('frozen', 3) }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('frozen', 3) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('frozen', 3) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
     expect(enemy.statusEffects[0]!.duration).toBe(3);
@@ -33,8 +33,8 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('counterattack', 2) });
-    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('counterattack', 2) }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('counterattack', 2) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('counterattack', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
     expect(enemy.statusEffects[0]!.type).toBe('counterattack');
@@ -47,8 +47,8 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('counterattack', 2) });
-    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('counterattack', 2) }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('counterattack', 2) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('counterattack', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
     expect(enemy.statusEffects[0]!.type).toBe('counterattack');
@@ -71,8 +71,8 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('silenced', 1) });
-    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('silenced', 1) }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('silenced', 1) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('silenced', 1) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
     expect(enemy.statusEffects[0]!.type).toBe('silenced');
@@ -95,8 +95,8 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, effect: makeStatus('silenced', 1) });
-    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, status: makeStatus('silenced', 1) }, builder, builder.root);
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('silenced', 1) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('silenced', 1) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
     expect(enemy.statusEffects[0]!.type).toBe('silenced');

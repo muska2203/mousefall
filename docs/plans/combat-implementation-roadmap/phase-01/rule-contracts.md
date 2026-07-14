@@ -27,9 +27,10 @@ type RuleContext = {
   eventTags: GameplayTag[];
 
   eventDamage: number | null;                 // для ENTITY_DAMAGED
-  eventAmount: number | null;                 // для ENTITY_HEALED, AP_RESTORED и т.д.
+  eventAmount: number | null;                 // для ENTITY_HEALED, AP_RESTORED, RESOURCE_CONSUMED и т.д.
   eventDuration: number | null;               // для STATUS_APPLIED
   eventStacks: number | null;                 // для STATUS_STACKS_ADJUSTED
+  eventMaxHp: number | null;                  // для STATUS_TICKED
 };
 ```
 
@@ -54,15 +55,21 @@ eventPosition =
 | `ENTITY_HEALED` | — | `entityId` события | `position` события | `eventAmount` |
 | `ENTITY_COLLIDED` | `sourceEntityId` события | `entityId` события | `position` события | `collisionTargetId` = `targetId` |
 | `ENTITY_DISPLACED` | `sourceEntityId` события | `entityId` события | `to` события | — |
-| `STATUS_APPLIED` | — | `entityId` события | позиция `entityId` | `eventDuration` |
+| `ENTITY_MOVED` | `entityId` события | — | `to` события | — |
+| `STATUS_APPLIED` | `sourceEntityId` события | `entityId` события | позиция `entityId` | `eventDuration` |
 | `STATUS_REMOVED` | — | `entityId` события | позиция `entityId` | — |
-| `STATUS_TICKED` | — | `entityId` события | позиция `entityId` | `eventStacks` не применяется |
+| `STATUS_TICKED` | — | `entityId` события | позиция `entityId` | `eventMaxHp` |
+| `STATUS_STACKS_ADJUSTED` | — | `entityId` события | позиция `entityId` | `eventStacks` |
+| `RESOURCE_CONSUMED` | `entityId` события | — | позиция `entityId` | `eventAmount` |
+| `COUNTER_ATTACK_APPLIED` | `attackerId` события | `targetId` события | позиция `targetId` | — |
 | `ABILITY_USED` | `entityId` события | первая цель из `targets` или null | позиция первой цели / точки | `abilityTargetPosition`, `abilityTargets` |
 | `TURN_BEGAN` | `actorId` события | — | позиция `actorId` | — |
 | `AP_RESTORED` | `entityId` события | — | позиция `entityId` | `eventAmount` |
-| `DAMAGE_INTENT` | `sourceEntityId` интента | `entityId` интента | позиция `entityId` | `eventDamage` = `damage` |
+| `DAMAGE` | `sourceEntityId` интента | `entityId` интента | позиция `entityId` | `eventDamage` = `damage` |
 | `PUSH` | `sourceEntityId` интента | `entityId` интента | позиция `entityId` | — |
-| `APPLY_STATUS` | — | `entityId` интента | позиция `entityId` | — |
+| `APPLY_STATUS` | `sourceEntityId` интента | `entityId` интента | позиция `entityId` | — |
+| `MOVE` | — | `entityId` интента | позиция `entityId` | — |
+| `HEAL` | — | `entityId` интента | позиция `entityId` | `eventAmount` |
 
 ### Правила построения
 
