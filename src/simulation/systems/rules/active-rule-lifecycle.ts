@@ -134,7 +134,7 @@ export function addActiveRulesForStatus(
   addActiveRules(
     actor,
     { type: 'entity', entityId: statusInstanceId, statusInstanceId: statusInstanceId },
-    template.ruleIds,
+    template.ruleIds ?? [],
   );
 }
 
@@ -171,7 +171,7 @@ export function addActiveRulesForAbility(actor: Actor, ability: RuntimeAbility):
   const template = registry?.abilities.get(ability.templateId);
   if (!template) return;
 
-  addActiveRules(actor, abilityOwnerContext(ability), template.ruleIds);
+  addActiveRules(actor, abilityOwnerContext(ability), template.ruleIds ?? []);
 }
 
 /**
@@ -192,8 +192,9 @@ export function removeActiveRulesForAbility(actor: Actor, ability: RuntimeAbilit
 export function rebuildActiveRules(actor: Actor): void {
   actor.activeRules = [];
 
-  // ── Экипировка (игрок с инвентарём) ───────────────────────────────────────
+  // ── Экипировка ────────────────────────────────────────────────────────────
   if ('inventory' in actor && Array.isArray(actor.inventory)) {
+    // Игрок: экипировка хранится как экземпляры в инвентаре.
     const player = actor as Actor & { inventory: Array<{ instanceId: string; templateId: string }> };
 
     const equippedInstances = [
@@ -209,25 +210,25 @@ export function rebuildActiveRules(actor: Actor): void {
       const registry = getContentRegistrySafe();
       const template = registry?.items.get(item.templateId);
       if (template) {
-        addActiveRulesForItem(actor, instanceId, template.ruleIds);
+        addActiveRulesForItem(actor, instanceId, template.ruleIds ?? []);
       }
     }
-  }
+  } else {
+    // Враг: экипировка задана только шаблоном, экземпляра предмета нет.
+    const enemyEquipmentIds = {
+      weapon: (actor as Actor & { equippedWeaponId?: string | null }).equippedWeaponId,
+      armor: (actor as Actor & { equippedArmorId?: string | null }).equippedArmorId,
+      amulet: (actor as Actor & { equippedAmuletId?: string | null }).equippedAmuletId,
+    };
 
-  // ── Экипировка врагов (только шаблон, без экземпляра) ─────────────────────
-  const enemyEquipmentIds = {
-    weapon: (actor as Actor & { equippedWeaponId?: string | null }).equippedWeaponId,
-    armor: (actor as Actor & { equippedArmorId?: string | null }).equippedArmorId,
-    amulet: (actor as Actor & { equippedAmuletId?: string | null }).equippedAmuletId,
-  };
+    for (const [slot, templateId] of Object.entries(enemyEquipmentIds)) {
+      if (!templateId) continue;
+      const registry = getContentRegistrySafe();
+      const template = registry?.items.get(templateId);
+      if (!template) continue;
 
-  for (const [slot, templateId] of Object.entries(enemyEquipmentIds)) {
-    if (!templateId) continue;
-    const registry = getContentRegistrySafe();
-    const template = registry?.items.get(templateId);
-    if (!template) continue;
-
-    addActiveRules(actor, { type: 'entity', entityId: `equipment:${slot}:${templateId}` }, template.ruleIds);
+      addActiveRules(actor, { type: 'entity', entityId: `equipment:${slot}:${templateId}` }, template.ruleIds ?? []);
+    }
   }
 
   // ── Статусы ───────────────────────────────────────────────────────────────

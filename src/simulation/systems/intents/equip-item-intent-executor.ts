@@ -42,7 +42,7 @@ export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
 
   recalculateActorStats(player);
 
-  addActiveRulesForItem(player, item.instanceId, template.ruleIds);
+  addActiveRulesForItem(player, item.instanceId, template.ruleIds ?? []);
 
   return builder.addChild(parent, {
     type: 'ITEM_EQUIPPED',

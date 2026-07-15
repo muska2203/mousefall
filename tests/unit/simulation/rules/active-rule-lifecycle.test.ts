@@ -193,6 +193,27 @@ describe('active-rule-lifecycle', () => {
     ).toBe(true);
   });
 
+  it('rebuildActiveRules не дублирует правила у игрока с inventory и equippedWeaponId', () => {
+    const player = makePlayer({
+      inventory: [
+        {
+          instanceId: 'item_1',
+          templateId: 'test_item',
+          quantity: 1,
+          grantedAbilities: [],
+        },
+      ],
+      equippedWeaponInstanceId: 'item_1',
+      equippedWeaponId: 'test_item',
+      activeRules: [],
+    });
+
+    rebuildActiveRules(player);
+
+    expect(player.activeRules).toHaveLength(1);
+    expect(player.activeRules[0]!.id).toBe('fire_damage_ignites');
+  });
+
   it('не дублирует правило от одного ownerContext, но сохраняет от разных', () => {
     const player = makePlayer();
 
