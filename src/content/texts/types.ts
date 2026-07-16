@@ -9,6 +9,7 @@ export interface ContentTexts {
   entities: Record<string, ContentText>;
   abilities: Record<string, ContentText>;
   players: Record<string, ContentText>;
+  statuses: Record<string, ContentText>;
   stairs: Record<string, ContentText>;
   doors: Record<string, ContentText>;
   tags: Record<string, ContentText>;

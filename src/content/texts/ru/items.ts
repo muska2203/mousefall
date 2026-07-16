@@ -21,6 +21,26 @@ export const items: Record<string, ContentText> = {
     name: 'Треснувшая спица',
     description: 'Почти палочка. Почти волшебная.',
   },
+  common_flaming_sword: {
+    name: 'Обгоревший короткий меч',
+    description: 'Тёплый на ощупь. Лезвие трещит слабым пламенем.',
+  },
+  common_venom_dagger: {
+    name: 'Жалящий кинжал',
+    description: 'Узкое лезвие с едва заметным зеленоватым налётом.',
+  },
+  common_spiked_cloak: {
+    name: 'Плащ из колючего вьюнка',
+    description: 'Сплетён из колючих лоз. Больно тем, кто подходит слишком близко.',
+  },
+  common_ember_amulet: {
+    name: 'Тусклый угольный амулет',
+    description: 'Хранит угасающую искру. Огонь вокруг кажется чуть горячее.',
+  },
+  common_energized_bead: {
+    name: 'Беспокойная бусина',
+    description: 'Покалывает в ладони. Порой дарует второе дыхание прямо в бою.',
+  },
   common_patch_cloak: {
     name: 'Потёртый плащ пыльника',
     description: 'Пахнет пылью и тайнами.',
@@ -40,5 +60,17 @@ export const items: Record<string, ContentText> = {
   health_potion: {
     name: 'Зелье здоровья',
     description: 'Небольшой пузырёк с красной жидкостью. Восстанавливает 30 HP.',
+  },
+  cat_guardian_plate: {
+    name: 'Стражевая кошачья броня',
+    description: 'Тяжёлая пластина, выкованная из чешуи котов-хранителей.',
+  },
+  cat_guardian_maul: {
+    name: 'Стражевой кошачий молот',
+    description: 'Массивный дробящий инструмент, которым охраняют сырные хранилища.',
+  },
+  unarmed: {
+    name: 'Без оружия',
+    description: 'Кулаки, зубы и хвост. Не блестяще, но бесплатно.',
   },
 };

@@ -17,7 +17,7 @@
  * - Решение: синглтон с initRegistry() для инжекции в тестах — золотая середина
  */
 
-import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, MapParams, StairsTemplate, DoorTemplate } from './schemas';
+import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, StatusTemplate, MapParams, StairsTemplate, DoorTemplate } from './schemas';
 import { getContentText, type Locale } from './texts/lookup';
 
 // ─────────────────────────────────────────────
@@ -189,6 +189,13 @@ export function getAllLocalizedItems(locale: Locale): LocalizedItemTemplate[] {
  */
 export function getAllEntities(): EntityTemplate[] {
   return Array.from(getRegistry().entities.values());
+}
+
+/**
+ * Получить все шаблоны статусов.
+ */
+export function getAllStatuses(): StatusTemplate[] {
+  return Array.from(getRegistry().statuses.values());
 }
 
 /**

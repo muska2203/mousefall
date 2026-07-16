@@ -410,7 +410,8 @@ export type GameEvent =
   | CooldownTickedEvent
   | DeadEntitiesCleanedEvent
   | AiNotifiedEvent
-  | CounterAttackAppliedEvent;
+  | CounterAttackAppliedEvent
+  | RuleTriggeredEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -594,4 +595,19 @@ export type CounterAttackAppliedEvent = {
   damage: number;
   /** Теги урона контратаки (основной тег + теги оружия + reaction.counter). */
   tags: GameplayTag[];
+};
+
+/**
+ * Observability-событие: контентное правило сработало и породило интенты.
+ * Не влияет на игровую логику, нужно только для debug-визуализации цепочек правил.
+ */
+export type RuleTriggeredEvent = {
+  type: 'RULE_TRIGGERED';
+  ruleId: string;
+  layer: 'source' | 'target' | 'world' | 'radius';
+  ownerEntityId: EntityId | null;
+  triggerEventType: string;
+  triggerTags: GameplayTag[];
+  intents: Intent[];
+  conditionMatched: boolean;
 };

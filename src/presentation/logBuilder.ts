@@ -17,22 +17,28 @@ import type { Locale } from '@content/texts/lookup';
 
 
 
-export function extractEvents(result: SimulationResult): GameEvent[] {
+export function extractEvents(result: SimulationResult, debug: boolean = false): GameEvent[] {
   const events: GameEvent[] = [];
   for (const phase of result.phases) {
     for (const action of phase.actions) {
-      walkExecutionTree(action, events, phase.side);
+      walkExecutionTree(action, events, phase.side, debug);
     }
   }
   return events;
 }
 
-function walkExecutionTree(node: ExecutionNode, out: GameEvent[], side: TurnSide): void {
-  if (side === 'player' || side === 'status_tick' || side === 'environment' || isEventRelevantToPlayer(node.event)) {
+function walkExecutionTree(node: ExecutionNode, out: GameEvent[], side: TurnSide, debug: boolean): void {
+  if (
+    side === 'player' ||
+    side === 'status_tick' ||
+    side === 'environment' ||
+    isEventRelevantToPlayer(node.event) ||
+    (debug && node.event.type === 'RULE_TRIGGERED')
+  ) {
     out.push(node.event);
   }
   for (const child of node.children) {
-    walkExecutionTree(child, out, side);
+    walkExecutionTree(child, out, side, debug);
   }
 }
 
@@ -51,6 +57,7 @@ export function gameEventToLog(
   state: GameState,
   event: GameEvent,
   locale: Locale,
+  debug: boolean = false,
 ): { text: string; variant?: 'loot' | 'good' | 'bad' | 'info' } | null {
   switch (event.type) {
     case 'ENTITY_MOVED': {
@@ -106,6 +113,13 @@ export function gameEventToLog(
       const ability = tryGetLocalizedAbility(event.abilityId, locale);
       const abilityName = ability?.name ?? event.abilityId;
       return { text: t('system.logBuilder.abilityPreparedCancelled', { name, ability: abilityName }), variant: 'info' };
+    }
+    case 'RULE_TRIGGERED': {
+      if (!debug) return null;
+      return {
+        text: `[DEBUG] Сработало правило ${event.ruleId} (${event.layer}) → ${event.intents.length} интентов`,
+        variant: 'info',
+      };
     }
     default:
       return null;

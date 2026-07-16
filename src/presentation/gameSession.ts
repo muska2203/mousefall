@@ -1389,8 +1389,8 @@ export class GameSession {
 
     if (result.success && result.stateChanged) {
       const state = this.simulation!.getState();
-      const events = extractEvents(result);
-      this.logs.append(state, events, this.locale);
+      const events = extractEvents(result, this.debugEnabled);
+      this.logs.append(state, events, this.locale, this.debugEnabled);
       this.logs.logs = this.logs.logs.slice(-30);
 
       // Строим дерево анимаций из дерева событий
@@ -1457,8 +1457,8 @@ export class GameSession {
       this.lastResult = result;
 
       const state = this.simulation.getState();
-      const events = extractEvents(result);
-      this.logs.append(state, events, this.locale);
+      const events = extractEvents(result, this.debugEnabled);
+      this.logs.append(state, events, this.locale, this.debugEnabled);
       this.logs.logs = this.logs.logs.slice(-30);
 
       const animations = buildAnimationTree(result, state);

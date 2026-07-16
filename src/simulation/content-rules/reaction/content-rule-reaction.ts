@@ -83,7 +83,7 @@ export function runContentRuleReactions(
   const ordered = sortRules(triggered);
 
   const intents: Intent[] = [];
-  for (const { rule, selfId } of ordered) {
+  for (const { rule, selfId, layer } of ordered) {
     if (!evaluateConditions(rule.conditions, ctx, selfId)) continue;
 
     const targetIds = resolveTarget(rule.target, ctx, selfId).filter((candidateId) => {
@@ -93,13 +93,20 @@ export function runContentRuleReactions(
 
     if (targetIds.length === 0) continue;
 
-    intents.push(...buildIntents(rule.effect, targetIds, ctx, selfId));
-  }
+    const ruleIntents = buildIntents(rule.effect, targetIds, ctx, selfId);
+    intents.push(...ruleIntents);
 
-  // `builder` и `parent` зарезервированы для будущей записи реакций
-  // в дерево выполнения (ExecutionNode). Сейчас интенты возвращаются как есть.
-  void builder;
-  void parent;
+    builder.addChild(parent, {
+      type: 'RULE_TRIGGERED',
+      ruleId: rule.id,
+      layer,
+      ownerEntityId: selfId,
+      triggerEventType: event.type,
+      triggerTags: ctx.eventTags,
+      intents: ruleIntents,
+      conditionMatched: true,
+    });
+  }
 
   return intents;
 }

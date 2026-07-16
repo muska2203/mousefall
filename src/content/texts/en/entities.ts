@@ -13,4 +13,8 @@ export const entities: Record<string, ContentText> = {
     name: 'Boss Cat',
     flavorText: 'The main cat of the district. Its rattling purr can be heard three blocks away.',
   },
+  cat_guardian: {
+    name: 'Cat Guardian',
+    flavorText: 'An ancient sentinel of cheese thrones. Dislikes uninvited guests.',
+  },
 };

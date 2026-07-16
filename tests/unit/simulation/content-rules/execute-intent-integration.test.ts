@@ -9,6 +9,7 @@ import {
   getWorldContentRules,
 } from '../../../fixtures/content-rules';
 import { ExecutionBuilder, ExecutionNode } from '@simulation/core-types.ts';
+import type { GameEvent } from '@simulation/types.ts';
 import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
 import { getContentRule } from '../../../../src/simulation/content-rules/registry';
 import * as randomModule from '../../../../src/utils/random';
@@ -171,6 +172,43 @@ describe('executeIntent + content rules integration', () => {
       );
 
       expect(enemy.statusEffects.some((e) => e.type === 'burning')).toBe(false);
+    });
+
+    it('при full-chain появляются RULE_TRIGGERED как children событий', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.featureFlags.contentRulesEnabled = true;
+
+      const builder = new ExecutionBuilder({
+        type: 'ACTION_APPLIED',
+        action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
+      });
+
+      executeIntent(
+        state,
+        {
+          type: 'DAMAGE',
+          entityId: enemy.id,
+          sourceEntityId: player.id,
+          damage: 10,
+          tags: ['damage.magical.fire'],
+        },
+        builder,
+        builder.root,
+      );
+
+      const damageNode = findNodeByEventType(builder.root, 'ENTITY_DAMAGED');
+      expect(damageNode).not.toBeNull();
+
+      const ruleNode = damageNode!.children.find((child) => child.event.type === 'RULE_TRIGGERED');
+      expect(ruleNode).toBeDefined();
+
+      const ruleEvent = ruleNode!.event as Extract<GameEvent, { type: 'RULE_TRIGGERED' }>;
+      expect(ruleEvent.ruleId).toBe('fire_damage_ignites');
+      expect(ruleEvent.layer).toBe('world');
+      expect(ruleEvent.conditionMatched).toBe(true);
+      expect(ruleEvent.intents.some((intent) => intent.type === 'APPLY_STATUS')).toBe(true);
     });
   });
 

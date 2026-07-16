@@ -49,6 +49,112 @@ describe('runContentRuleReactions', () => {
     setWorldContentRulesOverride(null);
   });
 
+  describe('RULE_TRIGGERED observability', () => {
+    it('эмитит RULE_TRIGGERED как child исходного события при срабатывании правила', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({
+        id: 'enemy_test_1',
+        x: 6,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'target_burn_rule',
+            trigger: { event: 'ENTITY_DAMAGED', tags: ['damage.physical.slashing'] },
+            effect: { type: 'applyStatus', statusType: 'burning', duration: 1 },
+            target: { type: 'eventTarget' },
+          }),
+        ],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['damage.physical.slashing'],
+      };
+      const builder = new ExecutionBuilder(event);
+
+      runContentRuleReactions(state, event, builder, builder.root);
+
+      const triggeredNodes = builder.root.children.filter((child) => child.event.type === 'RULE_TRIGGERED');
+      expect(triggeredNodes).toHaveLength(1);
+
+      const ruleEvent = triggeredNodes[0]!.event as Extract<GameEvent, { type: 'RULE_TRIGGERED' }>;
+      expect(ruleEvent.ruleId).toBe('target_burn_rule');
+      expect(ruleEvent.layer).toBe('target');
+      expect(ruleEvent.ownerEntityId).toBe(enemy.id);
+      expect(ruleEvent.triggerEventType).toBe('ENTITY_DAMAGED');
+      expect(ruleEvent.triggerTags).toEqual(['damage.physical.slashing']);
+      expect(ruleEvent.conditionMatched).toBe(true);
+      expect(ruleEvent.intents).toHaveLength(1);
+      expect(ruleEvent.intents[0]).toMatchObject({ type: 'APPLY_STATUS' });
+    });
+
+    it('RULE_TRIGGERED от мирового правила имеет layer world и ownerEntityId null', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['damage.magical.fire'],
+      };
+      const builder = new ExecutionBuilder(event);
+
+      runContentRuleReactions(state, event, builder, builder.root);
+
+      const worldRuleEvent = builder.root.children
+        .map((child) => child.event)
+        .find((e): e is Extract<GameEvent, { type: 'RULE_TRIGGERED' }> => e.type === 'RULE_TRIGGERED' && e.layer === 'world');
+
+      expect(worldRuleEvent).toBeDefined();
+      expect(worldRuleEvent!.ruleId).toBe('fire_damage_ignites');
+      expect(worldRuleEvent!.ownerEntityId).toBeNull();
+    });
+
+    it('не изменяет игровое состояние при генерации RULE_TRIGGERED', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({
+        id: 'enemy_test_1',
+        x: 6,
+        y: 5,
+        hp: 100,
+        activeRules: [
+          makeActiveRule({
+            id: 'target_burn_rule',
+            effect: { type: 'applyStatus', statusType: 'burning', duration: 1 },
+            target: { type: 'eventTarget' },
+          }),
+        ],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      const hpBefore = enemy.hp;
+      const statusesBefore = [...enemy.statusEffects];
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: [],
+      };
+      const builder = new ExecutionBuilder(event);
+
+      runContentRuleReactions(state, event, builder, builder.root);
+
+      expect(enemy.hp).toBe(hpBefore);
+      expect(enemy.statusEffects).toEqual(statusesBefore);
+    });
+  });
+
   it('применяет статус к eventTarget при срабатывании chance', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const enemy = makeEnemy({

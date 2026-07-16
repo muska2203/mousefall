@@ -6,7 +6,10 @@
  */
 
 import { loadAllContent, browserFetchJson } from '@content/loader';
-import { validateContentRuleReferences } from '@simulation/content-rules/validation';
+import {
+  validateContentRuleReferences,
+  validateContentRuleSemantics,
+} from '@simulation/content-rules/validation';
 import { getRegistry } from '@content/registry';
 
 /**
@@ -15,4 +18,12 @@ import { getRegistry } from '@content/registry';
 export async function bootstrapContent(): Promise<void> {
   await loadAllContent(browserFetchJson);
   validateContentRuleReferences(getRegistry());
+
+  const semanticsErrors = validateContentRuleSemantics(getRegistry());
+  if (semanticsErrors.length > 0) {
+    const messages = semanticsErrors
+      .map((e) => `[${e.path}] ${e.field}: ${e.problem}`)
+      .join('\n');
+    throw new Error(`Семантические ошибки контентных правил:\n${messages}`);
+  }
 }

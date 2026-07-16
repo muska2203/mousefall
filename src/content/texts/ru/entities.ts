@@ -13,4 +13,8 @@ export const entities: Record<string, ContentText> = {
     name: 'Босс-кот',
     flavorText: 'Главный кот района. Его гремучее мурлыканье слышно за три квартала.',
   },
+  cat_guardian: {
+    name: 'Кот-страж',
+    flavorText: 'Древний часовой сырных тронов. Не любит незваных гостей.',
+  },
 };

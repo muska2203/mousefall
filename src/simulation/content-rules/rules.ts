@@ -34,6 +34,124 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: {type: 'eventTarget'},
     priority: 0,
   },
+  // ── Стартовые правила оружия (WP6.3) ──────────────────────────────────────
+  {
+    id: 'weapon_fire_damage_boost',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['damage.magical.fire', 'delivery.weapon'],
+    },
+    effect: {
+      type: 'modifyDamage',
+      op: 'multiply',
+      value: 1.15,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    id: 'weapon_poison_on_hit',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['damage.physical.piercing', 'delivery.weapon'],
+    },
+    conditions: [{type: 'chance', probability: 40}],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'poisoned',
+      duration: 3,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    id: 'weapon_blunt_daze',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['damage.physical.blunt', 'delivery.weapon'],
+    },
+    conditions: [{type: 'chance', probability: 25}],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'dazed',
+      duration: 1,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  // ── Стартовые правила брони/щита (WP6.3) ───────────────────────────────────
+  {
+    id: 'armor_spiked_thorns',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['attack.melee'],
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: 2,
+      tags: ['damage.physical.piercing'],
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
+  // ── Стартовые правила колец/амулетов (WP6.3) ───────────────────────────────
+  {
+    id: 'amulet_restore_ap_on_hit',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['attack.melee', 'delivery.weapon'],
+    },
+    conditions: [{type: 'chance', probability: 15}],
+    effect: {
+      type: 'restoreAp',
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
+  {
+    id: 'amulet_fire_damage_multiplier',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['damage.magical.fire'],
+    },
+    effect: {
+      type: 'modifyDamage',
+      op: 'multiply',
+      value: 1.15,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  // ── Стартовые правила статусов (WP6.3) ─────────────────────────────────────
+  {
+    id: 'status_poison_tick_damage',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.poisoned'],
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},
+      tags: ['damage.magical.poison'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    id: 'status_burning_vulnerability',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['damage.magical.fire'],
+    },
+    conditions: [{type: 'hasStatus', statusType: 'burning', subject: 'self'}],
+    effect: {
+      type: 'modifyDamage',
+      op: 'multiply',
+      value: 1.2,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
 ];
 
 /**

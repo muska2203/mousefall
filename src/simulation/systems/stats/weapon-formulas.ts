@@ -66,3 +66,17 @@ export function getWeaponDamage(owner: StatActor, weapon: ItemTemplate | null): 
 export function registerWeaponFormula(id: string, formula: WeaponFormula): void {
   weaponFormulas[id] = formula;
 }
+
+/**
+ * Возвращает true, если формула урона с указанным ID зарегистрирована.
+ */
+export function hasWeaponFormula(id: string): boolean {
+  return id in weaponFormulas;
+}
+
+/**
+ * Возвращает все зарегистрированные ID формул урона.
+ */
+export function getAllWeaponFormulaIds(): readonly string[] {
+  return Object.keys(weaponFormulas);
+}

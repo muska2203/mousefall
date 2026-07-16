@@ -1,19 +1,19 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
+/**
+ * Конфигурация для запуска perf-тестов WP6.5.
+ *
+ * Используется скриптом `npm run test:perf`.
+ * Отличается от основной конфигурации `vitest.config.ts` только набором файлов:
+ * perf-тесты исключены из обычного `npm test`, чтобы не замедлять CI
+ * и не ломать его при использовании `bench()` / длительных замерах.
+ */
 export default defineConfig({
   test: {
-    // Симуляция безголовая — работает в Node, без браузерных API
     environment: 'node',
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
-    exclude: ['tests/perf/**', 'node_modules/**', 'dist/**'],
-    coverage: {
-      provider: 'v8',
-      // Измерять покрытие только для слоя симуляции
-      include: ['src/simulation/**', 'src/utils/**'],
-      exclude: ['src/ui/**', 'src/renderer/**', 'src/store/**'],
-      reporter: ['text', 'html'],
-    },
+    include: ['tests/perf/**/*.test.ts'],
+    exclude: ['node_modules/**', 'dist/**'],
   },
   resolve: {
     alias: {

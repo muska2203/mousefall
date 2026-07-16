@@ -19,9 +19,9 @@ export class LogBuffer {
   logs: LogItem[] = [];
   private nextLogId = 1;
 
-  append(state: GameState, events: GameEvent[], locale: Locale): void {
+  append(state: GameState, events: GameEvent[], locale: Locale, debug: boolean = false): void {
     for (const event of events) {
-      const entry = gameEventToLog(state, event, locale);
+      const entry = gameEventToLog(state, event, locale, debug);
       if (entry) {
         this.logs.push({ id: this.nextLogId++, text: entry.text, variant: entry.variant });
       }

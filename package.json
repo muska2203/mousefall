@@ -14,8 +14,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:perf": "vitest run --config vitest.perf.config.ts",
     "typecheck": "tsc --noEmit",
-    "validate:i18n": "tsx scripts/validate-i18n.ts"
+    "validate:i18n": "tsx scripts/validate-i18n.ts",
+    "validate:content": "tsx scripts/validate-content.ts",
+    "validate": "npm run typecheck && npm run validate:i18n && npm run validate:content"
   },
   "dependencies": {
     "i18next": "^26.3.1",

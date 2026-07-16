@@ -1,0 +1,22 @@
+{
+  "id": "common_venom_dagger",
+  "spriteId": "common_venom_dagger",
+  "icon": "/assets/items/common_venom_dagger.png",
+  "fallback": "🗡",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 10,
+  "weapon": {
+    "baseDamage": 3,
+    "damageFormulaId": "dagger",
+    "range": 1,
+    "damageDistribution": [
+      { "damageTag": "damage.physical.piercing", "weight": 1.0 }
+    ],
+    "tags": ["attack.melee", "target.single", "delivery.weapon"]
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [],
+  "ruleIds": ["weapon_poison_on_hit"]
+}

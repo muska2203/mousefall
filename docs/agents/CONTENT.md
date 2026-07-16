@@ -19,11 +19,13 @@ public/content/           # JSON-шаблоны: только механика (
 │   ├── amulet/
 │   └── consumables/
 ├── abilities/
+├── statuses/             # Шаблоны статусов (длительность, категория, ruleIds)
 └── maps/
 
 src/content/texts/        # Пользовательские тексты: name, description, flavorText
-├── ru.ts                 # Русские тексты врагов, предметов, способностей
-├── en.ts                 # Английские тексты
+├── ru.ts                 # Русские тексты врагов, предметов, способностей, статусов
+├── en.ts                 # Английские тексты врагов, предметов, способностей, статусов
+├── statuses.ts           # Локализованные описания эффектов статусов
 └── lookup.ts             # getContentText(category, id, locale)
 ```
 
@@ -48,6 +50,12 @@ src/content/texts/        # Пользовательские тексты: name,
 - `getItemTemplate(id)` — получить шаблон предмета
 
 Реализация: `src/content/loader.ts`, `src/content/registry.ts`.
+
+## Реестр статусов
+
+- `getStatusTemplate(id)` — получить шаблон статуса.
+- Шаблоны статусов хранятся в `public/content/statuses/` и ссылаются на `ruleIds` в `src/simulation/content-rules/`.
+- Локализованные описания эффектов статусов живут в `src/content/texts/statuses.ts`.
 
 ---
 

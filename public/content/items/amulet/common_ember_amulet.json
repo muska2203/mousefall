@@ -1,0 +1,12 @@
+{
+  "id": "common_ember_amulet",
+  "spriteId": "common_ember_amulet",
+  "icon": "/assets/items/common_ember_amulet.png",
+  "fallback": "🔥",
+  "type": "amulet",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 6,
+  "equipModifiers": [],
+  "ruleIds": ["amulet_fire_damage_multiplier"]
+}

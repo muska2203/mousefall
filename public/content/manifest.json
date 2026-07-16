@@ -15,18 +15,23 @@
     "/content/entities/player/witcher.json"
   ],
   "items": [
+    "/content/items/amulet/common_ember_amulet.json",
+    "/content/items/amulet/common_energized_bead.json",
     "/content/items/amulet/common_glass_bead.json",
     "/content/items/amulet/common_knotted_fang.json",
     "/content/items/armor/cat_guardian_plate.json",
     "/content/items/armor/common_patch_cloak.json",
+    "/content/items/armor/common_spiked_cloak.json",
     "/content/items/armor/common_tin_plate.json",
     "/content/items/consumables/health_potion.json",
     "/content/items/weapons/cat_claw_big.json",
     "/content/items/weapons/cat_claw_mid.json",
     "/content/items/weapons/cat_claw_small.json",
     "/content/items/weapons/cat_guardian_maul.json",
+    "/content/items/weapons/common_flaming_sword.json",
     "/content/items/weapons/common_school_wand.json",
     "/content/items/weapons/common_splinter_blade.json",
+    "/content/items/weapons/common_venom_dagger.json",
     "/content/items/weapons/unarmed.json"
   ],
   "abilities": [

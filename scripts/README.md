@@ -18,6 +18,24 @@ node scripts/generate-manifest.js
 
 ---
 
+## `validate-content.ts`
+
+Валидирует JSON-контент из `public/content/`:
+
+- ссылки `ruleIds` на декларативные правила,
+- семантику правил (статусы, формулы урона, способности),
+- наличие переводов для всех content ID в `ru` и `en`.
+
+Запуск:
+
+```bash
+npm run validate:content
+```
+
+Также входит в состав `npm run validate`.
+
+---
+
 ## `gen-swoop-sprite.py`
 
 Генерирует иконку способности `swoop` в `public/assets/skills/swoop.png`.

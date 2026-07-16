@@ -17,5 +17,6 @@
     "tags": ["attack.melee", "target.single", "delivery.weapon"]
   },
   "grantedAbilities": [],
-  "equipModifiers": []
+  "equipModifiers": [],
+  "ruleIds": ["weapon_blunt_daze"]
 }

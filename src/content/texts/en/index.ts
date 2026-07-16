@@ -3,6 +3,7 @@ import { doors, stairs } from './environment';
 import { entities } from './entities';
 import { items } from './items';
 import { players } from './players';
+import { statuses } from './statuses';
 import { tags } from './tags';
 import type { ContentTexts } from '../types';
 
@@ -12,6 +13,7 @@ export const enContentTexts: ContentTexts = {
   entities,
   items,
   players,
+  statuses,
   stairs,
   tags,
 };

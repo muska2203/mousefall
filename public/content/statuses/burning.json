@@ -1,6 +1,6 @@
 {
   "id": "burning",
-  "ruleIds": [],
+  "ruleIds": ["status_burning_vulnerability"],
   "statusCategory": "elemental",
   "categoryPriority": 1,
   "mutuallyExclusiveWith": ["frozen"],
