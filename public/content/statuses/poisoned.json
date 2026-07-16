@@ -1,1 +1,8 @@
-{"id": "poisoned", "ruleIds": []}
+{
+  "id": "poisoned",
+  "ruleIds": [],
+  "statusCategory": "poison",
+  "categoryPriority": 0,
+  "mutuallyExclusiveWith": [],
+  "blockedBy": []
+}

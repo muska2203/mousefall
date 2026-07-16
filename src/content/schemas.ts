@@ -179,6 +179,18 @@ export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;
 export const StatusTemplateSchema = z.object({
   id: z.string().min(1).describe('Уникальный идентификатор статуса (совпадает с именем файла)'),
   ruleIds: RuleIdsSchema,
+  statusCategory: z.enum(['elemental', 'physical', 'mental', 'poison', 'generic'])
+    .default('generic')
+    .describe('Категория статуса для разрешения конфликтов'),
+  categoryPriority: z.number().int()
+    .default(0)
+    .describe('Приоритет внутри категории; выше — приоритетнее'),
+  mutuallyExclusiveWith: z.array(z.string().min(1))
+    .default([])
+    .describe('Статусы, снимаемые при наложении этого статуса'),
+  blockedBy: z.array(z.string().min(1))
+    .default([])
+    .describe('Статусы, блокирующие наложение этого статуса'),
 }).describe('Шаблон статусного эффекта');
 
 export type StatusTemplate = z.output<typeof StatusTemplateSchema>;

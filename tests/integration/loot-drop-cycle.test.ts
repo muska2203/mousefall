@@ -103,7 +103,7 @@ function makeLootGameState(): GameState {
       itemsPickedUp: 0,
     },
     featureFlags: {
-      contentRulesEnabled: false,
+      contentRulesEnabled: true,
     },
   };
 }

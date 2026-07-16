@@ -17,7 +17,7 @@
 - модификаторы применяются перед `IntentExecutor`;
 - контентные реакции запускаются после `IntentExecutor`, перед системными `WorldReaction`.
 
-Новая система по умолчанию **выключена** через `GameState.featureFlags.contentRulesEnabled`.
+Новая система по умолчанию **включена** через `GameState.featureFlags.contentRulesEnabled`.
 
 ---
 
@@ -26,7 +26,7 @@
 | Файл | Назначение |
 |---|---|
 | `types.ts` | Типы: `ContentRule`, `ActiveRule`, `WorldContentRule`, `OwnerContext`, `RuleTrigger`, `RuleCondition`, `TargetSelector`, `RuleEffect`, `ParametrizedValue`. |
-| `rules.ts` | Статические декларативные правила (`CONTENT_RULES`) и глобальные мировые правила (`WORLD_CONTENT_RULES`). |
+| `rules.ts` | Статические декларативные правила (`CONTENT_RULES`). Глобальные мировые правила реэкспортируются из `world-rules/global-rules.ts`. |
 | `registry.ts` | Реестр правил по `id`: `getContentRule`, `tryGetContentRule`, `getAllContentRules`. |
 | `validation.ts` | Проверка ссылок `ruleIds` в шаблонах предметов, способностей и статусов. |
 | `rule-context.ts` | Тип `RuleContext` и функция `buildRuleContext(state, event/intent)`. |
@@ -36,6 +36,7 @@
 | `runtime-rng.ts` | Управление `GameState.runtimeRng` для детерминированных шансов правил. |
 | `intent-modifiers.ts` | Точка врезки `applyIntentModifiersIfEnabled`. |
 | `event-reactions.ts` | Точка врезки `runContentRuleReactionsIfEnabled`. |
+| `world-rules/global-rules.ts` | Глобальные мировые контентные правила (`GLOBAL_WORLD_CONTENT_RULES`). |
 | `README.md` | Этот файл. |
 
 ---
@@ -48,28 +49,35 @@
 
 - `chance` — константа или параметризованная вероятность (использует `state.runtimeRng`, см. раздел ниже);
 - `hasStatus` — проверка статуса у `self` / `target` / `candidate`;
+- `hasTag` — проверка наличия тега в тегах события;
 - `and` / `or` / `not` — логические комбинации;
 - `targetConditions` — фильтрация целей после их разрешения.
 
 **Селекторы целей (`TargetSelector`):**
 
 - `eventTarget`, `eventSource`, `self`, `collisionTarget`;
-- `allInRadius` — все акторы в радиусе (с опциональной фракцией `enemy`/`ally`);
+- `allInRadius` — все живые акторы в радиусе (с опциональной фракцией `enemy`/`ally` и флагом `excludeSelf`);
 - `nearestEnemy` — ближайший враг в радиусе.
+
+> `chain` отложен до появления скилла «цепная молния». Сейчас нет контента, который его использовал бы, а преждевременная реализация рискует оторвать API от будущих требований скилла.
 
 **Эффекты (`RuleEffect`):**
 
 - `applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`;
+- `counterAttack` — порождает интент `COUNTER_ATTACK` по первоначальному атакующему;
 - `modifyDamage` — только в слое модификаторов.
+
+> `dealDamage` без явных `tags` наследует теги из события. Это используется правилом `counterattack_damage`, чтобы урон контратаки сохранял рассчитанные в исполнителе теги.
 
 **Слои применения:**
 
 - `source` → `target` → `world` → `radius`;
-- сортировка: слой → приоритет → `ruleId`;
+- сортировка: слой → подтип слоя `world` (`global` → `tileEffect` → `tileIntrinsic`) → приоритет → `ruleId`;
 - в слое модификаторов внутри слоя сначала `multiply`, затем `add`.
 
 ### Отложено
 
+- Селектор `chain` (мультитаргетная цепочка целей) — будет реализован вместе со скиллом «цепная молния».
 - Тайловые эффекты (`worldLayer: 'tileEffect'`) и встроенные свойства тайла (`worldLayer: 'tileIntrinsic'`).
 - Условия у модификаторов интентов (на фазе 2 модификаторы фильтруются только по триггеру/тегам).
 - Модификаторы для интентов, отличных от `DAMAGE`.
@@ -157,14 +165,15 @@
 
 ---
 
-## Включение
+## Включение и выключение
 
-По умолчанию система выключена. Чтобы включить в тесте или пилоте:
+По умолчанию система включена. Чтобы явно управлять флагом в тесте или пилоте:
 
 ```typescript
 import { setContentRulesEnabled } from '@simulation/content-rules/feature-flags.ts';
 
-setContentRulesEnabled(state, true);
+setContentRulesEnabled(state, false); // отключить новую систему
+setContentRulesEnabled(state, true);  // включить новую систему
 ```
 
-При выключенном флаге `executeIntent` работает по старой схеме: модификаторы возвращают исходный интент, а контентные реакции возвращают пустой массив.
+При выключенном флаге `executeIntent` работает без контентных модификаторов и реакций: модификаторы возвращают исходный интент, а контентные реакции возвращают пустой массив.

@@ -222,7 +222,7 @@ describe('dashSkill', () => {
     expect(enemy.x).toBe(7);
     expect(enemy.y).toBe(5);
     expect(enemy.hp).toBeLessThan(20);
-    expect(enemy.statusEffects.some(e => e.type === 'stunned')).toBe(true);
+    expect(enemy.statusEffects.some(e => e.type === 'dazed')).toBe(true);
 
     const bumpEvents = builder.root.children.flatMap(n => collectEvents(n)).filter((e: any) => e.type === 'ENTITY_BUMPED');
     expect(bumpEvents.some((e: any) => e.entityId === player.id && e.position.x === 6 && e.position.y === 5)).toBe(true);
@@ -254,8 +254,8 @@ describe('dashSkill', () => {
 
     expect(enemy1.hp).toBeLessThan(20);
     expect(enemy2.hp).toBeLessThan(20);
-    expect(enemy1.statusEffects.some(e => e.type === 'stunned')).toBe(true);
-    expect(enemy2.statusEffects.some(e => e.type === 'stunned')).toBe(true);
+    expect(enemy1.statusEffects.some(e => e.type === 'dazed')).toBe(true);
+    expect(enemy2.statusEffects.some(e => e.type === 'dazed')).toBe(true);
   });
 
   it('returns valid targets within 2 cells in allowed directions', () => {

@@ -1,10 +1,19 @@
-import {describe, expect, it, beforeEach, afterEach} from 'vitest';
+import {describe, expect, it, beforeEach, afterEach, vi} from 'vitest';
 import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
 import { fireballSkill } from '../../../../src/simulation/skills/executors/fireballSkill';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
+import { ExecutionBuilder } from '../../../../src/simulation/core-types';
+import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
+
+vi.mock('../../../../src/utils/rng', () => ({
+  createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
+  rngChance: vi.fn(),
+}));
+
+import { rngChance } from '../../../../src/utils/rng';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -31,8 +40,8 @@ describe('fireballSkill', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    statuses: new Map(),
-});
+      statuses: new Map(),
+    });
   });
 
   afterEach(() => {
@@ -51,7 +60,7 @@ describe('fireballSkill', () => {
     expect(intents).toHaveLength(0);
   });
 
-  it('deals center damage + burning to enemy in center', () => {
+  it('deals center damage to enemy in center', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
@@ -63,18 +72,14 @@ describe('fireballSkill', () => {
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-    const statusIntents = intents.filter(i => i.type === 'APPLY_STATUS');
 
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.damage).toBeGreaterThan(0);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
     expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
-    expect(statusIntents).toHaveLength(1);
-    expect(statusIntents[0]!.status.type).toBe('burning');
-    expect(statusIntents[0]!.status.duration).toBe(3);
   });
 
-  it('deals aoe damage + burning to enemy near center', () => {
+  it('deals aoe damage to enemy near center', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
@@ -123,17 +128,13 @@ describe('fireballSkill', () => {
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-    const statusIntents = intents.filter(i => i.type === 'APPLY_STATUS');
 
     expect(damageIntents).toHaveLength(2);
     expect(damageIntents.some(i => i.entityId === player.id)).toBe(true);
     expect(damageIntents.some(i => i.entityId === enemy.id)).toBe(true);
-    expect(statusIntents).toHaveLength(2);
-    expect(statusIntents.some(i => i.entityId === player.id && i.status.type === 'burning')).toBe(true);
-    expect(statusIntents.some(i => i.entityId === enemy.id && i.status.type === 'burning')).toBe(true);
   });
 
-  it('deals center damage + burning to door', () => {
+  it('deals center damage to door', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
@@ -145,17 +146,13 @@ describe('fireballSkill', () => {
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
     const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-    const statusIntents = intents.filter(i => i.type === 'APPLY_STATUS');
 
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(door.id);
     expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
-    expect(statusIntents).toHaveLength(1);
-    expect(statusIntents[0]!.entityId).toBe(door.id);
-    expect(statusIntents[0]!.status.type).toBe('burning');
   });
 
-  it('deals aoe damage + burning to door near center', () => {
+  it('deals aoe damage to door near center', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
@@ -203,11 +200,10 @@ describe('fireballSkill', () => {
     expect(getSkillExecutor('fireball')).toBeDefined();
   });
 
-  it('does not apply burning status when content rules are enabled', () => {
+  it('resolve возвращает только DAMAGE-интенты, без прямого наложения горения', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
-    state.featureFlags.contentRulesEnabled = true;
     const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
     state.player = player;
@@ -222,5 +218,33 @@ describe('fireballSkill', () => {
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
     expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
     expect(statusIntents).toHaveLength(0);
+  });
+
+  it('горение накладывается через контентные правила при выполнении DAMAGE-интента', () => {
+    vi.mocked(rngChance).mockReturnValue(true);
+
+    const state = makeGameState();
+    state.visible[8]![8] = true;
+    state.visible[6]![6] = true;
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(enemy.id, enemy);
+
+    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
+    const damageIntent = intents.find(i => i.type === 'DAMAGE' && i.entityId === enemy.id);
+    expect(damageIntent).toBeDefined();
+
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
+    });
+
+    executeIntent(state, damageIntent!, builder, builder.root);
+
+    const burning = enemy.statusEffects.find(e => e.type === 'burning');
+    expect(burning).toBeDefined();
+    expect(burning!.duration).toBe(3);
   });
 });

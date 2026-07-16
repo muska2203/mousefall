@@ -1,1 +1,8 @@
-{"id": "regenerating", "ruleIds": []}
+{
+  "id": "regenerating",
+  "ruleIds": [],
+  "statusCategory": "generic",
+  "categoryPriority": 0,
+  "mutuallyExclusiveWith": [],
+  "blockedBy": []
+}

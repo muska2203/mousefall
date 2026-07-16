@@ -4,6 +4,85 @@
 
 ---
 
+## 2026-07-16. Фаза 5. Решение: шаг 5.5 признан корректно работающим в текущей реализации
+
+### Решение
+
+Шаг 5.5 «Статусы, наложенные в середине цепочки» выполнен. Текущий код признан корректным для MVP: статус добавляется к актору немедленно, его правила попадают в `activeRules` сразу, но не участвуют в текущей фазе `ContentRuleReaction`, потому что `collectRules` вызывается один раз в начале обработки события.
+
+### Детали
+
+- `executeApplyStatusIntent` (`src/simulation/systems/intents/apply-status-intent-executer.ts`) вызывает `addActiveRulesForStatus`, обновляя `activeRules` в момент наложения статуса.
+- `runContentRuleReactions` (`src/simulation/content-rules/reaction/content-rule-reaction.ts`) фиксирует список правил в локальной переменной `layeredRules` через `collectRules`; правила, добавленные после этой точки, в текущую фазу не попадают.
+- Следующее событие в той же цепочке (или следующий `dispatch`) увидит обновлённый `activeRules` и новые правила сработают.
+
+### Почему не делаем явный snapshot или отложенную активацию
+
+- Текущая императивная семантика покрывает MVP-контент и прошла тесты.
+- Явный snapshot `activeRules` добавляет оверхед и не решает проблему для последующих событий внутри цепочки.
+- Отложенная активация правил до конца цепочки сильно усложняет lifecycle и не требуется сейчас.
+- Если в будущем появится контент, где строгое отключение правил на всю цепочку критично, вопрос можно вернуть через бэклог фазы 6 / пост-MVP.
+
+### Статус
+
+✅ Зафиксировано. Roadmap обновлён: фаза 5 завершена, текущий фокус — фаза 5.5 «Адаптация Presentation».
+
+---
+
+## 2026-07-16. Фаза 5. Решение: перенос контратаки через теги атаки и урон в исполнителе
+
+### Решение
+
+В рамках шага 5.1b `counterAttackReaction` перенесена в `ContentRuleReaction`. Вместо явной проверки расстояния между сущностями использованы теги ближней одиночной атаки (`attack.melee`, `target.single`, `delivery.weapon`). Урон от контратаки рассчитывается в исполнителе интента `COUNTER_ATTACK` и передаётся в событие `COUNTER_ATTACK_APPLIED` через поле `damage`; content rule `counterattack_damage` читает его через `eventDamage`.
+
+### Детали
+
+- Созданы два content rule: `counterattack_trigger` и `counterattack_damage` в `src/simulation/content-rules/counterattack-rules.ts`.
+- `counterattack_trigger` срабатывает на `ENTITY_DAMAGED` с тегами ближней одиночной атаки, проверяет статус `counterattack` у владельца и шанс 50%.
+- `executeCounterAttackIntent` вычисляет `dx`/`dy`, `effectiveWeaponDamage`, основной тег урона и теги оружия, создаёт `COUNTER_ATTACK_APPLIED` с `damage` и `tags`.
+- `counterattack_damage` на `COUNTER_ATTACK_APPLIED` создаёт `DAMAGE`-интент с `amount: { type: 'context', field: 'eventDamage' }`.
+- `public/content/statuses/counterattack.json` ссылается на `ruleIds`: `["counterattack_trigger", "counterattack_damage"]`.
+- Старый файл `counter-attack-reaction.ts` удалён, регистрация в `reactions.ts` убрана.
+
+### Почему не `distance`-условие и не `source.effectiveWeaponDamage`
+
+- Теги `attack.melee`/`target.single`/`delivery.weapon` уже однозначно описывают подходящий входящий урон в текущей игре; отдельная проверка расстояния избыточна.
+- Вычисление `effectiveWeaponDamage` требует доступа к экипировке и формулам оружия; проще и надёжнее считать его в исполнителе, а в content rule читать готовое значение из события.
+
+### Статус
+
+✅ Реализовано. Тесты и typecheck проходят.
+
+---
+
+## 2026-07-15. Фаза 4. Решение: `allInRadius` использует `excludeSelf`; `chain` отложен
+
+### Решение
+
+В рамках шага 4.6 реализован только селектор `allInRadius` (и уже работающий `nearestEnemy`). Селектор `chain` отложен до появления скилла «цепная молния». Для исключения владельца из `allInRadius` в MVP используется поле `excludeSelf?: boolean`, а не будущий `filter: 'notSelf'`.
+
+### Детали
+
+- В `src/simulation/content-rules/types.ts` тип `allInRadius` расширен полем `excludeSelf?: boolean`.
+- `resolveAllInRadius` в `content-rule-reaction.ts`:
+  - исключает `selfId`, если `excludeSelf === true`;
+  - исключает акторов с `isAlive === false`;
+  - сортирует результат по `id` для детерминизма.
+- `targetConditions` применяются per-candidate; покрыто unit-тестами.
+- `chain` не добавлен в типы и не реализован, потому что в текущем контенте нет скилла, который бы его использовал.
+
+### Почему `excludeSelf`, а не `filter: 'notSelf'`
+
+- В текущем коде `allInRadius` уже использует поле `faction`. Переименование в `filter` — ломающее изменение существующих правил и тестов.
+- `excludeSelf` явнее и гибче: можно комбинировать с `faction` (например, «все союзники, кроме себя»).
+- Расхождение с концептом (`filter: 'notSelf'`) зафиксировано в `docs/plans/Концепт боевой системы.md`.
+
+### Статус
+
+✅ Реализовано. Тесты, typecheck и build проходят.
+
+---
+
 ## 2026-07-14. Фаза 4. Решение: перенос тайловых эффектов за пределы MVP
 
 ### Решение
@@ -465,4 +544,3 @@ Baseline фиксируется прохождением всех существ
 ### Статус
 
 ✅ Решено.
-

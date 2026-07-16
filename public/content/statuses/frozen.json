@@ -1,1 +1,8 @@
-{"id": "frozen", "ruleIds": []}
+{
+  "id": "frozen",
+  "ruleIds": [],
+  "statusCategory": "elemental",
+  "categoryPriority": 1,
+  "mutuallyExclusiveWith": ["burning"],
+  "blockedBy": []
+}

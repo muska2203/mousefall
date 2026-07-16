@@ -14,29 +14,22 @@ export type WorldReaction<T extends GameEvent> = (
 
 ---
 
-## Грядущая миграция на ContentRuleReaction
+## Миграция на ContentRuleReaction
 
-> ⚠️ Этот раздел описывает планируемую эволюцию системы реакций. Текущий код в этой папке остаётся рабочим до завершения миграции.
+> Контентные мировые реакции перенесены в data-driven систему контентных правил (`ContentRuleReaction`).
+> Старые императивные реакции (`fireDamageReaction`, `burningTickReaction`, `collisionDamageReaction`, `collisionStunReaction`) удалены из реестра.
 
-Часть существующих реакций мира будет перенесена в новую data-driven систему контентных правил (`ContentRuleReaction`) в рамках плана внедрения боевой концепции:
-
-- [`docs/plans/combat-implementation-roadmap/README.md`](../../../../plans/combat-implementation-roadmap/README.md) — общий план;
-- [`docs/plans/combat-implementation-roadmap/phase-01/reaction-inventory.md`](../../../../plans/combat-implementation-roadmap/phase-01/reaction-inventory.md) — классификация реакций;
-- [`docs/plans/combat-implementation-roadmap/phase-01/intent-event-flow.md`](../../../../plans/combat-implementation-roadmap/phase-01/intent-event-flow.md) — поток Intent → Event → World Reaction.
-
-### Принцип разделения
+### Что осталось в этой папке
 
 - **Системные реакции** остаются кодом: смерть, дроп лута, разрешение толчка, переходы этажей, AI-уведомления.
-- **Контентные реакции** становятся декларативными правилами: огненный урон → горение, урон/стан от столкновений, тик горения, контратака.
+- **Контентные реакции** теперь декларативные правила в `src/simulation/content-rules/`.
+- **`counterAttackReaction` полностью перенесена в контентные правила** (`counterattack_trigger` и `counterattack_damage`). Системная реакция удалена.
 
 ### Точка врезки новой системы
 
-Новые слои будут добавлены внутри общей функции `executeIntent` (`../intents/execute-intent.ts`):
+Контентные реакции запускаются внутри `executeIntent` (`../intents/execute-intent.ts`) после `IntentExecutor`, перед системными `WorldReaction`.
 
-1. **Модификаторы на интенте** — перед вызовом конкретного `IntentExecutor`.
-2. **Контентные реакции на событии** — после `IntentExecutor`, перед запуском системных `WorldReaction`.
-
-Включение новых слоёв будет управляться runtime-флагом в `Simulation`; на ранних фазах флаг активируется только для пилотных сценариев.
+Новая система включена по умолчанию через `GameState.featureFlags.contentRulesEnabled`.
 
 ### Что не меняется
 

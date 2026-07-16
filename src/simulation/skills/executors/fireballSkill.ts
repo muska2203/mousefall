@@ -8,7 +8,6 @@ import { isCombatEntity, isDamageable } from '@simulation/state';
 import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
 import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
 import { tryGetAbility } from '@content/registry';
-import { isContentRulesEnabled } from '@simulation/content-rules/feature-flags.ts';
 
 export const fireballSkill: SkillExecutor = {
   id: 'fireball',
@@ -76,16 +75,6 @@ export const fireballSkill: SkillExecutor = {
           damage: entry.damage,
           tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
         });
-      }
-
-      if (!isContentRulesEnabled(state)) {
-        const burning: StatusEffect = {
-          type: 'burning',
-          duration: 3,
-          value: Math.max(1, Math.round(entity.maxHp * 0.1)),
-          statModifiers: null,
-        };
-        intents.push({ type: 'APPLY_STATUS', entityId: entity.id, sourceEntityId: caster.id, status: burning });
       }
     }
 

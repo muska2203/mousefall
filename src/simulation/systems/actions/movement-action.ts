@@ -11,7 +11,7 @@
 
 import type {GameState} from '@simulation/types.ts';
 import {findEntity, isBlocked} from '@simulation/state.ts';
-import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
+import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 
@@ -42,8 +42,6 @@ export const moveEntity: ActionHandler = {
     },
 
     execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
-        for (const intent of intents) {
-            executeIntent(state, intent, executionBuilder, parentNode);
-        }
+        executeIntents(state, intents, executionBuilder, parentNode);
     }
 };

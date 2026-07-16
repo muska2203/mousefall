@@ -243,7 +243,7 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
       itemsPickedUp: 0,
     },
     featureFlags: {
-      contentRulesEnabled: false,
+      contentRulesEnabled: true,
     },
     ...overrides,
   };

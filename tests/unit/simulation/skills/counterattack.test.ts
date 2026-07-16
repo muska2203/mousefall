@@ -8,8 +8,15 @@ import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import { GameSimulation } from '../../../../src/simulation/simulation';
 import { createTestSimulation } from '../../../helpers/simulation';
 import { DefaultActionPointCostResolver } from '../../../../src/simulation/systems/action-cost-resolver';
-import type { Entity, EntityId } from '../../../../src/simulation/types';
-import * as randomModule from '../../../../src/utils/random';
+import type { Actor, Entity, EntityId } from '../../../../src/simulation/types';
+import { counterattackTriggerRule, counterattackDamageRule } from '../../../../src/simulation/content-rules/counterattack-rules';
+
+vi.mock('../../../../src/utils/rng', () => ({
+  createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
+  rngChance: vi.fn(),
+}));
+
+import { rngChance } from '../../../../src/utils/rng';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -23,6 +30,18 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     tags: [],
     ...overrides,
   } as AbilityTemplate;
+}
+
+/**
+ * Добавляет к актору активные правила контратаки, как если бы на него
+ * был наложен статус counterattack из контентного реестра.
+ */
+function addCounterattackRules(actor: Actor): void {
+  const ownerContext = { type: 'entity' as const, entityId: actor.id, statusInstanceId: 'counterattack_test' };
+  actor.activeRules.push(
+    { ...counterattackTriggerRule, ownerContext },
+    { ...counterattackDamageRule, ownerContext },
+  );
 }
 
 describe('counterattackSkill', () => {
@@ -132,6 +151,7 @@ describe('counterattack combat behavior', () => {
       stairs: new Map(),
     statuses: new Map(),
 });
+    vi.mocked(rngChance).mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -140,7 +160,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('incoming damage goes through and counterattack triggers on 50% chance', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
 
     const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, ap: 2, maxAp: 2, baseStats: { str: 5, dex: 0, int: 0, vit: 0 } });
     const enemy = makeEnemy({
@@ -155,6 +175,7 @@ describe('counterattack combat behavior', () => {
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
       statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
     });
+    addCounterattackRules(enemy);
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([
@@ -162,7 +183,6 @@ describe('counterattack combat behavior', () => {
         [enemy.id, enemy],
       ]),
     });
-
     const sim = createTestSimulation(state);
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
@@ -175,7 +195,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('no counterattack damage when 50% chance fails', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(false);
+    vi.mocked(rngChance).mockReturnValue(false);
 
     const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, ap: 2, maxAp: 2, baseStats: { str: 5, dex: 0, int: 0, vit: 0 } });
     const enemy = makeEnemy({
@@ -190,6 +210,7 @@ describe('counterattack combat behavior', () => {
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
       statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
     });
+    addCounterattackRules(enemy);
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([
@@ -197,7 +218,6 @@ describe('counterattack combat behavior', () => {
         [enemy.id, enemy],
       ]),
     });
-
     const sim = createTestSimulation(state);
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
@@ -207,7 +227,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('player counterattacks enemy when enemy attacks player with counterattack active', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
 
     const player = makePlayer({
       x: 5,
@@ -219,6 +239,7 @@ describe('counterattack combat behavior', () => {
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
       statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
     });
+    addCounterattackRules(player);
     const enemy = makeEnemy({ id: 'enemy_1', x: 6, y: 5, hp: 100, maxHp: 100, armor: 0, ap: 2, maxAp: 2, baseStats: { str: 5, dex: 0, int: 0, vit: 0 } });
     const state = makeGameState({
       player,
@@ -240,7 +261,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('counterattack triggers on sudden_strike melee single-target weapon damage', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
 
     const player = makePlayer({
       x: 5,
@@ -262,6 +283,7 @@ describe('counterattack combat behavior', () => {
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
       statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
     });
+    addCounterattackRules(enemy);
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([
@@ -269,7 +291,6 @@ describe('counterattack combat behavior', () => {
         [enemy.id, enemy],
       ]),
     });
-
     const sim = createTestSimulation(state);
     sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'sudden_strike', targets: [{ x: 6, y: 5 }] });
 
@@ -280,7 +301,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('counterattack does not trigger on ranged spell damage from magic_slap', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
 
     const player = makePlayer({
       x: 5,
@@ -302,6 +323,7 @@ describe('counterattack combat behavior', () => {
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
       statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
     });
+    addCounterattackRules(enemyCounter);
     const enemyExtra1 = makeEnemy({ id: 'enemy_extra_1', x: 5, y: 6, hp: 100, maxHp: 100, armor: 0 });
     const enemyExtra2 = makeEnemy({ id: 'enemy_extra_2', x: 4, y: 5, hp: 100, maxHp: 100, armor: 0 });
     const state = makeGameState({
@@ -313,7 +335,6 @@ describe('counterattack combat behavior', () => {
         [enemyExtra2.id, enemyExtra2],
       ]),
     });
-
     const sim = createTestSimulation(state);
     sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'magic_slap', targets: [{ x: 6, y: 5 }, { x: 5, y: 6 }, { x: 4, y: 5 }] });
 
@@ -324,7 +345,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('counterattack does not trigger on cleave AoE melee damage', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
 
     const player = makePlayer({
       x: 5,
@@ -346,6 +367,7 @@ describe('counterattack combat behavior', () => {
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
       statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
     });
+    addCounterattackRules(enemy);
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([
@@ -353,7 +375,6 @@ describe('counterattack combat behavior', () => {
         [enemy.id, enemy],
       ]),
     });
-
     const sim = createTestSimulation(state);
     sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] });
 
@@ -363,7 +384,7 @@ describe('counterattack combat behavior', () => {
   });
 
   it('counterattack does not trigger on fireball ranged AoE damage', () => {
-    vi.spyOn(randomModule, 'randomChance').mockReturnValue(true);
+    vi.mocked(rngChance).mockReturnValue(true);
 
     const player = makePlayer({
       x: 5,
@@ -385,6 +406,7 @@ describe('counterattack combat behavior', () => {
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
       statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
     });
+    addCounterattackRules(enemy);
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([
@@ -392,7 +414,6 @@ describe('counterattack combat behavior', () => {
         [enemy.id, enemy],
       ]),
     });
-
     const sim = createTestSimulation(state);
     sim.dispatch({ type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 7, y: 5 }] });
 

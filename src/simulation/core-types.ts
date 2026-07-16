@@ -102,6 +102,9 @@ export type StatusEffectType =
   | 'regenerating'
   | 'counterattack';
 
+/** Категория статуса для разрешения конфликтов между одновременно накладываемыми эффектами. */
+export type StatusCategory = 'elemental' | 'physical' | 'mental' | 'poison' | 'generic';
+
 /** Идентификатор фракции. */
 export type FactionId = 'player' | 'allies' | 'enemies' | 'neutrals';
 
@@ -359,7 +362,7 @@ export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; ab
 export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: TurnSide; round?: number };
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 export type NotifyAIIntent = { type: 'NOTIFY_AI'; entityId: EntityId; change: WorldChange };
-export type CounterAttackIntent = { type: 'COUNTER_ATTACK'; counterAttackerId: EntityId; targetId: EntityId; dx: number; dy: number };
+export type CounterAttackIntent = { type: 'COUNTER_ATTACK'; counterAttackerId: EntityId; targetId: EntityId; dx?: number; dy?: number };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -386,6 +389,7 @@ export type GameEvent =
   | FogUpdatedEvent
   | StatusAppliedEvent
   | StatusRemovedEvent
+  | StatusBlockedEvent
   | AbilityUsedEvent
   | AbilityPreparedEvent
   | AbilityPreparedCancelledEvent
@@ -485,6 +489,14 @@ export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; s
 
 export type StatusRemovedEvent = { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
 
+export type StatusBlockedEvent = {
+  type: 'STATUS_BLOCKED';
+  entityId: EntityId;
+  sourceEntityId: EntityId | null;
+  statusType: StatusEffectType;
+  blockedBy: StatusEffectType;
+};
+
 export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId; effectTypes: StatusEffectType[]; tags: GameplayTag[] };
 
 export type StatusStacksAdjustedEvent = {
@@ -578,4 +590,8 @@ export type CounterAttackAppliedEvent = {
   targetId: EntityId;
   dx: number;
   dy: number;
+  /** Урон, рассчитанный исполнителем интента контратаки. */
+  damage: number;
+  /** Теги урона контратаки (основной тег + теги оружия + reaction.counter). */
+  tags: GameplayTag[];
 };

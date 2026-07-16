@@ -142,6 +142,7 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     case 'COUNTER_ATTACK_APPLIED': {
       base.sourceEntityId = event.attackerId;
       base.targetEntityId = event.targetId;
+      base.eventDamage = event.damage;
       break;
     }
 

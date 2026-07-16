@@ -182,7 +182,7 @@ describe('executeIntent + content rules integration', () => {
         const player = makePlayer({ x: 5, y: 5 });
         const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
         const state = makeStateWithPlayerAndEntity(player, enemy);
-        // featureFlags по умолчанию выключен
+        state.featureFlags.contentRulesEnabled = false;
 
         const builder = new ExecutionBuilder({
           type: 'ACTION_APPLIED',
@@ -222,7 +222,7 @@ describe('executeIntent + content rules integration', () => {
 
       const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
       const state = makeStateWithPlayerAndEntity(player, enemy);
-      // featureFlags по умолчанию выключен
+      state.featureFlags.contentRulesEnabled = false;
 
       const builder = new ExecutionBuilder({
         type: 'ACTION_APPLIED',

@@ -1,0 +1,8 @@
+{
+  "id": "dazed",
+  "ruleIds": [],
+  "statusCategory": "physical",
+  "categoryPriority": 1,
+  "mutuallyExclusiveWith": [],
+  "blockedBy": ["stunned"]
+}

@@ -39,6 +39,7 @@ import {executeCounterAttackIntent} from "@simulation/systems/intents/counter-at
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
 import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
 import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
+import { resolveStatusBatch } from "@simulation/systems/statuses/status-conflict-resolver.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,
@@ -80,6 +81,21 @@ const intentExecutors = {
 /** Максимальное количество реакций в одной цепочке защиты от бесконечного цикла. */
 const MAX_REACTION_DEPTH = 1000;
 
+/**
+ * Исполняет пачку интентов, предварительно разрешая конфликты статусов.
+ */
+export function executeIntents(
+    state: GameState,
+    intents: Intent[],
+    builder: ExecutionBuilder,
+    parent: ExecutionNode,
+): void {
+    const resolved = resolveStatusBatch(state, intents);
+    for (const intent of resolved) {
+        executeIntent(state, intent, builder, parent, 0);
+    }
+}
+
 export function executeIntent(
     state: GameState,
     intent: Intent,
@@ -106,12 +122,12 @@ export function executeIntent(
 
     if (resultNode !== null) {
         const contentReactionIntents = runContentRuleReactionsIfEnabled(state, resultNode.event, builder, resultNode);
-        for (const reactionIntent of contentReactionIntents) {
+        for (const reactionIntent of resolveStatusBatch(state, contentReactionIntents)) {
             executeIntent(state, reactionIntent, builder, resultNode, reactionDepth + 1);
         }
 
         const reactionIntents = runWorldReactions(state, builder, resultNode);
-        for (const reactionIntent of reactionIntents) {
+        for (const reactionIntent of resolveStatusBatch(state, reactionIntents)) {
             executeIntent(state, reactionIntent, builder, resultNode, reactionDepth + 1);
         }
     }

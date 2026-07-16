@@ -12,7 +12,7 @@ import { GameState } from "@simulation/types.ts";
 import { getItem } from "@content/registry";
 import { ActionHandler, ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
 import { Intent } from "@simulation/systems/intents/types.ts";
-import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
+import { executeIntents } from "@simulation/systems/intents/execute-intent.ts";
 import { getItemAbilityEntries } from "@simulation/systems/ability-grant.ts";
 
 export const equipEntity: ActionHandler = {
@@ -88,8 +88,6 @@ export const equipEntity: ActionHandler = {
   },
 
   execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
-    for (const intent of intents) {
-      executeIntent(state, intent, executionBuilder, parentNode);
-    }
+    executeIntents(state, intents, executionBuilder, parentNode);
   },
 };

@@ -41,6 +41,7 @@
   "statuses": [
     "/content/statuses/burning.json",
     "/content/statuses/counterattack.json",
+    "/content/statuses/dazed.json",
     "/content/statuses/frozen.json",
     "/content/statuses/poisoned.json",
     "/content/statuses/regenerating.json",

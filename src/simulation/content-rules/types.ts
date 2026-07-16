@@ -67,6 +67,7 @@ export type ParametrizedValue =
 export type RuleCondition =
   | { type: 'chance'; probability: number | ParametrizedValue }
   | { type: 'hasStatus'; statusType: StatusEffectType; subject: 'self' | 'target' | 'candidate' }
+  | { type: 'hasTag'; tag: GameplayTag }
   | { type: 'and'; conditions: RuleCondition[] }
   | { type: 'or'; conditions: RuleCondition[] }
   | { type: 'not'; condition: RuleCondition };
@@ -79,7 +80,7 @@ export type TargetSelector =
   | { type: 'eventSource' }
   | { type: 'self' }
   | { type: 'collisionTarget' }
-  | { type: 'allInRadius'; radius: number; center: 'eventPosition' | 'self'; faction?: 'enemy' | 'ally' }
+  | { type: 'allInRadius'; radius: number; center: 'eventPosition' | 'self'; faction?: 'enemy' | 'ally'; excludeSelf?: boolean }
   | { type: 'nearestEnemy'; radius: number; center: 'eventPosition' | 'self' };
 
 /**
@@ -114,6 +115,9 @@ export type RuleEffect =
       op: 'multiply' | 'add';
       value: number | ParametrizedValue;
       addTags?: GameplayTag[];
+    }
+  | {
+      type: 'counterAttack';
     };
 
 /**

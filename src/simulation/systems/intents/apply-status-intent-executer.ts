@@ -3,8 +3,10 @@ import { ApplyStatusIntent, IntentExecutor } from '@simulation/systems/intents/t
 import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
 import { findEntity, isActor, nextEntityId } from '@simulation/state';
 import { isEnemyEntity } from '@simulation/ai/ai-state';
-import { addActiveRulesForStatus } from '@simulation/systems/rules/active-rule-lifecycle';
+import { addActiveRulesForStatus, removeActiveRulesForStatus } from '@simulation/systems/rules/active-rule-lifecycle';
 import { cancelPreparedAbility } from '@simulation/ai/ai-helpers';
+import { getStatusTemplate } from '@simulation/systems/statuses/status-template';
+import type { StatusEffectType } from '@simulation/core-types';
 
 export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   state: GameState,
@@ -16,6 +18,38 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   if (!target || !('statusEffects' in target)) return null;
 
   const holder = target as unknown as StatusEffectHolder;
+  const template = getStatusTemplate(intent.status.type);
+
+  // Блокировка: если на цели есть статус из blockedBy — наложение отменяется.
+  const blockedBy = template?.blockedBy ?? [];
+  for (const blockerType of blockedBy) {
+    if (holder.statusEffects.some((e) => e.type === blockerType)) {
+      return builder.addChild(parent, {
+        type: 'STATUS_BLOCKED',
+        entityId: intent.entityId,
+        sourceEntityId: intent.sourceEntityId ?? null,
+        statusType: intent.status.type,
+        blockedBy: blockerType as StatusEffectType,
+      });
+    }
+  }
+
+  // Взаимоисключение: снимаем конфликтующие статусы перед наложением нового.
+  const mutuallyExclusive = template?.mutuallyExclusiveWith ?? [];
+  for (const exclusiveType of mutuallyExclusive) {
+    const index = holder.statusEffects.findIndex((e) => e.type === exclusiveType);
+    if (index >= 0) {
+      const [removed] = holder.statusEffects.splice(index, 1);
+      if (removed && isActor(target)) {
+        removeActiveRulesForStatus(target, removed.instanceId ?? removed.type);
+      }
+      builder.addChild(parent, {
+        type: 'STATUS_REMOVED',
+        entityId: intent.entityId,
+        effectType: exclusiveType as StatusEffectType,
+      });
+    }
+  }
 
   // Проверяем дубликаты: если эффект того же типа уже есть — обновляем duration.
   // Для стакующихся статусов суммируем стаки.

@@ -193,20 +193,23 @@ describe('buildRuleContext', () => {
       });
     });
 
-    it('COUNTER_ATTACK_APPLIED: заполняет source, target и позицию цели', () => {
+    it('COUNTER_ATTACK_APPLIED: заполняет source, target, позицию цели и урон', () => {
       const event: GameEvent = {
         type: 'COUNTER_ATTACK_APPLIED',
         attackerId: player.id,
         targetId: enemy.id,
         dx: 1,
         dy: 0,
+        damage: 7,
+        tags: ['reaction.counter'],
       };
 
       expectContext(buildRuleContext(state, event), {
         sourceEntityId: player.id,
         targetEntityId: enemy.id,
         eventPosition: { x: 6, y: 5 },
-        eventTags: [],
+        eventDamage: 7,
+        eventTags: ['reaction.counter'],
       });
     });
 

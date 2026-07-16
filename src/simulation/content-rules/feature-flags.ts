@@ -24,9 +24,10 @@ export function setContentRulesEnabled(state: GameState, enabled: boolean): void
 /**
  * Гарантирует, что у состояния есть валидный блок featureFlags.
  * Используется при загрузке старых сохранений, где поле могло отсутствовать.
+ * Новая система контентных правил теперь включена по умолчанию.
  */
 export function ensureFeatureFlags(state: GameState): void {
   if (!state.featureFlags) {
-    state.featureFlags = { contentRulesEnabled: false };
+    state.featureFlags = { contentRulesEnabled: true };
   }
 }

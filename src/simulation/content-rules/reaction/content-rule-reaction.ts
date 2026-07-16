@@ -21,7 +21,7 @@ import type {
 } from '@simulation/core-types.ts';
 import type { Actor, GameState } from '@simulation/types.ts';
 import { findEntity, isActor } from '@simulation/state.ts';
-import { hasAllTags } from '@simulation/systems/tags/tag-helpers.ts';
+import { hasAllTags, hasTag } from '@simulation/systems/tags/tag-helpers.ts';
 import { rngChance } from '@utils/rng.ts';
 import { ensureRuntimeRng } from '../runtime-rng.ts';
 import { getWorldContentRules } from '../rules.ts';
@@ -44,6 +44,8 @@ type LayeredRule = {
   layer: RuleLayer;
   rule: ActiveRule;
   selfId: EntityId | null;
+  /** Подтип слоя `world`: global → tileEffect → tileIntrinsic. */
+  worldLayer?: 'global' | 'tileEffect' | 'tileIntrinsic';
 };
 
 /** Радиус слоя `radius` — Chebyshev distance от позиции события. */
@@ -55,6 +57,13 @@ const LAYER_ORDER: Record<RuleLayer, number> = {
   target: 1,
   world: 2,
   radius: 3,
+};
+
+/** Порядок подтипов внутри слоя `world`: global → tileEffect → tileIntrinsic. */
+const WORLD_LAYER_ORDER: Record<NonNullable<LayeredRule['worldLayer']>, number> = {
+  global: 0,
+  tileEffect: 1,
+  tileIntrinsic: 2,
 };
 
 /**
@@ -141,6 +150,7 @@ function collectRules(ctx: RuleContext): LayeredRule[] {
       layer: 'world',
       rule: toActiveRule(rule, { type: 'world' }),
       selfId: null,
+      worldLayer: rule.worldLayer,
     });
   }
 
@@ -182,12 +192,19 @@ function filterRulesByTrigger(
 }
 
 /**
- * Сортирует правила по слоям, затем по приоритету, затем по id.
+ * Сортирует правила по слоям, затем по подтипу слоя `world`,
+ * затем по приоритету, затем по id.
  */
 function sortRules(rules: LayeredRule[]): LayeredRule[] {
   return [...rules].sort((a, b) => {
     const layerDiff = LAYER_ORDER[a.layer] - LAYER_ORDER[b.layer];
     if (layerDiff !== 0) return layerDiff;
+
+    // Внутри слоя `world` фиксированный порядок: global → tileEffect → tileIntrinsic.
+    if (a.layer === 'world' && b.layer === 'world') {
+      const worldLayerDiff = WORLD_LAYER_ORDER[a.worldLayer!] - WORLD_LAYER_ORDER[b.worldLayer!];
+      if (worldLayerDiff !== 0) return worldLayerDiff;
+    }
 
     const priorityDiff = a.rule.priority - b.rule.priority;
     if (priorityDiff !== 0) return priorityDiff;
@@ -227,6 +244,9 @@ function evaluateCondition(
       const subjectId = resolveSubjectId(condition.subject, selfId, ctx, candidateId);
       if (subjectId === null) return false;
       return hasStatus(subjectId, condition.statusType, ctx);
+    }
+    case 'hasTag': {
+      return hasTag(ctx.eventTags, condition.tag);
     }
     case 'and':
       return condition.conditions.every((c) => evaluateCondition(c, ctx, selfId, candidateId));
@@ -299,6 +319,7 @@ function resolveTarget(
  * Возвращает всех акторов в заданном радиусе от центра.
  * Если указана фракция (`enemy` / `ally`), оставляет только акторов с подходящей
  * фракцией относительно сущности-владельца правила.
+ * Мёртвые акторы исключаются. Результат отсортирован по `id` для детерминизма.
  */
 function resolveAllInRadius(
   selector: Extract<TargetSelector, { type: 'allInRadius' }>,
@@ -316,6 +337,9 @@ function resolveAllInRadius(
     if (!isActor(entity)) continue;
     const actor = entity as Actor;
 
+    if (!actor.isAlive) continue;
+    if (selector.excludeSelf === true && actor.id === selfId) continue;
+
     const dx = Math.abs(actor.x - center.x);
     const dy = Math.abs(actor.y - center.y);
     if (Math.max(dx, dy) > selector.radius) continue;
@@ -325,7 +349,7 @@ function resolveAllInRadius(
 
     result.push(actor.id);
   }
-  return result;
+  return result.sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -400,13 +424,16 @@ function buildIntents(
     }
     case 'dealDamage': {
       const amount = resolveParametrizedValue(effect.amount, ctx);
+      // Если теги не заданы явно, наследуем их из события (например, COUNTER_ATTACK_APPLIED
+      // уже несёт рассчитанные теги урона).
+      const tags = effect.tags ?? ctx.eventTags;
       return targetIds.map((entityId) => ({
         type: 'DAMAGE',
         entityId,
         // Для мировых правил selfId === null, поэтому сохраняем источника из контекста события.
         sourceEntityId: selfId ?? ctx.sourceEntityId,
         damage: amount,
-        tags: effect.tags ?? [],
+        tags,
       }));
     }
     case 'heal': {
@@ -435,6 +462,32 @@ function buildIntents(
       // В фазе 2 modifyDamage не порождает отдельных интентов;
       // обработка переносится на слой исполнения.
       return [];
+    case 'counterAttack': {
+      if (selfId === null) return [];
+      const targetId = ctx.sourceEntityId;
+      if (targetId === null) return [];
+
+      const counterAttacker = findEntity(ctx.state, selfId);
+      const target = findEntity(ctx.state, targetId);
+      let dx = 0;
+      let dy = 0;
+      if (
+        counterAttacker && target &&
+        'x' in counterAttacker && 'y' in counterAttacker &&
+        'x' in target && 'y' in target
+      ) {
+        dx = target.x - counterAttacker.x;
+        dy = target.y - counterAttacker.y;
+      }
+
+      return [{
+        type: 'COUNTER_ATTACK',
+        counterAttackerId: selfId,
+        targetId,
+        dx,
+        dy,
+      }];
+    }
     default:
       return [];
   }

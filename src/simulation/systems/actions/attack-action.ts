@@ -1,6 +1,6 @@
 import {findAttacker, findFirstAttackableEntityAt} from "@simulation/state.ts";
 import {GameState} from "@simulation/types.ts";
-import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
+import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 import { getEffectiveWeaponDamage } from "@simulation/systems/stats/effective-stats.ts";
@@ -77,8 +77,6 @@ export const attackEntity: ActionHandler = {
   },
 
   execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
-    for (const intent of intents) {
-      executeIntent(state, intent, executionBuilder, parentNode);
-    }
+    executeIntents(state, intents, executionBuilder, parentNode);
   },
 };

@@ -38,4 +38,21 @@ describe('executeRestoreApIntent', () => {
 
     expect(node).toBeNull();
   });
+
+  it('статус dazed снижает восстановление AP на 1, но не ниже 0', () => {
+    const player = makePlayer({ ap: 0, maxAp: 3, statusEffects: [{ type: 'dazed', duration: 1, value: 0, statModifiers: null }] });
+    const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
+
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: player.id });
+    const node = executeRestoreApIntent(state, { type: 'RESTORE_AP', entityId: player.id }, builder, builder.root);
+
+    expect(state.player.ap).toBe(2);
+    expect(node).not.toBeNull();
+    expect(node!.event).toMatchObject({
+      type: 'AP_RESTORED',
+      entityId: player.id,
+      amount: 2,
+      remaining: 2,
+    });
+  });
 });

@@ -98,7 +98,14 @@ function mockAbility(id: string, ruleIds: string[] = []): AbilityTemplate {
 }
 
 function mockStatus(id: string, ruleIds: string[] = []): StatusTemplate {
-  return { id, ruleIds };
+  return {
+    id,
+    ruleIds,
+    statusCategory: 'generic',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+  };
 }
 
 function createEnemy(

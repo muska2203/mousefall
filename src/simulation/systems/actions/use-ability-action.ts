@@ -1,7 +1,7 @@
 import { GameState, ValidationResult, Entity, Position } from '@simulation/types';
 import { ActionHandler, ExecutionBuilder, ExecutionNode, UseAbilityAction } from '@simulation/systems/actions/types';
 import { Intent } from '@simulation/systems/intents/types';
-import { executeIntent } from '@simulation/systems/intents/execute-intent';
+import { executeIntents } from '@simulation/systems/intents/execute-intent';
 import { getSkillExecutor } from '@simulation/skills/skillExecutor';
 import { validateAbilityTargets } from '@simulation/skills/target-validation';
 import { tryGetAbility } from '@content/registry';
@@ -102,9 +102,7 @@ export const useAbilityAction: ActionHandler = {
 
     // Исполняем интенты как детей события способности,
     // чтобы анимации скилла шли последовательно.
-    for (const intent of intents) {
-      executeIntent(state, intent, executionBuilder, node);
-    }
+    executeIntents(state, intents, executionBuilder, node);
 
     // Если это подготовленная AI-способность — сбрасываем её после успешного применения.
     if (isEnemyEntity(actor) && actor.aiState.preparedAbility) {

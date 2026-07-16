@@ -9,9 +9,11 @@ import {
   makeEnemy,
   makeStateWithPlayerAndEntity,
 } from '../../../../fixtures/gameState';
+import {setWorldContentRulesOverride} from '../../../../../src/simulation/content-rules/rules';
 import { ExecutionBuilder } from '../../../../../src/simulation/core-types';
 import type { GameEvent, Intent } from '../../../../../src/simulation/core-types';
-import type { ActiveRule } from '../../../../../src/simulation/content-rules/types';
+import type { ActiveRule, WorldContentRule } from '../../../../../src/simulation/content-rules/types';
+import { counterattackTriggerRule, counterattackDamageRule } from '../../../../../src/simulation/content-rules/counterattack-rules';
 
 vi.mock('../../../../../src/utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
@@ -44,6 +46,7 @@ describe('runContentRuleReactions', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    setWorldContentRulesOverride(null);
   });
 
   it('применяет статус к eventTarget при срабатывании chance', () => {
@@ -189,10 +192,10 @@ describe('runContentRuleReactions', () => {
       y: 6,
       activeRules: [
         makeActiveRule({
-          id: 'radius_frozen',
+          id: 'radius_silenced',
           priority: -5,
           trigger: { event: 'ENTITY_DAMAGED', tags: ['damage.magical.fire'] },
-          effect: { type: 'applyStatus', statusType: 'frozen', duration: 1 },
+          effect: { type: 'applyStatus', statusType: 'silenced', duration: 1 },
           target: { type: 'eventTarget' },
         }),
       ],
@@ -215,8 +218,8 @@ describe('runContentRuleReactions', () => {
       .filter((intent) => intent.type === 'APPLY_STATUS')
       .map((intent) => intent.status.type);
 
-    // source (burning), target (poisoned), world (burning от fire_damage_ignites), radius (frozen)
-    expect(statusTypes).toEqual(['burning', 'poisoned', 'burning', 'frozen']);
+    // source (burning), target (poisoned), world (burning от fire_damage_ignites), radius (silenced)
+    expect(statusTypes).toEqual(['burning', 'poisoned', 'burning', 'silenced']);
   });
 
   it('не дублирует self-эффекты, когда source совпадает с target', () => {
@@ -429,6 +432,313 @@ describe('runContentRuleReactions', () => {
     });
   });
 
+  describe('порядок мировых правил в слое world', () => {
+    afterEach(() => {
+      setWorldContentRulesOverride(null);
+    });
+
+    it('соблюдает порядок global → tileEffect → tileIntrinsic независимо от priority', () => {
+      const player = makePlayer({x: 5, y: 5});
+      const enemy = makeEnemy({id: 'enemy_test_1', x: 6, y: 5});
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const tileIntrinsicRule: WorldContentRule = {
+        id: 'tile_intrinsic_rule',
+        trigger: {event: 'ENTITY_DAMAGED'},
+        effect: {type: 'applyStatus', statusType: 'frozen', duration: 1},
+        target: {type: 'eventTarget'},
+        priority: -100,
+        ownerContext: {type: 'world'},
+        worldLayer: 'tileIntrinsic',
+      };
+      const tileEffectRule: WorldContentRule = {
+        id: 'tile_effect_rule',
+        trigger: {event: 'ENTITY_DAMAGED'},
+        effect: {type: 'applyStatus', statusType: 'poisoned', duration: 1},
+        target: {type: 'eventTarget'},
+        priority: 100,
+        ownerContext: {type: 'world'},
+        worldLayer: 'tileEffect',
+      };
+      const globalRule: WorldContentRule = {
+        id: 'global_rule',
+        trigger: {event: 'ENTITY_DAMAGED'},
+        effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+        target: {type: 'eventTarget'},
+        priority: 0,
+        ownerContext: {type: 'world'},
+        worldLayer: 'global',
+      };
+
+      setWorldContentRulesOverride([tileIntrinsicRule, tileEffectRule, globalRule]);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: {x: 6, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      const statusTypes = intents
+        .filter((intent): intent is Extract<Intent, {type: 'APPLY_STATUS'}> => intent.type === 'APPLY_STATUS')
+        .map((intent) => intent.status.type);
+
+      expect(statusTypes).toEqual(['burning', 'poisoned', 'frozen']);
+    });
+
+    it('использует tie-break по ruleId при равных worldLayer и priority', () => {
+      const player = makePlayer({x: 5, y: 5});
+      const enemy = makeEnemy({id: 'enemy_test_1', x: 6, y: 5});
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const ruleB: WorldContentRule = {
+        id: 'world_b_rule',
+        trigger: {event: 'ENTITY_DAMAGED'},
+        effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+        target: {type: 'eventTarget'},
+        priority: 0,
+        ownerContext: {type: 'world'},
+        worldLayer: 'global',
+      };
+      const ruleA: WorldContentRule = {
+        id: 'world_a_rule',
+        trigger: {event: 'ENTITY_DAMAGED'},
+        effect: {type: 'applyStatus', statusType: 'poisoned', duration: 1},
+        target: {type: 'eventTarget'},
+        priority: 0,
+        ownerContext: {type: 'world'},
+        worldLayer: 'global',
+      };
+
+      setWorldContentRulesOverride([ruleB, ruleA]);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: {x: 6, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      const statusTypes = intents
+        .filter((intent): intent is Extract<Intent, {type: 'APPLY_STATUS'}> => intent.type === 'APPLY_STATUS')
+        .map((intent) => intent.status.type);
+
+      expect(statusTypes).toEqual(['poisoned', 'burning']);
+    });
+  });
+
+  describe('селектор allInRadius', () => {
+    it('включает владельца без excludeSelf и исключает при excludeSelf: true', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        factionId: 'player',
+        activeRules: [
+          makeActiveRule({
+            id: 'aoe_include_self',
+            trigger: {event: 'ENTITY_DAMAGED'},
+            effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+            target: {type: 'allInRadius', radius: 1, center: 'self'},
+          }),
+          makeActiveRule({
+            id: 'aoe_exclude_self',
+            priority: 1,
+            trigger: {event: 'ENTITY_DAMAGED'},
+            effect: {type: 'applyStatus', statusType: 'poisoned', duration: 1},
+            target: {type: 'allInRadius', radius: 1, center: 'self', excludeSelf: true},
+          }),
+        ],
+      });
+      const enemy = makeEnemy({id: 'enemy_test_1', x: 6, y: 5});
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: player.id,
+        sourceEntityId: enemy.id,
+        damage: 5,
+        position: {x: 5, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      const includeSelfIntents = intents.filter(
+        (intent) => intent.type === 'APPLY_STATUS' && intent.status.type === 'burning',
+      );
+      const excludeSelfIntents = intents.filter(
+        (intent) => intent.type === 'APPLY_STATUS' && intent.status.type === 'poisoned',
+      );
+
+      expect(
+        includeSelfIntents
+          .map((intent) => (intent as Extract<Intent, {type: 'APPLY_STATUS'}>).entityId)
+          .sort(),
+      ).toEqual([player.id, enemy.id].sort());
+      expect(
+        excludeSelfIntents.map((intent) => (intent as Extract<Intent, {type: 'APPLY_STATUS'}>).entityId),
+      ).toEqual([enemy.id]);
+    });
+
+    it('с faction: enemy исключает владельца той же фракции', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        factionId: 'player',
+        activeRules: [
+          makeActiveRule({
+            id: 'aoe_enemy_only',
+            trigger: {event: 'ENTITY_DAMAGED'},
+            effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+            target: {type: 'allInRadius', radius: 1, center: 'self', faction: 'enemy'},
+          }),
+        ],
+      });
+      const ally = makeEnemy({id: 'ally_test', x: 5, y: 6, factionId: 'player'});
+      const enemy = makeEnemy({id: 'enemy_test_1', x: 6, y: 5});
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.entities.set(ally.id, ally);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: player.id,
+        sourceEntityId: enemy.id,
+        damage: 5,
+        position: {x: 5, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({entityId: enemy.id});
+    });
+
+    it('не включает мёртвых акторов', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'aoe_all_alive',
+            trigger: {event: 'ENTITY_DAMAGED'},
+            effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+            target: {type: 'allInRadius', radius: 2, center: 'self'},
+          }),
+        ],
+      });
+      const aliveEnemy = makeEnemy({id: 'alive_enemy', x: 6, y: 5});
+      const deadEnemy = makeEnemy({id: 'dead_enemy', x: 5, y: 6, isAlive: false});
+      const state = makeStateWithPlayerAndEntity(player, aliveEnemy);
+      state.entities.set(deadEnemy.id, deadEnemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: player.id,
+        sourceEntityId: aliveEnemy.id,
+        damage: 5,
+        position: {x: 5, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      expect(
+        intents
+          .map((intent) => (intent as Extract<Intent, {type: 'APPLY_STATUS'}>).entityId)
+          .sort(),
+      ).toEqual([player.id, aliveEnemy.id].sort());
+    });
+
+    it('возвращает цели в детерминированном порядке по id независимо от порядка entities', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'aoe_deterministic',
+            trigger: {event: 'ENTITY_DAMAGED'},
+            effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+            target: {type: 'allInRadius', radius: 2, center: 'self'},
+          }),
+        ],
+      });
+      const enemyA = makeEnemy({id: 'enemy_a', x: 6, y: 5});
+      const enemyB = makeEnemy({id: 'enemy_b', x: 5, y: 6});
+
+      const state1 = makeStateWithPlayerAndEntity(player, enemyA);
+      state1.entities.set(enemyB.id, enemyB);
+
+      const state2 = makeStateWithPlayerAndEntity(player, enemyB);
+      state2.entities.set(enemyA.id, enemyA);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: player.id,
+        sourceEntityId: enemyA.id,
+        damage: 5,
+        position: {x: 5, y: 5},
+        tags: [],
+      };
+
+      const ids1 = runReactions(state1, event).map(
+        (intent) => (intent as Extract<Intent, {type: 'APPLY_STATUS'}>).entityId,
+      );
+      const ids2 = runReactions(state2, event).map(
+        (intent) => (intent as Extract<Intent, {type: 'APPLY_STATUS'}>).entityId,
+      );
+
+      expect(ids1).toEqual(ids2);
+      expect(ids1).toEqual([player.id, enemyA.id, enemyB.id].sort());
+    });
+
+    it('применяет targetConditions отдельно для каждой цели', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'aoe_only_burning_targets',
+            trigger: {event: 'ENTITY_DAMAGED'},
+            targetConditions: [{type: 'hasStatus', statusType: 'burning', subject: 'candidate'}],
+            effect: {type: 'dealDamage', amount: 3, tags: ['damage.magical.fire']},
+            target: {type: 'allInRadius', radius: 2, center: 'self'},
+          }),
+        ],
+      });
+      const burningEnemy = makeEnemy({
+        id: 'burning_enemy',
+        x: 6,
+        y: 5,
+        statusEffects: [{type: 'burning', duration: 1, value: 1, statModifiers: null}],
+      });
+      const normalEnemy = makeEnemy({id: 'normal_enemy', x: 5, y: 6});
+      const state = makeStateWithPlayerAndEntity(player, burningEnemy);
+      state.entities.set(normalEnemy.id, normalEnemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: player.id,
+        sourceEntityId: burningEnemy.id,
+        damage: 5,
+        position: {x: 5, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({entityId: burningEnemy.id, damage: 3});
+    });
+  });
+
   describe('мировые правила столкновений', () => {
     it('столкновение со стеной наносит урон и накладывает dazed на отталкиваемого актора', () => {
       const player = makePlayer({ x: 5, y: 5 });
@@ -506,6 +816,262 @@ describe('runContentRuleReactions', () => {
       expect(dazedIntents.map((intent) => intent.entityId).sort()).toEqual(
         [pushed.id, target.id].sort(),
       );
+    });
+  });
+
+  describe('порядок мировых правил в слое world', () => {
+    afterEach(() => {
+      setWorldContentRulesOverride(null);
+    });
+
+    it('соблюдает порядок global → tileEffect → tileIntrinsic независимо от priority', () => {
+      const player = makePlayer({x: 5, y: 5});
+      const enemy = makeEnemy({id: 'enemy_test_1', x: 6, y: 5});
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      setWorldContentRulesOverride([
+        {
+          id: 'tile_intrinsic_rule',
+          trigger: {event: 'ENTITY_DAMAGED'},
+          effect: {type: 'applyStatus', statusType: 'frozen', duration: 1},
+          target: {type: 'eventTarget'},
+          priority: -100,
+          ownerContext: {type: 'world'},
+          worldLayer: 'tileIntrinsic',
+        },
+        {
+          id: 'global_rule',
+          trigger: {event: 'ENTITY_DAMAGED'},
+          effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+          target: {type: 'eventTarget'},
+          priority: 100,
+          ownerContext: {type: 'world'},
+          worldLayer: 'global',
+        },
+        {
+          id: 'tile_effect_rule',
+          trigger: {event: 'ENTITY_DAMAGED'},
+          effect: {type: 'applyStatus', statusType: 'silenced', duration: 1},
+          target: {type: 'eventTarget'},
+          priority: -50,
+          ownerContext: {type: 'world'},
+          worldLayer: 'tileEffect',
+        },
+      ]);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 1,
+        position: {x: 6, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      const statusTypes = intents
+        .filter((intent) => intent.type === 'APPLY_STATUS')
+        .map((intent) => intent.status.type);
+
+      expect(statusTypes).toEqual(['burning', 'silenced', 'frozen']);
+    });
+
+    it('при равных worldLayer и priority использует tie-break по ruleId', () => {
+      const player = makePlayer({x: 5, y: 5});
+      const enemy = makeEnemy({id: 'enemy_test_1', x: 6, y: 5});
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      setWorldContentRulesOverride([
+        {
+          id: 'global_b',
+          trigger: {event: 'ENTITY_DAMAGED'},
+          effect: {type: 'applyStatus', statusType: 'poisoned', duration: 1},
+          target: {type: 'eventTarget'},
+          priority: 0,
+          ownerContext: {type: 'world'},
+          worldLayer: 'global',
+        },
+        {
+          id: 'global_a',
+          trigger: {event: 'ENTITY_DAMAGED'},
+          effect: {type: 'applyStatus', statusType: 'burning', duration: 1},
+          target: {type: 'eventTarget'},
+          priority: 0,
+          ownerContext: {type: 'world'},
+          worldLayer: 'global',
+        },
+      ]);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 1,
+        position: {x: 6, y: 5},
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      const statusTypes = intents
+        .filter((intent) => intent.type === 'APPLY_STATUS')
+        .map((intent) => intent.status.type);
+
+      expect(statusTypes).toEqual(['burning', 'poisoned']);
+    });
+  });
+
+  describe('контратака', () => {
+    function makeCounterattackActiveRule(rule: typeof counterattackTriggerRule | typeof counterattackDamageRule, ownerId: string): ActiveRule {
+      return {
+        ...rule,
+        ownerContext: { type: 'entity', entityId: ownerId, statusInstanceId: 'counterattack_test' },
+      };
+    }
+
+    it('counterattack_trigger срабатывает на ближний одиночный урон оружием при наличии статуса и успехе шанса', () => {
+      const player = makePlayer({ id: 'player', x: 5, y: 5 });
+      const enemy = makeEnemy({
+        id: 'enemy_counter',
+        x: 6,
+        y: 5,
+        statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
+        activeRules: [
+          makeCounterattackActiveRule(counterattackTriggerRule, 'enemy_counter'),
+          makeCounterattackActiveRule(counterattackDamageRule, 'enemy_counter'),
+        ],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toEqual({
+        type: 'COUNTER_ATTACK',
+        counterAttackerId: enemy.id,
+        targetId: player.id,
+        dx: -1,
+        dy: 0,
+      });
+    });
+
+    it('counterattack_trigger не срабатывает на дальний или множественный урон', () => {
+      const player = makePlayer({ id: 'player', x: 5, y: 5 });
+      const enemy = makeEnemy({
+        id: 'enemy_counter',
+        x: 6,
+        y: 5,
+        statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
+        activeRules: [
+          makeCounterattackActiveRule(counterattackTriggerRule, 'enemy_counter'),
+          makeCounterattackActiveRule(counterattackDamageRule, 'enemy_counter'),
+        ],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['attack.ranged', 'target.multi', 'delivery.spell'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents.filter((intent) => intent.type === 'COUNTER_ATTACK')).toHaveLength(0);
+    });
+
+    it('counterattack_trigger не срабатывает без статуса counterattack', () => {
+      const player = makePlayer({ id: 'player', x: 5, y: 5 });
+      const enemy = makeEnemy({
+        id: 'enemy_counter',
+        x: 6,
+        y: 5,
+        activeRules: [makeCounterattackActiveRule(counterattackTriggerRule, 'enemy_counter')],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents.filter((intent) => intent.type === 'COUNTER_ATTACK')).toHaveLength(0);
+    });
+
+    it('counterattack_trigger не срабатывает при провале шанса', () => {
+      vi.mocked(rngChance).mockReturnValue(false);
+
+      const player = makePlayer({ id: 'player', x: 5, y: 5 });
+      const enemy = makeEnemy({
+        id: 'enemy_counter',
+        x: 6,
+        y: 5,
+        statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
+        activeRules: [makeCounterattackActiveRule(counterattackTriggerRule, 'enemy_counter')],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(0);
+    });
+
+    it('counterattack_damage создаёт DAMAGE-интент с уроном из события', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        activeRules: [makeCounterattackActiveRule(counterattackDamageRule, 'player')],
+      });
+      const enemy = makeEnemy({ id: 'enemy_target', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'COUNTER_ATTACK_APPLIED',
+        attackerId: player.id,
+        targetId: enemy.id,
+        dx: 1,
+        dy: 0,
+        damage: 17,
+        tags: ['reaction.counter'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({
+        type: 'DAMAGE',
+        entityId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 17,
+        tags: ['reaction.counter'],
+      });
     });
   });
 });

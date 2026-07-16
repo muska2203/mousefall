@@ -220,6 +220,6 @@ describe('swoopSkill', () => {
     expect(enemy.x).toBe(7);
     expect(enemy.y).toBe(6);
     expect(enemy.hp).toBeLessThan(50);
-    expect(enemy.statusEffects.some(e => e.type === 'stunned')).toBe(true);
+    expect(enemy.statusEffects.some(e => e.type === 'dazed')).toBe(true);
   });
 });

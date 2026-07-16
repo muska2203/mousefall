@@ -10,10 +10,16 @@ import {
   makePlayer,
   makeEnemy,
   makeStateWithPlayerAndEntity,
+  makeGameState,
 } from '../../../fixtures/gameState';
 
 describe('content-rules feature flags', () => {
-  it('флаг выключен: executeIntent работает как раньше', () => {
+  it('makeGameState создаёт состояние с включённой системой контентных правил', () => {
+    const state = makeGameState();
+    expect(state.featureFlags.contentRulesEnabled).toBe(true);
+  });
+
+  it('executeIntent работает корректно с включённой системой контентных правил', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const enemy = makeEnemy({ x: 6, y: 5, hp: 20, armor: 0 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
@@ -42,7 +48,6 @@ describe('content-rules feature flags', () => {
   it('флаг включен без подходящих правил: поведение не меняется', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, makeEnemy({ x: 7, y: 5 }));
-    state.featureFlags.contentRulesEnabled = true;
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
@@ -64,12 +69,12 @@ describe('content-rules feature flags', () => {
     const state = makeStateWithPlayerAndEntity(makePlayer(), makeEnemy());
     const simulation = GameSimulation.loadSavedGame(state, false);
 
-    expect(simulation.getState().featureFlags.contentRulesEnabled).toBe(false);
-
-    simulation.setContentRulesEnabled(true);
     expect(simulation.getState().featureFlags.contentRulesEnabled).toBe(true);
 
     simulation.setContentRulesEnabled(false);
     expect(simulation.getState().featureFlags.contentRulesEnabled).toBe(false);
+
+    simulation.setContentRulesEnabled(true);
+    expect(simulation.getState().featureFlags.contentRulesEnabled).toBe(true);
   });
 });
