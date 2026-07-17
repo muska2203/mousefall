@@ -7,6 +7,7 @@
 
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput, Position, AnimationNode} from '@presentation/types';
+import type {DisplayState} from '@presentation/displayState/types';
 import {TILE_SIZE, FOG_EXPLORED_SPRITE_ALPHA} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
 import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite, getDoorSprite} from './spriteRegistry';
@@ -38,50 +39,48 @@ export class EntityRenderer {
     return this.sprites.get(id);
   }
 
-  /** Синхронное обновление спрайтов на основе текущего состояния.
+  /** Синхронное обновление спрайтов на основе текущего DisplayState.
    *  Текстуры подгружаются фоново, если их ещё нет в кеше. */
   update(input: RenderInput): void {
-    const state = input.state;
+    const displayState = input.displayState;
     const existingIds = new Set<string>();
     const texturePaths = new Map<string, string>();
 
-    // Собираем ID сущностей, для которых запланированы анимации.
-    // Не обновляем их позицию и не удаляем спрайт до завершения анимации,
-    // чтобы избежать мигания в конечной позиции или преждевременного исчезновения.
-    const animatedIds = new Set<string>();
+    // Собираем ITEM_DROP-узлы: предмета ещё нет в DisplayState, но для анимации
+    // появления нужно создать спрайт заранее и скрыть до её старта.
     const itemDropIds = new Set<string>();
+    const itemDropNodes: Array<{ itemId: string; templateId: string; position: Position }> = [];
     if (input.animations) {
       for (const phase of input.animations) {
         for (const node of phase.nodes) {
-          collectAnimatedEntityIds(node, animatedIds);
-          collectItemDropIds(node, itemDropIds);
+          collectItemDropNodes(node, itemDropIds, itemDropNodes);
         }
       }
     }
 
-    const playerPath = getPlayerSprite(input.state.player.templateId);
+    const playerPath = getPlayerSprite(displayState.player.templateId);
     texturePaths.set(playerPath, playerPath);
 
     // Игрок всегда виден себе
     const playerTexture = getTextureSync(playerPath);
-    const playerScale = getRenderScale(state.player.templateId, true);
-    this.renderEntitySync(state.player.id, state.player.x, state.player.y, playerTexture, playerPath, animatedIds, true, playerScale);
-    const playerSprite = this.sprites.get(state.player.id);
+    const playerScale = getRenderScale(displayState.player.templateId, true);
+    this.renderEntitySync(displayState.player.id, displayState.player.x, displayState.player.y, playerTexture, playerPath, true, playerScale);
+    const playerSprite = this.sprites.get(displayState.player.id);
     if (playerSprite) playerSprite.visible = true;
-    existingIds.add(state.player.id);
+    existingIds.add(displayState.player.id);
 
-    for (const entity of state.entities.values()) {
+    for (const entity of displayState.entities.values()) {
       if (entity.type === 'enemy') {
-        // Не рендерим мёртвых врагов, даже если они ещё не удалены из state.entities
-        if ('isAlive' in entity && entity.isAlive === false) continue;
+        // Не рендерим мёртвых врагов, даже если они ещё не удалены из DisplayState
+        if (entity.isAlive === false) continue;
         const path = getEnemySprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, true);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, true, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, true, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = input.debugEnabled || isCellVisible(state, entity.x, entity.y);
+          sprite.visible = input.debugEnabled || isCellVisible(displayState, entity.x, entity.y);
         }
         existingIds.add(entity.id);
       }
@@ -90,21 +89,21 @@ export class EntityRenderer {
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = input.debugEnabled || isCellExploredOrVisible(state, entity.x, entity.y);
-          sprite.alpha = getStaticEntityAlpha(state, entity.x, entity.y, input.debugEnabled);
+          sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
+          sprite.alpha = getStaticEntityAlpha(displayState, entity.x, entity.y, input.debugEnabled);
         }
         existingIds.add(entity.id);
       }
       if (entity.type === 'floor_item_container') {
-        const templateId = entity.item.templateId;
+        const templateId = entity.templateId;
         const path = getItemSprite(templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           // Если для предмета запланирована анимация появления — скрываем спрайт
@@ -112,39 +111,55 @@ export class EntityRenderer {
           if (itemDropIds.has(entity.id)) {
             sprite.visible = false;
           } else {
-            sprite.visible = input.debugEnabled || isCellExploredOrVisible(state, entity.x, entity.y);
-            sprite.alpha = getStaticEntityAlpha(state, entity.x, entity.y, input.debugEnabled);
+            sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
+            sprite.alpha = getStaticEntityAlpha(displayState, entity.x, entity.y, input.debugEnabled);
           }
         }
         existingIds.add(entity.id);
       }
       if (entity.type === 'door') {
-        // Не рендерим разрушенные двери, даже если они ещё не удалены из state.entities
-        if ('isAlive' in entity && entity.isAlive === false) continue;
-        const door = entity;
-        const path = input.doorSprites.get(door.id) ?? getDoorSprite(door.templateId, door.isOpen);
+        // Не рендерим разрушенные двери, даже если они ещё не удалены из DisplayState
+        if (entity.isAlive === false) continue;
+        const path = input.doorSprites.get(entity.id) ?? getDoorSprite(entity.templateId, entity.isOpen ?? false);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, animatedIds, false, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = input.debugEnabled || isCellExploredOrVisible(state, entity.x, entity.y);
-          sprite.alpha = getStaticEntityAlpha(state, entity.x, entity.y, input.debugEnabled);
+          sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
+          sprite.alpha = getStaticEntityAlpha(displayState, entity.x, entity.y, input.debugEnabled);
         }
         existingIds.add(entity.id);
       }
     }
 
-    // Удаляем спрайты для исчезнувших сущностей
+    // Предварительно создаём спрайты для предметов, которые появятся в анимации
+    // ITEM_DROP, но ещё отсутствуют в DisplayState.
+    for (const drop of itemDropNodes) {
+      if (!existingIds.has(drop.itemId)) {
+        const path = getItemSprite(drop.templateId);
+        texturePaths.set(path, path);
+        const texture = getTextureSync(path);
+        const scale = getRenderScale(drop.templateId, false);
+        this.renderEntitySync(drop.itemId, drop.position.x, drop.position.y, texture, path, false, scale);
+        const sprite = this.sprites.get(drop.itemId);
+        if (sprite && !this.activeAnimations.has(drop.itemId)) {
+          sprite.visible = false;
+        }
+        existingIds.add(drop.itemId);
+      }
+    }
+
+    // Удаляем спрайты для исчезнувших сущностей, но не трогаем те,
+    // для которых ещё идёт активная анимация (например, смерть или подбор предмета).
     for (const [id, sprite] of this.sprites) {
-      if (!existingIds.has(id) && !animatedIds.has(id)) {
+      if (!existingIds.has(id) && !this.activeAnimations.has(id)) {
         sprite.destroy();
         this.sprites.delete(id);
         this.activeAnimations.delete(id);
       }
     }
-
   }
 
   /** Анимация прыжка спрайта между тайлами.
@@ -576,7 +591,6 @@ export class EntityRenderer {
     y: number,
     texture: Texture | undefined,
     path: string,
-    animatedIds: Set<string>,
     isActor: boolean = false,
     renderScale: number = 1.0,
   ): void {
@@ -615,8 +629,9 @@ export class EntityRenderer {
         .catch(() => {});
     }
 
-    // Не трогаем позицию, если идёт активная анимация или запланирована новая
-    if (!this.activeAnimations.has(id) && !animatedIds.has(id)) {
+    // Не трогаем позицию, если идёт активная анимация.
+    // DisplayState уже отражает текущее состояние, а tween управляет спрайтом напрямую.
+    if (!this.activeAnimations.has(id)) {
       if (isActor) {
         sprite.x = x * TILE_SIZE + TILE_SIZE / 2;
         sprite.y = y * TILE_SIZE + TILE_SIZE * ACTOR_OFFSET_Y_FACTOR;
@@ -630,59 +645,36 @@ export class EntityRenderer {
 
 }
 
-function isCellVisible(state: RenderInput['state'], x: number, y: number): boolean {
-  return state.visible[y]?.[x] ?? false;
+function isCellVisible(displayState: DisplayState, x: number, y: number): boolean {
+  return displayState.map.visible[y]?.[x] ?? false;
 }
 
-function isCellExploredOrVisible(state: RenderInput['state'], x: number, y: number): boolean {
-  return (state.visible[y]?.[x] ?? false) || (state.explored[y]?.[x] ?? false);
+function isCellExploredOrVisible(displayState: DisplayState, x: number, y: number): boolean {
+  return (displayState.map.visible[y]?.[x] ?? false) || (displayState.map.explored[y]?.[x] ?? false);
 }
 
 /** Альфа для статических сущностей (предметы, двери, лестницы).
  *  На explored клетках спрайт затемняется, чтобы визуально совпадало с туманом,
  *  который теперь рисуется под сущностями. */
-function getStaticEntityAlpha(state: RenderInput['state'], x: number, y: number, debugEnabled: boolean): number {
+function getStaticEntityAlpha(displayState: DisplayState, x: number, y: number, debugEnabled: boolean): number {
   if (debugEnabled) return 1;
-  if (isCellVisible(state, x, y)) return 1;
-  if (isCellExploredOrVisible(state, x, y)) return FOG_EXPLORED_SPRITE_ALPHA;
+  if (isCellVisible(displayState, x, y)) return 1;
+  if (isCellExploredOrVisible(displayState, x, y)) return FOG_EXPLORED_SPRITE_ALPHA;
   return 1; // спрайт будет скрыт через visible = false
 }
 
-/** Рекурсивно собирает entityId из деревьев анимаций, для которых запланированы анимации спрайтов. */
-function collectAnimatedEntityIds(node: AnimationNode, out: Set<string>): void {
-  switch (node.step.type) {
-    case 'MOVE':
-    case 'JUMP':
-      out.add(node.step.entityId);
-      break;
-    case 'ATTACK':
-      out.add(node.step.attackerId);
-      break;
-    case 'DEATH':
-      out.add(node.step.entityId);
-      break;
-    case 'ABILITY_CAST':
-      out.add(node.step.entityId);
-      break;
-    case 'ITEM_DROP':
-      out.add(node.step.itemId);
-      break;
-    case 'BOUNCE':
-      out.add(node.step.entityId);
-      break;
-  }
-  for (const child of node.children) {
-    collectAnimatedEntityIds(child, out);
-  }
-}
-
-/** Рекурсивно собирает ID предметов с запланированной анимацией ITEM_DROP. */
-function collectItemDropIds(node: AnimationNode, out: Set<string>): void {
+/** Рекурсивно собирает ITEM_DROP-узлы для предварительного создания спрайтов. */
+function collectItemDropNodes(
+  node: AnimationNode,
+  ids: Set<string>,
+  out: Array<{ itemId: string; templateId: string; position: Position }>,
+): void {
   if (node.step.type === 'ITEM_DROP') {
-    out.add(node.step.itemId);
+    ids.add(node.step.itemId);
+    out.push({ itemId: node.step.itemId, templateId: node.step.templateId, position: node.step.position });
   }
   for (const child of node.children) {
-    collectItemDropIds(child, out);
+    collectItemDropNodes(child, ids, out);
   }
 }
 

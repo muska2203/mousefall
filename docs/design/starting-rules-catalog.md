@@ -22,7 +22,7 @@
 
 | `ruleId` | Источник | Триггер | Условие | Эффект | Числа |
 |---|---|---|---|---|---|
-| `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `chance 50` + `not hasTag target.aoe` + `not hasTag target.multi` | `counterAttack` | шанс 50% |
+| `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `eventRole target` + `chance 50` + `not hasTag target.aoe` + `not hasTag target.multi` | `counterAttack` | шанс 50% |
 | `counterattack_damage` | Статус `counterattack` | `COUNTER_ATTACK_APPLIED` | — | `dealDamage` от `eventDamage` | урон из события |
 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30%, длительность 3 |
 | `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1, тег `damage.magical.fire` | 10% max HP, округление |
@@ -48,7 +48,7 @@
 | 6 | `amulet_fire_damage_multiplier` | Амулет (`common_ember_amulet`) | `DAMAGE` `damage.magical.fire` | — | `modifyDamage multiply` 1.15 | +15% ко всему огненному урону |
 | 7 | `status_poison_tick_damage` | Статус `poisoned` | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1, тег `damage.magical.poison` | 8% max HP/ход |
 | 8 | `status_burning_vulnerability` | Статус `burning` | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
-| 9 | `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `chance 50` + `not target.aoe/multi` | `counterAttack` | шанс 50% |
+| 9 | `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `eventRole target` + `chance 50` + `not target.aoe/multi` | `counterAttack` | шанс 50% |
 | 10 | `counterattack_damage` | Статус `counterattack` | `COUNTER_ATTACK_APPLIED` | — | `dealDamage` от `eventDamage` | урон контратаки |
 | 11 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30% |
 | 12 | `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1 `damage.magical.fire` | 10% max HP/ход |

@@ -68,6 +68,7 @@ export type RuleCondition =
   | { type: 'chance'; probability: number | ParametrizedValue }
   | { type: 'hasStatus'; statusType: StatusEffectType; subject: 'self' | 'target' | 'candidate' }
   | { type: 'hasTag'; tag: GameplayTag }
+  | { type: 'eventRole'; role: 'source' | 'target' }
   | { type: 'and'; conditions: RuleCondition[] }
   | { type: 'or'; conditions: RuleCondition[] }
   | { type: 'not'; condition: RuleCondition };

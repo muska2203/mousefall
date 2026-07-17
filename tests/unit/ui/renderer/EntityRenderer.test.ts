@@ -64,6 +64,8 @@ vi.mock('pixi.js', () => {
 import {EntityRenderer} from '../../../../src/ui/renderer/EntityRenderer';
 import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
 import type {RenderInput} from '../../../../src/presentation/types';
+import { buildDisplayState } from '../../../../src/presentation/displayState/builder';
+import type { GameState } from '../../../../src/simulation/types';
 
 function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player']>, visible?: boolean[][]): RenderInput {
   const player = {
@@ -103,44 +105,47 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     ...playerOverrides,
   };
 
-  return {
-    state: {
-      map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
-      mapParams: {
-        id: 'floor_1',
-        strategy: 'tree',
-        height: 10,
-        width: 10,
-        minRooms: 1,
-        maxRooms: 2,
-        minRoomSize: 3,
-        maxRoomSize: 4,
-        enemyDensity: 0,
-        itemDensity: 0,
-        enemyPool: [],
-        itemPool: [],
-      },
-      entities: new Map(),
-      player,
-      visible: visible ?? [],
-      explored: visible ?? [],
-      turn: {activeSide: 'player' as const, round: 1},
-      phase: 'playing' as const,
-      floor: 1,
-      floorSnapshots: [],
-      rng: {seed: 1, state: 1},
-      runtimeRng: {seed: 1, state: 1},
-      nextEntityCounter: 0,
-      runStats: {
-        startTime: Date.now(),
-        enemiesKilled: 0,
-        chestsOpened: 0,
-        itemsPickedUp: 0,
-      },
-      featureFlags: {
-        contentRulesEnabled: false,
-      },
+  const state: GameState = {
+    map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
+    mapParams: {
+      id: 'floor_1',
+      strategy: 'tree',
+      height: 10,
+      width: 10,
+      minRooms: 1,
+      maxRooms: 2,
+      minRoomSize: 3,
+      maxRoomSize: 4,
+      enemyDensity: 0,
+      itemDensity: 0,
+      enemyPool: [],
+      itemPool: [],
     },
+    entities: new Map(),
+    player,
+    visible: visible ?? [],
+    explored: visible ?? [],
+    turn: {activeSide: 'player' as const, round: 1},
+    phase: 'playing' as const,
+    floor: 1,
+    floorSnapshots: [],
+    rng: {seed: 1, state: 1},
+    runtimeRng: {seed: 1, state: 1},
+    nextEntityCounter: 0,
+    runStats: {
+      startTime: Date.now(),
+      enemiesKilled: 0,
+      chestsOpened: 0,
+      itemsPickedUp: 0,
+    },
+    featureFlags: {
+      contentRulesEnabled: false,
+    },
+  };
+
+  return {
+    state,
+    displayState: buildDisplayState(state),
     highlightedPath: null,
     highlightedPathCommitted: false,
     highlightedPathTargetKind: 'none',
@@ -198,6 +203,10 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     debugEnabled: false,
     mapgenDebugEnabled: false,
   };
+}
+
+function refreshDisplayState(input: RenderInput): void {
+  input.displayState = buildDisplayState(input.state);
 }
 
 describe('EntityRenderer', () => {
@@ -291,12 +300,14 @@ describe('EntityRenderer', () => {
       statusEffects: [],
       abilities: [],
     } as any);
+    refreshDisplayState(input);
 
     renderer.update(input);
     expect((renderer as any).sprites.has('enemy1')).toBe(true);
 
     // Удаляем врага из состояния (симуляция его убила)
     input.state.entities.delete('enemy1');
+    refreshDisplayState(input);
 
     // Без анимации смерти спрайт должен быть удалён
     renderer.update(input);
@@ -320,10 +331,12 @@ describe('EntityRenderer', () => {
       statusEffects: [],
       abilities: [],
     } as any);
+    refreshDisplayState(input);
     renderer.update(input);
     expect((renderer as any).sprites.has('enemy1')).toBe(true);
 
-    // Удаляем врага, но запланируем анимацию смерти
+    // Удаляем врага, но запланируем анимацию смерти.
+    // DisplayState пока ещё содержит врага, поэтому спрайт остаётся для анимации.
     input.state.entities.delete('enemy1');
     input.animations = [
       {
@@ -364,13 +377,15 @@ describe('EntityRenderer', () => {
       statusEffects: [],
       abilities: [],
     } as any);
+    refreshDisplayState(input);
 
     renderer.update(input);
     const sprite = (renderer as any).sprites.get('enemy1');
     expect(sprite.x).toBe(1 * 32 + 32 / 2);
     expect(sprite.y).toBe(1 * 32 + 32 * 0.85);
 
-    // Симуляция переместила врага, но анимация ещё не запущена
+    // Симуляция переместила врага, но DisplayState ещё не обновлён (патч применится
+    // по завершении анимации). Спрайт не должен "прыгнуть" на новую позицию.
     input.state.entities.set('enemy1', {
       ...(input.state.entities.get('enemy1') as any),
       x: 3,
@@ -401,6 +416,7 @@ describe('EntityRenderer', () => {
     visible[3]![3] = true;
     const input = makeRenderInput(undefined, visible);
 
+    // Предмет появится в результате ITEM_DROPPED, но ещё отсутствует в DisplayState.
     input.state.entities.set('item1', {
       id: 'item1',
       type: 'floor_item_container',
@@ -417,10 +433,6 @@ describe('EntityRenderer', () => {
         grantedAbilities: [],
       },
     } as any);
-
-    renderer.update(input);
-    const sprite = (renderer as any).sprites.get('item1');
-    expect(sprite.visible).toBe(true);
 
     // Запланируем анимацию появления
     input.animations = [
@@ -436,7 +448,9 @@ describe('EntityRenderer', () => {
     ];
 
     renderer.update(input);
-    // Спрайт должен быть скрыт до начала анимации
+    const sprite = (renderer as any).sprites.get('item1');
+    expect(sprite).toBeDefined();
+    // Спрайт должен быть создан заранее, но скрыт до начала анимации
     expect(sprite.visible).toBe(false);
   });
 
@@ -444,6 +458,7 @@ describe('EntityRenderer', () => {
     const renderer = new EntityRenderer();
     const input = makeRenderInput();
 
+    // Предмет появится в результате ITEM_DROPPED, но ещё отсутствует в DisplayState.
     input.state.entities.set('item1', {
       id: 'item1',
       type: 'floor_item_container',
@@ -461,8 +476,22 @@ describe('EntityRenderer', () => {
       },
     } as any);
 
+    // Запланируем анимацию появления, чтобы спрайт был создан заранее
+    input.animations = [
+      {
+        side: 'player',
+        nodes: [
+          {
+            step: {type: 'ITEM_DROP', itemId: 'item1', position: {x: 3, y: 3}, from: {x: 2, y: 2}, templateId: 'health_potion'},
+            children: [],
+          },
+        ],
+      },
+    ];
+
     renderer.update(input);
     const sprite = (renderer as any).sprites.get('item1');
+    expect(sprite).toBeDefined();
 
     const p = renderer.animateItemDrop(
       'item1',
@@ -486,5 +515,52 @@ describe('EntityRenderer', () => {
     expect(sprite.x).toBe(3 * 32);
     expect(sprite.y).toBe(3 * 32);
     expect(sprite.alpha).toBe(1);
+  });
+
+  it('keeps sprite during active animation even if entity disappears from DisplayState', async () => {
+    const renderer = new EntityRenderer();
+    const input = makeRenderInput();
+
+    input.state.entities.set('enemy1', {
+      id: 'enemy1',
+      type: 'enemy',
+      x: 1,
+      y: 1,
+      blocksMovement: true,
+      hp: 0,
+      maxHp: 5,
+      armor: 0,
+      damage: 1,
+      maxAp: 1,
+      ap: 0,
+      templateId: 'cat_small',
+      aiStrategyId: 'melee',
+      statusEffects: [],
+      abilities: [],
+    } as any);
+    refreshDisplayState(input);
+
+    renderer.update(input);
+    expect((renderer as any).sprites.has('enemy1')).toBe(true);
+
+    // Запускаем анимацию смерти вручную.
+    const p = renderer.animateDeath('enemy1', ANIMATION_CONFIG.DEATH);
+    expect((renderer as any).activeAnimations.has('enemy1')).toBe(true);
+
+    // Убираем врага из DisplayState, как будто патч DEATH уже применился
+    // или состояние ресинкнулось с финальным GameState.
+    input.state.entities.delete('enemy1');
+    refreshDisplayState(input);
+
+    renderer.update(input);
+    // Пока идёт анимация, спрайт не должен быть удалён.
+    expect((renderer as any).sprites.has('enemy1')).toBe(true);
+
+    // Завершаем анимацию.
+    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.DEATH.duration + 10);
+    await p;
+
+    // После завершения анимации спрайт должен быть удалён.
+    expect((renderer as any).sprites.has('enemy1')).toBe(false);
   });
 });

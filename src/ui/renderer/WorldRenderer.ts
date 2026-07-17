@@ -39,8 +39,6 @@ export class WorldRenderer {
   public readonly unitInfoRenderer = new UnitInfoRenderer();
 
   private cameraAnimation: CameraAnimation | null = null;
-  /** Базовая клетка камеры: начальная точка текущего/последнего движения игрока. */
-  private cameraBase: Position | null = null;
   /** Текущая мировая позиция камеры (в пикселях тайлов), обновляется tween'ом. */
   private cameraWorldPos: { x: number; y: number } | null = null;
   private lastInput: RenderInput | null = null;
@@ -91,10 +89,9 @@ export class WorldRenderer {
    * - Если активна камерная анимация — root-позиция вычисляется из текущей
    *   мировой позиции камеры (cameraWorldPos) и актуального zoom'а. Это
    *   предотвращает телепорт при изменении масштаба/ресайзе во время движения.
-   * - Вне анимации камера центрируется на cameraBase. Пока анимация движения
-   *   игрока ещё не началась, cameraBase берётся из начальной клетки первого
-   *   MOVE/JUMP в плане, чтобы не показывать игрока в конечной позиции раньше
-   *   времени. После старта/завершения анимации база обновляется в animateCamera().
+   * - Вне анимации камера центрируется на игроке из DisplayState. Поскольку
+   *   DisplayState обновляется патчами по завершении анимаций, камера не
+   *   телепортируется в конечную позицию раньше времени.
    */
   render(input: RenderInput): void {
     this.lastInput = input;
@@ -116,22 +113,9 @@ export class WorldRenderer {
       this.root.x = -cameraX * scale;
       this.root.y = -cameraY * scale;
     } else {
-      // База камеры: если для игрока ещё не началась анимация движения в текущей партии,
-      // берём начальную клетку из плана, чтобы не телепортировать камеру в конечную
-      // позицию до старта анимации. После старта/завершения анимации база обновляется
-      // в animateCamera().
-      if (!input.animations) {
-        this.cameraBase = null;
-      } else if (this.cameraBase === null) {
-        const plannedFrom = this.findPlayerMoveFrom(input);
-        if (plannedFrom) {
-          this.cameraBase = plannedFrom;
-        }
-      }
-
-      const cameraBase = this.cameraBase ?? input.state.player;
-      const playerScreenX = cameraBase.x * TILE_SIZE;
-      const playerScreenY = cameraBase.y * TILE_SIZE;
+      const player = input.displayState.player;
+      const playerScreenX = player.x * TILE_SIZE;
+      const playerScreenY = player.y * TILE_SIZE;
 
       cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
       cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
@@ -159,7 +143,7 @@ export class WorldRenderer {
       this.entityRenderer.animateJump(entityId, from, to, config),
     ];
 
-    if (entityId === this.lastInput?.state.player.id) {
+    if (entityId === this.lastInput?.displayState.player.id) {
       promises.push(this.animateCamera(from, to, config));
     }
 
@@ -414,10 +398,10 @@ export class WorldRenderer {
     const scale = input.zoom;
     const viewW = this.viewportWidth / scale;
     const viewH = this.viewportHeight / scale;
-    const base = this.cameraBase ?? input.state.player;
+    const player = input.displayState.player;
     return {
-      x: base.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
-      y: base.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2,
+      x: player.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
+      y: player.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2,
     };
   }
 
@@ -438,35 +422,6 @@ export class WorldRenderer {
     return this.fogRenderer.animateReveal(positions, config.duration, config.easing, ticker);
   }
 
-  /**
-   * Ищет начальную клетку первой анимации MOVE игрока в запланированных анимациях.
-   * Возвращает null, если такой анимации нет.
-   */
-  private findPlayerMoveFrom(input: RenderInput): Position | null {
-    const playerId = input.state.player.id;
-    const animations = input.animations;
-    if (!animations) return null;
-
-    for (const phase of animations) {
-      for (const node of phase.nodes) {
-        const from = this.findMoveFromInNode(node, playerId);
-        if (from) return from;
-      }
-    }
-    return null;
-  }
-
-  private findMoveFromInNode(node: import('@presentation/types').AnimationNode, playerId: string): Position | null {
-    if ((node.step.type === 'MOVE' || node.step.type === 'JUMP') && node.step.entityId === playerId) {
-      return node.step.from;
-    }
-    for (const child of node.children) {
-      const from = this.findMoveFromInNode(child, playerId);
-      if (from) return from;
-    }
-    return null;
-  }
-
   /** Анимировать движение камеры между двумя тайлами. */
   animateCamera(fromTile: Position, toTile: Position, config: AnimationConfigEntry): Promise<void> {
     return new Promise((resolve) => {
@@ -475,8 +430,6 @@ export class WorldRenderer {
       if (this.cameraAnimation) {
         this.cameraAnimation.tween.cancel();
       }
-
-      this.cameraBase = fromTile;
 
       // Анимируем прогресс от 0 до 1, а мировые координаты пересчитываем каждый кадр.
       // Это корректно обрабатывает изменение zoom'а или ресайза во время движения камеры.
@@ -502,7 +455,6 @@ export class WorldRenderer {
           // Защита от устаревшего onComplete: старый tween мог быть отменён.
           if (this.cameraAnimation?.tween !== tween) return;
           this.cameraAnimation = null;
-          this.cameraBase = toTile;
           const scale = this.root.scale.x || 1;
           const viewW = this.viewportWidth / scale;
           const viewH = this.viewportHeight / scale;
@@ -587,7 +539,6 @@ export class WorldRenderer {
     this.floatingTextRenderer.clear();
     this.unitInfoRenderer.destroy();
     this.cameraAnimation = null;
-    this.cameraBase = null;
     this.cameraWorldPos = null;
     this.lastInput = null;
     this.root.destroy({children: true});

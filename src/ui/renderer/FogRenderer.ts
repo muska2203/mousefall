@@ -31,7 +31,7 @@ export class FogRenderer {
       return;
     }
 
-    const {visible, explored, map} = input.state;
+    const {visible, explored, width, height} = input.displayState.map;
 
     // Рисуем туман на всей видимой области, включая пространство за пределами карты
     const overrender = 1;
@@ -45,7 +45,7 @@ export class FogRenderer {
     // Explored — один batch с полупрозрачной заливкой
     for (let y = startRow; y < endRow; y++) {
       for (let x = startCol; x < endCol; x++) {
-        const inBounds = x >= 0 && x < map.width && y >= 0 && y < map.height;
+        const inBounds = x >= 0 && x < width && y >= 0 && y < height;
         if (inBounds && visible[y]![x]) continue;
         if (inBounds && explored[y]![x]) {
           this.graphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -57,7 +57,7 @@ export class FogRenderer {
     // Hidden / out-of-bounds — второй batch с непрозрачной заливкой
     for (let y = startRow; y < endRow; y++) {
       for (let x = startCol; x < endCol; x++) {
-        const inBounds = x >= 0 && x < map.width && y >= 0 && y < map.height;
+        const inBounds = x >= 0 && x < width && y >= 0 && y < height;
         if (inBounds && visible[y]![x]) continue;
         if (!inBounds || !explored[y]![x]) {
           this.graphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);

@@ -9,7 +9,8 @@
  */
 
 import type { GameState, PlayerStatsSnapshot, Intent, RunStats, TurnSide, StatusEffect, InteractionId, GameAction } from '@simulation/types';
-import type { AnimationConfigKey } from '@utils/animationConfig';
+import type { DisplayPatch, DisplayState } from './displayState/types';
+
 import type {AIMode} from '@simulation/ai/ai-state';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
@@ -180,6 +181,10 @@ export type AnimationStep =
 export type AnimationNode = {
   step: AnimationStep;
   children: AnimationNode[];
+  /** Патч DisplayState, который UI применяет после завершения шага. */
+  patch?: DisplayPatch;
+  /** Дополнительные патчи для переноса от невидимых дочерних событий. */
+  patches?: DisplayPatch[];
 };
 
 /** Одна анимационная фаза, соответствующая стороне хода из SimulationResult.
@@ -464,6 +469,8 @@ export type HighlightedPathTargetKind = 'none' | 'enemy' | 'interactable' | 'mov
 export type RenderInput = {
   /** Readonly снимок игрового состояния от Simulation. */
   state: RenderState;
+  /** Минимальная модель состояния поля, обновляемая патчами по мере анимаций. */
+  displayState: DisplayState;
   /** Подсвеченный автопуть (если есть). */
   highlightedPath: Position[] | null;
   /** True, если автопуть зафиксирован (клик), false — если это только preview при hover. */

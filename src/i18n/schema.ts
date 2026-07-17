@@ -342,6 +342,11 @@ export interface SystemLogBuilderTranslations {
   counterattackTriggered: string;
   abilityPrepared: string;
   abilityPreparedCancelled: string;
+  statusBlocked: string;
+  statusRemoved: string;
+  entityCollided: string;
+  entityDisplaced: string;
+  entityMissed: string;
 }
 
 export interface SystemItemMapperTranslations {

@@ -183,7 +183,10 @@ ACTION_APPLIED (ATTACK)
 
 - [ ] Тип добавлен в union `GameEvent` (`src/simulation/core-types.ts`, реэкспорт в `src/simulation/types.ts`)
 - [ ] Эмиссия добавлена в соответствующий `IntentExecutor` (`src/simulation/systems/intents/`)
-- [ ] Обработка добавлена в Presentation (перевод в анимацию / combat log)
-- [ ] Визуализация добавлена в UI (если требуется новый тип анимации)
+- [ ] Добавлен `DisplayPatch` в `src/presentation/displayState/builder.ts` (или `NO_OP`, если событие не меняет визуальное состояние)
+- [ ] Добавлен animation builder в `src/presentation/animation/builders/`, если событие визуально значимо
+- [ ] Builder зарегистрирован в `src/presentation/animation/register.ts` (файл загружается через `src/presentation/animation/index.ts`)
+- [ ] Добавлена строка в `src/presentation/logBuilder.ts` и i18n-ключи, если событие значимо для игрока
+- [ ] Добавлены unit-тесты Presentation для нового события (патч, builder, log)
 - [ ] Для событий, которые могут быть триггером контентных правил, добавлено построение `RuleContext` в `src/simulation/content-rules/rule-context.ts`
 - [ ] Если событие генерируется вне стандартного `executeIntent` (ручной вызов `builder.addChild`), учтён узел `RULE_TRIGGERED` в дереве `ExecutionNode` при необходимости

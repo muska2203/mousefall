@@ -14,12 +14,17 @@ type EntityMovedEvent = Extract<GameEvent, { type: 'ENTITY_MOVED' }>;
 type EntityDamagedEvent = Extract<GameEvent, { type: 'ENTITY_DAMAGED' }>;
 type EntityDiedEvent = Extract<GameEvent, { type: 'ENTITY_DIED' }>;
 type EntityBumpedEvent = Extract<GameEvent, { type: 'ENTITY_BUMPED' }>;
+type EntityCollidedEvent = Extract<GameEvent, { type: 'ENTITY_COLLIDED' }>;
+type EntityDisplacedEvent = Extract<GameEvent, { type: 'ENTITY_DISPLACED' }>;
+type EntityMissedEvent = Extract<GameEvent, { type: 'ENTITY_MISSED' }>;
 type ItemDroppedEvent = Extract<GameEvent, { type: 'ITEM_DROPPED' }>;
 type FogUpdatedEvent = Extract<GameEvent, { type: 'FOG_UPDATED' }>;
 type EntityHealedEvent = Extract<GameEvent, { type: 'ENTITY_HEALED' }>;
 type AbilityPreparedEvent = Extract<GameEvent, { type: 'ABILITY_PREPARED' }>;
 type AbilityPreparedCancelledEvent = Extract<GameEvent, { type: 'ABILITY_PREPARED_CANCELLED' }>;
 type StatusAppliedEvent = Extract<GameEvent, { type: 'STATUS_APPLIED' }>;
+type StatusBlockedEvent = Extract<GameEvent, { type: 'STATUS_BLOCKED' }>;
+type StatusRemovedEvent = Extract<GameEvent, { type: 'STATUS_REMOVED' }>;
 type DoorOpenedEvent = Extract<GameEvent, { type: 'DOOR_OPENED' }>;
 type DoorClosedEvent = Extract<GameEvent, { type: 'DOOR_CLOSED' }>;
 type ActionAppliedEvent = Extract<GameEvent, { type: 'ACTION_APPLIED' }>;
@@ -327,4 +332,33 @@ export function statusBurstForEntity(
     statusType,
     children,
   );
+}
+
+/** Создать узел всплеска частиц. */
+export function particleBurstNode(
+  center: Position,
+  color: number,
+  count: number,
+  children: AnimationNode[] = [],
+): AnimationNode {
+  return {
+    step: { type: 'PARTICLE_BURST', x: center.x, y: center.y, color, count },
+    children,
+  };
+}
+
+/** Создать узел перемещения для события ENTITY_DISPLACED. */
+export function displacementMoveNode(
+  event: EntityDisplacedEvent,
+  children: AnimationNode[],
+): AnimationNode {
+  return {
+    step: {
+      type: 'MOVE',
+      entityId: event.entityId,
+      from: event.from,
+      to: event.to,
+    },
+    children,
+  };
 }

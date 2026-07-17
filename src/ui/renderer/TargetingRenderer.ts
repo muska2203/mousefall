@@ -93,7 +93,7 @@ export class TargetingRenderer {
       this.drawPathLine(
         input.highlightedPath,
         color,
-        { x: input.state.player.x, y: input.state.player.y },
+        { x: input.displayState.player.x, y: input.displayState.player.y },
       );
 
       // Отметки тайлов, на которых закончится ход персонажа.
@@ -101,7 +101,7 @@ export class TargetingRenderer {
       for (const idx of turnEndIndices) {
         const pos = input.highlightedPath[idx]!;
         const prev = idx === 0
-          ? { x: input.state.player.x, y: input.state.player.y }
+          ? { x: input.displayState.player.x, y: input.displayState.player.y }
           : input.highlightedPath[idx - 1]!;
         const next = idx < input.highlightedPath.length - 1
           ? input.highlightedPath[idx + 1] ?? null

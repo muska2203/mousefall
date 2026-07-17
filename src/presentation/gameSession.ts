@@ -14,13 +14,17 @@
  */
 
 import { t } from '@i18n/t';
-import type {GameState, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, GameAction, FloorItemContainerEntity, DoorEntity} from '@simulation/types';
+import type {GameState, GameEvent, RuleTriggeredEvent, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, GameAction, ExecutionNode, FloorItemContainerEntity, DoorEntity} from '@simulation/types';
 import {GameSimulation} from '@simulation/simulation';
 import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
 import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel, AIPreparedIntentViewModel, PresentationIntent, HighlightedPathTargetKind, GameplayTag} from './types';
 import {toPresentationIntent} from './types';
+import type { DisplayState, DisplayPatch } from './displayState/types';
+import { buildDisplayState, applyPatches, applyPatch } from './displayState/builder';
+import { resyncDisplayState } from './displayState/sync';
+import { buildPresentationPlan } from './displayState/planner';
 import {
   getAllLocalizedPlayerTemplates,
   tryGetPlayerTemplate,
@@ -35,7 +39,7 @@ import {
 import type { Locale } from '@content/texts/lookup';
 
 import {buildAnimationTree} from './animation';
-import {extractEvents, gameEventToLog} from './logBuilder';
+import {extractEventsFromPlan} from './logBuilder';
 import {extractToasts, errorCodeToToast} from './toastBuilder';
 import {ToastBuffer} from './toastBuffer';
 import type {ToastItem} from './types';
@@ -148,6 +152,8 @@ export class GameSession {
   private autoPath = new AutoPathController();
   private listeners = new Set<() => void>();
   private viewModelCache: GameViewModel | null = null;
+  /** Минимальная модель состояния поля, обновляемая патчами по мере анимаций. */
+  private displayState: DisplayState | null = null;
   /** Монотонный счётчик партий анимаций. Инкрементируется при каждом dispatch, порождающем анимации. */
   private animationBatchId = 0;
   /** Защита от бесконечного цикла пустых фаз в step(). */
@@ -221,6 +227,7 @@ export class GameSession {
   private buildRenderInput(state: Readonly<GameState>): RenderInput {
     const locale = this.locale;
     const player = state.player;
+    const displayState = this.displayState ?? resyncDisplayState(state);
     const equipment: EquipmentSnapshot = {
       weaponId: player.equippedWeaponId,
       armorId: player.equippedArmorId,
@@ -409,10 +416,10 @@ export class GameSession {
       .sort(compareInventoryItems);
 
     const statusEffectsByEntity = new Map<string, readonly StatusEffect[]>();
-    statusEffectsByEntity.set(player.id, sortStatusEffects(player.statusEffects));
-    for (const entity of state.entities.values()) {
-      if ('statusEffects' in entity && entity.statusEffects.length > 0) {
-        statusEffectsByEntity.set(entity.id, sortStatusEffects(entity.statusEffects));
+    statusEffectsByEntity.set(displayState.player.id, sortStatusEffects(displayState.player.statusEffects ?? []));
+    for (const entity of displayState.entities.values()) {
+      if ((entity.statusEffects?.length ?? 0) > 0) {
+        statusEffectsByEntity.set(entity.id, sortStatusEffects(entity.statusEffects ?? []));
       }
     }
 
@@ -485,6 +492,7 @@ export class GameSession {
 
     return {
       state,
+      displayState,
       highlightedPath,
       highlightedPathCommitted: this.autoPath.isCommitted(),
       highlightedPathTargetKind: this.autoPath.isCommitted()
@@ -870,6 +878,7 @@ export class GameSession {
   enterCharacterCreation(): void {
     this.mode = 'characterCreation';
     this.simulation = null;
+    this.displayState = null;
     this.lastResult = null;
     this.animation.phase = 'idle';
     this.clearLogs();
@@ -903,6 +912,7 @@ export class GameSession {
       itemPool: ['health_potion'],
     };
     this.simulation = GameSimulation.createNewGame(seed, config, defaultMapParams, this.debugEnabled);
+    this.displayState = resyncDisplayState(this.simulation.getState());
     this.mode = 'playing';
     this.lastResult = null;
     this.animation.phase = 'idle';
@@ -923,6 +933,7 @@ export class GameSession {
     this.autoPath.cancel();
     this.suppressNextFieldClick = false;
     this.simulation = GameSimulation.loadSavedGame(state, this.debugEnabled);
+    this.displayState = resyncDisplayState(this.simulation.getState());
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
     this.animation.phase = this.mode === 'playing' ? 'idle' : 'gameOver';
@@ -1387,17 +1398,30 @@ export class GameSession {
   private dispatchAction(action: GameAction): SimulationResult {
     const result = this.simulation!.dispatch(action);
 
+    // В debug-режиме выводим действие, дерево событий и срабатывания правил в консоль.
+    if (this.debugEnabled) {
+      console.log('[GameSession] dispatch action:', action);
+      this.logDebugSimulationResult(result);
+    }
+
     if (result.success && result.stateChanged) {
       const state = this.simulation!.getState();
-      const events = extractEvents(result, this.debugEnabled);
-      this.logs.append(state, events, this.locale, this.debugEnabled);
+      const plan = buildPresentationPlan(result, state);
+      const events = extractEventsFromPlan(plan);
+      this.logs.append(state, events, this.locale);
       this.logs.logs = this.logs.logs.slice(-30);
 
-      // Строим дерево анимаций из дерева событий
+      // Строим дерево анимаций из плана презентации
       const animations = buildAnimationTree(result, state);
       if (animations.length > 0) {
         this.animation.phase = 'animating';
         this.animationBatchId++;
+      }
+
+      // Применяем патчи только если нет анимаций: с анимациями UI применит патчи
+      // по завершении каждого шага через onNodeComplete.
+      if (animations.length === 0) {
+        this.displayState = applyPatches(this.displayState ?? buildDisplayState(state), plan);
       }
     } else if (!result.success) {
       // При неудачном ходе показываем причины отказа и сбрасываем автопуть
@@ -1456,9 +1480,16 @@ export class GameSession {
       const result = this.simulation.step();
       this.lastResult = result;
 
+      // В debug-режиме выводим объект, полученный от simulation.step(), и срабатывания правил.
+      if (this.debugEnabled) {
+        console.log('[GameSession] simulation step result:');
+        this.logDebugSimulationResult(result);
+      }
+
       const state = this.simulation.getState();
-      const events = extractEvents(result, this.debugEnabled);
-      this.logs.append(state, events, this.locale, this.debugEnabled);
+      const plan = buildPresentationPlan(result, state);
+      const events = extractEventsFromPlan(plan);
+      this.logs.append(state, events, this.locale);
       this.logs.logs = this.logs.logs.slice(-30);
 
       const animations = buildAnimationTree(result, state);
@@ -1485,6 +1516,12 @@ export class GameSession {
             `продолжаем до лимита ${this.EMPTY_STEP_LIMIT}`,
           );
         }
+      }
+
+      // Применяем патчи только если нет анимаций: с анимациями UI применит патчи
+      // по завершении каждого шага через onNodeComplete.
+      if (animations.length === 0) {
+        this.displayState = applyPatches(this.displayState ?? buildDisplayState(state), plan);
       }
     }
 
@@ -1614,6 +1651,9 @@ export class GameSession {
     if (hadAnimations) {
       this.animation.phase = 'idle';
       this.lastResult = null; // сбрасываем анимации, чтобы не воспроизводить повторно
+      if (this.simulation) {
+        this.displayState = resyncDisplayState(this.simulation.getState());
+      }
     }
 
     // Автопродолжение зафиксированного автопути.
@@ -1655,6 +1695,27 @@ export class GameSession {
       this.notify();
     }
     return false;
+  }
+
+  /** Применить один патч к DisplayState после завершения анимационного шага.
+   *
+   * UI вызывает этот метод по завершении каждого шага анимации, чтобы
+   * DisplayState оставался синхронизированным с визуальным состоянием. */
+  applyAnimationPatch(patch: DisplayPatch): void {
+    if (!this.displayState) return;
+    this.displayState = applyPatch(this.displayState, patch);
+    this.notify();
+  }
+
+  /** Применить несколько патчей к DisplayState после завершения анимационного шага. */
+  applyAnimationPatches(patches: DisplayPatch[]): void {
+    if (!this.displayState) return;
+    let next = this.displayState;
+    for (const patch of patches) {
+      next = applyPatch(next, patch);
+    }
+    this.displayState = next;
+    this.notify();
   }
 
   /**
@@ -1927,11 +1988,67 @@ export class GameSession {
     this.notify();
   }
 
+  /** Debug: вывести в консоль дерево ExecutionNode и срабатывания правил из SimulationResult. */
+  private logDebugSimulationResult(result: SimulationResult): void {
+    const tree = result.phases.map((phase) => ({
+      side: phase.side,
+      actions: phase.actions.map((node) => this.toDebugExecutionNode(node)),
+    }));
+
+    console.log('[GameSession] Execution tree:', {
+      success: result.success,
+      stateChanged: result.stateChanged,
+      hasMoreSteps: result.hasMoreSteps,
+      phases: tree,
+    });
+
+    const ruleTriggers = this.collectRuleTriggers(result);
+    if (ruleTriggers.length > 0) {
+      console.log('[GameSession] Rule triggers:');
+      for (const trigger of ruleTriggers) {
+        console.log(
+          `  [DEBUG] Сработало правило ${trigger.ruleId} (${trigger.layer}) ` +
+          `→ ${trigger.intents.length} интентов ` +
+          `(trigger: ${trigger.triggerEventType}, owner: ${trigger.ownerEntityId ?? 'world'})`,
+        );
+      }
+    }
+  }
+
+  /** Рекурсивно собрать все RULE_TRIGGERED события из SimulationResult. */
+  private collectRuleTriggers(result: SimulationResult): RuleTriggeredEvent[] {
+    const triggers: RuleTriggeredEvent[] = [];
+    for (const phase of result.phases) {
+      for (const action of phase.actions) {
+        this.walkRuleTriggers(action, triggers);
+      }
+    }
+    return triggers;
+  }
+
+  private walkRuleTriggers(node: ExecutionNode, out: RuleTriggeredEvent[]): void {
+    if (node.event.type === 'RULE_TRIGGERED') {
+      out.push(node.event);
+    }
+    for (const child of node.children) {
+      this.walkRuleTriggers(child, out);
+    }
+  }
+
+  /** Рекурсивно превратить ExecutionNode в плоский объект без ссылки parent. */
+  private toDebugExecutionNode(node: ExecutionNode): { event: GameEvent; children: unknown[] } {
+    return {
+      event: node.event,
+      children: node.children.map((child) => this.toDebugExecutionNode(child)),
+    };
+  }
+
   /** Возврат в главное меню. Уничтожает текущую симуляцию. */
   returnToMenu(): void {
     this.autoPath.cancel();
     this.suppressNextFieldClick = false;
     this.simulation = null;
+    this.displayState = null;
     this.mode = 'mainMenu';
     this.lastResult = null;
     this.animation.phase = 'idle';

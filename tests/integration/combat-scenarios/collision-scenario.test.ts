@@ -14,6 +14,11 @@ import type { PlayerEntity, EnemyEntity, Entity, EntityId, GameState } from '../
 import { loadTestContent, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
 import { rngChance } from '../../../src/utils/rng';
+import { buildPresentationPlan } from '../../../src/presentation/displayState/planner';
+import { buildAnimationTree } from '../../../src/presentation/animation';
+import { extractEvents } from '../../../src/presentation/logBuilder';
+import { resyncDisplayState } from '../../../src/presentation/displayState/sync';
+import type { AnimationNode, AnimationPhase } from '../../../src/presentation/types';
 
 vi.mock('@utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
@@ -51,6 +56,20 @@ function createRat(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
 function withWallAt(state: GameState, x: number, y: number): GameState {
   state.map.tiles[y]![x] = 'wall';
   return state;
+}
+
+function flattenNodes(phases: AnimationPhase[]): AnimationNode[] {
+  const result: AnimationNode[] = [];
+  function visit(nodes: AnimationNode[]) {
+    for (const node of nodes) {
+      result.push(node);
+      visit(node.children);
+    }
+  }
+  for (const phase of phases) {
+    visit(phase.nodes);
+  }
+  return result;
 }
 
 describe('Collision scenario', () => {
@@ -142,5 +161,48 @@ describe('Collision scenario', () => {
     expect(rat2.hp).toBeLessThan(15);
     expect(rat1.statusEffects.some((s) => s.type === 'dazed')).toBe(true);
     expect(rat2.statusEffects.some((s) => s.type === 'dazed')).toBe(true);
+  });
+
+  it('produces ENTITY_COLLIDED events, TILE_SHAKE/PARTICLE_BURST animations and matching DisplayState', () => {
+    const state = withWallAt(makeGameState({ map: makeTestMap() }), 8, 5);
+    const player = createWitcherPlayer();
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    // Делаем клетки врага и стены видимыми.
+    state.visible[5]![6] = true;
+    state.visible[5]![7] = true;
+    state.visible[5]![8] = true;
+
+    const rat = createRat({ x: 7, y: 5 });
+    state.entities.set(rat.id, rat);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    sim.initializeTestTurnState('player', player.id);
+
+    const result = sim.dispatch({
+      type: 'USE_ABILITY',
+      entityId: player.id,
+      abilityId: 'dash',
+      targets: [{ x: 7, y: 5 }],
+    });
+    expect(result.success).toBe(true);
+
+    const events = extractEvents(result);
+    expect(events.some((e) => e.type === 'ENTITY_COLLIDED')).toBe(true);
+
+    const plan = buildPresentationPlan(result, sim.getState());
+    expect(plan.length).toBeGreaterThan(0);
+
+    const phases = buildAnimationTree(result, sim.getState());
+    const stepTypes = new Set(flattenNodes(phases).map((n) => n.step.type));
+    expect(stepTypes.has('TILE_SHAKE')).toBe(true);
+    expect(stepTypes.has('PARTICLE_BURST')).toBe(true);
+    expect(stepTypes.has('STATUS_BURST')).toBe(true);
+
+    const displayState = resyncDisplayState(sim.getState());
+    expect(displayState.entities.get(rat.id)?.hp).toBe(rat.hp);
+    expect(displayState.entities.get(rat.id)?.x).toBe(rat.x);
+    expect(displayState.entities.get(rat.id)?.y).toBe(rat.y);
   });
 });

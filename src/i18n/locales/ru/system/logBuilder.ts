@@ -16,4 +16,9 @@ export const ruLogBuilder = {
   counterattackTriggered: '{{name}} контратакует',
   abilityPrepared: '{{name}} готовит {{ability}}',
   abilityPreparedCancelled: '{{name}} прервал подготовку',
+  statusBlocked: '{{name}} не получил {{status}}: заблокировано {{blockedBy}}',
+  statusRemoved: '{{name}} потерял {{status}}',
+  entityCollided: '{{name}} врезался',
+  entityDisplaced: '{{name}} оттолкнут',
+  entityMissed: '{{attacker}} промахнулся по {{target}}',
 } as const satisfies SystemLogBuilderTranslations;

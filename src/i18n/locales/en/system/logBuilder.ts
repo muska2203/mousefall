@@ -16,4 +16,9 @@ export const enLogBuilder = {
   counterattackTriggered: '{{name}} counterattacks',
   abilityPrepared: '{{name}} is preparing {{ability}}',
   abilityPreparedCancelled: '{{name}} interrupted preparation',
+  statusBlocked: '{{name}} did not gain {{status}}: blocked by {{blockedBy}}',
+  statusRemoved: '{{name}} lost {{status}}',
+  entityCollided: '{{name}} collided',
+  entityDisplaced: '{{name}} was pushed',
+  entityMissed: '{{attacker}} missed {{target}}',
 } as const satisfies SystemLogBuilderTranslations;

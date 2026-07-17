@@ -9,8 +9,9 @@ export default defineConfig({
     exclude: ['tests/perf/**', 'node_modules/**', 'dist/**'],
     coverage: {
       provider: 'v8',
-      // Измерять покрытие только для слоя симуляции
-      include: ['src/simulation/**', 'src/utils/**'],
+      // Измерять покрытие для слоя симуляции и презентации, так как фаза 05.5
+      // добавляет модули в src/presentation/.
+      include: ['src/simulation/**', 'src/utils/**', 'src/presentation/**'],
       exclude: ['src/ui/**', 'src/renderer/**', 'src/store/**'],
       reporter: ['text', 'html'],
     },

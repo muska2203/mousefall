@@ -255,6 +255,13 @@ function evaluateCondition(
     case 'hasTag': {
       return hasTag(ctx.eventTags, condition.tag);
     }
+    case 'eventRole': {
+      // Проверяем, находится ли владелец правила (self) на указанной стороне события.
+      if (selfId === null) return false;
+      if (condition.role === 'source') return selfId === ctx.sourceEntityId;
+      if (condition.role === 'target') return selfId === ctx.targetEntityId;
+      return false;
+    }
     case 'and':
       return condition.conditions.every((c) => evaluateCondition(c, ctx, selfId, candidateId));
     case 'or':

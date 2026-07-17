@@ -8,7 +8,7 @@
 
 import {useRef, useEffect, useState} from 'react';
 import { useTranslation } from '@i18n/hooks';
-import type {RenderInput, TurnSide, HotbarItemViewModel} from '@presentation/types';
+import type {RenderInput, TurnSide, HotbarItemViewModel, AnimationNode} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {Panel} from './Panel';
 import {Hotbar} from './Hotbar';
@@ -35,6 +35,7 @@ interface Props {
   renderInput: RenderInput | null;
   onEndTurn: () => void;
   onAnimationsComplete: () => void;
+  onAnimationNodeComplete?: (node: AnimationNode) => void;
   onZoomDelta: (delta: number) => void;
   onMouseMove?: (pos: {x: number; y: number}) => void;
   onMouseClick?: (pos: {x: number; y: number}) => void;
@@ -52,6 +53,7 @@ export function GameField({
   renderInput,
   onEndTurn,
   onAnimationsComplete,
+  onAnimationNodeComplete,
   onZoomDelta,
   onMouseMove,
   onMouseClick,
@@ -75,6 +77,7 @@ export function GameField({
   const sequencerRef = useRef<AnimationSequencer | null>(null);
   const inputRef = useRef(renderInput);
   const onCompleteRef = useRef(onAnimationsComplete);
+  const onAnimationNodeCompleteRef = useRef(onAnimationNodeComplete);
   const onMouseMoveRef = useRef(onMouseMove);
   const lastMouseRef = useRef<{x: number; y: number; over: boolean}>({x: 0, y: 0, over: false});
   const lastSentTileRef = useRef<{x: number; y: number} | null>(null);
@@ -86,6 +89,7 @@ export function GameField({
   // Синхронизируем ref'ы для использования в ResizeObserver и callbacks
   inputRef.current = renderInput;
   onCompleteRef.current = onAnimationsComplete;
+  onAnimationNodeCompleteRef.current = onAnimationNodeComplete;
 
   // Монтирование PixiJS и sequencer
   useEffect(() => {
@@ -242,6 +246,7 @@ export function GameField({
         setAnimationPhaseSide(animations[0]?.side ?? null);
         const result = sequencerRef.current.run(animations, {
           onPhaseStart: (side) => setAnimationPhaseSide(side),
+          onNodeComplete: (node) => onAnimationNodeCompleteRef.current?.(node),
         });
         result.blockingDone.then(() => {
           setAnimationPhaseSide(null);

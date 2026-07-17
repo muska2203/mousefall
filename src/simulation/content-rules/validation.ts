@@ -278,6 +278,16 @@ function validateCondition(
         });
       }
       break;
+    case 'eventRole':
+      if (condition.role !== 'source' && condition.role !== 'target') {
+        errors.push({
+          path: `rule.${rule.id}.conditions[${index}]`,
+          ruleId: rule.id,
+          field: 'condition.role',
+          problem: 'Условие eventRole должно иметь значение "source" или "target"',
+        });
+      }
+      break;
     case 'and':
     case 'or':
       validateRuleConditions(rule, condition.conditions, errors);

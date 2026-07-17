@@ -1,5 +1,9 @@
 /**
  * Builder для события ENTITY_DAMAGED.
+ *
+ * Возвращает DAMAGE-узел и, для целей с HP, оборачивает детей
+ * (например, смерть) в HP_CHANGE, чтобы полоска HP анимировалась
+ * одновременно с всплывающим уроном.
  */
 
 import type { GameEvent, GameState } from '@simulation/types';

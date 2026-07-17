@@ -13,9 +13,14 @@ import { GameSimulation } from '../../../src/simulation/simulation';
 import { createStartingEquipment } from '../../../src/simulation/systems/starting-equipment';
 import { rebuildActiveRules } from '../../../src/simulation/systems/rules/active-rule-lifecycle';
 import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixtures/gameState';
-import type { PlayerEntity, EnemyEntity, Entity, EntityId } from '../../../src/simulation/types';
+import type { PlayerEntity, EnemyEntity } from '../../../src/simulation/types';
 import { loadTestContent, setupCombatScenario } from './helpers';
 import { rngChance } from '../../../src/utils/rng';
+import { buildPresentationPlan } from '../../../src/presentation/displayState/planner';
+import { buildAnimationTree } from '../../../src/presentation/animation';
+import { extractEvents } from '../../../src/presentation/logBuilder';
+import { resyncDisplayState } from '../../../src/presentation/displayState/sync';
+import type { AnimationNode, AnimationPhase } from '../../../src/presentation/types';
 
 vi.mock('@utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
@@ -39,8 +44,8 @@ function createRat(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
   return makeEnemy({
     id: `rat_${overrides.x ?? 0}_${overrides.y ?? 0}`,
     templateId: 'cat_small',
-    hp: 25,
-    maxHp: 25,
+    hp: 12,
+    maxHp: 12,
     ap: 2,
     maxAp: 2,
     baseStats: { str: 1, dex: 3, int: 0, vit: 0 },
@@ -48,6 +53,20 @@ function createRat(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     equippedWeaponId: 'common_splinter_blade',
     ...overrides,
   });
+}
+
+function flattenNodes(phases: AnimationPhase[]): AnimationNode[] {
+  const result: AnimationNode[] = [];
+  function visit(nodes: AnimationNode[]) {
+    for (const node of nodes) {
+      result.push(node);
+      visit(node.children);
+    }
+  }
+  for (const phase of phases) {
+    visit(phase.nodes);
+  }
+  return result;
 }
 
 describe('Poison + counterattack scenario', () => {
@@ -124,5 +143,53 @@ describe('Poison + counterattack scenario', () => {
     expect(rat.isAlive).toBe(false);
     expect(state.player.hp).toBeGreaterThan(0);
     expect(state.phase).toBe('playing');
+  });
+
+  it('produces poison and counterattack events, animations and matching DisplayState', () => {
+    const state = makeGameState({ map: makeTestMap() });
+    const player = createWitcherPlayer();
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    createStartingEquipment(state, player, ['common_venom_dagger']);
+
+    const rat = createRat({ x: 6, y: 5 });
+    rat.statusEffects.push({
+      type: 'counterattack',
+      duration: 3,
+      value: 0,
+      statModifiers: null,
+      instanceId: 'counter_test',
+    });
+    rebuildActiveRules(rat);
+    state.entities.set(rat.id, rat);
+
+    // Делаем клетку врага видимой.
+    state.visible[5]![6] = true;
+    state.explored[5]![6] = true;
+
+    const sim = GameSimulation.loadSavedGame(state);
+    sim.initializeTestTurnState('player', player.id);
+
+    const result = sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
+    expect(result.success).toBe(true);
+
+    const events = extractEvents(result);
+    expect(events.some((e) => e.type === 'STATUS_APPLIED' && (e as any).effect.type === 'poisoned')).toBe(true);
+    expect(events.some((e) => e.type === 'COUNTER_ATTACK_APPLIED')).toBe(true);
+
+    const plan = buildPresentationPlan(result, sim.getState());
+    expect(plan.length).toBeGreaterThan(0);
+
+    const phases = buildAnimationTree(result, sim.getState());
+    const stepTypes = new Set(flattenNodes(phases).map((n) => n.step.type));
+    expect(stepTypes.has('ATTACK')).toBe(true);
+    expect(stepTypes.has('DAMAGE')).toBe(true);
+    expect(stepTypes.has('STATUS_BURST')).toBe(true);
+
+    const displayState = resyncDisplayState(sim.getState());
+    const displayRat = displayState.entities.get(rat.id);
+    expect(displayRat?.statusEffects?.some((s) => s.type === 'poisoned')).toBe(true);
+    expect(displayRat?.hp).toBe(rat.hp);
   });
 });

@@ -157,4 +157,23 @@ describe('AnimationSequencer', () => {
     expect(order).toEqual(['parent']);
     expect(childExec.execute).not.toHaveBeenCalled();
   });
+
+  it('calls onNodeComplete once for each completed node', async () => {
+    const parentExec = makeMockExecutor('ATTACK', async () => {});
+    const childExec = makeMockExecutor('DEATH', async () => {});
+    const sequencer = new AnimationSequencer([parentExec, childExec], mockContext);
+
+    const child = makeNode({ type: 'DEATH', entityId: 'e1' });
+    const parent = makeNode({ type: 'ATTACK', attackerId: 'p1', dx: 1, dy: 0 }, [child]);
+
+    const completedNodes: AnimationNode[] = [];
+    const result = sequencer.run([makePhase([parent])], {
+      onNodeComplete: (node) => completedNodes.push(node),
+    });
+    await result.allDone;
+
+    expect(completedNodes.length).toBe(2);
+    expect(completedNodes[0]).toBe(parent);
+    expect(completedNodes[1]).toBe(child);
+  });
 });

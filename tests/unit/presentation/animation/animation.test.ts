@@ -70,27 +70,7 @@ describe('buildAnimationTree', () => {
     expect(tree).toHaveLength(1);
     expect(tree[0]!.nodes).toHaveLength(1);
     expect(tree[0]!.nodes[0]!.step.type).toBe('DAMAGE');
-  });
-
-  it('wraps HP_CHANGE inside DAMAGE for damaged enemy with HP', () => {
-    const state = makeMockState();
-    state.entities.set('enemy1', { id: 'enemy1', x: 3, y: 3, hp: 7, maxHp: 12 } as any);
-
-    const node = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } });
-    const result = makeResult([node]);
-    const tree = buildAnimationTree(result, state);
-
-    expect(tree).toHaveLength(1);
-    expect(tree[0]!.nodes).toHaveLength(1);
-    expect(tree[0]!.nodes[0]!.step.type).toBe('DAMAGE');
-    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
-    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('HP_CHANGE');
-
-    const hpChange = tree[0]!.nodes[0]!.children[0]!.step as any;
-    expect(hpChange.entityId).toBe('enemy1');
-    expect(hpChange.fromHp).toBe(12);
-    expect(hpChange.toHp).toBe(7);
-    expect(hpChange.maxHp).toBe(12);
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(0);
   });
 
   it('preserves parent-child structure', () => {
@@ -116,6 +96,16 @@ describe('buildAnimationTree', () => {
     expect(tree).toHaveLength(1);
     expect(tree[0]!.nodes).toHaveLength(1);
     expect(tree[0]!.nodes[0]!.step.type).toBe('MOVE');
+  });
+
+  it('attaches DisplayPatch to root AnimationNodes', () => {
+    const node = makeExecNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } });
+    const result = makeResult([node]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.patch).toBeDefined();
+    expect(tree[0]!.nodes[0]!.patch!.type).toBe('ENTITY_MOVED');
   });
 
   it('converts ITEM_DROPPED to ITEM_DROP step with from and position', () => {

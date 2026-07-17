@@ -17,7 +17,7 @@ export class TileRenderer {
   private sprites = new Map<string, Sprite>();
 
   update(input: RenderInput, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): void {
-    const map = input.state.map;
+    const map = input.displayState.map;
     const overrender = 1;
     const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
     const startRow = Math.floor(cameraY / TILE_SIZE) - overrender;
@@ -34,7 +34,7 @@ export class TileRenderer {
         if (!tile) continue;
         const key = `${x},${y}`;
         visibleKeys.add(key);
-        const path = getTileSprite(tile);
+        const path = getTileSprite(tile.type);
         texturePaths.set(path, path);
       }
     }
@@ -46,7 +46,7 @@ export class TileRenderer {
       const y = parseInt(sy!, 10);
       const tile = map.tiles[y]?.[x];
       if (!tile) continue;
-      const path = getTileSprite(tile);
+      const path = getTileSprite(tile.type);
       const texture = getTextureSync(path) ?? Texture.EMPTY;
 
       let sprite = this.sprites.get(key);

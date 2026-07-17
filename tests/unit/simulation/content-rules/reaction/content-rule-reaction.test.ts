@@ -1148,6 +1148,34 @@ describe('runContentRuleReactions', () => {
       expect(intents).toHaveLength(0);
     });
 
+    it('counterattack_trigger не срабатывает, когда владелец является источником урона', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        statusEffects: [{ type: 'counterattack', duration: 2, value: 0, statModifiers: null }],
+        activeRules: [
+          makeCounterattackActiveRule(counterattackTriggerRule, 'player'),
+          makeCounterattackActiveRule(counterattackDamageRule, 'player'),
+        ],
+      });
+      const enemy = makeEnemy({ id: 'enemy_target', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents.filter((intent) => intent.type === 'COUNTER_ATTACK')).toHaveLength(0);
+    });
+
     it('counterattack_damage создаёт DAMAGE-интент с уроном из события', () => {
       const player = makePlayer({
         id: 'player',

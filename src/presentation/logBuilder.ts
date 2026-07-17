@@ -11,34 +11,50 @@
  */
 
 import { t } from '@i18n/t';
-import type {GameEvent, GameState, SimulationResult, TurnSide, ExecutionNode} from '@simulation/types';
+import type {GameEvent, GameState, SimulationResult, TurnSide, ExecutionNode, StatusEffectType} from '@simulation/types';
 import { getLocalizedItem, getLocalizedEntity, getLocalizedPlayerTemplate, tryGetLocalizedAbility } from '@content/registry';
 import type { Locale } from '@content/texts/lookup';
 
 
 
-export function extractEvents(result: SimulationResult, debug: boolean = false): GameEvent[] {
+export function extractEvents(result: SimulationResult): GameEvent[] {
   const events: GameEvent[] = [];
   for (const phase of result.phases) {
     for (const action of phase.actions) {
-      walkExecutionTree(action, events, phase.side, debug);
+      walkExecutionTree(action, events, phase.side);
     }
   }
   return events;
 }
 
-function walkExecutionTree(node: ExecutionNode, out: GameEvent[], side: TurnSide, debug: boolean): void {
+export function extractEventsFromPlan(
+  plan: Array<{ event: GameEvent; side: TurnSide }>,
+): GameEvent[] {
+  const events: GameEvent[] = [];
+  for (const node of plan) {
+    if (
+      node.side === 'player' ||
+      node.side === 'status_tick' ||
+      node.side === 'environment' ||
+      isEventRelevantToPlayer(node.event)
+    ) {
+      events.push(node.event);
+    }
+  }
+  return events;
+}
+
+function walkExecutionTree(node: ExecutionNode, out: GameEvent[], side: TurnSide): void {
   if (
     side === 'player' ||
     side === 'status_tick' ||
     side === 'environment' ||
-    isEventRelevantToPlayer(node.event) ||
-    (debug && node.event.type === 'RULE_TRIGGERED')
+    isEventRelevantToPlayer(node.event)
   ) {
     out.push(node.event);
   }
   for (const child of node.children) {
-    walkExecutionTree(child, out, side, debug);
+    walkExecutionTree(child, out, side);
   }
 }
 
@@ -57,7 +73,6 @@ export function gameEventToLog(
   state: GameState,
   event: GameEvent,
   locale: Locale,
-  debug: boolean = false,
 ): { text: string; variant?: 'loot' | 'good' | 'bad' | 'info' } | null {
   switch (event.type) {
     case 'ENTITY_MOVED': {
@@ -114,16 +129,75 @@ export function gameEventToLog(
       const abilityName = ability?.name ?? event.abilityId;
       return { text: t('system.logBuilder.abilityPreparedCancelled', { name, ability: abilityName }), variant: 'info' };
     }
-    case 'RULE_TRIGGERED': {
-      if (!debug) return null;
+    case 'STATUS_BLOCKED': {
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      const status = getStatusDisplayName(event.statusType, locale);
+      const blockedBy = getStatusDisplayName(event.blockedBy, locale);
       return {
-        text: `[DEBUG] Сработало правило ${event.ruleId} (${event.layer}) → ${event.intents.length} интентов`,
+        text: t('system.logBuilder.statusBlocked', { name, status, blockedBy }),
         variant: 'info',
       };
+    }
+    case 'STATUS_REMOVED': {
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      const status = getStatusDisplayName(event.effectType, locale);
+      return {
+        text: t('system.logBuilder.statusRemoved', { name, status }),
+        variant: 'info',
+      };
+    }
+    case 'ENTITY_COLLIDED': {
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      return {
+        text: t('system.logBuilder.entityCollided', { name }),
+        variant: 'info',
+      };
+    }
+    case 'ENTITY_DISPLACED': {
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      return {
+        text: t('system.logBuilder.entityDisplaced', { name }),
+        variant: 'info',
+      };
+    }
+    case 'ENTITY_MISSED': {
+      const attacker = getEntityDisplayName(state, event.attackerId, locale);
+      const target = getEntityDisplayName(state, event.targetId, locale);
+      return {
+        text: t('system.logBuilder.entityMissed', { attacker, target }),
+        variant: 'info',
+      };
+    }
+    case 'RULE_TRIGGERED': {
+      // RULE_TRIGGERED — observability-событие для консольного дебага, не для игрового лога.
+      return null;
     }
     default:
       return null;
   }
+}
+
+function getStatusDisplayName(statusType: StatusEffectType, locale: Locale): string {
+  const keyMap: Partial<Record<StatusEffectType, string>> = {
+    poisoned: 'system.gameSession.effectPoisoned',
+    burning: 'system.gameSession.effectBurning',
+    frozen: 'system.gameSession.effectFrozen',
+    stunned: 'system.gameSession.effectStunned',
+    regenerating: 'system.gameSession.effectRegenerating',
+    counterattack: 'system.gameSession.effectCounterattack',
+    silenced: 'system.gameSession.effectSilenced',
+  };
+
+  const key = keyMap[statusType];
+  if (key) {
+    const actualKey = key.slice(key.indexOf('.') + 1);
+    const translated = t(key);
+    if (translated !== actualKey) {
+      return translated;
+    }
+  }
+
+  return statusType;
 }
 
 function getEntityDisplayName(state: GameState, entityId: string, locale: Locale): string {

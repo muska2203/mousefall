@@ -9,6 +9,7 @@
 
 import {useCallback, useEffect, useSyncExternalStore, useState} from 'react';
 import { useTranslation } from '@i18n/hooks';
+import type {AnimationNode} from '@presentation/types';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
 
 import {KEY_MAP, INTERACTIVE_TAGS} from '@ui/input/keyboardMap';
@@ -76,6 +77,18 @@ export function GameScreen({session, onModeChange}: Props) {
     session.dispatch({type: 'END_TURN', entityId: playerId});
     onModeChange(session.getMode());
   }, [session, onModeChange, isInputBlocked]);
+
+  const handleAnimationNodeComplete = useCallback(
+    (node: AnimationNode) => {
+      if (node.patch) {
+        session.applyAnimationPatch(node.patch);
+      }
+      if (node.patches && node.patches.length > 0) {
+        session.applyAnimationPatches(node.patches);
+      }
+    },
+    [session],
+  );
 
   const handleInteract = useCallback(() => {
     if (session.getMode() !== 'playing') return;
@@ -382,6 +395,7 @@ export function GameScreen({session, onModeChange}: Props) {
         renderInput={renderInput}
         onEndTurn={handleEndTurn}
         onAnimationsComplete={() => session.onAnimationsComplete()}
+        onAnimationNodeComplete={handleAnimationNodeComplete}
         onZoomDelta={handleZoom}
         onMouseMove={handleMouseMove}
         onMouseClick={handleMouseClick}

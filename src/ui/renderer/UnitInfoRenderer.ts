@@ -57,39 +57,16 @@ export class UnitInfoRenderer {
   private widgets = new Map<string, UnitInfoWidget>();
   private hpChangeAnimations = new Map<string, ActiveAnimation>();
 
-  /** Снимок статус-эффектов на момент последнего idle-кадра.
-   *  Используется во время анимаций, чтобы новые эффекты (например, burning)
-   *  не появлялись в виджете раньше завершения анимации. */
-  private lastIdleStatusEffects = new Map<string, readonly StatusEffect[]>();
-
-  /** Снимок AI-режима на момент последнего idle-кадра.
-   *  Аналогично lastIdleStatusEffects: не меняем иконку режима посреди анимации. */
-  private lastIdleAIMode = new Map<string, AIMode | null>();
-
   constructor() {
     this.container.sortableChildren = true;
   }
 
-  /** Обновить виджеты для всех сущностей с HP. */
+  /** Обновить виджеты для всех сущностей с HP на основе DisplayState. */
   update(input: RenderInput, getSprite: (id: string) => Sprite | undefined): void {
-    const state = input.state;
+    const displayState = input.displayState;
     const seen = new Set<string>();
 
-    // Во время анимаций показываем эффекты и главный статус из последнего idle-кадра,
-    // чтобы спрайты статусов не появлялись до завершения анимации.
-    if (input.phase !== 'animating') {
-      this.lastIdleStatusEffects = this.cloneStatusEffects(input.statusEffectsByEntity);
-      this.lastIdleAIMode = this.cloneAIMode(input.aiModeByEntity);
-    }
-    const statusEffectsByEntity = input.phase === 'animating'
-      ? this.lastIdleStatusEffects
-      : input.statusEffectsByEntity;
-    const aiModeByEntity = input.phase === 'animating'
-      ? this.lastIdleAIMode
-      : input.aiModeByEntity;
-
-    const processEntity = (id: string, entity: unknown) => {
-      if (!hasHp(entity)) return;
+    const processEntity = (id: string, entity: HpEntity) => {
       seen.add(id);
 
       const sprite = getSprite(id);
@@ -102,10 +79,10 @@ export class UnitInfoRenderer {
         this.container.addChild(widget.container);
       }
 
-      const effects = statusEffectsByEntity.get(id) ?? [];
+      const effects = input.statusEffectsByEntity.get(id) ?? [];
       this.updateEffectSlots(widget, effects);
 
-      const aiMode = aiModeByEntity.get(id) ?? null;
+      const aiMode = input.aiModeByEntity.get(id) ?? null;
       const preparedAbility = aiMode === 'prepared'
         ? (input.aiPreparedIntents.find((intent) => intent.entityId === id) ?? null)
         : null;
@@ -122,9 +99,14 @@ export class UnitInfoRenderer {
       this.syncWidgetPosition(widget, sprite);
     };
 
-    processEntity(state.player.id, state.player);
-    for (const entity of state.entities.values()) {
-      processEntity(entity.id, entity);
+    const player = displayState.player;
+    if (hasHp(player)) {
+      processEntity(player.id, player);
+    }
+    for (const entity of displayState.entities.values()) {
+      if (hasHp(entity)) {
+        processEntity(entity.id, entity);
+      }
     }
 
     // Удаляем виджеты для исчезнувших сущностей
@@ -145,7 +127,11 @@ export class UnitInfoRenderer {
     }
   }
 
-  /** Анимация изменения HP: плавное изменение заполнения полоски. */
+  /** Анимация изменения HP: плавное изменение заполнения полоски.
+   *  Несколько вызовов для одной сущности не выстраиваются в очередь:
+   *  каждый новый запрос прерывает текущую анимацию и стартует от текущего
+   *  визуального значения. Это предотвращает рывки и «перепрыгивание» полоски
+   *  при нескольких damage-нодах, попадающих в одну сущность. */
   animateHpChange(entityId: string, fromHp: number, toHp: number, maxHp: number, config: AnimationConfigEntry): Promise<void> {
     return new Promise((resolve) => {
       const widget = this.widgets.get(entityId);
@@ -209,18 +195,6 @@ export class UnitInfoRenderer {
       anim.onComplete();
     }
     this.hpChangeAnimations.clear();
-  }
-
-  private cloneStatusEffects(source: Map<string, readonly StatusEffect[]>): Map<string, readonly StatusEffect[]> {
-    const clone = new Map<string, readonly StatusEffect[]>();
-    for (const [id, effects] of source) {
-      clone.set(id, [...effects]);
-    }
-    return clone;
-  }
-
-  private cloneAIMode(source: Map<string, AIMode | null>): Map<string, AIMode | null> {
-    return new Map<string, AIMode | null>(source);
   }
 
   /** Проверить, есть ли в запланированных анимациях шаг HP_CHANGE для сущности. */

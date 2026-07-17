@@ -164,7 +164,9 @@ describe('updateFOV', () => {
     expect((events[0] as any).newlyVisible.length).toBeGreaterThan(0);
 
     const events2 = updateFOV(state);
-    expect(events2.length).toBe(0);
+    expect(events2.length).toBe(1);
+    expect(events2[0]!.type).toBe('FOG_UPDATED');
+    expect((events2[0] as any).newlyVisible.length).toBe(0);
   });
 
   it('сбрасывает visible, но не explored при обновлении', () => {

@@ -1,21 +1,18 @@
 /**
- * Построитель дерева анимаций из дерева ExecutionNode.
+ * Построитель дерева анимаций из плоского списка PresentationNode.
  *
  * Ответственность:
- * - Обход дерева событий SimulationResult.
- * - Преобразование GameEvent → AnimationNode (дерево).
- * - Цепочка узлов одной сущности и разбиение фазы окружения по актёрам.
+ * - Группировка корневых PresentationNode по фазам (стороне хода).
+ * - Сохранение логики chainNodesByEntity и splitByActor.
  *
  * Правила:
- * - Не содержит игровой логики.
- * - Только перевод событий в декларативные анимации.
- * - Неанимированные события пропускаются; их дети поднимаются как сиблинги к ближайшему анимированному предку.
+ * - FOV-фильтрация выполняется на этапе построения PresentationNode (planner).
+ * - Этот модуль работает только с уже отфильтрованными узлами.
  */
 
-import type { SimulationResult, GameState, TurnSide, ExecutionNode } from '@simulation/types';
+import type { GameState, TurnSide } from '@simulation/types';
 import type { AnimationNode, AnimationPhase, Position } from '@presentation/types';
-import { filterByFOV } from '@presentation/fogFilter';
-import { getAnimationBuilder } from './registry';
+import type { PresentationNode } from '@presentation/displayState/types';
 
 /** Возвращает ID сущности, которой принадлежит анимационный узел, или null. */
 function getNodeEntityId(node: AnimationNode): string | null {
@@ -109,49 +106,45 @@ function splitByActor(nodes: AnimationNode[]): AnimationNode[][] {
   return groups.map((group) => chainNodesByEntity(group));
 }
 
-/** Рекурсивно конвертирует ExecutionNode в AnimationNode[].
- *  Если текущее событие не маппится в шаг — узел "растворяется",
- *  а его дети поднимаются как сиблинги к ближайшему анимированному предку. */
-function convertExecutionNode(node: ExecutionNode, state: GameState): AnimationNode[] {
-  const builder = getAnimationBuilder(node.event.type);
-
-  const childNodes: AnimationNode[] = [];
-  for (const child of node.children) {
-    childNodes.push(...convertExecutionNode(child, state));
-  }
-
-  if (builder) {
-    const nodes = builder(node.event, childNodes, state);
-    if (nodes) return nodes;
-  }
-
-  return childNodes;
-}
-
-/** Построить дерево анимаций из SimulationResult. */
-export function buildAnimationTree(result: SimulationResult, state: GameState): AnimationPhase[] {
-  const filtered = filterByFOV(result, state);
+/** Построить дерево анимаций из плоского списка PresentationNode.
+ *
+ *  Использует только корневые узлы (parent === null) и группирует их по side.
+ *  Внутри каждой фазы применяется chainNodesByEntity и splitByActor. */
+export function buildAnimationTree(nodes: PresentationNode[], _state: GameState): AnimationPhase[] {
   const phases: AnimationPhase[] = [];
+  const phaseOrder: TurnSide[] = [];
+  const phaseRoots = new Map<TurnSide, AnimationNode[]>();
 
-  for (const phase of filtered.phases) {
-    const phaseNodes: AnimationNode[] = [];
-    for (const action of phase.actions) {
-      phaseNodes.push(...convertExecutionNode(action, state));
+  for (const node of nodes) {
+    if (node.parent !== null) continue;
+    if (!node.animations || node.animations.length === 0) continue;
+
+    if (!phaseOrder.includes(node.side)) {
+      phaseOrder.push(node.side);
     }
 
-    const chainedNodes = chainNodesByEntity(phaseNodes);
+    const roots = phaseRoots.get(node.side) ?? [];
+    roots.push(...node.animations);
+    phaseRoots.set(node.side, roots);
+  }
+
+  for (const side of phaseOrder) {
+    const roots = phaseRoots.get(side) ?? [];
+    if (roots.length === 0) continue;
+
+    const chainedNodes = chainNodesByEntity(roots);
     if (chainedNodes.length === 0) continue;
 
     // Ходы не-игроковских фракций разбиваем на подфазы по актёрам, чтобы
     // акторы ходили последовательно друг за другом, а не параллельно.
     // Служебные фазы ('status_tick', 'round_recovery', 'environment') идут как обычные фазы.
-    if (phase.side !== 'player' && phase.side !== 'status_tick' && phase.side !== 'round_recovery' && phase.side !== 'environment') {
+    if (side !== 'player' && side !== 'status_tick' && side !== 'round_recovery' && side !== 'environment') {
       const subPhases = splitByActor(chainedNodes);
-      for (const nodes of subPhases) {
-        phases.push({ side: phase.side, nodes, sequential: true });
+      for (const sub of subPhases) {
+        phases.push({ side, nodes: sub, sequential: true });
       }
     } else {
-      phases.push({ side: phase.side, nodes: chainedNodes });
+      phases.push({ side, nodes: chainedNodes });
     }
   }
 

@@ -66,7 +66,8 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
       return true;
     case 'STATUS_TICKED':
     case 'STATUS_APPLIED':
-    case 'STATUS_REMOVED': {
+    case 'STATUS_REMOVED':
+    case 'STATUS_BLOCKED': {
       const entity = state.entities.get(event.entityId);
       return entity !== undefined && isPosVisible(entity, state);
     }
@@ -80,8 +81,12 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     case 'ITEM_DROPPED':
     case 'DOOR_OPENED':
     case 'DOOR_CLOSED':
-    case 'ENTITY_BUMPED': {
+    case 'ENTITY_BUMPED':
+    case 'ENTITY_COLLIDED': {
       return isPosVisible(event.position, state);
+    }
+    case 'ENTITY_DISPLACED': {
+      return isPosVisible(event.from, state) || isPosVisible(event.to, state);
     }
     case 'FLOOR_CHANGED':
     case 'TURN_ENDED':

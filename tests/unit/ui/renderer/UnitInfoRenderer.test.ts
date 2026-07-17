@@ -95,6 +95,8 @@ vi.mock('../../../../src/ui/renderer/TextureCache', () => {
 import {UnitInfoRenderer} from '../../../../src/ui/renderer/UnitInfoRenderer';
 import {Sprite} from 'pixi.js';
 import type {RenderInput, StatusEffect} from '../../../../src/presentation/types';
+import { buildDisplayState } from '../../../../src/presentation/displayState/builder';
+import type { GameState } from '../../../../src/simulation/types';
 
 function makeRenderInput(debugEnabled: boolean): RenderInput {
   const player = {
@@ -133,44 +135,47 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     factionId: 'player' as const,
   };
 
-  return {
-    state: {
-      map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
-      mapParams: {
-        id: 'floor_1',
-        strategy: 'tree',
-        height: 10,
-        width: 10,
-        minRooms: 1,
-        maxRooms: 2,
-        minRoomSize: 3,
-        maxRoomSize: 4,
-        enemyDensity: 0,
-        itemDensity: 0,
-        enemyPool: [],
-        itemPool: [],
-      },
-      entities: new Map(),
-      player,
-      visible: [],
-      explored: [],
-      turn: {activeSide: 'player' as const, round: 1},
-      phase: 'playing' as const,
-      floor: 1,
-      floorSnapshots: [],
-      rng: {seed: 1, state: 1},
-      runtimeRng: {seed: 1, state: 1},
-      nextEntityCounter: 0,
-      runStats: {
-        startTime: Date.now(),
-        enemiesKilled: 0,
-        chestsOpened: 0,
-        itemsPickedUp: 0,
-      },
-      featureFlags: {
-        contentRulesEnabled: false,
-      },
+  const state: GameState = {
+    map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
+    mapParams: {
+      id: 'floor_1',
+      strategy: 'tree',
+      height: 10,
+      width: 10,
+      minRooms: 1,
+      maxRooms: 2,
+      minRoomSize: 3,
+      maxRoomSize: 4,
+      enemyDensity: 0,
+      itemDensity: 0,
+      enemyPool: [],
+      itemPool: [],
     },
+    entities: new Map(),
+    player,
+    visible: [],
+    explored: [],
+    turn: {activeSide: 'player' as const, round: 1},
+    phase: 'playing' as const,
+    floor: 1,
+    floorSnapshots: [],
+    rng: {seed: 1, state: 1},
+    runtimeRng: {seed: 1, state: 1},
+    nextEntityCounter: 0,
+    runStats: {
+      startTime: Date.now(),
+      enemiesKilled: 0,
+      chestsOpened: 0,
+      itemsPickedUp: 0,
+    },
+    featureFlags: {
+      contentRulesEnabled: false,
+    },
+  };
+
+  return {
+    state,
+    displayState: buildDisplayState(state),
     highlightedPath: null,
     highlightedPathCommitted: false,
     highlightedPathTargetKind: 'none',
@@ -230,6 +235,10 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
   };
 }
 
+function refreshDisplayState(input: RenderInput): void {
+  input.displayState = buildDisplayState(input.state);
+}
+
 describe('UnitInfoRenderer', () => {
   beforeEach(() => {
     initRegistry({
@@ -281,6 +290,7 @@ describe('UnitInfoRenderer', () => {
       statusEffects: [],
       abilities: [],
     } as any);
+    refreshDisplayState(withEnemy);
     const sprites = new Map<string, Sprite>();
     sprites.set('player', new Sprite());
     sprites.set('enemy1', new Sprite());
@@ -317,6 +327,7 @@ describe('UnitInfoRenderer', () => {
     const input = makeRenderInput(false);
     input.state.player.hp = 100;
     input.state.player.maxHp = 100;
+    refreshDisplayState(input);
     const sprites = new Map<string, Sprite>();
     sprites.set('player', new Sprite());
 
@@ -329,19 +340,73 @@ describe('UnitInfoRenderer', () => {
     expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
 
     // Вторая анимация приходит до завершения первой: 80 → 60.
-    // Полоска не должна прыгать к 80, а продолжать плавно с текущего 90.
+    // Она прерывает первую и стартует от текущего визуального значения (90),
+    // поэтому полоска не рывком сбрасывается к 80, а продолжает падать с 90 до 60.
     const second = renderer.animateHpChange('player', 80, 60, 100, {duration: 10, blocking: false, easing: (t) => t});
     expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
 
-    renderer.updateAnimations(performance.now() + 20);
+    renderer.updateAnimations(performance.now() + 50);
+    renderer.updateAnimations(performance.now() + 100);
     await Promise.all([first, second]);
 
     expect(widget.lastHpRatio).toBe(0.6);
   });
 
+  it('replaces earlier HP change animations with the latest target for one entity', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.state.player.hp = 100;
+    input.state.player.maxHp = 100;
+    refreshDisplayState(input);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    const first = renderer.animateHpChange('player', 100, 80, 100, {duration: 10, blocking: false, easing: (t) => t});
+    renderer.updateAnimations(performance.now() + 5);
+    const second = renderer.animateHpChange('player', 80, 60, 100, {duration: 10, blocking: false, easing: (t) => t});
+    const third = renderer.animateHpChange('player', 60, 40, 100, {duration: 10, blocking: false, easing: (t) => t});
+
+    renderer.updateAnimations(performance.now() + 50);
+    renderer.updateAnimations(performance.now() + 100);
+    renderer.updateAnimations(performance.now() + 150);
+    await Promise.all([first, second, third]);
+
+    expect(widget.lastHpRatio).toBe(0.4);
+  });
+
+  it('cancels active HP change animation and resolves pending promises', async () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.state.player.hp = 100;
+    input.state.player.maxHp = 100;
+    refreshDisplayState(input);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+
+    const first = renderer.animateHpChange('player', 100, 80, 100, {duration: 10, blocking: false, easing: (t) => t});
+    renderer.updateAnimations(performance.now() + 5);
+    const second = renderer.animateHpChange('player', 80, 60, 100, {duration: 10, blocking: false, easing: (t) => t});
+    const third = renderer.animateHpChange('player', 60, 40, 100, {duration: 10, blocking: false, easing: (t) => t});
+
+    renderer.cancelAnimations();
+
+    await Promise.all([first, second, third]);
+
+    expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
+    expect((renderer as any).hpChangeAnimations.size).toBe(0);
+  });
+
   it('does not snap HP bar to final value when HP_CHANGE animation is planned', () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
+    // DisplayState ещё не обновлён (патч применится по завершении анимации),
+    // поэтому HP-бар остаётся на текущем значении из DisplayState.
     input.state.player.hp = 5;
     input.animations = [
       {
@@ -379,6 +444,7 @@ describe('UnitInfoRenderer', () => {
     expect(widget.hpBarFill.visible).toBe(false);
 
     input.state.player.hp = 5;
+    refreshDisplayState(input);
     renderer.update(input, (id) => sprites.get(id));
 
     expect(widget.hpBarBg.visible).toBe(true);
@@ -424,7 +490,7 @@ describe('UnitInfoRenderer', () => {
     expect(widget.effectSlots[3].visible).toBe(true);
   });
 
-  it('delays newly added status effect sprites until animations finish', async () => {
+  it('shows newly added status effect sprites immediately regardless of animation phase', async () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
     const sprites = new Map<string, Sprite>();
@@ -441,12 +507,7 @@ describe('UnitInfoRenderer', () => {
     renderer.update(input, (id) => sprites.get(id));
     await new Promise((resolve) => setImmediate(resolve));
 
-    expect(widget.effectSlots.every((slot: Sprite) => !slot.visible)).toBe(true);
-
-    input.phase = 'idle';
-    renderer.update(input, (id) => sprites.get(id));
-    await new Promise((resolve) => setImmediate(resolve));
-
+    // С DisplayState эффекты рисуются сразу, без блокировки на время анимации.
     expect(widget.effectSlots[0].visible).toBe(true);
   });
 
@@ -529,7 +590,7 @@ describe('UnitInfoRenderer', () => {
     expect(widget.statusIcon.visible).toBe(false);
   });
 
-  it('delays newly added primary status until animations finish', async () => {
+  it('shows newly added primary status icon immediately regardless of animation phase', async () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
     const sprites = new Map<string, Sprite>();
@@ -544,12 +605,7 @@ describe('UnitInfoRenderer', () => {
     renderer.update(input, (id) => sprites.get(id));
     await new Promise((resolve) => setImmediate(resolve));
 
-    expect(widget.statusIcon.visible).toBe(false);
-
-    input.phase = 'idle';
-    renderer.update(input, (id) => sprites.get(id));
-    await new Promise((resolve) => setImmediate(resolve));
-
+    // С DisplayState иконка статуса обновляется сразу, без блокировки на время анимации.
     expect(widget.statusIcon.visible).toBe(true);
   });
 

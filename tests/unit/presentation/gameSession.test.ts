@@ -751,3 +751,147 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
     expect(templates[0]?.isDefault).toBe(true);
   });
 });
+
+
+describe('GameSession DisplayState', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map([
+        ['cat_small', {
+          id: 'cat_small',
+          health: {max: 20},
+          combat: {damage: 5, armor: 0},
+          baseStats: {str: 1, dex: 1, int: 0, vit: 0},
+          aiSightRadius: 6,
+          aiStrategyId: 'hunter',
+        } as any],
+      ]),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('initializes DisplayState when game is loaded', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.displayState).toBeDefined();
+    expect(vm.renderInput?.displayState.player.x).toBe(5);
+    expect(vm.renderInput?.displayState.player.y).toBe(5);
+  });
+
+  it('keeps DisplayState unchanged while move animation is pending', () => {
+    const player = makePlayer({x: 5, y: 5, ap: 2, maxAp: 2});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.dispatch({type: 'MOVE', entityId: player.id, dx: 0, dy: 1});
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.displayState.player.x).toBe(5);
+    expect(vm.renderInput?.displayState.player.y).toBe(5);
+
+    session.onAnimationsComplete();
+
+    const vmAfter = session.getViewModel();
+    expect(vmAfter.renderInput?.displayState.player.x).toBe(5);
+    expect(vmAfter.renderInput?.displayState.player.y).toBe(6);
+  });
+
+  it('keeps DisplayState unchanged while attack animation is pending', () => {
+    const player = makePlayer({x: 5, y: 5, ap: 2, maxAp: 2});
+    const enemy = makeEnemy({x: 6, y: 5, hp: 20, maxHp: 20, armor: 0});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.moveOrAttack(1, 0);
+
+    const vm = session.getViewModel();
+    const displayEnemyDuring = vm.renderInput?.displayState.entities.get(enemy.id);
+    expect(displayEnemyDuring?.hp).toBe(20);
+
+    session.onAnimationsComplete();
+
+    const vmAfter = session.getViewModel();
+    const displayEnemyAfter = vmAfter.renderInput?.displayState.entities.get(enemy.id);
+    expect(displayEnemyAfter?.hp).toBeLessThan(20);
+  });
+
+  it('RenderInput contains displayState', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const renderInput = session.getViewModel().renderInput;
+    expect(renderInput?.displayState).toBeDefined();
+    expect(renderInput?.displayState.map).toBeDefined();
+    expect(renderInput?.displayState.entities).toBeDefined();
+  });
+
+  it('DisplayState matches GameState after animations complete', () => {
+    const player = makePlayer({x: 5, y: 5, ap: 2, maxAp: 2});
+    const enemy = makeEnemy({x: 6, y: 5, hp: 20, maxHp: 20, armor: 0});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.moveOrAttack(1, 0);
+    session.onAnimationsComplete();
+
+    const vm = session.getViewModel();
+    const gameState = vm.renderInput!.state;
+    const displayState = vm.renderInput!.displayState;
+
+    expect(displayState.player.x).toBe(gameState.player.x);
+    expect(displayState.player.y).toBe(gameState.player.y);
+    expect(displayState.player.hp).toBe(gameState.player.hp);
+
+    const gameEnemy = gameState.entities.get(enemy.id) as import('../../../src/simulation/types').EnemyEntity;
+    const displayEnemy = displayState.entities.get(enemy.id);
+    expect(displayEnemy?.hp).toBe(gameEnemy?.hp);
+    expect(displayEnemy?.x).toBe(gameEnemy?.x);
+    expect(displayEnemy?.y).toBe(gameEnemy?.y);
+  });
+});

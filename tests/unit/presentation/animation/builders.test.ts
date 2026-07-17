@@ -13,6 +13,11 @@ import {itemDroppedBuilder} from '../../../../src/presentation/animation/builder
 import {doorOpenedBuilder} from '../../../../src/presentation/animation/builders/doorOpened';
 import {doorClosedBuilder} from '../../../../src/presentation/animation/builders/doorClosed';
 import {entityHealedBuilder} from '../../../../src/presentation/animation/builders/entityHealed';
+import {statusBlockedBuilder} from '../../../../src/presentation/animation/builders/statusBlocked';
+import {statusRemovedBuilder} from '../../../../src/presentation/animation/builders/statusRemoved';
+import {entityCollidedBuilder} from '../../../../src/presentation/animation/builders/entityCollided';
+import {entityDisplacedBuilder} from '../../../../src/presentation/animation/builders/entityDisplaced';
+import {entityMissedBuilder} from '../../../../src/presentation/animation/builders/entityMissed';
 
 import {statusAppliedBuilder} from '../../../../src/presentation/animation/builders/statusApplied';
 import {statusTickedBuilder} from '../../../../src/presentation/animation/builders/statusTicked';
@@ -91,6 +96,26 @@ describe('entityDamagedBuilder', () => {
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('DAMAGE');
     expect(nodes![0]!.children).toHaveLength(0);
+  });
+
+  it('creates only DAMAGE step for zero damage', () => {
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 0, position: { x: 3, y: 3 } };
+    const nodes = entityDamagedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('DAMAGE');
+    expect(nodes![0]!.children).toHaveLength(0);
+  });
+
+  it('preserves passed child nodes inside HP_CHANGE', () => {
+    const child = { step: { type: 'DEATH' as const, entityId: 'enemy1' }, children: [] };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
+    const nodes = entityDamagedBuilder(event, [child], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('DAMAGE');
+    expect(nodes![0]!.children[0]!.step.type).toBe('HP_CHANGE');
+    expect(nodes![0]!.children[0]!.children).toContain(child);
   });
 });
 
@@ -195,5 +220,88 @@ describe('status builders', () => {
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('STATUS_BURST');
+  });
+
+  it('creates UI_FLOATING_TEXT for STATUS_BLOCKED', () => {
+    const event: GameEvent = { type: 'STATUS_BLOCKED', entityId: 'player', sourceEntityId: null, statusType: 'poisoned', blockedBy: 'counterattack' };
+    const nodes = statusBlockedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('UI_FLOATING_TEXT');
+  });
+
+  it('creates UI_FLOATING_TEXT for STATUS_REMOVED', () => {
+    const event: GameEvent = { type: 'STATUS_REMOVED', entityId: 'player', effectType: 'poisoned' };
+    const nodes = statusRemovedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('UI_FLOATING_TEXT');
+  });
+});
+
+describe('entityCollidedBuilder', () => {
+  it('creates TILE_SHAKE and PARTICLE_BURST for ENTITY_COLLIDED', () => {
+    const event: GameEvent = {
+      type: 'ENTITY_COLLIDED',
+      entityId: 'player',
+      targetId: null,
+      collisionType: 'wall',
+      sourceEntityId: null,
+      position: { x: 2, y: 2 },
+      dx: 1,
+      dy: 0,
+      tags: ['collision.wall'],
+    };
+    const nodes = entityCollidedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(2);
+    const types = nodes!.map((n) => n.step.type);
+    expect(types).toContain('TILE_SHAKE');
+    expect(types).toContain('PARTICLE_BURST');
+  });
+});
+
+describe('entityDisplacedBuilder', () => {
+  it('creates MOVE step for ENTITY_DISPLACED without child MOVE', () => {
+    const event: GameEvent = {
+      type: 'ENTITY_DISPLACED',
+      entityId: 'enemy1',
+      sourceEntityId: null,
+      from: { x: 3, y: 3 },
+      to: { x: 4, y: 3 },
+      dx: 1,
+      dy: 0,
+    };
+    const nodes = entityDisplacedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('MOVE');
+  });
+
+  it('reuses child MOVE instead of duplicating animation', () => {
+    const event: GameEvent = {
+      type: 'ENTITY_DISPLACED',
+      entityId: 'enemy1',
+      sourceEntityId: null,
+      from: { x: 3, y: 3 },
+      to: { x: 4, y: 3 },
+      dx: 1,
+      dy: 0,
+    };
+    const childMove = { step: { type: 'MOVE' as const, entityId: 'enemy1', from: { x: 3, y: 3 }, to: { x: 4, y: 3 } }, children: [] };
+    const nodes = entityDisplacedBuilder(event, [childMove], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]).toBe(childMove);
+  });
+});
+
+describe('entityMissedBuilder', () => {
+  it('creates UI_FLOATING_TEXT for ENTITY_MISSED', () => {
+    const event: GameEvent = { type: 'ENTITY_MISSED', attackerId: 'player', targetId: 'enemy1' };
+    const nodes = entityMissedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('UI_FLOATING_TEXT');
   });
 });

@@ -85,6 +85,8 @@ vi.mock('pixi.js', () => {
 import {WorldRenderer} from '../../../../src/ui/renderer/WorldRenderer';
 import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
 import type {RenderInput} from '../../../../src/presentation/types';
+import { buildDisplayState } from '../../../../src/presentation/displayState/builder';
+import type { GameState } from '../../../../src/simulation/types';
 
 const TILE_SIZE = 32;
 
@@ -126,44 +128,47 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     ...playerOverrides,
   };
 
-  return {
-    state: {
-      map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
-      mapParams: {
-        id: 'floor_1',
-        strategy: 'tree',
-        height: 10,
-        width: 10,
-        minRooms: 1,
-        maxRooms: 2,
-        minRoomSize: 3,
-        maxRoomSize: 4,
-        enemyDensity: 0,
-        itemDensity: 0,
-        enemyPool: [],
-        itemPool: [],
-      },
-      entities: new Map(),
-      player,
-      visible: visible ?? Array.from({length: 10}, () => Array(10).fill(true)),
-      explored: visible ?? Array.from({length: 10}, () => Array(10).fill(true)),
-      turn: {activeSide: 'player' as const, round: 1},
-      phase: 'playing' as const,
-      floor: 1,
-      floorSnapshots: [],
-      rng: {seed: 1, state: 1},
-      runtimeRng: {seed: 1, state: 1},
-      nextEntityCounter: 0,
-      runStats: {
-        startTime: Date.now(),
-        enemiesKilled: 0,
-        chestsOpened: 0,
-        itemsPickedUp: 0,
-      },
-      featureFlags: {
-        contentRulesEnabled: false,
-      },
+  const state: GameState = {
+    map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
+    mapParams: {
+      id: 'floor_1',
+      strategy: 'tree',
+      height: 10,
+      width: 10,
+      minRooms: 1,
+      maxRooms: 2,
+      minRoomSize: 3,
+      maxRoomSize: 4,
+      enemyDensity: 0,
+      itemDensity: 0,
+      enemyPool: [],
+      itemPool: [],
     },
+    entities: new Map(),
+    player,
+    visible: visible ?? Array.from({length: 10}, () => Array(10).fill(true)),
+    explored: visible ?? Array.from({length: 10}, () => Array(10).fill(true)),
+    turn: {activeSide: 'player' as const, round: 1},
+    phase: 'playing' as const,
+    floor: 1,
+    floorSnapshots: [],
+    rng: {seed: 1, state: 1},
+    runtimeRng: {seed: 1, state: 1},
+    nextEntityCounter: 0,
+    runStats: {
+      startTime: Date.now(),
+      enemiesKilled: 0,
+      chestsOpened: 0,
+      itemsPickedUp: 0,
+    },
+    featureFlags: {
+      contentRulesEnabled: false,
+    },
+  };
+
+  return {
+    state,
+    displayState: buildDisplayState(state),
     highlightedPath: null,
     highlightedPathCommitted: false,
     highlightedPathTargetKind: 'none',
@@ -297,35 +302,12 @@ describe('WorldRenderer camera', () => {
     const expectedToX = -(1 * TILE_SIZE + TILE_SIZE / 2 - 800 / 2);
     expect(renderer.root.x).toBe(expectedToX);
 
-    // Повторный render() (например, из-за hover/resize во время анимации врага)
-    // не должен телепортировать камеру обратно к (0,0)
+    // Повторный render() после завершения анимации использует DisplayState.
+    // Симулируем применение патча: игрок теперь в конечной клетке.
+    input.displayState.player.x = 1;
+    input.displayState.player.y = 0;
     renderer.render(input);
     expect(renderer.root.x).toBe(expectedToX);
-  });
-
-  it('resets camera base when animation batch is cleared', () => {
-    const renderer = new WorldRenderer(800, 600);
-    const input = makeRenderInput();
-    input.state.player.x = 2;
-    input.state.player.y = 0;
-    input.animations = [
-      {
-        side: 'player',
-        nodes: [
-          {
-            step: {type: 'MOVE', entityId: 'player', from: {x: 1, y: 0}, to: {x: 2, y: 0}},
-            children: [],
-          },
-        ],
-      },
-    ];
-
-    renderer.render(input);
-    expect((renderer as any).cameraBase).toEqual({x: 1, y: 0});
-
-    input.animations = null;
-    renderer.render(input);
-    expect((renderer as any).cameraBase).toBeNull();
   });
 
   it('applies current zoom to camera position during animation', async () => {

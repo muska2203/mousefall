@@ -17,6 +17,8 @@ export const counterattackTriggerRule: ContentRule = {
   },
   conditions: [
     { type: 'hasStatus', statusType: 'counterattack', subject: 'self' },
+    // Контратака — реакция на полученный урон, поэтому владелец должен быть целью события.
+    { type: 'eventRole', role: 'target' },
     { type: 'chance', probability: 50 },
     { type: 'not', condition: { type: 'hasTag', tag: 'target.aoe' } },
     { type: 'not', condition: { type: 'hasTag', tag: 'target.multi' } },

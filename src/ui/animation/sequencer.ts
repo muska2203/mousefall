@@ -52,7 +52,7 @@ export class AnimationSequencer {
 
   run(
     phases: AnimationPhase[],
-    callbacks?: { onPhaseStart?: (side: TurnSide) => void },
+    callbacks?: { onPhaseStart?: (side: TurnSide) => void; onNodeComplete?: (node: AnimationNode) => void },
   ): AnimationRunResult {
     this.cancelled = false;
 
@@ -73,10 +73,10 @@ export class AnimationSequencer {
         if (phase.sequential) {
           for (const node of phase.nodes) {
             if (this.cancelled) break;
-            await this.runNode(node);
+            await this.runNode(node, callbacks);
           }
         } else {
-          await Promise.all(phase.nodes.map((node) => this.runNode(node)));
+          await Promise.all(phase.nodes.map((node) => this.runNode(node, callbacks)));
         }
       }
       if (!this.cancelled && this.remainingBlocking === 0 && this.blockingResolve) {
@@ -98,23 +98,19 @@ export class AnimationSequencer {
     this.blockingResolve?.();
   }
 
-  private async runNode(node: AnimationNode): Promise<void> {
+  private async runNode(
+    node: AnimationNode,
+    callbacks?: { onNodeComplete?: (node: AnimationNode) => void },
+  ): Promise<void> {
     if (this.cancelled) return;
 
     const step = node.step;
     const configKey = step.type as AnimationConfigKey;
     const config = ANIMATION_CONFIG[configKey];
-    if (!config) {
-      console.error(`[AnimationSequencer] Нет конфигурации для шага "${step.type}". Добавьте его в ANIMATION_CONFIG.`);
-      await Promise.all(node.children.map((child) => this.runNode(child)));
-      return;
-    }
-
-    const executor = this.executors.find((e) => e.canExecute(step));
 
     const finishBlocking = () => {
       if (this.cancelled) return;
-      if (config.blocking) {
+      if (config?.blocking) {
         this.remainingBlocking--;
         if (this.remainingBlocking === 0 && this.blockingResolve) {
           this.blockingResolve();
@@ -122,9 +118,29 @@ export class AnimationSequencer {
       }
     };
 
+    const onNodeComplete = () => {
+      callbacks?.onNodeComplete?.(node);
+    };
+
+    if (!config) {
+      console.error(
+        `[AnimationSequencer] Нет конфигурации для шага "${step.type}". Добавьте его в ANIMATION_CONFIG.`,
+      );
+      try {
+        onNodeComplete();
+        await Promise.all(node.children.map((child) => this.runNode(child, callbacks)));
+      } finally {
+        finishBlocking();
+      }
+      return;
+    }
+
+    const executor = this.executors.find((e) => e.canExecute(step));
+
     if (!executor) {
       try {
-        await Promise.all(node.children.map((child) => this.runNode(child)));
+        onNodeComplete();
+        await Promise.all(node.children.map((child) => this.runNode(child, callbacks)));
       } finally {
         finishBlocking();
       }
@@ -141,6 +157,7 @@ export class AnimationSequencer {
     } catch (err) {
       console.error(`[AnimationSequencer] Ошибка в executor для "${step.type}":`, err);
     } finally {
+      onNodeComplete();
       finishBlocking();
     }
 
@@ -148,7 +165,7 @@ export class AnimationSequencer {
 
     // После завершения родителя запускаем детей параллельно
     if (node.children.length > 0) {
-      await Promise.all(node.children.map((child) => this.runNode(child)));
+      await Promise.all(node.children.map((child) => this.runNode(child, callbacks)));
     }
   }
 }
