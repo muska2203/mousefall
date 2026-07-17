@@ -23,7 +23,10 @@
 | Как устроен AI врагов и реестр тактических утилит? | [`AI_SYSTEM.md`](./AI_SYSTEM.md) |
 | Как писать тесты, какие цели покрытия? | [`TESTING.md`](./TESTING.md) |
 | Как добавить контент (врага, предмет, карту)? | [`CONTENT.md`](./CONTENT.md) |
-| Как работают контентные правила и их крайние случаи? | [`CONTENT_RULES_EDGE_CASES.md`](./CONTENT_RULES_EDGE_CASES.md) |
+| Как работают контентные правила? | [`CONTENT_RULES_EDGE_CASES.md`](./CONTENT_RULES_EDGE_CASES.md) |
+| Где описан концепт боевой системы? | [`../plans/Концепт боевой системы.md`](../plans/Концепт%20боевой%20системы.md) |
+| Где архитектурный обзор боевой системы? | [`../plans/Архитектура_боевой_системы_на_основе_реакций.md`](../plans/Архитектура_боевой_системы_на_основе_реакций.md) |
+| Каталог стартовых правил | [`../design/starting-rules-catalog.md`](../design/starting-rules-catalog.md) |
 | Как работают сохранения и загрузки? | [`SAVES.md`](./SAVES.md) |
 | Как добавить/изменить перевод или текст? | [`I18N.md`](./I18N.md) |
 | Что означает термин X? | [`GLOSSARY.md`](./GLOSSARY.md) |
@@ -61,6 +64,7 @@
 | Общий архитектурный обзор | [`../architecture/OVERVIEW.md`](../architecture/OVERVIEW.md) |
 | Детали контент-пайплайна | [`../architecture/CONTENT_PIPELINE.md`](../architecture/CONTENT_PIPELINE.md) |
 | Детали системы сохранений | [`../architecture/SAVE_SYSTEM.md`](../architecture/SAVE_SYSTEM.md) |
+| Боевая система на основе реакций | [`../plans/Архитектура_боевой_системы_на_основе_реакций.md`](../plans/Архитектура_боевой_системы_на_основе_реакций.md) |
 
 ---
 

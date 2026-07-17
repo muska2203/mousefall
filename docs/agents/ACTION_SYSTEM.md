@@ -8,12 +8,18 @@
 
 ```
 Action → validate() → resolve() → Intent[]
-  → execute() → Events → World Reactions → дополнительные Intents / Events
+  → applyIntentModifiers() → execute() → Events
+  → runContentRuleReactions() → runWorldReactions()
+  → дополнительные Intents / Events
 ```
 
 1. **Action (`GameAction`)** — высокоуровневое намерение игрока/врага (MOVE, ATTACK, END_TURN).
 2. **Intent (`Intent`)** — низкоуровневые операции после разрешения (MOVE, DAMAGE, DIE).
-3. **Event (`GameEvent`)** — неизменяемая запись о произошедшем, возвращается через дерево `ExecutionNode`.
+3. **Модификаторы на интенте** — перед `execute()` контентные правила могут изменить интент (сейчас только `modifyDamage` для `DAMAGE`).
+4. **Execution** — `IntentExecutor` мутирует состояние и порождает событие.
+5. **ContentRuleReaction** — контентные правила реагируют на событие и порождают дополнительные интенты.
+6. **WorldReaction** — системные мировые реакции на то же событие.
+7. **Event (`GameEvent`)** — неизменяемая запись о произошедшем, возвращается через дерево `ExecutionNode`.
 
 ---
 
@@ -56,6 +62,23 @@ Action → validate() → resolve() → Intent[]
 
 ---
 
+## Модификаторы на интенте
+
+Перед вызовом `IntentExecutor` `executeIntent` строит `RuleContext` и применяет к интенту модифицирующие контентные правила (`applyIntentModifiersIfEnabled` → `src/simulation/content-rules/modifiers/apply-intent-modifiers.ts`).
+
+- **Поддерживаемый тип интента:** только `DAMAGE`. Остальные интенты проходят без изменений.
+- **Эффект:** `modifyDamage` (`op: 'multiply' | 'add'`, `value`, опционально `addTags`).
+- **Слои происхождения:** `source` → `target` → `world` → `radius`.
+  - `source` — `activeRules` сущности-источника интента.
+  - `target` — `activeRules` сущности-цели (не дублируется, если совпадает с `source`).
+  - `world` — глобальные мировые правила (`worldLayer: 'global'`).
+  - `radius` — `activeRules` живых акторов в радиусе 1 от позиции события (исключая `source` и `target`).
+- **Порядок внутри слоя:** сначала `multiply`, затем `add`; затем `priority` (меньше — раньше); затем `ruleId` для детерминированного порядка.
+- **Результат:** новый интент с изменённым `damage` и/или `tags`; исходный объект не мутируется.
+- **Feature flag:** поведение активно, только если `contentRulesEnabled` включён (`src/simulation/content-rules/feature-flags.ts`). Флаг включён по умолчанию.
+
+---
+
 ## ⚠️ ВАЖНОЕ ПРАВИЛО: IntentExecutor не исполняет другие интенты
 
 > **IntentExecutor должен выполнять ровно одно семантическое действие и порождать ровно одно семантическое событие. Он НЕ ДОЛЖЕН напрямую создавать или исполнять другие интенты.**
@@ -64,7 +87,7 @@ Action → validate() → resolve() → Intent[]
 
 1. Выполнить своё прямое действие (например, переместить сущность или зафиксировать столкновение).
 2. Породить **семантическое событие** (`ExecutionNode`), описывающее произошедшее.
-3. Позволить **мировой реакции** (`WorldReaction`) на это событие породить следующие интенты.
+3. Позволить **реакциям** (`ContentRuleReaction` и `WorldReaction`) на это событие породить следующие интенты.
 
 ### Пример: отталкивание актора в стену
 
@@ -90,20 +113,38 @@ WorldReaction на ENTITY_COLLIDED
 
 ---
 
+## Контентные реакции (`ContentRuleReaction`)
+
+После выполнения интента и до вызова `runWorldReactions` `executeIntent` запускает реакции контентных правил (`runContentRuleReactionsIfEnabled` → `src/simulation/content-rules/reaction/content-rule-reaction.ts`).
+
+- **Контекст:** `RuleContext` строится по событию (`src/simulation/content-rules/rule-context.ts`) и содержит `sourceEntityId`, `targetEntityId`, `eventPosition`, `eventTags`, а также специфичные поля (урон, длительность, стаки и т.д.).
+- **Слои правил:** `source` → `target` → `world` → `radius`.
+  - `source` — `activeRules` сущности-источника события.
+  - `target` — `activeRules` сущности-цели (не дублируется, если совпадает с `source`).
+  - `world` — глобальные правила и тайловые эффекты.
+  - `radius` — `activeRules` живых акторов в радиусе 1 от позиции события (исключая `source` и `target`).
+- **Порядок внутри слоя `world`:** `global` → `tileEffect` → `tileIntrinsic`.
+- **Общий порядок сортировки:** слой → подтип слоя `world` → `priority` (меньше — раньше) → `ruleId`.
+- **Фильтрация:** правила отбираются по типу события (`trigger.event`) и обязательным тегам (`trigger.tags`).
+- **Условия:** поддерживаются `chance`, `hasStatus`, `hasTag`, `and`, `or`, `not`.
+- **Поддерживаемые эффекты:** `applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `modifyDamage` (только на интенте, не порождает интентов здесь), `counterAttack`.
+- **Execution Node:** каждое сработавшее правило создаёт узел `RULE_TRIGGERED` в дереве `ExecutionNode` как дочерний к событию, вызвавшему реакцию. Порождённые правилом интенты исполняются отдельно и могут породить собственные цепочки реакций.
+- **Feature flag:** поведение активно, только если `contentRulesEnabled` включён (`src/simulation/content-rules/feature-flags.ts`). Флаг включён по умолчанию.
+
+---
+
 ## Мировые реакции (`WorldReaction`)
 
-После выполнения интента `runWorldReactions` проверяет зарегистрированные реакции.
+После выполнения интента `runWorldReactions` (`src/simulation/systems/world-reactions/reactions.ts`) проверяет зарегистрированные системные реакции.
 
-Реестр реакций (`src/simulation/systems/world-reactions/reactions.ts`) содержит:
+Сейчас реестр содержит только системные реакции:
 - `deathReaction` — при `ENTITY_DAMAGED`, если `hp <= 0`, порождает `DIE`;
 - `postDeathLootReaction` — при `ENTITY_DIED` дропает лут;
-- `fireDamageReaction` — дополнительный урон от огня;
-- `collisionDamageReaction` / `collisionStunReaction` — урон и стан от столкновений;
 - `displacementMoveReaction` — добивание отталкиванием;
-- `burningTickReaction` — урон от горения при тике статуса;
 - `floorTransitionReaction` — обработка смены этажа;
-- `aiPerceptionReaction` — уведомляет AI о `ENTITY_MOVED`, `DOOR_OPENED`, `DOOR_CLOSED`;
-- `counterAttackReaction` — встречный удар после `COUNTER_ATTACK_APPLIED`.
+- `aiPerceptionReaction` — уведомляет AI о `ENTITY_MOVED`, `DOOR_OPENED`, `DOOR_CLOSED`.
+
+> Ранее здесь находились игровые механики (урон от огня, урон и стан от столкновений, тик горения). Они перенесены в декларативные контентные правила (`src/simulation/content-rules/world-rules/global-rules.ts`) и теперь обрабатываются фазой `ContentRuleReaction`.
 
 ---
 
@@ -112,14 +153,17 @@ WorldReaction на ENTITY_COLLIDED
 1. **Action:** `ATTACK` (entityId, dx, dy)
 2. **Validation:** проверка, что цель в зоне поражения
 3. **Resolution:** порождает Intent `DAMAGE`
-4. **Execution:** `executeDamageIntent` уменьшает HP и создаёт `ENTITY_DAMAGED`
-5. **World Reactions:** `deathReaction` видит `hp <= 0`, порождает Intent `DIE`
-6. **Execution DIE:** `executeDieIntent` удаляет сущность, создаёт `ENTITY_DIED`
+4. **Modifiers:** контентные правила могут изменить урон (например, бонус к урону от предмета источника)
+5. **Execution:** `executeDamageIntent` уменьшает HP и создаёт `ENTITY_DAMAGED`
+6. **Content Reactions:** сработавшие правила (например, `fire_damage_ignites`, эффекты предметов) создают `RULE_TRIGGERED` и могут породить дополнительные интенты
+7. **World Reactions:** `deathReaction` видит `hp <= 0`, порождает Intent `DIE`
+8. **Execution DIE:** `executeDieIntent` удаляет сущность, создаёт `ENTITY_DIED`
 
 Итоговое дерево:
 ```
 ACTION_APPLIED (ATTACK)
 └── ENTITY_DAMAGED (target, damage)
+    ├── RULE_TRIGGERED (fire_damage_ignites, ...)
     └── ENTITY_DIED (target)
 ```
 
@@ -131,6 +175,7 @@ ACTION_APPLIED (ATTACK)
 - [ ] Handler создан в `src/simulation/systems/actions/`
 - [ ] Handler зарегистрирован в `src/simulation/simulation.ts`
 - [ ] Тесты добавлены в `tests/unit/simulation/actions/`
+- [ ] Проверено влияние на контентные правила: если action порождает события, на которые могут реагировать правила, добавлены/обновлены соответствующие `RuleContext` и `RULE_TRIGGERED`
 
 > **Примечание:** для объектных взаимодействий (двери, предметы на полу, лестницы, рычаги и т.п.) не добавляется отдельный action type. Вместо этого целевой объект получает `interactionKind`, а единый action `INTERACT` через `resolveInteraction` выбирает конкретный intent (`OPEN_DOOR`, `CLOSE_DOOR`, `PICK_UP`, `FLOOR_TRANSITION`).
 
@@ -140,3 +185,5 @@ ACTION_APPLIED (ATTACK)
 - [ ] Эмиссия добавлена в соответствующий `IntentExecutor` (`src/simulation/systems/intents/`)
 - [ ] Обработка добавлена в Presentation (перевод в анимацию / combat log)
 - [ ] Визуализация добавлена в UI (если требуется новый тип анимации)
+- [ ] Для событий, которые могут быть триггером контентных правил, добавлено построение `RuleContext` в `src/simulation/content-rules/rule-context.ts`
+- [ ] Если событие генерируется вне стандартного `executeIntent` (ручной вызов `builder.addChild`), учтён узел `RULE_TRIGGERED` в дереве `ExecutionNode` при необходимости

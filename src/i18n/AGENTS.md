@@ -65,5 +65,5 @@ src/i18n/
 
 ## Полная документация
 
-- [`docs/agents/I18N.md`](../docs/agents/I18N.md) — полное руководство по локализации
-- [`docs/agents/CONTENT.md`](../docs/agents/CONTENT.md) — контент-пайплайн и тексты врагов/предметов
+- [`docs/agents/I18N.md`](../../docs/agents/I18N.md) — полное руководство по локализации
+- [`docs/agents/CONTENT.md`](../../docs/agents/CONTENT.md) — контент-пайплайн и тексты врагов/предметов

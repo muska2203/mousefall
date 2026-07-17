@@ -14,6 +14,17 @@
 | **AnimationNode** | Узел дерева анимаций. Содержит `AnimationStep` + дочерние узлы. Сиблинги выполняются параллельно. |
 | **Combat Log** | Массив строк, сформированных Presentation на основе дерева событий. |
 | **Content Registry** | In-memory хранилище загруженных JSON-шаблонов. Read-only после инициализации. |
+| **Content Rule / Контентное правило** | Статическое декларативное правило из `content-rules`, которое срабатывает на событие или интент и применяет эффекты. |
+| **ContentRuleReaction** | Реакция, собирающая активные правила для события и порождающая дочерние интенты. |
+| **RuleContext** | Контекст события, доступный правилу: `source`, `target`, `eventPosition`, `eventDamage` и другие поля. |
+| **ActiveRule / activeRules** | Правило с привязанным владельцем, кэшируемое у актора. |
+| **Rule Layer** | Слой происхождения правила: `source`, `target`, `world`, `radius`. |
+| **GameplayTag** | Иерархический тег для фильтрации правил (например, `damage.magical.fire`). |
+| **Intent Modifier / modifyDamage** | Модификатор, изменяющий параметры интента, например урон на `DAMAGE`. |
+| **ParametrizedValue** | Число, заданное константой или ссылкой на поле `RuleContext`. |
+| **World Content Rule** | Мировое правило, не привязанное к сущности; подтипы `global`, `tileEffect`, `tileIntrinsic`. |
+| **RULE_TRIGGERED** | Событие в дереве `ExecutionNode`, фиксирующее срабатывание правила. |
+| **TileEffect** | Тайловый эффект (`water`, `oil`, `fog`); отложен за пределы MVP. |
 | **RNG (`utils/rng.ts`)** | Seeded PRNG. Единственный источник случайности в Simulation. |
 | **GameState** | Единственный источник истины. Все поля JSON-serializable. |
 | **Phase** | Фаза игры в `GameState`: `playing` \| `dead` \| `victory`. В Presentation/UI фаза отрисовки: `idle` \| `animating` \| `gameOver`. |

@@ -34,7 +34,7 @@
 - При превышении лимита — не только `console.error`, но и `GameEvent` `REACTION_CYCLE_DETECTED` с последними N правилами.
 - В debug-режиме выводить предупреждение в combat log / DebugPanel.
 
-**Связь:** `docs/agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Циклы»), `docs/plans/Концепт боевой системы.md`.
+**Связь:** `../agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Циклы»), `Концепт боевой системы.md`.
 
 ---
 
@@ -68,7 +68,7 @@
 - Убедиться, что шансовые условия используют детерминированный `runtimeRng`.
 - Добавить тесты на условные модификаторы.
 
-**Связь:** `docs/agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Модификаторы на интенте»).
+**Связь:** `../agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Модификаторы на интенте»).
 
 ---
 
@@ -88,7 +88,7 @@
 - Использовать индекс в `collectRules` для слоя `radius` и в селекторах `allInRadius` / `nearestEnemy`.
 - Сделать индекс optional/fallback на линейный scan для надёжности.
 
-**Связь:** `docs/plans/Концепт боевой системы.md` (раздел 2.8), `docs/plans/combat-implementation-roadmap/06-polirovka-perf-report.md`.
+**Связь:** `Концепт боевой системы.md` (раздел 2.8)
 
 ---
 
@@ -123,7 +123,7 @@
 - Добавить доступ к характеристикам через `RuleContext` / `getEntityStats`.
 - Обновить документацию и чек-лист.
 
-**Связь:** `docs/agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Параметризованные значения»), `docs/plans/Концепт боевой системы.md`.
+**Связь:** `../agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Параметризованные значения»), `Концепт боевой системы.md`.
 
 ---
 
@@ -140,7 +140,7 @@
 - Обновить `ContentRuleReaction` для генерации нескольких интентов из одного правила.
 - Обновить валидацию.
 
-**Связь:** `docs/plans/Концепт боевой системы.md` (раздел 2.6).
+**Связь:** `Концепт боевой системы.md` (раздел 2.6).
 
 ---
 
@@ -157,7 +157,7 @@
 - При `immediate === true` пересобирать `activeRules` и перезапускать `ContentRuleReaction` для текущего события с ограниченной глубиной.
 - Внимательно обработать защиту от циклов.
 
-**Связь:** `docs/agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Mid-chain статусы»).
+**Связь:** `../agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Mid-chain статусы»).
 
 ---
 
@@ -178,7 +178,7 @@
 - Добавить `TILE_EFFECT_CHANGED`, `EXPLOSION_TRIGGERED` события.
 - Интегрировать тайловые слои `tileEffect` / `tileIntrinsic` в `ContentRuleReaction`.
 
-**Связь:** `docs/plans/Концепт боевой системы.md` (раздел 4), `docs/plans/combat-implementation-roadmap/06-polirovka.md` (шаг 6.6).
+**Связь:** `Концепт боевой системы.md` (раздел 4)
 
 ---
 
@@ -199,7 +199,7 @@
 - Обновить `applyIntentModifiers`.
 - Учесть в валидации и тестах.
 
-**Связь:** `docs/agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Модификаторы на интенте»).
+**Связь:** `../agents/CONTENT_RULES_EDGE_CASES.md` (раздел «Модификаторы на интенте»).
 
 ---
 
@@ -220,7 +220,7 @@
 - Реализовать условие `sourceIsKiller` / `targetIsKiller`.
 - Поддержать модификаторы на исходящем уроне (слой `target` для `DAMAGE`-интента, где владелец — цель).
 
-**Связь:** `docs/design/starting-rules-catalog.md` (раздел 5 «Пост-MVP»).
+**Связь:** `../design/starting-rules-catalog.md` (раздел 5 «Пост-MVP»).
 
 ---
 
@@ -242,7 +242,6 @@
 - Добавить рекурсивный компонент для `ExecutionNode`.
 - Добавить фильтры и раскрытие/сворачивание узлов.
 
-**Связь:** `docs/plans/combat-implementation-roadmap/06-polirovka.md` (шаг 6.2).
 
 ---
 
@@ -259,7 +258,7 @@
 - Вернуть дерево событий.
 - Использовать в targeting/preview.
 
-**Связь:** `docs/plans/Концепт боевой системы.md`, `docs/plans/combat-implementation-roadmap/06-polirovka.md` (шаг 6.6).
+**Связь:** `Концепт боевой системы.md`
 
 ---
 
@@ -277,7 +276,6 @@
 - Хранить `discoveredRuleIds` в `GameState` / save.
 - В UI показывать скрытые правила как «???» до первого срабатывания.
 
-**Связь:** `docs/plans/combat-implementation-roadmap/06-polirovka.md` (шаг 6.6).
 
 ---
 
@@ -294,7 +292,6 @@
 - Добавить `AnimationStep` тип `PUSH` и `PixiPushExecutor`.
 - Добавить builder для `ENTITY_MISSED`.
 
-**Связь:** `docs/plans/combat-implementation-roadmap/06-polirovka-execution-plan.md` (Presentation-раздел).
 
 ---
 
@@ -326,10 +323,9 @@
 
 **Решение:**
 - Добавить job `perf` в `.github/workflows/deploy.yml`.
-- Сравнивать медиану typical/dense chain с baseline из `06-polirovka-perf-report.md`.
+- Сравнивать медиану typical/dense chain с baseline.
 - Использовать детерминированный seed.
 
-**Связь:** `docs/plans/combat-implementation-roadmap/06-polirovka-perf-report.md`.
 
 ---
 
@@ -361,7 +357,7 @@
 - Если «талант» = `AbilityTemplate` — зафиксировать это в документации и убрать неоднозначность.
 - Если нужен отдельный слой — создать `public/content/talents/`, `TalentTemplateSchema`, реестр, валидацию, жизненный цикл.
 
-**Связь:** `docs/plans/Концепт боевой системы.md` (раздел 3.1).
+**Связь:** `Концепт боевой системы.md` (раздел 3.1).
 
 ---
 
@@ -386,9 +382,6 @@
 
 ## Связанные документы
 
-- [`docs/plans/combat-implementation-roadmap/06-polirovka.md`](./06-polirovka.md)
-- [`docs/plans/combat-implementation-roadmap/06-polirovka-execution-plan.md`](./06-polirovka-execution-plan.md)
-- [`docs/plans/combat-implementation-roadmap/06-polirovka-perf-report.md`](./06-polirovka-perf-report.md)
-- [`docs/design/starting-rules-catalog.md`](../../design/starting-rules-catalog.md)
-- [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../agents/CONTENT_RULES_EDGE_CASES.md)
-- [`docs/plans/Концепт боевой системы.md`](../Концепт%20боевой%20системы.md)
+- [`../design/starting-rules-catalog.md`](../design/starting-rules-catalog.md)
+- [`../agents/CONTENT_RULES_EDGE_CASES.md`](../agents/CONTENT_RULES_EDGE_CASES.md)
+- [`Концепт боевой системы.md`](Концепт%20боевой%20системы.md)

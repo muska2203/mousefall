@@ -93,6 +93,7 @@ UI не знает о существовании Simulation. Content не зна
 - Управление ходами (Action → Intent → Event)
 - Генерация карт
 - AI-стратегии (как данные поведения, не как отображение)
+- Data-driven контентные правила: реакции и модификаторы (`src/simulation/content-rules/`)
 
 **Публичный API:**
 См. интерфейс `Simulation` в `src/simulation/types.ts`.
@@ -417,9 +418,10 @@ public/content/entities/cat_small.json  # Content: lowercase
 1. Добавить типы в `src/simulation/types.ts`
 2. Добавить логику в `src/simulation/systems/`
 3. Добавить обработчик действия в `src/simulation/systems/actions/`
-4. Добавить контент-определения при необходимости
-5. Обновить Presentation: добавить перевод новых событий в анимации
-6. Обновить UI: добавить визуализацию новых анимаций при необходимости
+4. Добавить контентное правило в `src/simulation/content-rules/`, если механика требует реакций/модификаторов (например, модификатор урона, накладывание статуса, контратака)
+5. Добавить контент-определения при необходимости
+6. Обновить Presentation: добавить перевод новых событий в анимации
+7. Обновить UI: добавить визуализацию новых анимаций при необходимости
 
 ### Новый UI-экран (например, экран крафта)
 1. Добавить React-компонент в `src/ui/components/`
@@ -441,6 +443,7 @@ public/content/entities/cat_small.json  # Content: lowercase
 - **UI Layer:** полностью реализован (`screens/`, `components/`, `input/`, `styles/`)
 - **Renderer (PixiJS):** полностью реализован (`ui/renderer/` — WorldRenderer, TileRenderer, EntityRenderer, FogRenderer и др.)
 - **World Reactions:** динамическая регистрация с приоритетами (`registerReaction`)
+- **Content Rules:** data-driven система реакций и модификаторов (`src/simulation/content-rules/`) — статические TS-объекты, на которые ссылаются JSON-шаблоны по `ruleIds`, с валидацией ссылок при загрузке.
 
 ### Удалено / не реализовано
 - **Save/Load** — модули `src/simulation/serialization.ts` и `src/simulation/turn.ts` удалены; сохранения не реализованы.

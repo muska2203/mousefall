@@ -207,6 +207,9 @@
 - AP-система, бой, экипировка, инвентарь, статусы.
 - FOV, pathfinding, базовый AI.
 - Content pipeline (JSON + Zod + реестр).
+- Data-driven content rules.
+- `activeRules` / кэш активных правил.
+- Новая боевая система на основе реакций.
 - Presentation layer: `GameSession`, анимационный планировщик, лог.
 - UI: экраны, PixiJS-рендерер, ввод.
 

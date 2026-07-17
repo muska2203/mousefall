@@ -41,14 +41,20 @@
 │     → Intent[]                          │
 │  4. ActionHandler.execute(...)          │
 │     → вызывает IntentExecutor'ы         │
+│     → перед каждым intent:              │
+│       applyIntentModifiersIfEnabled     │
+│       (модификаторы контентных правил)  │
 │     → каждый executor мутирует state    │
 │     → каждый executor создаёт узел      │
 │       через builder.addChild()          │
-│  5. runWorldReactions                   │
-│     → проверяет реакции на событие      │
-│     → может породить новые Intents      │
+│  5. runContentRuleReactionsIfEnabled    │
+│     → контентные правила на событие     │
+│     → могут породить новые Intents      │
+│  6. runWorldReactions                   │
+│     → системные реакции мира            │
+│     → могут породить новые Intents      │
 │     → новые Intents → новые Events      │
-│  6. SimulationResult                    │
+│  7. SimulationResult                    │
   │     { success, stateChanged,            │
   │       phases: TurnPhase[],              │
   │       hasMoreSteps }                    │
@@ -62,6 +68,7 @@
 │  Обходит дерево ExecutionNode:          │
 │  - ENTITY_MOVED    → анимация ходьбы    │
 │  - ACTION_APPLIED (ATTACK) → анимация атаки │
+│  - RULE_TRIGGERED  → запись combat log  │
 │  - ENTITY_DAMAGED  → всплывающий урон   │
 │  - ENTITY_DIED     → анимация смерти    │
 │  - ITEM_PICKED_UP  → звук + строка лога │
@@ -100,9 +107,16 @@ Action (GameAction)
         ├── Для каждого Intent:
         │     executeIntent(state, intent, builder, parent)
         │       │
+        │       ├── buildRuleContext(state, intent)
+        │       ├── applyIntentModifiersIfEnabled(state, intent, context)
+        │       │     → только для DAMAGE: модифицирует damage/tags
         │       ├── IntentExecutor мутирует state
         │       ├── Создаёт узел события через builder.addChild()
+        │       ├── runContentRuleReactionsIfEnabled(state, event, builder, node)
+        │       │     → контентные правила из слоёв source/target/world/radius
+        │       │     → могут породить новые Intents
         │       └── runWorldReactions(state, builder, node)
+        │             → только системные реакции
         │             → может породить новые Intents
         │
         └── Возвращает управление
@@ -113,6 +127,12 @@ Action (GameAction)
 Реализация IntentExecutor'ов: `src/simulation/systems/intents/`.
 
 Реализация WorldReactions: `src/simulation/systems/world-reactions/reactions.ts`.
+
+Реализация контентных модификаторов: `src/simulation/content-rules/modifiers/apply-intent-modifiers.ts`.
+
+Реализация контентных реакций: `src/simulation/content-rules/reaction/content-rule-reaction.ts`.
+
+Точки врезки в исполнитель интентов: `src/simulation/content-rules/intent-modifiers.ts`, `src/simulation/content-rules/event-reactions.ts`.
 
 ### Пример: MOVE Action
 
@@ -127,16 +147,97 @@ Action (GameAction)
 1. **Action:** `ATTACK` с параметрами (entityId, dx, dy)
 2. **Validation:** проверка, что цель в зоне поражения
 3. **Resolution:** порождает Intent `DAMAGE`
-4. **Execution:** `executeDamageIntent` уменьшает HP цели и создаёт событие `ENTITY_DAMAGED`
-5. **World Reactions:** `deathReaction` видит `ENTITY_DAMAGED`, проверяет `hp <= 0`, порождает Intent `DIE`
-6. **Execution DIE:** `executeDieIntent` удаляет сущность и создаёт `ENTITY_DIED` (или `PLAYER_DIED`)
+4. **Модификаторы:** `applyIntentModifiersIfEnabled` может изменить урон и теги DAMAGE-интента через контентные правила (например, `weapon_fire_damage_boost`)
+5. **Execution:** `executeDamageIntent` уменьшает HP цели и создаёт событие `ENTITY_DAMAGED`
+6. **Контентные реакции:** `runContentRuleReactionsIfEnabled` проверяет правила из слоёв `source`, `target`, `world`, `radius`. Например, `weapon_poison_on_hit` может породить `APPLY_STATUS`, а `armor_spiked_thorns` — контурный урон в ответ.
+7. **World Reactions:** `deathReaction` видит `ENTITY_DAMAGED`, проверяет `hp <= 0`, порождает Intent `DIE`
+8. **Execution DIE:** `executeDieIntent` удаляет сущность и создаёт `ENTITY_DIED` (или `PLAYER_DIED`)
 
-Итоговое дерево:
+Возможное итоговое дерево (с контентными реакциями):
+```
+ACTION_APPLIED (ATTACK)
+└── ENTITY_DAMAGED (target, damage: 10)  ← урон мог быть модифицирован правилом weapon_fire_damage_boost
+    ├── RULE_TRIGGERED (weapon_poison_on_hit)
+    ├── APPLY_STATUS (poisoned)
+    ├── RULE_TRIGGERED (armor_spiked_thorns)
+    ├── ENTITY_DAMAGED (attacker, thorns: 2)
+    └── ENTITY_DIED (target)
+```
+
+Без контентных правил дерево сводится к минимальной цепочке:
 ```
 ACTION_APPLIED (ATTACK)
 └── ENTITY_DAMAGED (target, damage)
     └── ENTITY_DIED (target)
 ```
+
+---
+
+## Модификаторы на интенте
+
+Модификаторы применяются **перед** исполнением интента. Они собирают активные правила с эффектом `modifyDamage` из слоёв `source`, `target`, `world`, `radius` и изменяют только `DAMAGE`-интенты.
+
+**Что может изменить модификатор:**
+- `damage` — умножение или сложение (`op: 'multiply' | 'add'`);
+- `tags` — добавление игровых тегов урона (`addTags`).
+
+**Порядок применения:**
+1. Слои в порядке `source → target → world → radius`.
+2. Внутри слоя: сначала `multiply`, затем `add`.
+3. При равенстве — по `priority`, затем по `id` правила.
+
+Модификаторы не мутируют `state` и не порождают событий; они возвращают новый интент, который затем исполняет стандартный `IntentExecutor`.
+
+Реализация: `src/simulation/content-rules/modifiers/apply-intent-modifiers.ts`.
+
+---
+
+## Контентные реакции (ContentRuleReaction)
+
+Контентные реакции запускаются **после** исполнения интента и создания узла события. Они собирают активные правила из всех слоёв, фильтруют по триггеру (`event.type` и теги), оценивают условия и превращают подходящие эффекты в интенты.
+
+**Слои источников правил:**
+| Слой | Описание |
+|------|----------|
+| `source` | `activeRules` сущности-источника события. |
+| `target` | `activeRules` сущности-цели события (если отличается от `source`). |
+| `world` | Глобальные мировые правила (`WORLD_CONTENT_RULES`). |
+| `radius` | `activeRules` живых акторов в радиусе 1 от позиции события (кроме `source`/`target`). |
+
+**Порядок обработки:**
+1. Слои: `source → target → world → radius`.
+2. Внутри слоя `world`: `global → tileEffect → tileIntrinsic`.
+3. При равенстве — по `priority`, затем по `id` правила.
+
+**Поддерживаемые эффекты реакций:**
+- `applyStatus` — наложить статус-эффект (`APPLY_STATUS`);
+- `dealDamage` — нанести урон (`DAMAGE`);
+- `heal` — лечение (`HEAL`);
+- `restoreAp` / `consumeAp` — изменить AP (`RESTORE_AP` / `CONSUME_AP`);
+- `counterAttack` — контратака (`COUNTER_ATTACK`).
+
+Каждое сработавшее правило записывается в дерево как событие `RULE_TRIGGERED`, которое содержит `ruleId`, слой, владельца, тип триггера и порождённые интенты. Порождённые интенты проходят через `resolveStatusBatch` и затем рекурсивно исполняются как дочерние узлы текущего события.
+
+Content-rules включены по умолчанию (`contentRulesEnabled`). Если флаг выключен, `applyIntentModifiersIfEnabled` и `runContentRuleReactionsIfEnabled` возвращают исходный интент / пустой массив, сохраняя старое поведение.
+
+Реализация: `src/simulation/content-rules/reaction/content-rule-reaction.ts`.
+
+---
+
+## WorldReactions: системные реакции мира
+
+`WorldReactions` — это жёстко зарегистрированные в коде реакции на события, которые обеспечивают базовые системные механики. Они выполняются **после** контентных реакций и не заменяются контентными правилами.
+
+**Список системных реакций:**
+- `death` — на `ENTITY_DAMAGED` проверяет `hp <= 0` и порождает `DIE`;
+- `postDeathLoot` — на `ENTITY_DIED` генерирует лут;
+- `displacementMove` — на `ENTITY_DISPLACED` завершает толчок;
+- `floorTransition` — на `FLOOR_CHANGED` обрабатывает переход между этажами;
+- `aiPerception` — на `ENTITY_MOVED`, `DOOR_OPENED`, `DOOR_CLOSED` обновляет восприятие AI.
+
+Все остальные механики (огненный урон, яд, шипы, контратаки, модификация урона и т.д.) вынесены в контентные правила и больше не являются частью `WorldReactions`.
+
+Реализация: `src/simulation/systems/world-reactions/reactions.ts`.
 
 ---
 

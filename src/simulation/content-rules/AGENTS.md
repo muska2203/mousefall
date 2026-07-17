@@ -1,12 +1,12 @@
 # Правила работы с content-rules
 
-> Локальные инструкции для папки `src/simulation/content-rules/`. Работая здесь, соблюдай эти правила в дополнение к [`src/simulation/AGENTS.md`](../../src/simulation/AGENTS.md) и [`AGENTS.md`](../../AGENTS.md).
+> Локальные инструкции для папки `src/simulation/content-rules/`. Работая здесь, соблюдай эти правила в дополнение к [`src/simulation/AGENTS.md`](../AGENTS.md) и [`AGENTS.md`](../../../AGENTS.md).
 
 ---
 
 ## Быстрый старт
 
-1. **Первый раз в content-rules?** → прочитай [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../docs/agents/CONTENT_RULES_EDGE_CASES.md).
+1. **Первый раз в content-rules?** → прочитай [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../../docs/agents/CONTENT_RULES_EDGE_CASES.md).
 2. **Хочешь добавить новое правило?** → раздел [«Как добавить новое правило»](#как-добавить-новое-правило) ниже.
 3. **Ищешь описание типов?** → `src/simulation/content-rules/types.ts`.
 
@@ -71,7 +71,7 @@ src/simulation/content-rules/
 7. **Обновить документацию.**
    - Новое правило в стартовом наборе → `docs/design/starting-rules-catalog.md`.
    - Новый edge case → `docs/agents/CONTENT_RULES_EDGE_CASES.md`.
-   - Изменения в жизненном цикле/порядке → этот файл и [`docs/plans/Концепт боевой системы.md`](../plans/Концепт%20боевой%20системы.md).
+   - Изменения в жизненном цикле/порядке → этот файл и [`docs/plans/Концепт боевой системы.md`](../../../docs/plans/Концепт%20боевой%20системы.md).
 
 8. **Запустить проверки.**
    - `npm run typecheck`
@@ -123,7 +123,7 @@ src/simulation/content-rules/
 
 ## Важные edge cases
 
-Краткая сводка; подробности — в [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../docs/agents/CONTENT_RULES_EDGE_CASES.md).
+Краткая сводка; подробности — в [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../../docs/agents/CONTENT_RULES_EDGE_CASES.md).
 
 - **Self-эффекты:** при `source === target` слои `source` и `target` не дублируются.
 - **Циклы:** лимит 1000 реакций за цепочку; при превышении ветвь прерывается.
@@ -137,7 +137,7 @@ src/simulation/content-rules/
 
 ## Связанные документы
 
-- [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../docs/agents/CONTENT_RULES_EDGE_CASES.md) — крайние случаи и отладка.
-- [`docs/agents/CONTENT.md`](../../docs/agents/CONTENT.md) — контент-пайплайн.
-- [`docs/design/starting-rules-catalog.md`](../design/starting-rules-catalog.md) — каталог стартовых правил.
-- [`docs/plans/Концепт боевой системы.md`](../plans/Концепт%20боевой%20системы.md) — концепт боевой системы.
+- [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../../docs/agents/CONTENT_RULES_EDGE_CASES.md) — крайние случаи и отладка.
+- [`docs/agents/CONTENT.md`](../../../docs/agents/CONTENT.md) — контент-пайплайн.
+- [`docs/design/starting-rules-catalog.md`](../../../docs/design/starting-rules-catalog.md) — каталог стартовых правил.
+- [`docs/plans/Концепт боевой системы.md`](../../../docs/plans/Концепт%20боевой%20системы.md) — концепт боевой системы.

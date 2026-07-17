@@ -90,6 +90,82 @@ public/content/
 
 ---
 
+## Content Rules
+
+Контентные правила (content rules) — это data-driven способ описывать **реакции** на игровые события и **модификаторы** интентов (например, модификаторы урона). Они хранятся отдельно от JSON-шаблонов, но шаблоны предметов, способностей и статусов ссылаются на них по `ruleIds`.
+
+### Почему правила — статические TypeScript-объекты
+
+- Правила — это **код**, а не данные: они описывают семантику игровой механики (триггеры, условия, эффекты, селекторы целей).
+- JSON-шаблоны должны оставаться простыми и редактироваться без пересборки; правила же меняются реже и требуют компиляции.
+- TypeScript даёт compile-time проверку типов `RuleTrigger`, `RuleCondition`, `RuleEffect` и `TargetSelector`.
+
+### Где хранятся правила
+
+- **Source-bound правила** — привязаны к источнику эффекта (предмет, способность, талант, статус). Реестр: `src/simulation/content-rules/rules.ts`.
+- **World-rules** — глобальные правила, не привязанные к конкретной сущности. Реестр: `src/simulation/content-rules/world-rules/global-rules.ts`.
+
+Все правила регистрируются статически при импорте модуля реестра (`src/simulation/content-rules/registry.ts`) и доступны по id через `getContentRule(id)` / `tryGetContentRule(id)`.
+
+### Как шаблоны ссылаются на правила
+
+Шаблоны предметов, способностей и статусов содержат поле `ruleIds` — массив строковых идентификаторов правил. При создании экземпляра актора кэшируются активные правила (`activeRules`) из экипировки, статусов и т.д. Этот кэш используется системами реакций и модификаторов.
+
+Пример JSON-шаблона статуса:
+
+```json
+{
+  "id": "burning",
+  "ruleIds": ["status_burning_vulnerability"],
+  "statusCategory": "elemental",
+  "categoryPriority": 1,
+  "mutuallyExclusiveWith": ["frozen"],
+  "blockedBy": []
+}
+```
+
+Пример контентного правила (TypeScript-объект):
+
+```ts
+{
+  id: 'status_burning_vulnerability',
+  trigger: {
+    event: 'DAMAGE',
+    tags: ['damage.magical.fire'],
+  },
+  conditions: [{ type: 'hasStatus', statusType: 'burning', subject: 'self' }],
+  effect: {
+    type: 'modifyDamage',
+    op: 'multiply',
+    value: 1.2,
+  },
+  target: { type: 'eventTarget' },
+  priority: 0,
+}
+```
+
+### Валидация ссылок при загрузке
+
+При загрузке контента выполняется двухуровневая проверка:
+
+1. **Ссылки шаблонов на правила** (`validateContentRuleReferences` в `src/simulation/content-rules/validation.ts`):
+   - Каждый `ruleId` из шаблонов items, abilities и statuses должен существовать в реестре правил.
+   - Внутри одного шаблона не должно быть дублирующихся `ruleIds`.
+   - При ошибке игра падает fail-fast с понятным сообщением.
+
+2. **Семантика правил** (`validateContentRuleSemantics` в `src/simulation/content-rules/validation.ts`):
+   - Проверяет, что правила ссылаются на реально существующие статусы, способности и формулы урона.
+   - Проверяет корректность тегов триггера и условий.
+   - Возвращает массив ошибок без выброса исключений, чтобы скрипты валидации могли собрать полный отчёт.
+
+### Что не контролируют правила
+
+- ❌ **Порядок исполнения** — он определяется в `src/simulation/content-rules/event-reactions.ts` и `src/simulation/content-rules/modifiers/apply-intent-modifiers.ts`.
+- ❌ **Визуализацию** — за анимации отвечает Presentation Layer.
+- ❌ **Добавление совершенно новых типов интентов** — это изменение модели игры, а не контентное правило.
+
+---
+
 ## Content Registry
 
 Реестр контента загружает все JSON-файлы при старте и предоставляет интерфейс lookup:
