@@ -126,6 +126,7 @@ export interface ComponentsItemDetailTranslations {
   abilityLevelPrefix: string;
   possibleSkillsTitle: string;
   descriptionTitle: string;
+  propertiesTitle: string;
 }
 
 export interface ComponentsEquipmentPanelTranslations {

@@ -1411,3 +1411,29 @@
 .cm-tag-link--effect { color: #ffbc6e; }
 .cm-tag-link--buff { color: #9ee6a0; }
 .cm-tag-link--other { color: var(--gold); }
+
+/* ───────────────────────────────────────────── */
+/* Item properties                              */
+/* ───────────────────────────────────────────── */
+
+.item-detail-property {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+}
+
+.item-detail-property + .item-detail-property {
+  border-top: 1px solid rgba(196, 163, 90, 0.12);
+}
+
+.item-detail-property__name {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.item-detail-property__desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}

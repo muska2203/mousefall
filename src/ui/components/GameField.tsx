@@ -282,11 +282,22 @@ export function GameField({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!rendererRef.current) return;
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
+
+      // События над панелью быстрого доступа не должны влиять на игровое поле:
+      // сбрасываем ховер и не отправляем координаты тайла.
+      if (isHotbarTarget(e.target)) {
+        lastMouseRef.current = { x: mouseX, y: mouseY, over: false };
+        lastSentTileRef.current = null;
+        onMouseLeave?.();
+        return;
+      }
+
       lastMouseRef.current = { x: mouseX, y: mouseY, over: true };
 
       const { x: tileX, y: tileY } = rendererRef.current.screenToWorld(mouseX, mouseY);
@@ -303,6 +314,9 @@ export function GameField({
 
     const handleClick = (e: MouseEvent) => {
       if (isInputBlockedRef.current) return;
+      // Клики по панели быстрого доступа не должны попадать на игровое поле.
+      if (isHotbarTarget(e.target)) return;
+
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
@@ -315,6 +329,9 @@ export function GameField({
     // Отмена автопути по любому нажатию мыши должна срабатывать даже во время
     // анимаций, чтобы игрок мог прервать committed-путь.
     const handleMouseDown = (e: MouseEvent) => {
+      // Нажатия на панель быстрого доступа не должны обрабатываться полем.
+      if (isHotbarTarget(e.target)) return;
+
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
@@ -371,6 +388,12 @@ export function GameField({
       </div>
     </Panel>
   );
+}
+
+/** Проверить, что событие произошло над панелью быстрого доступа (хотбаром). */
+function isHotbarTarget(target: EventTarget | null): boolean {
+  const element = target instanceof Element ? target : (target instanceof Node ? target.parentElement : null);
+  return element?.closest('.cm-quickbar-wrap') !== null;
 }
 
 interface PhaseButtonProps {

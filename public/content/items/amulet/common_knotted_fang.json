@@ -7,5 +7,6 @@
   "stackable": false,
   "maxStack": 1,
   "value": 5,
-  "equipModifiers": []
+  "equipModifiers": [],
+  "ruleIds": ["amulet_restore_ap_on_hit"]
 }

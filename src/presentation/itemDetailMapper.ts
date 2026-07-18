@@ -14,7 +14,7 @@ import type { ItemDetailSection, ItemDetailViewModel } from './types';
 import { tryGetLocalizedAbility } from '@content/registry';
 import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
 import type { Locale } from '@content/texts/lookup';
-import { getTagText } from '@content/texts/lookup';
+import { getContentText, getTagText } from '@content/texts/lookup';
 import type { GameplayTag } from '@simulation/core-types';
 import { t } from '@i18n/t';
 
@@ -24,6 +24,8 @@ export interface MapItemDetailOptions {
   fallbackIcon?: string;
   /** Effective урон по каждому типу урона (для оружия). Если не передан — показывается базовый урон. */
   effectiveDamageByTag?: Record<GameplayTag, number>;
+  /** true, если карточка показывает шаблон предмета, а не конкретный инстанс. */
+  isTemplate?: boolean;
 }
 
 function formatDamage(value: number): number {
@@ -64,6 +66,7 @@ export function mapItemTemplateToDetail(
 ): ItemDetailViewModel {
   const currentLocale = locale;
   const rarity = opts?.rarity ?? 'common';
+  const isTemplate = opts?.isTemplate ?? false;
 
   const sections: ItemDetailSection[] = [];
 
@@ -130,6 +133,18 @@ export function mapItemTemplateToDetail(
         })
       : null;
 
+  const properties =
+    template.ruleIds && template.ruleIds.length > 0
+      ? template.ruleIds.map((ruleId) => {
+          const text = getContentText('rules', ruleId, currentLocale);
+          return {
+            ruleId,
+            name: text.name,
+            description: text.description ?? '',
+          };
+        })
+      : null;
+
   return {
     name: template.name,
     description: template.description,
@@ -141,8 +156,10 @@ export function mapItemTemplateToDetail(
     frameUrl: resolveItemFrame(rarity),
     fallbackIcon: opts?.fallbackIcon,
     stackCount: opts?.stackCount,
+    isTemplate,
     sections,
-    abilityPool,
+    abilityPool: isTemplate ? abilityPool : null,
+    properties,
     tags: template.weapon?.tags ?? [],
   };
 }

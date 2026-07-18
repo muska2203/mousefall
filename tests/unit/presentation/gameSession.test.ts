@@ -895,3 +895,73 @@ describe('GameSession DisplayState', () => {
     expect(displayEnemy?.y).toBe(gameEnemy?.y);
   });
 });
+
+describe('GameSession fieldObjectPopover', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map([
+        ['cat_small', {
+          id: 'cat_small',
+          health: {max: 20},
+          combat: {damage: 5, armor: 0},
+          baseStats: {str: 1, dex: 1, int: 0, vit: 0},
+          aiSightRadius: 6,
+          aiStrategyId: 'hunter',
+        } as any],
+      ]),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('does not show enemy popover when the tile is not visible', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const enemy = makeEnemy({ x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.setFieldHover({ x: 6, y: 5 });
+    const popover = session.getViewModel().renderInput?.fieldObjectPopover;
+    expect(popover).toBeNull();
+  });
+
+  it('shows enemy popover when the tile is visible', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const enemy = makeEnemy({ x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.setFieldHover({ x: 6, y: 5 });
+    const popover = session.getViewModel().renderInput?.fieldObjectPopover;
+    expect(popover).toBeDefined();
+    expect(popover?.kind).toBe('enemy');
+  });
+});

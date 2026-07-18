@@ -103,6 +103,7 @@ describe('ItemDetailCard', () => {
       icon: '/icons/sword.png',
       frameUrl: '/frames/common.png',
       stackCount: 1,
+      isTemplate: false,
       sections: [],
       grantedAbilities: [],
       abilityPool: [],
@@ -124,9 +125,63 @@ describe('ItemDetailCard', () => {
       icon: '/icons/potion.png',
       frameUrl: '/frames/common.png',
       sections: [],
+      isTemplate: false,
       tags: [],
     };
     const html = renderToString(<ItemDetailCard item={item} />);
     expect(html).not.toContain('cm-tag-list');
+  });
+
+  it('renders item properties section', () => {
+    const item: ItemDetailViewModel = {
+      name: 'Амулет',
+      description: '',
+      rarity: 'common',
+      rarityLabel: 'Обычный',
+      typeLabel: 'Амулет',
+      type: 'amulet',
+      icon: '/icons/amulet.png',
+      frameUrl: '/frames/common.png',
+      sections: [],
+      isTemplate: false,
+      properties: [
+        { ruleId: 'amulet_fire_damage_multiplier', name: 'Угольная искра', description: 'Весь огненный урон увеличивается на 15%.' },
+      ],
+      tags: [],
+    };
+    const html = renderToString(<ItemDetailCard item={item} />);
+    expect(html).toContain('Свойства');
+    expect(html).toContain('Угольная искра');
+    expect(html).toContain('Весь огненный урон увеличивается на 15%.');
+  });
+
+  it('renders possible skills only for template view', () => {
+    const poolItem: ItemDetailViewModel = {
+      name: 'Амулет',
+      description: '',
+      rarity: 'common',
+      rarityLabel: 'Обычный',
+      typeLabel: 'Амулет',
+      type: 'amulet',
+      icon: '/icons/amulet.png',
+      frameUrl: '/frames/common.png',
+      sections: [],
+      isTemplate: false,
+      abilityPool: [
+        { abilityId: 'fireball', name: 'Огненный шар', description: '', icon: null, weight: 1 },
+      ],
+      tags: [],
+    };
+    const templateItem: ItemDetailViewModel = {
+      ...poolItem,
+      isTemplate: true,
+    };
+
+    const instanceHtml = renderToString(<ItemDetailCard item={poolItem} />);
+    const templateHtml = renderToString(<ItemDetailCard item={templateItem} />);
+
+    expect(instanceHtml).not.toContain('Возможные скиллы');
+    expect(templateHtml).toContain('Возможные скиллы');
+    expect(templateHtml).toContain('Огненный шар');
   });
 });

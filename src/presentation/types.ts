@@ -38,6 +38,8 @@ export interface ItemDetailViewModel {
   frameUrl: string;
   fallbackIcon?: string;
   stackCount?: number;
+  /** true, если карточка отображает шаблон предмета; false — для конкретного инстанса. */
+  isTemplate: boolean;
   sections: ItemDetailSection[];
   /** Все способности экземпляра предмета (фиксированные + ролленные) */
   grantedAbilities?: Array<{
@@ -54,6 +56,12 @@ export interface ItemDetailViewModel {
     description: string;
     icon: string | null;
     weight: number;
+  }> | null;
+  /** Пассивные свойства предмета, полученные из ruleIds шаблона. */
+  properties?: Array<{
+    ruleId: string;
+    name: string;
+    description: string;
   }> | null;
   /** Теги классификации предмета (обычно оружия). */
   tags: GameplayTag[];

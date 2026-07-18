@@ -11,5 +11,6 @@
     "baseArmor": 2
   },
   "grantedAbilities": [],
-  "equipModifiers": []
+  "equipModifiers": [],
+  "ruleIds": ["armor_spiked_thorns"]
 }

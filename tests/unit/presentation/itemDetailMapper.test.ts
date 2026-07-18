@@ -159,4 +159,102 @@ describe('mapItemTemplateToDetail', () => {
 
     expect(vm.tags).toEqual([]);
   });
+
+  it('maps item ruleIds into localized properties', () => {
+    const template: LocalizedItemTemplate = {
+      id: 'common_ember_amulet',
+      name: 'Тусклый угольный амулет',
+      description: 'Хранит угасающую искру.',
+      type: 'amulet',
+      spriteId: 'common_ember_amulet',
+      stackable: false,
+      maxStack: 1,
+      value: 6,
+      rarity: 'common',
+      equipModifiers: [],
+      abilityPool: [],
+      grantedAbilities: [],
+      apCost: 1,
+      ruleIds: ['amulet_fire_damage_multiplier'],
+    } as unknown as LocalizedItemTemplate;
+
+    const vm = mapItemTemplateToDetail(template, {}, 'ru');
+
+    expect(vm.properties).toEqual([
+      {
+        ruleId: 'amulet_fire_damage_multiplier',
+        name: 'Угольная искра',
+        description: 'Весь огненный урон увеличивается на 15%.',
+      },
+    ]);
+  });
+
+  it('returns null abilityPool and isTemplate=false by default', () => {
+    const template: LocalizedItemTemplate = {
+      id: 'common_school_wand',
+      name: 'Школьная палочка',
+      description: 'Простая палочка.',
+      type: 'weapon',
+      spriteId: 'common_school_wand',
+      stackable: false,
+      maxStack: 1,
+      value: 10,
+      rarity: 'common',
+      equipModifiers: [],
+      abilityPool: [
+        { abilityId: 'fireball', weight: 1 },
+        { abilityId: 'magic_slap', weight: 1 },
+      ],
+      grantedAbilities: [],
+      apCost: 1,
+      weapon: {
+        baseDamage: 2,
+        damageFormulaId: 'staff',
+        range: 1,
+        damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }],
+        tags: [],
+      },
+    } as unknown as LocalizedItemTemplate;
+
+    const vm = mapItemTemplateToDetail(template, {}, 'ru');
+
+    expect(vm.isTemplate).toBe(false);
+    expect(vm.abilityPool).toBeNull();
+  });
+
+  it('exposes abilityPool and isTemplate=true for template view', () => {
+    const template: LocalizedItemTemplate = {
+      id: 'common_school_wand',
+      name: 'Школьная палочка',
+      description: 'Простая палочка.',
+      type: 'weapon',
+      spriteId: 'common_school_wand',
+      stackable: false,
+      maxStack: 1,
+      value: 10,
+      rarity: 'common',
+      equipModifiers: [],
+      abilityPool: [
+        { abilityId: 'fireball', weight: 1 },
+        { abilityId: 'magic_slap', weight: 1 },
+      ],
+      grantedAbilities: [],
+      apCost: 1,
+      weapon: {
+        baseDamage: 2,
+        damageFormulaId: 'staff',
+        range: 1,
+        damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }],
+        tags: [],
+      },
+    } as unknown as LocalizedItemTemplate;
+
+    const vm = mapItemTemplateToDetail(template, { isTemplate: true }, 'ru');
+
+    expect(vm.isTemplate).toBe(true);
+    expect(vm.abilityPool).not.toBeNull();
+    expect(vm.abilityPool).toHaveLength(2);
+    expect(vm.abilityPool!.map((a) => a.abilityId)).toContain('fireball');
+    expect(vm.abilityPool!.map((a) => a.abilityId)).toContain('magic_slap');
+  });
 });

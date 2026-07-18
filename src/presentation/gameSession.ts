@@ -309,6 +309,8 @@ export class GameSession {
             fallbackIcon: '?',
             stackCount: invItem.quantity,
             sections: [],
+            isTemplate: false,
+            properties: [],
             tags: [],
           };
       const grantedAbilities = invItem.grantedAbilities.map((ability) => {
@@ -711,6 +713,9 @@ export class GameSession {
 
     const { x, y } = this.fieldHover;
 
+    // Popover объекта показывается только для клеток, видимых игроку в данный момент.
+    if (!state.visible[y]?.[x]) return null;
+
     // Ищем объект на клетке, исключая игрока
     let enemy = null;
     let door = null;
@@ -870,7 +875,7 @@ export class GameSession {
       name: info?.name ?? id,
       icon: info?.icon ?? `/assets/items/${id}.png`,
       fallback: info?.fallback ?? '?',
-      detail: rawTemplate ? mapItemTemplateToDetail(rawTemplate, {}, locale) : undefined,
+      detail: rawTemplate ? mapItemTemplateToDetail(rawTemplate, { isTemplate: true }, locale) : undefined,
     };
   }
 

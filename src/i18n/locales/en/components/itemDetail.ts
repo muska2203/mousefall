@@ -5,4 +5,5 @@ export const enItemDetail = {
   abilityLevelPrefix: 'lvl ',
   possibleSkillsTitle: 'Possible Skills',
   descriptionTitle: 'Description',
+  propertiesTitle: 'Properties',
 } as const satisfies ComponentsItemDetailTranslations;

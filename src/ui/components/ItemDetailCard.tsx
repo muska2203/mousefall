@@ -77,7 +77,23 @@ export function ItemDetailCard({ item }: Props) {
         </div>
       )}
 
-      {item.abilityPool && item.abilityPool.length > 0 && (
+      {item.properties && item.properties.length > 0 && (
+        <div className="item-detail-section">
+          <h4 className="item-detail-section-title">{t('itemDetail.propertiesTitle')}</h4>
+          <ul className="item-detail-list item-detail-list-plain">
+            {item.properties.map((property) => (
+              <li key={property.ruleId} className="item-detail-property">
+                <span className="item-detail-property__name">{property.name}</span>
+                <span className="item-detail-property__desc">
+                  <RichDescription text={property.description} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {item.isTemplate && item.abilityPool && item.abilityPool.length > 0 && (
         <div className="item-detail-section">
           <h4 className="item-detail-section-title">{t('itemDetail.possibleSkillsTitle')}</h4>
           <ul className="item-detail-list item-detail-list-plain">

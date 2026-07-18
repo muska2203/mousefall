@@ -5,4 +5,5 @@ export const ruItemDetail = {
   abilityLevelPrefix: 'ур. ',
   possibleSkillsTitle: 'Возможные скиллы',
   descriptionTitle: 'Описание',
+  propertiesTitle: 'Свойства',
 } as const satisfies ComponentsItemDetailTranslations;
