@@ -2,12 +2,15 @@
  * Информационный виджет над сущностями: портрет, слоты эффектов, HP-бар.
  *
  * Рисуется над каждой сущностью с HP в мировых координатах.
- * Ширина виджета масштабируется под ширину спрайта объекта.
+ * Ширина виджета фиксирована относительно размера тайла и не зависит
+ * от масштаба спрайта объекта.
  */
 
 import {Container, Graphics, Sprite, Texture} from 'pixi.js';
 import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode, AIPreparedIntentViewModel, AIMode} from '@presentation/types';
+import {TILE_SIZE} from '@utils/constants';
 import {Tween, lerp, clamp01} from '@utils/tween';
+import {ACTOR_OFFSET_Y_FACTOR} from './EntityRenderer';
 import type {Animatable} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
 import {getStatusEffectSprite, getStatusOverflowSprite, getAIModeSprite} from './spriteRegistry';
@@ -394,14 +397,19 @@ export class UnitInfoRenderer {
   }
 
   private syncWidgetPosition(widget: UnitInfoWidget, sprite: Sprite): void {
-    const scale = sprite.width / BASE_WIDTH;
+    const scale = TILE_SIZE / BASE_WIDTH;
     widget.container.scale.set(scale);
 
-    const centerX = sprite.x + sprite.width * (0.5 - sprite.anchor.x);
-    const topY = sprite.y - sprite.height * sprite.anchor.y;
+    const isActor = sprite.anchor.x === 0.5 && sprite.anchor.y === 1;
+    const tileX = isActor
+      ? (sprite.x - TILE_SIZE / 2) / TILE_SIZE
+      : sprite.x / TILE_SIZE;
+    const tileY = isActor
+      ? (sprite.y - TILE_SIZE * ACTOR_OFFSET_Y_FACTOR) / TILE_SIZE
+      : sprite.y / TILE_SIZE;
 
-    widget.container.x = centerX - (BASE_WIDTH * scale) / 2;
-    widget.container.y = topY - widget.contentHeight * scale - VERTICAL_OFFSET;
+    widget.container.x = tileX * TILE_SIZE;
+    widget.container.y = tileY * TILE_SIZE - widget.contentHeight * scale - VERTICAL_OFFSET;
     widget.container.visible = sprite.visible;
     widget.container.zIndex = (sprite.zIndex ?? 0) + 1;
   }

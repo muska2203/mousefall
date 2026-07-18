@@ -1026,6 +1026,79 @@ describe('runContentRuleReactions', () => {
     });
   });
 
+  describe('armor_spiked_thorns', () => {
+    it('не срабатывает, когда правило висит на источнике урона', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'armor_spiked_thorns',
+            trigger: {event: 'ENTITY_DAMAGED', tags: ['attack.melee']},
+            conditions: [{type: 'eventRole', role: 'target'}],
+            effect: {type: 'dealDamage', amount: 2, tags: ['damage.physical.piercing']},
+            target: {type: 'eventSource'},
+          }),
+        ],
+      });
+      const enemy = makeEnemy({id: 'enemy_test_1', x: 6, y: 5});
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: {x: 6, y: 5},
+        tags: ['attack.melee'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents.filter((intent) => intent.type === 'DAMAGE')).toHaveLength(0);
+    });
+
+    it('срабатывает, когда правило висит на цели урона, и бьёт по атакующему', () => {
+      const player = makePlayer({id: 'player', x: 5, y: 5});
+      const enemy = makeEnemy({
+        id: 'enemy_test_1',
+        x: 6,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'armor_spiked_thorns',
+            trigger: {event: 'ENTITY_DAMAGED', tags: ['attack.melee']},
+            conditions: [{type: 'eventRole', role: 'target'}],
+            effect: {type: 'dealDamage', amount: 2, tags: ['damage.physical.piercing']},
+            target: {type: 'eventSource'},
+          }),
+        ],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: {x: 6, y: 5},
+        tags: ['attack.melee'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({
+        type: 'DAMAGE',
+        entityId: player.id,
+        sourceEntityId: enemy.id,
+        damage: 2,
+        tags: ['damage.physical.piercing'],
+      });
+    });
+  });
+
   describe('контратака', () => {
     function makeCounterattackActiveRule(rule: typeof counterattackTriggerRule | typeof counterattackDamageRule, ownerId: string): ActiveRule {
       return {

@@ -18,7 +18,7 @@ import type {AnimationConfigEntry} from '@utils/animationConfig';
 
 const ACTOR_ANCHOR_X = 0.5;
 const ACTOR_ANCHOR_Y = 1;
-const ACTOR_OFFSET_Y_FACTOR = 0.85; // низ спрайта на 15% выше низа тайла
+export const ACTOR_OFFSET_Y_FACTOR = 0.85; // низ спрайта на 15% выше низа тайла
 
 type ActiveAnimation = {
   tween: Animatable;

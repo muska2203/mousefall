@@ -86,6 +86,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'ENTITY_DAMAGED',
       tags: ['attack.melee'],
     },
+    conditions: [{type: 'eventRole', role: 'target'}],
     effect: {
       type: 'dealDamage',
       amount: 2,
