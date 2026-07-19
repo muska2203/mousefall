@@ -31,8 +31,8 @@
 | `amulet_restore_ap_on_hit` | Амулет (`common_energized_bead`) | `ENTITY_DAMAGED` `attack.melee` `delivery.weapon` | `chance 15` | `restoreAp` себе | шанс 15%, восстановление 1 AP |
 | `amulet_fire_damage_multiplier` | Амулет (`common_ember_amulet`) | `DAMAGE` `damage.magical.fire` | `hasTag delivery.weapon` или `delivery.ability` | `modifyDamage add` 2 | +2 к огненному урону от оружия или способности |
 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30%, длительность 3 |
-| `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1, тег `damage.magical.fire` | 10% max HP, округление |
-| `status_poison_tick_damage` | Мир | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1, тег `damage.magical.poison` | 8% max HP, округление |
+| `burning_tick_damage` | Статус `burning` | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1, тег `damage.magical.fire` | 10% max HP, округление |
+| `status_poison_tick_damage` | Статус `poisoned` | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1, тег `damage.magical.poison` | 8% max HP, округление |
 | `status_burning_vulnerability` | Мир | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
 | `collision_damage` | Мир | `ENTITY_COLLIDED` `displacement.push` | — | `dealDamage` 5 `damage.physical.blunt` | урон 5 |
 | `collision_damage_actor` | Мир | `ENTITY_COLLIDED` `displacement.push` `collision.actor` | — | `dealDamage` 5 `damage.physical.blunt` по `collisionTarget` | урон 5 |
@@ -56,8 +56,8 @@
 | 7 | `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `eventRole target` + `chance 50` + `not target.aoe/multi` | `counterAttack` | шанс 50% |
 | 8 | `counterattack_damage` | Статус `counterattack` | `COUNTER_ATTACK_APPLIED` | — | `dealDamage` от `eventDamage` | урон контратаки |
 | 9 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30% |
-| 10 | `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1 `damage.magical.fire` | 10% max HP/ход |
-| 11 | `status_poison_tick_damage` | Мир | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1 `damage.magical.poison` | 8% max HP/ход |
+| 10 | `burning_tick_damage` | Статус `burning` | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1 `damage.magical.fire` | 10% max HP/ход |
+| 11 | `status_poison_tick_damage` | Статус `poisoned` | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1 `damage.magical.poison` | 8% max HP/ход |
 | 12 | `status_burning_vulnerability` | Мир | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
 
 ### Распределение по категориям
@@ -65,8 +65,8 @@
 - **Оружие:** 2 правила (яд, оглушение) + множитель огня на мече.
 - **Броня/щит:** 1 правило (шипы).
 - **Кольца/амулеты:** 2 правила (AP при ударе, бонусный огненный урон).
-- **Статусы:** 1 правило (контратака состоит из 2 правил).
-- **Мир:** 4 правила (поджигание, тик горения, тик яда, уязвимость к огню).
+- **Статусы:** 3 правила (контратака состоит из 2 правил, тик горения, тик яда).
+- **Мир:** 2 правила (поджигание, уязвимость к огню) + правила столкновений (`collision_*`).
 
 ---
 
@@ -78,7 +78,7 @@
 2. Обычная атака наносит урон `damage.magical.fire`.
 3. `item_fire_damage_multiplier` увеличивает урон на 50%.
 4. Мировое правило `fire_damage_ignites` (30%) накладывает `burning` на 3 хода.
-5. В начале хода врага `burning_tick_damage` наносит 10% max HP огнём.
+5. Правило статуса `burning_tick_damage` наносит 10% max HP огнём в начале хода врага.
 6. Если цель уже горит, `status_burning_vulnerability` усиливает последующий огненный урон ещё на 20%.
 
 **Баланс:** один удар сильно ранит крысу (≈14 урона против 15 HP), но не убивает сразу; горение добавляет ~2 HP/ход. Комбо сильно, но не мгновенно.
@@ -89,7 +89,7 @@
 2. Атака накладывает `poisoned` с шансом 40% (`weapon_poison_on_hit`).
 3. Игрок активирует `counterattack` (статус).
 4. Когда враг атакует игрока, `counterattack_trigger` + `counterattack_damage` отвечают ударом.
-5. В начале хода врага `status_poison_tick_damage` наносит 8% max HP ядом.
+5. Правило статуса `status_poison_tick_damage` наносит 8% max HP ядом в начале хода врага.
 
 **Баланс:** яд и контратака медленно «добивают» врага без риска убить его за один ход.
 

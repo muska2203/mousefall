@@ -270,6 +270,5 @@ export function createDoor(state: GameState, templateId: string, x: number, y: n
     maxHp: template.maxHp,
     armor: template.armor,
     isAlive: true,
-    statusEffects: [],
   };
 }

@@ -273,8 +273,8 @@ export interface StairsEntity extends BaseEntity, TemplateIdHolder {
   direction: 'up' | 'down';
 }
 
-/** Дверь — объект, который может быть открыт или закрыт. Может быть разрушена атаками и получать статус-эффекты. */
-export interface DoorEntity extends BaseEntity, Attackable, StatusEffectHolder, TemplateIdHolder {
+/** Дверь — объект, который может быть открыт или закрыт. Может быть разрушена атаками. */
+export interface DoorEntity extends BaseEntity, Attackable, TemplateIdHolder {
   type: 'door';
   blocksMovement: boolean;
   interactionKind: 'door';

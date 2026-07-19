@@ -512,10 +512,30 @@ describe('runContentRuleReactions', () => {
     expect(runReactions(state, event)).toHaveLength(1);
   });
 
-  describe('мировое правило тика горения', () => {
-    it('при STATUS_TICKED с тегом status.burning порождает fire DAMAGE от мира', () => {
+  describe('source-bound правила тиков статусов', () => {
+    it('при STATUS_TICKED с тегом status.burning порождает fire DAMAGE из activeRules статуса', () => {
       const player = makePlayer({ x: 5, y: 5 });
-      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5, hp: 100, maxHp: 100 });
+      const enemy = makeEnemy({
+        id: 'enemy_test_1',
+        x: 6,
+        y: 5,
+        hp: 100,
+        maxHp: 100,
+        activeRules: [
+          makeActiveRule({
+            id: 'burning_tick_damage',
+            trigger: { event: 'STATUS_TICKED', tags: ['status.burning'] },
+            effect: {
+              type: 'dealDamage',
+              amount: { type: 'context', field: 'eventMaxHp', multiply: 0.1, min: 1, round: true },
+              tags: ['damage.magical.fire'],
+            },
+            target: { type: 'eventTarget' },
+            priority: 0,
+            ownerContext: { type: 'entity', entityId: 'burning_instance', statusInstanceId: 'burning_instance' },
+          }),
+        ],
+      });
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
@@ -531,9 +551,53 @@ describe('runContentRuleReactions', () => {
       expect(damage).toBeDefined();
       expect(damage).toMatchObject({
         entityId: enemy.id,
-        sourceEntityId: null,
+        sourceEntityId: enemy.id,
         damage: Math.max(1, Math.round(enemy.maxHp * 0.1)),
         tags: expect.arrayContaining(['damage.magical.fire']),
+      });
+    });
+
+    it('при STATUS_TICKED с тегом status.poisoned порождает poison DAMAGE из activeRules статуса', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({
+        id: 'enemy_test_1',
+        x: 6,
+        y: 5,
+        hp: 100,
+        maxHp: 100,
+        activeRules: [
+          makeActiveRule({
+            id: 'status_poison_tick_damage',
+            trigger: { event: 'STATUS_TICKED', tags: ['status.poisoned'] },
+            effect: {
+              type: 'dealDamage',
+              amount: { type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true },
+              tags: ['damage.magical.poison'],
+            },
+            target: { type: 'eventTarget' },
+            priority: 0,
+            ownerContext: { type: 'entity', entityId: 'poison_instance', statusInstanceId: 'poison_instance' },
+          }),
+        ],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'STATUS_TICKED',
+        entityId: enemy.id,
+        effectTypes: ['poisoned'],
+        tags: ['status.poisoned'],
+      };
+
+      const intents = runReactions(state, event);
+
+      const damage = intents.find((intent) => intent.type === 'DAMAGE');
+      expect(damage).toBeDefined();
+      expect(damage).toMatchObject({
+        entityId: enemy.id,
+        sourceEntityId: enemy.id,
+        damage: Math.max(1, Math.round(enemy.maxHp * 0.08)),
+        tags: expect.arrayContaining(['damage.magical.poison']),
       });
     });
   });

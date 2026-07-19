@@ -17,6 +17,11 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   const target = findEntity(state, intent.entityId);
   if (!target || !('statusEffects' in target)) return null;
 
+  if (!isActor(target)) {
+    // Не-акторы не получают статусы.
+    return null;
+  }
+
   const holder = target as unknown as StatusEffectHolder;
   const template = getStatusTemplate(intent.status.type);
 

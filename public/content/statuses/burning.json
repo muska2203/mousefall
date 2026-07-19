@@ -1,6 +1,6 @@
 {
   "id": "burning",
-  "ruleIds": [],
+  "ruleIds": ["burning_tick_damage"],
   "statusCategory": "elemental",
   "categoryPriority": 1,
   "mutuallyExclusiveWith": ["frozen"],

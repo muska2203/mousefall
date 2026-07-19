@@ -1,5 +1,5 @@
-import {describe, expect, it} from 'vitest';
-import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
+import {describe, expect, it, beforeEach, afterEach} from 'vitest';
+import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
 import { tickEntityStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
 import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
@@ -8,8 +8,38 @@ import type { EntityDamagedEvent } from '../../../../src/simulation/core-types';
 import { GameSimulation } from '../../../../src/simulation/simulation';
 import { advanceToPlayerTurn } from '../../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
+import { rebuildActiveRules } from '../../../../src/simulation/systems/rules/active-rule-lifecycle';
+import type { StatusTemplate } from '../../../../src/content/schemas';
+
+function mockBurningStatus(): StatusTemplate {
+  return {
+    id: 'burning',
+    ruleIds: ['burning_tick_damage'],
+    statusCategory: 'elemental',
+    categoryPriority: 1,
+    mutuallyExclusiveWith: ['frozen'],
+    blockedBy: [],
+  };
+}
 
 describe('burning status effect', () => {
+  beforeEach(() => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      stairs: new Map(),
+      doors: new Map(),
+      statuses: new Map([['burning', mockBurningStatus()]]),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
   it('returns TICK_STATUS_EFFECTS intent', () => {
     const enemy = makeEnemy({ hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 3, value: 10, statModifiers: null }] });
     const intents = tickEntityStatusEffects(enemy, 'enemies');
@@ -65,6 +95,7 @@ describe('burning status effect', () => {
     const enemy = makeEnemy({ hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
+    rebuildActiveRules(enemy);
 
     const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
     executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
@@ -90,10 +121,8 @@ describe('burning status effect', () => {
     const state = makeGameState();
     const enemy = makeEnemy({ x: 6, y: 5, hp: 5, maxHp: 100, statusEffects: [{ type: 'burning', duration: 3, value: 10, statModifiers: null }] });
     state.entities.set(enemy.id, enemy);
+    rebuildActiveRules(enemy);
 
-    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map(),
-    statuses: new Map(),
-});
     const sim = GameSimulation.loadSavedGame(state);
 
     // Завершаем ход игрока и запускаем ход фракции врагов.
@@ -107,41 +136,6 @@ describe('burning status effect', () => {
     const updatedEnemy = sim.getState().entities.get(enemy.id);
     expect(updatedEnemy).toBeDefined();
     expect('isAlive' in updatedEnemy! && updatedEnemy.isAlive).toBe(false);
-    resetRegistry();
-  });
-
-  it('damages door when burning ticks through full intent chain', () => {
-    const state = makeGameState();
-    const door = makeDoor({ x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
-    state.entities.set(door.id, door);
-
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [], tags: [] });
-    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id, phase: 'enemies' }, builder, builder.root);
-
-    const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');
-    expect(damagedEvents).toHaveLength(1);
-    expect(damagedEvents[0]).toMatchObject({
-      targetId: door.id,
-      tags: expect.arrayContaining(['damage.magical.fire']),
-    });
-    expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
-  });
-
-  it('damages door when burning ticks in environment phase', () => {
-    const state = makeGameState();
-    const door = makeDoor({ x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 2, value: 10, statModifiers: null }] });
-    state.entities.set(door.id, door);
-
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: door.id, effectTypes: [], tags: [] });
-    executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: door.id, phase: 'environment' }, builder, builder.root);
-
-    const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');
-    expect(damagedEvents).toHaveLength(1);
-    expect(damagedEvents[0]).toMatchObject({
-      targetId: door.id,
-      tags: expect.arrayContaining(['damage.magical.fire']),
-    });
-    expect((damagedEvents[0] as EntityDamagedEvent).damage).toBeGreaterThan(0);
   });
 });
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
 import { tickEntityStatusEffects, tickAllStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
@@ -8,6 +8,18 @@ import { GameSimulation } from '../../../../src/simulation/simulation';
 import { advanceToPlayerTurn } from '../../../helpers/simulation';
 import type { Entity, EntityId } from '../../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
+import type { StatusTemplate } from '../../../../src/content/schemas';
+
+function mockStatus(id: string, ruleIds: string[] = []): StatusTemplate {
+  return {
+    id,
+    ruleIds,
+    statusCategory: 'generic',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+  };
+}
 
 function makeEffect(type: StatusEffect['type'], duration: number): StatusEffect {
   return {
@@ -19,6 +31,26 @@ function makeEffect(type: StatusEffect['type'], duration: number): StatusEffect 
 }
 
 describe('status effect tick phases', () => {
+  beforeEach(() => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      stairs: new Map(),
+      doors: new Map(),
+      statuses: new Map([
+        ['burning', mockStatus('burning', ['burning_tick_damage'])],
+        ['poisoned', mockStatus('poisoned', ['status_poison_tick_damage'])],
+      ]),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
   it('tickEntityStatusEffects returns intent for any non-stunned status and passed side', () => {
     const enemy = makeEnemy({
       statusEffects: [makeEffect('burning', 3)],
@@ -82,23 +114,6 @@ describe('status effect tick phases', () => {
     expect(ids).toEqual([player.id, enemyWithPoison.id].sort());
   });
 
-  it('tickAllStatusEffects includes non-actor entities for environment side', () => {
-    const door = makeDoor({ statusEffects: [makeEffect('burning', 2)] });
-    const enemy = makeEnemy({ id: 'enemy_burn', statusEffects: [makeEffect('burning', 2)] });
-
-    const state = makeGameState({
-      entities: new Map<EntityId, Entity>([
-        [door.id, door],
-        [enemy.id, enemy],
-      ]),
-    });
-
-    const results = tickAllStatusEffects(state, 'environment');
-    expect(results).toHaveLength(2);
-    const ids = results.map(r => r.entity.id).sort();
-    expect(ids).toEqual([door.id, enemy.id].sort());
-  });
-
   it('burning ticks once per round in FACTION_SETUP enemies', () => {
     const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({ id: 'burning_enemy', x: 6, y: 5, hp: 100, maxHp: 100, statusEffects: [makeEffect('burning', 3)] });
@@ -110,10 +125,6 @@ describe('status effect tick phases', () => {
       ]),
     });
 
-    resetRegistry();
-    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map(),
-    statuses: new Map(),
-});
     const sim = GameSimulation.loadSavedGame(state);
 
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
@@ -122,7 +133,6 @@ describe('status effect tick phases', () => {
     const updatedEnemy = sim.getState().entities.get(enemy.id);
     expect(updatedEnemy).toBeDefined();
     expect('statusEffects' in updatedEnemy! && updatedEnemy.statusEffects.find(e => e.type === 'burning')?.duration).toBe(2);
-    resetRegistry();
   });
 
   it('poisoned ticks in FACTION_SETUP player of next round', () => {
@@ -136,10 +146,6 @@ describe('status effect tick phases', () => {
       ]),
     });
 
-    resetRegistry();
-    initRegistry({ entities: new Map(), players: new Map(), items: new Map(), abilities: new Map(), maps: new Map(), stairs: new Map(), doors: new Map(),
-    statuses: new Map(),
-});
     const sim = GameSimulation.loadSavedGame(state);
 
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
@@ -147,6 +153,5 @@ describe('status effect tick phases', () => {
 
     const updatedPlayer = sim.getState().player;
     expect(updatedPlayer.statusEffects.find(e => e.type === 'poisoned')?.duration).toBe(2);
-    resetRegistry();
   });
 });

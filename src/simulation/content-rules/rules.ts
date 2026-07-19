@@ -128,6 +128,34 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     priority: 0,
   },
   // ── Стартовые правила статусов (WP6.3) ─────────────────────────────────────
+  {
+    id: 'burning_tick_damage',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.burning'],
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.1, min: 1, round: true},
+      tags: ['damage.magical.fire'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    id: 'status_poison_tick_damage',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.poisoned'],
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},
+      tags: ['damage.magical.poison'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
 ];
 
 /**

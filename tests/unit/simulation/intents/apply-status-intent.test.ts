@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makeEnemy } from '../../../fixtures/gameState';
+import { makeGameState, makeEnemy, makeDoor } from '../../../fixtures/gameState';
 import { executeApplyStatusIntent } from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
 import type { StatusEffect } from '../../../../src/simulation/core-types';
@@ -223,5 +223,16 @@ describe('apply-status-intent-executer', () => {
       entityId: enemy.id,
       effectType: 'frozen',
     });
+  });
+
+  it('does not apply status to non-actor entities', () => {
+    const door = makeDoor();
+    const state = makeGameState();
+    state.entities.set(door.id, door);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: door.id, sourceEntityId: null, effect: makeStatus('burning', 2) });
+    const result = executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: door.id, sourceEntityId: null, status: makeStatus('burning', 2) }, builder, builder.root);
+
+    expect(result).toBeNull();
   });
 });

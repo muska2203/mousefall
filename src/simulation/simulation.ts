@@ -589,17 +589,8 @@ export class GameSimulation implements Simulation {
             turnBeganNode.parent = null;
         }
 
-        const entities = Array.from(this.state.entities.values()).sort((a, b) => a.id.localeCompare(b.id));
-        for (const entity of entities) {
-            if (!('statusEffects' in entity)) continue;
-            if (isActor(entity)) continue;
-            if ('isAlive' in entity && entity.isAlive === false) continue;
-
-            const intents = tickEntityStatusEffects(entity, 'environment');
-            for (const intent of intents) {
-                executeIntent(this.state, intent, builder, root);
-            }
-        }
+        // После удаления статусов у не-акторов (Этап 1) environment-turn больше не тикает статусы.
+        // На Этапе 2 здесь будет тик тайловых эффектов (TICK_TILE_EFFECTS).
 
         return { side: 'environment', actions: [root] };
     }

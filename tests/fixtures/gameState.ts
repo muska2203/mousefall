@@ -168,7 +168,6 @@ export function makeDoor(overrides: Partial<DoorEntity> = {}): DoorEntity {
     maxHp: 30,
     armor: 2,
     isAlive: true,
-    statusEffects: [],
     ...overrides,
   };
 }
