@@ -1,5 +1,15 @@
 import {GameState} from "@simulation/types.ts";
-import {ExecutionBuilder, ExecutionNode, Intent, OpenDoorIntent, CloseDoorIntent, SetMapIntent, SetEntitiesIntent, TeleportEntityIntent, UpdateFogIntent} from "@simulation/core-types.ts";
+import {
+    CloseDoorIntent,
+    ExecutionBuilder,
+    ExecutionNode,
+    Intent,
+    OpenDoorIntent,
+    SetEntitiesIntent,
+    SetMapIntent,
+    TeleportEntityIntent,
+    UpdateFogIntent
+} from "@simulation/core-types.ts";
 
 // Реэкспорт базовых типов для обратной совместимости потребителей
 export type {

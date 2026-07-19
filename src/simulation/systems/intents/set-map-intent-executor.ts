@@ -8,10 +8,10 @@
  * - Порождает событие MAP_CHANGED.
  */
 
-import { GameState } from '@simulation/types';
-import { SetMapIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
-import { createBoolGrid } from '@simulation/state';
+import {GameState} from '@simulation/types';
+import {ExecutionBuilder, ExecutionNode, SetMapIntent} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
+import {createBoolGrid} from '@simulation/state';
 
 export const executeSetMapIntent: IntentExecutor<SetMapIntent> = (
   state: GameState,

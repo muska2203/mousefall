@@ -1,7 +1,7 @@
-import { GameState } from '@simulation/types';
-import { PushIntent, IntentExecutor } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode, GameplayTag } from '@simulation/core-types';
-import { findEntity, isBlocked, isActor, findAllEntitiesAt } from '@simulation/state';
+import {GameState} from '@simulation/types';
+import {IntentExecutor, PushIntent} from '@simulation/systems/intents/types';
+import {ExecutionBuilder, ExecutionNode, GameplayTag} from '@simulation/core-types';
+import {findAllEntitiesAt, findEntity, isActor, isBlocked} from '@simulation/state';
 
 /**
  * Формирует теги события столкновения без дублирования.
@@ -62,7 +62,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
   }
 
   const entitiesAtTarget = findAllEntitiesAt(state, targetX, targetY).filter(e => e.id !== entity.id);
-  const actorAtTarget = entitiesAtTarget.find(e => isActor(e) && 'hp' in e && e.isAlive !== false);
+  const actorAtTarget = entitiesAtTarget.find(e => isActor(e) && 'hp' in e && e.isAlive);
 
   // Столкновение с другим актором.
   if (actorAtTarget) {

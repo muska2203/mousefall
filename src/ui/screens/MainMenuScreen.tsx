@@ -6,8 +6,8 @@
  * - Не содержит логики создания игры.
  */
 
-import { useTranslation } from '@i18n/hooks';
-import { useSettingsStore } from '@ui/store/settings';
+import {useTranslation} from '@i18n/hooks';
+import {useSettingsStore} from '@ui/store/settings';
 
 interface Props {
   onNewGame: () => void;

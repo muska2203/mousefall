@@ -6,7 +6,7 @@
  */
 
 import {Container, Sprite, Texture} from 'pixi.js';
-import type {RenderInput, Position} from '@presentation/types';
+import type {Position, RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {getTileSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';

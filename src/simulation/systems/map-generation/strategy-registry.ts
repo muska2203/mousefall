@@ -7,8 +7,8 @@
  * потребителей.
  */
 
-import type { MapGenerationStrategy } from './types';
-import { treeRoomStrategy } from './tree-room-strategy';
+import type {MapGenerationStrategy} from './types';
+import {treeRoomStrategy} from './tree-room-strategy';
 
 const strategies = new Map<string, MapGenerationStrategy>([
   [treeRoomStrategy.id, treeRoomStrategy],

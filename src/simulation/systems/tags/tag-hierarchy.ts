@@ -6,7 +6,7 @@
  * категорий (например, `attack.melee` удовлетворяет запросу `attack`).
  */
 
-import type { GameplayTag } from '@simulation/core-types.ts';
+import type {GameplayTag} from '@simulation/core-types.ts';
 
 export type { GameplayTag };
 

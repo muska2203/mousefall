@@ -1,4 +1,4 @@
-import type { SystemItemMapperTranslations } from '@i18n/schema';
+import type {SystemItemMapperTranslations} from '@i18n/schema';
 
 export const enItemMapper = {
   typeWeapon: 'Weapon',

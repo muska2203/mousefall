@@ -6,7 +6,7 @@
  * - Случайность через runtime random (utils/random.ts), не связанный с seed.
  */
 
-import { randomFloat } from './random';
+import {randomFloat} from './random';
 
 /**
  * Взвешенный случайный выбор количества предметов из таблицы дропа.

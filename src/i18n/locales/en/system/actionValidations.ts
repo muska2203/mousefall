@@ -1,4 +1,4 @@
-import type { SystemActionValidationsTranslations } from '@i18n/schema';
+import type {SystemActionValidationsTranslations} from '@i18n/schema';
 
 export const enActionValidations = {
   itemNotFound: 'Item not found in inventory',

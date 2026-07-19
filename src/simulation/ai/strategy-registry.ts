@@ -10,10 +10,9 @@
  * - Этот реестр — чистая таблица поиска; он не содержит изменяемого состояния.
  */
 
-import type { AiActor, GameState } from '../types';
-import type { GameAction } from '../systems/actions/types';
-import type { ExecutionBuilder, ExecutionNode } from '../systems/actions/types';
-import type { WorldChange } from './perception-types';
+import type {AiActor, GameState} from '../types';
+import type {ExecutionBuilder, ExecutionNode, GameAction} from '../systems/actions/types';
+import type {WorldChange} from './perception-types';
 
 export type AIStrategy = {
   /** Обновить внутреннее состояние стратегии перед принятием решений (FSM-тики). */

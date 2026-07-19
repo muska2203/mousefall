@@ -8,17 +8,27 @@
  * - Утилиты спавна врагов/предметов.
  */
 
-import type { TileType, Room, GameState, RNGState, StairsEntity, DoorEntity, EnemyEntity, FloorItemContainerEntity, RuntimeAbility } from '@simulation/types';
-import type { MapParams } from '@content/schemas';
-import { rngInt, rngChance } from '@utils/rng';
-import { nextEntityId } from '@simulation/state';
-import { createDefaultAIState } from '@simulation/ai/ai-state';
-import { getEntity, getItem, getDoor } from '@content/registry';
-import { createFloorItemContainer } from '@simulation/systems/item-entity-factory';
-import { createInventoryItem } from '@simulation/systems/inventory-factory';
-import { addModifier } from '@simulation/systems/stats/modifier-engine';
-import { recalculateActorStats } from '@simulation/systems/stats/recalculate';
-import { rebuildActiveRules } from '@simulation/systems/rules/active-rule-lifecycle';
+import type {
+    DoorEntity,
+    EnemyEntity,
+    FloorItemContainerEntity,
+    GameState,
+    RNGState,
+    Room,
+    RuntimeAbility,
+    StairsEntity,
+    TileType
+} from '@simulation/types';
+import type {MapParams} from '@content/schemas';
+import {rngChance, rngInt} from '@utils/rng';
+import {nextEntityId} from '@simulation/state';
+import {createDefaultAIState} from '@simulation/ai/ai-state';
+import {getDoor, getEntity, getItem} from '@content/registry';
+import {createFloorItemContainer} from '@simulation/systems/item-entity-factory';
+import {createInventoryItem} from '@simulation/systems/inventory-factory';
+import {addModifier} from '@simulation/systems/stats/modifier-engine';
+import {recalculateActorStats} from '@simulation/systems/stats/recalculate';
+import {rebuildActiveRules} from '@simulation/systems/rules/active-rule-lifecycle';
 
 // ─────────────────────────────────────────────
 // Вырезание тайлов

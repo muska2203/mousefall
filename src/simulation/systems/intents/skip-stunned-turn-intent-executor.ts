@@ -1,8 +1,8 @@
-import { GameState, StatusEffect } from '@simulation/types';
-import { SkipStunnedTurnIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
-import { findEntity, isActor } from '@simulation/state';
-import { removeActiveRulesForStatus } from '@simulation/systems/rules/active-rule-lifecycle';
+import {GameState, StatusEffect} from '@simulation/types';
+import {ExecutionBuilder, ExecutionNode, SkipStunnedTurnIntent} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
+import {findEntity, isActor} from '@simulation/state';
+import {removeActiveRulesForStatus} from '@simulation/systems/rules/active-rule-lifecycle';
 
 /**
  * Исполняет интент пропуска хода оглушённым актором.

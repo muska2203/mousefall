@@ -1,4 +1,4 @@
-import type { SystemLogBuilderTranslations } from '@i18n/schema';
+import type {SystemLogBuilderTranslations} from '@i18n/schema';
 
 export const enLogBuilder = {
   heroMoved: '{{name}} moved',

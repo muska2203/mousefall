@@ -8,10 +8,10 @@
  * - Порождает единственное событие `FLOOR_CHANGED`, содержащее план.
  */
 
-import type { GameState } from '@simulation/types';
-import type { FloorTransitionIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import type { IntentExecutor } from './types';
-import { computeFloorTransition } from '@simulation/systems/floor-transition-planner';
+import type {GameState} from '@simulation/types';
+import type {ExecutionBuilder, ExecutionNode, FloorTransitionIntent} from '@simulation/core-types';
+import type {IntentExecutor} from './types';
+import {computeFloorTransition} from '@simulation/systems/floor-transition-planner';
 
 export const executeFloorTransitionIntent: IntentExecutor<FloorTransitionIntent> = (
   state: GameState,

@@ -1,6 +1,6 @@
-import { GameState } from '@simulation/types';
-import { BeginTurnIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
+import {GameState} from '@simulation/types';
+import {BeginTurnIntent, ExecutionBuilder, ExecutionNode} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
 
 /**
  * Фиксирует начало хода стороны.

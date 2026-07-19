@@ -11,12 +11,12 @@
  * - Для врагов не используется (у них плоские значения).
  */
 
-import type { StatActor } from '@simulation/types.ts';
-import { getItem } from '@content/registry';
-import { PLAYER_BASE_MAX_HP, BASE_CRIT_MULTIPLIER } from '@utils/constants.ts';
-import { getWeaponDamage } from './weapon-formulas.ts';
-import { getEffectiveBaseStats } from './effective-base-stats.ts';
-import type { EffectiveBaseStats } from './effective-base-stats.ts';
+import type {StatActor} from '@simulation/types.ts';
+import {getItem} from '@content/registry';
+import {BASE_CRIT_MULTIPLIER, PLAYER_BASE_MAX_HP} from '@utils/constants.ts';
+import {getWeaponDamage} from './weapon-formulas.ts';
+import type {EffectiveBaseStats} from './effective-base-stats.ts';
+import {getEffectiveBaseStats} from './effective-base-stats.ts';
 
 // ─────────────────────────────────────────────
 // Effective базовые статы (с учётом +str, +dex и т.д. от экипировки)

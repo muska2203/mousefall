@@ -12,8 +12,8 @@
  * чтобы не дублировать источник правды.
  */
 
-import {getDerivedAIMode} from '@simulation/ai/ai-state';
 import type {AIMode} from '@simulation/ai/ai-state';
+import {getDerivedAIMode} from '@simulation/ai/ai-state';
 import type {Entity} from '@simulation/types';
 
 /**

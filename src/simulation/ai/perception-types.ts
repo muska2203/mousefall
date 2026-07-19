@@ -6,7 +6,7 @@
  * - Стратегия сама решает, реагировать ли на изменение, проверяя видимость/LOS.
  */
 
-import type { WorldChange } from '@simulation/core-types';
+import type {WorldChange} from '@simulation/core-types';
 
 export type { WorldChange } from '@simulation/core-types';
 

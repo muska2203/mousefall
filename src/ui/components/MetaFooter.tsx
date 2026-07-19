@@ -2,7 +2,7 @@
  * Футер с брендом и версией (единый для всех экранов).
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 
 export function MetaFooter() {
   const { t } = useTranslation('components');

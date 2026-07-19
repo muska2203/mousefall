@@ -7,7 +7,7 @@
  * - Стоимость AP не вычисляется здесь — она всегда 1 для `INTERACT`.
  */
 
-import type { GameState, Entity, DoorEntity, EntityInteractionKind, ResolvedInteraction } from '@simulation/types';
+import type {DoorEntity, Entity, EntityInteractionKind, GameState, ResolvedInteraction} from '@simulation/types';
 
 /**
  * Возвращает разрешённое взаимодействие для целевой сущности от лица актора.
@@ -38,7 +38,7 @@ export function resolveInteractionForEntity(
     case 'door': {
       const door = entity as DoorEntity;
       // Разрушенная дверь не предоставляет взаимодействий.
-      if (door.isAlive === false) {
+      if (!door.isAlive) {
         return null;
       }
       return door.isOpen

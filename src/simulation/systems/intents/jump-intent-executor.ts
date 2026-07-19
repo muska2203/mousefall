@@ -1,7 +1,7 @@
-import { GameState } from '@simulation/types';
-import { IntentExecutor, JumpIntent } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { emitEntityMoved } from '@simulation/systems/intents/move-intent-executer';
+import {GameState} from '@simulation/types';
+import {IntentExecutor, JumpIntent} from '@simulation/systems/intents/types';
+import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
+import {emitEntityMoved} from '@simulation/systems/intents/move-intent-executer';
 
 /**
  * Исполняет интент прыжка.

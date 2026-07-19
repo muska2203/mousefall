@@ -2,10 +2,9 @@
  * Builder для события ABILITY_USED.
  */
 
-import type { GameEvent } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { abilityCastNode } from '../core/primitives';
-import { composeSkillAnimation } from '../skills/composer';
+import type {AnimationBuilder} from '../core/registry';
+import {abilityCastNode} from '../core/primitives';
+import {composeSkillAnimation} from '../skills/composer';
 
 export const abilityUsedBuilder: AnimationBuilder = (event, children, state) => {
   if (event.type !== 'ABILITY_USED') return null;

@@ -2,10 +2,10 @@
  * Хелперы для получения тегов экипированного оружия сущности.
  */
 
-import type { Entity } from '@simulation/types.ts';
-import { tryGetItem } from '@content/registry';
-import type { GameplayTag } from '@simulation/core-types.ts';
-import { isStatActor } from '@simulation/systems/stats/effective-stats';
+import type {Entity} from '@simulation/types.ts';
+import {tryGetItem} from '@content/registry';
+import type {GameplayTag} from '@simulation/core-types.ts';
+import {isStatActor} from '@simulation/systems/stats/effective-stats';
 
 /** Распределение урона безоружной атаки по умолчанию. */
 export const UNARMED_DAMAGE_DISTRIBUTION: Array<{ damageTag: GameplayTag; weight: number }> = [

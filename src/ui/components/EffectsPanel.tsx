@@ -4,7 +4,7 @@
  * Используется в GameScreen (левая колонка).
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 import {Panel} from './Panel';
 import {EffectCard} from './EffectCard';
 

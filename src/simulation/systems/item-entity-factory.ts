@@ -4,10 +4,8 @@
  * `createFloorItemContainer` — контейнер предмета на полу, используемый в системе взаимодействий.
  */
 
-import type { GameState, FloorItemContainerEntity, InventoryItem, Position } from '@simulation/types';
-import { getItem } from '@content/registry';
-import { nextEntityId } from '@simulation/state';
-import { createInventoryItem } from './inventory-factory';
+import type {FloorItemContainerEntity, GameState, InventoryItem, Position} from '@simulation/types';
+import {nextEntityId} from '@simulation/state';
 
 /**
  * Создаёт FloorItemContainerEntity в указанной позиции.

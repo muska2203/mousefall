@@ -4,9 +4,8 @@
  * Отображает короткое всплывающее уведомление о снятии статуса.
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { floatingTextNode } from '../core/primitives';
+import type {AnimationBuilder} from '../core/registry';
+import {floatingTextNode} from '../core/primitives';
 
 export const statusRemovedBuilder: AnimationBuilder = (event, _children, state) => {
   if (event.type !== 'STATUS_REMOVED') return null;

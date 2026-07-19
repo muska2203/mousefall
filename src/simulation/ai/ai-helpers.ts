@@ -16,12 +16,12 @@
  *   без дублирования.
  */
 
-import type { GameAction, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import type { AiActor, EnemyEntity, GameState, Position } from '@simulation/types';
-import { computeFOV } from '@simulation/systems/fov';
-import { chebyshevDistance } from '@utils/math';
-import { getPreparableAbilities } from './cast-helpers';
-import { getSkillExecutor } from '@simulation/skills/skillExecutor';
+import type {ExecutionBuilder, ExecutionNode, GameAction} from '@simulation/systems/actions/types';
+import type {AiActor, EnemyEntity, GameState, Position} from '@simulation/types';
+import {computeFOV} from '@simulation/systems/fov';
+import {chebyshevDistance} from '@utils/math';
+import {getPreparableAbilities} from './cast-helpers';
+import {getSkillExecutor} from '@simulation/skills/skillExecutor';
 
 // ─────────────────────────────────────────────
 // Зрение

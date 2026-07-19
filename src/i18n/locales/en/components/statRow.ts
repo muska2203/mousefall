@@ -1,4 +1,4 @@
-import type { ComponentsStatRowTranslations } from '@i18n/schema';
+import type {ComponentsStatRowTranslations} from '@i18n/schema';
 
 export const enStatRow = {
   decreaseAria: 'Decrease {{name}}',

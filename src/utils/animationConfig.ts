@@ -6,8 +6,8 @@
  * - Presentation и UI читают отсюда, не хардкодят числа.
  */
 
-import { Easing } from './tween';
-import type { EasingFn } from './tween';
+import type {EasingFn} from './tween';
+import {Easing} from './tween';
 
 export type AnimationConfigEntry = {
   duration: number;

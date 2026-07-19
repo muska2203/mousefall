@@ -5,13 +5,13 @@
  * количество и тултип при наведении.
  */
 
-import { useState } from 'react';
-import { useTranslation } from '@i18n/hooks';
-import type { HotbarItemViewModel } from '@presentation/types';
-import { resolveItemFrame } from '@utils/assetResolver';
-import { CircularCooldown } from './CircularCooldown';
-import { ItemDetailPopover } from './ItemDetailPopover';
-import { SkillDetailPopover } from './SkillDetailPopover';
+import {useState} from 'react';
+import {useTranslation} from '@i18n/hooks';
+import type {HotbarItemViewModel} from '@presentation/types';
+import {resolveItemFrame} from '@utils/assetResolver';
+import {CircularCooldown} from './CircularCooldown';
+import {ItemDetailPopover} from './ItemDetailPopover';
+import {SkillDetailPopover} from './SkillDetailPopover';
 
 interface Props {
   /** Индекс слота (0–9). */

@@ -1,4 +1,4 @@
-import type { CommonUiTranslations } from '@i18n/schema';
+import type {CommonUiTranslations} from '@i18n/schema';
 
 export const ruCommonUi = {
   yes: 'Да',

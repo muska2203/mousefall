@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './i18n/config';
 import App from './ui/App';
-import { bootstrapContent } from './bootstrap';
+import {bootstrapContent} from './bootstrap';
 
 import './ui/styles/game-screen.css';
 import './ui/styles/welcome.css';

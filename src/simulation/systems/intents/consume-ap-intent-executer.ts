@@ -1,5 +1,4 @@
-import {GameState} from "@simulation/types.ts";
-import {ConsumeApIntent, ExecutionBuilder, ExecutionNode} from "@simulation/core-types.ts";
+import {ConsumeApIntent} from "@simulation/core-types.ts";
 import {IntentExecutor} from "@simulation/systems/intents/types.ts";
 
 export const executeConsumeApIntent: IntentExecutor<ConsumeApIntent> = (

@@ -6,9 +6,9 @@
  * Порождает событие ITEM_USED.
  */
 
-import { GameState } from "@simulation/types.ts";
-import { RemoveItemIntent, IntentExecutor } from "@simulation/systems/intents/types.ts";
-import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
+import {GameState} from "@simulation/types.ts";
+import {IntentExecutor, RemoveItemIntent} from "@simulation/systems/intents/types.ts";
+import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 
 export const executeRemoveItemIntent: IntentExecutor<RemoveItemIntent> = (
   state: GameState,

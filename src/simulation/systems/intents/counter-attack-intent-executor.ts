@@ -1,10 +1,10 @@
-import { GameState } from '@simulation/types';
-import { CounterAttackIntent, IntentExecutor } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { findEntity } from '@simulation/state';
-import { getEffectiveWeaponDamage } from '@simulation/systems/stats/effective-stats';
-import { getPrimaryDamageTag, getWeaponTags } from '@simulation/systems/tags/weapon-tags';
-import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import {GameState} from '@simulation/types';
+import {CounterAttackIntent, IntentExecutor} from '@simulation/systems/intents/types';
+import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
+import {findEntity} from '@simulation/state';
+import {getEffectiveWeaponDamage} from '@simulation/systems/stats/effective-stats';
+import {getPrimaryDamageTag, getWeaponTags} from '@simulation/systems/tags/weapon-tags';
+import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 
 /**
  * Исполнитель интента контратаки.
@@ -21,12 +21,12 @@ export const executeCounterAttackIntent: IntentExecutor<CounterAttackIntent> = (
   parent: ExecutionNode,
 ) => {
   const counterAttacker = findEntity(state, intent.counterAttackerId);
-  if (!counterAttacker || !('hp' in counterAttacker) || counterAttacker.hp <= 0 || counterAttacker.isAlive === false) {
+  if (!counterAttacker || !('hp' in counterAttacker) || counterAttacker.hp <= 0 || !counterAttacker.isAlive) {
     return null;
   }
 
   const target = findEntity(state, intent.targetId);
-  if (!target || !('hp' in target) || target.hp <= 0 || target.isAlive === false) {
+  if (!target || !('hp' in target) || target.hp <= 0 || !target.isAlive) {
     return null;
   }
 

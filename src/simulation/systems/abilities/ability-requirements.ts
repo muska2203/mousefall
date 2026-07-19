@@ -2,11 +2,11 @@
  * Хелперы для проверки требований способностей.
  */
 
-import type { Entity } from '@simulation/types.ts';
-import type { RuntimeAbility } from '@simulation/core-types.ts';
-import { tryGetAbility } from '@content/registry';
-import { getWeaponTags } from '@simulation/systems/tags/weapon-tags';
-import { hasAllTags } from '@simulation/systems/tags/tag-helpers';
+import type {Entity} from '@simulation/types.ts';
+import type {RuntimeAbility} from '@simulation/core-types.ts';
+import {tryGetAbility} from '@content/registry';
+import {getWeaponTags} from '@simulation/systems/tags/weapon-tags';
+import {hasAllTags} from '@simulation/systems/tags/tag-helpers';
 
 /**
  * Проверяет, соответствует ли экипированное оружие кастующего требованиям

@@ -1,13 +1,13 @@
-import { GameState, Position, Entity } from '@simulation/types';
-import { Intent } from '@simulation/systems/intents/types';
-import { TargetMode } from '@simulation/core-types';
-import { SkillExecutor } from '@simulation/skills/skillExecutor';
-import { isDamageable } from '@simulation/state';
-import { getEffectiveWeaponDamage } from '@simulation/systems/stats/effective-stats';
-import { tryGetAbility } from '@content/registry';
-import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
-import { getWeaponTags, getWeaponWeightForTag } from '@simulation/systems/tags/weapon-tags';
-import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import {Entity, GameState, Position} from '@simulation/types';
+import {Intent} from '@simulation/systems/intents/types';
+import {TargetMode} from '@simulation/core-types';
+import {SkillExecutor} from '@simulation/skills/skillExecutor';
+import {isDamageable} from '@simulation/state';
+import {getEffectiveWeaponDamage} from '@simulation/systems/stats/effective-stats';
+import {tryGetAbility} from '@content/registry';
+import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
+import {getWeaponTags, getWeaponWeightForTag} from '@simulation/systems/tags/weapon-tags';
+import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 
 /**
  * Восемь соседних смещений вокруг клетки кастующего.

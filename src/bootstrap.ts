@@ -5,12 +5,9 @@
  * что все ссылки на контентные правила корректны.
  */
 
-import { loadAllContent, browserFetchJson } from '@content/loader';
-import {
-  validateContentRuleReferences,
-  validateContentRuleSemantics,
-} from '@simulation/content-rules/validation';
-import { getRegistry } from '@content/registry';
+import {browserFetchJson, loadAllContent} from '@content/loader';
+import {validateContentRuleReferences, validateContentRuleSemantics,} from '@simulation/content-rules/validation';
+import {getRegistry} from '@content/registry';
 
 /**
  * Загружает контент и валидирует ссылки на декларативные правила.

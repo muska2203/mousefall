@@ -11,11 +11,9 @@
  * поэтому не привязана к конкретному скиллу.
  */
 
-import { registerStrategy } from './strategy-registry';
-import type { AiActor, GameState } from '@simulation/types';
-import type { GameAction, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { canSeePlayer, tryPrepareAbility, endTurn } from './ai-helpers';
-import { isEnemyEntity } from './ai-state';
+import {registerStrategy} from './strategy-registry';
+import {canSeePlayer, endTurn, tryPrepareAbility} from './ai-helpers';
+import {isEnemyEntity} from './ai-state';
 
 registerStrategy('simple-boss', {
   updateState() {

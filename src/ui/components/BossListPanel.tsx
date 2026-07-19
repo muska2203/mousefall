@@ -4,7 +4,7 @@
  * Используется в EndingScreen (правая колонка).
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 import {Panel} from './Panel';
 
 interface Props {

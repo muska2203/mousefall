@@ -1,6 +1,6 @@
-import type { GameState } from '@simulation/types';
-import type { Intent } from '@simulation/core-types';
-import { getStatusTemplate } from './status-template';
+import type {GameState} from '@simulation/types';
+import type {Intent} from '@simulation/core-types';
+import {getStatusTemplate} from './status-template';
 
 /**
  * Разрешает конфликты одновременно накладываемых статусов одной категории.

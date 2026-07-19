@@ -1,4 +1,4 @@
-import type { ContentText } from '../types';
+import type {ContentText} from '../types';
 
 export const stairs: Record<string, ContentText> = {
   stairs_down: {

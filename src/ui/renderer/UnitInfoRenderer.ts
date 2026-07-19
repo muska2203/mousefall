@@ -7,13 +7,20 @@
  */
 
 import {Container, Graphics, Sprite, Texture} from 'pixi.js';
-import type {RenderInput, StatusEffect, AnimationPhase, AnimationNode, AIPreparedIntentViewModel, AIMode} from '@presentation/types';
+import type {
+    AIMode,
+    AIPreparedIntentViewModel,
+    AnimationNode,
+    AnimationPhase,
+    RenderInput,
+    StatusEffect
+} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
-import {Tween, lerp, clamp01} from '@utils/tween';
-import {ACTOR_OFFSET_Y_FACTOR} from './EntityRenderer';
 import type {Animatable} from '@utils/tween';
+import {clamp01, lerp, Tween} from '@utils/tween';
+import {ACTOR_OFFSET_Y_FACTOR} from './EntityRenderer';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-import {getStatusEffectSprite, getStatusOverflowSprite, getAIModeSprite} from './spriteRegistry';
+import {getAIModeSprite, getStatusEffectSprite, getStatusOverflowSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 
 
@@ -27,7 +34,6 @@ const EFFECT_GAP = 4;
 const HP_BAR_HEIGHT = 8;
 const VERTICAL_OFFSET = 1;
 
-const COLOR_SLOT_FILL = 0x222222;
 const COLOR_HP_BG = 0x333333;
 const COLOR_HP_FILL = 0xe74c3c;
 

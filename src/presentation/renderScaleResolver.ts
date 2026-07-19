@@ -5,7 +5,7 @@
  * UI вызывает эту функцию, не обращаясь к реестру напрямую.
  */
 
-import { tryGetEntity, tryGetStairs, tryGetPlayerTemplate, tryGetDoor } from '@content/registry';
+import {tryGetDoor, tryGetEntity, tryGetPlayerTemplate, tryGetStairs} from '@content/registry';
 
 /** Масштаб по умолчанию для не-акторов. */
 const DEFAULT_RENDER_SCALE = 1.0;

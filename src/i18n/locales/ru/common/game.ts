@@ -1,4 +1,4 @@
-import type { CommonGameTranslations } from '@i18n/schema';
+import type {CommonGameTranslations} from '@i18n/schema';
 
 export const ruCommonGame = {
   strength: 'Сила',

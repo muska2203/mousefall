@@ -1,4 +1,4 @@
-import type { ComponentsPortraitTranslations } from '@i18n/schema';
+import type {ComponentsPortraitTranslations} from '@i18n/schema';
 
 export const enPortrait = {
   levelAriaLabel: 'Level {{level}}',

@@ -5,12 +5,12 @@
  * Клик по предмету экипирует его (если это weapon/armor/amulet).
  */
 
-import { useState } from 'react';
-import { useTranslation } from '@i18n/hooks';
-import type { InventoryItemViewModel } from '@presentation/types';
-import { ItemDetailPopover } from './ItemDetailPopover';
+import {useState} from 'react';
+import {useTranslation} from '@i18n/hooks';
+import type {InventoryItemViewModel} from '@presentation/types';
+import {ItemDetailPopover} from './ItemDetailPopover';
 
-import { Panel } from './Panel';
+import {Panel} from './Panel';
 
 interface Props {
   items: InventoryItemViewModel[];

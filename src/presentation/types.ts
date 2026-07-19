@@ -8,16 +8,25 @@
  * - AnimationNode — дерево шагов, изоморфное ExecutionNode
  */
 
-import type { GameState, PlayerStatsSnapshot, Intent, RunStats, TurnSide, StatusEffect, InteractionId, GameAction } from '@simulation/types';
-import type { DisplayPatch, DisplayState } from './displayState/types';
+import type {
+    GameAction,
+    GameState,
+    Intent,
+    InteractionId,
+    PlayerStatsSnapshot,
+    RunStats,
+    StatusEffect,
+    TurnSide
+} from '@simulation/types';
+import type {DisplayPatch, DisplayState} from './displayState/types';
 
 import type {AIMode} from '@simulation/ai/ai-state';
+import type {GameplayTag as CoreGameplayTag} from '@simulation/core-types';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
 export type { TileType, TurnSide, StatusEffect, InteractionId } from '@simulation/types';
 export type { AIMode } from '@simulation/ai/ai-state';
 export type { AnimationConfigKey } from '@utils/animationConfig';
-import type { GameplayTag as CoreGameplayTag } from '@simulation/core-types';
 export type GameplayTag = CoreGameplayTag;
 
 /** Одна секция детальной карточки предмета. */

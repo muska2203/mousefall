@@ -5,8 +5,8 @@
  * доступ по id и базовую защиту от дубликатов.
  */
 
-import { CONTENT_RULES, WORLD_CONTENT_RULES } from './rules';
-import type { ContentRule } from './types';
+import {CONTENT_RULES, WORLD_CONTENT_RULES} from './rules';
+import type {ContentRule} from './types';
 
 const RULES_BY_ID: ReadonlyMap<string, ContentRule> = buildRulesMap();
 

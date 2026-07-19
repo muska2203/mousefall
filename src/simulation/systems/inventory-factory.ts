@@ -1,7 +1,7 @@
-import type { GameState, InventoryItem } from '@simulation/types';
-import { getItem } from '@content/registry';
-import { nextEntityId } from '@simulation/state';
-import { rollItemAbility } from './item-ability-roll';
+import type {GameState, InventoryItem} from '@simulation/types';
+import {getItem} from '@content/registry';
+import {nextEntityId} from '@simulation/state';
+import {rollItemAbility} from './item-ability-roll';
 
 /**
  * Фабрика создания экземпляра предмета в инвентаре.

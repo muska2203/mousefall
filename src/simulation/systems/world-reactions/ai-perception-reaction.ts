@@ -12,13 +12,13 @@
  * - Актор не реагирует на собственное движение.
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { Intent, WorldChange } from '@simulation/core-types';
-import type { WorldReaction } from './types';
-import { findAllAliveAiActors } from '@simulation/state';
-import { chebyshevDistance } from '@utils/math';
-import { getWorldChangePosition } from '@simulation/ai/perception-types';
-import { isEnemyEntity } from '@simulation/ai/ai-state';
+import type {GameEvent, GameState} from '@simulation/types';
+import type {Intent, WorldChange} from '@simulation/core-types';
+import type {WorldReaction} from './types';
+import {findAllAliveAiActors} from '@simulation/state';
+import {chebyshevDistance} from '@utils/math';
+import {getWorldChangePosition} from '@simulation/ai/perception-types';
+import {isEnemyEntity} from '@simulation/ai/ai-state';
 
 /**
  * Преобразует доменное событие в изменение мира, если оно интересно AI.

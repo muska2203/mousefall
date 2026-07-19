@@ -4,9 +4,9 @@
  * Пока только задержка (placeholder); визуальная анимация открытия тайлов — TODO.
  */
 
-import type { AnimationExecutor, AnimationContext } from './types';
-import type { AnimationStep } from '@presentation/types';
-import { ANIMATION_CONFIG } from '@utils/animationConfig';
+import type {AnimationContext, AnimationExecutor} from './types';
+import type {AnimationStep} from '@presentation/types';
+import {ANIMATION_CONFIG} from '@utils/animationConfig';
 
 export class FogAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {

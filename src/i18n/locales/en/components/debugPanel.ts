@@ -1,4 +1,4 @@
-import type { ComponentsDebugPanelTranslations } from '@i18n/schema';
+import type {ComponentsDebugPanelTranslations} from '@i18n/schema';
 
 export const enDebugPanel: ComponentsDebugPanelTranslations = {
   title: 'Debug mode',

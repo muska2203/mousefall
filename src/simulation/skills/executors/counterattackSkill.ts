@@ -1,8 +1,8 @@
-import { GameState, Position, Entity } from '@simulation/types';
-import { Intent } from '@simulation/systems/intents/types';
-import { TargetMode } from '@simulation/core-types';
-import { SkillExecutor } from '@simulation/skills/skillExecutor';
-import { isActor } from '@simulation/state';
+import {Entity, GameState, Position} from '@simulation/types';
+import {Intent} from '@simulation/systems/intents/types';
+import {TargetMode} from '@simulation/core-types';
+import {SkillExecutor} from '@simulation/skills/skillExecutor';
+import {isActor} from '@simulation/state';
 
 /**
  * Скилл "Контратака".

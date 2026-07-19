@@ -5,11 +5,11 @@
  * Доступно только при включённом debug-режиме.
  */
 
-import { GameState } from '@simulation/types.ts';
-import { tryGetItem } from '@content/registry';
-import { createInventoryItem } from '@simulation/systems/inventory-factory.ts';
-import { ActionHandler, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types.ts';
-import { Intent } from '@simulation/systems/intents/types.ts';
+import {GameState} from '@simulation/types.ts';
+import {tryGetItem} from '@content/registry';
+import {createInventoryItem} from '@simulation/systems/inventory-factory.ts';
+import {ActionHandler, ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
+import {Intent} from '@simulation/systems/intents/types.ts';
 
 export type DebugContext = {
   enabled: boolean;

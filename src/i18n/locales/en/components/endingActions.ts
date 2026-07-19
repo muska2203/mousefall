@@ -1,4 +1,4 @@
-import type { ComponentsEndingActionsTranslations } from '@i18n/schema';
+import type {ComponentsEndingActionsTranslations} from '@i18n/schema';
 
 export const enEndingActions = {
   title: 'Next',

@@ -1,13 +1,13 @@
-import { GameState, Position, Entity, StatusEffect } from '@simulation/types';
-import { Intent } from '@simulation/systems/intents/types';
-import { TargetMode } from '@simulation/core-types';
-import { SkillExecutor } from '@simulation/skills/skillExecutor';
-import { isCombatEntity, findAllEntitiesAt } from '@simulation/state';
-import { isEnemyEntity } from '@simulation/ai/ai-state';
-import { getEffectiveWeaponDamage } from '@simulation/systems/stats/effective-stats';
-import { getAbilityTags } from '@simulation/systems/tags/ability-tags';
-import { getPrimaryDamageTag, getWeaponTags } from '@simulation/systems/tags/weapon-tags';
-import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
+import {Entity, GameState, Position, StatusEffect} from '@simulation/types';
+import {Intent} from '@simulation/systems/intents/types';
+import {TargetMode} from '@simulation/core-types';
+import {SkillExecutor} from '@simulation/skills/skillExecutor';
+import {findAllEntitiesAt, isCombatEntity} from '@simulation/state';
+import {isEnemyEntity} from '@simulation/ai/ai-state';
+import {getEffectiveWeaponDamage} from '@simulation/systems/stats/effective-stats';
+import {getAbilityTags} from '@simulation/systems/tags/ability-tags';
+import {getPrimaryDamageTag, getWeaponTags} from '@simulation/systems/tags/weapon-tags';
+import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 
 /**
  * Восемь соседних смещений вокруг клетки кастующего.
@@ -45,7 +45,7 @@ export const suddenStrikeSkill: SkillExecutor = {
       // Валидными являются только клетки с живыми combat-акторами, кроме самого кастера.
       const entitiesAtTile = findAllEntitiesAt(state, x, y);
       const hasAliveCombatTarget = entitiesAtTile.some(
-        e => e.id !== caster.id && isCombatEntity(e) && e.isAlive !== false,
+        e => e.id !== caster.id && isCombatEntity(e) && e.isAlive,
       );
 
       if (hasAliveCombatTarget) {
@@ -76,7 +76,7 @@ export const suddenStrikeSkill: SkillExecutor = {
     if (!targetPos) return [];
 
     const target = findAllEntitiesAt(state, targetPos.x, targetPos.y)
-      .find(e => isCombatEntity(e) && e.isAlive !== false);
+      .find(e => isCombatEntity(e) && e.isAlive);
     if (!target) return [];
 
     const damage = getEffectiveWeaponDamage(caster);

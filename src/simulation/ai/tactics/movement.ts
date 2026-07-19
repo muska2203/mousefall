@@ -11,11 +11,11 @@
  * - Не решают, кого атаковать — только выполняют команду стратегии.
  */
 
-import type { GameState, EnemyEntity, Position, DoorEntity } from '@simulation/types';
-import type { MoveAction, AttackAction, InteractAction } from '@simulation/core-types';
-import { isBlocked, findAllEntitiesAt, findDoorAt } from '@simulation/state';
-import { chebyshevDistance, findPath } from '@utils/math';
-import type { CloseCombatResult, MoveTowardResult } from './types';
+import type {DoorEntity, EnemyEntity, GameState, Position} from '@simulation/types';
+import type {AttackAction, InteractAction} from '@simulation/core-types';
+import {findAllEntitiesAt, findDoorAt} from '@simulation/state';
+import {chebyshevDistance, findPath} from '@utils/math';
+import type {CloseCombatResult, MoveTowardResult} from './types';
 
 /** Максимальное число рассматриваемых узлов A*. */
 const DEFAULT_PATHFINDING_LIMIT = 200;
@@ -68,7 +68,7 @@ function isTilePassableForEnemy(state: GameState, pos: Position): boolean {
   if (blockers.length !== 1) return false;
 
   const door = findDoorAt(state, pos.x, pos.y);
-  return door !== undefined && door.isAlive !== false && !door.isOpen;
+  return door !== undefined && door.isAlive && !door.isOpen;
 }
 
 /**
@@ -76,7 +76,7 @@ function isTilePassableForEnemy(state: GameState, pos: Position): boolean {
  */
 function findClosedDoorAt(state: GameState, x: number, y: number): DoorEntity | null {
   const door = findDoorAt(state, x, y);
-  if (door && door.isAlive !== false && !door.isOpen) {
+  if (door && door.isAlive && !door.isOpen) {
     return door;
   }
   return null;

@@ -1,4 +1,4 @@
-import type { ComponentsInteractionHintTranslations } from '@i18n/schema';
+import type {ComponentsInteractionHintTranslations} from '@i18n/schema';
 
 export const enInteractionHint = {
   pickup: 'Pick up',

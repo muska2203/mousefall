@@ -5,7 +5,7 @@
  * чтобы текст и рамка всегда оставались единым цельным блоком.
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 
 interface Props {
   screenX: number;

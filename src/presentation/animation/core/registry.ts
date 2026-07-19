@@ -6,8 +6,8 @@
  * - Публичная функция registerAnimationBuilder для расширения системы.
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { AnimationNode } from '@presentation/types';
+import type {GameEvent, GameState} from '@simulation/types';
+import type {AnimationNode} from '@presentation/types';
 
 /** Функция, преобразующая GameEvent в дерево AnimationNode. */
 export type AnimationBuilder = (

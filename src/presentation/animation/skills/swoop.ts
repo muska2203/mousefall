@@ -2,12 +2,10 @@
  * Анимационный композер для способности Swoop.
  */
 
-import type { GameState } from '@simulation/types';
-import type { AnimationNode } from '@presentation/types';
-import type { AbilityEvent } from '../core/primitives';
-import type { SkillComposer } from './registry';
-import { registerSkillComposer } from './registry';
-import { explosionNode, tileShakeNode } from '../core/primitives';
+import type {AnimationNode} from '@presentation/types';
+import {explosionNode, tileShakeNode} from '../core/primitives';
+import type {SkillComposer} from './registry';
+import {registerSkillComposer} from './registry';
 
 /** Строит специализированное дерево анимаций для Налёта.
  *

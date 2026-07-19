@@ -1,4 +1,4 @@
-import type { InteractionId } from '@simulation/types';
+import type {InteractionId} from '@simulation/types';
 
 /**
  * Утилиты для формирования подсказок взаимодействия (Presentation Layer).

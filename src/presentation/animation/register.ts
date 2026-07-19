@@ -5,31 +5,31 @@
  * Публичный API для вызовов находится в animation/index.ts.
  */
 
-import { registerAnimationBuilder } from './core/registry';
+import {registerAnimationBuilder} from './core/registry';
 
 // Регистрация базовых builders.
-import { entityMovedBuilder } from './builders/entityMoved';
-import { actionAppliedBuilder } from './builders/actionApplied';
-import { entityDamagedBuilder } from './builders/entityDamaged';
-import { entityDiedBuilder } from './builders/entityDied';
-import { fogUpdatedBuilder } from './builders/fogUpdated';
-import { entityBumpedBuilder } from './builders/entityBumped';
-import { itemDroppedBuilder } from './builders/itemDropped';
-import { doorOpenedBuilder } from './builders/doorOpened';
-import { doorClosedBuilder } from './builders/doorClosed';
-import { entityHealedBuilder } from './builders/entityHealed';
-import { statusAppliedBuilder } from './builders/statusApplied';
-import { statusTickedBuilder } from './builders/statusTicked';
-import { statusStacksAdjustedBuilder } from './builders/statusStacksAdjusted';
-import { abilityUsedBuilder } from './builders/abilityUsed';
-import { abilityPreparedBuilder } from './builders/abilityPrepared';
-import { abilityPreparedCancelledBuilder } from './builders/abilityPreparedCancelled';
-import { counterAttackAppliedBuilder } from './builders/counterAttackApplied';
-import { statusBlockedBuilder } from './builders/statusBlocked';
-import { statusRemovedBuilder } from './builders/statusRemoved';
-import { entityCollidedBuilder } from './builders/entityCollided';
-import { entityDisplacedBuilder } from './builders/entityDisplaced';
-import { entityMissedBuilder } from './builders/entityMissed';
+import {entityMovedBuilder} from './builders/entityMoved';
+import {actionAppliedBuilder} from './builders/actionApplied';
+import {entityDamagedBuilder} from './builders/entityDamaged';
+import {entityDiedBuilder} from './builders/entityDied';
+import {fogUpdatedBuilder} from './builders/fogUpdated';
+import {entityBumpedBuilder} from './builders/entityBumped';
+import {itemDroppedBuilder} from './builders/itemDropped';
+import {doorOpenedBuilder} from './builders/doorOpened';
+import {doorClosedBuilder} from './builders/doorClosed';
+import {entityHealedBuilder} from './builders/entityHealed';
+import {statusAppliedBuilder} from './builders/statusApplied';
+import {statusTickedBuilder} from './builders/statusTicked';
+import {statusStacksAdjustedBuilder} from './builders/statusStacksAdjusted';
+import {abilityUsedBuilder} from './builders/abilityUsed';
+import {abilityPreparedBuilder} from './builders/abilityPrepared';
+import {abilityPreparedCancelledBuilder} from './builders/abilityPreparedCancelled';
+import {counterAttackAppliedBuilder} from './builders/counterAttackApplied';
+import {statusBlockedBuilder} from './builders/statusBlocked';
+import {statusRemovedBuilder} from './builders/statusRemoved';
+import {entityCollidedBuilder} from './builders/entityCollided';
+import {entityDisplacedBuilder} from './builders/entityDisplaced';
+import {entityMissedBuilder} from './builders/entityMissed';
 
 // Регистрация скилловых composers (side-effect).
 import './skills/fireball';

@@ -1,4 +1,4 @@
-import type { ContentText } from '../types';
+import type {ContentText} from '../types';
 
 export const players: Record<string, ContentText> = {
   'elven-ranger': {

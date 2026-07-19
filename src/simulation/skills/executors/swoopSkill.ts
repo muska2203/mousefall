@@ -1,13 +1,13 @@
-import { GameState, Position, Entity } from '@simulation/types';
-import { Intent } from '@simulation/systems/intents/types';
-import { TargetMode } from '@simulation/core-types';
-import { SkillExecutor } from '@simulation/skills/skillExecutor';
-import { damageFormulas } from '@simulation/skills/damageFormula';
-import { getEntitiesInRadius } from '@simulation/skills/targeting';
-import { isCombatEntity, isDamageable, isBlocked } from '@simulation/state';
-import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
-import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
-import { tryGetAbility } from '@content/registry';
+import {Entity, GameState, Position} from '@simulation/types';
+import {Intent} from '@simulation/systems/intents/types';
+import {TargetMode} from '@simulation/core-types';
+import {SkillExecutor} from '@simulation/skills/skillExecutor';
+import {damageFormulas} from '@simulation/skills/damageFormula';
+import {getEntitiesInRadius} from '@simulation/skills/targeting';
+import {isBlocked, isCombatEntity, isDamageable} from '@simulation/state';
+import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
+import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
+import {tryGetAbility} from '@content/registry';
 
 /**
  * Радиус выбора точки приземления относительно кастера.
@@ -76,9 +76,9 @@ function isValidJumpTarget(state: GameState, caster: Entity, target: Position): 
   const dx = target.x - caster.x;
   const dy = target.y - caster.y;
   if (dx === 0 && dy === 0) return false;
-  if (Math.abs(dx) > SWOOP_JUMP_RADIUS || Math.abs(dy) > SWOOP_JUMP_RADIUS) return false;
+  return !(Math.abs(dx) > SWOOP_JUMP_RADIUS || Math.abs(dy) > SWOOP_JUMP_RADIUS);
 
-  return true;
+
 }
 
 /**

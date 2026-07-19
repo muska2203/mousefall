@@ -8,9 +8,9 @@
  *   а не IntentExecutor (см. docs/agents/ACTION_SYSTEM.md).
  */
 
-import type { GameState, GameEvent } from '@simulation/types';
-import type { Intent, FloorChangedEvent, FogUpdatedEvent } from '@simulation/core-types';
-import type { WorldReaction } from './types';
+import type {GameEvent, GameState} from '@simulation/types';
+import type {FogUpdatedEvent, Intent} from '@simulation/core-types';
+import type {WorldReaction} from './types';
 
 export const floorTransitionReaction: WorldReaction = (
   _state: GameState,

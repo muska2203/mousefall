@@ -25,7 +25,7 @@ import {executeGrantAbilityIntent} from "@simulation/systems/intents/grant-abili
 import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-ability-intent-executor.ts";
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
-import {executeOpenDoorIntent, executeCloseDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
+import {executeCloseDoorIntent, executeOpenDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
 import {executeFloorTransitionIntent} from "@simulation/systems/intents/floor-transition-intent-executor.ts";
 import {executeBumpIntent} from "@simulation/systems/intents/bump-intent-executor.ts";
 import {executeSkipStunnedTurnIntent} from "@simulation/systems/intents/skip-stunned-turn-intent-executor.ts";
@@ -39,7 +39,7 @@ import {executeCounterAttackIntent} from "@simulation/systems/intents/counter-at
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
 import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
 import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
-import { resolveStatusBatch } from "@simulation/systems/statuses/status-conflict-resolver.ts";
+import {resolveStatusBatch} from "@simulation/systems/statuses/status-conflict-resolver.ts";
 
 const intentExecutors = {
   MOVE: executeMoveIntent,

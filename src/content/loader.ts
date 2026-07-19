@@ -12,19 +12,19 @@
  * - Тесты используют мок-контент напрямую через initRegistry()
  */
 
-import type { LoadedContent } from './schemas';
+import type {LoadedContent} from './schemas';
 import {
-  EntityTemplateSchema,
-  PlayerTemplateSchema,
-  ItemTemplateSchema,
-  AbilityTemplateSchema,
-  StatusTemplateSchema,
-  MapParamsSchema,
-  StairsTemplateSchema,
-  DoorTemplateSchema,
+    AbilityTemplateSchema,
+    DoorTemplateSchema,
+    EntityTemplateSchema,
+    ItemTemplateSchema,
+    MapParamsSchema,
+    PlayerTemplateSchema,
+    StairsTemplateSchema,
+    StatusTemplateSchema,
 } from './schemas';
-import { initRegistry } from './registry';
-import { z } from 'zod';
+import {initRegistry} from './registry';
+import {z} from 'zod';
 
 // ─────────────────────────────────────────────
 // Типы

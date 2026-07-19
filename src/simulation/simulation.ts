@@ -2,9 +2,9 @@ import {
     ActionPreview,
     Actor,
     AiActor,
-    EnemyEntity,
     Entity,
     EntityId,
+    FactionId,
     GameState,
     Intent,
     PlayerEntity,
@@ -15,15 +15,27 @@ import {
     TurnPhase,
     ValidationError,
     ValidationResult,
-    FactionId,
 } from "@simulation/types.ts";
-import {DefaultActionPointCostResolver, type ActionPointCostResolver} from "@simulation/systems/action-cost-resolver.ts";
+import {
+    type ActionPointCostResolver,
+    DefaultActionPointCostResolver
+} from "@simulation/systems/action-cost-resolver.ts";
 import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simulation/systems/actions/types.ts";
-import { getSkillExecutor } from "@simulation/skills/skillExecutor";
+import {getSkillExecutor} from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
-import {generateMap, createStairs} from "@simulation/systems/mapgen.ts";
+import {createStairs, generateMap} from "@simulation/systems/mapgen.ts";
 import {MAX_FLOOR} from "@utils/constants.ts";
-import {findAllAliveActorsOfFaction, isActor, createBoolGrid, findInteractableEntitiesAround} from "@simulation/state.ts";
+import {
+    createBoolGrid,
+    createInitialPlayer,
+    createNewGameState,
+    findAllAliveActorsOfFaction,
+    findAllEntitiesAt,
+    findFirstAttackableEntityAt,
+    findInteractableEntitiesAround,
+    findStairsAt,
+    isActor
+} from "@simulation/state.ts";
 import {isStunned} from "@simulation/systems/stun-helper.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
@@ -36,42 +48,34 @@ import {interactAction} from "@simulation/systems/actions/interact-action.ts";
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
-import { isEnemyEntity } from "@simulation/ai/ai-state.ts";
-import { cancelPreparedAbility } from "@simulation/ai/ai-helpers.ts";
+import {isEnemyEntity} from "@simulation/ai/ai-state.ts";
+import {cancelPreparedAbility} from "@simulation/ai/ai-helpers.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import "@simulation/ai/simple-boss-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
-import type { GameplayTag } from "@simulation/core-types.ts";
-import {createNewGameState, findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt, createInitialPlayer} from "@simulation/state.ts";
+import type {GameplayTag} from "@simulation/core-types.ts";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
 import {updateFOV} from "@simulation/systems/fov.ts";
+import {getEffectiveWeaponDamage,} from "@simulation/systems/stats/effective-stats.ts";
+import {getEffectiveBaseStats} from "@simulation/systems/stats/base-resolver.ts";
+import {getWeaponDamage} from "@simulation/systems/stats/weapon-formulas.ts";
+import {addModifier, applyModifiers} from "@simulation/systems/stats/modifier-engine.ts";
+import {recalculateActorStats} from "@simulation/systems/stats/recalculate.ts";
+import {getWeaponDamageDistribution, getWeaponWeightForTag} from "@simulation/systems/tags/weapon-tags.ts";
+import {getAbilityTags} from "@simulation/systems/tags/ability-tags.ts";
+import {meetsWeaponRequirements} from "@simulation/systems/abilities/ability-requirements.ts";
+import {initSkillRegistry} from "@simulation/skills/index.ts";
+import {getItem, tryGetAbility} from "@content/registry";
+import {tickEntityStatusEffects} from "@simulation/systems/status-effect-ticker.ts";
+import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
+import {resolveInteraction} from "@simulation/systems/interactions/resolve-interaction.ts";
 import {
-  getEffectiveDodgeChance,
-  getEffectiveAccuracy,
-  getEffectiveCritChance,
-  getEffectiveCritMultiplier,
-  getEffectiveWeaponDamage,
-} from "@simulation/systems/stats/effective-stats.ts";
-import { getEffectiveBaseStats } from "@simulation/systems/stats/base-resolver.ts";
-import { getWeaponDamage } from "@simulation/systems/stats/weapon-formulas.ts";
-import { applyModifiers } from "@simulation/systems/stats/modifier-engine.ts";
-import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
-import { getWeaponDamageDistribution, getWeaponWeightForTag } from "@simulation/systems/tags/weapon-tags.ts";
-import { getAbilityTags } from "@simulation/systems/tags/ability-tags.ts";
-import { meetsWeaponRequirements } from "@simulation/systems/abilities/ability-requirements.ts";
-import { initSkillRegistry } from "@simulation/skills/index.ts";
-import { tryGetAbility, getItem } from "@content/registry";
-import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
-import { tickEntityStatusEffects } from "@simulation/systems/status-effect-ticker.ts";
-import { executeIntent } from "@simulation/systems/intents/execute-intent.ts";
-import { resolveInteraction } from "@simulation/systems/interactions/resolve-interaction.ts";
-import {
-  ensureFeatureFlags,
-  setContentRulesEnabled as setContentRulesEnabledFlag,
+    ensureFeatureFlags,
+    setContentRulesEnabled as setContentRulesEnabledFlag,
 } from "@simulation/content-rules/feature-flags.ts";
-import { ensureRuntimeRng } from "@simulation/content-rules/runtime-rng.ts";
-import { findPath, posEqual } from "@utils/math.ts";
+import {ensureRuntimeRng} from "@simulation/content-rules/runtime-rng.ts";
+import {findPath, posEqual} from "@utils/math.ts";
 
 export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
 
@@ -224,7 +228,7 @@ export class GameSimulation implements Simulation {
         const debugContext: DebugContext = { enabled: debugEnabled };
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
         // Загруженная игра должна продолжаться с хода игрока, если он жив.
-        if (state.phase === 'playing' && state.player.isAlive !== false) {
+        if (state.phase === 'playing' && state.player.isAlive) {
             simulation.turnState = {
                 phase: 'actor-turn',
                 factionId: 'player',
@@ -297,14 +301,14 @@ export class GameSimulation implements Simulation {
         }
 
         const actor = this.getActor(action.entityId);
-        if (!actor || actor.isAlive === false) {
+        if (!actor || !actor.isAlive) {
             return this.reject('actor_dead', action);
         }
 
         if (action.type === 'END_TURN') {
             this.actorsDoneThisRound.add(actor.id);
             const phase = this.buildEndTurnPhase(actor);
-            const result: SimulationResult = {
+            return {
                 success: true,
                 // stateChanged зависит от наличия дочерних событий:
                 // оглушение добавляет SKIP_STUNNED_TURN, иначе только TURN_ENDED.
@@ -312,7 +316,6 @@ export class GameSimulation implements Simulation {
                 phases: [phase],
                 hasMoreSteps: true,
             };
-            return result;
         }
 
         if (isStunned(actor)) {
@@ -324,8 +327,7 @@ export class GameSimulation implements Simulation {
             action,
         });
 
-        const result = this.executeActionInContext(actor, action, builder, builder.root);
-        return result;
+        return this.executeActionInContext(actor, action, builder, builder.root);
     }
 
     step(): SimulationResult {
@@ -361,7 +363,7 @@ export class GameSimulation implements Simulation {
         // Пропускаем мёртвых или уже закончивших ход акторов.
         while (this.turnState.phase === 'actor-turn') {
             const actor = this.getActor(this.turnState.actorId);
-            if (!actor || actor.isAlive === false || this.isActorDone(actor.id)) {
+            if (!actor || !actor.isAlive || this.isActorDone(actor.id)) {
                 this.advanceActor();
             } else {
                 break;
@@ -392,19 +394,18 @@ export class GameSimulation implements Simulation {
                 const nextActorIsPlayer = actors.length > 0 && actors[0]!.id === this.state.player.id;
                 const transitionedToRoundRecovery = this.isRoundOver();
 
-                const result: SimulationResult = {
+                return {
                     success: true,
                     stateChanged: phase.actions.length > 0 && phase.actions.some(a => a.children.length > 0),
                     phases: [phase],
                     hasMoreSteps: transitionedToRoundRecovery || !nextActorIsPlayer,
                 };
-                return result;
             }
 
             case 'actor-turn': {
                 const actor = this.getActor(this.turnState.actorId);
 
-                if (!actor || actor.isAlive === false) {
+                if (!actor || !actor.isAlive) {
                     this.advanceActor();
                     return this.runStep();
                 }

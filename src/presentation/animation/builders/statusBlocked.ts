@@ -4,9 +4,8 @@
  * Отображает короткое всплывающее предупреждение о блокировке статуса.
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { floatingTextNode } from '../core/primitives';
+import type {AnimationBuilder} from '../core/registry';
+import {floatingTextNode} from '../core/primitives';
 
 export const statusBlockedBuilder: AnimationBuilder = (event, _children, state) => {
   if (event.type !== 'STATUS_BLOCKED') return null;

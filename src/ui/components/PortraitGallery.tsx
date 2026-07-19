@@ -4,7 +4,7 @@
  * Используется в CharacterCreationScreen.
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 
 export type PortraitItem = {
   id: string;

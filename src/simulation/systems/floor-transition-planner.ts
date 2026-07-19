@@ -13,12 +13,12 @@
  *   (через генерацию карты) и `state.floorSnapshots`.
  */
 
-import type { GameState, StairsEntity, GameEvent, GameMap, Entity, EntityId, Position } from '@simulation/types';
-import type { FloorTransitionPlan, TurnSide } from '@simulation/core-types';
-import { createBoolGrid } from '@simulation/state';
-import { generateMap, createStairs } from '@simulation/systems/mapgen';
-import { updateFOV } from '@simulation/systems/fov';
-import { MAX_FLOOR } from '@utils/constants';
+import type {Entity, EntityId, GameMap, GameState, Position, StairsEntity} from '@simulation/types';
+import type {FloorTransitionPlan, TurnSide} from '@simulation/core-types';
+import {createBoolGrid} from '@simulation/state';
+import {createStairs, generateMap} from '@simulation/systems/mapgen';
+import {updateFOV} from '@simulation/systems/fov';
+import {MAX_FLOOR} from '@utils/constants';
 
 /**
  * Вычисляет план перехода на другой этаж.

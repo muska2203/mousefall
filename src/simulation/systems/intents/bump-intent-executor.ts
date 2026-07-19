@@ -1,6 +1,6 @@
-import { GameState } from '@simulation/types';
-import { BumpIntent, IntentExecutor } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
+import {GameState} from '@simulation/types';
+import {BumpIntent, IntentExecutor} from '@simulation/systems/intents/types';
+import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
 
 /**
  * Исполняет интент столкновения BUMP.

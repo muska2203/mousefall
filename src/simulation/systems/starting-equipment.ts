@@ -1,9 +1,9 @@
-import type { GameState, PlayerEntity } from '@simulation/types';
-import { getItem } from '@content/registry';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
-import { executeIntent } from '@simulation/systems/intents/execute-intent';
-import { createInventoryItem } from './inventory-factory';
-import { getItemAbilityEntries } from './ability-grant';
+import type {GameState, PlayerEntity} from '@simulation/types';
+import {getItem} from '@content/registry';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
+import {executeIntent} from '@simulation/systems/intents/execute-intent';
+import {createInventoryItem} from './inventory-factory';
+import {getItemAbilityEntries} from './ability-grant';
 
 /**
  * Создаёт стартовое снаряжение игрока и помещает его в инвентарь.

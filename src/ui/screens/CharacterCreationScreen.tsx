@@ -7,18 +7,18 @@
  * Правая: StarterEquipmentPanel, информация, кнопка старта.
  */
 
-import {useState, useCallback, useMemo, useEffect} from 'react';
-import { useTranslation } from '@i18n/hooks';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useTranslation} from '@i18n/hooks';
 import type {CharacterConfig} from '@presentation/gameSession';
 import {GameSession} from '@presentation/gameSession';
-import { useSettingsStore } from '@ui/store/settings';
+import {useSettingsStore} from '@ui/store/settings';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
-import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
-import {PortraitGallery} from '@ui/components/PortraitGallery';
+import {HeroPanel} from '@ui/components/HeroPanel';
 import type {PortraitItem} from '@ui/components/PortraitGallery';
-import {StarterEquipmentPanel} from '@ui/components/StarterEquipmentPanel';
+import {PortraitGallery} from '@ui/components/PortraitGallery';
 import type {StarterSlot} from '@ui/components/StarterEquipmentPanel';
+import {StarterEquipmentPanel} from '@ui/components/StarterEquipmentPanel';
 import {Panel} from '@ui/components/Panel';
 
 interface Props {

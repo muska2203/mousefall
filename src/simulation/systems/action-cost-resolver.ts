@@ -5,10 +5,10 @@
  * состояния игры. Центральное списание AP происходит в `GameSimulation.executeAction`.
  */
 
-import { tryGetAbility, tryGetItem } from '@content/registry';
-import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
-import type { GameAction } from '@simulation/core-types.ts';
-import type { GameState } from '@simulation/types.ts';
+import {tryGetAbility, tryGetItem} from '@content/registry';
+import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
+import type {GameAction} from '@simulation/core-types.ts';
+import type {GameState} from '@simulation/types.ts';
 
 export type ActionPointCostResolver = {
   getCost(action: GameAction, state: GameState): number;

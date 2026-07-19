@@ -4,9 +4,8 @@
  * Показывает тряску тайлов и всплеск частиц в точке столкновения.
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { particleBurstNode, tileShakeNode } from '../core/primitives';
+import type {AnimationBuilder} from '../core/registry';
+import {particleBurstNode, tileShakeNode} from '../core/primitives';
 
 /** Цвет частиц по умолчанию для столкновений. */
 const DEFAULT_COLLISION_COLOR = 0xffaa00;

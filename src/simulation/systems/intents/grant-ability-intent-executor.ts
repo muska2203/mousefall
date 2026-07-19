@@ -4,11 +4,11 @@
  * Добавляет способность в массив abilities актёра.
  */
 
-import { GameState, Actor } from "@simulation/types.ts";
-import { isActor } from "@simulation/state.ts";
-import { IntentExecutor, GrantAbilityIntent } from "@simulation/systems/intents/types.ts";
-import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { addActiveRulesForAbility } from "@simulation/systems/rules/active-rule-lifecycle.ts";
+import {Actor, GameState} from "@simulation/types.ts";
+import {isActor} from "@simulation/state.ts";
+import {GrantAbilityIntent, IntentExecutor} from "@simulation/systems/intents/types.ts";
+import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {addActiveRulesForAbility} from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeGrantAbilityIntent: IntentExecutor<GrantAbilityIntent> = (
   state: GameState,

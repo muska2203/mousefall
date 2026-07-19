@@ -5,9 +5,9 @@
  * превью интентов при наведении.
  */
 
-import type { Position, Simulation, GameState } from '@simulation/types';
-import type { PresentationActionPreview } from './types';
-import { toPresentationIntent } from './types';
+import type {GameState, Position, Simulation} from '@simulation/types';
+import type {PresentationActionPreview} from './types';
+import {toPresentationIntent} from './types';
 
 export type TargetingPhase = 'normal' | 'targeting';
 

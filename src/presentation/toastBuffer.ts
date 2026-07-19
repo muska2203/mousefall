@@ -5,8 +5,8 @@
  * активных уведомлений. Не зависит от Simulation или UI.
  */
 
-import { getDefaultToastDuration } from './toastBuilder';
-import type { ToastItem, ToastKind } from './types';
+import {getDefaultToastDuration} from './toastBuilder';
+import type {ToastItem, ToastKind} from './types';
 
 /** Максимальное количество одновременно отображаемых уведомлений. */
 const MAX_VISIBLE_TOASTS = 10;

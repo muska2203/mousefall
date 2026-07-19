@@ -5,15 +5,9 @@
  * контентные правила. Правила не работают с сырым событием напрямую.
  */
 
-import type { GameState } from '@simulation/types.ts';
-import { findAllEntitiesAt, findEntity } from '@simulation/state.ts';
-import type {
-  EntityId,
-  GameEvent,
-  GameplayTag,
-  Intent,
-  Position,
-} from '@simulation/core-types.ts';
+import type {GameState} from '@simulation/types.ts';
+import {findAllEntitiesAt, findEntity} from '@simulation/state.ts';
+import type {EntityId, GameEvent, GameplayTag, Intent, Position,} from '@simulation/core-types.ts';
 
 /**
  * Контекст правила, передаваемый в условия и эффекты.

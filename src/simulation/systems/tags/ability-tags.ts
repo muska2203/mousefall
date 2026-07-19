@@ -2,9 +2,9 @@
  * Хелперы для получения тегов способности по ID шаблона.
  */
 
-import { tryGetAbility } from '@content/registry';
-import type { GameplayTag } from '@simulation/core-types.ts';
-import type { AbilityTemplate } from '@content/schemas';
+import {tryGetAbility} from '@content/registry';
+import type {GameplayTag} from '@simulation/core-types.ts';
+import type {AbilityTemplate} from '@content/schemas';
 
 /**
  * Возвращает теги классификации способности из реестра контента.

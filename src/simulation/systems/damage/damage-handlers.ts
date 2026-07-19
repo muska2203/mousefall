@@ -1,7 +1,7 @@
-import { Entity } from '@simulation/types';
-import type { GameplayTag } from '@simulation/core-types';
-import { getEffectiveArmor } from '@simulation/systems/stats/effective-stats';
-import { hasTag } from '@simulation/systems/tags/tag-helpers';
+import {Entity} from '@simulation/types';
+import type {GameplayTag} from '@simulation/core-types';
+import {getEffectiveArmor} from '@simulation/systems/stats/effective-stats';
+import {hasTag} from '@simulation/systems/tags/tag-helpers';
 
 export type DamageCalculationContext = {
   rawDamage: number;

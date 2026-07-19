@@ -1,5 +1,5 @@
-import { PlayerEntity, EnemyEntity, Attackable, Entity } from '@simulation/types';
-import type { GameplayTag } from '@simulation/core-types';
+import {Attackable, EnemyEntity, Entity, PlayerEntity} from '@simulation/types';
+import type {GameplayTag} from '@simulation/core-types';
 
 export type SkillDamageEntry = {
   damage: number;

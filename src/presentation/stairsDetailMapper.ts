@@ -5,15 +5,14 @@
  * и формирует готовый ViewModel для popover'а.
  */
 
-import type { StairsEntity } from '@simulation/types';
-import { tryGetLocalizedStairs } from '@content/registry';
-import { resolveStairsSprite } from '@utils/assetResolver';
-import type { StairsPopoverViewModel } from './types';
-import type { Locale } from '@content/texts/lookup';
+import type {StairsEntity} from '@simulation/types';
+import {tryGetLocalizedStairs} from '@content/registry';
+import {resolveStairsSprite} from '@utils/assetResolver';
+import type {StairsPopoverViewModel} from './types';
+import type {Locale} from '@content/texts/lookup';
 
 export function mapStairsToPopover(stairs: StairsEntity, locale: Locale): StairsPopoverViewModel {
-  const currentLocale = locale;
-  const template = tryGetLocalizedStairs(stairs.templateId, currentLocale);
+  const template = tryGetLocalizedStairs(stairs.templateId, locale);
 
   return {
     name: template?.name ?? stairs.displayName,

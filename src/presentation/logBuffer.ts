@@ -5,9 +5,9 @@
  * Не зависит от Simulation или UI.
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { Locale } from '@content/texts/lookup';
-import { gameEventToLog } from './logBuilder';
+import type {GameEvent, GameState} from '@simulation/types';
+import type {Locale} from '@content/texts/lookup';
+import {gameEventToLog} from './logBuilder';
 
 export type LogItem = {
   id: number;

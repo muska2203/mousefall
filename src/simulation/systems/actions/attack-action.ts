@@ -3,9 +3,9 @@ import {GameState} from "@simulation/types.ts";
 import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
-import { getEffectiveWeaponDamage } from "@simulation/systems/stats/effective-stats.ts";
-import { getPrimaryDamageTag, getWeaponTags } from "@simulation/systems/tags/weapon-tags.ts";
-import { mergeDamageIntentTags } from "@simulation/systems/tags/tag-helpers.ts";
+import {getEffectiveWeaponDamage} from "@simulation/systems/stats/effective-stats.ts";
+import {getPrimaryDamageTag, getWeaponTags} from "@simulation/systems/tags/weapon-tags.ts";
+import {mergeDamageIntentTags} from "@simulation/systems/tags/tag-helpers.ts";
 
 // ─────────────────────────────────────────────
 // Контекст атаки (устраняет дублирование поиска)

@@ -6,8 +6,8 @@
  * Поддерживает Promise-based анимации перемещения и плавное следование камеры.
  */
 
-import {Container, Ticker, Graphics} from 'pixi.js';
-import type {RenderInput, Position} from '@presentation/types';
+import {Container, Graphics, Ticker} from 'pixi.js';
+import type {Position, RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {TileRenderer} from './TileRenderer';
 import {EntityRenderer} from './EntityRenderer';
@@ -17,7 +17,7 @@ import {TargetingRenderer} from './TargetingRenderer';
 import {DebugMapRenderer} from './DebugMapRenderer';
 import {UnitInfoRenderer} from './UnitInfoRenderer';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-import {Tween, type TickerLike, runTickerTween, lerp} from '@utils/tween';
+import {lerp, runTickerTween, type TickerLike, Tween} from '@utils/tween';
 
 type CameraAnimation = {
   tween: Tween;

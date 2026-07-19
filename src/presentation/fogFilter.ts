@@ -12,7 +12,7 @@
  *   что из него попадёт в анимации.
  */
 
-import type { GameState, SimulationResult, TurnPhase, GameEvent, ExecutionNode } from '@simulation/types';
+import type {ExecutionNode, GameEvent, GameState, SimulationResult, TurnPhase} from '@simulation/types';
 
 /** Отфильтровать SimulationResult, оставив только видимые игроку события. */
 export function filterByFOV(result: SimulationResult, state: GameState): SimulationResult {

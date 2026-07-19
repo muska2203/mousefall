@@ -10,8 +10,8 @@
  */
 
 import {Container, Graphics, Text, TextStyle} from 'pixi.js';
-import { FONT_PANEL_TITLE } from './fonts';
-import type {RenderInput, Position, PresentationIntent} from '@presentation/types';
+import {FONT_PANEL_TITLE} from './fonts';
+import type {Position, RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 
 const COLORS = {

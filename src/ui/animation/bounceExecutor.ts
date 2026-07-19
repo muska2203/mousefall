@@ -2,9 +2,9 @@
  * Executor анимации отскока при столкновении (BOUNCE).
  */
 
-import type { AnimationExecutor, AnimationContext } from './types';
-import type { AnimationStep } from '@presentation/types';
-import { ANIMATION_CONFIG } from '@utils/animationConfig';
+import type {AnimationContext, AnimationExecutor} from './types';
+import type {AnimationStep} from '@presentation/types';
+import {ANIMATION_CONFIG} from '@utils/animationConfig';
 
 export class BounceAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {

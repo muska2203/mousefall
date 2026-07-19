@@ -4,10 +4,10 @@
  * Локализует каждый тег через content-тексты и отрисовывает бейджи.
  */
 
-import { getTagText } from '@content/texts/lookup';
-import type { Locale } from '@content/texts/lookup';
-import type { GameplayTag } from '@presentation/types';
-import { TagBadge } from './TagBadge';
+import type {Locale} from '@content/texts/lookup';
+import {getTagText} from '@content/texts/lookup';
+import type {GameplayTag} from '@presentation/types';
+import {TagBadge} from './TagBadge';
 
 interface Props {
   /** Теги для отображения. */

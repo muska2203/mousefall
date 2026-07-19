@@ -5,8 +5,8 @@
  * в конкретное число, которое можно передать в интент или условие.
  */
 
-import type { RuleContext } from './rule-context.ts';
-import type { ParametrizedValue } from './types.ts';
+import type {RuleContext} from './rule-context.ts';
+import type {ParametrizedValue} from './types.ts';
 
 /**
  * Преобразует `number | ParametrizedValue` в число по правилам контекста.

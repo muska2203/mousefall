@@ -1,4 +1,4 @@
-import type { ContentText } from '../types';
+import type {ContentText} from '../types';
 
 export const rules: Record<string, ContentText> = {
   item_fire_damage_multiplier: {

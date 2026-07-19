@@ -1,4 +1,4 @@
-import type { ComponentsEquipmentPanelTranslations } from '@i18n/schema';
+import type {ComponentsEquipmentPanelTranslations} from '@i18n/schema';
 
 export const ruEquipmentPanel = {
   title: 'Экипировка',

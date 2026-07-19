@@ -6,10 +6,10 @@
  * - Анимирует полоску HP от fromHp к toHp одновременно с всплывающим текстом урона.
  */
 
-import type { AnimationExecutor, AnimationContext } from './types';
-import type { AnimationStep } from '@presentation/types';
-import { ANIMATION_CONFIG } from '@utils/animationConfig';
-import type { AnimationConfigKey } from '@utils/animationConfig';
+import type {AnimationContext, AnimationExecutor} from './types';
+import type {AnimationStep} from '@presentation/types';
+import type {AnimationConfigKey} from '@utils/animationConfig';
+import {ANIMATION_CONFIG} from '@utils/animationConfig';
 
 export class HpChangeAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {

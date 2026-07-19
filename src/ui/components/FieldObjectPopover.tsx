@@ -8,11 +8,11 @@
  * Внутри переключает карточку в зависимости от типа объекта.
  */
 
-import { useLayoutEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslation } from '@i18n/hooks';
-import type { FieldObjectPopoverViewModel } from '@presentation/types';
-import { ItemDetailCard } from './ItemDetailCard';
+import {useLayoutEffect, useRef} from 'react';
+import {createPortal} from 'react-dom';
+import {useTranslation} from '@i18n/hooks';
+import type {FieldObjectPopoverViewModel} from '@presentation/types';
+import {ItemDetailCard} from './ItemDetailCard';
 
 interface Props {
   popover: FieldObjectPopoverViewModel;

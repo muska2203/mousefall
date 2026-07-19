@@ -1,4 +1,4 @@
-import type { ComponentsConsumablesTranslations } from '@i18n/schema';
+import type {ComponentsConsumablesTranslations} from '@i18n/schema';
 
 export const ruConsumables = {
   title: 'Расходники',

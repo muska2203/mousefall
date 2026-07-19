@@ -13,13 +13,12 @@
  *   тактическому реестру {@link './tactics'}.
  */
 
-import { registerStrategy } from './strategy-registry';
-import type { AiActor, EnemyEntity, GameState, Position } from '@simulation/types';
-import type { GameAction } from '@simulation/systems/actions/types';
-import type { WorldChange } from './perception-types';
-import { endTurn, canSeePlayer, canSeePosition } from './ai-helpers';
-import { isEnemyEntity } from './ai-state';
-import { findVisibleAttackTarget, closeCombat, moveToward } from './tactics';
+import {registerStrategy} from './strategy-registry';
+import type {EnemyEntity, GameState, Position} from '@simulation/types';
+import type {WorldChange} from './perception-types';
+import {canSeePlayer, canSeePosition, endTurn} from './ai-helpers';
+import {isEnemyEntity} from './ai-state';
+import {closeCombat, findVisibleAttackTarget, moveToward} from './tactics';
 
 registerStrategy('hunter', {
   updateState(actor, state) {

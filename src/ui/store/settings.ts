@@ -1,6 +1,6 @@
-import { create } from 'zustand';
+import {create} from 'zustand';
 import i18next from 'i18next';
-import type { Locale } from '@content/texts/lookup';
+import type {Locale} from '@content/texts/lookup';
 
 interface SettingsState {
   locale: Locale;

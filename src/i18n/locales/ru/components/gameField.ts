@@ -1,4 +1,4 @@
-import type { ComponentsGameFieldTranslations } from '@i18n/schema';
+import type {ComponentsGameFieldTranslations} from '@i18n/schema';
 
 export const ruGameField = {
   floorTitle: 'Уровень {{floor}}',

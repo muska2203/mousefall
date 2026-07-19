@@ -12,9 +12,9 @@
  *   независимо от типа.
  */
 
-import type { EnemyEntity, GameState } from '@simulation/types';
-import { canSeePlayer } from '../ai-helpers';
-import type { AttackTarget } from './types';
+import type {EnemyEntity, GameState} from '@simulation/types';
+import {canSeePlayer} from '../ai-helpers';
+import type {AttackTarget} from './types';
 
 /**
  * Возвращает видимую атакуемую цель для указанного врага.

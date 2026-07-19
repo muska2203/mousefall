@@ -11,7 +11,7 @@
  */
 
 import type {PlayerEntity} from './types';
-import { recalculateActorStats } from './systems/stats/recalculate.ts';
+import {recalculateActorStats} from './systems/stats/recalculate.ts';
 
 export type CharacterAttributes = {
   strength: number;

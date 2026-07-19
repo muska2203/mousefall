@@ -7,7 +7,7 @@
  * - Никаких импортов из simulation/ или ui/
  */
 
-import type { Position } from '../simulation/types';
+import type {Position} from '../simulation/types';
 
 // ─────────────────────────────────────────────
 // Расстояние

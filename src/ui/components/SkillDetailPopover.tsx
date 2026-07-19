@@ -5,12 +5,12 @@
  * Потребляет готовый ViewModel от Presentation.
  */
 
-import { useLayoutEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslation } from '@i18n/hooks';
-import type { HotbarSkillTooltip } from '@presentation/types';
-import { TagList } from './TagList';
-import { RichDescription } from './RichDescription';
+import {useLayoutEffect, useRef} from 'react';
+import {createPortal} from 'react-dom';
+import {useTranslation} from '@i18n/hooks';
+import type {HotbarSkillTooltip} from '@presentation/types';
+import {TagList} from './TagList';
+import {RichDescription} from './RichDescription';
 
 interface Props {
   /** Данные скилла для отображения (готовый ViewModel). */

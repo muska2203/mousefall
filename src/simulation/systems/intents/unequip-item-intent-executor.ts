@@ -4,12 +4,12 @@
  * Сбрасывает equipped{X}Id и equipped{X}InstanceId для указанного слота в null.
  */
 
-import { GameState } from "@simulation/types.ts";
-import { IntentExecutor, UnequipItemIntent } from "@simulation/systems/intents/types.ts";
-import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { removeModifiersBySource } from "@simulation/systems/stats/modifier-engine.ts";
-import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
-import { removeActiveRulesForItem } from "@simulation/systems/rules/active-rule-lifecycle.ts";
+import {GameState} from "@simulation/types.ts";
+import {IntentExecutor, UnequipItemIntent} from "@simulation/systems/intents/types.ts";
+import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {removeModifiersBySource} from "@simulation/systems/stats/modifier-engine.ts";
+import {recalculateActorStats} from "@simulation/systems/stats/recalculate.ts";
+import {removeActiveRulesForItem} from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeUnequipItemIntent: IntentExecutor<UnequipItemIntent> = (
   state: GameState,

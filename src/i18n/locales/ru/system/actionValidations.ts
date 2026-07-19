@@ -1,4 +1,4 @@
-import type { SystemActionValidationsTranslations } from '@i18n/schema';
+import type {SystemActionValidationsTranslations} from '@i18n/schema';
 
 export const ruActionValidations = {
   itemNotFound: 'Предмет не найден в инвентаре',

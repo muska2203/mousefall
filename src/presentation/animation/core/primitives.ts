@@ -6,8 +6,8 @@
  * - Переиспользование базовых анимаций в builders и skill composers.
  */
 
-import type { Entity, GameEvent } from '@simulation/types';
-import type { AnimationNode, Position } from '@presentation/types';
+import type {Entity, GameEvent} from '@simulation/types';
+import type {AnimationNode, Position} from '@presentation/types';
 
 // Конкретные типы событий выводим из union GameEvent, чтобы не зависеть от внутренних реэкспортов.
 type EntityMovedEvent = Extract<GameEvent, { type: 'ENTITY_MOVED' }>;

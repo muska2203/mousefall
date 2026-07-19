@@ -8,7 +8,7 @@
  */
 
 import type {TileType} from '@presentation/types';
-import { resolveStatusIcon } from '@utils/assetResolver';
+import {resolveStatusIcon} from '@utils/assetResolver';
 
 /** Путь к спрайту тайла. */
 export function getTileSprite(tile: TileType): string {

@@ -2,12 +2,10 @@
  * Анимационный композер для способности Fireball.
  */
 
-import type { GameState } from '@simulation/types';
-import type { AnimationNode } from '@presentation/types';
-import type { AbilityEvent } from '../core/primitives';
-import type { SkillComposer } from './registry';
-import { registerSkillComposer } from './registry';
-import { abilityCastNode, projectileNode, explosionNode } from '../core/primitives';
+import type {AbilityEvent} from '../core/primitives';
+import {abilityCastNode, explosionNode, projectileNode} from '../core/primitives';
+import type {SkillComposer} from './registry';
+import {registerSkillComposer} from './registry';
 
 export const fireballComposer: SkillComposer = (event: AbilityEvent, children) => {
   const target = event.targets[0];

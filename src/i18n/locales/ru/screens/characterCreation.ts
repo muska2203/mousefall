@@ -1,4 +1,4 @@
-import type { ScreensCharacterCreationTranslations } from '@i18n/schema';
+import type {ScreensCharacterCreationTranslations} from '@i18n/schema';
 
 export const ruCharacterCreation = {
   statsTitle: 'Распределение очков',

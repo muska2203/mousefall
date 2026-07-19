@@ -7,10 +7,10 @@
  * - Если новых видимых клеток нет, возвращает null.
  */
 
-import { GameState } from '@simulation/types';
-import { UpdateFogIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
-import { updateFOV } from '@simulation/systems/fov';
+import {GameState} from '@simulation/types';
+import {ExecutionBuilder, ExecutionNode, UpdateFogIntent} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
+import {updateFOV} from '@simulation/systems/fov';
 
 export const executeUpdateFogIntent: IntentExecutor<UpdateFogIntent> = (
   state: GameState,

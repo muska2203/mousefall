@@ -1,11 +1,5 @@
 import {GameState} from "@simulation/types.ts";
-import {
-  ExecutionBuilder,
-  ExecutionNode,
-  GameAction,
-  Intent,
-  ValidationResult,
-} from "@simulation/core-types.ts";
+import {ExecutionBuilder, ExecutionNode, GameAction, Intent, ValidationResult,} from "@simulation/core-types.ts";
 
 // Реэкспорт базовых типов для обратной совместимости потребителей
 export { ExecutionBuilder } from "@simulation/core-types.ts";

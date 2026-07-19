@@ -6,9 +6,8 @@
  * (displacement-move-reaction), не дублируем её собственным MOVE.
  */
 
-import type { GameEvent } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { displacementMoveNode } from '../core/primitives';
+import type {AnimationBuilder} from '../core/registry';
+import {displacementMoveNode} from '../core/primitives';
 
 export const entityDisplacedBuilder: AnimationBuilder = (event, children, _state) => {
   if (event.type !== 'ENTITY_DISPLACED') return null;

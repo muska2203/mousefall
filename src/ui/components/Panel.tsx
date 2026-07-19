@@ -3,7 +3,7 @@
  * Базовый визуальный компонент для всех секций UI.
  */
 
-import { type ReactNode } from 'react';
+import {type ReactNode} from 'react';
 
 interface Props {
   title: ReactNode;

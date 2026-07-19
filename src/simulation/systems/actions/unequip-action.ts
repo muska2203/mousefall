@@ -6,10 +6,10 @@
  * - Порождает UNEQUIP_ITEM и REVOKE_ABILITY.
  */
 
-import { GameState } from "@simulation/types.ts";
-import { ActionHandler, ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { Intent } from "@simulation/systems/intents/types.ts";
-import { executeIntents } from "@simulation/systems/intents/execute-intent.ts";
+import {GameState} from "@simulation/types.ts";
+import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {Intent} from "@simulation/systems/intents/types.ts";
+import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
 
 export const unequipEntity: ActionHandler = {
 

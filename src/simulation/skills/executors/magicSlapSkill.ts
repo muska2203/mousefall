@@ -1,13 +1,13 @@
-import { GameState, Position, Entity, Attackable } from '@simulation/types';
-import { Intent } from '@simulation/systems/intents/types';
-import { TargetMode } from '@simulation/core-types';
-import { SkillExecutor } from '@simulation/skills/skillExecutor';
-import { damageFormulas } from '@simulation/skills/damageFormula';
-import { getDamageablePositionsWithinRange } from '@simulation/skills/targeting';
-import { isCombatEntity, isDamageable } from '@simulation/state';
-import { getAbilityTags, getSkillDamageTag } from '@simulation/systems/tags/ability-tags';
-import { mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers';
-import { tryGetAbility } from '@content/registry';
+import {Attackable, Entity, GameState, Position} from '@simulation/types';
+import {Intent} from '@simulation/systems/intents/types';
+import {TargetMode} from '@simulation/core-types';
+import {SkillExecutor} from '@simulation/skills/skillExecutor';
+import {damageFormulas} from '@simulation/skills/damageFormula';
+import {getDamageablePositionsWithinRange} from '@simulation/skills/targeting';
+import {isCombatEntity, isDamageable} from '@simulation/state';
+import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
+import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
+import {tryGetAbility} from '@content/registry';
 
 export const magicSlapSkill: SkillExecutor = {
   id: 'magic_slap',

@@ -2,9 +2,9 @@
  * Строка распределяемой характеристики с кнопками +/-.
  */
 
-import { useState, useCallback } from 'react';
-import { useTranslation } from '@i18n/hooks';
-import { DetailPopover } from './DetailPopover';
+import {useCallback, useState} from 'react';
+import {useTranslation} from '@i18n/hooks';
+import {DetailPopover} from './DetailPopover';
 
 interface Props {
   icon: string;

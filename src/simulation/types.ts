@@ -11,33 +11,33 @@
 
 import type {ItemTemplate, MapParams} from "@content/schemas";
 import {
-  Position,
-  EntityId,
-  ItemInstanceId,
-  TileType,
-  Room,
-  Corridor,
-  CorridorSegment,
-  GameMap,
-  BaseStats,
-  StatModifierOp,
-  StatModifier,
-  StatusEffectType,
-  StatusEffect,
-  ValidationResult,
-  ValidationError,
-  ExecutionNode,
-  GameAction,
-  Intent,
-  GameEvent,
-  RuleTriggeredEvent,
-  RuntimeAbility,
-  GameplayTag,
-  TurnSide,
-  FactionId,
+    BaseStats,
+    Corridor,
+    CorridorSegment,
+    EntityId,
+    ExecutionNode,
+    FactionId,
+    GameAction,
+    GameEvent,
+    GameMap,
+    GameplayTag,
+    Intent,
+    ItemInstanceId,
+    Position,
+    Room,
+    RuleTriggeredEvent,
+    RuntimeAbility,
+    StatModifier,
+    StatModifierOp,
+    StatusEffect,
+    StatusEffectType,
+    TileType,
+    TurnSide,
+    ValidationError,
+    ValidationResult,
 } from "@simulation/core-types.ts";
-import type { AIState } from "./ai/ai-state";
-import type { ActiveRule } from "./content-rules/types";
+import type {AIState} from "./ai/ai-state";
+import type {ActiveRule} from "./content-rules/types";
 
 // Реэкспорт базовых типов из core-types для обратной совместимости потребителей
 export type {

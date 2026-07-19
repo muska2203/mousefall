@@ -11,17 +11,13 @@
  * Текущие hp/mp не превышают новые максимумы (clamp).
  */
 
-import type { Actor, StatActor } from '@simulation/types.ts';
+import type {Actor, StatActor} from '@simulation/types.ts';
+import {getBaseArmor, getBaseDamage, getBaseMaxHp,} from './base-resolver.ts';
 import {
-  getBaseMaxHp,
-  getBaseDamage,
-  getBaseArmor,
-} from './base-resolver.ts';
-import {
-  getEffectiveDodgeChance,
-  getEffectiveAccuracy,
-  getEffectiveCritChance,
-  getEffectiveCritMultiplier,
+    getEffectiveAccuracy,
+    getEffectiveCritChance,
+    getEffectiveCritMultiplier,
+    getEffectiveDodgeChance,
 } from './effective-stats.ts';
 
 export function recalculateActorStats(actor: StatActor & Actor): void {

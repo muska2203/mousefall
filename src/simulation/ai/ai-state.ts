@@ -7,8 +7,8 @@
  * - Поле strategy — discriminant для будущей расширяемости ( discriminated union ).
  */
 
-import type { Position } from '@simulation/core-types';
-import type { EnemyEntity } from '@simulation/types';
+import type {Position} from '@simulation/core-types';
+import type {EnemyEntity} from '@simulation/types';
 
 
 /**

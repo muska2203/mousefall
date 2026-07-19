@@ -11,11 +11,11 @@
  * - Не импортирует Simulation.
  */
 
-import {useState, useCallback, useRef, useEffect} from 'react';
-import { useTranslation } from '@i18n/hooks';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {useTranslation} from '@i18n/hooks';
+import type {CharacterConfig} from '@presentation/gameSession';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
-import type {CharacterConfig, PlayerStatsSnapshot} from '@presentation/gameSession';
-import { useSettingsStore } from '@ui/store/settings';
+import {useSettingsStore} from '@ui/store/settings';
 
 import {MainMenuScreen} from './screens/MainMenuScreen';
 import {CharacterCreationScreen} from './screens/CharacterCreationScreen';

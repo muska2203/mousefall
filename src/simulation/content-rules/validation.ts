@@ -8,10 +8,10 @@
  * и содержат корректные теги.
  */
 
-import type { LoadedContent } from '@content/schemas';
-import { getRegistry, getAllContentRules } from './registry';
-import type { ContentRule, RuleCondition, RuleEffect } from './types';
-import { hasWeaponFormula } from '@simulation/systems/stats/weapon-formulas';
+import type {LoadedContent} from '@content/schemas';
+import {getAllContentRules, getRegistry} from './registry';
+import type {ContentRule, RuleCondition, RuleEffect} from './types';
+import {hasWeaponFormula} from '@simulation/systems/stats/weapon-formulas';
 
 /**
  * Описание найденной ошибки валидации.

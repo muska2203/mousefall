@@ -4,10 +4,10 @@
  * Делегирует в WorldRenderer, который управляет EntityRenderer и камерой.
  */
 
-import type { AnimationExecutor, AnimationContext } from './types';
-import type { AnimationStep } from '@presentation/types';
-import { ANIMATION_CONFIG } from '@utils/animationConfig';
-import type { AnimationConfigKey } from '@utils/animationConfig';
+import type {AnimationContext, AnimationExecutor} from './types';
+import type {AnimationStep} from '@presentation/types';
+import type {AnimationConfigKey} from '@utils/animationConfig';
+import {ANIMATION_CONFIG} from '@utils/animationConfig';
 
 export class SpriteAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {

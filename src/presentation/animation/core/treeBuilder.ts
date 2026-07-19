@@ -10,9 +10,9 @@
  * - Этот модуль работает только с уже отфильтрованными узлами.
  */
 
-import type { GameState, TurnSide } from '@simulation/types';
-import type { AnimationNode, AnimationPhase, Position } from '@presentation/types';
-import type { PresentationNode } from '@presentation/displayState/types';
+import type {GameState, TurnSide} from '@simulation/types';
+import type {AnimationNode, AnimationPhase, Position} from '@presentation/types';
+import type {PresentationNode} from '@presentation/displayState/types';
 
 /** Возвращает ID сущности, которой принадлежит анимационный узел, или null. */
 function getNodeEntityId(node: AnimationNode): string | null {
@@ -28,16 +28,6 @@ function getNodeEntityId(node: AnimationNode): string | null {
       return step.attackerId;
     default:
       return null;
-  }
-}
-
-/** Добавить значение в массив Map, создавая массив при необходимости. */
-function pushToMap<T>(map: Map<string, T[]>, key: string, value: T): void {
-  const arr = map.get(key);
-  if (arr) {
-    arr.push(value);
-  } else {
-    map.set(key, [value]);
   }
 }
 

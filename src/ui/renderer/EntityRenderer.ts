@@ -6,14 +6,14 @@
  */
 
 import {Container, Sprite, Texture} from 'pixi.js';
-import type {RenderInput, Position, AnimationNode} from '@presentation/types';
+import type {AnimationNode, Position, RenderInput} from '@presentation/types';
 import type {DisplayState} from '@presentation/displayState/types';
-import {TILE_SIZE, FOG_EXPLORED_SPRITE_ALPHA} from '@utils/constants';
+import {FOG_EXPLORED_SPRITE_ALPHA, TILE_SIZE} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
-import {getPlayerSprite, getEnemySprite, getStairsSprite, getItemSprite, getDoorSprite} from './spriteRegistry';
-import {getTextureSync, getTexture} from './TextureCache';
-import {Tween, Vec2Tween, lerp} from '@utils/tween';
+import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getStairsSprite} from './spriteRegistry';
+import {getTexture, getTextureSync} from './TextureCache';
 import type {Animatable} from '@utils/tween';
+import {lerp, Tween, Vec2Tween} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
 
 const ACTOR_ANCHOR_X = 0.5;
@@ -209,8 +209,8 @@ export class EntityRenderer {
         onUpdate: (p) => {
           let x: number;
           let y: number;
-          let scaleY = baseScaleY;
-          let scaleX = baseScaleX;
+          let scaleY: number;
+          let scaleX: number;
 
           if (p < 0.15) {
             // Подготовка: сжатие.

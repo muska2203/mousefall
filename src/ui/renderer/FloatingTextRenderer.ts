@@ -11,9 +11,9 @@
  */
 
 import {Container, Text, TextStyle} from 'pixi.js';
-import { FONT_PANEL_TITLE } from './fonts';
-import {Tween, Easing} from '@utils/tween';
+import {FONT_PANEL_TITLE} from './fonts';
 import type {Animatable} from '@utils/tween';
+import {Easing, Tween} from '@utils/tween';
 
 type ActiveFloatingText = {
   text: Text;

@@ -1,5 +1,5 @@
-import { GameState, Position, Entity, EntityId } from '@simulation/types';
-import { computeFOV } from '@simulation/systems/fov';
+import {Entity, EntityId, GameState, Position} from '@simulation/types';
+import {computeFOV} from '@simulation/systems/fov';
 
 /**
  * Возвращает все сущности в заданном радиусе от центра (включая центр).
@@ -36,7 +36,7 @@ export function getDamageablePositionsWithinRange(state: GameState, caster: Enti
   const positions: Position[] = [];
   for (const entity of state.entities.values()) {
     if (entity.id === caster.id) continue;
-    if (!('hp' in entity) || entity.isAlive === false) continue;
+    if (!('hp' in entity) || !entity.isAlive) continue;
     const dx = Math.abs(entity.x - caster.x);
     const dy = Math.abs(entity.y - caster.y);
     if (dx + dy <= range && losSet.has(`${entity.x},${entity.y}`)) {

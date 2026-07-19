@@ -5,12 +5,7 @@
  * Шаблоны предметов, способностей и статусов ссылаются на них по `ruleIds`.
  */
 
-import type {
-  EntityId,
-  GameplayTag,
-  Position,
-  StatusEffectType,
-} from '@simulation/core-types.ts';
+import type {EntityId, GameplayTag, Position, StatusEffectType,} from '@simulation/core-types.ts';
 
 /**
  * Контекст владельца правила в рантайме.

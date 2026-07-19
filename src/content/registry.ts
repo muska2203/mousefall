@@ -17,8 +17,18 @@
  * - Решение: синглтон с initRegistry() для инжекции в тестах — золотая середина
  */
 
-import type { LoadedContent, EntityTemplate, PlayerTemplate, ItemTemplate, AbilityTemplate, StatusTemplate, MapParams, StairsTemplate, DoorTemplate } from './schemas';
-import { getContentText, type Locale } from './texts/lookup';
+import type {
+    AbilityTemplate,
+    DoorTemplate,
+    EntityTemplate,
+    ItemTemplate,
+    LoadedContent,
+    MapParams,
+    PlayerTemplate,
+    StairsTemplate,
+    StatusTemplate
+} from './schemas';
+import {getContentText, type Locale} from './texts/lookup';
 
 // ─────────────────────────────────────────────
 // Localized типы

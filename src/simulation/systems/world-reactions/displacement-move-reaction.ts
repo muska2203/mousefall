@@ -1,5 +1,5 @@
-import { WorldReaction } from './types';
-import { findEntity, isBlocked } from '@simulation/state';
+import {WorldReaction} from './types';
+import {findEntity, isBlocked} from '@simulation/state';
 
 /**
  * Реакция мира: успешное отталкивание на свободную клетку приводит к перемещению.

@@ -5,15 +5,15 @@
  * Доступно только при включённом debug-режиме.
  */
 
-import { GameState } from '@simulation/types.ts';
-import { tryGetItem, tryGetEntity, tryGetDoor, tryGetStairs } from '@content/registry';
-import { findAllEntitiesAt } from '@simulation/state.ts';
-import { createFloorItemContainer } from '@simulation/systems/item-entity-factory.ts';
-import { createInventoryItem } from '@simulation/systems/inventory-factory.ts';
-import { createEnemy, createDoor, createStairs } from '@simulation/systems/mapgen.ts';
-import { ActionHandler, ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types.ts';
-import { Intent } from '@simulation/systems/intents/types.ts';
-import type { DebugContext } from './debug-add-item-action.ts';
+import {GameState} from '@simulation/types.ts';
+import {tryGetDoor, tryGetEntity, tryGetItem, tryGetStairs} from '@content/registry';
+import {findAllEntitiesAt} from '@simulation/state.ts';
+import {createFloorItemContainer} from '@simulation/systems/item-entity-factory.ts';
+import {createInventoryItem} from '@simulation/systems/inventory-factory.ts';
+import {createDoor, createEnemy, createStairs} from '@simulation/systems/mapgen.ts';
+import {ActionHandler, ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
+import {Intent} from '@simulation/systems/intents/types.ts';
+import type {DebugContext} from './debug-add-item-action.ts';
 
 export function createDebugSpawnEntityActionHandler(context: DebugContext): ActionHandler {
   return {

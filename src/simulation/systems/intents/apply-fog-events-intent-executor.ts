@@ -9,9 +9,9 @@
  * планировщиком (`computeFloorTransition`) во временном состоянии.
  */
 
-import type { GameState } from '@simulation/types';
-import type { ApplyFogEventsIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import type { IntentExecutor } from '@simulation/systems/intents/types';
+import type {GameState} from '@simulation/types';
+import type {ApplyFogEventsIntent, ExecutionBuilder, ExecutionNode} from '@simulation/core-types';
+import type {IntentExecutor} from '@simulation/systems/intents/types';
 
 export const executeApplyFogEventsIntent: IntentExecutor<ApplyFogEventsIntent> = (
   state: GameState,

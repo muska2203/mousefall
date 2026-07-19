@@ -1,7 +1,7 @@
-import { GameState } from '@simulation/types';
-import { TickCooldownIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
-import { findEntity } from '@simulation/state';
+import {GameState} from '@simulation/types';
+import {ExecutionBuilder, ExecutionNode, TickCooldownIntent} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
+import {findEntity} from '@simulation/state';
 
 /**
  * Уменьшает кулдаун способности актора на 1.

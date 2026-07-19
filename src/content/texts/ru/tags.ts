@@ -1,4 +1,4 @@
-import type { ContentText } from '../types';
+import type {ContentText} from '../types';
 
 export const tags: Record<string, ContentText> = {
   'attack.melee': {
@@ -28,6 +28,10 @@ export const tags: Record<string, ContentText> = {
   'delivery.weapon': {
     name: 'Оружие',
     description: 'Удар оружием',
+  },
+  'delivery.ability': {
+    name: 'Способность',
+    description: 'Эффект или урон от способности',
   },
   'delivery.spell': {
     name: 'Заклинание',

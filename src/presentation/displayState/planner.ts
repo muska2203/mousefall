@@ -7,15 +7,15 @@
  * его патч переносится на ближайшего видимого предка (или видимых потомков).
  */
 
-import type { ExecutionNode, GameEvent, GameState, SimulationResult, TurnSide } from '@simulation/types';
-import type { AnimationNode, AnimationPhase } from '@presentation/types';
+import type {ExecutionNode, GameEvent, GameState, SimulationResult, TurnSide} from '@simulation/types';
+import type {AnimationNode, AnimationPhase} from '@presentation/types';
 // Регистрация стандартных builders выполняется через side-effect.
 import '../animation/register';
-import type { DisplayPatch, PresentationNode } from './types';
-import { createPatch } from './builder';
-import { getAnimationBuilder } from '../animation/core/registry';
-import { isEventVisible } from '../fogFilter';
-import { buildAnimationTree as buildAnimationPhases } from '../animation/core/treeBuilder';
+import type {DisplayPatch, PresentationNode} from './types';
+import {createPatch} from './builder';
+import {getAnimationBuilder} from '../animation/core/registry';
+import {isEventVisible} from '../fogFilter';
+import {buildAnimationTree as buildAnimationPhases} from '../animation/core/treeBuilder';
 
 /** Типы событий, которые происходят на поле и подлежат FOV-фильтрации. */
 const FIELD_EVENT_TYPES = new Set<GameEvent['type']>([

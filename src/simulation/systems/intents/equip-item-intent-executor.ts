@@ -4,13 +4,13 @@
  * Устанавливает equipped{X}Id и equipped{X}InstanceId для указанного слота.
  */
 
-import { GameState } from "@simulation/types.ts";
-import { IntentExecutor, EquipItemIntent } from "@simulation/systems/intents/types.ts";
-import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { getItem } from "@content/registry";
-import { addModifier } from "@simulation/systems/stats/modifier-engine.ts";
-import { recalculateActorStats } from "@simulation/systems/stats/recalculate.ts";
-import { addActiveRulesForItem } from "@simulation/systems/rules/active-rule-lifecycle.ts";
+import {GameState} from "@simulation/types.ts";
+import {EquipItemIntent, IntentExecutor} from "@simulation/systems/intents/types.ts";
+import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {getItem} from "@content/registry";
+import {addModifier} from "@simulation/systems/stats/modifier-engine.ts";
+import {recalculateActorStats} from "@simulation/systems/stats/recalculate.ts";
+import {addActiveRulesForItem} from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
   state: GameState,

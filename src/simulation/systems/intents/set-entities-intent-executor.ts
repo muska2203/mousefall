@@ -7,10 +7,10 @@
  * - Порождает событие ENTITIES_REPLACED с отсортированным списком ID.
  */
 
-import { GameState, Entity, EntityId } from '@simulation/types';
-import { SetEntitiesIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
-import { PLAYER_ID } from '@utils/constants';
+import {Entity, EntityId, GameState} from '@simulation/types';
+import {ExecutionBuilder, ExecutionNode, SetEntitiesIntent} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
+import {PLAYER_ID} from '@utils/constants';
 
 export const executeSetEntitiesIntent: IntentExecutor<SetEntitiesIntent> = (
   state: GameState,

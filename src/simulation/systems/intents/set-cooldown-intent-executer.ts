@@ -1,5 +1,4 @@
-import {GameState} from "@simulation/types.ts";
-import {SetCooldownIntent, ExecutionBuilder, ExecutionNode} from "@simulation/core-types.ts";
+import {SetCooldownIntent} from "@simulation/core-types.ts";
 import {IntentExecutor} from "@simulation/systems/intents/types.ts";
 
 export const executeSetCooldownIntent: IntentExecutor<SetCooldownIntent> = (

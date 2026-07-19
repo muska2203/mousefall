@@ -1,5 +1,5 @@
-import type { ItemTemplate } from '@content/schemas';
-import { randomFloat } from '@utils/random';
+import type {ItemTemplate} from '@content/schemas';
+import {randomFloat} from '@utils/random';
 
 /**
  * Роллит скилл из abilityPool предмета с использованием runtime random.

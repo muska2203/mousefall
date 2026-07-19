@@ -4,8 +4,8 @@
  * Используется в GameScreen (левая колонка).
  */
 
-import {useRef, useEffect} from 'react';
-import { useTranslation } from '@i18n/hooks';
+import {useEffect, useRef} from 'react';
+import {useTranslation} from '@i18n/hooks';
 import type {LogItem} from '@presentation/gameSession';
 import {Panel} from './Panel';
 import {LogEntry} from './LogEntry';

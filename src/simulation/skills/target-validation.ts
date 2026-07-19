@@ -5,8 +5,8 @@
  * валидных клеток и количества целей для разных режимов таргетинга.
  */
 
-import type { Entity, GameState, Position, ValidationResult } from '@simulation/types';
-import { getSkillExecutor } from './skillExecutor';
+import type {Entity, GameState, Position, ValidationResult} from '@simulation/types';
+import {getSkillExecutor} from './skillExecutor';
 
 /**
  * Проверяет, что выбранные цели способности корректны:

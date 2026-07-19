@@ -4,9 +4,9 @@
  * Рендерится через портал поверх всего UI в верхнем центре viewport.
  */
 
-import { createPortal } from 'react-dom';
-import type { ToastItem } from '@presentation/types';
-import { Toast } from './Toast';
+import {createPortal} from 'react-dom';
+import type {ToastItem} from '@presentation/types';
+import {Toast} from './Toast';
 
 interface Props {
   toasts: ToastItem[];

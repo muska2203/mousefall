@@ -8,12 +8,12 @@
  * - Порождает EQUIP_ITEM и GRANT_ABILITY (если у предмета есть скилл).
  */
 
-import { GameState } from "@simulation/types.ts";
-import { getItem } from "@content/registry";
-import { ActionHandler, ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { Intent } from "@simulation/systems/intents/types.ts";
-import { executeIntents } from "@simulation/systems/intents/execute-intent.ts";
-import { getItemAbilityEntries } from "@simulation/systems/ability-grant.ts";
+import {GameState} from "@simulation/types.ts";
+import {getItem} from "@content/registry";
+import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {Intent} from "@simulation/systems/intents/types.ts";
+import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
+import {getItemAbilityEntries} from "@simulation/systems/ability-grant.ts";
 
 export const equipEntity: ActionHandler = {
 

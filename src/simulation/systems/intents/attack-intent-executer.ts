@@ -1,8 +1,8 @@
-import { GameState } from '@simulation/types';
-import { DamageIntent, IntentExecutor } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { findAttackableEntity } from '@simulation/state';
-import { getDamageHandler, DamageCalculationContext } from '@simulation/systems/damage/damage-handlers';
+import {GameState} from '@simulation/types';
+import {DamageIntent, IntentExecutor} from '@simulation/systems/intents/types';
+import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
+import {findAttackableEntity} from '@simulation/state';
+import {DamageCalculationContext, getDamageHandler} from '@simulation/systems/damage/damage-handlers';
 
 /** Подсчитывает теги урона (начинающиеся с "damage."). */
 function countDamageTags(tags: readonly string[]): number {

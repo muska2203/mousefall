@@ -5,7 +5,7 @@
  * в intents / runtime-записи. Используется при экипировке и стартовом снаряжении.
  */
 
-import type { InventoryItem } from '@simulation/types';
+import type {InventoryItem} from '@simulation/types';
 
 /**
  * Возвращает плоский список всех способностей экземпляра предмета

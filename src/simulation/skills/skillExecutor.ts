@@ -1,6 +1,6 @@
-import { GameState, Position, Entity } from '@simulation/types';
-import { Intent } from '@simulation/systems/intents/types';
-import { TargetMode } from '@simulation/core-types';
+import {Entity, GameState, Position} from '@simulation/types';
+import {Intent} from '@simulation/systems/intents/types';
+import {TargetMode} from '@simulation/core-types';
 
 export interface SkillExecutor {
   id: string;

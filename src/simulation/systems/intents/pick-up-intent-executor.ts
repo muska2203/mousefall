@@ -7,10 +7,9 @@
  * Исполнитель работает только для сущности игрока (`type === 'player'`).
  */
 
-import type { GameState } from "@simulation/types.ts";
-import type { PickUpIntent, IntentExecutor } from "@simulation/systems/intents/types.ts";
-import type { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import type { FloorItemContainerEntity, PlayerEntity } from "@simulation/types.ts";
+import type {GameState} from "@simulation/types.ts";
+import type {IntentExecutor, PickUpIntent} from "@simulation/systems/intents/types.ts";
+import type {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 
 export const executePickUpIntent: IntentExecutor<PickUpIntent> = (
     state: GameState,

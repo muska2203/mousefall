@@ -10,30 +10,23 @@
  */
 
 import type {
-  EntityId,
-  ExecutionBuilder,
-  ExecutionNode,
-  GameEvent,
-  GameplayTag,
-  Intent,
-  Position,
-  StatusEffect,
+    EntityId,
+    ExecutionBuilder,
+    ExecutionNode,
+    GameEvent,
+    GameplayTag,
+    Intent,
+    Position,
 } from '@simulation/core-types.ts';
-import type { Actor, GameState } from '@simulation/types.ts';
-import { findEntity, isActor } from '@simulation/state.ts';
-import { hasAllTags } from '@simulation/systems/tags/tag-helpers.ts';
-import { ensureRuntimeRng } from '../runtime-rng.ts';
-import { getWorldContentRules } from '../rules.ts';
-import { buildRuleContext, type RuleContext } from '../rule-context.ts';
-import { resolveParametrizedValue } from '../value-resolver.ts';
-import { evaluateConditions } from '../condition-evaluator.ts';
-import type {
-  ActiveRule,
-  ContentRule,
-  OwnerContext,
-  RuleEffect,
-  TargetSelector,
-} from '../types.ts';
+import type {Actor, GameState} from '@simulation/types.ts';
+import {findEntity, isActor} from '@simulation/state.ts';
+import {hasAllTags} from '@simulation/systems/tags/tag-helpers.ts';
+import {ensureRuntimeRng} from '../runtime-rng.ts';
+import {getWorldContentRules} from '../rules.ts';
+import {buildRuleContext, type RuleContext} from '../rule-context.ts';
+import {resolveParametrizedValue} from '../value-resolver.ts';
+import {evaluateConditions} from '../condition-evaluator.ts';
+import type {ActiveRule, ContentRule, OwnerContext, RuleEffect, TargetSelector,} from '../types.ts';
 
 /** Слой происхождения правила. Определяет порядок обработки. */
 type RuleLayer = 'source' | 'target' | 'world' | 'radius';
@@ -192,8 +185,8 @@ function filterRulesByTrigger(
 ): LayeredRule[] {
   return rules.filter(({ rule }) => {
     if (rule.trigger.event !== eventType) return false;
-    if (rule.trigger.tags && !hasAllTags(tags, rule.trigger.tags)) return false;
-    return true;
+    return !(rule.trigger.tags && !hasAllTags(tags, rule.trigger.tags));
+
   });
 }
 

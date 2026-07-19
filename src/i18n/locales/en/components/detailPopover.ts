@@ -1,4 +1,4 @@
-import type { ComponentsDetailPopoverTranslations } from '@i18n/schema';
+import type {ComponentsDetailPopoverTranslations} from '@i18n/schema';
 
 export const enDetailPopover = {
   impactTitle: 'Impact',

@@ -7,11 +7,11 @@
  * - Порождает событие ENTITY_MOVED с `movementType: 'teleport'`.
  */
 
-import { GameState } from '@simulation/types';
-import { TeleportEntityIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
-import { findEntity } from '@simulation/state';
-import { PLAYER_ID } from '@utils/constants';
+import {GameState} from '@simulation/types';
+import {ExecutionBuilder, ExecutionNode, TeleportEntityIntent} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
+import {findEntity} from '@simulation/state';
+import {PLAYER_ID} from '@utils/constants';
 
 export const executeTeleportEntityIntent: IntentExecutor<TeleportEntityIntent> = (
   state: GameState,

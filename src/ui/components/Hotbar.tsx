@@ -5,9 +5,9 @@
  * Получает готовый ViewModel от Presentation и делегирует активацию наружу.
  */
 
-import { useTranslation } from '@i18n/hooks';
-import type { HotbarItemViewModel } from '@presentation/types';
-import { HotbarSlot } from './HotbarSlot';
+import {useTranslation} from '@i18n/hooks';
+import type {HotbarItemViewModel} from '@presentation/types';
+import {HotbarSlot} from './HotbarSlot';
 
 interface Props {
   /** Список слотов хотбара. */

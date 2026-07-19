@@ -6,12 +6,10 @@
  * соседями кастующего (пересечение 8-соседей цели и кастера).
  */
 
-import type { GameState } from '@simulation/types';
-import type { AnimationNode, Position } from '@presentation/types';
-import type { AbilityEvent } from '../core/primitives';
-import type { SkillComposer } from './registry';
-import { registerSkillComposer } from './registry';
-import { abilityCastNode, slashArcNode } from '../core/primitives';
+import type {Position} from '@presentation/types';
+import {abilityCastNode, slashArcNode} from '../core/primitives';
+import type {SkillComposer} from './registry';
+import {registerSkillComposer} from './registry';
 
 /** Найти боковые клетки для Рассечения.
  *

@@ -9,10 +9,10 @@
  * - updateFOV(state) → GameEvent[]               (мутирует visible/explored, возвращает события)
  */
 
-import type { GameState, GameEvent, Position } from '../types';
-import { blocksLOS } from '../state';
-import { PLAYER_SIGHT_RANGE } from '../../utils/constants';
-import { inBounds } from '../../utils/math';
+import type {GameEvent, GameState, Position} from '../types';
+import {blocksLOS} from '../state';
+import {PLAYER_SIGHT_RANGE} from '@utils/constants.ts';
+import {inBounds} from '@utils/math.ts';
 
 /**
  * Вычисляет набор видимых клеток из точки (originX, originY) с заданным радиусом.

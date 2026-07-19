@@ -5,8 +5,8 @@
  * поэтому семейство вычисляется здесь через hasTag.
  */
 
-import type { GameplayTag } from '@simulation/core-types';
-import { hasTag } from '@simulation/systems/tags/tag-helpers';
+import type {GameplayTag} from '@simulation/core-types';
+import {hasTag} from '@simulation/systems/tags/tag-helpers';
 
 export type DamageFamily = 'slashing' | 'piercing' | 'blunt' | 'fire' | 'electric' | 'poison' | 'frost' | 'physical';
 

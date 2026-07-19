@@ -5,11 +5,11 @@
  * изменений, сохраняя старое поведение.
  */
 
-import type { Intent } from '@simulation/core-types.ts';
-import type { GameState } from '@simulation/types.ts';
-import { applyIntentModifiers } from './modifiers/apply-intent-modifiers.ts';
-import type { RuleContext } from './rule-context.ts';
-import { isContentRulesEnabled } from './feature-flags.ts';
+import type {Intent} from '@simulation/core-types.ts';
+import type {GameState} from '@simulation/types.ts';
+import {applyIntentModifiers} from './modifiers/apply-intent-modifiers.ts';
+import type {RuleContext} from './rule-context.ts';
+import {isContentRulesEnabled} from './feature-flags.ts';
 
 /**
  * Применяет модифицирующие правила к интенту, только если включен флаг

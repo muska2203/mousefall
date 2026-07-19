@@ -6,9 +6,8 @@
  * одновременно с всплывающим уроном.
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { damageNode, hpChangeNode, isAttackableEntity } from '../core/primitives';
+import type {AnimationBuilder} from '../core/registry';
+import {damageNode, hpChangeNode, isAttackableEntity} from '../core/primitives';
 
 export const entityDamagedBuilder: AnimationBuilder = (event, children, state) => {
   if (event.type !== 'ENTITY_DAMAGED') return null;

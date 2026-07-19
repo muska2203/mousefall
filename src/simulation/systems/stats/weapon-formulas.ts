@@ -5,9 +5,9 @@
  * Формула получает владельца (StatActor) и шаблон оружия.
  */
 
-import type { StatActor } from '@simulation/types.ts';
-import type { ItemTemplate } from '@content/schemas';
-import { getEffectiveBaseStats } from './effective-base-stats.ts';
+import type {StatActor} from '@simulation/types.ts';
+import type {ItemTemplate} from '@content/schemas';
+import {getEffectiveBaseStats} from './effective-base-stats.ts';
 
 export type WeaponFormula = (owner: StatActor, weapon: ItemTemplate | null) => number;
 
@@ -18,7 +18,7 @@ function single(damage: number): number {
 const weaponFormulas: Record<string, WeaponFormula> = {
   unarmed: (owner) => {
     const s = getEffectiveBaseStats(owner);
-    return single(Math.max(0, Math.round(1 + s.str * 1.0)));
+    return single(Math.max(0, Math.round(1 + s.str)));
   },
 
   club: (owner, weapon) => {

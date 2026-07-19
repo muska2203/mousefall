@@ -10,9 +10,9 @@
  * - Только фильтрация и форматирование ошибок.
  */
 
-import { t } from '@i18n/t';
-import type { SimulationResult, ExecutionNode } from '@simulation/types';
-import type { ToastItem, ToastKind } from './types';
+import {t} from '@i18n/t';
+import type {ExecutionNode, SimulationResult} from '@simulation/types';
+import type {ToastItem, ToastKind} from './types';
 
 type ErrorMapping = {
   kind: ToastKind;

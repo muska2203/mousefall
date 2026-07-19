@@ -1,5 +1,3 @@
-import { StatusEffect } from '@simulation/types';
-
 /**
  * Хелперы для работы с оглушением (stunned).
  *

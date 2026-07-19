@@ -1,12 +1,12 @@
-import { GameState, StatusEffectHolder, EnemyEntity } from '@simulation/types';
-import { ApplyStatusIntent, IntentExecutor } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { findEntity, isActor, nextEntityId } from '@simulation/state';
-import { isEnemyEntity } from '@simulation/ai/ai-state';
-import { addActiveRulesForStatus, removeActiveRulesForStatus } from '@simulation/systems/rules/active-rule-lifecycle';
-import { cancelPreparedAbility } from '@simulation/ai/ai-helpers';
-import { getStatusTemplate } from '@simulation/systems/statuses/status-template';
-import type { StatusEffectType } from '@simulation/core-types';
+import {EnemyEntity, GameState, StatusEffectHolder} from '@simulation/types';
+import {ApplyStatusIntent, IntentExecutor} from '@simulation/systems/intents/types';
+import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
+import {findEntity, isActor, nextEntityId} from '@simulation/state';
+import {isEnemyEntity} from '@simulation/ai/ai-state';
+import {addActiveRulesForStatus, removeActiveRulesForStatus} from '@simulation/systems/rules/active-rule-lifecycle';
+import {cancelPreparedAbility} from '@simulation/ai/ai-helpers';
+import {getStatusTemplate} from '@simulation/systems/statuses/status-template';
+import type {StatusEffectType} from '@simulation/core-types';
 
 export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   state: GameState,

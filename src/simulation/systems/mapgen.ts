@@ -15,10 +15,10 @@
  * - Вся случайность через state.rng (детерминированно).
  */
 
-import type { GameState } from '@simulation/types';
-import type { MapParams } from '@content/schemas';
-import type { GeneratedMap } from './map-generation/types';
-import { getMapGenerationStrategy } from './map-generation/strategy-registry';
+import type {GameState} from '@simulation/types';
+import type {MapParams} from '@content/schemas';
+import type {GeneratedMap} from './map-generation/types';
+import {getMapGenerationStrategy} from './map-generation/strategy-registry';
 
 export type { GeneratedMap } from './map-generation/types';
 

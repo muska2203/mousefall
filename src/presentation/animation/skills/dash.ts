@@ -2,12 +2,10 @@
  * Анимационный композер для способности Dash.
  */
 
-import type { GameState } from '@simulation/types';
-import type { AnimationNode, Position } from '@presentation/types';
-import type { AbilityEvent } from '../core/primitives';
-import type { SkillComposer } from './registry';
-import { registerSkillComposer } from './registry';
-import { positionsEqual } from '../core/treeBuilder';
+import type {AnimationNode, Position} from '@presentation/types';
+import type {SkillComposer} from './registry';
+import {registerSkillComposer} from './registry';
+import {positionsEqual} from '../core/treeBuilder';
 
 /** Длительность одной клетки рывка — быстрее обычного передвижения. */
 const DASH_MOVE_DURATION_MS = 110;

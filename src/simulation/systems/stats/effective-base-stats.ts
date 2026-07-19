@@ -5,8 +5,8 @@
  * между base-resolver.ts и weapon-formulas.ts.
  */
 
-import type { StatActor } from '@simulation/types.ts';
-import { applyModifiers } from './modifier-engine.ts';
+import type {StatActor} from '@simulation/types.ts';
+import {applyModifiers} from './modifier-engine.ts';
 
 export type EffectiveBaseStats = {
   str: number;

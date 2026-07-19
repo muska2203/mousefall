@@ -4,9 +4,8 @@
  * Отображает всплывающий текст промаха у цели (или у атакующего, если цель не найдена).
  */
 
-import type { GameEvent, GameState } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { floatingTextNode } from '../core/primitives';
+import type {AnimationBuilder} from '../core/registry';
+import {floatingTextNode} from '../core/primitives';
 
 export const entityMissedBuilder: AnimationBuilder = (event, _children, state) => {
   if (event.type !== 'ENTITY_MISSED') return null;

@@ -1,4 +1,4 @@
-import type { ComponentsHotbarTranslations } from '@i18n/schema';
+import type {ComponentsHotbarTranslations} from '@i18n/schema';
 
 export const enHotbar = {
   emptySlotAria: 'Hot slot {{index}} (empty)',

@@ -6,8 +6,8 @@
  * чтобы роллы шансов контентных правил оставались детерминированными.
  */
 
-import type { GameState } from '@simulation/types.ts';
-import { createRNG } from '@utils/rng.ts';
+import type {GameState} from '@simulation/types.ts';
+import {createRNG} from '@utils/rng.ts';
 
 /**
  * Гарантирует, что у состояния есть runtimeRng.

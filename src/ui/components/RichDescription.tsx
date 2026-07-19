@@ -4,15 +4,15 @@
  * Парсит строку вида `[метка](tag:tagId)` и превращает ссылки в `<TagLink>`.
  */
 
-import type { ReactNode } from 'react';
-import { TagLink } from './TagLink';
+import type {ReactNode} from 'react';
+import {TagLink} from './TagLink';
 
 interface Props {
   /** Текст с markdown-like тег-ссылками. */
   text: string;
 }
 
-const TAG_LINK_REGEX = /\[([^\]]+)\]\(tag:([^)]+)\)/g;
+const TAG_LINK_REGEX = /\[([^\]]+)]\(tag:([^)]+)\)/g;
 
 export function RichDescription({ text }: Props) {
   const nodes: ReactNode[] = [];

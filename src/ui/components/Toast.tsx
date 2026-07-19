@@ -6,9 +6,9 @@
  * Перед удалением проигрывается анимация исчезновения.
  */
 
-import { useEffect, useState, useRef, useCallback } from 'react';
-import type { ToastItem } from '@presentation/types';
-import { useTranslation } from '@i18n/hooks';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import type {ToastItem} from '@presentation/types';
+import {useTranslation} from '@i18n/hooks';
 
 interface Props {
   toast: ToastItem;

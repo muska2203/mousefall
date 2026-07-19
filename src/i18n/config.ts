@@ -1,7 +1,7 @@
 import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import { ruResources } from './locales/ru';
-import { enResources } from './locales/en';
+import {initReactI18next} from 'react-i18next';
+import {ruResources} from './locales/ru';
+import {enResources} from './locales/en';
 
 const savedLocale = typeof localStorage !== 'undefined'
   ? localStorage.getItem('mousefall-locale')

@@ -1,6 +1,6 @@
-import { ruContentTexts } from './ru/index';
-import { enContentTexts } from './en/index';
-import type { ContentText, ContentTexts } from './types';
+import {ruContentTexts} from './ru/index';
+import {enContentTexts} from './en/index';
+import type {ContentText, ContentTexts} from './types';
 
 export type Locale = 'ru' | 'en';
 

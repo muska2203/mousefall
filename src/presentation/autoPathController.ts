@@ -13,10 +13,10 @@
  * - Все решения о проходимости делегируются внешним query-функциям (публичный API Simulation).
  */
 
-import type { DoorEntity, Entity, GameAction, GameState, Position } from '@simulation/types';
-import { chebyshevDistance, posEqual } from '@utils/math';
-import { findPathTowards, isTileExplored } from './pathfinding';
-import type { AutoPathTarget, AutoPathTargetKind } from './pathfinding';
+import type {DoorEntity, Entity, GameAction, GameState, Position} from '@simulation/types';
+import {chebyshevDistance, posEqual} from '@utils/math';
+import type {AutoPathTarget, AutoPathTargetKind} from './pathfinding';
+import {isTileExplored} from './pathfinding';
 
 /** Query-зависимости, которые предоставляет Simulation через публичный API. */
 export type AutoPathQueries = {
@@ -164,7 +164,7 @@ export class AutoPathController {
         this.cancel();
         return { kind: 'cancelled' };
       }
-      const isDead = 'isAlive' in entity && entity.isAlive === false;
+      const isDead = 'isAlive' in entity && !entity.isAlive;
       if (isDead) {
         this.cancel();
         return { kind: 'cancelled' };
@@ -244,7 +244,7 @@ export class AutoPathController {
     for (const entity of state.entities.values()) {
       if (
         entity.type === 'enemy' &&
-        entity.isAlive !== false &&
+        entity.isAlive &&
         state.visible[entity.y]?.[entity.x]
       ) {
         ids.add(entity.id);
@@ -279,7 +279,7 @@ export class AutoPathController {
     if (blockers.length !== 1) return null;
 
     const door = blockers[0];
-    if (!door || door.type !== 'door' || door.isAlive === false || door.isOpen) return null;
+    if (!door || door.type !== 'door' || !door.isAlive || door.isOpen) return null;
     return door;
   }
 
@@ -296,7 +296,7 @@ export class AutoPathController {
       case 'door': {
         const door = queries.findEntityAt(
           this.target.position,
-          (e) => e.type === 'door' && e.isAlive !== false,
+          (e) => e.type === 'door' && e.isAlive,
         );
         if (!door || door.type !== 'door') {
           // Дверь исчезла — отменяем путь.
@@ -319,7 +319,7 @@ export class AutoPathController {
         // сначала встать на их клетку, а уже потом активировать.
         // Возвращаем null, чтобы основная логика step сделала MOVE без
         // отмены автопути; активация произойдёт на следующем шаге.
-        if (entity.blocksMovement === false) {
+        if (!entity.blocksMovement) {
           return null;
         }
         return {

@@ -1,4 +1,4 @@
-import type { ScreensEndingTranslations } from '@i18n/schema';
+import type {ScreensEndingTranslations} from '@i18n/schema';
 
 export const ruEnding = {
   heroCardTitle: 'Карточка героя',

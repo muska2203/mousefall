@@ -7,17 +7,17 @@
  * Правая: EquipmentPanel, BossListPanel, EndingActionsPanel.
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
-import {HeroPanel} from '@ui/components/HeroPanel';
 import type {HeroStat} from '@ui/components/HeroPanel';
-import {EquipmentPanel} from '@ui/components/EquipmentPanel';
+import {HeroPanel} from '@ui/components/HeroPanel';
 import type {EquipSlotData} from '@ui/components/EquipmentPanel';
-import {EndingMetricsPanel} from '@ui/components/EndingMetricsPanel';
+import {EquipmentPanel} from '@ui/components/EquipmentPanel';
 import type {MetricItem} from '@ui/components/EndingMetricsPanel';
+import {EndingMetricsPanel} from '@ui/components/EndingMetricsPanel';
 import {BossListPanel} from '@ui/components/BossListPanel';
 import {EndingActionsPanel} from '@ui/components/EndingActionsPanel';
-import type {PlayerStatsSnapshot, EquipmentSnapshot, RunStats} from '@presentation/gameSession';
+import type {EquipmentSnapshot, PlayerStatsSnapshot, RunStats} from '@presentation/gameSession';
 
 interface Props {
   result: 'defeat' | 'victory';

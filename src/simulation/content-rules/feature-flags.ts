@@ -5,7 +5,7 @@
  * от конкретной структуры GameState.
  */
 
-import type { GameState } from '@simulation/types.ts';
+import type {GameState} from '@simulation/types.ts';
 
 /**
  * Возвращает true, если новая система контентных правил включена.

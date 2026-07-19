@@ -11,7 +11,7 @@
  *   увеличивается charges (если есть) или обновляется value.
  */
 
-import type { StatActor, StatModifier } from '@simulation/types.ts';
+import type {StatActor, StatModifier} from '@simulation/types.ts';
 
 export type ModifierBreakdownEntry = {
   source: string;

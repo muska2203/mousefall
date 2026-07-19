@@ -12,8 +12,8 @@
  *   но в будущем может быть враг, спутник или ломаемый объект.
  */
 
-import type { EntityId, Position, MoveAction, AttackAction, InteractAction } from '@simulation/core-types';
-import type { Attackable } from '@simulation/types';
+import type {AttackAction, EntityId, InteractAction, MoveAction, Position} from '@simulation/core-types';
+import type {Attackable} from '@simulation/types';
 
 /**
  * Абстракция цели для атаки.

@@ -1,8 +1,7 @@
-import { GameState, StatusEffectHolder } from '@simulation/types';
-import { AdjustStatusStacksIntent, IntentExecutor } from '@simulation/systems/intents/types';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import { findEntity, isActor } from '@simulation/state';
-import { removeActiveRulesForStatus } from '@simulation/systems/rules/active-rule-lifecycle';
+import {StatusEffectHolder} from '@simulation/types';
+import {AdjustStatusStacksIntent, IntentExecutor} from '@simulation/systems/intents/types';
+import {findEntity, isActor} from '@simulation/state';
+import {removeActiveRulesForStatus} from '@simulation/systems/rules/active-rule-lifecycle';
 
 /**
  * Изменяет количество стаков указанного статуса на сущности.

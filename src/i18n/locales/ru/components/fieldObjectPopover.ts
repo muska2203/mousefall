@@ -1,4 +1,4 @@
-import type { ComponentsFieldObjectPopoverTranslations } from '@i18n/schema';
+import type {ComponentsFieldObjectPopoverTranslations} from '@i18n/schema';
 
 export const ruFieldObjectPopover = {
   damageLabel: 'Урон: ',

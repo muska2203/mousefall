@@ -5,17 +5,9 @@
  * Она строится из GameState и обновляется патчами, порождёнными событиями Simulation.
  */
 
-import type {
-  EntityType,
-  GameEvent,
-  GamePhase,
-  Position,
-  StatusEffect,
-  TileType,
-  TurnSide,
-} from '@simulation/types';
-import type { StatusEffectType } from '@simulation/core-types.ts';
-import type { AnimationNode } from '@presentation/types';
+import type {EntityType, GameEvent, GamePhase, Position, StatusEffect, TileType, TurnSide,} from '@simulation/types';
+import type {StatusEffectType} from '@simulation/core-types.ts';
+import type {AnimationNode} from '@presentation/types';
 
 /** Сущность, отображаемая на поле. */
 export type DisplayEntity = {

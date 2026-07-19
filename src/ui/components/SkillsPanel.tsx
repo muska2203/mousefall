@@ -5,10 +5,10 @@
  * Максимальная высота — 3 строки, далее скролл (аналогично журналу).
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 import {Panel} from './Panel';
 import {SkillRow} from './SkillRow';
-import type { PlayerSkillViewModel } from '@presentation/types';
+import type {PlayerSkillViewModel} from '@presentation/types';
 
 interface Props {
   title?: string;

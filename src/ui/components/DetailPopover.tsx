@@ -18,9 +18,9 @@
  * />
  */
 
-import { useLayoutEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslation } from '@i18n/hooks';
+import {useLayoutEffect, useRef} from 'react';
+import {createPortal} from 'react-dom';
+import {useTranslation} from '@i18n/hooks';
 
 interface Props {
   /** Название описываемого элемента. */

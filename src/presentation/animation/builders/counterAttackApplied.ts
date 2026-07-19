@@ -5,8 +5,7 @@
  * чтобы на UI проигрывалась анимация замаха оружием.
  */
 
-import type { GameEvent } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
+import type {AnimationBuilder} from '../core/registry';
 
 export const counterAttackAppliedBuilder: AnimationBuilder = (event, children) => {
   if (event.type !== 'COUNTER_ATTACK_APPLIED') return null;

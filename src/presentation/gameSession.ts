@@ -13,51 +13,79 @@
  * - Все мутации GameState только через simulation.dispatch() или фабрики Simulation.
  */
 
-import { t } from '@i18n/t';
-import type {GameState, GameEvent, RuleTriggeredEvent, Simulation, SimulationResult, PlayerStatsSnapshot, Position, ActionPreview, StatusEffect, GameAction, ExecutionNode, FloorItemContainerEntity, DoorEntity} from '@simulation/types';
+import {t} from '@i18n/t';
+import type {
+    ActionPreview,
+    DoorEntity,
+    ExecutionNode,
+    FloorItemContainerEntity,
+    GameAction,
+    GameEvent,
+    GameState,
+    PlayerStatsSnapshot,
+    Position,
+    RuleTriggeredEvent,
+    Simulation,
+    SimulationResult,
+    StatusEffect
+} from '@simulation/types';
 import {GameSimulation} from '@simulation/simulation';
-import { MAX_ABILITY_ALL_AP_COST } from '@utils/constants';
+import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import type {MapParams} from '@content/schemas';
-import type {AnimationNode, RenderInput, EquipmentSnapshot, PlayerSkillViewModel, PresentationActionPreview, InventoryItemViewModel, ActiveEffectViewModel, InteractionOption, InteractionHintViewModel, AIPreparedIntentViewModel, PresentationIntent, HighlightedPathTargetKind, GameplayTag} from './types';
+import type {
+    ActiveEffectViewModel,
+    AIPreparedIntentViewModel,
+    AnimationNode,
+    EquipmentSnapshot,
+    GameplayTag,
+    HighlightedPathTargetKind,
+    InteractionHintViewModel,
+    InteractionOption,
+    InventoryItemViewModel,
+    PlayerSkillViewModel,
+    PresentationActionPreview,
+    PresentationIntent,
+    RenderInput,
+    ToastItem
+} from './types';
 import {toPresentationIntent} from './types';
-import type { DisplayState, DisplayPatch } from './displayState/types';
-import { buildDisplayState, applyPatches, applyPatch } from './displayState/builder';
-import { resyncDisplayState } from './displayState/sync';
-import { buildPresentationPlan } from './displayState/planner';
+import type {DisplayPatch, DisplayState} from './displayState/types';
+import {applyPatch, applyPatches, buildDisplayState} from './displayState/builder';
+import {resyncDisplayState} from './displayState/sync';
+import {buildPresentationPlan} from './displayState/planner';
 import {
-  getAllLocalizedPlayerTemplates,
-  tryGetPlayerTemplate,
-  tryGetItem,
-  tryGetLocalizedItem,
-  tryGetLocalizedAbility,
-  getAllLocalizedItems,
-  getAllLocalizedEntities,
-  getAllLocalizedDoors,
-  getAllLocalizedStairs,
+    getAllLocalizedDoors,
+    getAllLocalizedEntities,
+    getAllLocalizedItems,
+    getAllLocalizedPlayerTemplates,
+    getAllLocalizedStairs,
+    tryGetDoor,
+    tryGetItem,
+    tryGetLocalizedAbility,
+    tryGetLocalizedItem,
+    tryGetPlayerTemplate,
 } from '@content/registry';
-import type { Locale } from '@content/texts/lookup';
+import type {Locale} from '@content/texts/lookup';
 
 import {buildAnimationTree} from './animation';
 import {extractEventsFromPlan} from './logBuilder';
-import {extractToasts, errorCodeToToast} from './toastBuilder';
+import {errorCodeToToast, extractToasts} from './toastBuilder';
 import {ToastBuffer} from './toastBuffer';
-import type {ToastItem} from './types';
 import {mapItemTemplateToDetail} from './itemDetailMapper';
 import {mapEnemyToPopover} from './enemyDetailMapper';
 import {mapStairsToPopover} from './stairsDetailMapper';
 import {mapDoorToPopover} from './doorDetailMapper';
-import { tryGetDoor } from '@content/registry';
-import { resolveDoorSprite, resolveAbilityIcon, resolveItemIcon, resolveStatusIcon } from '@utils/assetResolver';
+import {resolveAbilityIcon, resolveDoorSprite, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
 import {AnimationState} from './animationState';
 import {TargetingController} from './targetingController';
 import {AutoPathController, type AutoPathQueries, type AutoPathStepResult} from './autoPathController';
-import {isTileExplored, findPathTowards} from './pathfinding';
-import {getInteractionHintKey, getInteractionPriority} from './interactionUtils';
 import type {AutoPathTarget, AutoPathTargetKind} from './pathfinding';
+import {findPathTowards, isTileExplored} from './pathfinding';
+import {getInteractionHintKey, getInteractionPriority} from './interactionUtils';
 import {sortStatusEffects} from './statusSorting';
 import {resolveAIMode} from './primaryStatus';
 
@@ -261,14 +289,6 @@ export class GameSession {
       {type: 'readonly' as const, icon: '🐾', name: t('system.gameSession.heroStatDexterity'), value: String(ps.effectiveStats.dex)},
       {type: 'readonly' as const, icon: '❤️', name: t('system.gameSession.heroStatVitality'), value: String(ps.effectiveStats.vit)},
     ];
-
-    const weaponTemplate = eq.weaponId ? tryGetLocalizedItem(eq.weaponId, locale) : null;
-    const armorTemplate = eq.armorId ? tryGetLocalizedItem(eq.armorId, locale) : null;
-    const amuletTemplate = eq.amuletId ? tryGetLocalizedItem(eq.amuletId, locale) : null;
-
-    const weaponDetail = weaponTemplate ? mapItemTemplateToDetail(weaponTemplate, {}, locale) : undefined;
-    const armorDetail = armorTemplate ? mapItemTemplateToDetail(armorTemplate, {}, locale) : undefined;
-    const amuletDetail = amuletTemplate ? mapItemTemplateToDetail(amuletTemplate, {}, locale) : undefined;
 
     const equippedIds = new Set([
       player.equippedWeaponInstanceId,

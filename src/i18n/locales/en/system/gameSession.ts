@@ -1,4 +1,4 @@
-import type { SystemGameSessionTranslations } from '@i18n/schema';
+import type {SystemGameSessionTranslations} from '@i18n/schema';
 
 export const enGameSession = {
   heroStatStrength: 'Strength',

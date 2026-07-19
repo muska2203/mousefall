@@ -10,13 +10,13 @@
  * в полном приложении все стратегии импортируются в simulation.ts.
  */
 
-import type { GameState } from '@simulation/types';
-import type { NotifyAIIntent } from '@simulation/core-types';
-import type { ExecutionBuilder, ExecutionNode } from '@simulation/systems/actions/types';
-import type { IntentExecutor } from './types';
-import { findEntity } from '@simulation/state';
-import { isEnemyEntity } from '@simulation/ai/ai-state';
-import { getStrategy } from '@simulation/ai/strategy-registry';
+import type {GameState} from '@simulation/types';
+import type {NotifyAIIntent} from '@simulation/core-types';
+import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
+import type {IntentExecutor} from './types';
+import {findEntity} from '@simulation/state';
+import {isEnemyEntity} from '@simulation/ai/ai-state';
+import {getStrategy} from '@simulation/ai/strategy-registry';
 
 export const executeNotifyAIIntent: IntentExecutor<NotifyAIIntent> = (
   state: GameState,

@@ -5,8 +5,8 @@
  * (GameSimulation, floor-transition-logic и т.д.).
  */
 
-import type { GameMap, EnemyEntity, FloorItemContainerEntity, DoorEntity, GameState } from '@simulation/types';
-import type { MapParams } from '@content/schemas';
+import type {DoorEntity, EnemyEntity, FloorItemContainerEntity, GameMap, GameState} from '@simulation/types';
+import type {MapParams} from '@content/schemas';
 
 /**
  * Результат генерации одного этажа.

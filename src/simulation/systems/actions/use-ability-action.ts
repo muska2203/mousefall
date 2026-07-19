@@ -1,13 +1,13 @@
-import { GameState, ValidationResult, Entity, Position } from '@simulation/types';
-import { ActionHandler, ExecutionBuilder, ExecutionNode, UseAbilityAction } from '@simulation/systems/actions/types';
-import { Intent } from '@simulation/systems/intents/types';
-import { executeIntents } from '@simulation/systems/intents/execute-intent';
-import { getSkillExecutor } from '@simulation/skills/skillExecutor';
-import { validateAbilityTargets } from '@simulation/skills/target-validation';
-import { tryGetAbility } from '@content/registry';
-import { isEnemyEntity } from '@simulation/ai/ai-state';
-import { isSilenced } from '@simulation/systems/silence-helper';
-import { meetsWeaponRequirements } from '@simulation/systems/abilities/ability-requirements';
+import {GameState, Position, ValidationResult} from '@simulation/types';
+import {ActionHandler, ExecutionBuilder, ExecutionNode, UseAbilityAction} from '@simulation/systems/actions/types';
+import {Intent} from '@simulation/systems/intents/types';
+import {executeIntents} from '@simulation/systems/intents/execute-intent';
+import {getSkillExecutor} from '@simulation/skills/skillExecutor';
+import {validateAbilityTargets} from '@simulation/skills/target-validation';
+import {tryGetAbility} from '@content/registry';
+import {isEnemyEntity} from '@simulation/ai/ai-state';
+import {isSilenced} from '@simulation/systems/silence-helper';
+import {meetsWeaponRequirements} from '@simulation/systems/abilities/ability-requirements';
 
 export const useAbilityAction: ActionHandler = {
   validate(state: GameState, action: UseAbilityAction): ValidationResult {

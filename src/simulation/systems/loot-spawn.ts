@@ -9,9 +9,9 @@
  * - Детерминированный fallback: если ничего не найдено, возвращает origin.
  */
 
-import type { GameState } from '@simulation/types';
-import type { Position } from '@simulation/core-types';
-import { isBlocked, findAllEntitiesAt } from '@simulation/state';
+import type {GameState} from '@simulation/types';
+import type {Position} from '@simulation/core-types';
+import {findAllEntitiesAt, isBlocked} from '@simulation/state';
 
 function isCompletelyEmpty(state: GameState, x: number, y: number): boolean {
   if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) return false;

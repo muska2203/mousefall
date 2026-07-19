@@ -4,7 +4,7 @@
  * Рендерит локализованную метку с цветовым модификатором по категории тега.
  */
 
-import type { GameplayTag } from '@presentation/types';
+import type {GameplayTag} from '@presentation/types';
 
 interface Props {
   /** Игровой тег классификации. */

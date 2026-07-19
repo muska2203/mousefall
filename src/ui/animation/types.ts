@@ -6,9 +6,9 @@
  * - Sequencer отвечает за оркестрацию: параллельность сиблингов, последовательность parent→child.
  */
 
-import type { Ticker } from 'pixi.js';
-import type { WorldRenderer } from '@ui/renderer/WorldRenderer';
-import type { AnimationStep, Position } from '@presentation/types';
+import type {Ticker} from 'pixi.js';
+import type {WorldRenderer} from '@ui/renderer/WorldRenderer';
+import type {AnimationStep, Position} from '@presentation/types';
 
 export interface AnimationExecutor {
   /** Возвращает true, если этот executor умеет исполнять данный шаг. */

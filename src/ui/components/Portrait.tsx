@@ -2,7 +2,7 @@
  * Круглый портрет персонажа с бейджем уровня.
  */
 
-import { useTranslation } from '@i18n/hooks';
+import {useTranslation} from '@i18n/hooks';
 
 interface Props {
   src: string;

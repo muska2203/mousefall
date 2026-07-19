@@ -5,10 +5,10 @@
  * Порождает событие ENTITY_HEALED.
  */
 
-import { GameState } from "@simulation/types.ts";
-import { HealIntent, IntentExecutor } from "@simulation/systems/intents/types.ts";
-import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { findAttackableEntity } from "@simulation/state.ts";
+import {GameState} from "@simulation/types.ts";
+import {HealIntent, IntentExecutor} from "@simulation/systems/intents/types.ts";
+import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {findAttackableEntity} from "@simulation/state.ts";
 
 export const executeHealIntent: IntentExecutor<HealIntent> = (
   state: GameState,

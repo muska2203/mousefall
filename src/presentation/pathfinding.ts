@@ -12,8 +12,8 @@
  *   передаются через коллбэки из публичного API Simulation.
  */
 
-import type { GameState, Position } from '@simulation/types';
-import { findPath, posEqual } from '@utils/math';
+import type {GameState, Position} from '@simulation/types';
+import {findPath, posEqual} from '@utils/math';
 
 /** Максимальное число рассматриваемых A*-узлов при поиске пути для игрока.
  * Защита от подвисаний на больших картах. */

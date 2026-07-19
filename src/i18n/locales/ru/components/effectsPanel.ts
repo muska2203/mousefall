@@ -1,4 +1,4 @@
-import type { ComponentsEffectsPanelTranslations } from '@i18n/schema';
+import type {ComponentsEffectsPanelTranslations} from '@i18n/schema';
 
 export const ruEffectsPanel = {
   title: 'Активные эффекты',

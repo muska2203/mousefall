@@ -1,4 +1,4 @@
-import type { ComponentsStarterEquipmentPanelTranslations } from '@i18n/schema';
+import type {ComponentsStarterEquipmentPanelTranslations} from '@i18n/schema';
 
 export const enStarterEquipmentPanel = {
   title: 'Starter Equipment',

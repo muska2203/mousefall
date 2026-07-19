@@ -1,4 +1,4 @@
-import type { ContentRule } from './types';
+import type {ContentRule} from './types';
 
 /**
  * Контентные правила контратаки.

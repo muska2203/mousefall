@@ -6,9 +6,9 @@
  * - Позволяет добавлять новые скиллы без изменения базовых builders.
  */
 
-import type { GameState } from '@simulation/types';
-import type { AnimationNode } from '@presentation/types';
-import type { AbilityEvent } from '../core/primitives';
+import type {GameState} from '@simulation/types';
+import type {AnimationNode} from '@presentation/types';
+import type {AbilityEvent} from '../core/primitives';
 
 /** Композер, строящий анимацию для конкретной способности. */
 export type SkillComposer = (

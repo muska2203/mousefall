@@ -2,9 +2,8 @@
  * Builder для события ENTITY_DIED.
  */
 
-import type { GameEvent } from '@simulation/types';
-import type { AnimationBuilder } from '../core/registry';
-import { deathNode } from '../core/primitives';
+import type {AnimationBuilder} from '../core/registry';
+import {deathNode} from '../core/primitives';
 
 export const entityDiedBuilder: AnimationBuilder = (event, children) => {
   if (event.type !== 'ENTITY_DIED') return null;

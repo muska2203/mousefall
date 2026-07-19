@@ -1,7 +1,7 @@
-import { GameState } from '@simulation/types';
-import { RestoreApIntent, ExecutionBuilder, ExecutionNode } from '@simulation/core-types';
-import { IntentExecutor } from '@simulation/systems/intents/types';
-import { findEntity } from '@simulation/state';
+import {GameState} from '@simulation/types';
+import {ExecutionBuilder, ExecutionNode, RestoreApIntent} from '@simulation/core-types';
+import {IntentExecutor} from '@simulation/systems/intents/types';
+import {findEntity} from '@simulation/state';
 
 /**
  * Восстанавливает AP актора до максимума.

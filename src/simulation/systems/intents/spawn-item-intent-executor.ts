@@ -5,13 +5,13 @@
  * и порождает событие ITEM_DROPPED.
  */
 
-import type { GameState } from "@simulation/types.ts";
-import type { SpawnItemIntent, IntentExecutor } from "@simulation/systems/intents/types.ts";
-import type { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { findFreeTileNear } from "@simulation/systems/loot-spawn.ts";
-import { tryGetItem } from "@content/registry";
-import { createFloorItemContainer } from "@simulation/systems/item-entity-factory.ts";
-import { createInventoryItem } from "@simulation/systems/inventory-factory.ts";
+import type {GameState} from "@simulation/types.ts";
+import type {IntentExecutor, SpawnItemIntent} from "@simulation/systems/intents/types.ts";
+import type {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {findFreeTileNear} from "@simulation/systems/loot-spawn.ts";
+import {tryGetItem} from "@content/registry";
+import {createFloorItemContainer} from "@simulation/systems/item-entity-factory.ts";
+import {createInventoryItem} from "@simulation/systems/inventory-factory.ts";
 
 export const executeSpawnItemIntent: IntentExecutor<SpawnItemIntent> = (
     state: GameState,

@@ -5,10 +5,10 @@
  * количество и содержимое дропа, возвращая SpawnItemIntent[].
  */
 
-import { WorldReaction } from './types';
-import { findEntity } from '@simulation/state';
-import { tryGetEntity } from '@content/registry';
-import { calculateLootDrops, rollLootDropCount } from '@utils/loot';
+import {WorldReaction} from './types';
+import {findEntity} from '@simulation/state';
+import {tryGetEntity} from '@content/registry';
+import {calculateLootDrops, rollLootDropCount} from '@utils/loot';
 
 export const postDeathLootReaction: WorldReaction = (
     state,

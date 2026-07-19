@@ -8,10 +8,10 @@
  * - Если в дереве нет blocking-узлов — blockingDone резолвится мгновенно.
  */
 
-import type { AnimationNode, AnimationPhase, TurnSide } from '@presentation/types';
-import { ANIMATION_CONFIG } from '@utils/animationConfig';
-import type { AnimationConfigKey } from '@utils/animationConfig';
-import type { AnimationExecutor, AnimationContext, AnimationRunResult } from './types';
+import type {AnimationNode, AnimationPhase, TurnSide} from '@presentation/types';
+import type {AnimationConfigKey} from '@utils/animationConfig';
+import {ANIMATION_CONFIG} from '@utils/animationConfig';
+import type {AnimationContext, AnimationExecutor, AnimationRunResult} from './types';
 
 function countBlockingNodes(nodes: AnimationNode[]): number {
   let count = 0;

@@ -9,13 +9,13 @@
  * - resolve порождает конкретный intent: OPEN_DOOR, CLOSE_DOOR, PICK_UP или FLOOR_TRANSITION.
  */
 
-import type { GameState, Position, ValidationResult, FloorItemContainerEntity } from '@simulation/types';
-import type { InteractAction, Intent } from '@simulation/core-types';
-import type { ActionHandler } from './types';
-import { findEntity, findDoorAt, findAllEntitiesAt } from '@simulation/state';
-import { executeIntents } from '@simulation/systems/intents/execute-intent.ts';
-import { resolveInteraction } from '@simulation/systems/interactions/resolve-interaction.ts';
-import { MAX_FLOOR } from '@utils/constants';
+import type {FloorItemContainerEntity, GameState, Position, ValidationResult} from '@simulation/types';
+import type {Intent, InteractAction} from '@simulation/core-types';
+import type {ActionHandler} from './types';
+import {findAllEntitiesAt, findDoorAt, findEntity} from '@simulation/state';
+import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
+import {resolveInteraction} from '@simulation/systems/interactions/resolve-interaction.ts';
+import {MAX_FLOOR} from '@utils/constants';
 
 function isAdjacent(a: Position, b: Position): boolean {
   return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= 1;
@@ -90,7 +90,7 @@ function validateInteractionSpecifics(
       if (!door) {
         return { ok: false, reasonCode: 'no_door_at_tile' };
       }
-      if (door.isAlive === false) {
+      if (!door.isAlive) {
         return { ok: false, reasonCode: 'door_destroyed' };
       }
       const expectedOpen = interaction.interactionId === 'close_door';

@@ -7,12 +7,12 @@
  * Правая: EquipmentPanel, InventoryPanel, SkillsPanel.
  */
 
-import {useCallback, useEffect, useSyncExternalStore, useState} from 'react';
-import { useTranslation } from '@i18n/hooks';
+import {useCallback, useEffect, useState, useSyncExternalStore} from 'react';
+import {useTranslation} from '@i18n/hooks';
 import type {AnimationNode} from '@presentation/types';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
 
-import {KEY_MAP, INTERACTIVE_TAGS} from '@ui/input/keyboardMap';
+import {INTERACTIVE_TAGS, KEY_MAP} from '@ui/input/keyboardMap';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import {EquipmentPanel} from '@ui/components/EquipmentPanel';
@@ -103,31 +103,11 @@ export function GameScreen({session, onModeChange}: Props) {
     session.cycleInteraction(1);
   }, [session, isInputBlocked]);
 
-  const handleEquipItem = useCallback(
-    (itemInstanceId: string) => {
-      if (session.getMode() !== 'playing') return;
-      if (isInputBlocked) return;
-      session.dispatch({type: 'EQUIP', entityId: 'player', itemInstanceId});
-      onModeChange(session.getMode());
-    },
-    [session, onModeChange, isInputBlocked],
-  );
-
   const handleUnequip = useCallback(
     (slot: 'weapon' | 'armor' | 'amulet') => {
       if (session.getMode() !== 'playing') return;
       if (isInputBlocked) return;
       session.dispatch({type: 'UNEQUIP', entityId: 'player', slot});
-      onModeChange(session.getMode());
-    },
-    [session, onModeChange, isInputBlocked],
-  );
-
-  const handleUseItem = useCallback(
-    (itemInstanceId: string) => {
-      if (session.getMode() !== 'playing') return;
-      if (isInputBlocked) return;
-      session.dispatch({type: 'USE_ITEM', entityId: 'player', itemInstanceId});
       onModeChange(session.getMode());
     },
     [session, onModeChange, isInputBlocked],

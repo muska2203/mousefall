@@ -1,4 +1,4 @@
-import type { ComponentsToastTranslations } from '@i18n/schema';
+import type {ComponentsToastTranslations} from '@i18n/schema';
 
 export const ruToast = {
   skillOnCooldownTitle: 'Способность недоступна',

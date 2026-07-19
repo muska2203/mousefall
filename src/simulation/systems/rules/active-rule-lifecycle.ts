@@ -13,12 +13,12 @@
  * - при обновлении длительности статуса его правила не пересоздаются.
  */
 
-import type { Actor, StatusEffectHolder } from '@simulation/types.ts';
-import type { OwnerContext, ActiveRule } from '@simulation/content-rules/types.ts';
-import { tryGetContentRule } from '@simulation/content-rules/registry.ts';
-import { getRegistry } from '@content/registry.ts';
-import type { LoadedContent } from '@content/schemas';
-import type { RuntimeAbility } from '@simulation/core-types.ts';
+import type {Actor, StatusEffectHolder} from '@simulation/types.ts';
+import type {OwnerContext} from '@simulation/content-rules/types.ts';
+import {tryGetContentRule} from '@simulation/content-rules/registry.ts';
+import {getRegistry} from '@content/registry.ts';
+import type {LoadedContent} from '@content/schemas';
+import type {RuntimeAbility} from '@simulation/core-types.ts';
 
 /**
  * Возвращает реестр контента, если он инициализирован.

@@ -5,11 +5,11 @@
  * разрешает пути к ассетам и формирует готовый ViewModel для popover'а.
  */
 
-import type { EnemyEntity } from '@simulation/types';
-import { tryGetLocalizedEntity, tryGetLocalizedItem, tryGetLocalizedAbility } from '@content/registry';
-import { resolveEnemySprite, resolveItemIcon, resolveAbilityIcon } from '@utils/assetResolver';
-import type { EnemyPopoverViewModel } from './types';
-import type { Locale } from '@content/texts/lookup';
+import type {EnemyEntity} from '@simulation/types';
+import {tryGetLocalizedAbility, tryGetLocalizedEntity, tryGetLocalizedItem} from '@content/registry';
+import {resolveAbilityIcon, resolveEnemySprite, resolveItemIcon} from '@utils/assetResolver';
+import type {EnemyPopoverViewModel} from './types';
+import type {Locale} from '@content/texts/lookup';
 
 export function mapEnemyToPopover(enemy: EnemyEntity, locale: Locale): EnemyPopoverViewModel {
   const currentLocale = locale;

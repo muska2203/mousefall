@@ -10,11 +10,22 @@
  * - Только фильтрация и форматирование событий.
  */
 
-import { t } from '@i18n/t';
-import type {GameEvent, GameState, SimulationResult, TurnSide, ExecutionNode, StatusEffectType} from '@simulation/types';
-import { getLocalizedItem, getLocalizedEntity, getLocalizedPlayerTemplate, tryGetLocalizedAbility } from '@content/registry';
-import type { Locale } from '@content/texts/lookup';
-
+import {t} from '@i18n/t';
+import type {
+    ExecutionNode,
+    GameEvent,
+    GameState,
+    SimulationResult,
+    StatusEffectType,
+    TurnSide
+} from '@simulation/types';
+import {
+    getLocalizedEntity,
+    getLocalizedItem,
+    getLocalizedPlayerTemplate,
+    tryGetLocalizedAbility
+} from '@content/registry';
+import type {Locale} from '@content/texts/lookup';
 
 
 export function extractEvents(result: SimulationResult): GameEvent[] {

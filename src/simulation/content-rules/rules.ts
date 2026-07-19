@@ -8,7 +8,7 @@
 
 import type {ContentRule, WorldContentRule} from './types';
 import {GLOBAL_WORLD_CONTENT_RULES} from './world-rules/global-rules';
-import {counterattackTriggerRule, counterattackDamageRule} from './counterattack-rules';
+import {counterattackDamageRule, counterattackTriggerRule} from './counterattack-rules';
 
 /**
  * Правила, привязанные к источнику (предмет, способность, талант).
@@ -49,6 +49,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
           {type: 'hasTag', tag: 'damage.physical.slashing'},
         ],
       },
+      { type: 'eventRole', role: 'target' },
       {type: 'chance', probability: 40},
     ],
     effect: {

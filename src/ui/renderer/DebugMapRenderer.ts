@@ -6,9 +6,9 @@
  * результат процедурной генерации карты.
  */
 
-import { Container, Graphics } from 'pixi.js';
-import type { RenderInput } from '@presentation/types';
-import { TILE_SIZE } from '@utils/constants';
+import {Container, Graphics} from 'pixi.js';
+import type {RenderInput} from '@presentation/types';
+import {TILE_SIZE} from '@utils/constants';
 
 const ROOM_FILL_ALPHA = 0.15;
 const ROOM_STROKE_ALPHA = 0.6;

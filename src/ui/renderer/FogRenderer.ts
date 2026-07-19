@@ -8,11 +8,10 @@
  */
 
 import {Container, Graphics} from 'pixi.js';
-import type {RenderInput, Position} from '@presentation/types';
-import {TILE_SIZE, FOG_EXPLORED_ALPHA} from '@utils/constants';
-import {runTickerTween, lerp, type TickerLike, type EasingFn} from '@utils/tween';
+import type {Position, RenderInput} from '@presentation/types';
+import {FOG_EXPLORED_ALPHA, TILE_SIZE} from '@utils/constants';
+import {type EasingFn, lerp, runTickerTween, type TickerLike} from '@utils/tween';
 
-const COLOR_HIDDEN = 0x000000;
 const COLOR_EXPLORED = 0x000000;
 const ALPHA_EXPLORED = FOG_EXPLORED_ALPHA;
 const ALPHA_HIDDEN = 1.0;

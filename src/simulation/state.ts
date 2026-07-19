@@ -13,27 +13,27 @@
  */
 
 import type {
-  Actor,
-  AiActor,
-  Attackable,
-  Attacker,
-  Entity,
-  EntityId,
-  EntityType,
-  GameState,
-  PlayerEntity,
-  EnemyEntity,
-  DoorEntity,
-  Position,
-  TileType,
-  EntityInteractionKind,
-  FactionId,
+    Actor,
+    AiActor,
+    Attackable,
+    Attacker,
+    DoorEntity,
+    EnemyEntity,
+    Entity,
+    EntityId,
+    EntityInteractionKind,
+    EntityType,
+    FactionId,
+    GameState,
+    PlayerEntity,
+    Position,
+    TileType,
 } from './types';
-import type { MapParams } from '@content/schemas';
+import type {MapParams} from '@content/schemas';
 import {createRNG} from '../utils/rng';
 import {PLAYER_ID} from '../utils/constants';
-import { tryGetPlayerTemplate } from '@content/registry';
-import { rebuildActiveRules } from './systems/rules/active-rule-lifecycle.ts';
+import {tryGetPlayerTemplate} from '@content/registry';
+import {rebuildActiveRules} from './systems/rules/active-rule-lifecycle.ts';
 
 // ─────────────────────────────────────────────
 // Фабрика начального состояния
@@ -160,7 +160,7 @@ export function isActor(entity: unknown): entity is Actor {
 
 export function findAttackableEntity(state: GameState, id: EntityId): (Entity & Attackable) | undefined {
   const foundEntity = state.entities.get(id);
-  if (foundEntity && 'hp' in foundEntity && foundEntity.isAlive !== false) {
+  if (foundEntity && 'hp' in foundEntity && foundEntity.isAlive) {
     return foundEntity as Entity & Attackable;
   }
   return undefined;
@@ -189,7 +189,7 @@ export function findAllAliveAiActors(state: GameState) {
 export function findAllAliveActorsOfFaction(state: GameState, factionId: FactionId) {
   return Array.from(state.entities.values())
       .filter((e): e is Extract<Entity, Actor> => isActor(e))
-      .filter(actor => actor.isAlive !== false && actor.factionId === factionId)
+      .filter(actor => actor.isAlive && actor.factionId === factionId)
       .sort((a, b) => a.id.localeCompare(b.id));
 }
 
@@ -206,7 +206,7 @@ export const TARGET_PRIORITY: Record<EntityType, number> = {
  * Используется для скиллов, урона и рукопашных атак по любым damageable-объектам.
  */
 export function isDamageable(e: Entity): e is Entity & Attackable {
-  return 'hp' in e && (e as Entity & Attackable).isAlive !== false;
+  return 'hp' in e && (e as Entity & Attackable).isAlive;
 }
 
 export function findFirstAttackableEntityAt(state: GameState, x: number, y: number): (Entity & Attackable) | undefined {
@@ -239,7 +239,7 @@ export function blocksLOS(state: GameState, x: number, y: number): boolean {
   if (tile === 'wall') return true;
   const door = findDoorAt(state, x, y);
   // Закрытая живая дверь блокирует обзор, открытая — нет.
-  return door ? door.isAlive !== false && !door.isOpen : false;
+  return door ? door.isAlive && !door.isOpen : false;
 }
 
 
@@ -266,7 +266,7 @@ export function findStairsAt(state: GameState, x: number, y: number, templateId?
 export function findDoorAt(state: GameState, x: number, y: number): DoorEntity | undefined {
   const entities = findAllEntitiesAt(state, x, y);
   return entities
-    .filter((e): e is DoorEntity => e.type === 'door' && e.isAlive !== false)[0];
+    .filter((e): e is DoorEntity => e.type === 'door' && e.isAlive)[0];
 }
 
 /**

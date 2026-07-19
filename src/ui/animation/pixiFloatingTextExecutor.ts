@@ -7,16 +7,14 @@
  * - Non-blocking: запускает анимацию и сразу возвращает управление.
  */
 
-import type {AnimationExecutor, AnimationContext} from './types';
+import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
-import {ANIMATION_CONFIG} from '@utils/animationConfig';
 import type {AnimationConfigKey} from '@utils/animationConfig';
+import {ANIMATION_CONFIG} from '@utils/animationConfig';
 import {TILE_SIZE} from '@utils/constants';
-import { t } from '@i18n/t';
-import type { DamageFamily } from '@presentation/damageFamily';
-import { getDamageFamily } from '@presentation/damageFamily';
-
-type DamageAnimationStep = Extract<AnimationStep, { type: 'DAMAGE' }>;
+import {t} from '@i18n/t';
+import type {DamageFamily} from '@presentation/damageFamily';
+import {getDamageFamily} from '@presentation/damageFamily';
 
 const DAMAGE_COLORS: Record<DamageFamily, string> = {
   piercing: '#ff4444',

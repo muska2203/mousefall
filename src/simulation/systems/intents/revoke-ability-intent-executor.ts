@@ -9,10 +9,10 @@
  * интент не поддерживается.
  */
 
-import { GameState, Actor } from "@simulation/types.ts";
-import { IntentExecutor, RevokeAbilityIntent } from "@simulation/systems/intents/types.ts";
-import { ExecutionBuilder, ExecutionNode } from "@simulation/systems/actions/types.ts";
-import { removeActiveRulesForAbility } from "@simulation/systems/rules/active-rule-lifecycle.ts";
+import {Actor, GameState} from "@simulation/types.ts";
+import {IntentExecutor, RevokeAbilityIntent} from "@simulation/systems/intents/types.ts";
+import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {removeActiveRulesForAbility} from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeRevokeAbilityIntent: IntentExecutor<RevokeAbilityIntent> = (
   state: GameState,

@@ -19,19 +19,12 @@
  *    Враги и предметы спавнятся обычной логикой.
  */
 
-import type { MapParams } from '@content/schemas';
-import type { GameState, Room, RNGState, Corridor, CorridorSegment, GameMap, DoorEntity } from '@simulation/types';
-import { rngInt, rngShuffle } from '@utils/rng';
-import { createTileGrid } from '@simulation/state';
-import type { GeneratedMap, MapGenerationStrategy } from './types';
-import {
-  carveRoom,
-  carveHCorridor,
-  carveVCorridor,
-  roomCenter,
-  spawnEnemiesAndItems,
-  createDoor,
-} from './shared';
+import type {MapParams} from '@content/schemas';
+import type {Corridor, CorridorSegment, DoorEntity, GameMap, GameState, RNGState, Room} from '@simulation/types';
+import {rngInt, rngShuffle} from '@utils/rng';
+import {createTileGrid} from '@simulation/state';
+import type {GeneratedMap, MapGenerationStrategy} from './types';
+import {carveHCorridor, carveRoom, carveVCorridor, createDoor, roomCenter, spawnEnemiesAndItems,} from './shared';
 
 /** Узел дерева комнат. Содержит топологию и ссылку на размещённую Room. */
 type TreeNode = {

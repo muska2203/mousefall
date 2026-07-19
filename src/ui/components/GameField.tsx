@@ -6,9 +6,9 @@
  * Управляет анимационной очередью через AnimationSequencer и сигнализирует о завершении.
  */
 
-import {useRef, useEffect, useState} from 'react';
-import { useTranslation } from '@i18n/hooks';
-import type {RenderInput, TurnSide, HotbarItemViewModel, AnimationNode} from '@presentation/types';
+import {useEffect, useRef, useState} from 'react';
+import {useTranslation} from '@i18n/hooks';
+import type {AnimationNode, HotbarItemViewModel, RenderInput, TurnSide} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {Panel} from './Panel';
 import {Hotbar} from './Hotbar';

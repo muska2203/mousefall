@@ -5,7 +5,7 @@
  * без привязки к конкретным enum'ам (например, attack.melee, target.aoe).
  */
 
-import type { GameplayTag } from '@simulation/core-types.ts';
+import type {GameplayTag} from '@simulation/core-types.ts';
 
 export type { GameplayTag };
 

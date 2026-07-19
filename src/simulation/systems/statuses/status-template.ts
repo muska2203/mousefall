@@ -1,5 +1,5 @@
-import { getRegistry } from '@content/registry';
-import type { StatusTemplate } from '@content/schemas';
+import {getRegistry} from '@content/registry';
+import type {StatusTemplate} from '@content/schemas';
 
 /**
  * Возвращает шаблон статуса из реестра контента.

@@ -11,16 +11,16 @@
  * выполняется на следующем шаге (Агент D).
  */
 
-import type { GameState } from '@simulation/types.ts';
-import type { EntityId, Intent } from '@simulation/core-types.ts';
-import { findEntity, isActor } from '@simulation/state.ts';
-import { hasAllTags, mergeDamageIntentTags } from '@simulation/systems/tags/tag-helpers.ts';
-import { chebyshevDistance } from '@utils/math.ts';
-import { getWorldContentRules } from '../rules.ts';
-import type { RuleContext } from '../rule-context.ts';
-import { resolveParametrizedValue } from '../value-resolver.ts';
-import { evaluateConditions } from '../condition-evaluator.ts';
-import type { ActiveRule } from '../types.ts';
+import type {GameState} from '@simulation/types.ts';
+import type {EntityId, Intent} from '@simulation/core-types.ts';
+import {findEntity, isActor} from '@simulation/state.ts';
+import {hasAllTags, mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers.ts';
+import {chebyshevDistance} from '@utils/math.ts';
+import {getWorldContentRules} from '../rules.ts';
+import type {RuleContext} from '../rule-context.ts';
+import {resolveParametrizedValue} from '../value-resolver.ts';
+import {evaluateConditions} from '../condition-evaluator.ts';
+import type {ActiveRule} from '../types.ts';
 
 /** Слой происхождения правила-модификатора. */
 type RuleLayer = 'source' | 'target' | 'world' | 'radius';
@@ -185,10 +185,8 @@ function filterModifiersByTrigger(
     if (rule.trigger.tags && !hasAllTags(intent.tags, rule.trigger.tags)) {
       return false;
     }
-    if (!evaluateConditions(rule.conditions, ctx, selfId)) {
-      return false;
-    }
-    return true;
+    return evaluateConditions(rule.conditions, ctx, selfId);
+
   });
 }
 

@@ -1,5 +1,5 @@
-import { GameState, Entity, StatusEffectHolder, TurnSide } from '@simulation/types';
-import { Intent } from '@simulation/systems/intents/types';
+import {Entity, GameState, StatusEffectHolder, TurnSide} from '@simulation/types';
+import {Intent} from '@simulation/systems/intents/types';
 
 /**
  * Возвращает интент на тик статус-эффектов для сущности в заданной фазе.

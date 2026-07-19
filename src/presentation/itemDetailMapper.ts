@@ -9,14 +9,14 @@
  * UI получает готовый ViewModel и не знает о существовании ItemTemplate.
  */
 
-import type { LocalizedItemTemplate } from '@content/registry';
-import type { ItemDetailSection, ItemDetailViewModel } from './types';
-import { tryGetLocalizedAbility } from '@content/registry';
-import { resolveItemIcon, resolveItemFrame, resolveAbilityIcon } from '@utils/assetResolver';
-import type { Locale } from '@content/texts/lookup';
-import { getContentText, getTagText } from '@content/texts/lookup';
-import type { GameplayTag } from '@simulation/core-types';
-import { t } from '@i18n/t';
+import type {LocalizedItemTemplate} from '@content/registry';
+import {tryGetLocalizedAbility} from '@content/registry';
+import type {ItemDetailSection, ItemDetailViewModel} from './types';
+import {resolveAbilityIcon, resolveItemFrame, resolveItemIcon} from '@utils/assetResolver';
+import type {Locale} from '@content/texts/lookup';
+import {getContentText, getTagText} from '@content/texts/lookup';
+import type {GameplayTag} from '@simulation/core-types';
+import {t} from '@i18n/t';
 
 export interface MapItemDetailOptions {
   stackCount?: number;

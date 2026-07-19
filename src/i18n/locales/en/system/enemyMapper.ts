@@ -1,4 +1,4 @@
-import type { SystemEnemyMapperTranslations } from '@i18n/schema';
+import type {SystemEnemyMapperTranslations} from '@i18n/schema';
 
 export const enEnemyMapper = {
   damagePiercing: 'Piercing',

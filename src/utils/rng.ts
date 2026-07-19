@@ -17,7 +17,7 @@
  */
 
 export type { RNGState } from '../simulation/types';
-import type { RNGState } from '../simulation/types';
+import type {RNGState} from '../simulation/types';
 
 /**
  * Create a new RNG with the given seed.

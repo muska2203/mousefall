@@ -7,15 +7,8 @@
  * - applyPatch возвращает новый DisplayState, не мутируя исходный.
  */
 
-import type { Entity, GameEvent, GameState, Position } from '@simulation/types';
-import type {
-  DisplayEntity,
-  DisplayMap,
-  DisplayPatch,
-  DisplayState,
-  DisplayTile,
-  PresentationNode,
-} from './types';
+import type {Entity, GameEvent, GameState, Position} from '@simulation/types';
+import type {DisplayEntity, DisplayMap, DisplayPatch, DisplayState, DisplayTile, PresentationNode,} from './types';
 
 /** Преобразовать Entity из Simulation в DisplayEntity. */
 function toDisplayEntity(entity: Entity): DisplayEntity {
@@ -27,16 +20,16 @@ function toDisplayEntity(entity: Entity): DisplayEntity {
     templateId: (entity as { templateId?: string }).templateId ?? '',
   };
 
-  if ('hp' in entity && typeof entity.hp === 'number') {
+  if ('hp' in entity) {
     display.hp = entity.hp;
   }
-  if ('maxHp' in entity && typeof entity.maxHp === 'number') {
+  if ('maxHp' in entity) {
     display.maxHp = entity.maxHp;
   }
-  if ('isAlive' in entity && typeof entity.isAlive === 'boolean') {
+  if ('isAlive' in entity) {
     display.isAlive = entity.isAlive;
   }
-  if ('level' in entity && typeof entity.level === 'number') {
+  if ('level' in entity) {
     display.level = entity.level;
   }
   if ('statusEffects' in entity && Array.isArray(entity.statusEffects)) {

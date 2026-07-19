@@ -1,4 +1,4 @@
-import type { SystemEntityNamesTranslations } from '@i18n/schema';
+import type {SystemEntityNamesTranslations} from '@i18n/schema';
 
 export const enEntityNames = {
   heroName: 'Hero',

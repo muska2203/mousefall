@@ -4,7 +4,7 @@
  * Рендерит подчёркнутый текст с цветом, соответствующим категории тега.
  */
 
-import type { GameplayTag } from '@presentation/types';
+import type {GameplayTag} from '@presentation/types';
 
 interface Props {
   /** Игровой тег классификации. */

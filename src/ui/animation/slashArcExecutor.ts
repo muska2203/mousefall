@@ -2,9 +2,9 @@
  * Executor анимации дуги рассечения (SLASH_ARC).
  */
 
-import type { AnimationExecutor, AnimationContext } from './types';
-import type { AnimationStep } from '@presentation/types';
-import { ANIMATION_CONFIG } from '@utils/animationConfig';
+import type {AnimationContext, AnimationExecutor} from './types';
+import type {AnimationStep} from '@presentation/types';
+import {ANIMATION_CONFIG} from '@utils/animationConfig';
 
 export class SlashArcExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {

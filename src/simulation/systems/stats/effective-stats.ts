@@ -7,17 +7,17 @@
  * - Для врагов: плоские значения из state (без изменений).
  */
 
-import type { Entity, StatActor } from '@simulation/types.ts';
+import type {Entity, StatActor} from '@simulation/types.ts';
 import {
-  getBaseMaxHp,
-  getBaseDamage,
-  getBaseArmor,
-  getBaseDodgeChance,
-  getBaseAccuracy,
-  getBaseCritChance,
-  getBaseCritMultiplier,
+    getBaseAccuracy,
+    getBaseArmor,
+    getBaseCritChance,
+    getBaseCritMultiplier,
+    getBaseDamage,
+    getBaseDodgeChance,
+    getBaseMaxHp,
 } from './base-resolver.ts';
-import { applyModifiers } from './modifier-engine.ts';
+import {applyModifiers} from './modifier-engine.ts';
 
 // ─────────────────────────────────────────────
 // Type guards
