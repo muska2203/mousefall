@@ -1,13 +1,13 @@
 import type { ContentText } from '../types';
 
 export const rules: Record<string, ContentText> = {
-  weapon_fire_damage_boost: {
-    name: 'Огненный удар',
-    description: 'Урон огнём от атак этого оружия увеличивается на 15%.',
+  item_fire_damage_multiplier: {
+    name: 'Пылающий удар',
+    description: 'Урон огнём увеличивается на 50%.',
   },
   weapon_poison_on_hit: {
     name: 'Ядовитое лезвие',
-    description: 'Атаки колющим уроном имеют 40% шанс наложить яд на 3 хода.',
+    description: 'Атаки колющим или рубящим уроном имеют 40% шанс наложить яд на 3 хода.',
   },
   weapon_blunt_daze: {
     name: 'Оглушающий удар',
@@ -23,6 +23,6 @@ export const rules: Record<string, ContentText> = {
   },
   amulet_fire_damage_multiplier: {
     name: 'Угольная искра',
-    description: 'Весь огненный урон увеличивается на 15%.',
+    description: 'Огненные атаки оружием или способностью наносят на 2 урона больше.',
   },
 };

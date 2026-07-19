@@ -47,6 +47,39 @@ export const GLOBAL_WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
     worldLayer: 'global',
   },
   {
+    id: 'status_poison_tick_damage',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.poisoned'],
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},
+      tags: ['damage.magical.poison'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
+    id: 'status_burning_vulnerability',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['damage.magical.fire'],
+    },
+    conditions: [{type: 'hasStatus', statusType: 'burning', subject: 'self'}],
+    effect: {
+      type: 'modifyDamage',
+      op: 'multiply',
+      value: 1.2,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
     id: 'collision_damage',
     trigger: {
       event: 'ENTITY_COLLIDED',

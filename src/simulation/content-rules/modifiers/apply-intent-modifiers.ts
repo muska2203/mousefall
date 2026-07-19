@@ -19,6 +19,7 @@ import { chebyshevDistance } from '@utils/math.ts';
 import { getWorldContentRules } from '../rules.ts';
 import type { RuleContext } from '../rule-context.ts';
 import { resolveParametrizedValue } from '../value-resolver.ts';
+import { evaluateConditions } from '../condition-evaluator.ts';
 import type { ActiveRule } from '../types.ts';
 
 /** Слой происхождения правила-модификатора. */
@@ -64,7 +65,7 @@ export function applyIntentModifiers(
   const damageIntent = intent as Extract<Intent, { type: 'DAMAGE' }>;
 
   const layeredRules = collectDamageModifiers(state, ctx);
-  const triggered = filterModifiersByTrigger(layeredRules, damageIntent);
+  const triggered = filterModifiersByTrigger(layeredRules, damageIntent, ctx);
   const ordered = sortModifiers(triggered);
 
   let damage = damageIntent.damage;
@@ -175,12 +176,16 @@ function collectDamageModifiers(state: GameState, ctx: RuleContext): LayeredRule
 function filterModifiersByTrigger(
   rules: LayeredRule[],
   intent: Extract<Intent, { type: 'DAMAGE' }>,
+  ctx: RuleContext,
 ): LayeredRule[] {
-  return rules.filter(({ rule }) => {
+  return rules.filter(({ rule, selfId }) => {
     if (rule.trigger.event !== intent.type) {
       return false;
     }
     if (rule.trigger.tags && !hasAllTags(intent.tags, rule.trigger.tags)) {
+      return false;
+    }
+    if (!evaluateConditions(rule.conditions, ctx, selfId)) {
       return false;
     }
     return true;

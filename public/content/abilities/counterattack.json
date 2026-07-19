@@ -4,5 +4,5 @@
   "cooldown": 4,
   "apCost": 2,
   "requiredWeaponTags": ["attack.melee"],
-  "tags": ["attack.melee", "target.single", "delivery.weapon", "reaction.counter"]
+  "tags": ["delivery.ability", "attack.melee", "target.single", "delivery.weapon", "reaction.counter"]
 }

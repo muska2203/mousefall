@@ -21,6 +21,7 @@ src/simulation/content-rules/
 ├── registry.ts               # Быстрый доступ по id, защита от дубликатов, тестовые override.
 ├── validation.ts             # Валидация ссылок и семантики контентных правил.
 ├── value-resolver.ts         # Разрешение ParametrizedValue в число.
+├── condition-evaluator.ts    # Оценка декларативных условий (chance, hasStatus, hasTag, and/or/not).
 ├── rule-context.ts           # Построение RuleContext из события/интента.
 ├── feature-flags.ts          # Флаг contentRulesEnabled.
 ├── event-reactions.ts        # Точка врезки реакций на события.

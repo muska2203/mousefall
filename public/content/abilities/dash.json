@@ -4,5 +4,5 @@
   "cooldown": 4,
   "apCost": 1,
   "damageTag": "damage.physical.blunt",
-  "tags": ["delivery.movement", "attack.melee", "target.aoe", "effect.knockback"]
+  "tags": ["delivery.ability", "delivery.movement", "attack.melee", "target.aoe", "effect.knockback"]
 }

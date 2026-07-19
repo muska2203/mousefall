@@ -292,12 +292,12 @@ describe('applyIntentModifiers', () => {
     expect(state).toEqual(before);
   });
 
-  it('условия модификаторов в фазе 2 не оцениваются (modifyDamage безусловен)', () => {
+  it('условия модификаторов оцениваются и фильтруют неподходящие правила', () => {
     const player = makePlayer({
       activeRules: [
         makeModifierRule({
-          id: 'source_with_condition',
-          conditions: [{ type: 'chance', probability: 0 }],
+          id: 'source_fire_only',
+          conditions: [{ type: 'hasTag', tag: 'damage.magical.fire' }],
           effect: { type: 'modifyDamage', op: 'multiply', value: 2 },
         }),
       ],
@@ -305,13 +305,24 @@ describe('applyIntentModifiers', () => {
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
-    const intent = makeDamageIntent({
+    const physicalIntent = makeDamageIntent({
       entityId: enemy.id,
       sourceEntityId: player.id,
+      tags: ['damage.physical.slashing'],
     });
 
-    const result = runDamageModifiers(state, intent);
+    // Физический урон не проходит условие hasTag fire.
+    const physicalResult = runDamageModifiers(state, physicalIntent);
+    expect(physicalResult.damage).toBeCloseTo(11, 10); // только мировое ×1.1
 
-    expect(result.damage).toBeCloseTo(22, 10);
+    const fireIntent = makeDamageIntent({
+      entityId: enemy.id,
+      sourceEntityId: player.id,
+      tags: ['damage.magical.fire'],
+    });
+
+    // Огненный урон проходит условие.
+    const fireResult = runDamageModifiers(state, fireIntent);
+    expect(fireResult.damage).toBeCloseTo(22, 10); // ×2 source ×1.1 world
   });
 });

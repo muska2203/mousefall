@@ -1,13 +1,13 @@
 import type { ContentText } from '../types';
 
 export const rules: Record<string, ContentText> = {
-  weapon_fire_damage_boost: {
-    name: 'Fire Strike',
-    description: 'Fire damage from this weapon is increased by 15%.',
+  item_fire_damage_multiplier: {
+    name: 'Flaming Strike',
+    description: 'Fire damage is increased by 50%.',
   },
   weapon_poison_on_hit: {
     name: 'Venomous Blade',
-    description: 'Piercing attacks have a 40% chance to apply poison for 3 turns.',
+    description: 'Piercing or slashing attacks have a 40% chance to apply poison for 3 turns.',
   },
   weapon_blunt_daze: {
     name: 'Dazing Blow',
@@ -23,6 +23,6 @@ export const rules: Record<string, ContentText> = {
   },
   amulet_fire_damage_multiplier: {
     name: 'Ember Spark',
-    description: 'All fire damage is increased by 15%.',
+    description: 'Fire attacks made with a weapon or ability deal 2 additional damage.',
   },
 };

@@ -1,6 +1,6 @@
 {
   "id": "poisoned",
-  "ruleIds": ["status_poison_tick_damage"],
+  "ruleIds": [],
   "statusCategory": "poison",
   "categoryPriority": 0,
   "mutuallyExclusiveWith": [],

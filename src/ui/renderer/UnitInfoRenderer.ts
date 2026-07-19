@@ -34,7 +34,7 @@ const COLOR_HP_FILL = 0xe74c3c;
 const MAX_VISIBLE_STATUS_SLOTS = 4;
 const OVERFLOW_SLOT_INDEX = 3;
 
-type HpEntity = {hp: number; maxHp: number};
+type HpEntity = {hp: number; maxHp: number; isAlive?: boolean};
 
 type UnitInfoWidget = {
   container: Container;
@@ -103,11 +103,14 @@ export class UnitInfoRenderer {
     };
 
     const player = displayState.player;
-    if (hasHp(player)) {
+    // Не рисуем виджет для мёртвого игрока, даже если он ещё не удалён из DisplayState.
+    if (hasHp(player) && player.isAlive !== false) {
       processEntity(player.id, player);
     }
     for (const entity of displayState.entities.values()) {
-      if (hasHp(entity)) {
+      // Мёртвые сущности пропускаются: виджет удалится в конце update(),
+      // а не будет висеть до события DEAD_ENTITIES_CLEANED.
+      if (hasHp(entity) && entity.isAlive !== false) {
         processEntity(entity.id, entity);
       }
     }

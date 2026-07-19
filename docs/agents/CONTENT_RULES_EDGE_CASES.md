@@ -239,14 +239,14 @@ source → target → world → radius
 ### Пример влияния порядка
 
 ```text
-source:  weapon_fire_damage_boost  (multiply ×1.15)
+source:  item_fire_damage_multiplier (multiply ×1.5)
 world:   fire_damage_ignites       (applyStatus burning)
-target:  status_burning_vulnerability (multiply ×1.2)
+world:   status_burning_vulnerability (multiply ×1.2)
 ```
 
-- Модификаторы урона: `source` и `target` применяются к `DAMAGE`-интенту до нанесения урона.
+- Модификаторы урона: `source` и `world` применяются к `DAMAGE`-интенту до нанесения урона.
 - Реакция на событие: `world` срабатывает после `ENTITY_DAMAGED` и может наложить `burning`.
-- Если у цели уже есть `burning`, `status_burning_vulnerability` усилит входящий огненный урон на 20%.
+- Если у цели уже есть `burning`, мировое правило `status_burning_vulnerability` усилит входящий огненный урон на 20%.
 
 ### Слой radius
 
@@ -360,7 +360,6 @@ target: add -2
 
 ### Ограничения
 
-- Условия на модификаторах (`conditions`, `targetConditions`) **не оцениваются** в текущей реализации. Любое активное правило с `effect.type === 'modifyDamage'`, чей триггер и теги совпадают, применяется.
 - Модификаторы не мутируют `state`, только меняют поле `damage` и `tags` интента.
 - `addTags` добавляет теги через `mergeDamageIntentTags`, гарантируя ровно один `damage.*`-тег.
 
@@ -368,14 +367,14 @@ target: add -2
 
 ```ts
 {
-  id: 'weapon_fire_damage_boost',
-  trigger: { event: 'DAMAGE', tags: ['damage.magical.fire', 'delivery.weapon'] },
-  effect: { type: 'modifyDamage', op: 'multiply', value: 1.15 },
+  id: 'item_fire_damage_multiplier',
+  trigger: { event: 'DAMAGE', tags: ['damage.magical.fire'] },
+  effect: { type: 'modifyDamage', op: 'multiply', value: 1.5 },
   target: { type: 'eventTarget' },
 }
 ```
 
-Если огненный меч наносит 10 урона, после модификатора урон станет 11.5 (до округления в исполнителе).
+Если огненный меч наносит 10 урона, после модификатора урон станет 15 (до округления в исполнителе).
 
 ---
 

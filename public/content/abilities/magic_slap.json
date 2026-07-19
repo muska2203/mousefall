@@ -5,5 +5,5 @@
   "apCost": 1,
   "aiPreparable": true,
   "damageTag": "damage.magical.electric",
-  "tags": ["attack.ranged", "target.single", "delivery.spell"]
+  "tags": ["delivery.ability", "attack.ranged", "target.single", "delivery.spell"]
 }

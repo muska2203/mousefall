@@ -184,7 +184,7 @@ describe('mapItemTemplateToDetail', () => {
       {
         ruleId: 'amulet_fire_damage_multiplier',
         name: 'Угольная искра',
-        description: 'Весь огненный урон увеличивается на 15%.',
+        description: 'Огненные атаки оружием или способностью наносят на 2 урона больше.',
       },
     ]);
   });

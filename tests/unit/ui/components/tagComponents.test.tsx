@@ -145,14 +145,14 @@ describe('ItemDetailCard', () => {
       sections: [],
       isTemplate: false,
       properties: [
-        { ruleId: 'amulet_fire_damage_multiplier', name: 'Угольная искра', description: 'Весь огненный урон увеличивается на 15%.' },
+        { ruleId: 'amulet_fire_damage_multiplier', name: 'Угольная искра', description: 'Огненные атаки оружием или способностью наносят на 2 урона больше.' },
       ],
       tags: [],
     };
     const html = renderToString(<ItemDetailCard item={item} />);
     expect(html).toContain('Свойства');
     expect(html).toContain('Угольная искра');
-    expect(html).toContain('Весь огненный урон увеличивается на 15%.');
+    expect(html).toContain('Огненные атаки оружием или способностью наносят на 2 урона больше.');
   });
 
   it('renders possible skills only for template view', () => {

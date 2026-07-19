@@ -303,6 +303,46 @@ describe('UnitInfoRenderer', () => {
     expect((renderer as any).widgets.has('enemy1')).toBe(false);
   });
 
+  it('removes widget immediately when entity dies', () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    input.state.entities.set('enemy1', {
+      id: 'enemy1',
+      type: 'enemy',
+      x: 1,
+      y: 1,
+      blocksMovement: true,
+      hp: 3,
+      maxHp: 5,
+      armor: 0,
+      damage: 1,
+      maxAp: 1,
+      ap: 1,
+      templateId: 'cat_small',
+      aiStrategyId: 'melee',
+      statusEffects: [],
+      abilities: [],
+      isAlive: true,
+    } as any);
+    refreshDisplayState(input);
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', new Sprite());
+    sprites.set('enemy1', new Sprite());
+
+    renderer.update(input, (id) => sprites.get(id));
+    expect((renderer as any).widgets.size).toBe(2);
+
+    // Враг умирает, но ещё не удалён из DisplayState — виджет должен исчезнуть сразу.
+    const enemy = input.displayState.entities.get('enemy1');
+    if (enemy) {
+      enemy.isAlive = false;
+    }
+
+    renderer.update(input, (id) => sprites.get(id));
+    expect((renderer as any).widgets.size).toBe(1);
+    expect((renderer as any).widgets.has('enemy1')).toBe(false);
+  });
+
   it('animates HP change with tween', async () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);

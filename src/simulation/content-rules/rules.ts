@@ -36,26 +36,21 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   },
   // ── Стартовые правила оружия (WP6.3) ──────────────────────────────────────
   {
-    id: 'weapon_fire_damage_boost',
-    trigger: {
-      event: 'DAMAGE',
-      tags: ['damage.magical.fire', 'delivery.weapon'],
-    },
-    effect: {
-      type: 'modifyDamage',
-      op: 'multiply',
-      value: 1.15,
-    },
-    target: {type: 'eventTarget'},
-    priority: 0,
-  },
-  {
     id: 'weapon_poison_on_hit',
     trigger: {
       event: 'ENTITY_DAMAGED',
-      tags: ['damage.physical.piercing', 'delivery.weapon'],
+      tags: ['delivery.weapon'],
     },
-    conditions: [{type: 'chance', probability: 40}],
+    conditions: [
+      {
+        type: 'or',
+        conditions: [
+          {type: 'hasTag', tag: 'damage.physical.piercing'},
+          {type: 'hasTag', tag: 'damage.physical.slashing'},
+        ],
+      },
+      {type: 'chance', probability: 40},
+    ],
     effect: {
       type: 'applyStatus',
       statusType: 'poisoned',
@@ -115,44 +110,24 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'DAMAGE',
       tags: ['damage.magical.fire'],
     },
+    conditions: [
+      {
+        type: 'or',
+        conditions: [
+          {type: 'hasTag', tag: 'delivery.weapon'},
+          {type: 'hasTag', tag: 'delivery.ability'},
+        ],
+      },
+    ],
     effect: {
       type: 'modifyDamage',
-      op: 'multiply',
-      value: 1.15,
+      op: 'add',
+      value: 2,
     },
     target: {type: 'eventTarget'},
     priority: 0,
   },
   // ── Стартовые правила статусов (WP6.3) ─────────────────────────────────────
-  {
-    id: 'status_poison_tick_damage',
-    trigger: {
-      event: 'STATUS_TICKED',
-      tags: ['status.poisoned'],
-    },
-    effect: {
-      type: 'dealDamage',
-      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},
-      tags: ['damage.magical.poison'],
-    },
-    target: {type: 'eventTarget'},
-    priority: 0,
-  },
-  {
-    id: 'status_burning_vulnerability',
-    trigger: {
-      event: 'DAMAGE',
-      tags: ['damage.magical.fire'],
-    },
-    conditions: [{type: 'hasStatus', statusType: 'burning', subject: 'self'}],
-    effect: {
-      type: 'modifyDamage',
-      op: 'multiply',
-      value: 1.2,
-    },
-    target: {type: 'eventTarget'},
-    priority: 0,
-  },
 ];
 
 /**

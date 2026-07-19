@@ -108,7 +108,7 @@ describe('executeIntent + content rules integration', () => {
       expect(burning!.duration).toBe(3);
     });
 
-    it('пилотный модификатор огня ×1.5 комбинируется с мировым модификатором', () => {
+    it('модификатор огня ×1.5 комбинируется с мировым модификатором', () => {
       vi.mocked(rngChance).mockReturnValue(false);
 
       const player = makePlayer({ x: 5, y: 5 });

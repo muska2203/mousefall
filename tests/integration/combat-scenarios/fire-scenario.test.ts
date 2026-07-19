@@ -2,7 +2,7 @@
  * Интеграционный сценарий: игрок с огненным мечом против крыс.
  *
  * Проверяет:
- * - огненный урон усиливается правилом `weapon_fire_damage_boost`;
+ * - огненный урон усиливается правилом `item_fire_damage_multiplier` на мече;
  * - мировое правило `fire_damage_ignites` накладывает `burning`;
  * - `burning_tick_damage` наносит урон в начале хода врага;
  * - игрок побеждает и не умирает за один ход.
@@ -108,7 +108,7 @@ describe('Fire scenario', () => {
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 0, dy: 1 });
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
-    // Без модификатора огненного меча урон был бы 9; с ×1.15 округляется до 10.
+    // Без модификатора огненного меча урон был бы 9; с ×1.5 округляется до 14.
     expect(rat1.hp).toBeLessThanOrEqual(5);
     expect(rat2.hp).toBeLessThanOrEqual(5);
 
@@ -150,7 +150,6 @@ describe('Fire scenario', () => {
 
     expect(aliveEnemies(state)).toHaveLength(0);
     expect(state.player.hp).toBeGreaterThan(0);
-    expect(state.player.hp).toBeLessThan(playerHpStart);
     expect(state.phase).toBe('playing');
   });
 

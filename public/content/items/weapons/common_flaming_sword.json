@@ -18,5 +18,5 @@
   },
   "grantedAbilities": [],
   "equipModifiers": [],
-  "ruleIds": ["weapon_fire_damage_boost"]
+  "ruleIds": ["item_fire_damage_multiplier"]
 }

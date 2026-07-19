@@ -24,42 +24,49 @@
 |---|---|---|---|---|---|
 | `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `eventRole target` + `chance 50` + `not hasTag target.aoe` + `not hasTag target.multi` | `counterAttack` | шанс 50% |
 | `counterattack_damage` | Статус `counterattack` | `COUNTER_ATTACK_APPLIED` | — | `dealDamage` от `eventDamage` | урон из события |
+| `item_fire_damage_multiplier` | Оружие (`common_flaming_sword`) | `DAMAGE` `damage.magical.fire` | — | `modifyDamage multiply` 1.5 | множитель ×1.5 |
+| `weapon_poison_on_hit` | Оружие (`common_venom_dagger`) | `ENTITY_DAMAGED` `delivery.weapon` | `hasTag piercing/slashing` + `chance 40` | `applyStatus poisoned` 3 хода | шанс 40%, яд 3 хода |
+| `weapon_blunt_daze` | Оружие (`cat_guardian_maul`) | `ENTITY_DAMAGED` `damage.physical.blunt` `delivery.weapon` | `chance 25` | `applyStatus dazed` 1 ход | шанс 25%, оглушение 1 ход |
+| `armor_spiked_thorns` | Броня (`common_spiked_cloak`) | `ENTITY_DAMAGED` `attack.melee` | `eventRole target` | `dealDamage` 2 `damage.physical.piercing` по атакующему | ответный урон 2 |
+| `amulet_restore_ap_on_hit` | Амулет (`common_energized_bead`) | `ENTITY_DAMAGED` `attack.melee` `delivery.weapon` | `chance 15` | `restoreAp` себе | шанс 15%, восстановление 1 AP |
+| `amulet_fire_damage_multiplier` | Амулет (`common_ember_amulet`) | `DAMAGE` `damage.magical.fire` | `hasTag delivery.weapon` или `delivery.ability` | `modifyDamage add` 2 | +2 к огненному урону от оружия или способности |
 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30%, длительность 3 |
 | `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1, тег `damage.magical.fire` | 10% max HP, округление |
+| `status_poison_tick_damage` | Мир | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1, тег `damage.magical.poison` | 8% max HP, округление |
+| `status_burning_vulnerability` | Мир | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
 | `collision_damage` | Мир | `ENTITY_COLLIDED` `displacement.push` | — | `dealDamage` 5 `damage.physical.blunt` | урон 5 |
 | `collision_damage_actor` | Мир | `ENTITY_COLLIDED` `displacement.push` `collision.actor` | — | `dealDamage` 5 `damage.physical.blunt` по `collisionTarget` | урон 5 |
 | `collision_daze` | Мир | `ENTITY_COLLIDED` `displacement.push` | — | `applyStatus dazed` 2 хода | длительность 2 |
 | `collision_daze_actor` | Мир | `ENTITY_COLLIDED` `displacement.push` `collision.actor` | — | `applyStatus dazed` 2 хода по `collisionTarget` | длительность 2 |
-| `item_fire_damage_multiplier` | Предмет/способность (сейчас не привязано) | `DAMAGE` `damage.magical.fire` | — | `modifyDamage multiply` 1.5 | множитель ×1.5 |
 
 ---
 
 ## 2. Стартовый набор правил MVP
 
-В таблице ниже 12 правил, которые использует реальный контент первого этажа. Все они реализованы существующими `RuleEffect` и `RuleCondition` (`types.ts`).
+В таблице ниже 11 правил, которые использует реальный контент первого этажа. Все они реализованы существующими `RuleEffect` и `RuleCondition` (`types.ts`).
 
 | # | `ruleId` | Источник | Триггер | Условие | Эффект | Числа |
 |---|---|---|---|---|---|---|
-| 1 | `weapon_fire_damage_boost` | Оружие (`common_flaming_sword`) | `DAMAGE` `damage.magical.fire` `delivery.weapon` | — | `modifyDamage multiply` 1.15 | +15% к урону огненного оружия |
-| 2 | `weapon_poison_on_hit` | Оружие (`common_venom_dagger`) | `ENTITY_DAMAGED` `damage.physical.piercing` `delivery.weapon` | `chance 40` | `applyStatus poisoned` 3 хода | шанс 40%, яд 3 хода |
+| 1 | `item_fire_damage_multiplier` | Оружие (`common_flaming_sword`) | `DAMAGE` `damage.magical.fire` | — | `modifyDamage multiply` 1.5 | +50% к огненному урону |
+| 2 | `weapon_poison_on_hit` | Оружие (`common_venom_dagger`) | `ENTITY_DAMAGED` `delivery.weapon` | `hasTag piercing/slashing` + `chance 40` | `applyStatus poisoned` 3 хода | шанс 40%, яд 3 хода |
 | 3 | `weapon_blunt_daze` | Оружие (`cat_guardian_maul`) | `ENTITY_DAMAGED` `damage.physical.blunt` `delivery.weapon` | `chance 25` | `applyStatus dazed` 1 ход | шанс 25%, оглушение 1 ход |
-| 4 | `armor_spiked_thorns` | Броня (`common_spiked_cloak`) | `ENTITY_DAMAGED` `attack.melee` | — | `dealDamage` 2 `damage.physical.piercing` по атакующему | ответный урон 2 |
-| 5 | `amulet_restore_ap_on_hit` | Амулет (`common_energized_bead`) | `ENTITY_DAMAGED` `attack.melee` `delivery.weapon` | `chance 15` | `restoreAp` себе | шанс 15%, восстановление AP до максимума |
-| 6 | `amulet_fire_damage_multiplier` | Амулет (`common_ember_amulet`) | `DAMAGE` `damage.magical.fire` | — | `modifyDamage multiply` 1.15 | +15% ко всему огненному урону |
-| 7 | `status_poison_tick_damage` | Статус `poisoned` | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1, тег `damage.magical.poison` | 8% max HP/ход |
-| 8 | `status_burning_vulnerability` | Статус `burning` | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
-| 9 | `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `eventRole target` + `chance 50` + `not target.aoe/multi` | `counterAttack` | шанс 50% |
-| 10 | `counterattack_damage` | Статус `counterattack` | `COUNTER_ATTACK_APPLIED` | — | `dealDamage` от `eventDamage` | урон контратаки |
-| 11 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30% |
-| 12 | `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1 `damage.magical.fire` | 10% max HP/ход |
+| 4 | `armor_spiked_thorns` | Броня (`common_spiked_cloak`) | `ENTITY_DAMAGED` `attack.melee` | `eventRole target` | `dealDamage` 2 `damage.physical.piercing` по атакующему | ответный урон 2 |
+| 5 | `amulet_restore_ap_on_hit` | Амулет (`common_energized_bead`) | `ENTITY_DAMAGED` `attack.melee` `delivery.weapon` | `chance 15` | `restoreAp` себе | шанс 15%, восстановление 1 AP |
+| 6 | `amulet_fire_damage_multiplier` | Амулет (`common_ember_amulet`) | `DAMAGE` `damage.magical.fire` | `hasTag delivery.weapon` или `delivery.ability` | `modifyDamage add` 2 | +2 к огненному урону от оружия или способности |
+| 7 | `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `eventRole target` + `chance 50` + `not target.aoe/multi` | `counterAttack` | шанс 50% |
+| 8 | `counterattack_damage` | Статус `counterattack` | `COUNTER_ATTACK_APPLIED` | — | `dealDamage` от `eventDamage` | урон контратаки |
+| 9 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30% |
+| 10 | `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1 `damage.magical.fire` | 10% max HP/ход |
+| 11 | `status_poison_tick_damage` | Мир | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1 `damage.magical.poison` | 8% max HP/ход |
+| 12 | `status_burning_vulnerability` | Мир | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
 
 ### Распределение по категориям
 
-- **Оружие:** 3 правила (огонь, яд, оглушение).
+- **Оружие:** 2 правила (яд, оглушение) + множитель огня на мече.
 - **Броня/щит:** 1 правило (шипы).
-- **Кольца/амулеты:** 2 правила (AP при ударе, множитель огня).
-- **Статусы:** 3 правила (яд, уязвимость к огню, контратака состоит из 2 правил).
-- **Мир:** 2 правила (поджигание, тик горения).
+- **Кольца/амулеты:** 2 правила (AP при ударе, бонусный огненный урон).
+- **Статусы:** 1 правило (контратака состоит из 2 правил).
+- **Мир:** 4 правила (поджигание, тик горения, тик яда, уязвимость к огню).
 
 ---
 
@@ -69,12 +76,12 @@
 
 1. Игрок экипирует `common_flaming_sword`.
 2. Обычная атака наносит урон `damage.magical.fire`.
-3. `weapon_fire_damage_boost` увеличивает урон оружия на 15%.
+3. `item_fire_damage_multiplier` увеличивает урон на 50%.
 4. Мировое правило `fire_damage_ignites` (30%) накладывает `burning` на 3 хода.
 5. В начале хода врага `burning_tick_damage` наносит 10% max HP огнём.
 6. Если цель уже горит, `status_burning_vulnerability` усиливает последующий огненный урон ещё на 20%.
 
-**Баланс:** один удар не убивает крысу (≈10–12 урона против 15 HP); горение добавляет ~2 HP/ход. Комбо сильно, но не мгновенно.
+**Баланс:** один удар сильно ранит крысу (≈14 урона против 15 HP), но не убивает сразу; горение добавляет ~2 HP/ход. Комбо сильно, но не мгновенно.
 
 ### 3.2 «Ядовитый кинжал + контратака»
 
@@ -105,7 +112,8 @@
 | Тик горения | 10% max HP, min 1 | Для крысы 15 HP — 2/ход; для босса 100 HP — 10/ход. Масштабируется. |
 | Урон яда | 8% max HP, min 1 | Медленнее горения, компенсируется длительностью 3 хода. |
 | Урон шипов | 2 piercing | Небольшой ответный урон, не доминирует. |
-| Огненный бонус оружия/амулета | ×1.15 | Маленький стимул собирать fire-build. |
+| Огненный бонус меча | ×1.5 | Сильный стимул собирать fire-build. |
+| Огненный бонус амулета | +2 | Плоский бонус к огненным атакам оружием или способностью. |
 | Уязвимость горения | ×1.2 | Поощряет повторный огненный урон по горящей цели. |
 | Шанс оглушения дробящим | 25%, 1 ход | Контроль, но ненадёжный. |
 | Шанс яда кинжала | 40%, 3 хода | Надёжный DoT, но не 100%. |
