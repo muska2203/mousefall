@@ -15,7 +15,7 @@
 - использует уже существующие механизмы: `ContentRuleReaction`, статусы акторов, `environment-turn`;
 - не требует переписывания ядра игровой логики.
 
-Первая итерация фокусируется на трёх эффектах: `water`, `oil`, `fire`. Цель — отработать взаимодействие между тайловыми эффектами и статусами акторов.
+Первая итерация фокусируется на двух тайловых эффектах-материалах (`water`, `oil`) и одном статусе тайлового эффекта (`burning`). Цель — отработать взаимодействие между тайловыми эффектами, их статусами и статусами акторов.
 
 ---
 
@@ -80,10 +80,10 @@ source → target → world → radius
 Внутри слоя `world` уже определён порядок подтипов:
 
 ```text
-global → tileEffect → tileIntrinsic
+global → tileEffect → tileEffectStatus → tileIntrinsic
 ```
 
-Это означает, что правила тайловых эффектов (`worldLayer: 'tileEffect'`) будут обрабатываться после глобальных мировых правил и до статических свойств тайла.
+Это означает, что правила тайловых эффектов (`worldLayer: 'tileEffect'`) обрабатываются после глобальных мировых правил, затем правила статусов тайловых эффектов (`worldLayer: 'tileEffectStatus'`), и только потом статические свойства тайла (`tileIntrinsic`).
 
 Каждое правило содержит:
 
@@ -102,7 +102,7 @@ global → tileEffect → tileIntrinsic
 - могут иметь `ruleIds`, через которые добавляют активные правила актору;
 - поддерживают `blockedBy` и `mutuallyExclusiveWith` для разрешения конфликтов.
 
-В контексте тайловых эффектов статусы являются **исполнителями механики**: торможение, скольжение, ограничение обзора, урон от горения — всё это реализуется статусами, которые тайловые эффекты накладывают при входе актора на тайл.
+В контексте тайловых эффектов статусы акторов и статусы тайловых эффектов являются **исполнителями механики**: торможение, скольжение, ограничение обзора, урон от горения — всё это реализуется статусами. Тайловые эффекты и их статусы накладывают статусы на акторов при входе сущности на тайл.
 
 ### 2.5 Фазы хода и environment-turn
 
@@ -125,21 +125,22 @@ player → allies → enemies → neutrals → environment-turn → round-recove
 
 | Термин | Описание |
 |--------|----------|
-| **Тайловый эффект** | Динамическое состояние клетки карты, которое влияет на сущности, входящие на тайл, и/или взаимодействует с другими тайловыми эффектами. |
+| **Тайловый эффект** | Динамическое состояние клетки карты, представляющее материал или покров (`water`, `oil`, `fog`). Влияет на сущности, входящие на тайл, и взаимодействует с другими тайловыми эффектами. |
+| **Статус тайлового эффекта** | Временное состояние материала (`burning`, `electrified`, `frozen` и др.), которое тикает при тике тайлового эффекта в `environment-turn` и реализует механические эффекты. |
 | **Статус актора** | Состояние сущности (`wet`, `oiled`, `burning` и др.), которое тикает в фазе фракции и реализует механические эффекты. |
-| **Топливо** | Другой тайловый эффект или объект, поддерживающий существование `fire` на тайле. |
+| **Слой** | Категория тайлового эффекта (`foundation`, `cover`, `aboveGround`). Зарезервирован для будущего использования; в первой итерации все эффекты относятся к слою `cover`. |
 | **Совместимость** | Правила, определяющие, могут ли два тайловых эффекта сосуществовать на одном тайле. |
 | **Content Rule** | Декларативное правило, описывающее реакцию на игровое событие. |
-| **OwnerContext** | Контекст владельца правила. Для тайловых эффектов — `{ type: 'tileEffect', position, tileEffectType }`. |
+| **OwnerContext** | Контекст владельца правила. Для тайловых эффектов — `{ type: 'tileEffect', position, tileEffectType }`. Для статусов тайловых эффектов — `{ type: 'tileEffectStatus', position, tileEffectType, statusType }`. |
 
 ---
 
 ## 4. Архитектурные принципы
 
-1. **Тайловые эффекты — катализаторы, не исполнители.** Сами эффекты не тормозят, не скользят и не ограничивают обзор. Это делают статусы акторов, которые эффекты накладывают при входе сущности на тайл.
-2. **Data-driven через Content Rules.** Большинство взаимодействий описывается декларативными правилами с `worldLayer: 'tileEffect'`. Новые эффекты и комбо добавляются контентом, а не кодом.
+1. **Тайловые эффекты — материалы, не механики.** Сами эффекты (`water`, `oil`) не наносят урон и не тормозят. Механические эффекты реализуются статусами тайловых эффектов (`burning`) и статусами акторов (`wet`, `oiled`, `burning`).
+2. **Data-driven через Content Rules.** Большинство взаимодействий описывается декларативными правилами с `worldLayer: 'tileEffect'` и `worldLayer: 'tileEffectStatus'`. Новые материалы, статусы и комбо добавляются контентом, а не кодом.
 3. **Шаблоны для инвариантов.** Базовые физические ограничения (совместимость, условия существования) задаются в JSON-шаблоне эффекта, а не в правилах.
-4. **Тик в `environment-turn`.** Все тайловые эффекты обрабатываются раз в раунд в фазе окружения.
+4. **Тик в `environment-turn`.** Все тайловые эффекты и их статусы обрабатываются раз в раунд в фазе окружения.
 5. **Минимум специальных случаев.** Тайловые эффекты используют те же интенты, события и исполнители, что и остальная игра, с минимальным набором новых типов.
 6. **Сериализуемость.** Всё состояние тайловых эффектов хранится в `GameState` в виде plain-объектов, без функций и классов.
 
@@ -150,8 +151,10 @@ player → allies → enemies → neutrals → environment-turn → round-recove
 Проект уже инвестировал в data-driven content rules. В `ContentRuleReaction` уже зарезервированы:
 
 - `worldLayer: 'tileEffect'`;
+- `worldLayer: 'tileEffectStatus'` (добавляется для статусов тайловых эффектов);
 - `OwnerContext.type: 'tileEffect'`;
-- порядок `global → tileEffect → tileIntrinsic`.
+- `OwnerContext.type: 'tileEffectStatus'`;
+- порядок `global → tileEffect → tileEffectStatus → tileIntrinsic`.
 
 Кроме того, в `simulation.ts` фаза `environment-turn` уже помечена комментарием о будущем тике тайловых эффектов.
 
@@ -174,7 +177,7 @@ player → allies → enemies → neutrals → environment-turn → round-recove
 tileEffects: Map<effectType, TileEffectInstance>
 ```
 
-где `effectType` — строковый идентификатор типа эффекта (`water`, `oil`, `fire`), а `TileEffectInstance` — plain-объект с состоянием экземпляра.
+где `effectType` — строковый идентификатор типа эффекта (`water`, `oil`), а `TileEffectInstance` — plain-объект с состоянием экземпляра.
 
 ### 6.1 Свойства
 
@@ -190,8 +193,10 @@ GameState.tileEffects: TileEffects[][]
 TileEffects: Record<effectType, TileEffectInstance>
 
 TileEffectInstance: {
-  type: string,        // 'water' | 'oil' | 'fire'
-  duration: number,    // оставшиеся ходы
+  type: string,              // 'water' | 'oil'
+  duration: number,          // оставшиеся ходы
+  layer: 'foundation' | 'cover' | 'aboveGround',  // слой эффекта
+  statusEffects: StatusEffectInstance[],  // статусы материала
   // другие runtime-поля по необходимости
 }
 ```
@@ -199,10 +204,10 @@ TileEffectInstance: {
 ### 6.3 Примеры состояний тайла
 
 ```text
-{ oil: { duration: 5 }, fire: { duration: 3 } }     // масло горит
-{ water: { duration: 4 }, fog: { duration: 2 } }    // вода и туман
-{ oil: { duration: 5 } }                            // просто масло
-{}                                                  // пустой тайл
+{ oil: { duration: 5, statusEffects: [{ type: 'burning', duration: 3 }] } }  // масло горит
+{ water: { duration: 4 }, fog: { duration: 2, layer: 'aboveGround' } }      // вода и туман
+{ oil: { duration: 5, statusEffects: [] } }                                 // просто масло
+{}                                                                          // пустой тайл
 ```
 
 ### 6.4 Где хранить
@@ -219,19 +224,24 @@ TileEffectInstance: {
 
 Источники:
 
-- способности и скиллы (`fireball`, `rain`);
-- взаимодействие эффектов друг с другом (огонь поджигает масло);
+- способности и скиллы (`rain`, создающая `water`);
+- взаимодействие эффектов и их статусов друг с другом (огненный урон поджигает `oil`);
 - контентные правила.
 
-При появлении исполнитель проверяет совместимость через шаблон эффекта. Если тайл содержит эффект из `blockedByTileEffects`, новый эффект не накладывается.
+При появлении исполнитель проверяет совместимость через шаблон эффекта:
+
+- если тайл содержит эффект из `blockedByTileEffects`, новый эффект не накладывается;
+- если тайл содержит эффект из `mutuallyExclusiveWithTileEffects`, существующие эффекты удаляются, и новый эффект накладывается.
 
 ### 7.2 Тик
 
 Раз в раунд, в `environment-turn`, выполняется интент `TICK_TILE_EFFECTS`. Для каждого эффекта на каждом тайле:
 
 - уменьшается `duration`;
-- проверяются условия существования (см. раздел 9);
-- срабатывают content rules тайловых эффектов на событии `TILE_EFFECT_TICKED`.
+- тикают статусы тайлового эффекта (`statusEffects`);
+- срабатывают content rules тайловых эффектов и их статусов на событии `TILE_EFFECT_TICKED`.
+
+Статусы тайловых эффектов тикают аналогично статусам акторов: уменьшается их `duration`, при достижении нуля статус удаляется. Content rules на `TILE_EFFECT_STATUS_TICKED` могут порождать дополнительные эффекты, например распространение `burning`.
 
 ### 7.3 Продление и усиление
 
@@ -245,9 +255,14 @@ TileEffectInstance: {
 Эффект удаляется через интент `REMOVE_TILE_EFFECT` в случаях:
 
 - `duration` достиг нуля;
-- нарушено условие существования (например, `fire` потух из-за отсутствия топлива);
-- взаимоисключение с другим эффектом;
-- явное тушение/очищение через правила или способности.
+- взаимоисключение с другим эффектом (например, `water` заменяет `oil`);
+- явное очищение через правила или способности.
+
+Статус тайлового эффекта удаляется в случаях:
+
+- `duration` статуса достиг нуля (автоматически при тике);
+- удаление родительского тайлового эффекта (например, `water` заменяет `oil`, и `burning` удаляется вместе с `oil`);
+- явное снятие через интент `REMOVE_TILE_EFFECT_STATUS` или способности.
 
 ---
 
@@ -260,8 +275,10 @@ TileEffectInstance: {
 | `SPAWN_TILE_EFFECT` | Создать тайловый эффект на указанной позиции. |
 | `REMOVE_TILE_EFFECT` | Удалить тайловый эффект с указанной позиции. |
 | `TRANSFORM_TILE_EFFECT` | Заменить один тайловый эффект на другой. |
-| `TICK_TILE_EFFECTS` | Тикнуть все тайловые эффекты на карте. |
+| `TICK_TILE_EFFECTS` | Тикнуть все тайловые эффекты и их статусы на карте. |
 | `ADJUST_TILE_EFFECT_DURATION` | Изменить длительность существующего эффекта. |
+| `APPLY_TILE_EFFECT_STATUS` | Наложить статус на тайловый эффект. |
+| `REMOVE_TILE_EFFECT_STATUS` | Снять статус с тайлового эффекта. |
 
 ### 8.2 Новые события
 
@@ -270,6 +287,9 @@ TileEffectInstance: {
 | `TILE_EFFECT_CHANGED` | При создании, трансформации или обновлении эффекта. |
 | `TILE_EFFECT_REMOVED` | При удалении эффекта. |
 | `TILE_EFFECT_TICKED` | При тике эффекта в `environment-turn`. |
+| `TILE_EFFECT_STATUS_APPLIED` | При наложении статуса на тайловый эффект. |
+| `TILE_EFFECT_STATUS_REMOVED` | При снятии статуса с тайлового эффекта. |
+| `TILE_EFFECT_STATUS_TICKED` | При тике статуса тайлового эффекта. |
 
 Эти события участвуют в дереве `ExecutionNode` и могут быть обработаны `ContentRuleReaction`.
 
@@ -277,76 +297,122 @@ TileEffectInstance: {
 
 ## 9. Совместимость и условия существования
 
-### 9.1 Совместимость эффектов
+### 9.1 Совместимость тайловых эффектов
 
-Совместимость задаётся в шаблоне тайлового эффекта через поля, аналогичные статусам:
+Совместимость задаётся в шаблоне тайлового эффекта:
 
 - `blockedByTileEffects` — эффект не накладывается, если на тайле есть указанные эффекты.
 - `mutuallyExclusiveWithTileEffects` — при наложении эффект снимает указанные эффекты с тайла.
 
-### 9.2 Примеры для первой итерации
+В будущем совместимость может определяться слоем (`layer`): на одном тайле может быть только один эффект слоя `foundation`, один эффект слоя `cover`, но несколько эффектов слоя `aboveGround`. В первой итерации слой не влияет на совместимость напрямую; используются поля `blockedByTileEffects` и `mutuallyExclusiveWithTileEffects`.
+
+### 9.2 Совместимость статусов тайловых эффектов
+
+Статусы тайловых эффектов используют ту же модель совместимости, что и статусы акторов:
+
+- `blockedBy` — статус не накладывается, если у эффекта есть указанные статусы.
+- `mutuallyExclusiveWith` — при наложении статус снимает указанные статусы.
+
+### 9.3 Примеры для первой итерации
 
 ```text
 water:
-  blockedByTileEffects: ['oil']
-  // вода не добавляется на тайл с маслом
+  layer: 'cover'
+  mutuallyExclusiveWithTileEffects: ['oil']
+  // вода заменяет масло
 
 oil:
-  // масло доминирует; при необходимости может иметь mutuallyExclusiveWithTileEffects: ['water']
+  layer: 'cover'
+  mutuallyExclusiveWithTileEffects: ['water']
+  canHaveStatus: ['burning']
+  // масло заменяет воду и может гореть
 ```
-
-Проверка совместимости выполняется исполнителем `SPAWN_TILE_EFFECT` / `TRANSFORM_TILE_EFFECT` на основе шаблона.
-
-### 9.3 Условия существования
-
-Некоторые эффекты могут существовать только при выполнении определённых условий. Условия задаются в шаблоне эффекта.
-
-#### `fire`
-
-`fire` существует, пока на тайле есть топливо. В первой итерации топливом является эффект `oil`. В будущем могут быть горючие объекты или теги (`flammable`).
 
 ```text
-fire:
-  fuelTileEffects: ['oil']
+burning (статус тайлового эффекта):
+  // может быть наложен только на тайловый эффект, у которого в шаблоне есть 'burning' в canHaveStatus
 ```
 
-При тике `TICK_TILE_EFFECTS` для `fire` проверяется наличие хотя бы одного эффекта из `fuelTileEffects` на том же тайле. Если топлива нет — `fire` удаляется.
+Проверка совместимости тайловых эффектов выполняется исполнителем `SPAWN_TILE_EFFECT` / `TRANSFORM_TILE_EFFECT`. Проверка совместимости статусов выполняется исполнителем `APPLY_TILE_EFFECT_STATUS`.
 
-Длительность `fire` при этом остаётся важной: она ограничивает максимальное время горения, даже если топливо ещё есть.
+### 9.4 Условия существования
+
+Тайловый эффект существует, пока не истёк его `duration` или не нарушена совместимость. Статус тайлового эффекта существует, пока не истёк его `duration`, не нарушена совместимость или не удалён родительский тайловый эффект.
+
+### 9.5 Визуализация и порядок отрисовки
+
+Тайловый эффект и каждый его статус отображаются отдельными оверлеями. Порядок наложения оверлеев определяется полем `renderOrder`:
+
+- у тайлового эффекта — относительно других тайловых эффектов;
+- у статуса — относительно родительского эффекта и других статусов.
+
+```text
+water:
+  renderOrder: 1
+
+oil:
+  renderOrder: 2
+
+burning (статус):
+  renderOrder: 10
+```
+
+В первой итерации приоритет отрисовки: `water` < `oil` < `burning`. Это позволяет показывать огонь поверх материала.
+
+Комбинированные спрайты для конкретных комбинаций эффектов и статусов не используются в первой итерации.
+
+### 9.6 Статические свойства тайла (`tileIntrinsic`)
+
+`tileIntrinsic` — статические свойства базового тайла (например, тип пола, горючесть, скользкость). Они хранятся отдельно от `GameState.tileEffects`, не имеют длительности и не тикают в `environment-turn`.
+
+Взаимодействие с тайловыми эффектами:
+
+- `tileIntrinsic` не заменяют тайловые эффекты, а дополняют их.
+- Они могут участвовать в условиях content rules наравне с тайловыми эффектами.
+- В будущем они могут влиять на совместимость эффектов и статусов (например, горючий пол позволяет наложить `burning` на любой покров).
+
+В первой итерации `tileIntrinsic` не реализуются. Порядок слоёв в `ContentRuleReaction` (`global → tileEffect → tileEffectStatus → tileIntrinsic`) остаётся зарезервированным для будущего использования.
 
 ---
 
-## 10. Взаимодействия между эффектами и сущностями
+## 10. Взаимодействия между эффектами, статусами и сущностями
 
-Все игровые эффекты от тайловых эффектов реализуются через content rules с `worldLayer: 'tileEffect'`. Правила собираются по позиции события.
+Все игровые эффекты от тайловых эффектов реализуются через content rules с `worldLayer: 'tileEffect'` или `worldLayer: 'tileEffectStatus'`. Правила собираются по позиции события.
 
 ### 10.1 Вход сущности на тайл
 
-При событии `ENTITY_MOVED` на позицию с тайловым эффектом срабатывают правила этого эффекта:
-
-| Эффект | Правило | Результат |
-|--------|---------|-----------|
-| `water` | `water_applies_wet` | `APPLY_STATUS wet` |
-| `oil` | `oil_applies_oiled` | `APPLY_STATUS oiled` |
-| `fire` | `fire_deals_damage_on_entry` | `DAMAGE` (огненный) |
-| `fire` | `fire_applies_burning` | `APPLY_STATUS burning` |
-
-### 10.2 Урон по тайлу
-
-При событии `ENTITY_DAMAGED` на позиции с тайловым эффектом могут сработать правила:
+При событии `ENTITY_MOVED` на позицию с тайловым эффектом срабатывают правила этого эффекта и его статусов:
 
 | Ситуация | Правило | Результат |
 |----------|---------|-----------|
-| Огненный урон по тайлу с `oil` | `fire_damage_ignites_oil` | `SPAWN_TILE_EFFECT fire` |
+| На тайле `water` | `water_applies_wet` | `APPLY_STATUS wet` на актора |
+| На тайле `oil` | `oil_applies_oiled` | `APPLY_STATUS oiled` на актора |
+| На тайле `oil` со статусом `burning` | `burning_deals_damage_on_entry` | `DAMAGE` (огненный) по актору |
+| На тайле `oil` со статусом `burning` | `burning_applies_burning` | `APPLY_STATUS burning` на актора |
 
-### 10.3 Тик тайлового эффекта
+### 10.2 Поджог и другие статусы
 
-При событии `TILE_EFFECT_TICKED` могут сработать правила распространения, тушения, трансформации:
+При событии `ENTITY_DAMAGED` или `TILE_EFFECT_CHANGED` на позиции с тайловым эффектом могут сработать правила наложения статусов:
 
 | Ситуация | Правило | Результат |
 |----------|---------|-----------|
-| `fire` тикает рядом с тайлом, содержащим `oil` | `fire_spreads_to_oil` | `SPAWN_TILE_EFFECT fire` на соседний тайл |
-| `water` попадает на тайл с `fire` | `water_extinguishes_fire` | `REMOVE_TILE_EFFECT fire` |
+| Огненный урон по тайлу с `oil` | `fire_damage_ignites_oil` | `APPLY_TILE_EFFECT_STATUS burning` на `oil` |
+
+### 10.3 Тик тайлового эффекта и его статусов
+
+При событиях `TILE_EFFECT_TICKED` и `TILE_EFFECT_STATUS_TICKED` могут сработать правила распространения, тушения, трансформации:
+
+| Ситуация | Правило | Результат |
+|----------|---------|-----------|
+| `oil` со статусом `burning` тикает рядом с горючим тайловым эффектом | `burning_spreads_to_flammable` | `APPLY_TILE_EFFECT_STATUS burning` на соседний тайл в радиусе 1 |
+
+В первой итерации `water` тушит `burning` за счёт взаимоисключения с `oil`: при замене `oil` на `water` статус `burning` удаляется вместе с родительским эффектом. В будущем, когда `burning` может быть на эффектах, не взаимоисключающихся с `water`, может понадобиться отдельное правило `water_extinguishes_burning`.
+
+### 10.4 AI и pathfinding
+
+В первой итерации AI не учитывает тайловые эффекты при выборе пути. Однако pathfinding работает с полным `GameState`, включая `tileEffects`, чтобы в будущем можно было добавить учёт эффектов и их статусов без перестройки архитектуры.
+
+В перспективе в шаблон тайлового эффекта или его статуса может быть добавлено поле, описывающее влияние на проходимость или опасность тайла. Pathfinding будет использовать это поле для принятия решений AI.
 
 ---
 
@@ -356,47 +422,48 @@ fire:
 |---------|-------|------------|
 | `GameState` | `src/simulation/types.ts` | Новое поле для хранения тайловых эффектов. |
 | `GameMap` / `TileType` | `src/simulation/core-types.ts` | Тайловые эффекты хранятся отдельно от базового типа тайла (`floor`/`wall`). |
-| `ContentRuleReaction` | `src/simulation/content-rules/reaction/content-rule-reaction.ts` | Правила с `worldLayer: 'tileEffect'` собираются по позиции события. |
-| `RuleContext` | `src/simulation/content-rules/rule-context.ts` | Добавляется информация о тайловых эффектах на позиции события для условий и селекторов. |
-| `condition-evaluator` | `src/simulation/content-rules/condition-evaluator.ts` | Добавляется условие `inTileEffect` для проверки наличия эффекта на тайле. |
-| `executeIntent` | `src/simulation/systems/intents/execute-intent.ts` | Новые интенты: `SPAWN_TILE_EFFECT`, `REMOVE_TILE_EFFECT`, `TRANSFORM_TILE_EFFECT`, `TICK_TILE_EFFECTS`, `ADJUST_TILE_EFFECT_DURATION`. |
-| `IntentExecutor` | `src/simulation/systems/intents/` | Новые исполнители для тайловых интентов. |
-| `simulation.ts` | `src/simulation/simulation.ts` | Тик тайловых эффектов в `runEnvironmentTurn`. |
-| `movement-action` / `executeMoveIntent` | `src/simulation/systems/actions/movement-action.ts`, `src/simulation/systems/intents/move-intent-executer.ts` | Не изменяется напрямую. Вход на тайл порождает `ENTITY_MOVED`, на которое реагируют тайловые эффекты. |
-| `Presentation` | `src/presentation/displayState/builder.ts`, `src/presentation/displayState/types.ts` | Новые события (`TILE_EFFECT_CHANGED`, `TILE_EFFECT_REMOVED`, `TILE_EFFECT_TICKED`) переводятся в патчи `DisplayState`. |
-| `Animation` | `src/presentation/animation/builders/` | Новые builder'ы для тайловых событий. |
-| `UI` | `src/ui/renderer/` | Отрисовка оверлеев тайловых эффектов поверх тайлов. |
-| `Content schemas` | `src/content/schemas.ts` | Новая схема шаблона тайлового эффекта с `ruleIds`, `blockedByTileEffects`, `mutuallyExclusiveWithTileEffects`, `fuelTileEffects`. |
-| `Content rules` | `src/simulation/content-rules/world-rules/` или аналогичный модуль | Правила для `water`, `oil`, `fire`. |
+| `ContentRuleReaction` | `src/simulation/content-rules/reaction/content-rule-reaction.ts` | Правила с `worldLayer: 'tileEffect'` и `worldLayer: 'tileEffectStatus'` собираются по позиции события. |
+| `RuleContext` | `src/simulation/content-rules/rule-context.ts` | Добавляется информация о тайловых эффектах и их статусах на позиции события для условий и селекторов. |
+| `condition-evaluator` | `src/simulation/content-rules/condition-evaluator.ts` | Добавляются условия `inTileEffect` и `tileEffectHasStatus` для проверки эффектов и их статусов на тайле. |
+| `executeIntent` | `src/simulation/systems/intents/execute-intent.ts` | Новые интенты: `SPAWN_TILE_EFFECT`, `REMOVE_TILE_EFFECT`, `TRANSFORM_TILE_EFFECT`, `TICK_TILE_EFFECTS`, `ADJUST_TILE_EFFECT_DURATION`, `APPLY_TILE_EFFECT_STATUS`, `REMOVE_TILE_EFFECT_STATUS`. |
+| `IntentExecutor` | `src/simulation/systems/intents/` | Новые исполнители для тайловых интентов и интентов статусов tile effects. |
+| `simulation.ts` | `src/simulation/simulation.ts` | Тик тайловых эффектов и их статусов в `runEnvironmentTurn`. |
+| `movement-action` / `executeMoveIntent` | `src/simulation/systems/actions/movement-action.ts`, `src/simulation/systems/intents/move-intent-executer.ts` | Не изменяется напрямую. Вход на тайл порождает `ENTITY_MOVED`, на которое реагируют тайловые эффекты и их статусы. |
+| `Presentation` | `src/presentation/displayState/builder.ts`, `src/presentation/displayState/types.ts` | Новые события (`TILE_EFFECT_CHANGED`, `TILE_EFFECT_REMOVED`, `TILE_EFFECT_TICKED`, `TILE_EFFECT_STATUS_*`) переводятся в патчи `DisplayState`. |
+| `Animation` | `src/presentation/animation/builders/` | Новые builder'ы для тайловых событий и событий статусов tile effects. |
+| `UI` | `src/ui/renderer/` | Отрисовка оверлеев тайловых эффектов и их статусов поверх тайлов. |
+| `Content schemas` | `src/content/schemas.ts` | Новые схемы: шаблон тайлового эффекта (`ruleIds`, `layer`, `blockedByTileEffects`, `mutuallyExclusiveWithTileEffects`, `canHaveStatus`, `renderOrder`) и шаблон статуса тайлового эффекта. |
+| `Content rules` | `src/simulation/content-rules/world-rules/` или аналогичный модуль | Правила для `water`, `oil`, `burning` и других материалов/статусов. |
 
 ---
 
-## 12. Первые эффекты: water, oil, fire
+## 12. Первые эффекты: water, oil, burning
 
 ### 12.1 `water`
 
+- Слой: `cover`.
 - Накладывает статус `wet` при входе актора.
-- Тушит `fire` при попадании на тайл с огнём.
-- Не накладывается на тайл с `oil` (`blockedByTileEffects: ['oil']`).
+- Взаимоисключается с `oil` (`mutuallyExclusiveWithTileEffects: ['oil']`). Замена `oil` на `water` удаляет `burning` вместе с родительским эффектом.
+- Не позволяет загореться: `burning` не накладывается на `water`, так как `water` не входит в `canHaveStatus: ['burning']`.
 - Тикает в `environment-turn`, уменьшая длительность.
 
 ### 12.2 `oil`
 
+- Слой: `cover`.
 - Накладывает статус `oiled` при входе актора.
-- Является топливом для `fire`.
-- Доминирует над `water`.
-- Поджигается огненным уроном: при получении урона с тегом `damage.magical.fire` на тайле с `oil` появляется `fire`.
+- Взаимоисключается с `water` (`mutuallyExclusiveWithTileEffects: ['water']`).
+- Поджигается огненным уроном: при получении урона с тегом `damage.magical.fire` на тайле с `oil` накладывается статус `burning`.
 - Тикает в `environment-turn`, уменьшая длительность.
 
-### 12.3 `fire`
+### 12.3 `burning` (статус тайлового эффекта)
 
+- Может быть наложен на горючие тайловые эффекты. В первой итерации — только на `oil`.
 - Наносит огненный урон при входе актора на тайл.
 - Накладывает статус `burning` при входе актора.
-- Существует только при наличии топлива (`oil` в первой итерации).
-- При тике без топлива удаляется.
-- Может распространяться на соседние тайлы с `oil`.
-- Тушится `water`.
-- Тикает в `environment-turn`, уменьшая длительность.
+- Распространяется на соседние тайлы с горючими эффектами в радиусе 1 (8 клеток вокруг).
+- Тушится `water` за счёт замены `oil` (взаимоисключение материалов).
+- Не существует без материала-носителя: в первой итерации удаляется вместе с родительским тайловым эффектом.
+- Тикает в `environment-turn`, уменьшая длительность. Когда длительность достигает нуля, статус удаляется.
 
 ### 12.4 Пример цепочки
 
@@ -404,36 +471,45 @@ fire:
 fireball попадает в клетку с oil
   → ENTITY_DAMAGED (огненный урон)
     → ContentRuleReaction: fire_damage_ignites_oil
-      → SPAWN_TILE_EFFECT fire
-        → TILE_EFFECT_CHANGED
-          → fire существует, пока на тайле есть oil
+      → APPLY_TILE_EFFECT_STATUS burning на oil
+        → TILE_EFFECT_STATUS_APPLIED
+          → oil теперь горит
 
-Актор входит на тайл с fire
+Актор входит на тайл с oil + burning
   → ENTITY_MOVED
-    → ContentRuleReaction: fire_deals_damage_on_entry
+    → ContentRuleReaction: burning_deals_damage_on_entry
       → DAMAGE
-    → ContentRuleReaction: fire_applies_burning
+    → ContentRuleReaction: burning_applies_burning
       → APPLY_STATUS burning
 
 Актор снова входит на тайл с water
   → ENTITY_MOVED
     → ContentRuleReaction: water_applies_wet
       → APPLY_STATUS wet
-      → wet взаимоисключается с burning (уже реализовано в статусах)
+      → wet взаимоисключается с burning (уже реализовано в статусах акторов)
+
+Вода попадает на тайл с oil + burning
+  → TILE_EFFECT_CHANGED
+    → water заменяет oil (mutuallyExclusive)
+    → oil удаляется вместе со статусом burning
 ```
 
 ---
 
-## 13. Открытые вопросы
+## 13. Решения по открытым вопросам
 
-Следующие вопросы сознательно отложены и будут решены позже:
-
-1. **Симметрия `oil` / `water`.** Блокирует ли `oil` наложение `water` в одну сторону или взаимно? В концепте зафиксировано одностороннее блокирование (`water` не накладывается на `oil`).
-2. **Распространение огня.** Распространяется ли `fire` только на соседние тайлы с `oil`, или на любые горючие эффекты/объекты?
-3. **Визуализация нескольких эффектов.** Как renderer показывает тайл, на котором одновременно `oil` и `fire`? Отдельные оверлеи или комбинированный спрайт?
-4. **Горючие объекты.** Помимо тайловых эффектов, какие сущности или объекты будут считаться топливом для `fire`?
-5. **Статические свойства тайла (`tileIntrinsic`).** Отложены за пределы первой итерации.
-6. **AI и pathfinding.** Пока AI не учитывает тайловые эффекты при выборе пути.
+| # | Вопрос | Принятое решение |
+|---|--------|------------------|
+| 1 | **Симметрия `oil` / `water`** | Взаимное вытеснение. `water` и `oil` заменяют друг друга (`mutuallyExclusiveWithTileEffects`). Побеждает тот, кто наложен последним. |
+| 2 | **Модель огня** | Огонь — не отдельный тайловый эффект, а статус `burning` тайлового эффекта. В первой итерации горит только `oil`. |
+| 3 | **Распространение огня** | Статус `burning` распространяется на соседние тайлы в радиусе 1 (8 клеток вокруг) с горючими тайловыми эффектами. В первой итерации горючим является только `oil`. |
+| 4 | **Вода и огонь** | `water` заменяет `oil` и снимает статус `burning`. `burning` не накладывается на тайл с `water`. |
+| 5 | **Визуализация** | Отдельные оверлеи для тайлового эффекта и каждого его статуса. Порядок задаётся `renderOrder`. Комбинированные спрайты не используются в первой итерации. |
+| 6 | **Слои тайловых эффектов** | В шаблон введено поле `layer` (`foundation` / `cover` / `aboveGround`) как placeholder. В первой итерации `water` и `oil` имеют `layer: 'cover'`, совместимость определяется через `mutuallyExclusiveWithTileEffects`. |
+| 7 | **Статусы тайловых эффектов** | Принята архитектура статусов у tile effects. В первой итерации используется только `burning`. Система расширяема на `electrified`, `frozen` и др. |
+| 8 | **Статические свойства тайла (`tileIntrinsic`)** | Отложены за пределы первой итерации. Зафиксированы границы: `tileIntrinsic` — статические свойства базового тайла, хранятся отдельно от `tileEffects`, участвуют в условиях content rules, не имеют длительности и не тикают. |
+| 9 | **AI и pathfinding** | В первой итерации AI не учитывает тайловые эффекты. Pathfinding работает с полным `GameState`, включая `tileEffects`, для будущего расширения. |
+| 10 | **Огонь без масла** | В первой итерации не реализуется. `burning` — статус тайлового эффекта и удаляется вместе с родительским материалом. |
 
 ---
 
