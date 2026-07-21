@@ -50,6 +50,7 @@
 | Функциональность | Файл |
 |------------------|------|
 | Актуальный план разработки | [`../../roadMap.md`](../../roadMap.md) |
+| План реализации тайловых эффектов | [`../../docs/plans/tile-effects-implementation-plan.md`](../../docs/plans/tile-effects-implementation-plan.md) |
 
 ---
 
