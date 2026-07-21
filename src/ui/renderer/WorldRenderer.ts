@@ -10,6 +10,7 @@ import {Container, Graphics, Ticker} from 'pixi.js';
 import type {Position, RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {TileRenderer} from './TileRenderer';
+import {TileEffectRenderer} from './TileEffectRenderer';
 import {EntityRenderer} from './EntityRenderer';
 import {FogRenderer} from './FogRenderer';
 import {FloatingTextRenderer} from './FloatingTextRenderer';
@@ -31,6 +32,7 @@ export class WorldRenderer {
   public viewportHeight: number;
 
   private tileRenderer = new TileRenderer();
+  private tileEffectRenderer = new TileEffectRenderer();
   private targetingRenderer = new TargetingRenderer();
   private entityRenderer = new EntityRenderer();
   private fogRenderer = new FogRenderer();
@@ -51,12 +53,14 @@ export class WorldRenderer {
     // 1. тайлы пола
     // 2. debug-оверлей комнат и коридоров — под туманом, чтобы не мешал игре
     // 3. подсветка клеток (таргетинг) — под туманом, чтобы не светила в затемнённой зоне
-    // 4. туман войны — затемняет пол, но не сущности
-    // 5. сущности и предметы — рисуются поверх тумана, чтобы большие спрайты не обрезались
-    // 6. превью интентов (стрелки, цифры урона) — поверх сущностей
+    // 4. тайловые эффекты — поверх пола, под туманом
+    // 5. туман войны — затемняет пол и эффекты, но не сущности
+    // 6. сущности и предметы — рисуются поверх тумана, чтобы большие спрайты не обрезались
+    // 7. превью интентов (стрелки, цифры урона) — поверх сущностей
     this.root.addChild(this.tileRenderer.container);
     this.root.addChild(this.debugMapRenderer.container);
     this.root.addChild(this.targetingRenderer.overlayContainer);
+    this.root.addChild(this.tileEffectRenderer.container);
     this.root.addChild(this.fogRenderer.container);
     this.root.addChild(this.entityRenderer.container);
     this.root.addChild(this.unitInfoRenderer.container);
@@ -128,6 +132,7 @@ export class WorldRenderer {
     this.tileRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.debugMapRenderer.update(input);
     this.targetingRenderer.update(input);
+    this.tileEffectRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.entityRenderer.update(input);
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.unitInfoRenderer.update(input, (id) => this.entityRenderer.getSprite(id));
@@ -533,6 +538,7 @@ export class WorldRenderer {
 
   destroy(): void {
     this.tileRenderer.clear();
+    this.tileEffectRenderer.clear();
     this.targetingRenderer.clear();
     this.entityRenderer.clear();
     this.fogRenderer.clear();

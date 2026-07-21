@@ -60,6 +60,7 @@ import {
     getAllLocalizedItems,
     getAllLocalizedPlayerTemplates,
     getAllLocalizedStairs,
+    getAllLocalizedTileEffects,
     tryGetDoor,
     tryGetItem,
     tryGetLocalizedAbility,
@@ -477,6 +478,8 @@ export class GameSession {
             desc: t('system.gameSession.effectSilencedDesc', { turns: effect.duration }),
             turns: effect.duration,
           };
+        case 'wet':
+          return {icon: '💧', name: t('system.gameSession.effectWet'), desc: t('system.gameSession.effectWetDesc', { value: effect.value }), turns: effect.duration};
         default:
           return {icon: '❓', name: t('system.gameSession.effectUnknown'), desc: '', turns: effect.duration};
       }
@@ -863,6 +866,14 @@ export class GameSession {
    */
   static getAllStairs(locale: Locale) {
     return getAllLocalizedStairs(locale);
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны тайловых эффектов.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllTileEffects(locale: Locale) {
+    return getAllLocalizedTileEffects(locale);
   }
 
   /**
@@ -1999,6 +2010,22 @@ export class GameSession {
       entityId: 'player',
       spawnType,
       templateId,
+      position,
+    });
+  }
+
+  /** Debug: заспавнить тайловый эффект на карте. */
+  debugSpawnTileEffect(
+    effectType: string,
+    position: Position,
+  ): void {
+    if (!this.simulation || this.mode !== 'playing') {
+      return;
+    }
+    this.dispatch({
+      type: 'DEBUG_SPAWN_TILE_EFFECT',
+      entityId: 'player',
+      effectType,
       position,
     });
   }

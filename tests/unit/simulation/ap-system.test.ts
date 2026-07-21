@@ -50,6 +50,7 @@ describe('AP-система: мульти-AP сценарии', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 

@@ -146,6 +146,12 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
       break;
     }
 
+    case 'TILE_EFFECT_CHANGED':
+    case 'TILE_EFFECT_REMOVED': {
+      base.eventPosition = event.position;
+      break;
+    }
+
     case 'STATUS_TICKED': {
       base.targetEntityId = event.entityId;
       base.eventTags = event.tags;

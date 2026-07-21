@@ -69,6 +69,7 @@ beforeEach(() => {
     ]),
     stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 });
 

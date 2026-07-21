@@ -197,7 +197,11 @@ export function GameScreen({session, onModeChange}: Props) {
       if (isInputBlocked) return;
 
       if (pendingDebugSpawn && import.meta.env.DEV) {
-        session.debugSpawnEntity(pendingDebugSpawn.spawnType, pendingDebugSpawn.templateId, pos);
+        if (pendingDebugSpawn.spawnType === 'tileEffect') {
+          session.debugSpawnTileEffect(pendingDebugSpawn.templateId, pos);
+        } else {
+          session.debugSpawnEntity(pendingDebugSpawn.spawnType, pendingDebugSpawn.templateId, pos);
+        }
         setPendingDebugSpawn(null);
         return;
       }

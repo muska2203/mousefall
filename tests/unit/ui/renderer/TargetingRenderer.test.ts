@@ -60,6 +60,7 @@ function makeRenderInput(
 ): RenderInput {
   const state: GameState = {
     map: {width: 10, height: 10, tiles: [], rooms: [], corridors: []},
+    tileEffects: [],
     mapParams: {
       id: 'floor_1',
       strategy: 'tree',

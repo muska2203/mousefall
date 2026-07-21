@@ -30,6 +30,7 @@ describe('Faction scheduler', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 

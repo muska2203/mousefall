@@ -9,6 +9,7 @@ export const enDebugPanel: ComponentsDebugPanelTranslations = {
   spawnTypeEnemy: 'Enemy',
   spawnTypeDoor: 'Door',
   spawnTypeStairs: 'Stairs',
+  spawnTypeTileEffect: 'Tile effect',
   selectTileHint: 'Select a tile on the field',
   spawnButtonIdle: 'Place on map',
   spawnButtonPending: 'Select a tile...',

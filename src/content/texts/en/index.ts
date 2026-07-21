@@ -6,6 +6,7 @@ import {players} from './players';
 import {rules} from './rules';
 import {statuses} from './statuses';
 import {tags} from './tags';
+import {tileEffects} from './tile-effects';
 import type {ContentTexts} from '../types';
 
 export const enContentTexts: ContentTexts = {
@@ -16,6 +17,7 @@ export const enContentTexts: ContentTexts = {
   players,
   rules,
   statuses,
+  tileEffects,
   stairs,
   tags,
 };

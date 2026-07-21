@@ -33,4 +33,12 @@ export const statuses: Record<string, ContentText> = {
     name: 'Stunned',
     description: 'Cannot take actions.',
   },
+  wet: {
+    name: 'Wet',
+    description: 'Extinguishes burning and washes away oil.',
+  },
+  oiled: {
+    name: 'Oiled',
+    description: 'Vulnerable to fire.',
+  },
 };

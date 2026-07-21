@@ -45,6 +45,9 @@ describe('GameSession debug mode', () => {
         ['stairs_down', {id: 'stairs_down'} as any],
       ]),
     statuses: new Map(),
+    tileEffects: new Map([
+      ['water', {id: 'water', layer: 'cover', duration: 4, renderOrder: 1, ruleIds: [], blockedByTileEffects: [], mutuallyExclusiveWithTileEffects: [], canHaveStatus: []} as any],
+    ]),
 });
   });
 
@@ -91,6 +94,24 @@ describe('GameSession debug mode', () => {
     expect(spawned?.templateId).toBe('health_potion');
   });
 
+  it('debugSpawnTileEffect spawns tile effect on map when debug is enabled', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.toggleDebug();
+    session.loadGame(state);
+
+    session.debugSpawnTileEffect('water', {x: 3, y: 3});
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.water).toBeDefined();
+    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.water?.type).toBe('water');
+  });
+
   it('debug actions are rejected when debug is disabled', () => {
     const player = makePlayer({x: 5, y: 5});
     const state = makeGameState({
@@ -105,10 +126,12 @@ describe('GameSession debug mode', () => {
 
     session.debugAddItem('health_potion');
     session.debugSpawnEntity('item', 'health_potion', {x: 3, y: 3});
+    session.debugSpawnTileEffect('water', {x: 3, y: 3});
 
     const vm = session.getViewModel();
     expect(vm.renderInput?.inventory.length).toBe(0);
     expect(vm.renderInput?.itemsOnFloor.length).toBe(0);
+    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.water).toBeUndefined();
   });
 
   it('debugAddItem works after toggling debug on already loaded game', () => {
@@ -167,6 +190,7 @@ describe('GameSession AP display during animations', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -255,6 +279,7 @@ describe('GameSession moveOrAttack with doors', () => {
       ]),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -392,6 +417,7 @@ describe('GameSession interactions (F / Tab)', () => {
         ['stairs_up', {id: 'stairs_up'} as any],
       ]),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -743,6 +769,7 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
     const templates = GameSession.getAvailablePlayerTemplates('ru');
@@ -774,6 +801,7 @@ describe('GameSession DisplayState', () => {
       doors: new Map(),
       stairs: new Map(),
       statuses: new Map(),
+    tileEffects: new Map(),
     });
   });
 
@@ -917,6 +945,7 @@ describe('GameSession fieldObjectPopover', () => {
       doors: new Map(),
       stairs: new Map(),
       statuses: new Map(),
+    tileEffects: new Map(),
     });
   });
 

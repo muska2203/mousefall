@@ -48,10 +48,15 @@
     "/content/statuses/counterattack.json",
     "/content/statuses/dazed.json",
     "/content/statuses/frozen.json",
+    "/content/statuses/oiled.json",
     "/content/statuses/poisoned.json",
     "/content/statuses/regenerating.json",
     "/content/statuses/silenced.json",
-    "/content/statuses/stunned.json"
+    "/content/statuses/stunned.json",
+    "/content/statuses/wet.json"
+  ],
+  "tileEffects": [
+    "/content/tile-effects/water.json"
   ],
   "maps": [
     "/content/maps/default.json",

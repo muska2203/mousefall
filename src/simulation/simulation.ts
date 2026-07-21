@@ -47,6 +47,7 @@ import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
 import {interactAction} from "@simulation/systems/actions/interact-action.ts";
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
+import {createDebugSpawnTileEffectActionHandler} from "@simulation/systems/actions/debug-spawn-tile-effect-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import {isEnemyEntity} from "@simulation/ai/ai-state.ts";
 import {cancelPreparedAbility} from "@simulation/ai/ai-helpers.ts";
@@ -590,8 +591,8 @@ export class GameSimulation implements Simulation {
             turnBeganNode.parent = null;
         }
 
-        // После удаления статусов у не-акторов (Этап 1) environment-turn больше не тикает статусы.
-        // На Этапе 2 здесь будет тик тайловых эффектов (TICK_TILE_EFFECTS).
+        // Тик тайловых эффектов: уменьшение длительности и удаление истёкших.
+        executeIntent(this.state, { type: 'TICK_TILE_EFFECTS' }, builder, root);
 
         return { side: 'environment', actions: [root] };
     }
@@ -1119,6 +1120,7 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
     registry.register('INTERACT', interactAction);
     registry.register('DEBUG_ADD_ITEM', createDebugAddItemActionHandler(debugContext));
     registry.register('DEBUG_SPAWN_ENTITY', createDebugSpawnEntityActionHandler(debugContext));
+    registry.register('DEBUG_SPAWN_TILE_EFFECT', createDebugSpawnTileEffectActionHandler(debugContext));
     return registry;
 }
 

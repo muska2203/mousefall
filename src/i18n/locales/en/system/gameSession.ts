@@ -24,5 +24,7 @@ export const enGameSession = {
   effectCounterattackDesc: '50% chance to strike back, {{turns}} turns',
   effectSilenced: 'Silenced',
   effectSilencedDesc: 'Cannot use skills, {{turns}} turns',
+  effectWet: 'Wet',
+  effectWetDesc: 'Like a dog',
   effectUnknown: 'Unknown effect',
 } as const satisfies SystemGameSessionTranslations;

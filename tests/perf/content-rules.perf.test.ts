@@ -503,6 +503,7 @@ describe('WP6.5 — Проверка производительности conten
         ['perf_ability', perfAbility],
       ]),
       statuses: new Map(perfStatusTemplates.map((s) => [s.id, s] as const)),
+      tileEffects: new Map(),
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),

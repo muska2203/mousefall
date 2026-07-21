@@ -160,6 +160,18 @@ export type TurnBeganPatch = {
   round: number;
 };
 
+export type TileEffectChangedPatch = {
+  type: 'TILE_EFFECT_CHANGED';
+  effectType: string;
+  position: Position;
+};
+
+export type TileEffectRemovedPatch = {
+  type: 'TILE_EFFECT_REMOVED';
+  effectType: string;
+  position: Position;
+};
+
 export type ItemPickedUpPatch = {
   type: 'ITEM_PICKED_UP';
   entityId: string;
@@ -185,6 +197,8 @@ export type DisplayPatch =
   | PlayerDiedPatch
   | PlayerLeveledUpPatch
   | TurnBeganPatch
+  | TileEffectChangedPatch
+  | TileEffectRemovedPatch
   | ItemPickedUpPatch;
 
 /** Узел плана презентации: событие, патч и анимации для одного шага. */

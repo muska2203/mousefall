@@ -33,4 +33,12 @@ export const statuses: Record<string, ContentText> = {
     name: 'Ошеломление',
     description: 'Не может совершать действия.',
   },
+  wet: {
+    name: 'Мокрый',
+    description: 'Тушит горение и смывает масло.',
+  },
+  oiled: {
+    name: 'В масле',
+    description: 'Уязвим к огню.',
+  },
 };

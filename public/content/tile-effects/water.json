@@ -1,0 +1,10 @@
+{
+  "id": "water",
+  "layer": "cover",
+  "duration": 4,
+  "renderOrder": 1,
+  "ruleIds": ["water_applies_wet", "water_applies_wet_on_spawn"],
+  "blockedByTileEffects": [],
+  "mutuallyExclusiveWithTileEffects": ["oil"],
+  "canHaveStatus": []
+}

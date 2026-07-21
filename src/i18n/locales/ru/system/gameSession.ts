@@ -24,5 +24,7 @@ export const ruGameSession = {
   effectCounterattackDesc: '50% шанс ответить ударом, {{turns}} хода',
   effectSilenced: 'Немота',
   effectSilencedDesc: 'Нельзя использовать скиллы, {{turns}} ход',
+  effectWet: 'Мокрый',
+  effectWetDesc: 'Можно выжимать',
   effectUnknown: 'Неизвестный эффект',
 } as const satisfies SystemGameSessionTranslations;

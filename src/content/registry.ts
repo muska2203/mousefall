@@ -26,7 +26,8 @@ import type {
     MapParams,
     PlayerTemplate,
     StairsTemplate,
-    StatusTemplate
+    StatusTemplate,
+    TileEffectTemplate
 } from './schemas';
 import {getContentText, type Locale} from './texts/lookup';
 
@@ -62,6 +63,10 @@ export type LocalizedStairsTemplate = StairsTemplate & {
 export type LocalizedDoorTemplate = DoorTemplate & {
   name: string;
   flavorText?: string;
+};
+
+export type LocalizedTileEffectTemplate = TileEffectTemplate & {
+  name: string;
 };
 
 // ─────────────────────────────────────────────
@@ -206,6 +211,59 @@ export function getAllEntities(): EntityTemplate[] {
  */
 export function getAllStatuses(): StatusTemplate[] {
   return Array.from(getRegistry().statuses.values());
+}
+
+/**
+ * Получить шаблон тайлового эффекта по ID.
+ */
+export function getTileEffect(id: string): TileEffectTemplate {
+  const template = getRegistry().tileEffects.get(id);
+  if (!template) throw new Error(`Tile effect template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон тайлового эффекта.
+ */
+export function tryGetTileEffect(id: string): TileEffectTemplate | undefined {
+  if (_registry === null) return undefined;
+  return _registry.tileEffects.get(id);
+}
+
+/**
+ * Получить локализованный шаблон тайлового эффекта по ID.
+ */
+export function getLocalizedTileEffect(id: string, locale: Locale): LocalizedTileEffectTemplate {
+  const template = getTileEffect(id);
+  const text = getContentText('tileEffects', id, locale);
+  return {...template, name: text.name};
+}
+
+/**
+ * Попытаться получить локализованный шаблон тайлового эффекта.
+ */
+export function tryGetLocalizedTileEffect(id: string, locale: Locale): LocalizedTileEffectTemplate | undefined {
+  const template = tryGetTileEffect(id);
+  if (!template) return undefined;
+  const text = getContentText('tileEffects', id, locale);
+  return {...template, name: text.name};
+}
+
+/**
+ * Получить все шаблоны тайловых эффектов.
+ */
+export function getAllTileEffects(): TileEffectTemplate[] {
+  return Array.from(getRegistry().tileEffects.values());
+}
+
+/**
+ * Получить все локализованные шаблоны тайловых эффектов.
+ */
+export function getAllLocalizedTileEffects(locale: Locale): LocalizedTileEffectTemplate[] {
+  return Array.from(getRegistry().tileEffects.values()).map((template) => {
+    const text = getContentText('tileEffects', template.id, locale);
+    return {...template, name: text.name};
+  });
 }
 
 /**

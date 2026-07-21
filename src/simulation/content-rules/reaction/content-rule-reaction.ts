@@ -19,10 +19,12 @@ import type {
     Position,
 } from '@simulation/core-types.ts';
 import type {Actor, GameState} from '@simulation/types.ts';
-import {findEntity, isActor} from '@simulation/state.ts';
+import {findEntity, getTileEffectsAt, isActor} from '@simulation/state.ts';
+import {tryGetTileEffect} from '@content/registry';
 import {hasAllTags} from '@simulation/systems/tags/tag-helpers.ts';
 import {ensureRuntimeRng} from '../runtime-rng.ts';
 import {getWorldContentRules} from '../rules.ts';
+import {tryGetContentRule} from '../registry.ts';
 import {buildRuleContext, type RuleContext} from '../rule-context.ts';
 import {resolveParametrizedValue} from '../value-resolver.ts';
 import {evaluateConditions} from '../condition-evaluator.ts';
@@ -143,7 +145,27 @@ function collectRules(ctx: RuleContext): LayeredRule[] {
     }
   }
 
-  // ── Слой world ────────────────────────────────────────────────────────────
+  // ── Слой world: tile effects ──────────────────────────────────────────────
+  // Правила собираются из шаблонов эффектов, находящихся на позиции события.
+  if (ctx.eventPosition !== null) {
+    const tileEffects = getTileEffectsAt(state, ctx.eventPosition.x, ctx.eventPosition.y);
+    for (const tileEffectType of Object.keys(tileEffects)) {
+      const template = tryGetTileEffect(tileEffectType);
+      if (!template) continue;
+      for (const ruleId of template.ruleIds) {
+        const rule = tryGetContentRule(ruleId);
+        if (!rule) continue;
+        result.push({
+          layer: 'world',
+          rule: toActiveRule(rule, { type: 'tileEffect', position: ctx.eventPosition, tileEffectType }),
+          selfId: null,
+          worldLayer: 'tileEffect',
+        });
+      }
+    }
+  }
+
+  // ── Слой world: global / tileIntrinsic ────────────────────────────────────
   for (const rule of getWorldContentRules()) {
     result.push({
       layer: 'world',

@@ -35,6 +35,7 @@ describe('useAbilityAction', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -53,6 +54,7 @@ describe('useAbilityAction', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
     const state = makeGameState();
@@ -86,6 +88,7 @@ describe('useAbilityAction', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
     const state = makeGameState();

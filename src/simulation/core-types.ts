@@ -100,7 +100,9 @@ export type StatusEffectType =
   | 'dazed'
   | 'silenced'
   | 'regenerating'
-  | 'counterattack';
+  | 'counterattack'
+  | 'wet'
+  | 'oiled';
 
 /** Категория статуса для разрешения конфликтов между одновременно накладываемыми эффектами. */
 export type StatusCategory = 'elemental' | 'physical' | 'mental' | 'poison' | 'generic';
@@ -123,6 +125,38 @@ export type StatusEffect = {
   /** Стабильный ID экземпляра статуса. Заполняется при первом наложении. */
   instanceId?: EntityId;
 };
+
+// ─────────────────────────────────────────────
+// Тайловые эффекты
+// ─────────────────────────────────────────────
+
+/** Слой тайлового эффекта. На первом этапе все эффекты относятся к слою cover. */
+export type TileEffectLayer = 'foundation' | 'cover' | 'aboveGround';
+
+/** Экземпляр статуса тайлового эффекта (например, горение на луже масла). */
+export type TileEffectStatusInstance = {
+  type: string;
+  /** Оставшиеся ходы. */
+  duration: number;
+  /** Порядок отрисовки относительно родительского эффекта и других статусов. */
+  renderOrder: number;
+};
+
+/** Экземпляр тайлового эффекта на конкретной клетке. */
+export type TileEffectInstance = {
+  type: string;
+  /** Оставшиеся ходы существования эффекта. */
+  duration: number;
+  /** Слой эффекта. */
+  layer: TileEffectLayer;
+  /** Статусы материала (например, burning). */
+  statusEffects: TileEffectStatusInstance[];
+  /** Порядок отрисовки относительно других тайловых эффектов. */
+  renderOrder: number;
+};
+
+/** Набор тайловых эффектов на одной клетке: ключ — тип эффекта. */
+export type TileEffects = Record<string, TileEffectInstance>;
 
 export type RuntimeAbility = {
   templateId: string;
@@ -199,6 +233,7 @@ export type GameAction =
   | InteractAction
   | DebugAddItemAction
   | DebugSpawnEntityAction
+  | DebugSpawnTileEffectAction
 ;
 
 export type MoveAction = {
@@ -265,6 +300,13 @@ export type DebugSpawnEntityAction = {
   position: Position;
 };
 
+export type DebugSpawnTileEffectAction = {
+  type: 'DEBUG_SPAWN_TILE_EFFECT';
+  entityId: EntityId;
+  effectType: string;
+  position: Position;
+};
+
 export type TargetMode =
   | { type: 'self' }
   | { type: 'single'; range: number }
@@ -322,7 +364,10 @@ export type Intent =
   | CleanupDeadEntitiesIntent
   | ApplyFogEventsIntent
   | NotifyAIIntent
-  | CounterAttackIntent;
+  | CounterAttackIntent
+  | SpawnTileEffectIntent
+  | RemoveTileEffectIntent
+  | TickTileEffectsIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -363,6 +408,9 @@ export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: TurnSide; round?: numb
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 export type NotifyAIIntent = { type: 'NOTIFY_AI'; entityId: EntityId; change: WorldChange };
 export type CounterAttackIntent = { type: 'COUNTER_ATTACK'; counterAttackerId: EntityId; targetId: EntityId; dx?: number; dy?: number };
+export type SpawnTileEffectIntent = { type: 'SPAWN_TILE_EFFECT'; effectType: string; position: Position; duration?: number };
+export type RemoveTileEffectIntent = { type: 'REMOVE_TILE_EFFECT'; effectType: string; position: Position };
+export type TickTileEffectsIntent = { type: 'TICK_TILE_EFFECTS' };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -411,7 +459,9 @@ export type GameEvent =
   | DeadEntitiesCleanedEvent
   | AiNotifiedEvent
   | CounterAttackAppliedEvent
-  | RuleTriggeredEvent;
+  | RuleTriggeredEvent
+  | TileEffectChangedEvent
+  | TileEffectRemovedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -610,4 +660,18 @@ export type RuleTriggeredEvent = {
   triggerTags: GameplayTag[];
   intents: Intent[];
   conditionMatched: boolean;
+};
+
+export type TileEffectChangedEvent = {
+  type: 'TILE_EFFECT_CHANGED';
+  effectType: string;
+  position: Position;
+  /** true, если эффект только что создан; false, если обновлён (например, продлён). */
+  isNew: boolean;
+};
+
+export type TileEffectRemovedEvent = {
+  type: 'TILE_EFFECT_REMOVED';
+  effectType: string;
+  position: Position;
 };

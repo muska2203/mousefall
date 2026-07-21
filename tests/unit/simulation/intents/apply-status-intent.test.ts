@@ -65,6 +65,7 @@ describe('apply-status-intent-executer', () => {
         ['silenced', mockStatusTemplate({ id: 'silenced', statusCategory: 'mental', categoryPriority: 0 })],
         ['counterattack', mockStatusTemplate({ id: 'counterattack', statusCategory: 'generic', categoryPriority: 0 })],
       ]),
+      tileEffects: new Map(),
     });
   });
 

@@ -36,6 +36,11 @@ import {executeCleanupDeadEntitiesIntent} from "@simulation/systems/intents/clea
 import {executeApplyFogEventsIntent} from "@simulation/systems/intents/apply-fog-events-intent-executor.ts";
 import {executeNotifyAIIntent} from "@simulation/systems/intents/notify-ai-intent-executor.ts";
 import {executeCounterAttackIntent} from "@simulation/systems/intents/counter-attack-intent-executor.ts";
+import {
+  executeRemoveTileEffectIntent,
+  executeSpawnTileEffectIntent,
+  executeTickTileEffectsIntent,
+} from "@simulation/systems/intents/tile-effect-intent-executor.ts";
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
 import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
 import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
@@ -76,6 +81,9 @@ const intentExecutors = {
   APPLY_FOG_EVENTS: executeApplyFogEventsIntent,
   NOTIFY_AI: executeNotifyAIIntent,
   COUNTER_ATTACK: executeCounterAttackIntent,
+  SPAWN_TILE_EFFECT: executeSpawnTileEffectIntent,
+  REMOVE_TILE_EFFECT: executeRemoveTileEffectIntent,
+  TICK_TILE_EFFECTS: executeTickTileEffectsIntent,
 };
 
 /** Максимальное количество реакций в одной цепочке защиты от бесконечного цикла. */

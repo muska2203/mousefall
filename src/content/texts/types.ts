@@ -10,6 +10,7 @@ export interface ContentTexts {
   abilities: Record<string, ContentText>;
   players: Record<string, ContentText>;
   statuses: Record<string, ContentText>;
+  tileEffects: Record<string, ContentText>;
   stairs: Record<string, ContentText>;
   doors: Record<string, ContentText>;
   tags: Record<string, ContentText>;

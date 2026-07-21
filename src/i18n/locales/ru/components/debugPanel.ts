@@ -9,6 +9,7 @@ export const ruDebugPanel: ComponentsDebugPanelTranslations = {
   spawnTypeEnemy: 'Враг',
   spawnTypeDoor: 'Дверь',
   spawnTypeStairs: 'Лестница',
+  spawnTypeTileEffect: 'Тайловый эффект',
   selectTileHint: 'Выберите клетку на поле',
   spawnButtonIdle: 'Поставить на карту',
   spawnButtonPending: 'Выберите клетку...',

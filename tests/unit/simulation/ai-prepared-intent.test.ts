@@ -103,6 +103,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -319,6 +320,7 @@ describe('AI: подготовка скилла (AI-Delayed Intent)', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
     const player = makePlayer({ x: 5, y: 5, maxAp: 1, ap: 1 });

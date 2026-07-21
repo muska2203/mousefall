@@ -55,6 +55,11 @@ export function getStatusOverflowSprite(): string {
   return '/assets/statuses/overflow.png';
 }
 
+/** Путь к спрайту тайлового эффекта по типу. */
+export function getTileEffectSprite(effectType: string): string {
+  return `/assets/tile-effects/${effectType}.png`;
+}
+
 /**
  * Fallback-путь к спрайту двери по templateId и состоянию.
  * Для кастомных openSpriteId используется RenderInput.doorSprites.

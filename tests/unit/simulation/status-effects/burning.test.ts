@@ -33,6 +33,7 @@ describe('burning status effect', () => {
       stairs: new Map(),
       doors: new Map(),
       statuses: new Map([['burning', mockBurningStatus()]]),
+      tileEffects: new Map(),
     });
   });
 

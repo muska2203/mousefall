@@ -42,6 +42,7 @@ describe('postDeathLootReaction', () => {
             doors: new Map(),
             stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
         const enemy = makeEnemy({ templateId: 'no_loot_enemy' });
@@ -68,6 +69,7 @@ describe('postDeathLootReaction', () => {
             doors: new Map(),
             stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
         const enemy = makeEnemy({ templateId: 'loot_enemy' });
@@ -94,6 +96,7 @@ describe('postDeathLootReaction', () => {
             doors: new Map(),
             stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
         const player = makePlayer();
@@ -127,6 +130,7 @@ describe('postDeathLootReaction', () => {
             doors: new Map(),
             stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
         const enemy = makeEnemy({ templateId: 'multi_loot_enemy' });

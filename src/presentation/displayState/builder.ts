@@ -47,6 +47,14 @@ function toDisplayTile(type: 'floor' | 'wall'): DisplayTile {
   return { type };
 }
 
+/** Возвращает тип основного тайлового эффекта для отображения или undefined. */
+function getPrimaryTileEffect(tileEffects: import('@simulation/core-types.ts').TileEffects): string | undefined {
+  const types = Object.keys(tileEffects);
+  if (types.length === 0) return undefined;
+  // На первом этапе на тайле может быть только один эффект.
+  return types[0];
+}
+
 /** Создать копию DisplayMap. */
 function cloneDisplayMap(map: DisplayMap): DisplayMap {
   return {
@@ -91,8 +99,15 @@ export function buildDisplayState(state: GameState): DisplayState {
 
   const player = entities.get(state.player.id) ?? toDisplayEntity(state.player);
 
-  const tiles: DisplayTile[][] = state.map.tiles.map((row) =>
-    row.map((tile) => toDisplayTile(tile)),
+  const tiles: DisplayTile[][] = state.map.tiles.map((row, y) =>
+    row.map((tile, x) => {
+      const displayTile = toDisplayTile(tile);
+      const primaryEffect = getPrimaryTileEffect(state.tileEffects[y]?.[x] ?? {});
+      if (primaryEffect) {
+        displayTile.tileEffect = primaryEffect;
+      }
+      return displayTile;
+    }),
   );
 
   const map: DisplayMap = {
@@ -250,6 +265,20 @@ export function createPatch(event: GameEvent, state?: GameState): DisplayPatch {
         type: 'TURN_BEGAN',
         turnSide: event.side,
         round: event.round,
+      };
+
+    case 'TILE_EFFECT_CHANGED':
+      return {
+        type: 'TILE_EFFECT_CHANGED',
+        effectType: event.effectType,
+        position: event.position,
+      };
+
+    case 'TILE_EFFECT_REMOVED':
+      return {
+        type: 'TILE_EFFECT_REMOVED',
+        effectType: event.effectType,
+        position: event.position,
       };
 
     case 'RESOURCE_CONSUMED':
@@ -427,6 +456,25 @@ export function applyPatch(state: DisplayState, patch: DisplayPatch): DisplaySta
           round: patch.round,
         },
       };
+    }
+
+    case 'TILE_EFFECT_CHANGED':
+    case 'TILE_EFFECT_REMOVED': {
+      const newMap = cloneDisplayMap(state.map);
+      const { x, y } = patch.position;
+      if (y >= 0 && y < newMap.height && x >= 0 && x < newMap.width) {
+        const tile = newMap.tiles[y]![x];
+        if (tile) {
+          if (patch.type === 'TILE_EFFECT_CHANGED') {
+            tile.tileEffect = patch.effectType;
+          } else {
+            if (tile.tileEffect === patch.effectType) {
+              delete tile.tileEffect;
+            }
+          }
+        }
+      }
+      return { ...state, map: newMap };
     }
 
     default:

@@ -99,6 +99,7 @@ describe('treeRoomStrategy', () => {
       ]),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 

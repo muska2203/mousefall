@@ -66,8 +66,12 @@ function makeLootGameState(): GameState {
     aiStrategyId: 'hunter',
   });
 
+  const emptyTileEffects = (): import('../../src/simulation/core-types').TileEffects[][] =>
+    Array.from({ length: map.height }, () => Array(map.width).fill(null).map(() => ({})));
+
   return {
     map,
+    tileEffects: emptyTileEffects(),
     mapParams: {
       id: 'test',
       strategy: 'tree',
@@ -137,6 +141,7 @@ describe('Интеграция: цикл выпадения лута', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -286,6 +291,7 @@ describe('Интеграция: цикл выпадения лута', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
     const state = makeLootGameState();

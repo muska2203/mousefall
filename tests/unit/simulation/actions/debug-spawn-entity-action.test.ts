@@ -47,6 +47,7 @@ beforeEach(() => {
       ['stairs_up', {id: 'stairs_up'} as any],
     ]),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 });
 

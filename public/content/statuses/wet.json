@@ -1,0 +1,8 @@
+{
+  "id": "wet",
+  "ruleIds": [],
+  "statusCategory": "elemental",
+  "categoryPriority": 0,
+  "mutuallyExclusiveWith": ["burning", "oiled"],
+  "blockedBy": []
+}

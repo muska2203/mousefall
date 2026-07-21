@@ -330,6 +330,8 @@ export type GamePhase = 'playing' | 'dead' | 'victory';
 export type GameState = {
   // ── World ──────────────────────────────────────────────────────────
   map: GameMap;
+  /** Тайловые эффекты на карте. Доступ как tileEffects[y][x]. */
+  tileEffects: import('@simulation/core-types.ts').TileEffects[][];
 
   // ── Map Generation Params ──────────────────────────────────────────
   /** Параметры генерации карты для текущего и новых этажей. */

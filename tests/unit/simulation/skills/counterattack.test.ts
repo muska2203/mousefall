@@ -58,6 +58,7 @@ describe('counterattackSkill', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -150,6 +151,7 @@ describe('counterattack combat behavior', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
     vi.mocked(rngChance).mockReturnValue(true);
   });

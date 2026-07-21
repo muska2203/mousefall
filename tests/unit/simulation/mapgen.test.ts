@@ -47,6 +47,7 @@ describe('createEnemy', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
     const state = makeGameState();
@@ -73,6 +74,7 @@ describe('createEnemy', () => {
       doors: new Map(),
       stairs: new Map(),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
 
     const state = makeGameState();

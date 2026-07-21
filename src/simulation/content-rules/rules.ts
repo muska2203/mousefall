@@ -21,6 +21,37 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   counterattackTriggerRule,
   counterattackDamageRule,
   {
+    id: 'water_applies_wet',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    conditions: [{ type: 'inTileEffect', effectType: 'water' }],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'wet',
+      duration: 3,
+    },
+    target: { type: 'eventSource' },
+    priority: 0,
+  },
+  {
+    id: 'water_applies_wet_on_spawn',
+    trigger: {
+      event: 'TILE_EFFECT_CHANGED',
+    },
+    conditions: [
+      { type: 'eventFieldEquals', field: 'effectType', value: 'water' },
+      { type: 'eventFieldEquals', field: 'isNew', value: true },
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'wet',
+      duration: 3,
+    },
+    target: { type: 'allInRadius', radius: 0, center: 'eventPosition' },
+    priority: 0,
+  },
+  {
     id: 'item_fire_damage_multiplier',
     trigger: {
       event: 'DAMAGE',

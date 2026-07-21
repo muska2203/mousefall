@@ -67,6 +67,7 @@ export class DefaultActionPointCostResolver
 
       case 'DEBUG_ADD_ITEM':
       case 'DEBUG_SPAWN_ENTITY':
+      case 'DEBUG_SPAWN_TILE_EFFECT':
         return 0;
 
       default: {

@@ -22,6 +22,7 @@ import type {
   TileType
 } from '../../src/simulation/types';
 import type { MapParams } from '../../src/content/schemas';
+import type { TileEffects } from '../../src/simulation/core-types';
 import {createRNG} from '../../src/utils/rng';
 import { createDefaultAIState } from '../../src/simulation/ai/ai-state';
 import {PLAYER_ID} from '../../src/utils/constants';
@@ -221,8 +222,12 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
     Array.from({ length: h }, () => Array(w).fill(v) as boolean[]);
 
   const player = makePlayer();
+  const emptyTileEffects = (): TileEffects[][] =>
+    Array.from({ length: map.height }, () => Array(map.width).fill(null).map(() => ({})));
+
   return {
     map,
+    tileEffects: emptyTileEffects(),
     mapParams: defaultTestMapParams,
     player: player,
     entities: new Map<EntityId, Entity>([[player.id, player]]),

@@ -104,6 +104,13 @@ export function createTileGrid(width: number, height: number): TileType[][] {
 }
 
 /**
+ * Создаёт пустую двумерную сетку тайловых эффектов.
+ */
+export function createTileEffectsGrid(width: number, height: number): import('@simulation/core-types.ts').TileEffects[][] {
+  return Array.from({ length: height }, () => Array(width).fill(null).map(() => ({})));
+}
+
+/**
  * Создаёт минимально валидный GameState.
  * Используется как база перед тем, как генерация карты заполнит карту и позиции сущностей.
  */
@@ -120,6 +127,7 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
       rooms: [],
       corridors: [],
     },
+    tileEffects: createTileEffectsGrid(mapWidth, mapHeight),
     mapParams,
     entities: new Map<EntityId, Entity>([[player.id, player]]),
     player: player,
@@ -218,6 +226,18 @@ export function findFirstAttackableEntityAt(state: GameState, x: number, y: numb
 export function findAllEntitiesAt(state: GameState, x: number, y: number): Entity[] {
   return Array.from(state.entities.values())
       .filter(e => e.x === x && e.y === y);
+}
+
+/**
+ * Возвращает тайловые эффекты клетки или пустой объект, если клетка вне карты.
+ */
+export function getTileEffectsAt(state: GameState, x: number, y: number): import('@simulation/core-types.ts').TileEffects {
+  if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) {
+    return {};
+  }
+  const row = state.tileEffects[y];
+  if (!row) return {};
+  return row[x] ?? {};
 }
 
 /**

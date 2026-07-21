@@ -140,6 +140,7 @@ describe('interactAction.validate', () => {
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -395,6 +396,7 @@ describe('interactAction.resolve', () => {
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -520,6 +522,7 @@ describe('interactAction.validate — дополнительные провер�
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -583,6 +586,7 @@ describe('INTERACT — полные flow', () => {
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 
@@ -683,6 +687,7 @@ describe('авто-спуск по лестнице удалён', () => {
         ['stairs_up', mockStairsTemplate('stairs_up')],
       ]),
     statuses: new Map(),
+    tileEffects: new Map(),
 });
   });
 

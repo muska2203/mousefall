@@ -41,6 +41,7 @@ describe('fireballSkill', () => {
       doors: new Map(),
       stairs: new Map(),
       statuses: new Map(),
+    tileEffects: new Map(),
     });
   });
 

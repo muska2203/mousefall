@@ -226,6 +226,7 @@ export interface ComponentsDebugPanelTranslations {
   spawnTypeEnemy: string;
   spawnTypeDoor: string;
   spawnTypeStairs: string;
+  spawnTypeTileEffect: string;
   selectTileHint: string;
   spawnButtonIdle: string;
   spawnButtonPending: string;
@@ -410,6 +411,7 @@ export interface SystemGameSessionTranslations {
   effectBurningDesc: string;
   effectFrozen: string;
   effectFrozenDesc: string;
+  effectWetDesc: string;
   effectStunned: string;
   effectStunnedDesc: string;
   effectRegenerating: string;
@@ -418,6 +420,7 @@ export interface SystemGameSessionTranslations {
   effectCounterattackDesc: string;
   effectSilenced: string;
   effectSilencedDesc: string;
+  effectWet: string;
   effectUnknown: string;
 }
 

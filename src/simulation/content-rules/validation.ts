@@ -278,6 +278,16 @@ function validateCondition(
         });
       }
       break;
+    case 'eventFieldEquals':
+      if (typeof condition.field !== 'string' || condition.field.length === 0) {
+        errors.push({
+          path: `rule.${rule.id}.conditions[${index}]`,
+          ruleId: rule.id,
+          field: 'condition.field',
+          problem: 'Условие eventFieldEquals содержит пустое имя поля события',
+        });
+      }
+      break;
     case 'eventRole':
       if (condition.role !== 'source' && condition.role !== 'target') {
         errors.push({

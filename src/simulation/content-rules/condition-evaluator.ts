@@ -6,7 +6,7 @@
  */
 
 import type {EntityId} from '@simulation/core-types.ts';
-import {findEntity} from '@simulation/state.ts';
+import {findEntity, getTileEffectsAt} from '@simulation/state.ts';
 import {hasTag} from '@simulation/systems/tags/tag-helpers.ts';
 import {rngChance} from '@utils/rng.ts';
 import type {RuleContext} from './rule-context.ts';
@@ -47,6 +47,15 @@ export function evaluateCondition(
     }
     case 'hasTag': {
       return hasTag(ctx.eventTags, condition.tag);
+    }
+    case 'inTileEffect': {
+      if (ctx.eventPosition === null) return false;
+      const tileEffects = getTileEffectsAt(ctx.state, ctx.eventPosition.x, ctx.eventPosition.y);
+      return tileEffects[condition.effectType] !== undefined;
+    }
+    case 'eventFieldEquals': {
+      const event = ctx.event as Record<string, unknown>;
+      return event[condition.field] === condition.value;
     }
     case 'eventRole': {
       // Проверяем, находится ли владелец правила (self) на указанной стороне события.

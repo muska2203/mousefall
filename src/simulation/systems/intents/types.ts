@@ -45,6 +45,10 @@ export type {
   BeginTurnIntent,
   NotifyAIIntent,
   CounterAttackIntent,
+  SpawnTileEffectIntent,
+  RemoveTileEffectIntent,
+  TickTileEffectsIntent,
+  TileEffectInstance,
 } from "@simulation/core-types.ts";
 
 export type OpenDoorIntentExecutor = IntentExecutor<OpenDoorIntent>;
