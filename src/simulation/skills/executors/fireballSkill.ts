@@ -3,8 +3,8 @@ import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {damageFormulas} from '@simulation/skills/damageFormula';
-import {getEntitiesInRadius, getVisiblePositionsWithinRange} from '@simulation/skills/targeting';
-import {isCombatEntity, isDamageable} from '@simulation/state';
+import {getVisiblePositionsWithinRange} from '@simulation/skills/targeting';
+import {isCombatEntity} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
@@ -42,35 +42,34 @@ export const fireballSkill: SkillExecutor = {
     if (!center) return [];
 
     const intents: Intent[] = [];
-    const affectedEntities = getEntitiesInRadius(state, center, 1);
+    const affectedPositions = this.getAffectedPositions(state, caster, [], center);
     const ability = tryGetAbility(this.id);
     const damageTag = getSkillDamageTag(ability);
     const abilityTags = getAbilityTags(this.id);
 
-    for (const entity of affectedEntities) {
-      // Предметы и лестницы не получают урона.
-      if (entity.type === 'floor_item_container' || entity.type === 'stairs') continue;
-      if (!isDamageable(entity)) continue;
-      const isCenter = entity.x === center.x && entity.y === center.y;
+    if (!isCombatEntity(caster)) return [];
+    const skillLevel = caster.type === 'player'
+      ? (caster.abilities.find(a => a.templateId === 'fireball')?.level ?? 1)
+      : 1;
+    const baseDamage = 20;
+
+    for (const position of affectedPositions) {
+      const isCenter = position.x === center.x && position.y === center.y;
       const formulaId = isCenter ? 'fireball_center' : 'fireball_aoe';
-      const baseDamage = 20; // base damage 20
       const formula = damageFormulas[formulaId];
       if (!formula) continue;
-      const skillLevel = caster.type === 'player'
-        ? (caster.abilities.find(a => a.templateId === 'fireball')?.level ?? 1)
-        : 1;
-      if (!isCombatEntity(caster)) continue;
+
       const damageEntries = formula({
         caster,
-        target: entity,
         skillLevel,
         baseDamage,
       });
+
       for (const entry of damageEntries) {
         const tags = mergeDamageIntentTags(entry.tags, abilityTags);
         intents.push({
-          type: 'DAMAGE',
-          entityId: entity.id,
+          type: 'DAMAGE_TILE',
+          position,
           sourceEntityId: caster.id,
           damage: entry.damage,
           tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,

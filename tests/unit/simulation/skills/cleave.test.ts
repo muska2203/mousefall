@@ -12,6 +12,8 @@ import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate, ItemTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
+import { ExecutionBuilder } from '../../../../src/simulation/core-types';
+import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -22,6 +24,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     id,
     cooldown: 2,
     damageTag: 'damage.physical.slashing',
+    tags: ['delivery.ability', 'attack.melee', 'target.aoe', 'delivery.weapon'],
     ...overrides,
   } as AbilityTemplate;
 }
@@ -62,10 +65,10 @@ describe('cleaveSkill', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    statuses: new Map(),
-    tileEffects: new Map(),
-    tileEffectStatuses: new Map(),
-});
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
   });
 
   afterEach(() => {
@@ -124,7 +127,7 @@ describe('cleaveSkill', () => {
     }
   });
 
-  it('resolve returns no intents when cast on empty tile', () => {
+  it('resolve returns DAMAGE_TILE intents for all affected positions', () => {
     const state = makeGameState();
     const player = makePlayer({
       x: 5,
@@ -136,10 +139,14 @@ describe('cleaveSkill', () => {
     state.entities.set(player.id, player);
 
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    expect(intents).toHaveLength(0);
+    const damageTileIntents = intents.filter(i => i.type === 'DAMAGE_TILE');
+
+    expect(damageTileIntents).toHaveLength(3);
+    expect(damageTileIntents.every(i => i.tags.includes('damage.physical.slashing'))).toBe(true);
+    expect(damageTileIntents.every(i => i.tags.includes('target.aoe'))).toBe(true);
   });
 
-  it('resolve deals damage to a single target in center cell', () => {
+  it('executing DAMAGE_TILE damages entity in center cell', () => {
     const state = makeGameState();
     const player = makePlayer({
       x: 5,
@@ -154,38 +161,20 @@ describe('cleaveSkill', () => {
     state.entities.set(enemy.id, enemy);
 
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    const centerIntent = intents.find(i => i.type === 'DAMAGE_TILE' && i.position.x === 6 && i.position.y === 5);
+    expect(centerIntent).toBeDefined();
 
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.damage).toBeGreaterThan(0);
-    expect(damageIntents[0]!.tags).toContain('damage.physical.slashing');
-  });
-
-  it('resolve deals damage to two targets in arc', () => {
-    const state = makeGameState();
-    const player = makePlayer({
-      x: 5,
-      y: 5,
-      baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
-      abilities: [{ templateId: 'cleave', source: 'innate', level: 1, currentCooldown: 0 }],
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] },
     });
-    const enemyCenter = makeEnemy({ id: 'enemy_center', x: 6, y: 5, hp: 50, maxHp: 50, armor: 0 });
-    const enemySide = makeEnemy({ id: 'enemy_side', x: 6, y: 6, hp: 50, maxHp: 50, armor: 0 });
-    state.player = player;
-    state.entities.set(player.id, player);
-    state.entities.set(enemyCenter.id, enemyCenter);
-    state.entities.set(enemySide.id, enemySide);
 
-    const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    executeIntent(state, centerIntent!, builder, builder.root);
 
-    expect(damageIntents).toHaveLength(2);
-    expect(damageIntents.some(i => i.entityId === enemyCenter.id)).toBe(true);
-    expect(damageIntents.some(i => i.entityId === enemySide.id)).toBe(true);
+    expect(enemy.hp).toBeLessThan(50);
   });
 
-  it('resolve deals damage to three targets in arc', () => {
+  it('executing DAMAGE_TILE damages entities in all arc cells', () => {
     const state = makeGameState();
     const player = makePlayer({
       x: 5,
@@ -203,15 +192,22 @@ describe('cleaveSkill', () => {
     state.entities.set(enemySide2.id, enemySide2);
 
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
 
-    expect(damageIntents).toHaveLength(3);
-    expect(damageIntents.some(i => i.entityId === enemyCenter.id)).toBe(true);
-    expect(damageIntents.some(i => i.entityId === enemySide1.id)).toBe(true);
-    expect(damageIntents.some(i => i.entityId === enemySide2.id)).toBe(true);
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] },
+    });
+
+    for (const intent of intents) {
+      executeIntent(state, intent, builder, builder.root);
+    }
+
+    expect(enemyCenter.hp).toBeLessThan(50);
+    expect(enemySide1.hp).toBeLessThan(50);
+    expect(enemySide2.hp).toBeLessThan(50);
   });
 
-  it('resolve damages door but not floor container or stairs', () => {
+  it('executing DAMAGE_TILE damages door but ignores floor container and stairs', () => {
     const state = makeGameState();
     const player = makePlayer({
       x: 5,
@@ -230,13 +226,19 @@ describe('cleaveSkill', () => {
     state.entities.set(stairs.id, stairs);
 
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
 
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.entityId).toBe(door.id);
-    expect(damageIntents[0]!.damage).toBeGreaterThan(0);
-    expect(damageIntents.some(i => i.entityId === container.id)).toBe(false);
-    expect(damageIntents.some(i => i.entityId === stairs.id)).toBe(false);
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] },
+    });
+
+    for (const intent of intents) {
+      executeIntent(state, intent, builder, builder.root);
+    }
+
+    expect(door.hp).toBeLessThan(50);
+    expect(state.entities.has(container.id)).toBe(true);
+    expect(state.entities.has(stairs.id)).toBe(true);
   });
 
   it('resolve does not create COUNTER_ATTACK intents', () => {
@@ -271,10 +273,10 @@ describe('cleaveSkill', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    statuses: new Map(),
-    tileEffects: new Map(),
-    tileEffectStatuses: new Map(),
-});
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -292,10 +294,10 @@ describe('cleaveSkill', () => {
     state.entities.set(enemy.id, enemy);
 
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    const damageTileIntents = intents.filter(i => i.type === 'DAMAGE_TILE');
 
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.tags).toContain('damage.physical.slashing');
+    expect(damageTileIntents).toHaveLength(3);
+    expect(damageTileIntents[0]!.tags).toContain('damage.physical.slashing');
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('damageTag'));
 
     warnSpy.mockRestore();

@@ -105,35 +105,43 @@ function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position
     dy: target.y - caster.y,
   });
 
-  // Удар по земле: урон и отталкивание всем живым объектам с hp в радиусе.
-  const affectedEntities = getEntitiesInRadius(state, target, SWOOP_AOE_RADIUS);
+  // Удар по земле: площадной урон по клеткам вокруг точки приземления.
   const formula = damageFormulas['swoop_slam'];
 
+  for (let dy = -SWOOP_AOE_RADIUS; dy <= SWOOP_AOE_RADIUS; dy++) {
+    for (let dx = -SWOOP_AOE_RADIUS; dx <= SWOOP_AOE_RADIUS; dx++) {
+      const x = target.x + dx;
+      const y = target.y + dy;
+
+      if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) continue;
+
+      if (formula) {
+        const damageEntries = formula({
+          caster,
+          skillLevel,
+          baseDamage: SWOOP_BASE_DAMAGE,
+        });
+
+        for (const entry of damageEntries) {
+          const tags = mergeDamageIntentTags(entry.tags, abilityTags);
+          intents.push({
+            type: 'DAMAGE_TILE',
+            position: { x, y },
+            sourceEntityId: caster.id,
+            damage: entry.damage,
+            tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
+          });
+        }
+      }
+    }
+  }
+
+  // Отталкивание всем живым объектам с hp в радиусе.
+  const affectedEntities = getEntitiesInRadius(state, target, SWOOP_AOE_RADIUS);
   for (const entity of affectedEntities) {
     if (entity.id === caster.id) continue;
     if (!isDamageable(entity)) continue;
 
-    if (formula) {
-      const damageEntries = formula({
-        caster,
-        target: entity,
-        skillLevel,
-        baseDamage: SWOOP_BASE_DAMAGE,
-      });
-
-      for (const entry of damageEntries) {
-        const tags = mergeDamageIntentTags(entry.tags, abilityTags);
-        intents.push({
-          type: 'DAMAGE',
-          entityId: entity.id,
-          sourceEntityId: caster.id,
-          damage: entry.damage,
-          tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
-        });
-      }
-    }
-
-    // Отталкивание на одну клетку в сторону от точки приземления.
     const pushDx = Math.sign(entity.x - target.x);
     const pushDy = Math.sign(entity.y - target.y);
 

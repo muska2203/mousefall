@@ -8,7 +8,7 @@ export type SkillDamageEntry = {
 
 export type DamageFormulaContext = {
   caster: PlayerEntity | EnemyEntity;
-  target: Entity & Attackable;
+  target?: Entity & Attackable;
   skillLevel: number;
   baseDamage: number;
 };

@@ -248,6 +248,9 @@ export const TileEffectStatusTemplateSchema = z.object({
     .describe('Статусы тайловых эффектов, блокирующие наложение этого статуса'),
   renderOrder: z.number().int().default(1)
     .describe('Порядок отрисовки статуса относительно других статусов тайлового эффекта'),
+  neverExpires: z.boolean()
+    .default(false)
+    .describe('Если true, длительность статуса не уменьшается и он не удаляется при тике. Снимается только вместе с родительским тайловым эффектом.'),
 }).describe('Шаблон статуса тайлового эффекта');
 
 export type TileEffectStatusTemplate = z.output<typeof TileEffectStatusTemplateSchema>;

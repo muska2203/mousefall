@@ -49,8 +49,10 @@ const OP_ORDER: Record<'multiply' | 'add', number> = {
   add: 1,
 };
 
+type DamageLikeIntent = Extract<Intent, { type: 'DAMAGE' } | { type: 'DAMAGE_TILE' }>;
+
 /**
- * Применяет ко DAMAGE-интенту модификаторы урона из всех слоёв.
+ * Применяет к DAMAGE- и DAMAGE_TILE-интентам модификаторы урона из всех слоёв.
  * Для остальных типов интентов возвращает исходный объект без изменений.
  */
 export function applyIntentModifiers(
@@ -58,11 +60,11 @@ export function applyIntentModifiers(
   intent: Intent,
   ctx: RuleContext,
 ): Intent {
-  if (intent.type !== 'DAMAGE') {
+  if (intent.type !== 'DAMAGE' && intent.type !== 'DAMAGE_TILE') {
     return intent;
   }
 
-  const damageIntent = intent as Extract<Intent, { type: 'DAMAGE' }>;
+  const damageIntent = intent as DamageLikeIntent;
 
   const layeredRules = collectDamageModifiers(state, ctx);
   const triggered = filterModifiersByTrigger(layeredRules, damageIntent, ctx);
@@ -175,7 +177,7 @@ function collectDamageModifiers(state: GameState, ctx: RuleContext): LayeredRule
  */
 function filterModifiersByTrigger(
   rules: LayeredRule[],
-  intent: Extract<Intent, { type: 'DAMAGE' }>,
+  intent: DamageLikeIntent,
   ctx: RuleContext,
 ): LayeredRule[] {
   return rules.filter(({ rule, selfId }) => {

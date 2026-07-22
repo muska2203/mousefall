@@ -335,6 +335,7 @@ export type Intent =
   | JumpIntent
   | PushIntent
   | DamageIntent
+  | DamageTileIntent
   | DieIntent
   | ApplyStatusIntent
   | SetMapIntent
@@ -375,6 +376,7 @@ export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: num
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
 export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null; tags?: GameplayTag[] };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
+export type DamageTileIntent = { type: 'DAMAGE_TILE'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; sourceEntityId: EntityId | null; status: StatusEffect; tags?: GameplayTag[] };
 export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][] };
@@ -438,6 +440,7 @@ export type GameEvent =
   | ActionRejectedEvent
   | EntityMovedEvent
   | EntityDamagedEvent
+  | TileDamagedEvent
   | EntityDiedEvent
   | EntityMissedEvent
   | ItemPickedUpEvent
@@ -491,6 +494,8 @@ export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationE
 export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' | 'dash' | 'teleport' };
 
 export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; sourceEntityId: EntityId | null; damage: number; position: Position; tags: GameplayTag[] };
+
+export type TileDamagedEvent = { type: 'TILE_DAMAGED'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 
 export type EntityDiedEvent = { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
 

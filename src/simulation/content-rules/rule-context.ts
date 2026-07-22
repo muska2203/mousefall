@@ -90,6 +90,13 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
       break;
     }
 
+    case 'TILE_DAMAGED': {
+      base.sourceEntityId = event.sourceEntityId;
+      base.eventPosition = event.position;
+      base.eventDamage = event.damage;
+      break;
+    }
+
     case 'ENTITY_HEALED': {
       base.targetEntityId = event.entityId;
       base.eventPosition = event.position;
@@ -197,6 +204,13 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     case 'DAMAGE': {
       base.sourceEntityId = event.sourceEntityId;
       base.targetEntityId = event.entityId;
+      base.eventDamage = event.damage;
+      break;
+    }
+
+    case 'DAMAGE_TILE': {
+      base.sourceEntityId = event.sourceEntityId;
+      base.eventPosition = event.position;
       base.eventDamage = event.damage;
       break;
     }

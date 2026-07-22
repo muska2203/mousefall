@@ -52,15 +52,16 @@ export class WorldRenderer {
     // Порядок слоёв важен:
     // 1. тайлы пола
     // 2. debug-оверлей комнат и коридоров — под туманом, чтобы не мешал игре
-    // 3. подсветка клеток (таргетинг) — под туманом, чтобы не светила в затемнённой зоне
-    // 4. тайловые эффекты — поверх пола, под туманом
-    // 5. туман войны — затемняет пол и эффекты, но не сущности
+    // 3. тайловые эффекты — поверх пола, под туманом
+    // 4. подсветка клеток (таргетинг) и автопуть — поверх тайловых эффектов, под туманом,
+    //    чтобы превью пути и интентов не прятались под эффектами
+    // 5. туман войны — затемняет пол, эффекты и подсветку, но не сущности
     // 6. сущности и предметы — рисуются поверх тумана, чтобы большие спрайты не обрезались
     // 7. превью интентов (стрелки, цифры урона) — поверх сущностей
     this.root.addChild(this.tileRenderer.container);
     this.root.addChild(this.debugMapRenderer.container);
-    this.root.addChild(this.targetingRenderer.overlayContainer);
     this.root.addChild(this.tileEffectRenderer.container);
+    this.root.addChild(this.targetingRenderer.overlayContainer);
     this.root.addChild(this.fogRenderer.container);
     this.root.addChild(this.entityRenderer.container);
     this.root.addChild(this.unitInfoRenderer.container);

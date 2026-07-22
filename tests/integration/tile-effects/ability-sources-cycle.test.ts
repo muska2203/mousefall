@@ -5,7 +5,7 @@
  * 1. Игрок кастует rain на клетку → появляется water.
  * 2. Игрок кастует oil_flask на другую клетку → появляется oil.
  * 3. Огненный урон по сущности на масле → поджог (burning на tile effect).
- * 4. Завершение хода → burning тикает, длительность уменьшается.
+ * 4. Завершение хода → burning тикает, уменьшая длительность масла; сам burning не гаснет.
  * 5. Игрок кастует rain на горящее масло → масло заменяется водой, burning удаляется.
  */
 
@@ -116,7 +116,8 @@ describe('Цикл способностей rain и oil_flask', () => {
     expect(oilAfterTick!.duration).toBe(4);
     const burningAfterTick = oilAfterTick!.statusEffects.find((s) => s.type === 'burning');
     expect(burningAfterTick).toBeDefined();
-    expect(burningAfterTick!.duration).toBe(2);
+    // Бесконечный статус горения не тратит свою длительность.
+    expect(burningAfterTick!.duration).toBe(3);
 
     // 5. Игрок кастует rain на горящее масло → масло заменяется водой, burning удаляется.
     const extinguishResult = simulation.dispatch({

@@ -5,8 +5,8 @@
  * 1. Спавн масла на клетке через debug-действие.
  * 2. Перемещение игрока на масло → наложение статуса `oiled`.
  * 3. Нанесение огненного урона по сущности на масле → поджог (`burning` на tile effect).
- * 4. Тик `burning` в фазе `environment-turn` уменьшает длительность.
- * 5. После истечения длительности `burning` удаляется, а масло остаётся.
+ * 4. Тик `burning` в фазе `environment-turn` уменьшает длительность масла.
+ * 5. Статус `burning` не гаснет по своей длительности — он удаляется только вместе с маслом, когда масло полностью сгорает.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -76,7 +76,7 @@ describe('Цикл масла и поджога', () => {
     expect(oilAfterTick!.statusEffects).toHaveLength(0);
   });
 
-  it('спавн масла → oiled → огненный урон → burning → тик → затухание', () => {
+  it('спавн масла → oiled → огненный урон → burning → тик → полное сгорание', () => {
     const state = makeGameState({ map: makeTestMap() }) as GameState;
     const player = createTestPlayer();
     state.player = player;
@@ -140,35 +140,65 @@ describe('Цикл масла и поджога', () => {
     expect(burningAfterIgnite).toBeDefined();
     expect(burningAfterIgnite!.duration).toBe(3);
 
-    // 5. Завершаем ход игрока и прокручиваем раунды до environment-turn.
-    simulation.dispatch({ type: 'END_TURN', entityId: player.id });
-    advanceToPlayerTurn(simulation);
+    // 5-9. Пять раундов горения: масло уменьшается на 1 за раунд, горение не гаснет.
+    // После пятого раунда масло исчерпано — оно удаляется вместе с горением.
+    for (let round = 1; round <= 5; round++) {
+      simulation.dispatch({ type: 'END_TURN', entityId: player.id });
+      advanceToPlayerTurn(simulation);
 
-    const oilAfterFirstTick = getOilAt(state, 2, 2);
-    expect(oilAfterFirstTick).toBeDefined();
-    expect(oilAfterFirstTick!.duration).toBe(4);
-    const burningAfterFirstTick = oilAfterFirstTick!.statusEffects.find((s) => s.type === 'burning');
-    expect(burningAfterFirstTick).toBeDefined();
-    expect(burningAfterFirstTick!.duration).toBe(2);
+      if (round < 5) {
+        const oil = getOilAt(state, 2, 2);
+        expect(oil).toBeDefined();
+        expect(oil!.duration).toBe(5 - round);
+        const burning = oil!.statusEffects.find((s) => s.type === 'burning');
+        expect(burning).toBeDefined();
+        expect(burning!.duration).toBe(3);
+      } else {
+        expect(getOilAt(state, 2, 2)).toBeUndefined();
+      }
+    }
+  });
 
-    // 6. Ещё один раунд — длительность уменьшается до 1.
-    simulation.dispatch({ type: 'END_TURN', entityId: player.id });
-    advanceToPlayerTurn(simulation);
+  it('площадной огненный урон поджигает пустую клетку с маслом', () => {
+    const state = makeGameState({ map: makeTestMap() }) as GameState;
+    const player = createTestPlayer();
+    state.player = player;
+    state.entities.set(player.id, player);
 
-    const oilAfterSecondTick = getOilAt(state, 2, 2);
-    expect(oilAfterSecondTick).toBeDefined();
-    expect(oilAfterSecondTick!.duration).toBe(3);
-    const burningAfterSecondTick = oilAfterSecondTick!.statusEffects.find((s) => s.type === 'burning');
-    expect(burningAfterSecondTick).toBeDefined();
-    expect(burningAfterSecondTick!.duration).toBe(1);
+    const simulation = GameSimulation.loadSavedGame(state);
+    simulation.initializeTestTurnState('player', player.id);
+    simulation.setDebugEnabled(true);
+    simulation.setContentRulesEnabled(true);
 
-    // 7. Третий раунд — `burning` истекает и удаляется, масло остаётся.
-    simulation.dispatch({ type: 'END_TURN', entityId: player.id });
-    advanceToPlayerTurn(simulation);
+    const spawnResult = simulation.dispatch({
+      type: 'DEBUG_SPAWN_TILE_EFFECT',
+      entityId: player.id,
+      effectType: 'oil',
+      position: { x: 2, y: 2 },
+    });
+    expect(spawnResult.success).toBe(true);
 
-    const oilAfterBurnout = getOilAt(state, 2, 2);
-    expect(oilAfterBurnout).toBeDefined();
-    expect(oilAfterBurnout!.statusEffects.some((s) => s.type === 'burning')).toBe(false);
-    expect(oilAfterBurnout!.duration).toBe(2);
+    const damageBuilder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'END_TURN', entityId: player.id },
+    });
+    executeIntent(
+      state,
+      {
+        type: 'DAMAGE_TILE',
+        position: { x: 2, y: 2 },
+        sourceEntityId: null,
+        damage: 1,
+        tags: ['damage.magical.fire', 'target.aoe'],
+      },
+      damageBuilder,
+      damageBuilder.root,
+    );
+
+    const oilAfterIgnite = getOilAt(state, 2, 2);
+    expect(oilAfterIgnite).toBeDefined();
+    const burningAfterIgnite = oilAfterIgnite!.statusEffects.find((s) => s.type === 'burning');
+    expect(burningAfterIgnite).toBeDefined();
+    expect(burningAfterIgnite!.duration).toBe(3);
   });
 });

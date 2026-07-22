@@ -1,7 +1,7 @@
 {
   "id": "oil_flask",
   "spriteId": "oil_flask",
-  "cooldown": 1,
+  "cooldown": 0,
   "apCost": 1,
   "tags": ["delivery.ability", "target.aoe", "delivery.projectile", "effect.oil"]
 }

@@ -2,7 +2,7 @@ import {describe, expect, it, beforeEach, afterEach, vi} from 'vitest';
 import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
 import { fireballSkill } from '../../../../src/simulation/skills/executors/fireballSkill';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate } from '../../../../src/content/schemas';
+import type { AbilityTemplate, LoadedContent, TileEffectTemplate, TileEffectStatusTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
@@ -23,8 +23,70 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     cooldown: 3,
+    tags: ['delivery.ability', 'attack.ranged', 'target.aoe', 'delivery.projectile', 'delivery.spell', 'effect.burn'],
     ...overrides,
   } as AbilityTemplate;
+}
+
+function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: string }): TileEffectTemplate {
+  return {
+    layer: 'cover',
+    duration: 4,
+    renderOrder: 1,
+    ruleIds: ['fire_damage_ignites_oil', 'fire_tile_damage_ignites_oil'],
+    blockedByTileEffects: [],
+    mutuallyExclusiveWithTileEffects: [],
+    canHaveStatus: ['burning'],
+    durationDecreasesWhenHasStatus: [],
+    ...overrides,
+  };
+}
+
+function mockTileEffectStatusTemplate(
+  overrides: Partial<TileEffectStatusTemplate> & { id: string },
+): TileEffectStatusTemplate {
+  return {
+    duration: 3,
+    neverExpires: false,
+    ruleIds: [],
+    statusCategory: 'elemental',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+    renderOrder: 10,
+    ...overrides,
+  };
+}
+
+function createContentWithOilAndBurning(): LoadedContent {
+  return {
+    entities: new Map(),
+    players: new Map(),
+    items: new Map(),
+    abilities: new Map([
+      ['fireball', mockAbility('fireball', { cooldown: 3 })],
+    ]),
+    maps: new Map(),
+    doors: new Map(),
+    stairs: new Map(),
+    statuses: new Map(),
+    tileEffects: new Map([
+      ['oil', mockTileEffectTemplate({ id: 'oil', canHaveStatus: ['burning'] })],
+    ]),
+    tileEffectStatuses: new Map([
+      ['burning', mockTileEffectStatusTemplate({ id: 'burning' })],
+    ]),
+  };
+}
+
+function placeOil(state: ReturnType<typeof makeGameState>, x: number, y: number) {
+  state.tileEffects[y]![x]!.oil = {
+    type: 'oil',
+    duration: 5,
+    layer: 'cover',
+    statusEffects: [],
+    renderOrder: 1,
+  };
 }
 
 describe('fireballSkill', () => {
@@ -41,8 +103,8 @@ describe('fireballSkill', () => {
       doors: new Map(),
       stairs: new Map(),
       statuses: new Map(),
-    tileEffects: new Map(),
-    tileEffectStatuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
     });
   });
 
@@ -50,7 +112,7 @@ describe('fireballSkill', () => {
     resetRegistry();
   });
 
-  it('resolves no intents when cast on empty tile', () => {
+  it('resolves DAMAGE_TILE intents for all positions in aoe', () => {
     const state = makeGameState();
     state.visible[3]![3] = true;
     state.visible[6]![6] = true;
@@ -59,117 +121,79 @@ describe('fireballSkill', () => {
     state.entities.set(player.id, player);
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    expect(intents).toHaveLength(0);
+    const damageTileIntents = intents.filter(i => i.type === 'DAMAGE_TILE');
+
+    expect(damageTileIntents).toHaveLength(9);
+    expect(damageTileIntents.every(i => i.tags.includes('damage.magical.fire'))).toBe(true);
+    expect(damageTileIntents.every(i => i.tags.includes('target.aoe'))).toBe(true);
   });
 
-  it('deals center damage to enemy in center', () => {
+  it('center tile deals more damage than aoe tiles', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
-    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 0, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
+    const centerIntent = intents.find((i): i is Extract<typeof i, { type: 'DAMAGE_TILE' }> => i.type === 'DAMAGE_TILE' && i.position.x === 6 && i.position.y === 6);
+    const aoeIntent = intents.find((i): i is Extract<typeof i, { type: 'DAMAGE_TILE' }> => i.type === 'DAMAGE_TILE' && i.position.x === 7 && i.position.y === 6);
+
+    expect(centerIntent).toBeDefined();
+    expect(aoeIntent).toBeDefined();
+    expect(centerIntent!.damage).toBeGreaterThan(aoeIntent!.damage);
+  });
+
+  it('executing DAMAGE_TILE damages entities in affected tiles', () => {
+    const state = makeGameState();
+    state.visible[8]![8] = true;
+    state.visible[6]![6] = true;
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 0, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
     state.player = player;
     state.entities.set(player.id, player);
     state.entities.set(enemy.id, enemy);
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    const centerIntent = intents.find(i => i.type === 'DAMAGE_TILE' && i.position.x === 6 && i.position.y === 6);
+    expect(centerIntent).toBeDefined();
 
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.damage).toBeGreaterThan(0);
-    expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
+    });
+
+    executeIntent(state, centerIntent!, builder, builder.root);
+
+    expect(enemy.hp).toBeLessThan(100);
   });
 
-  it('deals aoe damage to enemy near center', () => {
+  it('executing DAMAGE_TILE emits TILE_DAMAGED event', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
-    state.visible[7]![6] = true;
-    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
-    const enemy = makeEnemy({ x: 7, y: 6, hp: 100, maxHp: 100 });
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 0, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
     state.entities.set(player.id, player);
-    state.entities.set(enemy.id, enemy);
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
-  });
+    const centerIntent = intents.find(i => i.type === 'DAMAGE_TILE' && i.position.x === 6 && i.position.y === 6);
+    expect(centerIntent).toBeDefined();
 
-  it('hits multiple enemies in aoe', () => {
-    const state = makeGameState();
-    state.visible[8]![8] = true;
-    state.visible[6]![6] = true;
-    state.visible[7]![6] = true;
-    state.visible[6]![7] = true;
-    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
-    const enemy1 = makeEnemy({ id: 'enemy_1', x: 6, y: 6, hp: 100, maxHp: 100 });
-    const enemy2 = makeEnemy({ id: 'enemy_2', x: 7, y: 6, hp: 100, maxHp: 100 });
-    state.player = player;
-    state.entities.set(player.id, player);
-    state.entities.set(enemy1.id, enemy1);
-    state.entities.set(enemy2.id, enemy2);
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
+    });
 
-    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-    expect(damageIntents).toHaveLength(2);
-  });
+    executeIntent(state, centerIntent!, builder, builder.root);
 
-  it('damages caster when caster is inside aoe radius', () => {
-    const state = makeGameState();
-    state.visible[5]![5] = true;
-    state.visible[6]![6] = true;
-    const player = makePlayer({ x: 5, y: 5, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
-    const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
-    state.player = player;
-    state.entities.set(player.id, player);
-    state.entities.set(enemy.id, enemy);
-
-    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-
-    expect(damageIntents).toHaveLength(2);
-    expect(damageIntents.some(i => i.entityId === player.id)).toBe(true);
-    expect(damageIntents.some(i => i.entityId === enemy.id)).toBe(true);
-  });
-
-  it('deals center damage to door', () => {
-    const state = makeGameState();
-    state.visible[8]![8] = true;
-    state.visible[6]![6] = true;
-    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
-    const door = makeDoor({ x: 6, y: 6, hp: 100, maxHp: 100, armor: 0 });
-    state.player = player;
-    state.entities.set(player.id, player);
-    state.entities.set(door.id, door);
-
-    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.entityId).toBe(door.id);
-    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
-  });
-
-  it('deals aoe damage to door near center', () => {
-    const state = makeGameState();
-    state.visible[8]![8] = true;
-    state.visible[6]![6] = true;
-    state.visible[7]![6] = true;
-    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
-    const door = makeDoor({ x: 7, y: 6, hp: 100, maxHp: 100, armor: 0 });
-    state.player = player;
-    state.entities.set(player.id, player);
-    state.entities.set(door.id, door);
-
-    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.entityId).toBe(door.id);
-    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
+    const tileDamagedEvent = builder.root.children.find(e => e.event.type === 'TILE_DAMAGED');
+    expect(tileDamagedEvent).toBeDefined();
+    expect(tileDamagedEvent!.event).toMatchObject({
+      type: 'TILE_DAMAGED',
+      position: { x: 6, y: 6 },
+    });
   });
 
   it('can target tile with enemy in line of sight', () => {
@@ -202,51 +226,88 @@ describe('fireballSkill', () => {
     expect(getSkillExecutor('fireball')).toBeDefined();
   });
 
-  it('resolve возвращает только DAMAGE-интенты, без прямого наложения горения', () => {
+  it('resolve returns DAMAGE_TILE intents, no direct status application', () => {
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
-    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 0, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
     state.player = player;
     state.entities.set(player.id, player);
     state.entities.set(enemy.id, enemy);
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    const damageTileIntents = intents.filter(i => i.type === 'DAMAGE_TILE');
     const statusIntents = intents.filter(i => i.type === 'APPLY_STATUS');
 
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.tags).toContain('damage.magical.fire');
+    expect(damageTileIntents).toHaveLength(9);
     expect(statusIntents).toHaveLength(0);
   });
 
-  it('горение накладывается через контентные правила при выполнении DAMAGE-интента', () => {
+  it('TILE_DAMAGED ignites oil on empty tile', () => {
+    resetRegistry();
+    initRegistry(createContentWithOilAndBurning());
     vi.mocked(rngChance).mockReturnValue(true);
 
     const state = makeGameState();
     state.visible[8]![8] = true;
     state.visible[6]![6] = true;
-    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 10, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
-    const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 0, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
     state.entities.set(player.id, player);
-    state.entities.set(enemy.id, enemy);
+    placeOil(state, 6, 6);
 
     const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
-    const damageIntent = intents.find(i => i.type === 'DAMAGE' && i.entityId === enemy.id);
-    expect(damageIntent).toBeDefined();
+    const centerIntent = intents.find(i => i.type === 'DAMAGE_TILE' && i.position.x === 6 && i.position.y === 6);
+    expect(centerIntent).toBeDefined();
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED',
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
     });
 
-    executeIntent(state, damageIntent!, builder, builder.root);
+    executeIntent(state, centerIntent!, builder, builder.root);
 
-    const burning = enemy.statusEffects.find(e => e.type === 'burning');
+    const oil = state.tileEffects[6]![6]!.oil;
+    expect(oil).toBeDefined();
+    const burning = oil!.statusEffects.find(s => s.type === 'burning');
     expect(burning).toBeDefined();
     expect(burning!.duration).toBe(3);
+
+    resetRegistry();
+  });
+
+  it('TILE_DAMAGED ignites oil when entity stands on it', () => {
+    resetRegistry();
+    initRegistry(createContentWithOilAndBurning());
+    vi.mocked(rngChance).mockReturnValue(true);
+
+    const state = makeGameState();
+    state.visible[8]![8] = true;
+    state.visible[6]![6] = true;
+    const player = makePlayer({ x: 8, y: 8, baseStats: { str: 0, dex: 0, int: 0, vit: 0 }, abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const enemy = makeEnemy({ x: 6, y: 6, hp: 100, maxHp: 100 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(enemy.id, enemy);
+    placeOil(state, 6, 6);
+
+    const intents = fireballSkill.resolve(state, player, [{ x: 6, y: 6 }]);
+    const centerIntent = intents.find(i => i.type === 'DAMAGE_TILE' && i.position.x === 6 && i.position.y === 6);
+    expect(centerIntent).toBeDefined();
+
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED',
+      action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
+    });
+
+    executeIntent(state, centerIntent!, builder, builder.root);
+
+    const oil = state.tileEffects[6]![6]!.oil;
+    expect(oil).toBeDefined();
+    const burning = oil!.statusEffects.find(s => s.type === 'burning');
+    expect(burning).toBeDefined();
+
+    resetRegistry();
   });
 });

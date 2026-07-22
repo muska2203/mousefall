@@ -4,6 +4,7 @@ import {executeJumpIntent} from "@simulation/systems/intents/jump-intent-executo
 
 import {executePushIntent} from "@simulation/systems/intents/push-intent-executer.ts";
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
+import {executeDamageTileIntent} from "@simulation/systems/intents/damage-tile-intent-executor.ts";
 import {Intent, IntentExecutor} from "@simulation/systems/intents/types.ts";
 import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {runWorldReactions} from "@simulation/systems/world-reactions/reactions.ts";
@@ -53,6 +54,7 @@ const intentExecutors = {
   JUMP: executeJumpIntent,
   PUSH: executePushIntent,
   DAMAGE: executeDamageIntent,
+  DAMAGE_TILE: executeDamageTileIntent,
   DIE: executeDieIntent,
   APPLY_STATUS: executeApplyStatusIntent,
   SET_MAP: executeSetMapIntent,

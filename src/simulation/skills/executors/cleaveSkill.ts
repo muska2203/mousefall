@@ -2,7 +2,7 @@ import {Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
-import {isDamageable} from '@simulation/state';
+
 import {getEffectiveWeaponDamage} from '@simulation/systems/stats/effective-stats';
 import {tryGetAbility} from '@content/registry';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
@@ -100,22 +100,22 @@ export const cleaveSkill: SkillExecutor = {
     const damage = Math.round(baseDamage * weight);
     const tags = mergeDamageIntentTags([skillTag], getAbilityTags(this.id), getWeaponTags(caster));
 
-    for (const pos of affectedPositions) {
-      for (const entity of state.entities.values()) {
-        if (entity.x !== pos.x || entity.y !== pos.y) continue;
-
-        // Предметы на полу и лестницы не получают урон.
-        if (entity.type === 'floor_item_container' || entity.type === 'stairs') continue;
-        if (!isDamageable(entity)) continue;
-
-        intents.push({
-          type: 'DAMAGE',
-          entityId: entity.id,
-          sourceEntityId: caster.id,
-          damage,
-          tags,
-        });
+    for (const position of affectedPositions) {
+      // Клетка должна находиться внутри границ карты.
+      if (
+        position.x < 0 || position.x >= state.map.width ||
+        position.y < 0 || position.y >= state.map.height
+      ) {
+        continue;
       }
+
+      intents.push({
+        type: 'DAMAGE_TILE',
+        position,
+        sourceEntityId: caster.id,
+        damage,
+        tags,
+      });
     }
 
     return intents;

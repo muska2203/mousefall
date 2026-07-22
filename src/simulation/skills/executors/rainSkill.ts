@@ -2,7 +2,10 @@ import {Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
-import {getVisiblePositionsWithinRange} from '@simulation/skills/targeting';
+import {getVisiblePositionsWithinRange, getPositionsInRadius} from '@simulation/skills/targeting';
+
+/** Радиус дождя. 0 — только клетка цели. */
+const RAIN_RADIUS = 1;
 
 export const rainSkill: SkillExecutor = {
   id: 'rain',
@@ -20,24 +23,22 @@ export const rainSkill: SkillExecutor = {
     return this.resolve(state, caster, [hoveredTarget]);
   },
 
-  getAffectedPositions(_state: GameState, _caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
+  getAffectedPositions(state: GameState, _caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
     if (!hoveredTarget) return [];
-    return [hoveredTarget];
+    return getPositionsInRadius(state, hoveredTarget, RAIN_RADIUS)
+      .filter(pos => state.map.tiles[pos.y]?.[pos.x] === 'floor');
   },
 
   resolve(state: GameState, _caster: Entity, targets: Position[]): Intent[] {
     const target = targets[0];
     if (!target) return [];
 
-    const { x, y } = target;
-    if (state.map.tiles[y]?.[x] !== 'floor') return [];
-
-    return [
-      {
+    return getPositionsInRadius(state, target, RAIN_RADIUS)
+      .filter(pos => state.map.tiles[pos.y]?.[pos.x] === 'floor')
+      .map(pos => ({
         type: 'SPAWN_TILE_EFFECT',
         effectType: 'water',
-        position: { x, y },
-      },
-    ];
+        position: pos,
+      }));
   },
 };

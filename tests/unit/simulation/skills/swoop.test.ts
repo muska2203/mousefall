@@ -17,6 +17,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     cooldown: 2,
+    tags: ['delivery.ability', 'delivery.movement', 'attack.melee', 'target.aoe', 'effect.knockback'],
     ...overrides,
   } as AbilityTemplate;
 }
@@ -41,10 +42,10 @@ describe('swoopSkill', () => {
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),
-    statuses: new Map(),
-    tileEffects: new Map(),
-    tileEffectStatuses: new Map(),
-});
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
   });
 
   afterEach(() => {
@@ -100,7 +101,7 @@ describe('swoopSkill', () => {
     expect(jumpIntents[0]).toMatchObject({ type: 'JUMP', entityId: player.id, dx: 2, dy: 0 });
   });
 
-  it('deals damage and pushes enemy in aoe', () => {
+  it('deals DAMAGE_TILE damage and pushes enemy in aoe', () => {
     const state = makeGameState();
     const player = makePlayer({
       x: 5,
@@ -114,18 +115,17 @@ describe('swoopSkill', () => {
     state.entities.set(enemy.id, enemy);
 
     const intents = swoopSkill.resolve(state, player, [{ x: 7, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE');
+    const damageTileIntents = intents.filter(i => i.type === 'DAMAGE_TILE');
     const pushIntents = intents.filter(i => i.type === 'PUSH');
 
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    expect(damageIntents[0]!.tags).toContain('damage.physical.blunt');
-    expect(damageIntents[0]!.damage).toBeGreaterThan(0);
+    expect(damageTileIntents).toHaveLength(9);
+    expect(damageTileIntents.every(i => i.tags.includes('damage.physical.blunt'))).toBe(true);
+    expect(damageTileIntents.every(i => i.tags.includes('target.aoe'))).toBe(true);
     expect(pushIntents).toHaveLength(1);
     expect(pushIntents[0]).toMatchObject({ type: 'PUSH', entityId: enemy.id, dx: 0, dy: 1 });
   });
 
-  it('does not damage or push caster', () => {
+  it('does not push caster', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'swoop', source: 'innate', level: 1, currentCooldown: 0 }] });
     state.player = player;
@@ -133,14 +133,12 @@ describe('swoopSkill', () => {
 
     // Прыжок на соседнюю клетку — кастер попадал бы в радиус 1 от цели.
     const intents = swoopSkill.resolve(state, player, [{ x: 6, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE').filter(i => i.entityId === player.id);
     const pushIntents = intents.filter(i => i.type === 'PUSH').filter(i => i.entityId === player.id);
 
-    expect(damageIntents).toHaveLength(0);
     expect(pushIntents).toHaveLength(0);
   });
 
-  it('damages door in aoe and pushes it', () => {
+  it('damages door in aoe via DAMAGE_TILE and pushes it', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'swoop', source: 'innate', level: 1, currentCooldown: 0 }] });
     const door = makeDoor({ id: 'door_1', x: 7, y: 6, hp: 50, maxHp: 50, armor: 0 });
@@ -149,10 +147,15 @@ describe('swoopSkill', () => {
     state.entities.set(door.id, door);
 
     const intents = swoopSkill.resolve(state, player, [{ x: 7, y: 5 }]);
-    const damageIntents = intents.filter(i => i.type === 'DAMAGE').filter(i => i.entityId === door.id);
+    const doorTileIntent = intents.find(
+      i => i.type === 'DAMAGE_TILE' && i.position.x === 7 && i.position.y === 6
+    );
+    expect(doorTileIntent).toBeDefined();
 
-    expect(damageIntents).toHaveLength(1);
-    expect(damageIntents[0]!.tags).toContain('damage.physical.blunt');
+    const builder = makeBuilder(player.id);
+    executeIntent(state, doorTileIntent!, builder, builder.root);
+
+    expect(door.hp).toBeLessThan(50);
   });
 
   it('returns no intents when target is a wall', () => {

@@ -3,7 +3,7 @@
   "layer": "cover",
   "duration": 5,
   "renderOrder": 2,
-  "ruleIds": ["oil_applies_oiled", "fire_damage_ignites_oil"],
+  "ruleIds": ["oil_applies_oiled", "fire_damage_ignites_oil", "fire_tile_damage_ignites_oil"],
   "blockedByTileEffects": [],
   "mutuallyExclusiveWithTileEffects": ["water"],
   "canHaveStatus": ["burning"],

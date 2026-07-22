@@ -171,7 +171,13 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
           });
           const aliveStatuses: TileEffectStatusInstance[] = [];
           for (const status of effect.statusEffects) {
-            status.duration -= 1;
+            const statusTemplate = getTileEffectStatusTemplate(status.type);
+            const isInfinite = statusTemplate?.neverExpires ?? false;
+
+            if (!isInfinite) {
+              status.duration -= 1;
+            }
+
             lastNode = builder.addChild(parent, {
               type: 'TILE_EFFECT_STATUS_TICKED',
               effectType,
@@ -179,7 +185,7 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
               position: { x, y },
             });
 
-            if (status.duration > 0) {
+            if (isInfinite || status.duration > 0) {
               aliveStatuses.push(status);
             } else {
               lastNode = builder.addChild(parent, {

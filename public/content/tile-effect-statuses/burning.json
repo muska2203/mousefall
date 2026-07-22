@@ -1,6 +1,7 @@
 {
   "id": "burning",
   "duration": 3,
+  "neverExpires": true,
   "ruleIds": ["burning_spreads_to_flammable", "burning_deals_damage_on_entry", "burning_applies_burning"],
   "statusCategory": "elemental",
   "categoryPriority": 1,

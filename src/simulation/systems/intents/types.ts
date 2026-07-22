@@ -18,6 +18,7 @@ export type {
   JumpIntent,
   PushIntent,
   DamageIntent,
+  DamageTileIntent,
   DieIntent,
   ApplyStatusIntent,
   SetMapIntent,

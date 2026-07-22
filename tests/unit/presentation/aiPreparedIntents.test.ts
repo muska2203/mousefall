@@ -83,6 +83,6 @@ describe('GameSession AI prepared intents', () => {
     expect(aiIntent.abilityId).toBe('test-fireball');
     expect(aiIntent.affectedPositions.length).toBeGreaterThan(0);
     expect(aiIntent.intents.length).toBeGreaterThan(0);
-    expect(aiIntent.intents.some((i) => i.type === 'DAMAGE')).toBe(true);
+    expect(aiIntent.intents.some((i) => i.type === 'DAMAGE_TILE')).toBe(true);
   });
 });

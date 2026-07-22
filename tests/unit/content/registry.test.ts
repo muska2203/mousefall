@@ -15,6 +15,7 @@ function mockTileEffectStatusTemplate(
 ): TileEffectStatusTemplate {
   return {
     duration: 3,
+    neverExpires: false,
     ruleIds: [],
     statusCategory: 'generic',
     categoryPriority: 0,

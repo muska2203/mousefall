@@ -56,6 +56,7 @@ function mockTileEffectStatusTemplate(id: string, ruleIds: string[] = []): TileE
   return {
     id,
     duration: 3,
+    neverExpires: false,
     ruleIds,
     statusCategory: 'generic',
     categoryPriority: 0,

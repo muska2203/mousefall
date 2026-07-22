@@ -48,6 +48,7 @@ function mockTileEffectStatusTemplate(
 ): TileEffectStatusTemplate {
   return {
     duration: 3,
+    neverExpires: false,
     ruleIds: [],
     statusCategory: 'generic',
     categoryPriority: 0,
@@ -757,7 +758,10 @@ describe('tile-effect-intent-executor', () => {
     });
 
     it('тикает масло с горением и уменьшает длительность эффекта', () => {
-      initRegistry(createContentWithOilAndStatuses({ durationDecreasesWhenHasStatus: ['burning'] }));
+      initRegistry(createContentWithOilAndStatuses(
+        { durationDecreasesWhenHasStatus: ['burning'] },
+        { neverExpires: true },
+      ));
       const state = makeGameState();
       state.tileEffects[3]![3]!.oil = {
         type: 'oil',
@@ -777,11 +781,47 @@ describe('tile-effect-intent-executor', () => {
 
       const effect = getTileEffectAt(state, 3, 3, 'oil');
       expect(effect.duration).toBe(4);
-      expect(effect.statusEffects[0]!.duration).toBe(2);
+      // Бесконечный статус горения не тратит свою длительность.
+      expect(effect.statusEffects[0]!.duration).toBe(3);
+      expect(effect.statusEffects).toHaveLength(1);
       expect(builder.root.children.map((child) => child.event.type)).toEqual([
         'TILE_EFFECT_TICKED',
         'TILE_EFFECT_STATUS_TICKED',
       ]);
+
+      resetRegistry();
+    });
+
+    it('не удаляет бесконечный статус даже при достижении нуля длительности', () => {
+      initRegistry(createContentWithOilAndStatuses(
+        { durationDecreasesWhenHasStatus: ['burning'] },
+        { neverExpires: true },
+      ));
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 1, renderOrder: 10 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder('environment');
+      executeTickTileEffectsIntent(
+        state,
+        { type: 'TICK_TILE_EFFECTS' },
+        builder,
+        builder.root,
+      );
+
+      const effect = getTileEffectAt(state, 3, 3, 'oil');
+      expect(effect.statusEffects).toHaveLength(1);
+      expect(effect.statusEffects[0]).toMatchObject({ type: 'burning', duration: 1 });
+      expect(builder.root.children.map((child) => child.event.type)).toEqual([
+        'TILE_EFFECT_TICKED',
+        'TILE_EFFECT_STATUS_TICKED',
+      ]);
+      expect(builder.root.children.some((child) => child.event.type === 'TILE_EFFECT_STATUS_REMOVED')).toBe(false);
 
       resetRegistry();
     });

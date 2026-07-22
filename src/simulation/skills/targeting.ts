@@ -17,6 +17,25 @@ export function getEntitiesInRadius(state: GameState, center: Position, radius: 
 }
 
 /**
+ * Возвращает позиции клеток в радиусе `radius` от центра (включая центр),
+ * ограниченные границами карты. Радиус измеряется по Чебышёву.
+ */
+export function getPositionsInRadius(state: GameState, center: Position, radius: number): Position[] {
+  const positions: Position[] = [];
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const x = center.x + dx;
+      const y = center.y + dy;
+      if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) {
+        continue;
+      }
+      positions.push({ x, y });
+    }
+  }
+  return positions;
+}
+
+/**
  * Возвращает позиции клеток, видимых кастеру в заданном радиусе с учётом LOS.
  * Использует тот же алгоритм FOV, что и основная игра, поэтому двери и стены
  * блокируют выбор целей за ними.

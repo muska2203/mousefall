@@ -410,6 +410,7 @@ export type PresentationIntent =
   | { type: 'JUMP'; entityId: string; dx: number; dy: number; from: Position; to: Position }
   | { type: 'PUSH'; entityId: string; dx: number; dy: number; from: Position; to: Position }
   | { type: 'DAMAGE'; entityId: string; damage: number; tags: GameplayTag[]; position: Position }
+  | { type: 'DAMAGE_TILE'; position: Position; damage: number; tags: GameplayTag[] }
   | { type: 'HEAL'; entityId: string; amount: number; position: Position }
   | { type: 'DIE'; entityId: string; position: Position }
   | { type: 'APPLY_STATUS'; entityId: string; statusType: string; duration: number; value: number; position: Position }
@@ -447,6 +448,9 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
       const entity = state.entities.get(intent.entityId);
       if (!entity) return null;
       return { type: 'DAMAGE', entityId: intent.entityId, damage: intent.damage, tags: intent.tags, position: { x: entity.x, y: entity.y } };
+    }
+    case 'DAMAGE_TILE': {
+      return { type: 'DAMAGE_TILE', position: intent.position, damage: intent.damage, tags: intent.tags };
     }
     case 'HEAL': {
       const entity = state.entities.get(intent.entityId);
