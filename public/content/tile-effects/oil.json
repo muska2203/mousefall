@@ -6,5 +6,6 @@
   "ruleIds": ["oil_applies_oiled", "fire_damage_ignites_oil"],
   "blockedByTileEffects": [],
   "mutuallyExclusiveWithTileEffects": ["water"],
-  "canHaveStatus": ["burning"]
+  "canHaveStatus": ["burning"],
+  "durationDecreasesWhenHasStatus": ["burning"]
 }

@@ -703,6 +703,8 @@ export type TileEffectStatusAppliedEvent = {
   statusType: string;
   position: Position;
   duration: number;
+  /** Сущность-источник наложения статуса; null для мировых правил. */
+  sourceEntityId: EntityId | null;
 };
 
 export type TileEffectStatusRemovedEvent = {
@@ -719,7 +721,6 @@ export type TileEffectStatusTickedEvent = {
   position: Position;
 };
 
-// TODO(tile-effects-stage-3): порождать TILE_EFFECT_TICKED при тике эффекта в environment-turn.
 export type TileEffectTickedEvent = {
   type: 'TILE_EFFECT_TICKED';
   effectType: string;

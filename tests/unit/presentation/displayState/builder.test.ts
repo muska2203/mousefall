@@ -382,6 +382,7 @@ describe('createPatch', () => {
       statusType: 'burning',
       position: { x: 3, y: 3 },
       duration: 3,
+      sourceEntityId: null,
     };
     const patch = createPatch(event, state);
     expect(patch).toEqual({

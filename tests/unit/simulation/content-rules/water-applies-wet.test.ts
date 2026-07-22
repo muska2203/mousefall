@@ -15,6 +15,7 @@ function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: s
     blockedByTileEffects: [],
     mutuallyExclusiveWithTileEffects: [],
     canHaveStatus: [],
+    durationDecreasesWhenHasStatus: [],
     ...overrides,
   };
 }

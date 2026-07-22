@@ -334,7 +334,7 @@ describe('tileEffect builders', () => {
   });
 
   it('creates orange PARTICLE_BURST for burning TILE_EFFECT_STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 }, duration: 3 };
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null };
     const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -343,7 +343,7 @@ describe('tileEffect builders', () => {
   });
 
   it('creates gray PARTICLE_BURST for non-burning TILE_EFFECT_STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'frozen', position: { x: 2, y: 3 }, duration: 3 };
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'frozen', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null };
     const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);

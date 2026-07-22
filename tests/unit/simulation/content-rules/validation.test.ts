@@ -41,6 +41,7 @@ function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectT
     blockedByTileEffects: [],
     mutuallyExclusiveWithTileEffects: [],
     canHaveStatus: [],
+    durationDecreasesWhenHasStatus: [],
   };
 }
 
@@ -419,5 +420,36 @@ describe('validateContentRuleSemantics', () => {
       field: 'effect.damageFormulaId',
       problem: expect.stringContaining('unknown_formula'),
     });
+  });
+
+  it('возвращает ошибку, когда durationDecreasesWhenHasStatus ссылается на отсутствующий статус тайлового эффекта', () => {
+    const base = createContent();
+    const tileEffects = new Map(base.tileEffects);
+    tileEffects.set('oil', {
+      ...mockTileEffectTemplate('oil'),
+      durationDecreasesWhenHasStatus: ['unknown_status'],
+    });
+    const content = createContent({ tileEffects });
+
+    const errors = validateContentRuleSemantics(content);
+    const tileEffectError = errors.find((e) => e.path.startsWith('tileEffect.oil.durationDecreasesWhenHasStatus'));
+    expect(tileEffectError).toBeDefined();
+    expect(tileEffectError).toMatchObject({
+      path: 'tileEffect.oil.durationDecreasesWhenHasStatus[0]',
+      field: 'durationDecreasesWhenHasStatus',
+      problem: expect.stringContaining('unknown_status'),
+    });
+  });
+
+  it('проходит, когда durationDecreasesWhenHasStatus ссылается на существующий статус тайлового эффекта', () => {
+    const base = createContent();
+    const tileEffects = new Map(base.tileEffects);
+    tileEffects.set('oil', {
+      ...mockTileEffectTemplate('oil'),
+      durationDecreasesWhenHasStatus: ['burning'],
+    });
+    const content = createContent({ tileEffects });
+
+    expect(validateContentRuleSemantics(content)).toEqual([]);
   });
 });

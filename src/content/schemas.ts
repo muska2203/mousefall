@@ -218,6 +218,9 @@ export const TileEffectTemplateSchema = z.object({
   canHaveStatus: z.array(z.string().min(1))
     .default([])
     .describe('Статусы тайловых эффектов, которые могут быть наложены на этот эффект'),
+  durationDecreasesWhenHasStatus: z.array(z.string().min(1))
+    .default([])
+    .describe('Статусы тайловых эффектов, при наличии которых уменьшается длительность эффекта. Если пусто — длительность уменьшается каждый тик.'),
 }).describe('Шаблон тайлового эффекта (материала)');
 
 export type TileEffectTemplate = z.output<typeof TileEffectTemplateSchema>;

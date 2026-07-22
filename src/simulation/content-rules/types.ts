@@ -87,7 +87,8 @@ export type TargetSelector =
   | { type: 'collisionTarget' }
   | { type: 'eventTileEffect'; effectType: string }
   | { type: 'allInRadius'; radius: number; center: 'eventPosition' | 'self'; faction?: 'enemy' | 'ally'; excludeSelf?: boolean }
-  | { type: 'nearestEnemy'; radius: number; center: 'eventPosition' | 'self' };
+  | { type: 'nearestEnemy'; radius: number; center: 'eventPosition' | 'self' }
+  | { type: 'tilesInRadius'; radius: number; center: 'eventPosition' | 'self'; effectType: string };
 
 /**
  * Эффект правила.

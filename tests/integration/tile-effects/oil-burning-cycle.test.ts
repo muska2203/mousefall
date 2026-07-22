@@ -44,6 +44,38 @@ describe('Цикл масла и поджога', () => {
     // Реестр контента сбрасывается внутри loadTestContent через resetRegistry().
   });
 
+  it('масло не тикает и не исчезает, пока не горит', () => {
+    const state = makeGameState({ map: makeTestMap() }) as GameState;
+    const player = createTestPlayer();
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const simulation = GameSimulation.loadSavedGame(state);
+    simulation.initializeTestTurnState('player', player.id);
+    simulation.setDebugEnabled(true);
+    simulation.setContentRulesEnabled(true);
+
+    const spawnResult = simulation.dispatch({
+      type: 'DEBUG_SPAWN_TILE_EFFECT',
+      entityId: player.id,
+      effectType: 'oil',
+      position: { x: 2, y: 2 },
+    });
+    expect(spawnResult.success).toBe(true);
+
+    const oilBefore = getOilAt(state, 2, 2);
+    expect(oilBefore).toBeDefined();
+    expect(oilBefore!.duration).toBe(5);
+
+    simulation.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(simulation);
+
+    const oilAfterTick = getOilAt(state, 2, 2);
+    expect(oilAfterTick).toBeDefined();
+    expect(oilAfterTick!.duration).toBe(5);
+    expect(oilAfterTick!.statusEffects).toHaveLength(0);
+  });
+
   it('спавн масла → oiled → огненный урон → burning → тик → затухание', () => {
     const state = makeGameState({ map: makeTestMap() }) as GameState;
     const player = createTestPlayer();
@@ -114,6 +146,7 @@ describe('Цикл масла и поджога', () => {
 
     const oilAfterFirstTick = getOilAt(state, 2, 2);
     expect(oilAfterFirstTick).toBeDefined();
+    expect(oilAfterFirstTick!.duration).toBe(4);
     const burningAfterFirstTick = oilAfterFirstTick!.statusEffects.find((s) => s.type === 'burning');
     expect(burningAfterFirstTick).toBeDefined();
     expect(burningAfterFirstTick!.duration).toBe(2);
@@ -123,6 +156,8 @@ describe('Цикл масла и поджога', () => {
     advanceToPlayerTurn(simulation);
 
     const oilAfterSecondTick = getOilAt(state, 2, 2);
+    expect(oilAfterSecondTick).toBeDefined();
+    expect(oilAfterSecondTick!.duration).toBe(3);
     const burningAfterSecondTick = oilAfterSecondTick!.statusEffects.find((s) => s.type === 'burning');
     expect(burningAfterSecondTick).toBeDefined();
     expect(burningAfterSecondTick!.duration).toBe(1);
@@ -134,6 +169,6 @@ describe('Цикл масла и поджога', () => {
     const oilAfterBurnout = getOilAt(state, 2, 2);
     expect(oilAfterBurnout).toBeDefined();
     expect(oilAfterBurnout!.statusEffects.some((s) => s.type === 'burning')).toBe(false);
-    expect(oilAfterBurnout!.duration).toBeGreaterThan(0);
+    expect(oilAfterBurnout!.duration).toBe(2);
   });
 });

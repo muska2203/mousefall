@@ -25,7 +25,8 @@ import {resolveStatusConflicts} from '@simulation/systems/statuses/resolve-statu
 /**
  * Создаёт экземпляр тайлового эффекта с заданными параметрами.
  * Если шаблон загружен, длительность, слой и порядок отрисовки берутся из него.
- * На этапе 1 совместимость (blockedBy / mutuallyExclusive) не проверяется.
+ * Совместимость тайловых эффектов (blockedBy / mutuallyExclusive) проверяется
+ * в executeSpawnTileEffectIntent перед вызовом этой функции.
  */
 function createTileEffectInstance(effectType: string, duration: number): TileEffectInstance {
   const template = tryGetTileEffect(effectType);
@@ -72,9 +73,29 @@ export const executeSpawnTileEffectIntent: IntentExecutor<SpawnTileEffectIntent>
   }
 
   const cell = ensureTileEffectsCell(state, x, y);
-  const existingEffect = cell[intent.effectType];
   const template = tryGetTileEffect(intent.effectType);
   const duration = intent.duration ?? template?.duration ?? 4;
+
+  // Блокировка: если на клетке есть эффект из blockedByTileEffects, спавн не происходит.
+  for (const blocker of template?.blockedByTileEffects ?? []) {
+    if (cell[blocker] !== undefined) {
+      return null;
+    }
+  }
+
+  // Удаляем конфликтующие эффекты перед созданием нового, чтобы породить TILE_EFFECT_REMOVED.
+  for (const existingType of Object.keys(cell)) {
+    if (template?.mutuallyExclusiveWithTileEffects.includes(existingType)) {
+      executeRemoveTileEffectIntent(
+        state,
+        { type: 'REMOVE_TILE_EFFECT', effectType: existingType, position: { x, y } },
+        builder,
+        parent,
+      );
+    }
+  }
+
+  const existingEffect = cell[intent.effectType];
   if (!existingEffect) {
     cell[intent.effectType] = createTileEffectInstance(intent.effectType, duration);
   } else {
@@ -130,11 +151,24 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
         const effect = cell[effectType];
         if (!effect) continue;
 
+        // Некоторые материалы (например, масло) не исчезают сами по себе.
+        // Их длительность уменьшается только при наличии указанных статусов.
+        const template = tryGetTileEffect(effectType);
+        const decayStatuses = template?.durationDecreasesWhenHasStatus ?? [];
+        const shouldDecay = decayStatuses.length === 0 || effect.statusEffects.some((s) => decayStatuses.includes(s.type));
+        if (!shouldDecay) {
+          continue;
+        }
+
         effect.duration -= 1;
-        // TODO(tile-effects-stage-3): здесь будет порождаться TILE_EFFECT_TICKED.
 
         if (effect.duration > 0) {
-          // Тикаем только статусы живого эффекта.
+          // Живой тайловый эффект тикает: сначала сам эффект, затем его статусы.
+          lastNode = builder.addChild(parent, {
+            type: 'TILE_EFFECT_TICKED',
+            effectType,
+            position: { x, y },
+          });
           const aliveStatuses: TileEffectStatusInstance[] = [];
           for (const status of effect.statusEffects) {
             status.duration -= 1;
@@ -271,6 +305,7 @@ export const executeApplyTileEffectStatusIntent: IntentExecutor<ApplyTileEffectS
     statusType: intent.statusType,
     position: { x, y },
     duration,
+    sourceEntityId: intent.sourceEntityId ?? null,
   });
 };
 

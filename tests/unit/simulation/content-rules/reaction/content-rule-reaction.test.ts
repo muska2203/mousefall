@@ -14,7 +14,7 @@ import {setWorldContentRulesOverride} from '../../../../../src/simulation/conten
 import {setContentRulesOverride} from '../../../../../src/simulation/content-rules/registry';
 import { ExecutionBuilder } from '../../../../../src/simulation/core-types';
 import type { GameEvent, Intent, TileEffectInstance, TileEffectStatusInstance } from '../../../../../src/simulation/core-types';
-import type { ActiveRule, WorldContentRule } from '../../../../../src/simulation/content-rules/types';
+import type { ActiveRule, WorldContentRule, RuleCondition } from '../../../../../src/simulation/content-rules/types';
 import { counterattackTriggerRule, counterattackDamageRule } from '../../../../../src/simulation/content-rules/counterattack-rules';
 import { initRegistry, resetRegistry } from '../../../../../src/content/registry';
 import type { LoadedContent, TileEffectTemplate, TileEffectStatusTemplate } from '../../../../../src/content/schemas';
@@ -48,6 +48,7 @@ function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectT
     blockedByTileEffects: [],
     mutuallyExclusiveWithTileEffects: [],
     canHaveStatus: ['burning'],
+    durationDecreasesWhenHasStatus: [],
   };
 }
 
@@ -1772,6 +1773,180 @@ describe('runContentRuleReactions', () => {
 
       const igniteIntents = intents.filter((intent) => intent.type === 'APPLY_TILE_EFFECT_STATUS');
       expect(igniteIntents).toHaveLength(0);
+    });
+  });
+
+  describe('селектор tilesInRadius', () => {
+    function makeSpreadRule(targetConditions?: RuleCondition[], duration = 1): WorldContentRule {
+      return {
+        id: 'oil_fire_spread',
+        trigger: { event: 'TILE_EFFECT_STATUS_TICKED' },
+        targetConditions,
+        effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration },
+        target: { type: 'tilesInRadius', radius: 1, center: 'eventPosition', effectType: 'oil' },
+        priority: 0,
+        ownerContext: { type: 'world' },
+        worldLayer: 'tileEffect',
+      };
+    }
+
+    beforeEach(() => {
+      initTileEffectRegistry({
+        tileEffects: new Map([
+          ['oil', mockTileEffectTemplate('oil', ['oil_fire_spread'])],
+        ]),
+        tileEffectStatuses: new Map([
+          ['burning', mockTileEffectStatusTemplate('burning', [])],
+        ]),
+      });
+    });
+
+    it('возвращает позиции в радиусе 1 (8 клеток вокруг)', () => {
+      setContentRulesOverride([makeSpreadRule()]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const state = makeStateWithPlayer(player);
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const x = 5 + dx;
+          const y = 5 + dy;
+          state.tileEffects[y]![x] = { oil: makeTileEffectInstance('oil', []) };
+        }
+      }
+
+      const event: GameEvent = {
+        type: 'TILE_EFFECT_STATUS_TICKED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 5, y: 5 },
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(8);
+      const positions = intents
+        .filter((intent): intent is Extract<Intent, { type: 'APPLY_TILE_EFFECT_STATUS' }> => intent.type === 'APPLY_TILE_EFFECT_STATUS')
+        .map((intent) => intent.position);
+
+      expect(positions).not.toContainEqual({ x: 5, y: 5 });
+      expect(positions).toEqual([
+        { x: 4, y: 4 },
+        { x: 4, y: 5 },
+        { x: 4, y: 6 },
+        { x: 5, y: 4 },
+        { x: 5, y: 6 },
+        { x: 6, y: 4 },
+        { x: 6, y: 5 },
+        { x: 6, y: 6 },
+      ]);
+    });
+
+    it('targetConditions с inTileEffect: oil фильтруют только клетки с маслом', () => {
+      setContentRulesOverride([
+        makeSpreadRule([{ type: 'inTileEffect', effectType: 'oil' }]),
+      ]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const state = makeStateWithPlayer(player);
+      state.tileEffects[5]![5] = { oil: makeTileEffectInstance('oil', []) };
+      state.tileEffects[4]![4] = { oil: makeTileEffectInstance('oil', []) };
+      state.tileEffects[6]![6] = { oil: makeTileEffectInstance('oil', []) };
+
+      const event: GameEvent = {
+        type: 'TILE_EFFECT_STATUS_TICKED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 5, y: 5 },
+      };
+
+      const intents = runReactions(state, event);
+      const positions = intents
+        .filter((intent): intent is Extract<Intent, { type: 'APPLY_TILE_EFFECT_STATUS' }> => intent.type === 'APPLY_TILE_EFFECT_STATUS')
+        .map((intent) => intent.position);
+
+      expect(positions).toEqual([
+        { x: 4, y: 4 },
+        { x: 6, y: 6 },
+      ]);
+    });
+
+    it('targetConditions с not tileEffectHasStatus исключают уже горящие клетки', () => {
+      setContentRulesOverride([
+        makeSpreadRule([
+          {
+            type: 'not',
+            condition: { type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' },
+          },
+        ]),
+      ]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const state = makeStateWithPlayer(player);
+
+      const neighbors = [
+        { x: 4, y: 4 },
+        { x: 4, y: 5 },
+        { x: 4, y: 6 },
+        { x: 5, y: 4 },
+        { x: 5, y: 6 },
+        { x: 6, y: 4 },
+        { x: 6, y: 5 },
+        { x: 6, y: 6 },
+      ];
+
+      state.tileEffects[5]![5] = { oil: makeTileEffectInstance('oil', ['burning']) };
+      for (const pos of neighbors) {
+        // Нечётные клетки получают горение, чётные — нет.
+        const isBurning = (pos.x + pos.y) % 2 === 1;
+        state.tileEffects[pos.y]![pos.x] = {
+          oil: makeTileEffectInstance('oil', isBurning ? ['burning'] : []),
+        };
+      }
+
+      const event: GameEvent = {
+        type: 'TILE_EFFECT_STATUS_TICKED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 5, y: 5 },
+      };
+
+      const intents = runReactions(state, event);
+      const positions = intents
+        .filter((intent): intent is Extract<Intent, { type: 'APPLY_TILE_EFFECT_STATUS' }> => intent.type === 'APPLY_TILE_EFFECT_STATUS')
+        .map((intent) => intent.position);
+
+      expect(positions).toHaveLength(4);
+      expect(positions).toEqual(
+        neighbors.filter((pos) => (pos.x + pos.y) % 2 === 0),
+      );
+    });
+
+    it('правило на TILE_EFFECT_STATUS_TICKED порождает корректные APPLY_TILE_EFFECT_STATUS интенты для соседних oil', () => {
+      setContentRulesOverride([makeSpreadRule(undefined, 3)]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const state = makeStateWithPlayer(player);
+      state.tileEffects[5]![5] = { oil: makeTileEffectInstance('oil', ['burning']) };
+      state.tileEffects[6]![6] = { oil: makeTileEffectInstance('oil', []) };
+
+      const event: GameEvent = {
+        type: 'TILE_EFFECT_STATUS_TICKED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 5, y: 5 },
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({
+        type: 'APPLY_TILE_EFFECT_STATUS',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 6, y: 6 },
+        duration: 3,
+        sourceEntityId: null,
+      });
     });
   });
 });

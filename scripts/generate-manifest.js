@@ -28,6 +28,7 @@ const CATEGORY_MAP = {
   abilities: 'abilities',
   statuses: 'statuses',
   'tile-effects': 'tileEffects',
+  'tile-effect-statuses': 'tileEffectStatuses',
   maps: 'maps',
 };
 
@@ -55,6 +56,7 @@ function categorize(files) {
     abilities: [],
     statuses: [],
     tileEffects: [],
+    tileEffectStatuses: [],
     maps: [],
     stairs: [],
     doors: [],

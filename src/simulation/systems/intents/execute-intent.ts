@@ -124,6 +124,12 @@ export function executeIntent(
     const intentContext = buildRuleContext(state, intent);
     const modifiedIntent = applyIntentModifiersIfEnabled(state, intent, intentContext);
 
+    // Запоминаем количество дочерних узлов до исполнения, чтобы обработать
+    // реакции на все события, порождённые этим интентом (например, при тике
+    // тайловых эффектов один интент порождает TILE_EFFECT_TICKED и
+    // TILE_EFFECT_STATUS_TICKED для нескольких клеток).
+    const childrenBefore = parent.children.length;
+
     const executor = intentExecutors[modifiedIntent.type] as IntentExecutor<any>;
     const resultNode = executor(
         state,
@@ -133,14 +139,19 @@ export function executeIntent(
     );
 
     if (resultNode !== null) {
-        const contentReactionIntents = runContentRuleReactionsIfEnabled(state, resultNode.event, builder, resultNode);
-        for (const reactionIntent of resolveStatusBatch(state, contentReactionIntents)) {
-            executeIntent(state, reactionIntent, builder, resultNode, reactionDepth + 1);
-        }
+        const newChildren = parent.children.slice(childrenBefore);
+        const nodesToProcess = newChildren.length > 0 ? newChildren : [resultNode];
 
-        const reactionIntents = runWorldReactions(state, builder, resultNode);
-        for (const reactionIntent of resolveStatusBatch(state, reactionIntents)) {
-            executeIntent(state, reactionIntent, builder, resultNode, reactionDepth + 1);
+        for (const node of nodesToProcess) {
+            const contentReactionIntents = runContentRuleReactionsIfEnabled(state, node.event, builder, node);
+            for (const reactionIntent of resolveStatusBatch(state, contentReactionIntents)) {
+                executeIntent(state, reactionIntent, builder, node, reactionDepth + 1);
+            }
+
+            const reactionIntents = runWorldReactions(state, builder, node);
+            for (const reactionIntent of resolveStatusBatch(state, reactionIntents)) {
+                executeIntent(state, reactionIntent, builder, node, reactionDepth + 1);
+            }
         }
     }
     return resultNode;

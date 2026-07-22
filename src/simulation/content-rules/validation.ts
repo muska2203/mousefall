@@ -98,7 +98,32 @@ export function validateContentRuleSemantics(content: LoadedContent): ContentRul
     validateRuleConditions(rule, rule.targetConditions, knownTileEffectIds, knownTileEffectStatusIds, errors);
   }
 
+  validateTileEffectTemplates(content.tileEffects, knownTileEffectStatusIds, errors);
+
   return errors;
+}
+
+/**
+ * Проверяет шаблоны тайловых эффектов на корректность ссылок.
+ */
+function validateTileEffectTemplates(
+  tileEffects: LoadedContent['tileEffects'],
+  knownTileEffectStatusIds: ReadonlySet<string>,
+  errors: ContentRuleValidationError[],
+): void {
+  for (const [id, template] of tileEffects) {
+    for (let i = 0; i < template.durationDecreasesWhenHasStatus.length; i++) {
+      const statusType = template.durationDecreasesWhenHasStatus[i];
+      if (statusType === undefined) continue;
+      if (!knownTileEffectStatusIds.has(statusType)) {
+        errors.push({
+          path: `tileEffect.${id}.durationDecreasesWhenHasStatus[${i}]`,
+          field: 'durationDecreasesWhenHasStatus',
+          problem: `Статус тайлового эффекта "${statusType}" не найден в реестре`,
+        });
+      }
+    }
+  }
 }
 
 /**
@@ -203,12 +228,12 @@ function validateApplyTileEffectStatusEffect(
     });
   }
 
-  if (rule.target.type !== 'eventTileEffect') {
+  if (rule.target.type !== 'eventTileEffect' && rule.target.type !== 'tilesInRadius') {
     errors.push({
       path: `rule.${rule.id}.target`,
       ruleId: rule.id,
       field: 'target.type',
-      problem: 'Эффект applyTileEffectStatus требует target.type === "eventTileEffect"',
+      problem: 'Эффект applyTileEffectStatus требует target.type === "eventTileEffect" или "tilesInRadius"',
     });
     return;
   }

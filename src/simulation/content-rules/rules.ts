@@ -87,6 +87,67 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     priority: 0,
   },
   {
+    id: 'burning_deals_damage_on_entry',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    conditions: [
+      { type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' },
+    ],
+    effect: {
+      type: 'dealDamage',
+      amount: 3,
+      tags: ['damage.magical.fire'],
+    },
+    target: { type: 'eventSource' },
+    priority: 0,
+  },
+  {
+    id: 'burning_applies_burning',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    conditions: [
+      { type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' },
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'burning',
+      duration: 3,
+    },
+    target: { type: 'eventSource' },
+    priority: 0,
+  },
+  {
+    id: 'burning_spreads_to_flammable',
+    trigger: {
+      event: 'TILE_EFFECT_STATUS_TICKED',
+    },
+    conditions: [
+      { type: 'eventFieldEquals', field: 'effectType', value: 'oil' },
+      { type: 'eventFieldEquals', field: 'statusType', value: 'burning' },
+    ],
+    targetConditions: [
+      { type: 'inTileEffect', effectType: 'oil' },
+      {
+        type: 'not',
+        condition: { type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' },
+      },
+    ],
+    effect: {
+      type: 'applyTileEffectStatus',
+      statusType: 'burning',
+      duration: 3,
+    },
+    target: {
+      type: 'tilesInRadius',
+      radius: 1,
+      center: 'eventPosition',
+      effectType: 'oil',
+    },
+    priority: 0,
+  },
+  {
     id: 'item_fire_damage_multiplier',
     trigger: {
       event: 'DAMAGE',

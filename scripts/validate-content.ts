@@ -68,6 +68,7 @@ function validateTranslations(): { ru: string[]; en: string[] } {
     { key: 'players', map: registry.players },
     { key: 'statuses', map: registry.statuses },
     { key: 'tileEffects', map: registry.tileEffects },
+    { key: 'tileEffectStatuses', map: registry.tileEffectStatuses },
     { key: 'stairs', map: registry.stairs },
     { key: 'doors', map: registry.doors },
   ];

@@ -83,6 +83,22 @@ export function runContentRuleReactions(
 
     const targetIds = resolveTarget(rule.target, ctx, selfId).filter((candidateId) => {
       if (!rule.targetConditions) return true;
+
+      // Для тайловых позиций условия оцениваются в контексте каждой клетки,
+      // а не в позиции исходного события.
+      if (rule.target.type === 'tilesInRadius') {
+        const parsed = parseTileCandidateId(candidateId);
+        if (!parsed) return false;
+
+        const { x, y } = parsed.position;
+        const tileCtx: RuleContext = {
+          ...ctx,
+          eventPosition: parsed.position,
+          tileEffectsAtEventPosition: getTileEffectsAt(ctx.state, x, y),
+        };
+        return evaluateConditions(rule.targetConditions, tileCtx, selfId);
+      }
+
       return evaluateConditions(rule.targetConditions, ctx, selfId, candidateId);
     });
 
@@ -261,8 +277,35 @@ function sortRules(rules: LayeredRule[]): LayeredRule[] {
   });
 }
 
+/** Префикс псевдо-ID тайловой позиции, используемого вместо EntityId. */
+const TILE_CANDIDATE_PREFIX = 'tile:';
+
 /**
- * Разрешает селектор цели в список ID сущностей.
+ * Кодирует позицию тайлового эффекта в псевдо-ID.
+ * Необходим, потому что resolveTarget возвращает EntityId[], а позиции — не сущности.
+ */
+function encodeTileCandidateId(effectType: string, x: number, y: number): EntityId {
+  return `${TILE_CANDIDATE_PREFIX}${effectType}:${x}:${y}`;
+}
+
+/**
+ * Декодирует псевдо-ID тайловой позиции, созданный encodeTileCandidateId.
+ * Возвращает null, если формат не распознан.
+ */
+function parseTileCandidateId(id: EntityId): { effectType: string; position: Position } | null {
+  const parts = id.split(':');
+  if (parts.length !== 4 || parts[0] !== 'tile') return null;
+
+  const effectType = parts[1]!;
+  const x = parseInt(parts[2]!, 10);
+  const y = parseInt(parts[3]!, 10);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+  return { effectType, position: { x, y } };
+}
+
+/**
+ * Разрешает селектор цели в список ID сущностей (или псевдо-ID тайловых позиций).
  */
 function resolveTarget(
   selector: TargetSelector,
@@ -285,9 +328,44 @@ function resolveTarget(
       return resolveAllInRadius(selector, ctx, selfId);
     case 'nearestEnemy':
       return resolveNearestEnemy(selector, ctx, selfId);
+    case 'tilesInRadius':
+      return resolveTilesInRadius(selector, ctx, selfId);
     default:
       return [];
   }
+}
+
+/**
+ * Возвращает позиции клеток в заданном радиусе (Chebyshev distance) от центра,
+ * на которых присутствует указанный тайловый эффект.
+ * Центральная клетка исключается: огонь распространяется на соседей, а не на себя.
+ * Результат отсортирован по x, затем по y, для детерминизма.
+ */
+function resolveTilesInRadius(
+  selector: Extract<TargetSelector, { type: 'tilesInRadius' }>,
+  ctx: RuleContext,
+  selfId: EntityId | null,
+): EntityId[] {
+  const center = resolveCenter(selector.center, ctx, selfId);
+  if (!center) return [];
+
+  const positions: Position[] = [];
+  for (let dx = -selector.radius; dx <= selector.radius; dx++) {
+    for (let dy = -selector.radius; dy <= selector.radius; dy++) {
+      if (dx === 0 && dy === 0) continue;
+
+      const x = center.x + dx;
+      const y = center.y + dy;
+      const tileEffects = getTileEffectsAt(ctx.state, x, y);
+      if (tileEffects[selector.effectType] !== undefined) {
+        positions.push({ x, y });
+      }
+    }
+  }
+
+  return positions
+    .sort((a, b) => a.x - b.x || a.y - b.y)
+    .map((pos) => encodeTileCandidateId(selector.effectType, pos.x, pos.y));
 }
 
 /**
@@ -383,6 +461,11 @@ function buildIntents(
   selfId: EntityId | null,
   target: TargetSelector,
 ): Intent[] {
+  // Пока tilesInRadius поддерживается только для applyTileEffectStatus.
+  if (target.type === 'tilesInRadius' && effect.type !== 'applyTileEffectStatus') {
+    return [];
+  }
+
   switch (effect.type) {
     case 'applyStatus': {
       const duration = resolveParametrizedValue(effect.duration, ctx);
@@ -465,18 +548,38 @@ function buildIntents(
       }];
     }
     case 'applyTileEffectStatus': {
-      if (ctx.eventPosition === null) return [];
-      if (target.type !== 'eventTileEffect') return [];
-
       const duration = resolveParametrizedValue(effect.duration, ctx);
-      return [{
-        type: 'APPLY_TILE_EFFECT_STATUS',
-        effectType: target.effectType,
-        statusType: effect.statusType,
-        position: ctx.eventPosition,
-        duration,
-        sourceEntityId: selfId ?? ctx.sourceEntityId,
-      }];
+
+      if (target.type === 'eventTileEffect') {
+        if (ctx.eventPosition === null) return [];
+        return [{
+          type: 'APPLY_TILE_EFFECT_STATUS',
+          effectType: target.effectType,
+          statusType: effect.statusType,
+          position: ctx.eventPosition,
+          duration,
+          sourceEntityId: selfId ?? ctx.sourceEntityId,
+        }];
+      }
+
+      if (target.type === 'tilesInRadius') {
+        return targetIds
+          .map((candidateId) => {
+            const parsed = parseTileCandidateId(candidateId);
+            if (!parsed) return null;
+            return {
+              type: 'APPLY_TILE_EFFECT_STATUS' as const,
+              effectType: parsed.effectType,
+              statusType: effect.statusType,
+              position: parsed.position,
+              duration,
+              sourceEntityId: selfId ?? ctx.sourceEntityId,
+            };
+          })
+          .filter((intent): intent is NonNullable<typeof intent> => intent !== null);
+      }
+
+      return [];
     }
     default:
       return [];

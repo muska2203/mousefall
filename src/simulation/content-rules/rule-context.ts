@@ -150,7 +150,9 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     }
 
     case 'TILE_EFFECT_CHANGED':
-    case 'TILE_EFFECT_REMOVED': {
+    case 'TILE_EFFECT_REMOVED':
+    case 'TILE_EFFECT_TICKED':
+    case 'TILE_EFFECT_STATUS_TICKED': {
       base.eventPosition = event.position;
       break;
     }
