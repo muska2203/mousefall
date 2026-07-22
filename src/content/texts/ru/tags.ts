@@ -53,6 +53,14 @@ export const tags: Record<string, ContentText> = {
     name: 'Поджог',
     description: 'Накладывает горение',
   },
+  'effect.oil': {
+    name: 'Масло',
+    description: 'Создаёт на тайле эффект масла',
+  },
+  'effect.water': {
+    name: 'Вода',
+    description: 'Создаёт на тайле эффект воды',
+  },
   'buff.reactive': {
     name: 'Реакция',
     description: 'Реактивный бафф',

@@ -17,6 +17,14 @@ export const abilities: Record<string, ContentText> = {
     name: 'Magic Slap',
     description: 'Up to three [ranged](tag:attack.ranged) lightning strikes on selected visible targets within 5 cells. Electric damage, scales with INT. Costs 1 AP, cooldown 2.',
   },
+  oil_flask: {
+    name: 'Oil Flask',
+    description: 'Throws a flask of oil into a targeted area, creating an [oil](tag:effect.oil) tile effect. Costs 1 AP, cooldown 1.',
+  },
+  rain: {
+    name: 'Rain',
+    description: 'Summons a downpour in a targeted area, creating a [water](tag:effect.water) tile effect. Extinguishes fire and washes away oil. Costs 1 AP, cooldown 1.',
+  },
   counterattack: {
     name: 'Counterattack',
     description: 'For 2 turns, gain a 50% chance to strike back against a [single-target](tag:target.single) [melee](tag:attack.melee) hit. Costs 2 AP, cooldown 4.',

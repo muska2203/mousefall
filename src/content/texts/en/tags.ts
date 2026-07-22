@@ -53,6 +53,14 @@ export const tags: Record<string, ContentText> = {
     name: 'Burn',
     description: 'Applies burning',
   },
+  'effect.oil': {
+    name: 'Oil',
+    description: 'Creates an oil tile effect',
+  },
+  'effect.water': {
+    name: 'Water',
+    description: 'Creates a water tile effect',
+  },
   'buff.reactive': {
     name: 'Reactive',
     description: 'Reactive buff',

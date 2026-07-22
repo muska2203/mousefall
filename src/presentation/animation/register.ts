@@ -37,6 +37,8 @@ import './skills/fireball';
 import './skills/dash';
 import './skills/swoop';
 import './skills/cleave';
+import './skills/rain';
+import './skills/oilFlask';
 
 registerAnimationBuilder('ENTITY_MOVED', entityMovedBuilder);
 registerAnimationBuilder('ACTION_APPLIED', actionAppliedBuilder);

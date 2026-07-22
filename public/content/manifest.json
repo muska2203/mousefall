@@ -40,6 +40,8 @@
     "/content/abilities/dash.json",
     "/content/abilities/fireball.json",
     "/content/abilities/magic_slap.json",
+    "/content/abilities/oil_flask.json",
+    "/content/abilities/rain.json",
     "/content/abilities/sudden_strike.json",
     "/content/abilities/swoop.json"
   ],
