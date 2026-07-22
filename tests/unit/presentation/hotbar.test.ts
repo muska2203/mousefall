@@ -52,6 +52,7 @@ describe('GameSession hotbar', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 

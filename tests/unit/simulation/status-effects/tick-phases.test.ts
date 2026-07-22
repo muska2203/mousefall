@@ -45,6 +45,7 @@ describe('status effect tick phases', () => {
         ['poisoned', mockStatus('poisoned', ['status_poison_tick_damage'])],
       ]),
       tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
     });
   });
 

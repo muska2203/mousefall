@@ -51,6 +51,15 @@ function ownerContextEquals(a: OwnerContext, b: OwnerContext): boolean {
         a.tileEffectType === other.tileEffectType
       );
     }
+    case 'tileEffectStatus': {
+      const other = b as Extract<OwnerContext, { type: 'tileEffectStatus' }>;
+      return (
+        a.position.x === other.position.x &&
+        a.position.y === other.position.y &&
+        a.tileEffectType === other.tileEffectType &&
+        a.statusType === other.statusType
+      );
+    }
     case 'world':
       return true;
   }

@@ -6,6 +6,7 @@ import {isEnemyEntity} from '@simulation/ai/ai-state';
 import {addActiveRulesForStatus, removeActiveRulesForStatus} from '@simulation/systems/rules/active-rule-lifecycle';
 import {cancelPreparedAbility} from '@simulation/ai/ai-helpers';
 import {getStatusTemplate} from '@simulation/systems/statuses/status-template';
+import {resolveStatusConflicts} from '@simulation/systems/statuses/resolve-status-conflicts';
 import type {StatusEffectType} from '@simulation/core-types';
 
 export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
@@ -25,23 +26,23 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   const holder = target as unknown as StatusEffectHolder;
   const template = getStatusTemplate(intent.status.type);
 
-  // Блокировка: если на цели есть статус из blockedBy — наложение отменяется.
-  const blockedBy = template?.blockedBy ?? [];
-  for (const blockerType of blockedBy) {
-    if (holder.statusEffects.some((e) => e.type === blockerType)) {
-      return builder.addChild(parent, {
-        type: 'STATUS_BLOCKED',
-        entityId: intent.entityId,
-        sourceEntityId: intent.sourceEntityId ?? null,
-        statusType: intent.status.type,
-        blockedBy: blockerType as StatusEffectType,
-      });
-    }
+  // Разрешаем конфликты blockedBy / mutuallyExclusiveWith через общий хелпер.
+  const conflictResult = resolveStatusConflicts(
+    holder.statusEffects,
+    { blockedBy: template?.blockedBy ?? [], mutuallyExclusiveWith: template?.mutuallyExclusiveWith ?? [] },
+  );
+
+  if (conflictResult.blockedBy) {
+    return builder.addChild(parent, {
+      type: 'STATUS_BLOCKED',
+      entityId: intent.entityId,
+      sourceEntityId: intent.sourceEntityId ?? null,
+      statusType: intent.status.type,
+      blockedBy: conflictResult.blockedBy as StatusEffectType,
+    });
   }
 
-  // Взаимоисключение: снимаем конфликтующие статусы перед наложением нового.
-  const mutuallyExclusive = template?.mutuallyExclusiveWith ?? [];
-  for (const exclusiveType of mutuallyExclusive) {
+  for (const exclusiveType of conflictResult.removedTypes) {
     const index = holder.statusEffects.findIndex((e) => e.type === exclusiveType);
     if (index >= 0) {
       const [removed] = holder.statusEffects.splice(index, 1);

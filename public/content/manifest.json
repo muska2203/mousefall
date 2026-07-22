@@ -55,7 +55,11 @@
     "/content/statuses/stunned.json",
     "/content/statuses/wet.json"
   ],
+  "tileEffectStatuses": [
+    "/content/tile-effect-statuses/burning.json"
+  ],
   "tileEffects": [
+    "/content/tile-effects/oil.json",
     "/content/tile-effects/water.json"
   ],
   "maps": [

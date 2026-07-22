@@ -5,10 +5,12 @@ import {
   executeSpawnTileEffectIntent,
   executeRemoveTileEffectIntent,
   executeTickTileEffectsIntent,
+  executeApplyTileEffectStatusIntent,
+  executeRemoveTileEffectStatusIntent,
 } from '../../../../src/simulation/systems/intents/tile-effect-intent-executor';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { LoadedContent, TileEffectTemplate } from '../../../../src/content/schemas';
+import type { LoadedContent, TileEffectTemplate, TileEffectStatusTemplate } from '../../../../src/content/schemas';
 
 function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: string }): TileEffectTemplate {
   return {
@@ -35,6 +37,46 @@ function createContentWithWater(overrides: Partial<TileEffectTemplate> = {}): Lo
     doors: new Map(),
     tileEffects: new Map([
       ['water', mockTileEffectTemplate({ id: 'water', ...overrides })],
+    ]),
+    tileEffectStatuses: new Map(),
+  };
+}
+
+function mockTileEffectStatusTemplate(
+  overrides: Partial<TileEffectStatusTemplate> & { id: string },
+): TileEffectStatusTemplate {
+  return {
+    duration: 3,
+    ruleIds: [],
+    statusCategory: 'generic',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+    renderOrder: 1,
+    ...overrides,
+  };
+}
+
+function createContentWithOilAndStatuses(
+  oilOverrides: Partial<TileEffectTemplate> = {},
+  burningOverrides: Partial<TileEffectStatusTemplate> = {},
+): LoadedContent {
+  return {
+    entities: new Map(),
+    players: new Map(),
+    items: new Map(),
+    abilities: new Map(),
+    statuses: new Map(),
+    maps: new Map(),
+    stairs: new Map(),
+    doors: new Map(),
+    tileEffects: new Map([
+      ['oil', mockTileEffectTemplate({ id: 'oil', canHaveStatus: ['burning'], ...oilOverrides })],
+      ['water', mockTileEffectTemplate({ id: 'water', canHaveStatus: [] })],
+    ]),
+    tileEffectStatuses: new Map([
+      ['burning', mockTileEffectStatusTemplate({ id: 'burning', statusCategory: 'elemental', renderOrder: 10, ...burningOverrides })],
+      ['soaked', mockTileEffectStatusTemplate({ id: 'soaked', statusCategory: 'elemental', renderOrder: 5 })],
     ]),
   };
 }
@@ -73,7 +115,7 @@ describe('tile-effect-intent-executor', () => {
       });
     });
 
-    it('перезаписывает существующий эффект того же типа', () => {
+    it('обновляет длительность существующего эффекта того же типа, сохраняя статусы', () => {
       const state = makeGameState();
       const builder = makeBuilder();
 
@@ -83,6 +125,11 @@ describe('tile-effect-intent-executor', () => {
         builder,
         builder.root,
       );
+      getTileEffectAt(state, 3, 3, 'water').statusEffects.push({
+        type: 'test-status',
+        duration: 3,
+        renderOrder: 1,
+      });
 
       const node = executeSpawnTileEffectIntent(
         state,
@@ -92,11 +139,57 @@ describe('tile-effect-intent-executor', () => {
       );
 
       expect(getTileEffectAt(state, 3, 3, 'water').duration).toBe(2);
+      expect(getTileEffectAt(state, 3, 3, 'water').statusEffects).toHaveLength(1);
+      expect(getTileEffectAt(state, 3, 3, 'water').statusEffects[0]).toMatchObject({
+        type: 'test-status',
+        duration: 3,
+      });
       expect(node!.event).toMatchObject({
         type: 'TILE_EFFECT_CHANGED',
         effectType: 'water',
         isNew: false,
       });
+    });
+
+    it('повторный спавн oil не сбрасывает статус burning', () => {
+      initRegistry(createContentWithOilAndStatuses());
+      const state = makeGameState();
+      const builder = makeBuilder();
+
+      executeSpawnTileEffectIntent(
+        state,
+        { type: 'SPAWN_TILE_EFFECT', effectType: 'oil', position: { x: 3, y: 3 }, duration: 5 },
+        builder,
+        builder.root,
+      );
+      executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 }, duration: 4 },
+        builder,
+        builder.root,
+      );
+
+      const node = executeSpawnTileEffectIntent(
+        state,
+        { type: 'SPAWN_TILE_EFFECT', effectType: 'oil', position: { x: 3, y: 3 }, duration: 7 },
+        builder,
+        builder.root,
+      );
+
+      const effect = getTileEffectAt(state, 3, 3, 'oil');
+      expect(effect.duration).toBe(7);
+      expect(effect.statusEffects).toHaveLength(1);
+      expect(effect.statusEffects[0]).toMatchObject({
+        type: 'burning',
+        duration: 4,
+      });
+      expect(node!.event).toMatchObject({
+        type: 'TILE_EFFECT_CHANGED',
+        effectType: 'oil',
+        isNew: false,
+      });
+
+      resetRegistry();
     });
 
     it('использует длительность по умолчанию, если duration не указан', () => {
@@ -287,6 +380,404 @@ describe('tile-effect-intent-executor', () => {
       const node = executeTickTileEffectsIntent(
         state,
         { type: 'TICK_TILE_EFFECTS' },
+        builder,
+        builder.root,
+      );
+
+      expect(node).toBeNull();
+    });
+
+    it('уменьшает длительность статуса burning при тике и порождает TILE_EFFECT_STATUS_TICKED', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 3, renderOrder: 10 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder('environment');
+      executeTickTileEffectsIntent(
+        state,
+        { type: 'TICK_TILE_EFFECTS' },
+        builder,
+        builder.root,
+      );
+
+      const effect = getTileEffectAt(state, 3, 3, 'oil');
+      expect(effect.duration).toBe(4);
+      expect(effect.statusEffects).toHaveLength(1);
+      expect(effect.statusEffects[0]!.duration).toBe(2);
+
+      const tickedEvents = builder.root.children.filter(
+        (child) => child.event.type === 'TILE_EFFECT_STATUS_TICKED',
+      );
+      expect(tickedEvents).toHaveLength(1);
+      expect(tickedEvents[0]!.event).toMatchObject({
+        type: 'TILE_EFFECT_STATUS_TICKED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 3, y: 3 },
+      });
+    });
+
+    it('удаляет истёкший статус burning и порождает TILE_EFFECT_STATUS_REMOVED', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 1, renderOrder: 10 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder('environment');
+      executeTickTileEffectsIntent(
+        state,
+        { type: 'TICK_TILE_EFFECTS' },
+        builder,
+        builder.root,
+      );
+
+      const effect = getTileEffectAt(state, 3, 3, 'oil');
+      expect(effect.statusEffects).toHaveLength(0);
+
+      const events = builder.root.children.map((child) => child.event.type);
+      expect(events).toEqual([
+        'TILE_EFFECT_STATUS_TICKED',
+        'TILE_EFFECT_STATUS_REMOVED',
+      ]);
+      const removedEvent = builder.root.children.find(
+        (child) => child.event.type === 'TILE_EFFECT_STATUS_REMOVED',
+      );
+      expect(removedEvent!.event).toMatchObject({
+        type: 'TILE_EFFECT_STATUS_REMOVED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 3, y: 3 },
+      });
+    });
+
+    it('удаляет истёкший эффект вместе со статусами без отдельных TILE_EFFECT_STATUS_REMOVED', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 1,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 5, renderOrder: 10 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder('environment');
+      executeTickTileEffectsIntent(
+        state,
+        { type: 'TICK_TILE_EFFECTS' },
+        builder,
+        builder.root,
+      );
+
+      expect(state.tileEffects[3]![3]!.oil).toBeUndefined();
+
+      const events = builder.root.children.map((child) => child.event.type);
+      expect(events).toEqual(['TILE_EFFECT_REMOVED']);
+      expect(builder.root.children[0]!.event).toMatchObject({
+        type: 'TILE_EFFECT_REMOVED',
+        effectType: 'oil',
+        position: { x: 3, y: 3 },
+      });
+    });
+
+    it('не тикает статусы эффекта, который сам истёк в этом тике', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 1,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 2, renderOrder: 10 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder('environment');
+      executeTickTileEffectsIntent(
+        state,
+        { type: 'TICK_TILE_EFFECTS' },
+        builder,
+        builder.root,
+      );
+
+      expect(state.tileEffects[3]![3]!.oil).toBeUndefined();
+      expect(builder.root.children).toHaveLength(1);
+      expect(builder.root.children[0]!.event.type).toBe('TILE_EFFECT_REMOVED');
+    });
+  });
+
+  describe('executeApplyTileEffectStatusIntent', () => {
+    beforeEach(() => {
+      initRegistry(createContentWithOilAndStatuses());
+    });
+
+    afterEach(() => {
+      resetRegistry();
+    });
+
+    it('накладывает burning на oil и эмитит TILE_EFFECT_STATUS_APPLIED', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      const node = executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 }, duration: 4 },
+        builder,
+        builder.root,
+      );
+
+      expect(node).not.toBeNull();
+      expect(node!.event).toMatchObject({
+        type: 'TILE_EFFECT_STATUS_APPLIED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 3, y: 3 },
+        duration: 4,
+      });
+
+      const effect = getTileEffectAt(state, 3, 3, 'oil');
+      expect(effect.statusEffects).toHaveLength(1);
+      expect(effect.statusEffects[0]).toMatchObject({
+        type: 'burning',
+        duration: 4,
+        renderOrder: 10,
+      });
+    });
+
+    it('использует длительность из шаблона, если intent.duration не указан', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 } },
+        builder,
+        builder.root,
+      );
+
+      expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects[0]!.duration).toBe(3);
+    });
+
+    it('берёт длительность из конкретного шаблона статуса', () => {
+      resetRegistry();
+      initRegistry(createContentWithOilAndStatuses({}, { duration: 7 }));
+
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 } },
+        builder,
+        builder.root,
+      );
+
+      expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects[0]!.duration).toBe(7);
+
+      resetRegistry();
+    });
+
+    it('блокирует наложение, если на эффекте есть статус из blockedBy', () => {
+      resetRegistry();
+      initRegistry(createContentWithOilAndStatuses({}, { blockedBy: ['soaked'] }));
+
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'soaked', duration: 2, renderOrder: 5 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      const node = executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 } },
+        builder,
+        builder.root,
+      );
+
+      expect(node).toBeNull();
+      expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects).toHaveLength(1);
+    });
+
+    it('снимает статусы из mutuallyExclusiveWith и порождает TILE_EFFECT_STATUS_REMOVED', () => {
+      resetRegistry();
+      initRegistry(createContentWithOilAndStatuses({}, { mutuallyExclusiveWith: ['soaked'] }));
+
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'soaked', duration: 2, renderOrder: 5 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      const node = executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 }, duration: 4 },
+        builder,
+        builder.root,
+      );
+
+      expect(node).not.toBeNull();
+      const effect = getTileEffectAt(state, 3, 3, 'oil');
+      expect(effect.statusEffects).toHaveLength(1);
+      expect(effect.statusEffects[0]!.type).toBe('burning');
+
+      const removedEvents = builder.root.children.filter(
+        (child) => child.event.type === 'TILE_EFFECT_STATUS_REMOVED',
+      );
+      expect(removedEvents).toHaveLength(1);
+      expect(removedEvents[0]!.event).toMatchObject({
+        type: 'TILE_EFFECT_STATUS_REMOVED',
+        effectType: 'oil',
+        statusType: 'soaked',
+        position: { x: 3, y: 3 },
+      });
+    });
+
+    it('обновляет длительность при повторном наложении того же статуса', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 2, renderOrder: 10 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      const node = executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 }, duration: 6 },
+        builder,
+        builder.root,
+      );
+
+      expect(node).not.toBeNull();
+      expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects).toHaveLength(1);
+      expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects[0]!.duration).toBe(6);
+    });
+
+    it('возвращает null при попытке наложить burning на water (не в canHaveStatus)', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.water = {
+        type: 'water',
+        duration: 4,
+        layer: 'cover',
+        statusEffects: [],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      const node = executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'water', statusType: 'burning', position: { x: 3, y: 3 } },
+        builder,
+        builder.root,
+      );
+
+      expect(node).toBeNull();
+      expect(getTileEffectAt(state, 3, 3, 'water').statusEffects).toHaveLength(0);
+    });
+
+    it('возвращает null для позиции вне карты', () => {
+      const state = makeGameState();
+      const builder = makeBuilder();
+
+      const node = executeApplyTileEffectStatusIntent(
+        state,
+        { type: 'APPLY_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 100, y: 100 } },
+        builder,
+        builder.root,
+      );
+
+      expect(node).toBeNull();
+    });
+  });
+
+  describe('executeRemoveTileEffectStatusIntent', () => {
+    beforeEach(() => {
+      initRegistry(createContentWithOilAndStatuses());
+    });
+
+    afterEach(() => {
+      resetRegistry();
+    });
+
+    it('удаляет статус и эмитит TILE_EFFECT_STATUS_REMOVED', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 4, renderOrder: 10 }],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      const node = executeRemoveTileEffectStatusIntent(
+        state,
+        { type: 'REMOVE_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 } },
+        builder,
+        builder.root,
+      );
+
+      expect(node).not.toBeNull();
+      expect(node!.event).toMatchObject({
+        type: 'TILE_EFFECT_STATUS_REMOVED',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 3, y: 3 },
+      });
+      expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects).toHaveLength(0);
+    });
+
+    it('возвращает null, если статус отсутствует на эффекте', () => {
+      const state = makeGameState();
+      state.tileEffects[3]![3]!.oil = {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [],
+        renderOrder: 1,
+      };
+
+      const builder = makeBuilder();
+      const node = executeRemoveTileEffectStatusIntent(
+        state,
+        { type: 'REMOVE_TILE_EFFECT_STATUS', effectType: 'oil', statusType: 'burning', position: { x: 3, y: 3 } },
         builder,
         builder.root,
       );

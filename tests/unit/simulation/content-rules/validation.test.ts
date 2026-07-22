@@ -3,7 +3,7 @@ import {
   validateContentRuleReferences,
   validateContentRuleSemantics,
 } from '@simulation/content-rules/validation';
-import type { LoadedContent, ItemTemplate, AbilityTemplate, StatusTemplate } from '@content/schemas';
+import type { LoadedContent, ItemTemplate, AbilityTemplate, StatusTemplate, TileEffectTemplate, TileEffectStatusTemplate } from '@content/schemas';
 import type { ContentRule } from '@simulation/content-rules/types';
 import type { StatusEffectType } from '@simulation/core-types';
 import { setContentRulesOverride } from '@simulation/content-rules/registry';
@@ -31,21 +31,56 @@ function mockAbilityTemplate(id: string, ruleIds: string[] = []): AbilityTemplat
   };
 }
 
+function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectTemplate {
+  return {
+    id,
+    ruleIds,
+    layer: 'cover',
+    duration: 3,
+    renderOrder: 1,
+    blockedByTileEffects: [],
+    mutuallyExclusiveWithTileEffects: [],
+    canHaveStatus: [],
+  };
+}
+
+function mockTileEffectStatusTemplate(id: string, ruleIds: string[] = []): TileEffectStatusTemplate {
+  return {
+    id,
+    duration: 3,
+    ruleIds,
+    statusCategory: 'generic',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+    renderOrder: 1,
+  };
+}
+
 function createContent(overrides: Partial<LoadedContent> = {}): LoadedContent {
   return {
     entities: new Map(),
     players: new Map(),
     items: new Map(),
     abilities: new Map(),
-    // Production-правила ссылаются на burning, dazed и poisoned; включаем их по умолчанию,
-    // чтобы unit-тесты семантики не получали ложных ошибок от существующих правил.
+    // Production-правила ссылаются на burning, dazed, poisoned, wet и oiled;
+    // water_applies_wet и oil_applies_oiled ссылаются на тайловые эффекты water и oil;
+    // fire_damage_ignites_oil ссылается на тайловый эффект oil и тайловый статус burning.
+    // Включаем их по умолчанию, чтобы unit-тесты семантики не получали ложных ошибок от существующих правил.
     statuses: new Map([
       ['burning', mockStatusTemplate('burning')],
       ['dazed', mockStatusTemplate('dazed')],
       ['poisoned', mockStatusTemplate('poisoned')],
       ['wet', mockStatusTemplate('wet')],
+      ['oiled', mockStatusTemplate('oiled')],
     ]),
-    tileEffects: new Map(),
+    tileEffects: new Map([
+      ['water', mockTileEffectTemplate('water')],
+      ['oil', mockTileEffectTemplate('oil')],
+    ]),
+    tileEffectStatuses: new Map([
+      ['burning', mockTileEffectStatusTemplate('burning')],
+    ]),
     maps: new Map(),
     stairs: new Map(),
     doors: new Map(),
@@ -75,6 +110,20 @@ describe('validateContentRuleReferences', () => {
   it('падает при неизвестном ruleId в статусе', () => {
     const content = createContent({
       statuses: new Map([['test_status', mockStatusTemplate('test_status', ['unknown_rule'])]]),
+    });
+    expect(() => validateContentRuleReferences(content)).toThrow('unknown_rule');
+  });
+
+  it('падает при неизвестном ruleId в тайловом эффекте', () => {
+    const content = createContent({
+      tileEffects: new Map([['test_tile_effect', mockTileEffectTemplate('test_tile_effect', ['unknown_rule'])]]),
+    });
+    expect(() => validateContentRuleReferences(content)).toThrow('unknown_rule');
+  });
+
+  it('падает при неизвестном ruleId в статусе тайлового эффекта', () => {
+    const content = createContent({
+      tileEffectStatuses: new Map([['test_tile_effect_status', mockTileEffectStatusTemplate('test_tile_effect_status', ['unknown_rule'])]]),
     });
     expect(() => validateContentRuleReferences(content)).toThrow('unknown_rule');
   });
@@ -133,6 +182,136 @@ describe('validateContentRuleSemantics', () => {
     expect(errors[0]).toMatchObject({
       ruleId: 'test_apply_unknown',
       field: 'effect.statusType',
+      problem: expect.stringContaining('unknown_status'),
+    });
+  });
+
+  it('возвращает ошибку, когда applyTileEffectStatus ссылается на отсутствующий статус', () => {
+    const rule: ContentRule = {
+      id: 'test_apply_unknown_tile_effect_status',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      effect: { type: 'applyTileEffectStatus', statusType: 'unknown_tile_status', duration: 3 },
+      target: { type: 'eventTileEffect', effectType: 'oil' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_apply_unknown_tile_effect_status',
+      field: 'effect.statusType',
+      problem: expect.stringContaining('unknown_tile_status'),
+    });
+  });
+
+  it('проходит, когда applyTileEffectStatus ссылается на существующий статус тайлового эффекта', () => {
+    const rule: ContentRule = {
+      id: 'test_apply_burning_to_oil',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 3 },
+      target: { type: 'eventTileEffect', effectType: 'oil' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    expect(validateContentRuleSemantics(createContent())).toEqual([]);
+  });
+
+  it('возвращает ошибку, когда applyTileEffectStatus использует target.type !== eventTileEffect', () => {
+    const rule: ContentRule = {
+      id: 'test_apply_tile_effect_status_wrong_target',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 3 },
+      target: { type: 'eventTarget' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_apply_tile_effect_status_wrong_target',
+      field: 'target.type',
+      problem: expect.stringContaining('eventTileEffect'),
+    });
+  });
+
+  it('возвращает ошибку, когда applyTileEffectStatus ссылается на отсутствующий тайловый эффект', () => {
+    const rule: ContentRule = {
+      id: 'test_apply_tile_effect_status_unknown_effect',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 3 },
+      target: { type: 'eventTileEffect', effectType: 'unknown_tile_effect' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_apply_tile_effect_status_unknown_effect',
+      field: 'target.effectType',
+      problem: expect.stringContaining('unknown_tile_effect'),
+    });
+  });
+
+  it('возвращает ошибку, когда inTileEffect ссылается на отсутствующий тайловый эффект', () => {
+    const rule: ContentRule = {
+      id: 'test_in_unknown_tile_effect',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      conditions: [{ type: 'inTileEffect', effectType: 'unknown_tile_effect' }],
+      effect: { type: 'restoreAp' },
+      target: { type: 'self' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_in_unknown_tile_effect',
+      field: 'condition.effectType',
+      problem: expect.stringContaining('unknown_tile_effect'),
+    });
+  });
+
+  it('возвращает ошибку, когда tileEffectHasStatus ссылается на отсутствующий тайловый эффект', () => {
+    const rule: ContentRule = {
+      id: 'test_tile_effect_has_unknown_effect',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      conditions: [{ type: 'tileEffectHasStatus', effectType: 'unknown_tile_effect', statusType: 'burning' }],
+      effect: { type: 'restoreAp' },
+      target: { type: 'self' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_tile_effect_has_unknown_effect',
+      field: 'condition.effectType',
+      problem: expect.stringContaining('unknown_tile_effect'),
+    });
+  });
+
+  it('возвращает ошибку, когда tileEffectHasStatus ссылается на отсутствующий статус тайлового эффекта', () => {
+    const rule: ContentRule = {
+      id: 'test_tile_effect_has_unknown_status',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      conditions: [{ type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'unknown_status' }],
+      effect: { type: 'restoreAp' },
+      target: { type: 'self' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_tile_effect_has_unknown_status',
+      field: 'condition.statusType',
       problem: expect.stringContaining('unknown_status'),
     });
   });

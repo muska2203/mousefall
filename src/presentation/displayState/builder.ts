@@ -8,7 +8,7 @@
  */
 
 import type {Entity, GameEvent, GameState, Position} from '@simulation/types';
-import type {DisplayEntity, DisplayMap, DisplayPatch, DisplayState, DisplayTile, PresentationNode,} from './types';
+import type {DisplayEntity, DisplayMap, DisplayPatch, DisplayState, DisplayTile, PresentationNode, TileEffectOverlay,} from './types';
 
 /** Преобразовать Entity из Simulation в DisplayEntity. */
 function toDisplayEntity(entity: Entity): DisplayEntity {
@@ -47,12 +47,21 @@ function toDisplayTile(type: 'floor' | 'wall'): DisplayTile {
   return { type };
 }
 
-/** Возвращает тип основного тайлового эффекта для отображения или undefined. */
-function getPrimaryTileEffect(tileEffects: import('@simulation/core-types.ts').TileEffects): string | undefined {
-  const types = Object.keys(tileEffects);
-  if (types.length === 0) return undefined;
-  // На первом этапе на тайле может быть только один эффект.
-  return types[0];
+/** Собирает и сортирует оверлеи тайловых эффектов на клетке, включая их статусы. */
+function getTileEffectOverlays(tileEffects: import('@simulation/core-types.ts').TileEffects): TileEffectOverlay[] {
+  const overlays: TileEffectOverlay[] = [];
+  for (const effect of Object.values(tileEffects)) {
+    overlays.push({ type: effect.type, renderOrder: effect.renderOrder });
+    for (const status of effect.statusEffects) {
+      overlays.push({ type: status.type, renderOrder: status.renderOrder });
+    }
+  }
+  // Сначала по возрастанию renderOrder, при равенстве — по типу для стабильности.
+  overlays.sort((a, b) => {
+    if (a.renderOrder !== b.renderOrder) return a.renderOrder - b.renderOrder;
+    return a.type.localeCompare(b.type);
+  });
+  return overlays;
 }
 
 /** Создать копию DisplayMap. */
@@ -60,7 +69,12 @@ function cloneDisplayMap(map: DisplayMap): DisplayMap {
   return {
     width: map.width,
     height: map.height,
-    tiles: map.tiles.map((row) => row.slice()),
+    tiles: map.tiles.map((row) =>
+      row.map((tile) => ({
+        ...tile,
+        tileEffects: tile.tileEffects ? tile.tileEffects.map((overlay) => ({ ...overlay })) : undefined,
+      })),
+    ),
     visible: map.visible.map((row) => row.slice()),
     explored: map.explored.map((row) => row.slice()),
   };
@@ -102,9 +116,9 @@ export function buildDisplayState(state: GameState): DisplayState {
   const tiles: DisplayTile[][] = state.map.tiles.map((row, y) =>
     row.map((tile, x) => {
       const displayTile = toDisplayTile(tile);
-      const primaryEffect = getPrimaryTileEffect(state.tileEffects[y]?.[x] ?? {});
-      if (primaryEffect) {
-        displayTile.tileEffect = primaryEffect;
+      const overlays = getTileEffectOverlays(state.tileEffects[y]?.[x] ?? {});
+      if (overlays.length > 0) {
+        displayTile.tileEffects = overlays;
       }
       return displayTile;
     }),
@@ -147,9 +161,9 @@ function updateEntity(
 
 /** Создать DisplayPatch для одного GameEvent.
  *
- *  Для события FOG_UPDATED требуется `state`, чтобы построить полный снимок
- *  видимых/исследованных клеток, а не только вновь открытые. */
-export function createPatch(event: GameEvent, state?: GameState): DisplayPatch {
+ *  Для событий FOG_UPDATED и TILE_EFFECT_* требуется `state`, чтобы построить
+ *  корректный снимок видимых/исследованных клеток и оверлеев тайловых эффектов. */
+export function createPatch(event: GameEvent, state: GameState): DisplayPatch {
   switch (event.type) {
     case 'ENTITY_MOVED':
       return {
@@ -272,6 +286,7 @@ export function createPatch(event: GameEvent, state?: GameState): DisplayPatch {
         type: 'TILE_EFFECT_CHANGED',
         effectType: event.effectType,
         position: event.position,
+        overlays: getTileEffectOverlays(state.tileEffects[event.position.y]?.[event.position.x] ?? {}),
       };
 
     case 'TILE_EFFECT_REMOVED':
@@ -279,7 +294,28 @@ export function createPatch(event: GameEvent, state?: GameState): DisplayPatch {
         type: 'TILE_EFFECT_REMOVED',
         effectType: event.effectType,
         position: event.position,
+        overlays: getTileEffectOverlays(state.tileEffects[event.position.y]?.[event.position.x] ?? {}),
       };
+
+    case 'TILE_EFFECT_STATUS_APPLIED':
+      return {
+        type: 'TILE_EFFECT_CHANGED',
+        effectType: event.effectType,
+        position: event.position,
+        overlays: getTileEffectOverlays(state.tileEffects[event.position.y]?.[event.position.x] ?? {}),
+      };
+
+    case 'TILE_EFFECT_STATUS_REMOVED':
+      return {
+        type: 'TILE_EFFECT_CHANGED',
+        effectType: event.effectType,
+        position: event.position,
+        overlays: getTileEffectOverlays(state.tileEffects[event.position.y]?.[event.position.x] ?? {}),
+      };
+
+    case 'TILE_EFFECT_STATUS_TICKED':
+    case 'TILE_EFFECT_TICKED':
+      return { type: 'NO_OP' };
 
     case 'RESOURCE_CONSUMED':
     case 'AP_RESTORED':
@@ -465,13 +501,7 @@ export function applyPatch(state: DisplayState, patch: DisplayPatch): DisplaySta
       if (y >= 0 && y < newMap.height && x >= 0 && x < newMap.width) {
         const tile = newMap.tiles[y]![x];
         if (tile) {
-          if (patch.type === 'TILE_EFFECT_CHANGED') {
-            tile.tileEffect = patch.effectType;
-          } else {
-            if (tile.tileEffect === patch.effectType) {
-              delete tile.tileEffect;
-            }
-          }
+          tile.tileEffects = patch.overlays;
         }
       }
       return { ...state, map: newMap };

@@ -32,6 +32,7 @@ function createContentWithWater(): LoadedContent {
     tileEffects: new Map([
       ['water', mockTileEffectTemplate({ id: 'water', ruleIds: ['water_applies_wet', 'water_applies_wet_on_spawn'] })],
     ]),
+    tileEffectStatuses: new Map(),
   };
 }
 

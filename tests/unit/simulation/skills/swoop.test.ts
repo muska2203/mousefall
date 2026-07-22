@@ -43,6 +43,7 @@ describe('swoopSkill', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 

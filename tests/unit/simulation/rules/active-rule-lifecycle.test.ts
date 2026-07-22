@@ -76,6 +76,7 @@ beforeEach(() => {
       ['burning', mockStatus('burning', ['fire_damage_ignites'])],
     ]),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
     maps: new Map(),
     doors: new Map(),
     stairs: new Map(),

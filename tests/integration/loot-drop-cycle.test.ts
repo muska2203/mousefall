@@ -142,6 +142,7 @@ describe('Интеграция: цикл выпадения лута', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -292,6 +293,7 @@ describe('Интеграция: цикл выпадения лута', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
 
     const state = makeLootGameState();

@@ -7,13 +7,17 @@ import { runContentRuleReactions } from '../../../../../src/simulation/content-r
 import {
   makePlayer,
   makeEnemy,
+  makeStateWithPlayer,
   makeStateWithPlayerAndEntity,
 } from '../../../../fixtures/gameState';
 import {setWorldContentRulesOverride} from '../../../../../src/simulation/content-rules/rules';
+import {setContentRulesOverride} from '../../../../../src/simulation/content-rules/registry';
 import { ExecutionBuilder } from '../../../../../src/simulation/core-types';
-import type { GameEvent, Intent } from '../../../../../src/simulation/core-types';
+import type { GameEvent, Intent, TileEffectInstance, TileEffectStatusInstance } from '../../../../../src/simulation/core-types';
 import type { ActiveRule, WorldContentRule } from '../../../../../src/simulation/content-rules/types';
 import { counterattackTriggerRule, counterattackDamageRule } from '../../../../../src/simulation/content-rules/counterattack-rules';
+import { initRegistry, resetRegistry } from '../../../../../src/content/registry';
+import type { LoadedContent, TileEffectTemplate, TileEffectStatusTemplate } from '../../../../../src/content/schemas';
 
 vi.mock('../../../../../src/utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
@@ -34,6 +38,71 @@ function makeActiveRule(overrides: Partial<ActiveRule> = {}): ActiveRule {
   };
 }
 
+function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectTemplate {
+  return {
+    id,
+    ruleIds,
+    layer: 'cover',
+    duration: 3,
+    renderOrder: 1,
+    blockedByTileEffects: [],
+    mutuallyExclusiveWithTileEffects: [],
+    canHaveStatus: ['burning'],
+  };
+}
+
+function mockTileEffectStatusTemplate(id: string, ruleIds: string[] = []): TileEffectStatusTemplate {
+  return {
+    id,
+    duration: 3,
+    ruleIds,
+    statusCategory: 'generic',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+    renderOrder: 1,
+  };
+}
+
+function createTileEffectContent(overrides: Partial<LoadedContent> = {}): LoadedContent {
+  return {
+    entities: new Map(),
+    players: new Map(),
+    items: new Map(),
+    abilities: new Map(),
+    statuses: new Map(),
+    tileEffects: new Map([
+      ['oil', mockTileEffectTemplate('oil', ['oil_intrinsic_rule'])],
+    ]),
+    tileEffectStatuses: new Map([
+      ['burning', mockTileEffectStatusTemplate('burning', ['burning_oil_rule'])],
+    ]),
+    maps: new Map(),
+    stairs: new Map(),
+    doors: new Map(),
+    ...overrides,
+  };
+}
+
+function makeTileEffectStatusInstance(type: string, duration = 3): TileEffectStatusInstance {
+  return { type, duration, renderOrder: 1 };
+}
+
+function makeTileEffectInstance(type: string, statusTypes: string[] = []): TileEffectInstance {
+  return {
+    type,
+    duration: 3,
+    layer: 'cover',
+    statusEffects: statusTypes.map((statusType) => makeTileEffectStatusInstance(statusType)),
+    renderOrder: 1,
+  };
+}
+
+function initTileEffectRegistry(overrides: Partial<LoadedContent> = {}): void {
+  resetRegistry();
+  initRegistry(createTileEffectContent(overrides));
+}
+
 function runReactions(state: ReturnType<typeof makeStateWithPlayerAndEntity>, event: GameEvent): Intent[] {
   const builder = new ExecutionBuilder(event);
   return runContentRuleReactions(state, event, builder, builder.root);
@@ -47,6 +116,8 @@ describe('runContentRuleReactions', () => {
   afterEach(() => {
     vi.clearAllMocks();
     setWorldContentRulesOverride(null);
+    setContentRulesOverride(null);
+    resetRegistry();
   });
 
   describe('RULE_TRIGGERED observability', () => {
@@ -1343,6 +1414,364 @@ describe('runContentRuleReactions', () => {
         damage: 17,
         tags: ['reaction.counter'],
       });
+    });
+  });
+
+  describe('статусы тайловых эффектов', () => {
+    it('правило из статуса tile effect собирается в слой tileEffectStatus', () => {
+      initTileEffectRegistry();
+      const burningOilRule: WorldContentRule = {
+        id: 'burning_oil_rule',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 2 },
+        target: { type: 'eventTileEffect', effectType: 'oil' },
+        priority: 0,
+        ownerContext: { type: 'world' },
+        worldLayer: 'tileEffectStatus',
+      };
+      setContentRulesOverride([burningOilRule]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.tileEffects[5]![6] = {
+        oil: makeTileEffectInstance('oil', ['burning']),
+      };
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: [],
+      };
+      const builder = new ExecutionBuilder(event);
+
+      runContentRuleReactions(state, event, builder, builder.root);
+
+      const triggeredNodes = builder.root.children.filter(
+        (child) => child.event.type === 'RULE_TRIGGERED',
+      );
+      const statusRuleEvent = triggeredNodes.find(
+        (node) => (node.event as Extract<GameEvent, { type: 'RULE_TRIGGERED' }>).ruleId === 'burning_oil_rule',
+      );
+      expect(statusRuleEvent).toBeDefined();
+
+      const ruleEvent = statusRuleEvent!.event as Extract<GameEvent, { type: 'RULE_TRIGGERED' }>;
+      expect(ruleEvent.layer).toBe('world');
+      expect(ruleEvent.ownerEntityId).toBeNull();
+      expect(ruleEvent.intents).toHaveLength(1);
+      expect(ruleEvent.intents[0]).toMatchObject({
+        type: 'APPLY_TILE_EFFECT_STATUS',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 6, y: 5 },
+        duration: 2,
+        sourceEntityId: player.id,
+      });
+    });
+
+    it('соблюдает порядок global → tileEffect → tileEffectStatus → tileIntrinsic независимо от priority', () => {
+      initTileEffectRegistry({
+        tileEffects: new Map([
+          ['oil', mockTileEffectTemplate('oil', ['oil_tile_effect_rule', 'oil_intrinsic_rule'])],
+        ]),
+        tileEffectStatuses: new Map([
+          ['burning', mockTileEffectStatusTemplate('burning', ['burning_oil_rule'])],
+        ]),
+      });
+
+      const intrinsicRule: WorldContentRule = {
+        id: 'oil_intrinsic_rule',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        effect: { type: 'applyStatus', statusType: 'frozen', duration: 1 },
+        target: { type: 'eventTarget' },
+        priority: -100,
+        ownerContext: { type: 'world' },
+        worldLayer: 'tileIntrinsic',
+      };
+      const tileEffectRule: WorldContentRule = {
+        id: 'oil_tile_effect_rule',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        effect: { type: 'applyStatus', statusType: 'poisoned', duration: 1 },
+        target: { type: 'eventTarget' },
+        priority: 100,
+        ownerContext: { type: 'world' },
+        worldLayer: 'tileEffect',
+      };
+      const statusRule: WorldContentRule = {
+        id: 'burning_oil_rule',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 1 },
+        target: { type: 'eventTileEffect', effectType: 'oil' },
+        priority: 50,
+        ownerContext: { type: 'world' },
+        worldLayer: 'tileEffectStatus',
+      };
+      const globalRule: WorldContentRule = {
+        id: 'global_rule',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        effect: { type: 'applyStatus', statusType: 'dazed', duration: 1 },
+        target: { type: 'eventTarget' },
+        priority: 0,
+        ownerContext: { type: 'world' },
+        worldLayer: 'global',
+      };
+      setWorldContentRulesOverride([intrinsicRule, globalRule]);
+      setContentRulesOverride([tileEffectRule, statusRule]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.tileEffects[5]![6] = {
+        oil: makeTileEffectInstance('oil', ['burning']),
+      };
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      const statusTypes = intents
+        .filter((intent): intent is Extract<Intent, { type: 'APPLY_STATUS' }> => intent.type === 'APPLY_STATUS')
+        .map((intent) => intent.status.type);
+
+      expect(statusTypes).toEqual(['dazed', 'poisoned', 'frozen']);
+
+      const tileEffectStatusIntent = intents.find(
+        (intent): intent is Extract<Intent, { type: 'APPLY_TILE_EFFECT_STATUS' }> =>
+          intent.type === 'APPLY_TILE_EFFECT_STATUS',
+      );
+      expect(tileEffectStatusIntent).toBeDefined();
+    });
+
+    it('условие tileEffectHasStatus срабатывает, когда статус присутствует', () => {
+      initTileEffectRegistry({
+        tileEffectStatuses: new Map([
+          ['burning', mockTileEffectStatusTemplate('burning', ['ignite_if_burning'])],
+        ]),
+      });
+
+      const rule: WorldContentRule = {
+        id: 'ignite_if_burning',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        conditions: [{ type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' }],
+        effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 5 },
+        target: { type: 'eventTileEffect', effectType: 'oil' },
+        priority: 0,
+        ownerContext: { type: 'world' },
+        worldLayer: 'tileEffectStatus',
+      };
+      setContentRulesOverride([rule]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.tileEffects[5]![6] = {
+        oil: makeTileEffectInstance('oil', ['burning']),
+      };
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({
+        type: 'APPLY_TILE_EFFECT_STATUS',
+        effectType: 'oil',
+        statusType: 'burning',
+        duration: 5,
+      });
+    });
+
+    it('условие tileEffectHasStatus не срабатывает, когда статус отсутствует', () => {
+      initTileEffectRegistry({
+        tileEffectStatuses: new Map([
+          ['burning', mockTileEffectStatusTemplate('burning', ['ignite_if_burning'])],
+        ]),
+      });
+
+      const rule: WorldContentRule = {
+        id: 'ignite_if_burning',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        conditions: [{ type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' }],
+        effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 5 },
+        target: { type: 'eventTileEffect', effectType: 'oil' },
+        priority: 0,
+        ownerContext: { type: 'world' },
+        worldLayer: 'tileEffectStatus',
+      };
+      setContentRulesOverride([rule]);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.tileEffects[5]![6] = {
+        oil: makeTileEffectInstance('oil', []),
+      };
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: [],
+      };
+
+      const intents = runReactions(state, event);
+      expect(intents).toHaveLength(0);
+    });
+  });
+
+  describe('правила тайлового эффекта oil', () => {
+    beforeEach(() => {
+      initTileEffectRegistry({
+        tileEffects: new Map([
+          ['oil', mockTileEffectTemplate('oil', ['oil_applies_oiled', 'fire_damage_ignites_oil'])],
+        ]),
+        tileEffectStatuses: new Map([
+          ['burning', mockTileEffectStatusTemplate('burning', [])],
+        ]),
+      });
+      const oilRules: WorldContentRule[] = [
+        {
+          id: 'oil_applies_oiled',
+          trigger: { event: 'ENTITY_MOVED' },
+          conditions: [{ type: 'inTileEffect', effectType: 'oil' }],
+          effect: { type: 'applyStatus', statusType: 'oiled', duration: 3 },
+          target: { type: 'eventSource' },
+          priority: 0,
+          ownerContext: { type: 'world' },
+          worldLayer: 'tileEffect',
+        },
+        {
+          id: 'fire_damage_ignites_oil',
+          trigger: { event: 'ENTITY_DAMAGED', tags: ['damage.magical.fire'] },
+          conditions: [
+            { type: 'inTileEffect', effectType: 'oil' },
+            {
+              type: 'not',
+              condition: { type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' },
+            },
+          ],
+          effect: { type: 'applyTileEffectStatus', statusType: 'burning', duration: 3 },
+          target: { type: 'eventTileEffect', effectType: 'oil' },
+          priority: 0,
+          ownerContext: { type: 'world' },
+          worldLayer: 'tileEffect',
+        },
+      ];
+      setContentRulesOverride(oilRules);
+    });
+
+    it('при ENTITY_MOVED накладывает oiled на актора в клетке с oil', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const state = makeStateWithPlayer(player);
+      state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', []) };
+
+      const event: GameEvent = {
+        type: 'ENTITY_MOVED',
+        entityId: player.id,
+        from: { x: 5, y: 5 },
+        to: { x: 6, y: 5 },
+        movementType: 'walk',
+      };
+
+      const intents = runReactions(state, event);
+
+      const oiledIntent = intents.find(
+        (intent) => intent.type === 'APPLY_STATUS' && intent.status.type === 'oiled',
+      );
+      expect(oiledIntent).toBeDefined();
+      expect(oiledIntent).toMatchObject({
+        type: 'APPLY_STATUS',
+        entityId: player.id,
+        sourceEntityId: player.id,
+        status: { type: 'oiled', duration: 3, value: 0, statModifiers: null },
+      });
+    });
+
+    it('при fire damage поджигает oil, если в клетке нет burning', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', []) };
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['damage.magical.fire'],
+      };
+
+      const intents = runReactions(state, event);
+
+      const igniteIntent = intents.find((intent) => intent.type === 'APPLY_TILE_EFFECT_STATUS');
+      expect(igniteIntent).toBeDefined();
+      expect(igniteIntent).toMatchObject({
+        type: 'APPLY_TILE_EFFECT_STATUS',
+        effectType: 'oil',
+        statusType: 'burning',
+        position: { x: 6, y: 5 },
+        duration: 3,
+        sourceEntityId: player.id,
+      });
+    });
+
+    it('не поджигает oil повторно, если на нём уже есть burning', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', ['burning']) };
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['damage.magical.fire'],
+      };
+
+      const intents = runReactions(state, event);
+
+      const igniteIntents = intents.filter((intent) => intent.type === 'APPLY_TILE_EFFECT_STATUS');
+      expect(igniteIntents).toHaveLength(0);
+    });
+
+    it('не срабатывает при fire damage без oil в клетке', () => {
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED',
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: { x: 6, y: 5 },
+        tags: ['damage.magical.fire'],
+      };
+
+      const intents = runReactions(state, event);
+
+      const igniteIntents = intents.filter((intent) => intent.type === 'APPLY_TILE_EFFECT_STATUS');
+      expect(igniteIntents).toHaveLength(0);
     });
   });
 });

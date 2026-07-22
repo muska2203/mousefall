@@ -20,7 +20,7 @@ import type {
 } from '@simulation/core-types.ts';
 import type {Actor, GameState} from '@simulation/types.ts';
 import {findEntity, getTileEffectsAt, isActor} from '@simulation/state.ts';
-import {tryGetTileEffect} from '@content/registry';
+import {tryGetTileEffect, tryGetTileEffectStatus} from '@content/registry';
 import {hasAllTags} from '@simulation/systems/tags/tag-helpers.ts';
 import {ensureRuntimeRng} from '../runtime-rng.ts';
 import {getWorldContentRules} from '../rules.ts';
@@ -28,7 +28,7 @@ import {tryGetContentRule} from '../registry.ts';
 import {buildRuleContext, type RuleContext} from '../rule-context.ts';
 import {resolveParametrizedValue} from '../value-resolver.ts';
 import {evaluateConditions} from '../condition-evaluator.ts';
-import type {ActiveRule, ContentRule, OwnerContext, RuleEffect, TargetSelector,} from '../types.ts';
+import type {ActiveRule, ContentRule, OwnerContext, RuleEffect, TargetSelector} from '../types.ts';
 
 /** Слой происхождения правила. Определяет порядок обработки. */
 type RuleLayer = 'source' | 'target' | 'world' | 'radius';
@@ -38,8 +38,8 @@ type LayeredRule = {
   layer: RuleLayer;
   rule: ActiveRule;
   selfId: EntityId | null;
-  /** Подтип слоя `world`: global → tileEffect → tileIntrinsic. */
-  worldLayer?: 'global' | 'tileEffect' | 'tileIntrinsic';
+  /** Подтип слоя `world`: global → tileEffect → tileEffectStatus → tileIntrinsic. */
+  worldLayer?: 'global' | 'tileEffect' | 'tileEffectStatus' | 'tileIntrinsic';
 };
 
 /** Радиус слоя `radius` — Chebyshev distance от позиции события. */
@@ -53,11 +53,12 @@ const LAYER_ORDER: Record<RuleLayer, number> = {
   radius: 3,
 };
 
-/** Порядок подтипов внутри слоя `world`: global → tileEffect → tileIntrinsic. */
+/** Порядок подтипов внутри слоя `world`: global → tileEffect → tileEffectStatus → tileIntrinsic. */
 const WORLD_LAYER_ORDER: Record<NonNullable<LayeredRule['worldLayer']>, number> = {
   global: 0,
   tileEffect: 1,
-  tileIntrinsic: 2,
+  tileEffectStatus: 2,
+  tileIntrinsic: 3,
 };
 
 /**
@@ -85,9 +86,9 @@ export function runContentRuleReactions(
       return evaluateConditions(rule.targetConditions, ctx, selfId, candidateId);
     });
 
-    if (targetIds.length === 0) continue;
+    const ruleIntents = buildIntents(rule.effect, targetIds, ctx, selfId, rule.target);
+    if (ruleIntents.length === 0) continue;
 
-    const ruleIntents = buildIntents(rule.effect, targetIds, ctx, selfId);
     intents.push(...ruleIntents);
 
     builder.addChild(parent, {
@@ -150,17 +151,43 @@ function collectRules(ctx: RuleContext): LayeredRule[] {
   if (ctx.eventPosition !== null) {
     const tileEffects = getTileEffectsAt(state, ctx.eventPosition.x, ctx.eventPosition.y);
     for (const tileEffectType of Object.keys(tileEffects)) {
+      const effect = tileEffects[tileEffectType];
+      if (!effect) continue;
+
       const template = tryGetTileEffect(tileEffectType);
-      if (!template) continue;
-      for (const ruleId of template.ruleIds) {
-        const rule = tryGetContentRule(ruleId);
-        if (!rule) continue;
-        result.push({
-          layer: 'world',
-          rule: toActiveRule(rule, { type: 'tileEffect', position: ctx.eventPosition, tileEffectType }),
-          selfId: null,
-          worldLayer: 'tileEffect',
-        });
+      if (template) {
+        for (const ruleId of template.ruleIds) {
+          const rule = tryGetContentRule(ruleId);
+          if (!rule) continue;
+          result.push({
+            layer: 'world',
+            rule: toActiveRule(rule, { type: 'tileEffect', position: ctx.eventPosition, tileEffectType }),
+            selfId: null,
+            worldLayer: 'tileEffect',
+          });
+        }
+      }
+
+      // ── Слой world: tile effect statuses ──────────────────────────────────
+      // Правила собираются из шаблонов статусов, висящих на тайловых эффектах позиции.
+      for (const statusEffect of effect.statusEffects) {
+        const statusTemplate = tryGetTileEffectStatus(statusEffect.type);
+        if (!statusTemplate) continue;
+        for (const ruleId of statusTemplate.ruleIds) {
+          const rule = tryGetContentRule(ruleId);
+          if (!rule) continue;
+          result.push({
+            layer: 'world',
+            rule: toActiveRule(rule, {
+              type: 'tileEffectStatus',
+              position: ctx.eventPosition,
+              tileEffectType,
+              statusType: statusEffect.type,
+            }),
+            selfId: null,
+            worldLayer: 'tileEffectStatus',
+          });
+        }
       }
     }
   }
@@ -221,7 +248,7 @@ function sortRules(rules: LayeredRule[]): LayeredRule[] {
     const layerDiff = LAYER_ORDER[a.layer] - LAYER_ORDER[b.layer];
     if (layerDiff !== 0) return layerDiff;
 
-    // Внутри слоя `world` фиксированный порядок: global → tileEffect → tileIntrinsic.
+    // Внутри слоя `world` фиксированный порядок: global → tileEffect → tileEffectStatus → tileIntrinsic.
     if (a.layer === 'world' && b.layer === 'world') {
       const worldLayerDiff = WORLD_LAYER_ORDER[a.worldLayer!] - WORLD_LAYER_ORDER[b.worldLayer!];
       if (worldLayerDiff !== 0) return worldLayerDiff;
@@ -251,6 +278,9 @@ function resolveTarget(
       return selfId !== null ? [selfId] : [];
     case 'collisionTarget':
       return ctx.collisionTargetId !== null ? [ctx.collisionTargetId] : [];
+    case 'eventTileEffect':
+      // Цель — не сущность, а тайловый эффект; интент строится отдельно в buildIntents.
+      return [];
     case 'allInRadius':
       return resolveAllInRadius(selector, ctx, selfId);
     case 'nearestEnemy':
@@ -351,6 +381,7 @@ function buildIntents(
   targetIds: EntityId[],
   ctx: RuleContext,
   selfId: EntityId | null,
+  target: TargetSelector,
 ): Intent[] {
   switch (effect.type) {
     case 'applyStatus': {
@@ -431,6 +462,20 @@ function buildIntents(
         targetId,
         dx,
         dy,
+      }];
+    }
+    case 'applyTileEffectStatus': {
+      if (ctx.eventPosition === null) return [];
+      if (target.type !== 'eventTileEffect') return [];
+
+      const duration = resolveParametrizedValue(effect.duration, ctx);
+      return [{
+        type: 'APPLY_TILE_EFFECT_STATUS',
+        effectType: target.effectType,
+        statusType: effect.statusType,
+        position: ctx.eventPosition,
+        duration,
+        sourceEntityId: selfId ?? ctx.sourceEntityId,
       }];
     }
     default:

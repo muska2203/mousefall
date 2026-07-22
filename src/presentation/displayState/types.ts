@@ -26,11 +26,18 @@ export type DisplayEntity = {
   level?: number;
 };
 
+/** Оверлей тайлового эффекта для отрисовки поверх базового тайла. */
+export type TileEffectOverlay = {
+  type: string;
+  /** Порядок отрисовки относительно других оверлеев на той же клетке. */
+  renderOrder: number;
+};
+
 /** Один тайл, отображаемый на поле. */
 export type DisplayTile = {
   type: TileType;
-  /** Опциональный идентификатор тайлового эффекта (например, лужа крови). */
-  tileEffect?: string;
+  /** Оверлеи тайловых эффектов, отсортированные для отрисовки. */
+  tileEffects?: TileEffectOverlay[];
 };
 
 /** Карта, видимость и исследованность с точки зрения игрока. */
@@ -164,12 +171,16 @@ export type TileEffectChangedPatch = {
   type: 'TILE_EFFECT_CHANGED';
   effectType: string;
   position: Position;
+  /** Актуальный набор оверлеев на клетке после изменения. */
+  overlays: TileEffectOverlay[];
 };
 
 export type TileEffectRemovedPatch = {
   type: 'TILE_EFFECT_REMOVED';
   effectType: string;
   position: Position;
+  /** Актуальный набор оверлеев на клетке после удаления. */
+  overlays: TileEffectOverlay[];
 };
 
 export type ItemPickedUpPatch = {

@@ -147,6 +147,7 @@ beforeEach(() => {
       ['poisoned', mockStatus('poisoned', ['status_restore_ap_on_damage'])],
     ]),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
     maps: new Map(),
     doors: new Map([
       [

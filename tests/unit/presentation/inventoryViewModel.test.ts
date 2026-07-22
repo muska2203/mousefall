@@ -30,6 +30,7 @@ describe('Inventory ViewModel', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -100,6 +101,7 @@ describe('Inventory sorting', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 

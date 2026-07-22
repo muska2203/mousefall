@@ -48,6 +48,7 @@ beforeEach(() => {
     ]),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
 });
 

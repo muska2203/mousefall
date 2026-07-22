@@ -21,6 +21,7 @@ function initEmptyRegistry() {
     stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
 }
 
@@ -935,6 +936,7 @@ describe('GameSession auto-path integration', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
 
     const state = makeGameState();

@@ -23,6 +23,7 @@ import {
     StairsTemplateSchema,
     StatusTemplateSchema,
     TileEffectTemplateSchema,
+    TileEffectStatusTemplateSchema,
 } from './schemas';
 import {initRegistry} from './registry';
 import {z} from 'zod';
@@ -45,6 +46,7 @@ const ManifestSchema = z.object({
   abilities: z.array(z.string()),
   statuses: z.array(z.string()),
   tileEffects: z.array(z.string()),
+  tileEffectStatuses: z.array(z.string()),
   maps: z.array(z.string()),
   stairs: z.array(z.string()),
   doors: z.array(z.string()),
@@ -78,13 +80,14 @@ export async function browserFetchJson(path: string): Promise<unknown> {
 export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
   const manifest = await loadManifest(fetchJson);
 
-  const [entities, players, items, abilities, statuses, tileEffects, maps, stairs, doors] = await Promise.all([
+  const [entities, players, items, abilities, statuses, tileEffects, tileEffectStatuses, maps, stairs, doors] = await Promise.all([
     loadCategory(manifest.entities, EntityTemplateSchema, fetchJson),
     loadCategory(manifest.players, PlayerTemplateSchema, fetchJson),
     loadCategory(manifest.items, ItemTemplateSchema, fetchJson),
     loadCategory(manifest.abilities, AbilityTemplateSchema, fetchJson),
     loadCategory(manifest.statuses, StatusTemplateSchema, fetchJson),
     loadCategory(manifest.tileEffects, TileEffectTemplateSchema, fetchJson),
+    loadCategory(manifest.tileEffectStatuses, TileEffectStatusTemplateSchema, fetchJson),
     loadCategory(manifest.maps, MapParamsSchema, fetchJson),
     loadCategory(manifest.stairs, StairsTemplateSchema, fetchJson),
     loadCategory(manifest.doors, DoorTemplateSchema, fetchJson),
@@ -97,6 +100,7 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
     abilities: new Map(abilities.map(a => [a.id, a])),
     statuses:  new Map(statuses.map(s => [s.id, s])),
     tileEffects: new Map(tileEffects.map(t => [t.id, t])),
+    tileEffectStatuses: new Map(tileEffectStatuses.map(s => [s.id, s])),
     maps:      new Map(maps.map(m => [m.id, m])),
     stairs:    new Map(stairs.map(s => [s.id, s])),
     doors:     new Map(doors.map(d => [d.id, d])),

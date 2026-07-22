@@ -47,6 +47,7 @@ describe('DefaultActionPointCostResolver', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -102,6 +103,7 @@ describe('DefaultActionPointCostResolver', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
     expect(resolver.getCost({ type: 'USE_ABILITY', entityId: 'player', abilityId: 'counterattack', targets: [] }, state)).toBe(2);
 

@@ -1,11 +1,11 @@
 /**
  * Валидация ссылок на контентные правила и семантика декларативных правил.
  *
- * Проверяет, что все ruleIds, указанные в шаблонах предметов, способностей
- * и статусов, существуют в реестре правил, что внутри одного шаблона
- * нет дублирующихся ruleIds, а также что сами правила ссылаются на
- * реально существующий контент (статусы, формулы урона, способности)
- * и содержат корректные теги.
+ * Проверяет, что все ruleIds, указанные в шаблонах предметов, способностей,
+ * статусов, тайловых эффектов и статусов тайловых эффектов, существуют в реестре правил,
+ * что внутри одного шаблона нет дублирующихся ruleIds, а также что сами правила
+ * ссылаются на реально существующий контент (статусы, формулы урона, способности,
+ * тайловые эффекты и их статусы) и содержат корректные теги.
  */
 
 import type {LoadedContent} from '@content/schemas';
@@ -68,6 +68,14 @@ export function validateContentRuleReferences(content: LoadedContent): void {
   for (const [id, template] of content.statuses) {
     validateTemplateRuleIds(template.ruleIds, id);
   }
+
+  for (const [id, template] of content.tileEffects) {
+    validateTemplateRuleIds(template.ruleIds, id);
+  }
+
+  for (const [id, template] of content.tileEffectStatuses) {
+    validateTemplateRuleIds(template.ruleIds, id);
+  }
 }
 
 /**
@@ -80,12 +88,14 @@ export function validateContentRuleSemantics(content: LoadedContent): ContentRul
   const errors: ContentRuleValidationError[] = [];
   const knownStatusIds = new Set(content.statuses.keys());
   const knownAbilityIds = new Set(content.abilities.keys());
+  const knownTileEffectStatusIds = new Set(content.tileEffectStatuses.keys());
+  const knownTileEffectIds = new Set(content.tileEffects.keys());
 
   for (const rule of getAllContentRules()) {
     validateRuleTrigger(rule, errors);
-    validateRuleEffect(rule, knownStatusIds, knownAbilityIds, errors);
-    validateRuleConditions(rule, rule.conditions, errors);
-    validateRuleConditions(rule, rule.targetConditions, errors);
+    validateRuleEffect(rule, knownStatusIds, knownAbilityIds, knownTileEffectStatusIds, knownTileEffectIds, errors);
+    validateRuleConditions(rule, rule.conditions, knownTileEffectIds, knownTileEffectStatusIds, errors);
+    validateRuleConditions(rule, rule.targetConditions, knownTileEffectIds, knownTileEffectStatusIds, errors);
   }
 
   return errors;
@@ -129,6 +139,8 @@ function validateRuleEffect(
   rule: ContentRule,
   knownStatusIds: ReadonlySet<string>,
   knownAbilityIds: ReadonlySet<string>,
+  knownTileEffectStatusIds: ReadonlySet<string>,
+  knownTileEffectIds: ReadonlySet<string>,
   errors: ContentRuleValidationError[],
 ): void {
   const effect = rule.effect;
@@ -136,6 +148,9 @@ function validateRuleEffect(
   switch (effect.type) {
     case 'applyStatus':
       validateApplyStatusEffect(rule, effect, knownStatusIds, errors);
+      break;
+    case 'applyTileEffectStatus':
+      validateApplyTileEffectStatusEffect(rule, effect, knownTileEffectStatusIds, knownTileEffectIds, errors);
       break;
     case 'dealDamage':
       validateDealDamageEffect(rule, effect, errors);
@@ -164,6 +179,46 @@ function validateApplyStatusEffect(
       ruleId: rule.id,
       field: 'effect.statusType',
       problem: `Статус "${effect.statusType}" не найден в реестре статусов`,
+    });
+  }
+}
+
+/**
+ * Проверяет ссылку на статус тайлового эффекта и целевой тайловый эффект
+ * в эффекте applyTileEffectStatus.
+ */
+function validateApplyTileEffectStatusEffect(
+  rule: ContentRule,
+  effect: Extract<RuleEffect, { type: 'applyTileEffectStatus' }>,
+  knownTileEffectStatusIds: ReadonlySet<string>,
+  knownTileEffectIds: ReadonlySet<string>,
+  errors: ContentRuleValidationError[],
+): void {
+  if (!knownTileEffectStatusIds.has(effect.statusType)) {
+    errors.push({
+      path: `rule.${rule.id}.effect`,
+      ruleId: rule.id,
+      field: 'effect.statusType',
+      problem: `Статус тайлового эффекта "${effect.statusType}" не найден в реестре`,
+    });
+  }
+
+  if (rule.target.type !== 'eventTileEffect') {
+    errors.push({
+      path: `rule.${rule.id}.target`,
+      ruleId: rule.id,
+      field: 'target.type',
+      problem: 'Эффект applyTileEffectStatus требует target.type === "eventTileEffect"',
+    });
+    return;
+  }
+
+  if (!knownTileEffectIds.has(rule.target.effectType)) {
+    errors.push({
+      path: `rule.${rule.id}.target`,
+      ruleId: rule.id,
+      field: 'target.effectType',
+      problem: `Тайловый эффект "${rule.target.effectType}" не найден в реестре`,
     });
   }
 }
@@ -244,6 +299,8 @@ function validateCounterAttackEffect(
 function validateRuleConditions(
   rule: ContentRule,
   conditions: readonly RuleCondition[] | undefined,
+  knownTileEffectIds: ReadonlySet<string>,
+  knownTileEffectStatusIds: ReadonlySet<string>,
   errors: ContentRuleValidationError[],
 ): void {
   if (!conditions) {
@@ -253,7 +310,7 @@ function validateRuleConditions(
   for (let i = 0; i < conditions.length; i++) {
     const condition = conditions[i];
     if (condition) {
-      validateCondition(rule, condition, i, errors);
+      validateCondition(rule, condition, i, knownTileEffectIds, knownTileEffectStatusIds, errors);
     }
   }
 }
@@ -265,6 +322,8 @@ function validateCondition(
   rule: ContentRule,
   condition: RuleCondition,
   index: number,
+  knownTileEffectIds: ReadonlySet<string>,
+  knownTileEffectStatusIds: ReadonlySet<string>,
   errors: ContentRuleValidationError[],
 ): void {
   switch (condition.type) {
@@ -298,12 +357,40 @@ function validateCondition(
         });
       }
       break;
+    case 'inTileEffect':
+      if (!knownTileEffectIds.has(condition.effectType)) {
+        errors.push({
+          path: `rule.${rule.id}.conditions[${index}]`,
+          ruleId: rule.id,
+          field: 'condition.effectType',
+          problem: `Тайловый эффект "${condition.effectType}" не найден в реестре`,
+        });
+      }
+      break;
+    case 'tileEffectHasStatus':
+      if (!knownTileEffectIds.has(condition.effectType)) {
+        errors.push({
+          path: `rule.${rule.id}.conditions[${index}]`,
+          ruleId: rule.id,
+          field: 'condition.effectType',
+          problem: `Тайловый эффект "${condition.effectType}" не найден в реестре`,
+        });
+      }
+      if (!knownTileEffectStatusIds.has(condition.statusType)) {
+        errors.push({
+          path: `rule.${rule.id}.conditions[${index}]`,
+          ruleId: rule.id,
+          field: 'condition.statusType',
+          problem: `Статус тайлового эффекта "${condition.statusType}" не найден в реестре`,
+        });
+      }
+      break;
     case 'and':
     case 'or':
-      validateRuleConditions(rule, condition.conditions, errors);
+      validateRuleConditions(rule, condition.conditions, knownTileEffectIds, knownTileEffectStatusIds, errors);
       break;
     case 'not':
-      validateCondition(rule, condition.condition, index, errors);
+      validateCondition(rule, condition.condition, index, knownTileEffectIds, knownTileEffectStatusIds, errors);
       break;
   }
 }

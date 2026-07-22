@@ -27,7 +27,8 @@ import type {
     PlayerTemplate,
     StairsTemplate,
     StatusTemplate,
-    TileEffectTemplate
+    TileEffectTemplate,
+    TileEffectStatusTemplate,
 } from './schemas';
 import {getContentText, type Locale} from './texts/lookup';
 
@@ -66,6 +67,10 @@ export type LocalizedDoorTemplate = DoorTemplate & {
 };
 
 export type LocalizedTileEffectTemplate = TileEffectTemplate & {
+  name: string;
+};
+
+export type LocalizedTileEffectStatusTemplate = TileEffectStatusTemplate & {
   name: string;
 };
 
@@ -262,6 +267,59 @@ export function getAllTileEffects(): TileEffectTemplate[] {
 export function getAllLocalizedTileEffects(locale: Locale): LocalizedTileEffectTemplate[] {
   return Array.from(getRegistry().tileEffects.values()).map((template) => {
     const text = getContentText('tileEffects', template.id, locale);
+    return {...template, name: text.name};
+  });
+}
+
+/**
+ * Получить шаблон статуса тайлового эффекта по ID.
+ */
+export function getTileEffectStatus(id: string): TileEffectStatusTemplate {
+  const template = getRegistry().tileEffectStatuses.get(id);
+  if (!template) throw new Error(`Tile effect status template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон статуса тайлового эффекта.
+ */
+export function tryGetTileEffectStatus(id: string): TileEffectStatusTemplate | undefined {
+  if (_registry === null) return undefined;
+  return _registry.tileEffectStatuses.get(id);
+}
+
+/**
+ * Получить локализованный шаблон статуса тайлового эффекта по ID.
+ */
+export function getLocalizedTileEffectStatus(id: string, locale: Locale): LocalizedTileEffectStatusTemplate {
+  const template = getTileEffectStatus(id);
+  const text = getContentText('tileEffectStatuses', id, locale);
+  return {...template, name: text.name};
+}
+
+/**
+ * Попытаться получить локализованный шаблон статуса тайлового эффекта.
+ */
+export function tryGetLocalizedTileEffectStatus(id: string, locale: Locale): LocalizedTileEffectStatusTemplate | undefined {
+  const template = tryGetTileEffectStatus(id);
+  if (!template) return undefined;
+  const text = getContentText('tileEffectStatuses', id, locale);
+  return {...template, name: text.name};
+}
+
+/**
+ * Получить все шаблоны статусов тайловых эффектов.
+ */
+export function getAllTileEffectStatuses(): TileEffectStatusTemplate[] {
+  return Array.from(getRegistry().tileEffectStatuses.values());
+}
+
+/**
+ * Получить все локализованные шаблоны статусов тайловых эффектов.
+ */
+export function getAllLocalizedTileEffectStatuses(locale: Locale): LocalizedTileEffectStatusTemplate[] {
+  return Array.from(getRegistry().tileEffectStatuses.values()).map((template) => {
+    const text = getContentText('tileEffectStatuses', template.id, locale);
     return {...template, name: text.name};
   });
 }

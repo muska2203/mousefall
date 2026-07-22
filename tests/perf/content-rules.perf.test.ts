@@ -504,6 +504,7 @@ describe('WP6.5 — Проверка производительности conten
       ]),
       statuses: new Map(perfStatusTemplates.map((s) => [s.id, s] as const)),
       tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
       maps: new Map(),
       doors: new Map(),
       stairs: new Map(),

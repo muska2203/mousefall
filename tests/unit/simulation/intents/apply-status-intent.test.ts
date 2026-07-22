@@ -66,6 +66,7 @@ describe('apply-status-intent-executer', () => {
         ['counterattack', mockStatusTemplate({ id: 'counterattack', statusCategory: 'generic', categoryPriority: 0 })],
       ]),
       tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
     });
   });
 

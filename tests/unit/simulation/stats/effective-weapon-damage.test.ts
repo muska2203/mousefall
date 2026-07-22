@@ -71,6 +71,7 @@ describe('effective weapon damage helpers', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 

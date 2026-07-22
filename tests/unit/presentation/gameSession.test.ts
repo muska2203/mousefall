@@ -48,6 +48,7 @@ describe('GameSession debug mode', () => {
     tileEffects: new Map([
       ['water', {id: 'water', layer: 'cover', duration: 4, renderOrder: 1, ruleIds: [], blockedByTileEffects: [], mutuallyExclusiveWithTileEffects: [], canHaveStatus: []} as any],
     ]),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -191,6 +192,7 @@ describe('GameSession AP display during animations', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -280,6 +282,7 @@ describe('GameSession moveOrAttack with doors', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -418,6 +421,7 @@ describe('GameSession interactions (F / Tab)', () => {
       ]),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -770,6 +774,7 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
 
     const templates = GameSession.getAvailablePlayerTemplates('ru');
@@ -802,6 +807,7 @@ describe('GameSession DisplayState', () => {
       stairs: new Map(),
       statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
     });
   });
 
@@ -946,6 +952,7 @@ describe('GameSession fieldObjectPopover', () => {
       stairs: new Map(),
       statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
     });
   });
 

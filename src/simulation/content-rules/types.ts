@@ -26,6 +26,12 @@ export type OwnerContext =
       tileEffectType: string;
     }
   | {
+      type: 'tileEffectStatus';
+      position: Position;
+      tileEffectType: string;
+      statusType: string;
+    }
+  | {
       type: 'world';
     };
 
@@ -64,6 +70,7 @@ export type RuleCondition =
   | { type: 'hasStatus'; statusType: StatusEffectType; subject: 'self' | 'target' | 'candidate' }
   | { type: 'hasTag'; tag: GameplayTag }
   | { type: 'inTileEffect'; effectType: string }
+  | { type: 'tileEffectHasStatus'; effectType: string; statusType: string }
   | { type: 'eventFieldEquals'; field: string; value: unknown }
   | { type: 'eventRole'; role: 'source' | 'target' }
   | { type: 'and'; conditions: RuleCondition[] }
@@ -78,6 +85,7 @@ export type TargetSelector =
   | { type: 'eventSource' }
   | { type: 'self' }
   | { type: 'collisionTarget' }
+  | { type: 'eventTileEffect'; effectType: string }
   | { type: 'allInRadius'; radius: number; center: 'eventPosition' | 'self'; faction?: 'enemy' | 'ally'; excludeSelf?: boolean }
   | { type: 'nearestEnemy'; radius: number; center: 'eventPosition' | 'self' };
 
@@ -116,6 +124,11 @@ export type RuleEffect =
     }
   | {
       type: 'counterAttack';
+    }
+  | {
+      type: 'applyTileEffectStatus';
+      statusType: string;
+      duration: number | ParametrizedValue;
     };
 
 /**
@@ -145,7 +158,7 @@ export type ActiveRule = ContentRule & {
  * Используется для глобальных мировых правил и тайловых эффектов.
  */
 export type WorldContentRule = ContentRule & {
-  ownerContext: Extract<OwnerContext, { type: 'world' } | { type: 'tileEffect' }>;
+  ownerContext: Extract<OwnerContext, { type: 'world' } | { type: 'tileEffect' } | { type: 'tileEffectStatus' }>;
   /** Подтип слоя world для сортировки. */
-  worldLayer: 'global' | 'tileEffect' | 'tileIntrinsic';
+  worldLayer: 'global' | 'tileEffect' | 'tileEffectStatus' | 'tileIntrinsic';
 };

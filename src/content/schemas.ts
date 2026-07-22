@@ -223,6 +223,33 @@ export const TileEffectTemplateSchema = z.object({
 export type TileEffectTemplate = z.output<typeof TileEffectTemplateSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон статуса тайлового эффекта
+// ─────────────────────────────────────────────
+
+export const TileEffectStatusTemplateSchema = z.object({
+  id: z.string().min(1).describe('Уникальный идентификатор статуса тайлового эффекта (совпадает с именем файла)'),
+  duration: z.number().int().positive()
+    .describe('Базовая длительность статуса тайлового эффекта в ходах'),
+  ruleIds: RuleIdsSchema,
+  statusCategory: z.enum(['elemental', 'physical', 'mental', 'poison', 'generic'])
+    .default('generic')
+    .describe('Категория статуса для разрешения конфликтов'),
+  categoryPriority: z.number().int()
+    .default(0)
+    .describe('Приоритет внутри категории; выше — приоритетнее'),
+  mutuallyExclusiveWith: z.array(z.string().min(1))
+    .default([])
+    .describe('Статусы тайловых эффектов, снимаемые при наложении этого статуса'),
+  blockedBy: z.array(z.string().min(1))
+    .default([])
+    .describe('Статусы тайловых эффектов, блокирующие наложение этого статуса'),
+  renderOrder: z.number().int().default(1)
+    .describe('Порядок отрисовки статуса относительно других статусов тайлового эффекта'),
+}).describe('Шаблон статуса тайлового эффекта');
+
+export type TileEffectStatusTemplate = z.output<typeof TileEffectStatusTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Параметры карты
 // ─────────────────────────────────────────────
 
@@ -301,6 +328,7 @@ export type LoadedContent = {
   abilities: Map<string, AbilityTemplate>;
   statuses:  Map<string, StatusTemplate>;
   tileEffects: Map<string, TileEffectTemplate>;
+  tileEffectStatuses: Map<string, TileEffectStatusTemplate>;
   maps:      Map<string, MapParams>;
   stairs:    Map<string, StairsTemplate>;
   doors:     Map<string, DoorTemplate>;

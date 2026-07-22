@@ -1,0 +1,10 @@
+{
+  "id": "oil",
+  "layer": "cover",
+  "duration": 5,
+  "renderOrder": 2,
+  "ruleIds": ["oil_applies_oiled", "fire_damage_ignites_oil"],
+  "blockedByTileEffects": [],
+  "mutuallyExclusiveWithTileEffects": ["water"],
+  "canHaveStatus": ["burning"]
+}

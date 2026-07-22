@@ -12,10 +12,15 @@ import type {
   RemoveTileEffectIntent,
   SpawnTileEffectIntent,
   TickTileEffectsIntent,
+  ApplyTileEffectStatusIntent,
+  RemoveTileEffectStatusIntent,
   TileEffectInstance,
 } from '@simulation/systems/intents/types.ts';
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
+import type {TileEffectStatusInstance} from '@simulation/core-types.ts';
 import {tryGetTileEffect} from '@content/registry.ts';
+import {getTileEffectStatusTemplate} from '@simulation/systems/tile-effects/tile-effect-status-template.ts';
+import {resolveStatusConflicts} from '@simulation/systems/statuses/resolve-status-conflicts.ts';
 
 /**
  * Создаёт экземпляр тайлового эффекта с заданными параметрами.
@@ -67,16 +72,20 @@ export const executeSpawnTileEffectIntent: IntentExecutor<SpawnTileEffectIntent>
   }
 
   const cell = ensureTileEffectsCell(state, x, y);
-  const isNew = cell[intent.effectType] === undefined;
+  const existingEffect = cell[intent.effectType];
   const template = tryGetTileEffect(intent.effectType);
   const duration = intent.duration ?? template?.duration ?? 4;
-  cell[intent.effectType] = createTileEffectInstance(intent.effectType, duration);
+  if (!existingEffect) {
+    cell[intent.effectType] = createTileEffectInstance(intent.effectType, duration);
+  } else {
+    existingEffect.duration = duration;
+  }
 
   return builder.addChild(parent, {
     type: 'TILE_EFFECT_CHANGED',
     effectType: intent.effectType,
     position: { x, y },
-    isNew,
+    isNew: !existingEffect,
   });
 };
 
@@ -108,6 +117,7 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
   parent: ExecutionNode,
 ) => {
   const removed: Array<{ effectType: string; x: number; y: number }> = [];
+  let lastNode: ExecutionNode | null = null;
 
   // Детерминированный обход: сначала по строкам (y), затем по столбцам (x).
   for (let y = 0; y < state.map.height; y++) {
@@ -119,8 +129,36 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
       for (const effectType of Object.keys(cell)) {
         const effect = cell[effectType];
         if (!effect) continue;
+
         effect.duration -= 1;
-        if (effect.duration <= 0) {
+        // TODO(tile-effects-stage-3): здесь будет порождаться TILE_EFFECT_TICKED.
+
+        if (effect.duration > 0) {
+          // Тикаем только статусы живого эффекта.
+          const aliveStatuses: TileEffectStatusInstance[] = [];
+          for (const status of effect.statusEffects) {
+            status.duration -= 1;
+            lastNode = builder.addChild(parent, {
+              type: 'TILE_EFFECT_STATUS_TICKED',
+              effectType,
+              statusType: status.type,
+              position: { x, y },
+            });
+
+            if (status.duration > 0) {
+              aliveStatuses.push(status);
+            } else {
+              lastNode = builder.addChild(parent, {
+                type: 'TILE_EFFECT_STATUS_REMOVED',
+                effectType,
+                statusType: status.type,
+                position: { x, y },
+              });
+            }
+          }
+          effect.statusEffects = aliveStatuses;
+        } else {
+          // Эффект истёк — его статусы удалятся вместе с ним без отдельных событий.
           removed.push({ effectType, x, y });
         }
       }
@@ -128,9 +166,8 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
   }
 
   // Удаляем истёкшие эффекты и порождаем события.
-  let lastNode: ExecutionNode | null = null;
   for (const { effectType, x, y } of removed) {
-    const cell = state.tileEffects[y]![x];
+    const cell = state.tileEffects[y]?.[x];
     if (cell) {
       delete cell[effectType];
     }
@@ -142,4 +179,133 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
   }
 
   return lastNode;
+};
+
+/**
+ * Накладывает статус на тайловый эффект.
+ *
+ * Проверки:
+ * - Позиция в пределах карты.
+ * - Тайловый эффект effectType присутствует на клетке.
+ * - Шаблон эффекта разрешает этот статус через canHaveStatus.
+ * - Шаблон статуса не блокируется уже существующими статусами через blockedBy.
+ *
+ * Применяет взаимоисключение: снимает конфликтующие статусы и порождает
+ * TILE_EFFECT_STATUS_REMOVED для каждого снятого.
+ * Если статус уже есть — обновляет длительность, иначе добавляет новый экземпляр.
+ * Порождает TILE_EFFECT_STATUS_APPLIED с итоговой длительностью.
+ */
+export const executeApplyTileEffectStatusIntent: IntentExecutor<ApplyTileEffectStatusIntent> = (
+  state: GameState,
+  intent: ApplyTileEffectStatusIntent,
+  builder: ExecutionBuilder,
+  parent: ExecutionNode,
+) => {
+  const { x, y } = intent.position;
+  if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) {
+    return null;
+  }
+
+  const cell = ensureTileEffectsCell(state, x, y);
+  const effect = cell[intent.effectType];
+  if (!effect) {
+    return null;
+  }
+
+  const effectTemplate = tryGetTileEffect(intent.effectType);
+  if (!effectTemplate) {
+    return null;
+  }
+
+  if (!effectTemplate.canHaveStatus.includes(intent.statusType)) {
+    return null;
+  }
+
+  const statusTemplate = getTileEffectStatusTemplate(intent.statusType);
+  if (!statusTemplate) {
+    return null;
+  }
+
+  // Разрешаем конфликты blockedBy / mutuallyExclusiveWith через общий хелпер.
+  const conflictResult = resolveStatusConflicts(
+    effect.statusEffects,
+    { blockedBy: statusTemplate.blockedBy, mutuallyExclusiveWith: statusTemplate.mutuallyExclusiveWith },
+  );
+
+  if (conflictResult.blockedBy) {
+    return null;
+  }
+
+  for (const exclusiveType of conflictResult.removedTypes) {
+    const index = effect.statusEffects.findIndex((status) => status.type === exclusiveType);
+    if (index >= 0) {
+      effect.statusEffects.splice(index, 1);
+      builder.addChild(parent, {
+        type: 'TILE_EFFECT_STATUS_REMOVED',
+        effectType: intent.effectType,
+        statusType: exclusiveType,
+        position: { x, y },
+      });
+    }
+  }
+
+  const duration = intent.duration ?? statusTemplate.duration;
+  const existingIndex = effect.statusEffects.findIndex((status) => status.type === intent.statusType);
+  if (existingIndex >= 0) {
+    effect.statusEffects[existingIndex] = {
+      ...effect.statusEffects[existingIndex]!,
+      duration,
+    };
+  } else {
+    const newStatus: TileEffectStatusInstance = {
+      type: intent.statusType,
+      duration,
+      renderOrder: statusTemplate.renderOrder,
+    };
+    effect.statusEffects.push(newStatus);
+  }
+
+  return builder.addChild(parent, {
+    type: 'TILE_EFFECT_STATUS_APPLIED',
+    effectType: intent.effectType,
+    statusType: intent.statusType,
+    position: { x, y },
+    duration,
+  });
+};
+
+/**
+ * Удаляет статус с тайлового эффекта и порождает TILE_EFFECT_STATUS_REMOVED.
+ * Возвращает null, если эффект или статус отсутствуют.
+ */
+export const executeRemoveTileEffectStatusIntent: IntentExecutor<RemoveTileEffectStatusIntent> = (
+  state: GameState,
+  intent: RemoveTileEffectStatusIntent,
+  builder: ExecutionBuilder,
+  parent: ExecutionNode,
+) => {
+  const { x, y } = intent.position;
+  if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) {
+    return null;
+  }
+
+  const cell = ensureTileEffectsCell(state, x, y);
+  const effect = cell[intent.effectType];
+  if (!effect) {
+    return null;
+  }
+
+  const index = effect.statusEffects.findIndex((status) => status.type === intent.statusType);
+  if (index < 0) {
+    return null;
+  }
+
+  effect.statusEffects.splice(index, 1);
+
+  return builder.addChild(parent, {
+    type: 'TILE_EFFECT_STATUS_REMOVED',
+    effectType: intent.effectType,
+    statusType: intent.statusType,
+    position: { x, y },
+  });
 };

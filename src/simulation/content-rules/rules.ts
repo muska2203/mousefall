@@ -52,6 +52,41 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     priority: 0,
   },
   {
+    id: 'oil_applies_oiled',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    conditions: [{ type: 'inTileEffect', effectType: 'oil' }],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'oiled',
+      duration: 3,
+    },
+    target: { type: 'eventSource' },
+    priority: 0,
+  },
+  {
+    id: 'fire_damage_ignites_oil',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['damage.magical.fire'],
+    },
+    conditions: [
+      { type: 'inTileEffect', effectType: 'oil' },
+      {
+        type: 'not',
+        condition: { type: 'tileEffectHasStatus', effectType: 'oil', statusType: 'burning' },
+      },
+    ],
+    effect: {
+      type: 'applyTileEffectStatus',
+      statusType: 'burning',
+      duration: 3,
+    },
+    target: { type: 'eventTileEffect', effectType: 'oil' },
+    priority: 0,
+  },
+  {
     id: 'item_fire_damage_multiplier',
     trigger: {
       event: 'DAMAGE',

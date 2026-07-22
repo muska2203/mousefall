@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Entity, GameEvent, GameState } from '../../../../src/simulation/types';
+import type { TileEffectInstance, TileEffects } from '../../../../src/simulation/core-types';
 import {
   buildDisplayState,
   createPatch,
@@ -19,6 +20,13 @@ import {
 } from '../../../fixtures/gameState';
 import { PLAYER_ID } from '../../../../src/utils/constants';
 import type { DisplayPatch } from '../../../../src/presentation/displayState/types';
+
+function makeMinimalState(): GameState {
+  return makeGameState({
+    player: makePlayer({ x: 5, y: 5 }),
+    entities: new Map(),
+  });
+}
 
 function buildStateWithDoorAndItem(): GameState {
   const player = makePlayer({ x: 5, y: 5 });
@@ -78,6 +86,29 @@ describe('buildDisplayState', () => {
     expect(display.map.explored).not.toBe(state.explored);
     expect(display.entities.get(PLAYER_ID)).not.toBe(state.player);
   });
+
+  it('collects tile effect overlays with correct renderOrder including statuses', () => {
+    const state = makeGameState({
+      player: makePlayer({ x: 5, y: 5 }),
+      entities: new Map(),
+    });
+    const tileEffects = state.tileEffects as TileEffects[][];
+    tileEffects[5]![5]! = {
+      oil: {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 3, renderOrder: 2 }],
+        renderOrder: 1,
+      } satisfies TileEffectInstance,
+    };
+
+    const display = buildDisplayState(state);
+    expect(display.map.tiles[5]![5]!.tileEffects).toEqual([
+      { type: 'oil', renderOrder: 1 },
+      { type: 'burning', renderOrder: 2 },
+    ]);
+  });
 });
 
 describe('createPatch', () => {
@@ -89,7 +120,7 @@ describe('createPatch', () => {
       to: { x: 6, y: 5 },
       movementType: 'walk',
     };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({
       type: 'ENTITY_MOVED',
       entityId: 'player',
@@ -107,7 +138,7 @@ describe('createPatch', () => {
       position: { x: 3, y: 3 },
       tags: ['damage.physical'],
     };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({
       type: 'ENTITY_DAMAGED',
       entityId: 'enemy_test_1',
@@ -123,7 +154,7 @@ describe('createPatch', () => {
       newHp: 90,
       position: { x: 5, y: 5 },
     };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({
       type: 'ENTITY_HEALED',
       entityId: PLAYER_ID,
@@ -138,7 +169,7 @@ describe('createPatch', () => {
       entityId: 'enemy_test_1',
       position: { x: 3, y: 3 },
     };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({ type: 'ENTITY_DIED', entityId: 'enemy_test_1' });
   });
 
@@ -150,7 +181,7 @@ describe('createPatch', () => {
       sourceEntityId: null,
       effect,
     };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({
       type: 'STATUS_APPLIED',
       entityId: 'enemy_test_1',
@@ -164,7 +195,7 @@ describe('createPatch', () => {
       entityId: 'enemy_test_1',
       effectType: 'poisoned',
     };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({
       type: 'STATUS_REMOVED',
       entityId: 'enemy_test_1',
@@ -180,7 +211,7 @@ describe('createPatch', () => {
       statusType: 'burning',
       blockedBy: 'frozen',
     };
-    expect(createPatch(event)).toEqual({ type: 'NO_OP' });
+    expect(createPatch(event, makeMinimalState())).toEqual({ type: 'NO_OP' });
   });
 
   it('maps FOG_UPDATED to full visibility/explored snapshot', () => {
@@ -210,7 +241,7 @@ describe('createPatch', () => {
 
   it('maps DOOR_OPENED to door patch', () => {
     const event: GameEvent = { type: 'DOOR_OPENED', position: { x: 4, y: 5 } };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({ type: 'DOOR_OPENED', position: { x: 4, y: 5 } });
   });
 
@@ -224,7 +255,7 @@ describe('createPatch', () => {
       position: { x: 3, y: 3 },
       from: { x: 2, y: 3 },
     };
-    const patch = createPatch(event);
+    const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({
       type: 'ITEM_DROPPED',
       container: {
@@ -243,7 +274,7 @@ describe('createPatch', () => {
       type: 'ACTION_APPLIED',
       action: { type: 'MOVE', entityId: PLAYER_ID, dx: 1, dy: 0 },
     };
-    expect(createPatch(action)).toEqual({ type: 'NO_OP' });
+    expect(createPatch(action, makeMinimalState())).toEqual({ type: 'NO_OP' });
 
     const resource: GameEvent = {
       type: 'RESOURCE_CONSUMED',
@@ -252,7 +283,7 @@ describe('createPatch', () => {
       amount: 1,
       remaining: 0,
     };
-    expect(createPatch(resource)).toEqual({ type: 'NO_OP' });
+    expect(createPatch(resource, makeMinimalState())).toEqual({ type: 'NO_OP' });
 
     const cooldown: GameEvent = {
       type: 'COOLDOWN_SET',
@@ -260,7 +291,125 @@ describe('createPatch', () => {
       abilityId: 'dash',
       turns: 2,
     };
-    expect(createPatch(cooldown)).toEqual({ type: 'NO_OP' });
+    expect(createPatch(cooldown, makeMinimalState())).toEqual({ type: 'NO_OP' });
+  });
+
+  it('maps TILE_EFFECT_CHANGED to overlay patch from state', () => {
+    const state = makeGameState({
+      player: makePlayer({ x: 5, y: 5 }),
+      entities: new Map(),
+    });
+    const tileEffects = state.tileEffects as TileEffects[][];
+    tileEffects[3]![3]! = {
+      oil: {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [{ type: 'burning', duration: 3, renderOrder: 2 }],
+        renderOrder: 1,
+      } satisfies TileEffectInstance,
+    };
+
+    const event: GameEvent = {
+      type: 'TILE_EFFECT_CHANGED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+      isNew: true,
+    };
+    const patch = createPatch(event, state);
+    expect(patch).toEqual({
+      type: 'TILE_EFFECT_CHANGED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+      overlays: [
+        { type: 'oil', renderOrder: 1 },
+        { type: 'burning', renderOrder: 2 },
+      ],
+    });
+  });
+
+  it('maps TILE_EFFECT_REMOVED to overlay patch from state', () => {
+    const state = makeGameState({
+      player: makePlayer({ x: 5, y: 5 }),
+      entities: new Map(),
+    });
+    const tileEffects = state.tileEffects as TileEffects[][];
+    tileEffects[3]![3]! = {
+      water: {
+        type: 'water',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [],
+        renderOrder: 1,
+      } satisfies TileEffectInstance,
+    };
+
+    const event: GameEvent = {
+      type: 'TILE_EFFECT_REMOVED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+    };
+    const patch = createPatch(event, state);
+    expect(patch).toEqual({
+      type: 'TILE_EFFECT_REMOVED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+      overlays: [{ type: 'water', renderOrder: 1 }],
+    });
+  });
+
+  it('maps TILE_EFFECT_STATUS_APPLIED to overlay patch from state', () => {
+    const state = makeGameState({
+      player: makePlayer({ x: 5, y: 5 }),
+      entities: new Map(),
+    });
+    const tileEffects = state.tileEffects as TileEffects[][];
+    tileEffects[3]![3]! = {
+      oil: {
+        type: 'oil',
+        duration: 5,
+        layer: 'cover',
+        statusEffects: [
+          { type: 'burning', duration: 3, renderOrder: 2 },
+        ],
+        renderOrder: 1,
+      } satisfies TileEffectInstance,
+    };
+
+    const event: GameEvent = {
+      type: 'TILE_EFFECT_STATUS_APPLIED',
+      effectType: 'oil',
+      statusType: 'burning',
+      position: { x: 3, y: 3 },
+      duration: 3,
+    };
+    const patch = createPatch(event, state);
+    expect(patch).toEqual({
+      type: 'TILE_EFFECT_CHANGED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+      overlays: [
+        { type: 'oil', renderOrder: 1 },
+        { type: 'burning', renderOrder: 2 },
+      ],
+    });
+  });
+
+  it('returns NO_OP for TILE_EFFECT_STATUS_TICKED and TILE_EFFECT_TICKED', () => {
+    const tickedStatus: GameEvent = {
+      type: 'TILE_EFFECT_STATUS_TICKED',
+      effectType: 'oil',
+      statusType: 'burning',
+      position: { x: 3, y: 3 },
+    };
+    expect(createPatch(tickedStatus, makeMinimalState())).toEqual({ type: 'NO_OP' });
+
+    const ticked: GameEvent = {
+      type: 'TILE_EFFECT_TICKED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+    };
+    expect(createPatch(ticked, makeMinimalState())).toEqual({ type: 'NO_OP' });
   });
 });
 
@@ -273,7 +422,7 @@ describe('applyPatch', () => {
       from: { x: 5, y: 5 },
       to: { x: 6, y: 5 },
       movementType: 'walk',
-    });
+    }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.player.x).toBe(6);
@@ -290,7 +439,7 @@ describe('applyPatch', () => {
       damage: 120,
       position: { x: 5, y: 5 },
       tags: ['damage.physical'],
-    });
+    }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.player.hp).toBe(0);
@@ -306,7 +455,7 @@ describe('applyPatch', () => {
       amount: 100,
       newHp: 200,
       position: { x: 5, y: 5 },
-    });
+    }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.player.hp).toBe(100);
@@ -323,7 +472,7 @@ describe('applyPatch', () => {
       entityId: PLAYER_ID,
       sourceEntityId: null,
       effect: { type: 'poisoned', duration: 5, value: 2 } as any,
-    });
+    }, makeMinimalState());
     const withPoison = applyPatch(state, applied);
     expect(withPoison.player.statusEffects!.map((e) => e.type)).toEqual(['burning', 'poisoned']);
 
@@ -331,7 +480,7 @@ describe('applyPatch', () => {
       type: 'STATUS_REMOVED',
       entityId: PLAYER_ID,
       effectType: 'burning',
-    });
+    }, makeMinimalState());
     const withoutBurning = applyPatch(withPoison, removed);
     expect(withoutBurning.player.statusEffects!.map((e) => e.type)).toEqual(['poisoned']);
   });
@@ -380,7 +529,7 @@ describe('applyPatch', () => {
 
   it('updates door open state', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
-    const patch = createPatch({ type: 'DOOR_OPENED', position: { x: 4, y: 5 } });
+    const patch = createPatch({ type: 'DOOR_OPENED', position: { x: 4, y: 5 } }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.entities.get('door_1')!.isOpen).toBe(true);
@@ -397,7 +546,7 @@ describe('applyPatch', () => {
       templateId: 'gold',
       position: { x: 7, y: 5 },
       from: { x: 6, y: 5 },
-    });
+    }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     const container = next.entities.get('floor_container_2');
@@ -412,7 +561,7 @@ describe('applyPatch', () => {
     const patch = createPatch({
       type: 'DEAD_ENTITIES_CLEANED',
       removed: [{ entityId: 'door_1', position: { x: 4, y: 5 } }],
-    });
+    }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.entities.has('door_1')).toBe(false);
@@ -421,7 +570,7 @@ describe('applyPatch', () => {
 
   it('updates player death and phase', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
-    const patch = createPatch({ type: 'PLAYER_DIED' });
+    const patch = createPatch({ type: 'PLAYER_DIED' }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.player.isAlive).toBe(false);
@@ -431,7 +580,7 @@ describe('applyPatch', () => {
 
   it('updates player level on PLAYER_LEVELED_UP', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
-    const patch = createPatch({ type: 'PLAYER_LEVELED_UP', newLevel: 2 });
+    const patch = createPatch({ type: 'PLAYER_LEVELED_UP', newLevel: 2 }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.player.level).toBe(2);
@@ -444,11 +593,55 @@ describe('applyPatch', () => {
       side: 'enemies',
       round: 1,
       actorId: 'enemy_test_1',
-    });
+    }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.meta.turnSide).toBe('enemies');
     expect(next.meta.round).toBe(1);
+  });
+
+  it('updates tileEffects on TILE_EFFECT_CHANGED', () => {
+    const state = buildDisplayState(buildStateWithDoorAndItem());
+    const patch: DisplayPatch = {
+      type: 'TILE_EFFECT_CHANGED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+      overlays: [
+        { type: 'oil', renderOrder: 1 },
+        { type: 'burning', renderOrder: 2 },
+      ],
+    };
+    const next = applyPatch(state, patch);
+
+    expect(next.map.tiles[3]![3]!.tileEffects).toEqual([
+      { type: 'oil', renderOrder: 1 },
+      { type: 'burning', renderOrder: 2 },
+    ]);
+    expect(state.map.tiles[3]![3]!.tileEffects).toBeUndefined();
+  });
+
+  it('updates tileEffects on TILE_EFFECT_REMOVED', () => {
+    const state = buildDisplayState(buildStateWithDoorAndItem());
+    const changed: DisplayPatch = {
+      type: 'TILE_EFFECT_CHANGED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+      overlays: [
+        { type: 'oil', renderOrder: 1 },
+        { type: 'burning', renderOrder: 2 },
+      ],
+    };
+    const withEffects = applyPatch(state, changed);
+
+    const removed: DisplayPatch = {
+      type: 'TILE_EFFECT_REMOVED',
+      effectType: 'oil',
+      position: { x: 3, y: 3 },
+      overlays: [],
+    };
+    const next = applyPatch(withEffects, removed);
+
+    expect(next.map.tiles[3]![3]!.tileEffects).toEqual([]);
   });
 });
 

@@ -68,6 +68,7 @@ describe('resolveStatusBatch', () => {
         ['poisoned', mockStatusTemplate({ id: 'poisoned', statusCategory: 'poison', categoryPriority: 0 })],
       ]),
       tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
     });
   });
 

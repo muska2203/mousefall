@@ -367,7 +367,9 @@ export type Intent =
   | CounterAttackIntent
   | SpawnTileEffectIntent
   | RemoveTileEffectIntent
-  | TickTileEffectsIntent;
+  | TickTileEffectsIntent
+  | ApplyTileEffectStatusIntent
+  | RemoveTileEffectStatusIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -411,6 +413,21 @@ export type CounterAttackIntent = { type: 'COUNTER_ATTACK'; counterAttackerId: E
 export type SpawnTileEffectIntent = { type: 'SPAWN_TILE_EFFECT'; effectType: string; position: Position; duration?: number };
 export type RemoveTileEffectIntent = { type: 'REMOVE_TILE_EFFECT'; effectType: string; position: Position };
 export type TickTileEffectsIntent = { type: 'TICK_TILE_EFFECTS' };
+export type ApplyTileEffectStatusIntent = {
+  type: 'APPLY_TILE_EFFECT_STATUS';
+  effectType: string;
+  statusType: string;
+  position: Position;
+  duration?: number;
+  /** Сущность-источник наложения статуса; для мировых правил берётся из контекста события. */
+  sourceEntityId?: EntityId | null;
+};
+export type RemoveTileEffectStatusIntent = {
+  type: 'REMOVE_TILE_EFFECT_STATUS';
+  effectType: string;
+  statusType: string;
+  position: Position;
+};
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -461,7 +478,11 @@ export type GameEvent =
   | CounterAttackAppliedEvent
   | RuleTriggeredEvent
   | TileEffectChangedEvent
-  | TileEffectRemovedEvent;
+  | TileEffectRemovedEvent
+  | TileEffectStatusAppliedEvent
+  | TileEffectStatusRemovedEvent
+  | TileEffectStatusTickedEvent
+  | TileEffectTickedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -672,6 +693,35 @@ export type TileEffectChangedEvent = {
 
 export type TileEffectRemovedEvent = {
   type: 'TILE_EFFECT_REMOVED';
+  effectType: string;
+  position: Position;
+};
+
+export type TileEffectStatusAppliedEvent = {
+  type: 'TILE_EFFECT_STATUS_APPLIED';
+  effectType: string;
+  statusType: string;
+  position: Position;
+  duration: number;
+};
+
+export type TileEffectStatusRemovedEvent = {
+  type: 'TILE_EFFECT_STATUS_REMOVED';
+  effectType: string;
+  statusType: string;
+  position: Position;
+};
+
+export type TileEffectStatusTickedEvent = {
+  type: 'TILE_EFFECT_STATUS_TICKED';
+  effectType: string;
+  statusType: string;
+  position: Position;
+};
+
+// TODO(tile-effects-stage-3): порождать TILE_EFFECT_TICKED при тике эффекта в environment-turn.
+export type TileEffectTickedEvent = {
+  type: 'TILE_EFFECT_TICKED';
   effectType: string;
   position: Position;
 };

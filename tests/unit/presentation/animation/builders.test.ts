@@ -22,6 +22,12 @@ import {entityMissedBuilder} from '../../../../src/presentation/animation/builde
 import {statusAppliedBuilder} from '../../../../src/presentation/animation/builders/statusApplied';
 import {statusTickedBuilder} from '../../../../src/presentation/animation/builders/statusTicked';
 import {statusStacksAdjustedBuilder} from '../../../../src/presentation/animation/builders/statusStacksAdjusted';
+import {
+  tileEffectChangedBuilder,
+  tileEffectRemovedBuilder,
+  tileEffectStatusAppliedBuilder,
+  tileEffectStatusRemovedBuilder,
+} from '../../../../src/presentation/animation/builders/tileEffect';
 import type {GameEvent, GameState} from '../../../../src/simulation/types';
 
 function makeMockState(): GameState {
@@ -303,5 +309,62 @@ describe('entityMissedBuilder', () => {
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('UI_FLOATING_TEXT');
+  });
+});
+
+describe('tileEffect builders', () => {
+  it('creates PARTICLE_BURST for TILE_EFFECT_CHANGED', () => {
+    const event: GameEvent = { type: 'TILE_EFFECT_CHANGED', effectType: 'oil', position: { x: 2, y: 3 }, isNew: true };
+    const nodes = tileEffectChangedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('PARTICLE_BURST');
+    expect((nodes![0]!.step as any).x).toBe(2);
+    expect((nodes![0]!.step as any).y).toBe(3);
+    expect((nodes![0]!.step as any).color).toBe(0xcccccc);
+  });
+
+  it('creates PARTICLE_BURST for TILE_EFFECT_REMOVED', () => {
+    const event: GameEvent = { type: 'TILE_EFFECT_REMOVED', effectType: 'oil', position: { x: 2, y: 3 } };
+    const nodes = tileEffectRemovedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('PARTICLE_BURST');
+    expect((nodes![0]!.step as any).color).toBe(0x888888);
+  });
+
+  it('creates orange PARTICLE_BURST for burning TILE_EFFECT_STATUS_APPLIED', () => {
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 }, duration: 3 };
+    const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('PARTICLE_BURST');
+    expect((nodes![0]!.step as any).color).toBe(0xffaa00);
+  });
+
+  it('creates gray PARTICLE_BURST for non-burning TILE_EFFECT_STATUS_APPLIED', () => {
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'frozen', position: { x: 2, y: 3 }, duration: 3 };
+    const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('PARTICLE_BURST');
+    expect((nodes![0]!.step as any).color).toBe(0xcccccc);
+  });
+
+  it('creates PARTICLE_BURST for TILE_EFFECT_STATUS_REMOVED', () => {
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_REMOVED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 } };
+    const nodes = tileEffectStatusRemovedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('PARTICLE_BURST');
+    expect((nodes![0]!.step as any).color).toBe(0x888888);
+  });
+
+  it('returns null for mismatched event type', () => {
+    const event: GameEvent = { type: 'ENTITY_MOVED', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 }, movementType: 'walk' };
+    expect(tileEffectChangedBuilder(event, [], makeMockState())).toBeNull();
+    expect(tileEffectRemovedBuilder(event, [], makeMockState())).toBeNull();
+    expect(tileEffectStatusAppliedBuilder(event, [], makeMockState())).toBeNull();
+    expect(tileEffectStatusRemovedBuilder(event, [], makeMockState())).toBeNull();
   });
 });

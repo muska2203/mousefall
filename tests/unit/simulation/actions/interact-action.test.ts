@@ -141,6 +141,7 @@ describe('interactAction.validate', () => {
       ]),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -397,6 +398,7 @@ describe('interactAction.resolve', () => {
       ]),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -523,6 +525,7 @@ describe('interactAction.validate — дополнительные провер�
       ]),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -587,6 +590,7 @@ describe('INTERACT — полные flow', () => {
       ]),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -688,6 +692,7 @@ describe('авто-спуск по лестнице удалён', () => {
       ]),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 

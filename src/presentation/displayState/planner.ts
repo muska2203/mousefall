@@ -40,6 +40,10 @@ const FIELD_EVENT_TYPES = new Set<GameEvent['type']>([
   'ABILITY_USED',
   'COUNTER_ATTACK_APPLIED',
   'FLOOR_CHANGED',
+  'TILE_EFFECT_CHANGED',
+  'TILE_EFFECT_REMOVED',
+  'TILE_EFFECT_STATUS_APPLIED',
+  'TILE_EFFECT_STATUS_REMOVED',
 ]);
 
 /** Определить, является ли событие полевым. */

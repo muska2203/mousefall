@@ -64,6 +64,7 @@ describe('cleaveSkill', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
   });
 
@@ -272,6 +273,7 @@ describe('cleaveSkill', () => {
       stairs: new Map(),
     statuses: new Map(),
     tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
 });
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});

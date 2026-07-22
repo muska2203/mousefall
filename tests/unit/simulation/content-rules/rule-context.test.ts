@@ -9,7 +9,7 @@ import {
   makeEnemy,
   makeStateWithPlayerAndEntity,
 } from '../../../fixtures/gameState';
-import type { GameEvent, Intent, StatusEffect } from '../../../../src/simulation/core-types';
+import type { GameEvent, Intent, StatusEffect, TileEffects } from '../../../../src/simulation/core-types';
 
 type PartialContext = Partial<RuleContext>;
 
@@ -24,6 +24,7 @@ function expectContext(
   if ('abilityTargetPosition' in expected) expect(actual.abilityTargetPosition).toEqual(expected.abilityTargetPosition);
   if ('abilityTargets' in expected) expect(actual.abilityTargets).toEqual(expected.abilityTargets);
   if ('eventPosition' in expected) expect(actual.eventPosition).toEqual(expected.eventPosition);
+  if ('tileEffectsAtEventPosition' in expected) expect(actual.tileEffectsAtEventPosition).toEqual(expected.tileEffectsAtEventPosition);
   if ('eventTags' in expected) expect(actual.eventTags).toEqual(expected.eventTags);
   if ('eventDamage' in expected) expect(actual.eventDamage).toBe(expected.eventDamage);
   if ('eventAmount' in expected) expect(actual.eventAmount).toBe(expected.eventAmount);
@@ -284,6 +285,32 @@ describe('buildRuleContext', () => {
         abilityTargetPosition: { x: 6, y: 5 },
         abilityTargets: [enemy.id, secondEnemy.id],
         eventPosition: { x: 6, y: 5 },
+      });
+    });
+
+    it('TILE_EFFECT_CHANGED: заполняет позицию и tileEffectsAtEventPosition', () => {
+      const tileEffectsAtPosition: TileEffects = {
+        oil: {
+          type: 'oil',
+          duration: 3,
+          layer: 'cover',
+          statusEffects: [],
+          renderOrder: 1,
+        },
+      };
+      const stateWithTileEffect = makeStateWithPlayerAndEntity(player, enemy);
+      stateWithTileEffect.tileEffects[5]![6] = tileEffectsAtPosition;
+
+      const event: GameEvent = {
+        type: 'TILE_EFFECT_CHANGED',
+        effectType: 'oil',
+        position: { x: 6, y: 5 },
+        isNew: true,
+      };
+
+      expectContext(buildRuleContext(stateWithTileEffect, event), {
+        eventPosition: { x: 6, y: 5 },
+        tileEffectsAtEventPosition: tileEffectsAtPosition,
       });
     });
 

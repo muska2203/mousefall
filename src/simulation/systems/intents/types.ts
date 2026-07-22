@@ -48,6 +48,8 @@ export type {
   SpawnTileEffectIntent,
   RemoveTileEffectIntent,
   TickTileEffectsIntent,
+  ApplyTileEffectStatusIntent,
+  RemoveTileEffectStatusIntent,
   TileEffectInstance,
 } from "@simulation/core-types.ts";
 

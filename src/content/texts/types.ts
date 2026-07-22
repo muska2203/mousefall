@@ -11,6 +11,7 @@ export interface ContentTexts {
   players: Record<string, ContentText>;
   statuses: Record<string, ContentText>;
   tileEffects: Record<string, ContentText>;
+  tileEffectStatuses: Record<string, ContentText>;
   stairs: Record<string, ContentText>;
   doors: Record<string, ContentText>;
   tags: Record<string, ContentText>;

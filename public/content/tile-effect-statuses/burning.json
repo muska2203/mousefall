@@ -1,0 +1,10 @@
+{
+  "id": "burning",
+  "duration": 3,
+  "ruleIds": [],
+  "statusCategory": "elemental",
+  "categoryPriority": 1,
+  "mutuallyExclusiveWith": [],
+  "blockedBy": [],
+  "renderOrder": 10
+}
