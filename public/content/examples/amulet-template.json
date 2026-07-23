@@ -1,0 +1,14 @@
+{
+  "$schemaComment": "Шаблон амулета. Скопируйте файл в public/content/items/amulet/<id>.json и замените значения.",
+  "id": "amulet_template",
+  "spriteId": "amulet_template",
+  "icon": "/assets/items/amulet_template.png",
+  "fallback": "📿",
+  "type": "amulet",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 8,
+  "equipModifiers": [],
+  "grantedAbilities": [],
+  "ruleIds": []
+}

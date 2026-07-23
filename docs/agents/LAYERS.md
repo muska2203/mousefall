@@ -43,7 +43,7 @@ utils/        → (ничего — чистые функции)
 - Использует seeded PRNG (`utils/rng.ts`) для генерации мира и runtime random (`utils/random.ts`) для игровой логики. Никакого `Math.random()` напрямую.
 - Состояние мутируется напрямую внутри функций симуляции.
 - Функции возвращают дерево `GameEvent` через `ExecutionBuilder`, описывая, что произошло.
-- **Публичный API:** `dispatch(action)`, `step()`, `preview(action)`, `getState()`, `isPlayerTurn()`, `generateMap(params)`, `regenerateMap()`, `getActionCost(action)`, `getPlayerStats()`, `setDebugEnabled(enabled)`, а также query-методы способностей, pathfinding'а и взаимодействий. Полный интерфейс — `src/simulation/types.ts` (`Simulation`).
+- **Публичный API:** `dispatch(action)`, `step()`, `preview(action)`, `getState()`, `isPlayerTurn()`, `generateMap(params)`, `regenerateMap()`, `getActionCost(action)`, `getPlayerStats()`, `setDebugEnabled(enabled)`, `setContentRulesEnabled(enabled)`, а также query-методы способностей (`getAbility*`), оружия (`getWeapon*`), pathfinding'а (`findPathForPlayer`, `isTileWalkableForPlayer`) и взаимодействий (`resolveInteraction`, `findInteractableEntitiesAround`). Полный интерфейс — `src/simulation/types.ts` (`Simulation`).
 
 **Запрещено:** импортировать React, PixiJS, любые browser API. Обращаться к DOM. Импортировать из `presentation/` или `ui/`.
 

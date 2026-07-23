@@ -25,9 +25,9 @@
 | **GameplayTag** | Иерархический тег для фильтрации правил (например, `damage.magical.fire`). |
 | **Intent Modifier / modifyDamage** | Модификатор, изменяющий параметры интента, например урон на `DAMAGE`. |
 | **ParametrizedValue** | Число, заданное константой или ссылкой на поле `RuleContext`. |
-| **World Content Rule** | Мировое правило, не привязанное к сущности; подтипы `global`, `tileEffect`, `tileIntrinsic`. |
+| **World Content Rule** | Мировое правило, не привязанное к сущности; подтипы `global`, `tileEffect`, `tileEffectStatus`, `tileIntrinsic`. |
 | **RULE_TRIGGERED** | Событие в дереве `ExecutionNode`, фиксирующее срабатывание правила. |
-| **TileEffect** | Тайловый эффект (`water`, `oil`, `fog`); отложен за пределы MVP. |
+| **TileEffect** | Тайловый эффект (`water`, `oil`); материал на клетке, поведение которого задаётся контентными правилами. |
 | **RNG (`utils/rng.ts`)** | Seeded PRNG. Единственный источник случайности в Simulation. |
 | **GameState** | Единственный источник истины. Все поля JSON-serializable. |
 | **Phase** | Фаза игры в `GameState`: `playing` \| `dead` \| `victory`. В Presentation/UI фаза отрисовки: `idle` \| `animating` \| `gameOver`. |

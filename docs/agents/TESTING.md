@@ -3,7 +3,7 @@
 > **Статус:** `[STABLE]` — правила тестирования устаканились.
 > **Источник правды:** этот файл.
 
-> Тестирование сфокусировано на **simulation layer** — единственном слое, содержащем игровую логику.
+> Тестирование сфокусировано на **simulation layer** как основном месте игровой логики. Presentation и UI покрываются unit-тестами там, где есть чистая логика (builders, mappers, патчи, targeting), но coverage по ним не измеряется.
 
 ---
 
@@ -67,7 +67,7 @@ tests/
 ├── unit/
 │   ├── simulation/        # Unit-тесты систем simulation
 │   ├── presentation/      # Unit-тесты presentation (мокаем Simulation)
-│   ├── ui/                # Unit-тесты утилит UI
+│   ├── ui/                # Unit-тесты UI helpers, pure components, renderer helpers
 │   └── utils/             # Тесты утилит (RNG, math)
 ├── integration/           # Последовательности ходов, save/load
 └── fixtures/              # Предсобранные GameState для тестов
@@ -84,6 +84,11 @@ tests/
 - Генерация карт (валидность, связность комнат)
 - Seeded RNG (детерминированность)
 
+### ✅ Unit-тестируем (Presentation / UI — логика, не визуал)
+- Animation builders, displayState builder/патчи, logBuilder
+- Targeting helpers, mappers, view model builders
+- UI helpers, pure components, renderer helpers
+
 ### ✅ Интеграционно тестируем
 - Полный ход игрока → AI отвечает → состояние консистентно
 - Боевая последовательность: Attack → damage → death
@@ -91,7 +96,6 @@ tests/
 - Save/load cycle — пока не реализован
 
 ### ❌ НЕ юнит-тестируем
-- React-компоненты (визуальные)
-- PixiJS renderer (визуальный)
-- Input handlers (browser events)
-- Presentation layer (тонкая оркестрация)
+- Визуальный рендеринг и DOM (React + PixiJS) — покрывается интеграционно/вручную.
+- Browser input handlers (keyboard/mouse events).
+- Тонкая оркестрация `GameSession` — покрывается интеграционными тестами.

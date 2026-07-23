@@ -18,7 +18,8 @@
 - ✅ Все `docs/agents/*.md` получили маркеры `[STABLE]` / `[DRAFT]`.
 - ✅ `INDEX.md` и корневой `AGENTS.md` обновлены.
 - ⚠️ Не хватает расширенных рецептов (броня, амулет, расходник, способность, тайловый эффект, карта).
-- ⚠️ Большие справочники (`ACTION_SYSTEM.md`, `TURN_FLOW.md`) ещё не разбиты на рецепты.
+- ✅ `ACTION_SYSTEM.md` разбит на короткий справочник + рецепты `add-action.md`, `add-event.md`.
+- ⚠️ `TURN_FLOW.md` ещё не сокращён.
 - ✅ Папка `public/content/examples/` создана с базовыми шаблонами.
 - ⚠️ Новый подход не протестирован на реальной задаче.
 
@@ -41,18 +42,20 @@
 
 ### Фаза 2. Расширенный набор рецептов
 
+**Статус:** выполнена.
+
 Добавить рецепты для остальных типов контента:
 
-- `docs/recipes/add-armor.md`
-- `docs/recipes/add-amulet.md`
-- `docs/recipes/add-consumable.md`
-- `docs/recipes/add-ability.md`
-- `docs/recipes/add-tile-effect.md`
-- `docs/recipes/add-map.md`
+- [x] `docs/recipes/add-armor.md`
+- [x] `docs/recipes/add-amulet.md`
+- [x] `docs/recipes/add-consumable.md`
+- [x] `docs/recipes/add-ability.md`
+- [x] `docs/recipes/add-tile-effect.md`
+- [x] `docs/recipes/add-map.md`
 
 ### Фаза 3. Аудит существующей документации
 
-**Источник правды:** код + тесты.
+**Статус:** выполнена.
 
 Проверить каждый `[STABLE]`-документ на актуальность:
 
@@ -63,28 +66,34 @@
 5. При обнаружении рассинхрона — либо исправить документ, либо перевести в `[DRAFT]` и занести в `SYNC_STATUS.md`.
 
 Приоритет аудита:
-1. `ACTION_SYSTEM.md`
-2. `CONTENT.md`
-3. `TURN_FLOW.md`
-4. `PRESENTATION_CONTRACT.md`
-5. `TESTING.md`
-6. `CONTENT_RULES_EDGE_CASES.md`
-7. `TILE_EFFECTS.md`
-8. `I18N.md`
-9. `LAYERS.md`
-10. `GLOSSARY.md`
+
+- [x] `ACTION_SYSTEM.md` — проверен, мелкие рассинхроны исправлены.
+- [x] `CONTENT.md` — проверен, мелкие рассинхроны исправлены.
+- [x] `TURN_FLOW.md` — проверен, мелкие рассинхроны исправлены.
+- [x] `PRESENTATION_CONTRACT.md` — проверен, мелкие рассинхроны исправлены.
+- [x] `TESTING.md` — проверен, мелкие рассинхроны исправлены.
+- [x] `I18N.md` — проверен, мелкие рассинхроны исправлены.
+- [x] `CONTENT_RULES_EDGE_CASES.md`
+- [x] `TILE_EFFECTS.md`
+- [x] `LAYERS.md`
+- [x] `GLOSSARY.md`
 
 ### Фаза 4. Рефакторинг монолитных справочников
+
+**Статус:** выполняется.
 
 Разделить большие документы на:
 - короткий справочник с принципами (`[STABLE]`);
 - рецепты для конкретных действий.
 
 Цели:
-- `ACTION_SYSTEM.md` → `ACTION_SYSTEM.md` (короткий) + рецепты `add-action.md`, `add-event.md`.
-- `TURN_FLOW.md` → оставить как справочник, возможно сократить.
-- `AI_SYSTEM.md` → когда система устаканится, превратить в справочник + рецепт `add-ai-strategy.md`.
-- `CONTENT_RULES_EDGE_CASES.md` → оставить как справочник, добавить рецепт `add-content-rule.md`.
+- [x] `ACTION_SYSTEM.md` → `ACTION_SYSTEM.md` (короткий) + рецепты `add-action.md`, `add-event.md`.
+- [ ] `TURN_FLOW.md` → оставить как справочник, возможно сократить.
+- [ ] `AI_SYSTEM.md` → когда система устаканится, превратить в справочник + рецепт `add-ai-strategy.md`.
+- [x] `CONTENT_RULES_EDGE_CASES.md` → оставить как справочник, добавить рецепт `add-content-rule.md`.
+
+Примечания:
+- `CONTENT_RULES_EDGE_CASES.md` дополнительно сокращён: дублирующий чеклист добавления правила заменён ссылкой на `docs/recipes/add-content-rule.md`. Ссылки между справочником, рецептом и `src/simulation/content-rules/AGENTS.md` приведены в консистентное состояние. Оставшийся рассинхрон (`counterAttack.skillId` в `validation.ts`/тестах) зафиксирован в `SYNC_STATUS.md`.
 
 ### Фаза 5. Живые примеры контента
 
@@ -94,9 +103,13 @@
 
 - [x] `enemy-template.json`
 - [x] `weapon-template.json`
+- [x] `armor-template.json`
+- [x] `amulet-template.json`
+- [x] `consumable-template.json`
 - [x] `status-template.json`
 - [x] `ability-template.json`
-- [ ] `tile-effect-template.json`
+- [x] `tile-effect-template.json`
+- [x] `map-template.json`
 
 Эти примеры не добавлены в `manifest.json` и служат шаблонами для копирования.
 

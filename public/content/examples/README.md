@@ -13,5 +13,10 @@
 
 - [`enemy-template.json`](./enemy-template.json) — враг.
 - [`weapon-template.json`](./weapon-template.json) — оружие.
+- [`armor-template.json`](./armor-template.json) — броня.
+- [`amulet-template.json`](./amulet-template.json) — амулет.
+- [`consumable-template.json`](./consumable-template.json) — расходуемый предмет.
 - [`status-template.json`](./status-template.json) — статус.
 - [`ability-template.json`](./ability-template.json) — способность.
+- [`tile-effect-template.json`](./tile-effect-template.json) — тайловый эффект (материал).
+- [`map-template.json`](./map-template.json) — параметры процедурной генерации карты.

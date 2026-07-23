@@ -23,12 +23,19 @@ public/content/           # JSON-шаблоны: только механика (
 │   └── consumables/
 ├── abilities/
 ├── statuses/             # Шаблоны статусов (длительность, категория, ruleIds)
+├── tile-effects/         # Шаблоны тайловых эффектов (лужи, ловушки)
+├── tile-effect-statuses/ # Шаблоны статусов, висящих на тайловых эффектах
 └── maps/
 
 src/content/texts/        # Пользовательские тексты: name, description, flavorText
-├── ru.ts                 # Русские тексты врагов, предметов, способностей, статусов
-├── en.ts                 # Английские тексты врагов, предметов, способностей, статусов
-├── statuses.ts           # Локализованные описания эффектов статусов
+├── ru.ts                 # Реэкспорт русских текстов из ru/
+├── en.ts                 # Реэкспорт английских текстов из en/
+├── ru/                   # Русские тексты по категориям
+│   ├── statuses.ts       # Локализованные описания эффектов статусов
+│   └── ...
+├── en/                   # Английские тексты по категориям
+│   ├── statuses.ts
+│   └── ...
 └── lookup.ts             # getContentText(category, id, locale)
 ```
 
@@ -48,17 +55,19 @@ src/content/texts/        # Пользовательские тексты: name,
 
 ## Реестр контента
 
-- `loadAllContent(fetchJson)` — асинхронная загрузка всех JSON-файлов
-- `getEntityTemplate(id)` — получить шаблон сущности
-- `getItemTemplate(id)` — получить шаблон предмета
+- `loadAllContent(fetchJson)` — асинхронная загрузка всех JSON-файлов (`src/content/loader.ts`).
+- `getEntity(id)` / `getLocalizedEntity(id, locale)` — получить шаблон сущности / локализованный шаблон сущности.
+- `getItem(id)` / `getLocalizedItem(id, locale)` — получить шаблон предмета / локализованный шаблон предмета.
+- `getAbility(id)` / `getLocalizedAbility(id, locale)` — получить шаблон способности / локализованный шаблон способности.
+- `getTileEffect(id)` / `getLocalizedTileEffect(id, locale)` — получить шаблон тайлового эффекта / локализованный шаблон.
 
 Реализация: `src/content/loader.ts`, `src/content/registry.ts`.
 
 ## Реестр статусов
 
-- `getStatusTemplate(id)` — получить шаблон статуса.
+- `getStatusTemplate(statusType)` — получить шаблон статуса. Реализация: `src/simulation/systems/statuses/status-template.ts` (обёртка над реестром контента).
 - Шаблоны статусов хранятся в `public/content/statuses/` и ссылаются на `ruleIds` в `src/simulation/content-rules/`.
-- Локализованные описания эффектов статусов живут в `src/content/texts/statuses.ts`.
+- Локализованные описания эффектов статусов живут в `src/content/texts/ru/statuses.ts` и `src/content/texts/en/statuses.ts`.
 
 ---
 
@@ -69,13 +78,13 @@ src/content/texts/        # Пользовательские тексты: name,
 ### Где живут правила
 
 - **Source-bound правила** (привязанные к предмету, способности или статусу) — массив `CONTENT_RULES` в `src/simulation/content-rules/rules.ts`.
-- **Мировые правила** (не привязаны к конкретной сущности, срабатывают от событий в мире) — массив `GLOBAL_WORLD_CONTENT_RULES` в `src/simulation/content-rules/world-rules/global-rules.ts`.
+- **Мировые правила** (не привязаны к конкретной сущности, срабатывают от событий в мире) — массив `GLOBAL_WORLD_CONTENT_RULES` в `src/simulation/content-rules/world-rules/global-rules.ts`, реэкспортируемый как `WORLD_CONTENT_RULES` в `src/simulation/content-rules/rules.ts`.
 
 Оба массива попадают в реестр `src/simulation/content-rules/registry.ts`, который проверяет уникальность `id` и выбрасывает ошибку при дублировании.
 
 ### Как шаблоны ссылаются на правила
 
-Шаблоны предметов, способностей и статусов содержат поле `ruleIds` — массив строк с идентификаторами правил. При загрузке контента `src/simulation/content-rules/validation.ts` проверяет, что каждый `ruleId` существует в реестре, а внутри одного шаблона нет повторов.
+Шаблоны предметов, способностей, статусов, тайловых эффектов и статусов тайловых эффектов содержат поле `ruleIds` — массив строк с идентификаторами правил. При загрузке контента `src/simulation/content-rules/validation.ts` проверяет, что каждый `ruleId` существует в реестре, а внутри одного шаблона нет повторов.
 
 ### Жизненный цикл: `activeRules`
 

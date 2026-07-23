@@ -19,7 +19,8 @@
 |-----------------|------|
 | Какой стек, команды, структура проекта? | [`ONBOARDING.md`](./ONBOARDING.md) |
 | Какие слои, кто от кого зависит, что запрещено? | [`LAYERS.md`](./LAYERS.md) |
-| Как добавить Action / Intent / Event? | [`ACTION_SYSTEM.md`](./ACTION_SYSTEM.md) |
+| Как работает Action / Intent / Event? | [`ACTION_SYSTEM.md`](./ACTION_SYSTEM.md) |
+| Как добавить Action / Intent / Event? | [`docs/recipes/README.md`](../recipes/README.md) |
 | Как работает фракционный ход? | [`TURN_FLOW.md`](./TURN_FLOW.md) |
 | Как устроен AI врагов и реестр тактических утилит? | [`AI_SYSTEM.md`](./AI_SYSTEM.md) |
 | Как писать тесты, какие цели покрытия? | [`TESTING.md`](./TESTING.md) |

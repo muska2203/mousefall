@@ -1,0 +1,19 @@
+{
+  "$schemaComment": "Шаблон параметров процедурной генерации карты. Скопируйте файл в public/content/maps/<id>.json и замените значения.",
+  "id": "map_template",
+  "strategy": "tree",
+  "width": 50,
+  "height": 50,
+  "minRooms": 6,
+  "maxRooms": 10,
+  "minRoomSize": 4,
+  "maxRoomSize": 10,
+  "enemyDensity": 0.6,
+  "itemDensity": 0.3,
+  "enemyPool": [
+    "cat_small"
+  ],
+  "itemPool": [
+    "health_potion"
+  ]
+}

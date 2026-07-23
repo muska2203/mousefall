@@ -42,8 +42,8 @@ src/simulation/content-rules/
 ### Чек-лист
 
 1. **Определить тип правила.**
-   - Модификатор на интенте (`modifyDamage`) → триггер `DAMAGE` (или другой интент, когда поддержка расширится).
-   - Реакция на событие (`applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `counterAttack`) → триггер `GameEvent`.
+   - Модификатор на интенте (`modifyDamage`) → триггер `DAMAGE` или `DAMAGE_TILE`.
+   - Реакция на событие (`applyStatus`, `applyTileEffectStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `counterAttack`) → триггер `GameEvent`.
 
 2. **Добавить объект правила в реестр.**
    - Source-bound правило: `src/simulation/content-rules/rules.ts`, массив `CONTENT_RULES`.
@@ -58,10 +58,12 @@ src/simulation/content-rules/
 4. **Проверить валидацию.**
    - `npm run validate:content` должен проходить.
    - `applyStatus.statusType` должен существовать в `public/content/statuses/`.
-   - `counterAttack.skillId` (если указан) должен существовать в `public/content/abilities/`.
+   - `applyTileEffectStatus.statusType` должен существовать в `public/content/tile-effect-statuses/`.
+   - `applyTileEffectStatus` требует `target.type === 'eventTileEffect'` или `'tilesInRadius'`.
 
 5. **Обновить тексты.**
-   - `src/content/texts/ru.ts` и `src/content/texts/en.ts` — `name`, `description`, `flavorText` для связанных предметов/статусов/способностей.
+   - Тексты самого правила — в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.
+   - Тексты связанных предметов/статусов/способностей — в соответствующих файлах `src/content/texts/ru/` и `src/content/texts/en/`.
    - JSON-шаблоны не содержат текстов.
 
 6. **Написать тесты.**
@@ -132,7 +134,7 @@ src/simulation/content-rules/
 - **Конфликты статусов:** `mutuallyExclusiveWith` снимает, `blockedBy` блокирует.
 - **Пустые селекторы:** правило пропускается без ошибки.
 - **Порядок слоёв:** `source` → `target` → `world` → `radius`; внутри слоя — `priority`, затем `ruleId`.
-- **Модификаторы на интенте:** только `DAMAGE`; порядок `multiply` → `add`; условия пока не оцениваются.
+- **Модификаторы на интенте:** только `DAMAGE` и `DAMAGE_TILE`; порядок `multiply` → `add`; условия пока не оцениваются.
 
 ---
 

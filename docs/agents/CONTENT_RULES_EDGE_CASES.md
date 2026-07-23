@@ -18,7 +18,6 @@
 7. [Параметризованные значения](#параметризованные-значения)
 8. [Модификаторы на интенте](#модификаторы-на-интенте)
 9. [Отладка](#отладка)
-10. [Чек-лист добавления нового правила](#чек-лист-добавления-нового-правила)
 
 ---
 
@@ -235,7 +234,7 @@ source → target → world → radius
 
 ### Сортировка внутри слоя
 
-1. **world** сначала сортируется по подтипу: `global` → `tileEffect` → `tileIntrinsic`.
+1. **world** сначала сортируется по подтипу: `global` → `tileEffect` → `tileEffectStatus` → `tileIntrinsic`.
 2. Затем все слои сортируются по `priority` (меньше — раньше).
 3. При равных `priority` — по `ruleId` (лексикографически, детерминированный tie-break).
 
@@ -258,6 +257,42 @@ world:   status_burning_vulnerability (multiply ×1.2)
 ### Self vs target повторно
 
 Если `sourceEntityId === targetEntityId`, target-слой пропускается, поэтому для self-эффектов `source` всегда идёт раньше любого потенциального `target`.
+
+---
+
+## Поддерживаемые условия
+
+Список актуальных условий из `src/simulation/content-rules/condition-evaluator.ts`:
+
+| Условие | Описание |
+|---|---|
+| `chance` | Шанс срабатывания в процентах (`probability: number \| ParametrizedValue`). |
+| `hasStatus` | У субъекта (`self` / `target` / `candidate`) есть указанный статус. |
+| `hasTag` | Событие содержит указанный игровой тег. |
+| `inTileEffect` | На `eventPosition` есть указанный тайловый эффект. |
+| `tileEffectHasStatus` | Указанный тайловый эффект на `eventPosition` имеет указанный статус. |
+| `eventFieldEquals` | Поле события равно заданному значению. |
+| `eventRole` | Владелец правила (`self`) находится на указанной стороне события (`source` / `target`). |
+| `and` / `or` / `not` | Логические комбинации условий. |
+
+Условия могут использоваться как в `conditions` (проверка перед срабатыванием правила), так и в `targetConditions` (фильтрация найденных целей).
+
+---
+
+## Поддерживаемые селекторы целей
+
+Список актуальных селекторов из `src/simulation/content-rules/types.ts` и `src/simulation/content-rules/reaction/content-rule-reaction.ts`:
+
+| Селектор | Описание |
+|---|---|
+| `eventTarget` | Сущность-цель события (`ctx.targetEntityId`). |
+| `eventSource` | Сущность-источник события (`ctx.sourceEntityId`). |
+| `self` | Владелец правила (`selfId`). |
+| `collisionTarget` | Сущность, с которой произошло столкновение (`ctx.collisionTargetId`). |
+| `eventTileEffect` | Тайловый эффект на `eventPosition` (используется с `applyTileEffectStatus`). |
+| `allInRadius` | Все живые акторы в радиусе (Chebyshev) от центра с опциональным фильтром по фракции. |
+| `nearestEnemy` | Ближайший враждебный актор в радиусе. |
+| `tilesInRadius` | Клетки в радиусе с указанным тайловым эффектом (поддерживается только для `applyTileEffectStatus`). |
 
 ---
 
@@ -332,9 +367,9 @@ amount: { type: 'literal', value: 5 }
 
 ## Модификаторы на интенте
 
-### Только DAMAGE
+### Только DAMAGE и DAMAGE_TILE
 
-В текущей реализации модификаторы применяются **только к `DAMAGE`-интентам**. Для остальных типов интентов `applyIntentModifiers` возвращает исходный объект без изменений.
+В текущей реализации модификаторы применяются **к `DAMAGE`- и `DAMAGE_TILE`-интентам**. Для остальных типов интентов `applyIntentModifiers` возвращает исходный объект без изменений.
 
 ### Порядок операций
 
@@ -420,50 +455,15 @@ target: add -2
 
 ---
 
-## Чек-лист добавления нового правила
+## Как добавить новое правило
 
-1. **Определить тип правила.**
-   - Модификатор на интенте (`modifyDamage`) → триггер `DAMAGE` или другой интент.
-   - Реакция на событие (`applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `counterAttack`) → триггер `GameEvent`.
-
-2. **Добавить правило в реестр.**
-   - Source-bound правило: `src/simulation/content-rules/rules.ts`, массив `CONTENT_RULES`.
-   - Мировое правило: `src/simulation/content-rules/world-rules/global-rules.ts`, массив `GLOBAL_WORLD_CONTENT_RULES` (или создать отдельный модуль и реэкспортировать).
-   - Убедиться, что `id` уникален в пределах `CONTENT_RULES + WORLD_CONTENT_RULES`.
-
-3. **Обновить контент, который ссылается на правило.**
-   - Предмет: `public/content/items/...json`, поле `ruleIds`.
-   - Статус: `public/content/statuses/...json`, поле `ruleIds`.
-   - Способность: `public/content/abilities/...json`, поле `ruleIds`.
-
-4. **Проверить валидацию.**
-   - `npm run validate:content` должен проходить.
-   - Если правило использует `applyStatus`, статус должен существовать в `public/content/statuses/`.
-   - Если использует `counterAttack` с `skillId`, способность должна существовать.
-
-5. **Добавить/обновить тексты.**
-   - Если правило даёт предмет/статус/способность новый эффект, обновите `name`/`description`/`flavorText` в `src/content/texts/ru.ts` и `src/content/texts/en.ts`.
-   - Не храните тексты в JSON-шаблонах.
-
-6. **Написать тесты.**
-   - Unit: `tests/unit/simulation/content-rules/reaction/content-rule-reaction.test.ts` или новый файл.
-   - Интеграционный сценарий: `tests/integration/combat-scenarios/`.
-   - Проверьте edge cases: пустой селектор, self-эффект, mid-chain статус, конфликт статусов.
-
-7. **Обновить документацию.**
-   - Если правило входит в стартовый набор — `docs/design/starting-rules-catalog.md`.
-   - Если добавляет новый edge case — этот файл (`CONTENT_RULES_EDGE_CASES.md`).
-   - Если меняет порядок/жизненный цикл — `src/simulation/content-rules/AGENTS.md` и `docs/plans/Концепт боевой системы.md`.
-
-8. **Запустить проверки.**
-   - `npm run typecheck`
-   - `npm test`
-   - `npm run validate:content`
+Пошаговая инструкция и чек-лист вынесены в рецепт [`docs/recipes/add-content-rule.md`](../recipes/add-content-rule.md). Этот документ остаётся справочником по edge cases и порядку исполнения.
 
 ---
 
 ## Связанные документы
 
+- [`docs/recipes/add-content-rule.md`](../recipes/add-content-rule.md) — рецепт добавления нового правила.
 - [`docs/plans/Концепт боевой системы.md`](../plans/Концепт%20боевой%20системы.md) — концептуальное описание боевой системы.
 - [`docs/design/starting-rules-catalog.md`](../design/starting-rules-catalog.md) — каталог стартовых правил и чисел.
 - [`src/simulation/content-rules/AGENTS.md`](../../src/simulation/content-rules/AGENTS.md) — локальные правила слоя content-rules.

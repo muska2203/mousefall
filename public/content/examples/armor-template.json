@@ -1,0 +1,17 @@
+{
+  "$schemaComment": "Шаблон брони. Скопируйте файл в public/content/items/armor/<id>.json и замените значения.",
+  "id": "armor_template",
+  "spriteId": "armor_template",
+  "icon": "/assets/items/armor_template.png",
+  "fallback": "🛡️",
+  "type": "armor",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 10,
+  "armor": {
+    "baseArmor": 2
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [],
+  "ruleIds": []
+}

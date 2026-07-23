@@ -1,0 +1,16 @@
+{
+  "$schemaComment": "Шаблон расходуемого предмета. Скопируйте файл в public/content/items/consumables/<id>.json и замените значения.",
+  "id": "consumable_template",
+  "spriteId": "consumable_template",
+  "icon": "/assets/items/consumable_template.png",
+  "fallback": "🧪",
+  "type": "consumable",
+  "stackable": true,
+  "maxStack": 10,
+  "value": 25,
+  "consumable": {
+    "effect": "heal",
+    "value": 30
+  },
+  "apCost": 1
+}

@@ -1,0 +1,12 @@
+{
+  "$schemaComment": "Шаблон тайлового эффекта (материала). Скопируйте файл в public/content/tile-effects/<id>.json и замените значения.",
+  "id": "tile_effect_template",
+  "layer": "cover",
+  "duration": 5,
+  "renderOrder": 1,
+  "ruleIds": [],
+  "blockedByTileEffects": [],
+  "mutuallyExclusiveWithTileEffects": [],
+  "canHaveStatus": [],
+  "durationDecreasesWhenHasStatus": []
+}

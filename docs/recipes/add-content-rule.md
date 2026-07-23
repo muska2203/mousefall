@@ -47,10 +47,10 @@
    - `id` — уникальный ID правила.
    - `trigger.event` — событие или интент (`ENTITY_DAMAGED`, `DAMAGE`, `ENTITY_MOVED` и т.д.).
    - `trigger.tags` — обязательные теги.
-   - `conditions` — глобальные условия (`chance`, `hasStatus`, `distance`, `faction`, `and`, `or`, `not`).
+   - `conditions` — глобальные условия (`chance`, `hasStatus`, `hasTag`, `inTileEffect`, `tileEffectHasStatus`, `eventFieldEquals`, `eventRole`, `and`, `or`, `not`).
    - `targetConditions` — условия, проверяемые для каждой цели.
-   - `effect` — что делает правило (`applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `modifyDamage`, `counterAttack`).
-   - `target` — селектор целей (`eventTarget`, `eventSource`, `self`, `allInRadius`, `nearestEnemy`).
+   - `effect` — что делает правило (`applyStatus`, `applyTileEffectStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `modifyDamage`, `counterAttack`).
+   - `target` — селектор целей (`eventTarget`, `eventSource`, `self`, `collisionTarget`, `eventTileEffect`, `allInRadius`, `nearestEnemy`, `tilesInRadius`).
    - `priority` — порядок срабатывания (меньше — раньше).
 
 3. **Добавь текст правила** в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`:
@@ -92,3 +92,11 @@
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.
+
+---
+
+## Связанные документы
+
+- [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../agents/CONTENT_RULES_EDGE_CASES.md) — крайние случаи, порядок исполнения и отладка.
+- [`src/simulation/content-rules/AGENTS.md`](../../src/simulation/content-rules/AGENTS.md) — локальные правила слоя content-rules.
+- [`docs/agents/CONTENT.md`](../agents/CONTENT.md) — контент-пайплайн и добавление JSON-шаблонов.

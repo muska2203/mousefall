@@ -58,9 +58,11 @@
 1. Добавьте правило в массив `CONTENT_RULES` в `src/simulation/content-rules/rules.ts`.
 2. Укажите идентификатор правила в поле `ruleIds` шаблона тайлового эффекта.
 
-При событии на клетке с эффектом правило автоматически попадёт в мировой слой `tileEffect`.
+При событии на клетке с эффектом правило автоматически попадёт в мировой слой `tileEffect`, а правило из статуса тайлового эффекта — в слой `tileEffectStatus`.
 
 Глобальные мировые правила, не привязанные к конкретному эффекту, добавляются в массив `GLOBAL_WORLD_CONTENT_RULES` в `src/simulation/content-rules/world-rules/global-rules.ts`.
+
+Исполнители тайловых интентов находятся в `src/simulation/systems/intents/tile-effect-intent-executor.ts` (`SPAWN_TILE_EFFECT`, `APPLY_TILE_EFFECT_STATUS`, `TICK_TILE_EFFECTS` и др.).
 
 Полезные условия и селекторы:
 
@@ -73,7 +75,7 @@
 Если эффект должен появляться в обычной игре:
 
 1. Создайте шаблон способности в `public/content/abilities/<id>.json`.
-2. Создайте исполнитель способности в `src/simulation/skills/executors/<id>Skill.ts`, который порождает интенты `SPAWN_TILE_EFFECT`.
+2. Создайте исполнитель способности в `src/simulation/skills/executors/<id>Skill.ts` (например, `oilFlaskSkill.ts`), который порождает интенты `SPAWN_TILE_EFFECT`.
 3. Зарегистрируйте исполнитель в реестре скиллов.
 4. Добавьте анимацию применения в `src/presentation/animation/skills/`.
 5. Добавьте текст и спрайт для UI.

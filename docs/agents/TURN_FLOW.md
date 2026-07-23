@@ -18,10 +18,13 @@
 - `isPlayerTurn()` — возвращает `true`, если сейчас ожидается ввод игрока.
 
 ```
-Начало игры / загрузка
+Начало игры
     │
     ▼
-actor-turn 'player'           ← первый ход игрока без предварительного сетапа
+faction-setup 'player'        ← первый раунд: сетап игрока, round += 1
+    │
+    ▼
+actor-turn 'player'
     │
     ▼
 Игрок: MOVE → ATTACK → END_TURN
@@ -47,7 +50,7 @@ faction-setup 'neutrals'
 actor-turn 'neutral_1' → END_TURN
     │
     ▼
-environment-turn              ← тик статусов и прочие действия не-акторов
+environment-turn              ← тик тайловых эффектов
     │
     ▼
 round-recovery                ← cleanup dead entities, сброс actorsDoneThisRound
@@ -62,7 +65,7 @@ actor-turn 'player'
 ...
 ```
 
-> **Примечание о первом раунде.** `generateMap` и `loadSavedGame` устанавливают `turnState` сразу в `actor-turn 'player'`, поэтому первый ход игрока выполняется без предварительного `faction-setup`. Статусы, AP и кулдауны игрока впервые тикают в `faction-setup 'player'` после первого `round-recovery`.
+> **Примечание о первом раунде.** `turnState` инициализируется в `idle`. Первый вызов `step()` переводит его в `faction-setup 'player'`, выполняет сетап, а затем переходит к `actor-turn 'player'`. Таким образом, первый ход игрока проходит через `faction-setup`, как и любой другой раунд. `loadSavedGame` устанавливает `turnState` сразу в `actor-turn 'player'`, пропуская начальный сетап.
 
 ---
 
@@ -130,7 +133,7 @@ private actorsDoneThisRound: Set<EntityId> = new Set();
    - возвращается фаза с событием `TURN_ENDED`;
    - `hasMoreSteps: true`.
 5. Обычное действие:
-   - валидируется и исполняется через `executeActionInContext`;
+   - `executeActionInContext` вызывает `executeAction`, где действие валидируется и исполняется;
    - списываются AP (`CONSUME_AP` → `RESOURCE_CONSUMED { resource: 'ap' }`);
    - handler порождает дочерние интенты (`MOVE`, `DAMAGE` и т.п.);
    - после каждого интента запускаются мировые реакции.
@@ -159,7 +162,7 @@ export type SimulationResult = {
 
 ## step()
 
-`step()` продвигает игру на одну фазу вперёд. Presentation вызывает его рекурсивно после анимации, пока `hasMoreSteps === true`.
+`step()` продвигает игру на одну фазу вперёд. Presentation вызывает его после завершения анимации предыдущей фазы, пока `hasMoreSteps === true`.
 
 ```
 step()
@@ -179,8 +182,8 @@ switch (turnState.phase)
 
 1. Выполняется `runFactionSetup(factionId)`:
    - `BEGIN_TURN { side: factionId }` — устанавливает `state.turn.activeSide`, для `player` увеличивает `state.turn.round`, порождает событие `TURN_BEGAN`;
-   - тикают статусы всех живых акторов фракции (`TICK_STATUS_EFFECTS`);
    - восстанавливается AP (`RESTORE_AP`);
+   - тикают статусы всех живых акторов фракции (`TICK_STATUS_EFFECTS`);
    - тикают кулдауны способностей (`TICK_COOLDOWN`).
 2. Если в фракции есть живые акторы — переход в `actor-turn` первого актора.
 3. Если акторов нет — переход к следующей фракции через `advanceFaction()`.
@@ -196,7 +199,7 @@ switch (turnState.phase)
 
 1. Выполняется `runEnvironmentTurn()`:
    - `BEGIN_TURN { side: 'environment' }` — устанавливает `state.turn.activeSide`, порождает событие `TURN_BEGAN`;
-   - для каждой живой не-акторской сущности со статусами выполняется `TICK_STATUS_EFFECTS` с `phase: 'environment'`.
+   - выполняется `TICK_TILE_EFFECTS` — тикают тайловые эффекты (уменьшение длительности, удаление истёкших).
 2. `turnState` переводится в `round-recovery`.
 3. Возвращается фаза с `hasMoreSteps: true`.
 
@@ -222,8 +225,8 @@ switch (turnState.phase)
 |---------|----------|
 | `TURN_BEGAN` | Начало фазы фракции. |
 | `BEGIN_TURN` | Установка `activeSide`, для `player` — увеличение `round`. |
-| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых акторов фракции. Intent несёт `phase: FactionId` (идентификатор фракции). |
 | `RESTORE_AP` | Восстановление AP для каждого актора фракции. |
+| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых акторов фракции. Intent несёт `phase: FactionId` (идентификатор фракции). |
 | `TICK_COOLDOWN` | Уменьшение кулдаунов способностей. |
 
 ### actor-turn
@@ -239,12 +242,13 @@ switch (turnState.phase)
 |---------|----------|
 | `TURN_BEGAN` | Начало хода окружения. |
 | `BEGIN_TURN` | Установка `activeSide` в `'environment'`. |
-| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых не-акторских сущностей. Intent несёт `phase: 'environment'`. |
+| `TICK_TILE_EFFECTS` | Тикают тайловые эффекты. |
 
 ### round-recovery
 
 | Событие | Описание |
 |---------|----------|
+| `TURN_BEGAN` | Начало фазы восстановления раунда (`side: 'round_recovery'`). |
 | `CLEANUP_DEAD_ENTITIES` | Удаление мёртвых не-игроковых сущностей. |
 
 После этого очищается `actorsDoneThisRound` и раунд начинается заново с `faction-setup 'player'`.
@@ -301,7 +305,7 @@ executeNotifyAIIntent
 
 ### Ответственность слоёв
 
-- **Реакция мира** (`ai-perception-reaction.ts`) делает только грубый фильтр по расстоянию (Chebyshev) до источника события. Она не проверяет FOV/LOS и не решает, стоит ли реагировать.
+- **Реакция мира** (`ai-perception-reaction.ts`) делает только грубый фильтр по расстоянию (Chebyshev) до источника события, используя `actor.aiSightRadius`. Она не проверяет FOV/LOS и не решает, стоит ли реагировать.
 - **Исполнитель интента** (`notify-ai-intent-executor.ts`) находит стратегию актора и вызывает `onWorldChange`. Если стратегия не зарегистрирована — это ошибка конфигурации.
 - **Стратегия** (`hunter-strategy.ts`) сама решает, видит ли актор источник изменения, и мутирует только `enemy.aiState` (например, переключается в `chase`).
 
@@ -314,8 +318,8 @@ executeNotifyAIIntent
 Для каждого живого AI-актора в фазе `actor-turn` `step()` вызывает `runAiAction(actor)`:
 
 1. Если актор оглушён:
-   - сбрасывается подготовленная способность (`cancelPreparedAbility`), если актор — враг;
    - эмитится `SKIP_STUNNED_TURN`;
+   - сбрасывается подготовленная способность (`cancelPreparedAbility`), если актор — враг, и эмитится `ABILITY_PREPARED_CANCELLED`;
    - актор помечается закончившим ход;
    - возвращается фаза с `hasMoreSteps: true`.
 2. Вызывается `strategy.updateState?.(actor, state)` для FSM-тиков.
@@ -353,7 +357,7 @@ executeNotifyAIIntent
 
 - При оглушении подготовленная способность сбрасывается и эмитится `ABILITY_PREPARED_CANCELLED`.
 - Сброс централизован в helper'е `cancelPreparedAbility` (`src/simulation/ai/ai-helpers.ts`) и вызывается из:
-  - `apply-status-intent-executer.ts` — если стан наложили во время хода игрока;
+  - `apply-status-intent-executer.ts` — если стан или немота наложены во время хода игрока;
   - `simulation.ts:runAiAction` — если враг начинает ход в стане.
 
 ---
@@ -410,8 +414,8 @@ Presentation → simulation.step()
 faction-setup 'allies' / 'enemies' / 'neutrals'
   ┌─ TURN_BEGAN
   ├─ BEGIN_TURN
-  ├─ TICK_STATUS_EFFECTS
   ├─ RESTORE_AP
+  ├─ TICK_STATUS_EFFECTS
   └─ TICK_COOLDOWN
     │
     ▼
@@ -426,7 +430,7 @@ actor-turn AI → step() → runAiAction
 environment-turn
   ┌─ TURN_BEGAN
   ├─ BEGIN_TURN
-  └─ TICK_STATUS_EFFECTS          ← для не-акторов
+  └─ TICK_TILE_EFFECTS
     │
     ▼
 round-recovery
@@ -436,8 +440,8 @@ round-recovery
 faction-setup 'player' (следующий раунд)
   ┌─ TURN_BEGAN
   ├─ BEGIN_TURN          ← round += 1
-  ├─ TICK_STATUS_EFFECTS
   ├─ RESTORE_AP
+  ├─ TICK_STATUS_EFFECTS
   └─ TICK_COOLDOWN
     │
     ▼
@@ -451,8 +455,8 @@ actor-turn 'player' — ожидание ввода
 | Механика | Фаза | Примечание |
 |----------|------|------------|
 | Статусы | `faction-setup` | Для каждой фракции отдельно. |
-| Восстановление AP | `faction-setup` | В начале хода фракции. |
-| Тик кулдаунов | `faction-setup` | В начале хода фракции. |
+| Восстановление AP | `faction-setup` | В начале хода фракции, перед тиком статусов. |
+| Тик кулдаунов | `faction-setup` | В начале хода фракции, после тика статусов. |
 | Удаление мёртвых сущностей | `round-recovery` | В конце раунда. |
-| Тик статусов не-акторов | `environment-turn` | После всех фракций, перед `round-recovery`. |
+| Тик тайловых эффектов | `environment-turn` | После всех фракций, перед `round-recovery`. |
 | Увеличение номера раунда | `faction-setup 'player'` | В `BEGIN_TURN` фракции `player`. |
