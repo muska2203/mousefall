@@ -26,19 +26,19 @@ const BURNING_CLUSTER_COUNT_MIN = 3;
 const BURNING_CLUSTER_COUNT_MAX = 5;
 
 /** Минимальный масштаб язычка пламени относительно размера клетки. */
-const BURNING_CLUSTER_SCALE_MIN = 0.25;
+export const BURNING_CLUSTER_SCALE_MIN = 0.25;
 /** Максимальный масштаб язычка пламени относительно размера клетки. */
-const BURNING_CLUSTER_SCALE_MAX = 0.45;
+export const BURNING_CLUSTER_SCALE_MAX = 0.45;
 
 /** Отступ язычка пламени от краёв клетки по горизонтали. */
-const BURNING_CLUSTER_PADDING_X = 4;
+export const BURNING_CLUSTER_PADDING_X = 4;
 /** Минимальная вертикальная позиция "низа" язычка внутри клетки (0 — верх, 1 — низ). */
-const BURNING_CLUSTER_VERTICAL_MIN = 0.05;
+export const BURNING_CLUSTER_VERTICAL_MIN = 0.05;
 /** Максимальная вертикальная позиция "низа" язычка внутри клетки. */
-const BURNING_CLUSTER_VERTICAL_MAX = 0.9;
+export const BURNING_CLUSTER_VERTICAL_MAX = 0.9;
 
 /** Амплитуда покачивания язычка влево-вправо. */
-const BURNING_CLUSTER_SWAY_AMPLITUDE = TILE_SIZE * 0.06;
+export const BURNING_CLUSTER_SWAY_AMPLITUDE = TILE_SIZE * 0.06;
 /** Базовая скорость покачивания (радиан в миллисекунду). */
 const BURNING_CLUSTER_SWAY_SPEED = 0.003;
 /** Разброс скорости покачивания. */

@@ -157,6 +157,8 @@ export type AnimationStep =
       type: 'PROJECTILE';
       from: Position;
       to: Position;
+      /** Если true, снаряд стартует за верхней границей экрана (падение сверху). */
+      fromSky?: boolean;
     }
   | {
       type: 'SLASH_ARC';

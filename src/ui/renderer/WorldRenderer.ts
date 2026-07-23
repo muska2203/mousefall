@@ -274,8 +274,9 @@ export class WorldRenderer {
 
   /** Анимировать полёт снаряда от кастера до цели.
    *  Рисует красный круг, который движется по прямой между центрами тайлов.
+   *  Если fromSky === true, снаряд стартует за верхней границей viewport.
    *  Использует runTickerTween, чтобы tween обновлялся через PixiJS ticker. */
-  animateProjectile(from: Position, to: Position, config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
+  animateProjectile(from: Position, to: Position, fromSky: boolean, config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
     return new Promise((resolve) => {
       const g = new Graphics();
       const radius = TILE_SIZE / 4;
@@ -283,7 +284,9 @@ export class WorldRenderer {
       g.fill({ color: 0xff3300 });
 
       const fromX = from.x * TILE_SIZE + TILE_SIZE / 2;
-      const fromY = from.y * TILE_SIZE + TILE_SIZE / 2;
+      const fromY = fromSky
+        ? (this.cameraWorldPos?.y ?? 0) - TILE_SIZE
+        : from.y * TILE_SIZE + TILE_SIZE / 2;
       const toX = to.x * TILE_SIZE + TILE_SIZE / 2;
       const toY = to.y * TILE_SIZE + TILE_SIZE / 2;
 

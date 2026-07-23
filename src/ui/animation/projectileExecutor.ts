@@ -15,6 +15,6 @@ export class ProjectileAnimationExecutor implements AnimationExecutor {
     if (step.type !== 'PROJECTILE') return;
 
     const config = ANIMATION_CONFIG.PROJECTILE;
-    await ctx.worldRenderer.animateProjectile(step.from, step.to, config, ctx.ticker);
+    await ctx.worldRenderer.animateProjectile(step.from, step.to, step.fromSky ?? false, config, ctx.ticker);
   }
 }

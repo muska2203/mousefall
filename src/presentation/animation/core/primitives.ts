@@ -206,9 +206,10 @@ export function projectileNode(
   from: Position,
   to: Position,
   children: AnimationNode[],
+  fromSky: boolean = false,
 ): AnimationNode {
   return {
-    step: { type: 'PROJECTILE', from, to },
+    step: { type: 'PROJECTILE', from, to, fromSky },
     children,
   };
 }

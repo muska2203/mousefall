@@ -4,13 +4,21 @@
 
 import {describe, expect, it, vi, beforeEach} from 'vitest';
 import {Container} from 'pixi.js';
-import type {RenderInput} from '../../../../src/presentation/types';
-import type {DisplayState} from '../../../../src/presentation/displayState/types';
+import type {RenderInput} from '@presentation/types.ts';
+import type {DisplayState} from '@presentation/displayState/types.ts';
 import {
   TILE_SIZE,
   TILE_EFFECT_STATUS_SPRITE_SCALE,
   TILE_EFFECT_STATUS_OFFSET_Y_FACTOR,
-} from '../../../../src/utils/constants';
+} from '@utils/constants.ts';
+import {
+  BURNING_CLUSTER_PADDING_X,
+  BURNING_CLUSTER_SCALE_MAX,
+  BURNING_CLUSTER_SCALE_MIN,
+  BURNING_CLUSTER_SWAY_AMPLITUDE,
+  BURNING_CLUSTER_VERTICAL_MAX,
+  BURNING_CLUSTER_VERTICAL_MIN,
+} from '@ui/renderer/TileEffectStatusRenderer.ts';
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -206,12 +214,12 @@ describe('TileEffectStatusRenderer', () => {
       const sprite = child as any;
       expect(sprite.anchor.x).toBe(0.5);
       expect(sprite.anchor.y).toBe(1);
-      expect(sprite.x).toBeGreaterThanOrEqual(baseX + 4);
-      expect(sprite.x).toBeLessThanOrEqual(baseX + TILE_SIZE - 4);
-      expect(sprite.y).toBeGreaterThanOrEqual(baseY + TILE_SIZE * 0.3);
-      expect(sprite.y).toBeLessThanOrEqual(baseY + TILE_SIZE * 0.9);
-      expect(sprite.width).toBeGreaterThanOrEqual(TILE_SIZE * 0.25);
-      expect(sprite.width).toBeLessThanOrEqual(TILE_SIZE * 0.45);
+      expect(sprite.x).toBeGreaterThanOrEqual(baseX + BURNING_CLUSTER_PADDING_X);
+      expect(sprite.x).toBeLessThanOrEqual(baseX + TILE_SIZE - BURNING_CLUSTER_PADDING_X);
+      expect(sprite.y).toBeGreaterThanOrEqual(baseY + TILE_SIZE * BURNING_CLUSTER_VERTICAL_MIN);
+      expect(sprite.y).toBeLessThanOrEqual(baseY + TILE_SIZE * BURNING_CLUSTER_VERTICAL_MAX);
+      expect(sprite.width).toBeGreaterThanOrEqual(TILE_SIZE * BURNING_CLUSTER_SCALE_MIN);
+      expect(sprite.width).toBeLessThanOrEqual(TILE_SIZE * BURNING_CLUSTER_SCALE_MAX);
       expect(sprite.height).toBe(sprite.width);
       expect(sprite.zIndex).toBe(sprite.y);
     }
@@ -234,7 +242,7 @@ describe('TileEffectStatusRenderer', () => {
 
     for (let i = 0; i < initialXs.length; i++) {
       expect(nextXs[i]).not.toBe(initialXs[i]);
-      expect(Math.abs((nextXs[i] as number) - (initialXs[i] as number))).toBeLessThanOrEqual(TILE_SIZE * 0.06 + 0.001);
+      expect(Math.abs((nextXs[i] as number) - (initialXs[i] as number))).toBeLessThanOrEqual(BURNING_CLUSTER_SWAY_AMPLITUDE + 0.001);
     }
   });
 

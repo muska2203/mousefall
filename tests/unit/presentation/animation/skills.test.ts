@@ -16,6 +16,7 @@ function makeMockState(): GameState {
   return {
     player: { id: 'player', x: 0, y: 0 } as any,
     entities: new Map(),
+    map: { width: 10, height: 10, tiles: [], rooms: [], corridors: [] },
   } as unknown as GameState;
 }
 
@@ -37,6 +38,7 @@ describe('fireballComposer', () => {
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('ABILITY_CAST');
     expect(nodes![0]!.children[0]!.step.type).toBe('PROJECTILE');
+    expect((nodes![0]!.children[0]!.step as any).fromSky).toBe(true);
     expect(nodes![0]!.children[0]!.children[0]!.step.type).toBe('EXPLOSION');
   });
 
