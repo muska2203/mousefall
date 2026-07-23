@@ -27,6 +27,7 @@ function makeMockState(): GameState {
     map: { width, height, tiles: [], rooms: [], corridors: [] },
     visible: Array.from({ length: height }, () => Array(width).fill(true)),
     explored: Array.from({ length: height }, () => Array(width).fill(true)),
+    tileEffects: Array.from({ length: height }, () => Array(width).fill({})),
     entities: new Map([['player', { id: 'player', x: 0, y: 0 } as any]]),
     player: { id: 'player', x: 0, y: 0 } as any,
     mapParams: {} as any,
@@ -157,6 +158,52 @@ describe('buildAnimationTree', () => {
     expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('PROJECTILE');
     expect(tree[0]!.nodes[0]!.children[0]!.children).toHaveLength(1);
     expect(tree[0]!.nodes[0]!.children[0]!.children[0]!.step.type).toBe('EXPLOSION');
+  });
+
+  it('expands TILE_EXPLODED into EXPLOSION with child damage', () => {
+    const damage = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.magical.fire'], damage: 5, position: { x: 3, y: 3 } });
+    const tileExploded = makeExecNode({
+      type: 'TILE_EXPLODED',
+      position: { x: 3, y: 3 },
+      sourceEntityId: null,
+      damage: 5,
+      radius: 1,
+      tags: ['damage.magical.fire'],
+    }, [damage]);
+    const result = makeResult([tileExploded]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('EXPLOSION');
+    expect(tree[0]!.nodes[0]!.children).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.children[0]!.step.type).toBe('DAMAGE');
+  });
+
+  it('preserves TILE_EXPLODED explosion under TILE_EFFECT_STATUS_APPLIED (burning oil)', () => {
+    const damage = makeExecNode({ type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.magical.fire'], damage: 5, position: { x: 3, y: 3 } });
+    const tileExploded = makeExecNode({
+      type: 'TILE_EXPLODED',
+      position: { x: 3, y: 3 },
+      sourceEntityId: null,
+      damage: 5,
+      radius: 1,
+      tags: ['damage.magical.fire'],
+    }, [damage]);
+    const statusApplied = makeExecNode({
+      type: 'TILE_EFFECT_STATUS_APPLIED',
+      effectType: 'oil',
+      statusType: 'burning',
+      position: { x: 3, y: 3 },
+      duration: 3,
+      sourceEntityId: null,
+      isNew: true,
+    }, [tileExploded]);
+    const result = makeResult([statusApplied]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.nodes.some((n) => n.step.type === 'EXPLOSION')).toBe(true);
   });
 
   it('supports custom builders via registerAnimationBuilder', () => {

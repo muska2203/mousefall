@@ -44,6 +44,7 @@ const FIELD_EVENT_TYPES = new Set<GameEvent['type']>([
   'TILE_EFFECT_REMOVED',
   'TILE_EFFECT_STATUS_APPLIED',
   'TILE_EFFECT_STATUS_REMOVED',
+  'TILE_EXPLODED',
 ]);
 
 /** Определить, является ли событие полевым. */

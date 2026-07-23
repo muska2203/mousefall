@@ -28,6 +28,7 @@ import {
   tileEffectStatusAppliedBuilder,
   tileEffectStatusRemovedBuilder,
 } from '../../../../src/presentation/animation/builders/tileEffect';
+import {tileExplodedBuilder} from '../../../../src/presentation/animation/builders/tileExploded';
 import type {GameEvent, GameState} from '../../../../src/simulation/types';
 
 function makeMockState(): GameState {
@@ -334,7 +335,7 @@ describe('tileEffect builders', () => {
   });
 
   it('creates orange PARTICLE_BURST for burning TILE_EFFECT_STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null };
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null, isNew: true };
     const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -343,7 +344,7 @@ describe('tileEffect builders', () => {
   });
 
   it('creates gray PARTICLE_BURST for non-burning TILE_EFFECT_STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'frozen', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null };
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'frozen', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null, isNew: true };
     const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -366,5 +367,61 @@ describe('tileEffect builders', () => {
     expect(tileEffectRemovedBuilder(event, [], makeMockState())).toBeNull();
     expect(tileEffectStatusAppliedBuilder(event, [], makeMockState())).toBeNull();
     expect(tileEffectStatusRemovedBuilder(event, [], makeMockState())).toBeNull();
+  });
+});
+
+describe('tileExplodedBuilder', () => {
+  it('creates EXPLOSION step for TILE_EXPLODED', () => {
+    const event: GameEvent = {
+      type: 'TILE_EXPLODED',
+      position: { x: 2, y: 3 },
+      sourceEntityId: null,
+      damage: 5,
+      radius: 1,
+      tags: ['damage.magical.fire'],
+    };
+    const nodes = tileExplodedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('EXPLOSION');
+    expect((nodes![0]!.step as any).center).toEqual({ x: 2, y: 3 });
+    expect((nodes![0]!.step as any).radius).toBe(1);
+  });
+
+  it('uses event radius for explosion', () => {
+    const event: GameEvent = {
+      type: 'TILE_EXPLODED',
+      position: { x: 5, y: 5 },
+      sourceEntityId: null,
+      damage: 8,
+      radius: 2,
+      tags: ['damage.magical.fire'],
+    };
+    const nodes = tileExplodedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect((nodes![0]!.step as any).radius).toBe(2);
+  });
+
+  it('wraps child damage nodes inside explosion', () => {
+    const childDamage = { step: { type: 'DAMAGE' as const, targetId: 'enemy1', amount: 5, tags: ['damage.magical.fire'], position: { x: 2, y: 3 } }, children: [] };
+    const event: GameEvent = {
+      type: 'TILE_EXPLODED',
+      position: { x: 2, y: 3 },
+      sourceEntityId: null,
+      damage: 5,
+      radius: 1,
+      tags: ['damage.magical.fire'],
+    };
+    const nodes = tileExplodedBuilder(event, [childDamage], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('EXPLOSION');
+    expect(nodes![0]!.children).toContain(childDamage);
+  });
+
+  it('returns null for mismatched event type', () => {
+    const event: GameEvent = { type: 'ENTITY_MOVED', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 }, movementType: 'walk' };
+    expect(tileExplodedBuilder(event, [], makeMockState())).toBeNull();
   });
 });

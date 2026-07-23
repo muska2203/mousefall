@@ -51,6 +51,7 @@ export type {
   TickTileEffectsIntent,
   ApplyTileEffectStatusIntent,
   RemoveTileEffectStatusIntent,
+  TileExplosionIntent,
   TileEffectInstance,
 } from "@simulation/core-types.ts";
 

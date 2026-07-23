@@ -31,6 +31,7 @@ import {entityCollidedBuilder} from './builders/entityCollided';
 import {entityDisplacedBuilder} from './builders/entityDisplaced';
 import {entityMissedBuilder} from './builders/entityMissed';
 import {tileEffectChangedBuilder, tileEffectRemovedBuilder, tileEffectStatusAppliedBuilder, tileEffectStatusRemovedBuilder} from './builders/tileEffect';
+import {tileExplodedBuilder} from './builders/tileExploded';
 
 // Регистрация скилловых composers (side-effect).
 import './skills/fireball';
@@ -66,6 +67,7 @@ registerAnimationBuilder('TILE_EFFECT_CHANGED', tileEffectChangedBuilder);
 registerAnimationBuilder('TILE_EFFECT_REMOVED', tileEffectRemovedBuilder);
 registerAnimationBuilder('TILE_EFFECT_STATUS_APPLIED', tileEffectStatusAppliedBuilder);
 registerAnimationBuilder('TILE_EFFECT_STATUS_REMOVED', tileEffectStatusRemovedBuilder);
+registerAnimationBuilder('TILE_EXPLODED', tileExplodedBuilder);
 
 // Примечание: FLOOR_CHANGED намеренно не регистрируется здесь.
 // Переход между этажами — это мгновенный сброс экрана: UI перестраивает

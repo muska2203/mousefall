@@ -19,18 +19,6 @@ function mockStatusTemplate(id: string, ruleIds: string[] = []): StatusTemplate 
   };
 }
 
-function mockAbilityTemplate(id: string, ruleIds: string[] = []): AbilityTemplate {
-  return {
-    id,
-    ruleIds,
-    cooldown: 0,
-    apCost: 1,
-    aiPreparable: false,
-    requiredWeaponTags: [],
-    tags: [],
-  };
-}
-
 function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectTemplate {
   return {
     id,
@@ -352,42 +340,6 @@ describe('validateContentRuleSemantics', () => {
     expect(errors[0]).toMatchObject({
       ruleId: 'test_empty_condition_tag',
       field: 'condition.tag',
-    });
-  });
-
-  it('проходит, когда counterAttack.skillId ссылается на существующую способность', () => {
-    const rule: ContentRule = {
-      id: 'test_counter_with_skill',
-      trigger: { event: 'ENTITY_DAMAGED' },
-      effect: { type: 'counterAttack', skillId: 'cleave' } as unknown as ContentRule['effect'],
-      target: { type: 'eventSource' },
-      priority: 0,
-    };
-    setContentRulesOverride([rule]);
-
-    const content = createContent({
-      abilities: new Map([['cleave', mockAbilityTemplate('cleave')]]),
-    });
-
-    expect(validateContentRuleSemantics(content)).toEqual([]);
-  });
-
-  it('возвращает ошибку, когда counterAttack.skillId ссылается на отсутствующую способность', () => {
-    const rule: ContentRule = {
-      id: 'test_counter_unknown_skill',
-      trigger: { event: 'ENTITY_DAMAGED' },
-      effect: { type: 'counterAttack', skillId: 'missing_skill' } as unknown as ContentRule['effect'],
-      target: { type: 'eventSource' },
-      priority: 0,
-    };
-    setContentRulesOverride([rule]);
-
-    const errors = validateContentRuleSemantics(createContent());
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatchObject({
-      ruleId: 'test_counter_unknown_skill',
-      field: 'effect.skillId',
-      problem: expect.stringContaining('missing_skill'),
     });
   });
 

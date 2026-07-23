@@ -38,6 +38,7 @@
 | `collision_damage_actor` | Мир | `ENTITY_COLLIDED` `displacement.push` `collision.actor` | — | `dealDamage` 5 `damage.physical.blunt` по `collisionTarget` | урон 5 |
 | `collision_daze` | Мир | `ENTITY_COLLIDED` `displacement.push` | — | `applyStatus dazed` 2 хода | длительность 2 |
 | `collision_daze_actor` | Мир | `ENTITY_COLLIDED` `displacement.push` `collision.actor` | — | `applyStatus dazed` 2 хода по `collisionTarget` | длительность 2 |
+| `burning_oil_explosion` | Мир (системная реакция) | `TILE_EFFECT_STATUS_APPLIED` | `effectType === 'oil'`, `statusType === 'burning'`, `isNew === true` | `TILE_EXPLOSION` 2 урона, радиус 1, тег `damage.magical.fire` | цепная реакция поджога масла |
 
 ---
 

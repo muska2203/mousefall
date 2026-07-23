@@ -291,18 +291,19 @@ export const executeApplyTileEffectStatusIntent: IntentExecutor<ApplyTileEffectS
 
   const duration = intent.duration ?? statusTemplate.duration;
   const existingIndex = effect.statusEffects.findIndex((status) => status.type === intent.statusType);
-  if (existingIndex >= 0) {
-    effect.statusEffects[existingIndex] = {
-      ...effect.statusEffects[existingIndex]!,
-      duration,
-    };
-  } else {
+  const isNew = existingIndex < 0;
+  if (isNew) {
     const newStatus: TileEffectStatusInstance = {
       type: intent.statusType,
       duration,
       renderOrder: statusTemplate.renderOrder,
     };
     effect.statusEffects.push(newStatus);
+  } else {
+    effect.statusEffects[existingIndex] = {
+      ...effect.statusEffects[existingIndex]!,
+      duration,
+    };
   }
 
   return builder.addChild(parent, {
@@ -312,6 +313,7 @@ export const executeApplyTileEffectStatusIntent: IntentExecutor<ApplyTileEffectS
     position: { x, y },
     duration,
     sourceEntityId: intent.sourceEntityId ?? null,
+    isNew,
   });
 };
 

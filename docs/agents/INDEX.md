@@ -63,8 +63,7 @@
 |-----------------|------|
 | Как агенту классифицировать задачу и что читать? | [`PROTOCOL.md`](./PROTOCOL.md) |
 | Каким системам доверять, а где источник правды — код? | [`SYNC_STATUS.md`](./SYNC_STATUS.md) |
-| Каков план перехода на новый подход? | [`TRANSITION_PLAN.md`](./TRANSITION_PLAN.md) |
-| Где шаблоны промптов для следующих сессий? | [`SESSION_PROMPTS.md`](./SESSION_PROMPTS.md) |
+| Как писать короткие промпты? | [`PROMPT_GUIDE.md`](./PROMPT_GUIDE.md) |
 | Какие рецепты для типовых задач есть? | [`docs/recipes/README.md`](../recipes/README.md) |
 
 ---

@@ -35,9 +35,7 @@
 
 ## Известный рассинхрон
 
-| Система | Дока | Код | Примечание |
-|---|---|---|---|
-| content-rules | [`CONTENT_RULES_EDGE_CASES.md`](./CONTENT_RULES_EDGE_CASES.md), [`src/simulation/content-rules/AGENTS.md`](../../src/simulation/content-rules/AGENTS.md) | `src/simulation/content-rules/validation.ts`, `tests/unit/simulation/content-rules/validation.test.ts` | Валидация и тесты ожидают опциональный `skillId` у эффекта `counterAttack`, но `RuleEffect` в `types.ts` и runtime (`buildIntents`) это поле не поддерживают. Оставлено от старой реализации; требуется либо удалить мёртвую проверку, либо вернуть поддержку skillId. |
+На текущий момент рассинхронов не зафиксировано.
 
 ---
 
@@ -47,3 +45,4 @@
 |---|---|
 | 2026-07-23 | Завершён аудит фазы 3 (`CONTENT_RULES_EDGE_CASES.md`, `TILE_EFFECTS.md`, `LAYERS.md`, `GLOSSARY.md`). Найденные рассинхроны устранены в документации: добавлен `tileEffectStatus` в порядок мировых слоёв, уточнён список условий/селекторов/эффектов, исправлены пути к текстам и исполнителям интентов. |
 | 2026-07-23 | Фаза 4: `CONTENT_RULES_EDGE_CASES.md` укорочен — чеклист добавления правила вынесен в `docs/recipes/add-content-rule.md`. Исправлены устаревшие детали в рецепте и `src/simulation/content-rules/AGENTS.md`. Добавлен рассинхрон по `counterAttack.skillId` в `validation.ts` / тестах. |
+| 2026-07-23 | Устранён рассинхрон по `counterAttack.skillId`: удалена мёртвая валидация и тесты на поле, которое не поддерживается `RuleEffect` и runtime. Запись о рассинхроне удалена из `SYNC_STATUS.md`. |

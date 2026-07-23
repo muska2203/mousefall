@@ -6,6 +6,8 @@ import {postDeathLootReaction} from "@simulation/systems/world-reactions/post-de
 import {displacementMoveReaction} from "@simulation/systems/world-reactions/displacement-move-reaction.ts";
 import {floorTransitionReaction} from "@simulation/systems/world-reactions/floor-transition-reaction.ts";
 import {aiPerceptionReaction} from "@simulation/systems/world-reactions/ai-perception-reaction.ts";
+import {tileExplosionDamageReaction} from "@simulation/systems/world-reactions/tile-explosion-damage-reaction.ts";
+import {burningOilExplosionReaction} from "@simulation/systems/world-reactions/burning-oil-explosion-reaction.ts";
 
 // ─────────────────────────────────────────────
 // Хранилище реакций
@@ -69,3 +71,5 @@ registerReaction('FLOOR_CHANGED', floorTransitionReaction, 0);
 registerReaction('ENTITY_MOVED', aiPerceptionReaction, 0);
 registerReaction('DOOR_OPENED', aiPerceptionReaction, 0);
 registerReaction('DOOR_CLOSED', aiPerceptionReaction, 0);
+registerReaction('TILE_EXPLODED', tileExplosionDamageReaction, 0);
+registerReaction('TILE_EFFECT_STATUS_APPLIED', burningOilExplosionReaction, 0);

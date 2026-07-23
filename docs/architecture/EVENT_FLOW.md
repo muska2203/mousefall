@@ -104,23 +104,26 @@ Action (GameAction)
   │
   └── execute(state, action, intents, builder, parentNode)
         │
-        ├── Для каждого Intent:
-        │     executeIntent(state, intent, builder, parent)
-        │       │
-        │       ├── buildRuleContext(state, intent)
-        │       ├── applyIntentModifiersIfEnabled(state, intent, context)
-        │       │     → только для DAMAGE: модифицирует damage/tags
-        │       ├── IntentExecutor мутирует state
-        │       ├── Создаёт узел события через builder.addChild()
-        │       ├── runContentRuleReactionsIfEnabled(state, event, builder, node)
-        │       │     → контентные правила из слоёв source/target/world/radius
-        │       │     → могут породить новые Intents
-        │       └── runWorldReactions(state, builder, node)
-        │             → только системные реакции
-        │             → может породить новые Intents
-        │
-        └── Возвращает управление
+        └── executeIntents(state, intents, builder, parentNode)
+              │
+              ┌─ Волна 0: исполнить все начальные Intents
+              │     → события
+              │
+              ├─ Контентная фаза: runContentRuleReactionsIfEnabled
+              │     на всех событиях волны (с цепочками)
+              │     → дополнительные Intents
+              │
+              ├─ Мировая фаза: runWorldReactions
+              │     на всех событиях волны и результатах контентной фазы
+              │     → дополнительные Intents
+              │
+              └─ Волна 1: исполнить Intents, порождённые реакциями волны 0
+                    → повторить фазы
 ```
+
+Исполнитель `executeIntents` работает **волнами**: сначала исполняются все интенты текущей волны, затем на все порождённые события запускаются реакции, которые формируют следующую волну. Внутри волны сохраняется порядок: полное разрешение контентных реакций, затем мировые реакции.
+
+Так массовые эффекты (AoE-урон, взрывы горящего масла) применяются параллельно ко всем целям, а не последовательно.
 
 Реализация оркестратора: `src/simulation/systems/actions/action-utils.ts`.
 

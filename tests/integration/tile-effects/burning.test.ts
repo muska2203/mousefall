@@ -116,7 +116,7 @@ describe('Горящий тайловый эффект', () => {
     expect(player.statusEffects.some((effect) => effect.type === 'burning')).toBe(true);
   });
 
-  it('при тике burning распространяется на соседние клетки с маслом', () => {
+  it('поджог масла вызывает взрыв, распространяющий горение на соседние клетки с маслом', () => {
     const state = makeGameState({ map: makeTestMap() }) as GameState;
     const player = createTestPlayer();
     state.player = player;
@@ -131,14 +131,17 @@ describe('Горящий тайловый эффект', () => {
     spawnOil(simulation, player.id, 3, 2);
     applyBurningToOil(state, 2, 2);
 
-    expect(getOilAt(state, 3, 2)!.statusEffects).toHaveLength(0);
+    // Взрыв радиуса 1 сразу поджигает соседнее масло.
+    const neighborOilAfterIgnite = getOilAt(state, 3, 2);
+    expect(neighborOilAfterIgnite).toBeDefined();
+    expect(neighborOilAfterIgnite!.statusEffects.some((s) => s.type === 'burning')).toBe(true);
 
     simulation.dispatch({ type: 'END_TURN', entityId: player.id });
     advanceToPlayerTurn(simulation);
 
-    const neighborOil = getOilAt(state, 3, 2);
-    expect(neighborOil).toBeDefined();
-    expect(neighborOil!.statusEffects.some((s) => s.type === 'burning')).toBe(true);
+    const neighborOilAfterTick = getOilAt(state, 3, 2);
+    expect(neighborOilAfterTick).toBeDefined();
+    expect(neighborOilAfterTick!.statusEffects.some((s) => s.type === 'burning')).toBe(true);
   });
 
   it('при тике burning не распространяется на воду и пустые тайлы', () => {

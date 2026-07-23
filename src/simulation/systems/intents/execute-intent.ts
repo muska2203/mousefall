@@ -44,6 +44,7 @@ import {
   executeSpawnTileEffectIntent,
   executeTickTileEffectsIntent,
 } from "@simulation/systems/intents/tile-effect-intent-executor.ts";
+import {executeTileExplosionIntent} from "@simulation/systems/intents/tile-explosion-intent-executor.ts";
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
 import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
 import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
@@ -90,71 +91,184 @@ const intentExecutors = {
   TICK_TILE_EFFECTS: executeTickTileEffectsIntent,
   APPLY_TILE_EFFECT_STATUS: executeApplyTileEffectStatusIntent,
   REMOVE_TILE_EFFECT_STATUS: executeRemoveTileEffectStatusIntent,
+  TILE_EXPLOSION: executeTileExplosionIntent,
 };
 
-/** Максимальное количество реакций в одной цепочке защиты от бесконечного цикла. */
+/** Максимальное количество волн реакций защиты от бесконечного цикла. */
 const MAX_REACTION_DEPTH = 1000;
 
+/** Очередной интент вместе с родительским узлом, к которому он привязывается. */
+type PendingIntent = {
+  intent: Intent;
+  parent: ExecutionNode;
+};
+
 /**
- * Исполняет пачку интентов, предварительно разрешая конфликты статусов.
+ * Исполняет пачку интентов волнами: сначала все интенты текущей волны,
+ * затем реакции на все порождённые события образуют следующую волну.
+ *
+ * Внутри одной волны сохраняется порядок: сначала полностью разрешаются
+ * контентные реакции, потом мировые реакции. Это гарантирует, что массовые
+ * эффекты (например, взрыв горящего масла) применяются параллельно ко всем
+ * целям, а не последовательно змейкой.
  */
 export function executeIntents(
     state: GameState,
     intents: Intent[],
     builder: ExecutionBuilder,
     parent: ExecutionNode,
-): void {
-    const resolved = resolveStatusBatch(state, intents);
-    for (const intent of resolved) {
-        executeIntent(state, intent, builder, parent, 0);
+): (ExecutionNode | null)[] {
+    let wave: PendingIntent[] = intents.map((intent) => ({ intent, parent }));
+    let depth = 0;
+    let topLevelResults: (ExecutionNode | null)[] | null = null;
+
+    while (wave.length > 0) {
+        if (depth > MAX_REACTION_DEPTH) {
+            // eslint-disable-next-line no-console
+            console.error('[executeIntents] превышен лимит глубины реакций (%d)', MAX_REACTION_DEPTH);
+            break;
+        }
+
+        const { resultNodes, createdNodes } = executeIntentBatch(state, builder, wave);
+        if (topLevelResults === null) {
+            topLevelResults = resultNodes;
+        }
+
+        // Сначала полностью разрешаем контентные реакции на события волны,
+        // затем собираем мировые реакции уже с учётом результатов контентной фазы.
+        const { nodes: contentNodes, limitReached } = runContentPhase(state, builder, createdNodes, depth);
+        if (limitReached) {
+            break;
+        }
+        const worldIntents = collectWorldReactionIntents(state, builder, [...createdNodes, ...contentNodes]);
+
+        wave = worldIntents;
+        depth++;
     }
+
+    return topLevelResults ?? [];
 }
 
+/**
+ * Исполняет один интент. Обёртка над executeIntents для обратной совместимости.
+ * Параметр reactionDepth сохранён в сигнатуре, но больше не используется:
+ * глубина отсчитывается от корня вызова executeIntents.
+ */
 export function executeIntent(
     state: GameState,
     intent: Intent,
     builder: ExecutionBuilder,
     parent: ExecutionNode,
-    reactionDepth: number = 0,
+    _reactionDepth: number = 0,
 ): ExecutionNode | null {
-    if (reactionDepth > MAX_REACTION_DEPTH) {
-        // eslint-disable-next-line no-console
-        console.error('[executeIntent] превышен лимит глубины реакций (%d)', MAX_REACTION_DEPTH);
-        return null;
-    }
+    const results = executeIntents(state, [intent], builder, parent);
+    return results[0] ?? null;
+}
 
-    const intentContext = buildRuleContext(state, intent);
-    const modifiedIntent = applyIntentModifiersIfEnabled(state, intent, intentContext);
+/**
+ * Исполняет пачку интентов, не запуская реакции.
+ * Возвращает узлы результатов для каждого интента и все созданные событийные узлы.
+ */
+function executeIntentBatch(
+    state: GameState,
+    builder: ExecutionBuilder,
+    intents: PendingIntent[],
+): { resultNodes: (ExecutionNode | null)[]; createdNodes: ExecutionNode[] } {
+    const resultNodes: (ExecutionNode | null)[] = [];
+    const createdNodes: ExecutionNode[] = [];
 
-    // Запоминаем количество дочерних узлов до исполнения, чтобы обработать
-    // реакции на все события, порождённые этим интентом (например, при тике
-    // тайловых эффектов один интент порождает TILE_EFFECT_TICKED и
-    // TILE_EFFECT_STATUS_TICKED для нескольких клеток).
-    const childrenBefore = parent.children.length;
+    for (const { intent, parent } of intents) {
+        const intentContext = buildRuleContext(state, intent);
+        const modifiedIntent = applyIntentModifiersIfEnabled(state, intent, intentContext);
 
-    const executor = intentExecutors[modifiedIntent.type] as IntentExecutor<any>;
-    const resultNode = executor(
-        state,
-        modifiedIntent,
-        builder,
-        parent,
-    );
+        // Запоминаем количество дочерних узлов до исполнения, чтобы отделить
+        // события, порождённые этим интентом, от уже существующих детей.
+        const childrenBefore = parent.children.length;
 
-    if (resultNode !== null) {
-        const newChildren = parent.children.slice(childrenBefore);
-        const nodesToProcess = newChildren.length > 0 ? newChildren : [resultNode];
+        const executor = intentExecutors[modifiedIntent.type] as IntentExecutor<any>;
+        const resultNode = executor(
+            state,
+            modifiedIntent,
+            builder,
+            parent,
+        );
 
-        for (const node of nodesToProcess) {
-            const contentReactionIntents = runContentRuleReactionsIfEnabled(state, node.event, builder, node);
-            for (const reactionIntent of resolveStatusBatch(state, contentReactionIntents)) {
-                executeIntent(state, reactionIntent, builder, node, reactionDepth + 1);
-            }
+        resultNodes.push(resultNode);
 
-            const reactionIntents = runWorldReactions(state, builder, node);
-            for (const reactionIntent of resolveStatusBatch(state, reactionIntents)) {
-                executeIntent(state, reactionIntent, builder, node, reactionDepth + 1);
-            }
+        if (resultNode !== null) {
+            const newChildren = parent.children.slice(childrenBefore);
+            const nodesToProcess = newChildren.length > 0 ? newChildren : [resultNode];
+            createdNodes.push(...nodesToProcess);
         }
     }
-    return resultNode;
+
+    return { resultNodes, createdNodes };
+}
+
+/**
+ * Полностью разрешает контентные реакции на переданных узлах, включая
+ * цепочки контент-реакций на результаты контент-реакций.
+ * Все интенты одного уровня исполняются параллельно (batch).
+ *
+ * Возвращает созданные узлы и флаг `limitReached`, чтобы вызывающий цикл
+ * прервал дальнейшее исполнение при превышении лимита глубины.
+ */
+function runContentPhase(
+    state: GameState,
+    builder: ExecutionBuilder,
+    seedNodes: ExecutionNode[],
+    startDepth: number,
+): { nodes: ExecutionNode[]; limitReached: boolean } {
+    const allContentNodes: ExecutionNode[] = [];
+    let currentNodes = seedNodes;
+    let depth = startDepth;
+
+    while (currentNodes.length > 0) {
+        if (depth >= MAX_REACTION_DEPTH) {
+            // eslint-disable-next-line no-console
+            console.error('[executeIntents] превышен лимит глубины реакций (%d)', MAX_REACTION_DEPTH);
+            return { nodes: allContentNodes, limitReached: true };
+        }
+
+        const contentIntents: PendingIntent[] = [];
+        for (const node of currentNodes) {
+            const nodeIntents = runContentRuleReactionsIfEnabled(state, node.event, builder, node);
+            const resolved = resolveStatusBatch(state, nodeIntents);
+            for (const intent of resolved) {
+                contentIntents.push({ intent, parent: node });
+            }
+        }
+
+        if (contentIntents.length === 0) {
+            break;
+        }
+
+        const { createdNodes } = executeIntentBatch(state, builder, contentIntents);
+        allContentNodes.push(...createdNodes);
+        currentNodes = createdNodes;
+        depth++;
+    }
+
+    return { nodes: allContentNodes, limitReached: false };
+}
+
+/**
+ * Собирает интенты мировых реакций на переданных узлах.
+ */
+function collectWorldReactionIntents(
+    state: GameState,
+    builder: ExecutionBuilder,
+    nodes: ExecutionNode[],
+): PendingIntent[] {
+    const worldIntents: PendingIntent[] = [];
+
+    for (const node of nodes) {
+        const nodeIntents = runWorldReactions(state, builder, node);
+        const resolved = resolveStatusBatch(state, nodeIntents);
+        for (const intent of resolved) {
+            worldIntents.push({ intent, parent: node });
+        }
+    }
+
+    return worldIntents;
 }

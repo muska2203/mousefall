@@ -142,6 +142,25 @@
 
 ---
 
+## Взрывы тайловых эффектов
+
+Если материал должен взрываться при получении статуса, используйте мировую реакцию на событие `TILE_EFFECT_STATUS_APPLIED` и выделенный интент `TILE_EXPLOSION`.
+
+Пример — взрыв горящего масла:
+
+1. Мировая реакция `burningOilExplosionReaction` (`src/simulation/systems/world-reactions/burning-oil-explosion-reaction.ts`) проверяет `effectType === 'oil'`, `statusType === 'burning'` и `isNew === true`.
+2. Реакция порождает `TILE_EXPLOSION` с параметрами урона, радиуса и тегов.
+3. Исполнитель `executeTileExplosionIntent` эмитит событие `TILE_EXPLODED`.
+4. Мировая реакция `tileExplosionDamageReaction` (`src/simulation/systems/world-reactions/tile-explosion-damage-reaction.ts`) превращает `TILE_EXPLODED` в `DAMAGE_TILE` по всем клеткам в радиусе (включая центр).
+
+Все `DAMAGE_TILE` от одного взрыва исполняются одной волной: сначала урон наносится по всем клеткам, затем на все `TILE_DAMAGED` срабатывают реакции поджога. Благодаря этому огонь распространяется параллельно во все стороны.
+
+Поле `isNew` в событии `TILE_EFFECT_STATUS_APPLIED` позволяет отличить первое наложение статуса от обновления длительности и избежать повторных взрывов.
+
+Добавляя новый взрыв, повторите этот паттерн: создайте реакцию, которая по условию порождает `TILE_EXPLOSION`, и используйте существующую `tileExplosionDamageReaction` для нанесения урона.
+
+---
+
 ## Частые ошибки
 
 - **Забыли добавить `canHaveStatus`.** Статус не наложится, даже если правило сработает.

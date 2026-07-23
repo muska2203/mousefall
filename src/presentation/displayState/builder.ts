@@ -315,6 +315,7 @@ export function createPatch(event: GameEvent, state: GameState): DisplayPatch {
 
     case 'TILE_EFFECT_STATUS_TICKED':
     case 'TILE_EFFECT_TICKED':
+    case 'TILE_EXPLODED':
       return { type: 'NO_OP' };
 
     case 'RESOURCE_CONSUMED':

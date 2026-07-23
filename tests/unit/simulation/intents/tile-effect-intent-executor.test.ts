@@ -862,6 +862,7 @@ describe('tile-effect-intent-executor', () => {
         position: { x: 3, y: 3 },
         duration: 4,
         sourceEntityId: null,
+        isNew: true,
       });
 
       const effect = getTileEffectAt(state, 3, 3, 'oil');
@@ -1002,6 +1003,7 @@ describe('tile-effect-intent-executor', () => {
       );
 
       expect(node).not.toBeNull();
+      expect((node!.event as any).isNew).toBe(false);
       expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects).toHaveLength(1);
       expect(getTileEffectAt(state, 3, 3, 'oil').statusEffects[0]!.duration).toBe(6);
     });

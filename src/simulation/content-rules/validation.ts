@@ -87,13 +87,12 @@ export function validateContentRuleReferences(content: LoadedContent): void {
 export function validateContentRuleSemantics(content: LoadedContent): ContentRuleValidationError[] {
   const errors: ContentRuleValidationError[] = [];
   const knownStatusIds = new Set(content.statuses.keys());
-  const knownAbilityIds = new Set(content.abilities.keys());
   const knownTileEffectStatusIds = new Set(content.tileEffectStatuses.keys());
   const knownTileEffectIds = new Set(content.tileEffects.keys());
 
   for (const rule of getAllContentRules()) {
     validateRuleTrigger(rule, errors);
-    validateRuleEffect(rule, knownStatusIds, knownAbilityIds, knownTileEffectStatusIds, knownTileEffectIds, errors);
+    validateRuleEffect(rule, knownStatusIds, knownTileEffectStatusIds, knownTileEffectIds, errors);
     validateRuleConditions(rule, rule.conditions, knownTileEffectIds, knownTileEffectStatusIds, errors);
     validateRuleConditions(rule, rule.targetConditions, knownTileEffectIds, knownTileEffectStatusIds, errors);
   }
@@ -163,7 +162,6 @@ function validateRuleTrigger(rule: ContentRule, errors: ContentRuleValidationErr
 function validateRuleEffect(
   rule: ContentRule,
   knownStatusIds: ReadonlySet<string>,
-  knownAbilityIds: ReadonlySet<string>,
   knownTileEffectStatusIds: ReadonlySet<string>,
   knownTileEffectIds: ReadonlySet<string>,
   errors: ContentRuleValidationError[],
@@ -182,9 +180,6 @@ function validateRuleEffect(
       break;
     case 'heal':
       validateHealEffect(rule, effect, errors);
-      break;
-    case 'counterAttack':
-      validateCounterAttackEffect(rule, effect, knownAbilityIds, errors);
       break;
   }
 }
@@ -292,30 +287,6 @@ function validateHealEffect(
   // Сейчас поле игнорируется, чтобы не ломать существующий контент.
   void errors;
   void effect;
-}
-
-/**
- * Проверяет ссылку на способность в эффекте counterAttack, если skillId указан.
- */
-function validateCounterAttackEffect(
-  rule: ContentRule,
-  effect: Extract<RuleEffect, { type: 'counterAttack' }>,
-  knownAbilityIds: ReadonlySet<string>,
-  errors: ContentRuleValidationError[],
-): void {
-  const skillId = (effect as { skillId?: string }).skillId;
-  if (skillId === undefined) {
-    return;
-  }
-
-  if (!knownAbilityIds.has(skillId)) {
-    errors.push({
-      path: `rule.${rule.id}.effect`,
-      ruleId: rule.id,
-      field: 'effect.skillId',
-      problem: `Способность "${skillId}" не найдена в реестре способностей`,
-    });
-  }
 }
 
 /**

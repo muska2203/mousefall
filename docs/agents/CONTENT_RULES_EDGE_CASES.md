@@ -101,6 +101,38 @@ if (reactionDepth > MAX_REACTION_DEPTH) {
 
 ---
 
+## Взрывы тайловых эффектов и цепные реакции
+
+### Порядок событий
+
+Взрыв горящего масла реализован через мировую реакцию на `TILE_EFFECT_STATUS_APPLIED`. Важно: `executeIntents` исполняет интенты **волнами**, поэтому все `DAMAGE_TILE` от одного взрыва применяются параллельно, и только потом на все `TILE_DAMAGED` срабатывают реакции поджога. Огонь распространяется равномерно во все стороны, а не змейкой.
+
+```text
+APPLY_TILE_EFFECT_STATUS burning на oil
+  → TILE_EFFECT_STATUS_APPLIED (isNew: true)
+    → WorldReaction: burningOilExplosionReaction
+      → TILE_EXPLOSION intent
+        → executeTileExplosionIntent → TILE_EXPLODED
+          → WorldReaction: tileExplosionDamageReaction
+            → [DAMAGE_TILE по всем клеткам в радиусе]  ← одна волна
+              → [TILE_DAMAGED на клетках с маслом]
+                → ContentRuleReaction: fire_tile_damage_ignites_oil
+                  → [APPLY_TILE_EFFECT_STATUS burning на соседнем oil]
+                    → повторяется цепочка следующей волной
+```
+
+### Защита от бесконечных циклов
+
+1. **`isNew` в `TILE_EFFECT_STATUS_APPLIED`.** Реакция взрыва проверяет `isNew === true`, поэтому обновление длительности уже горящего масла не вызывает повторный взрыв.
+2. **Правило `fire_tile_damage_ignites_oil` требует отсутствия `burning`.** Повторный `TILE_DAMAGED` по уже горящей клетке не переподжигает её.
+3. **Масло не удаляется при взрыве.** Это позволяет огню продолжать гореть и распространяться по тику, но не создаёт новых взрывов без нового поджога.
+
+### Практический совет
+
+При добавлении новых взрывных тайловых эффектов всегда проверяйте, что реакция срабатывает только на первое наложение статуса, и что цепочка имеет естественную точку остановки. Используйте `RULE_TRIGGERED` и счётчик глубины реакций для отладки.
+
+---
+
 ## Mid-chain статусы
 
 ### Правило

@@ -370,7 +370,8 @@ export type Intent =
   | RemoveTileEffectIntent
   | TickTileEffectsIntent
   | ApplyTileEffectStatusIntent
-  | RemoveTileEffectStatusIntent;
+  | RemoveTileEffectStatusIntent
+  | TileExplosionIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -430,6 +431,14 @@ export type RemoveTileEffectStatusIntent = {
   statusType: string;
   position: Position;
 };
+export type TileExplosionIntent = {
+  type: 'TILE_EXPLOSION';
+  position: Position;
+  sourceEntityId: EntityId | null;
+  damage: number;
+  radius: number;
+  tags: GameplayTag[];
+};
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -485,7 +494,8 @@ export type GameEvent =
   | TileEffectStatusAppliedEvent
   | TileEffectStatusRemovedEvent
   | TileEffectStatusTickedEvent
-  | TileEffectTickedEvent;
+  | TileEffectTickedEvent
+  | TileExplodedEvent;
 
 export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -710,6 +720,8 @@ export type TileEffectStatusAppliedEvent = {
   duration: number;
   /** Сущность-источник наложения статуса; null для мировых правил. */
   sourceEntityId: EntityId | null;
+  /** true, если статус только что наложен; false, если обновлён (например, продлён). */
+  isNew: boolean;
 };
 
 export type TileEffectStatusRemovedEvent = {
@@ -730,4 +742,13 @@ export type TileEffectTickedEvent = {
   type: 'TILE_EFFECT_TICKED';
   effectType: string;
   position: Position;
+};
+
+export type TileExplodedEvent = {
+  type: 'TILE_EXPLODED';
+  position: Position;
+  sourceEntityId: EntityId | null;
+  damage: number;
+  radius: number;
+  tags: GameplayTag[];
 };

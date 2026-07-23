@@ -383,6 +383,7 @@ describe('createPatch', () => {
       position: { x: 3, y: 3 },
       duration: 3,
       sourceEntityId: null,
+      isNew: true,
     };
     const patch = createPatch(event, state);
     expect(patch).toEqual({
