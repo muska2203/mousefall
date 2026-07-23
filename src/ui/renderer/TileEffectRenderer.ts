@@ -31,9 +31,14 @@ export class TileEffectRenderer {
 
     for (let y = Math.max(0, startRow); y < Math.min(map.height, endRow); y++) {
       for (let x = Math.max(0, startCol); x < Math.min(map.width, endCol); x++) {
+        // Тайловые эффекты отображаются только в зоне прямой видимости.
+        // В debug-режиме туман войны отключён, поэтому показываем всё.
+        if (!input.debugEnabled && !map.visible[y]?.[x]) continue;
+
         const tile = map.tiles[y]?.[x];
         if (!tile || !tile.tileEffects || tile.tileEffects.length === 0) continue;
         for (const overlay of tile.tileEffects) {
+          if (overlay.kind === 'status') continue;
           const key = `${x},${y},${overlay.type}`;
           visibleKeys.add(key);
           const path = getTileEffectSprite(overlay.type);

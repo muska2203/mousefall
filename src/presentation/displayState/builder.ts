@@ -51,9 +51,9 @@ function toDisplayTile(type: 'floor' | 'wall'): DisplayTile {
 function getTileEffectOverlays(tileEffects: import('@simulation/core-types.ts').TileEffects): TileEffectOverlay[] {
   const overlays: TileEffectOverlay[] = [];
   for (const effect of Object.values(tileEffects)) {
-    overlays.push({ type: effect.type, renderOrder: effect.renderOrder });
+    overlays.push({ type: effect.type, kind: 'effect', renderOrder: effect.renderOrder });
     for (const status of effect.statusEffects) {
-      overlays.push({ type: status.type, renderOrder: status.renderOrder });
+      overlays.push({ type: status.type, kind: 'status', renderOrder: status.renderOrder });
     }
   }
   // Сначала по возрастанию renderOrder, при равенстве — по типу для стабильности.

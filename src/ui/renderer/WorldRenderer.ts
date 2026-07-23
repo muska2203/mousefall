@@ -11,6 +11,7 @@ import type {Position, RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {TileRenderer} from './TileRenderer';
 import {TileEffectRenderer} from './TileEffectRenderer';
+import {TileEffectStatusRenderer} from './TileEffectStatusRenderer';
 import {EntityRenderer} from './EntityRenderer';
 import {FogRenderer} from './FogRenderer';
 import {FloatingTextRenderer} from './FloatingTextRenderer';
@@ -35,6 +36,7 @@ export class WorldRenderer {
   private tileEffectRenderer = new TileEffectRenderer();
   private targetingRenderer = new TargetingRenderer();
   private entityRenderer = new EntityRenderer();
+  private tileEffectStatusRenderer = new TileEffectStatusRenderer(this.entityRenderer.container);
   private fogRenderer = new FogRenderer();
   private floatingTextRenderer = new FloatingTextRenderer();
   private debugMapRenderer = new DebugMapRenderer();
@@ -56,7 +58,8 @@ export class WorldRenderer {
     // 4. подсветка клеток (таргетинг) и автопуть — поверх тайловых эффектов, под туманом,
     //    чтобы превью пути и интентов не прятались под эффектами
     // 5. туман войны — затемняет пол, эффекты и подсветку, но не сущности
-    // 6. сущности и предметы — рисуются поверх тумана, чтобы большие спрайты не обрезались
+    // 6. сущности, предметы и статусы тайловых эффектов — в одном контейнере
+    //    поверх тумана, чтобы большие спрайты не обрезались и сортировались по Y
     // 7. превью интентов (стрелки, цифры урона) — поверх сущностей
     this.root.addChild(this.tileRenderer.container);
     this.root.addChild(this.debugMapRenderer.container);
@@ -136,6 +139,7 @@ export class WorldRenderer {
     this.tileEffectRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.entityRenderer.update(input);
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);
+    this.tileEffectStatusRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.unitInfoRenderer.update(input, (id) => this.entityRenderer.getSprite(id));
 
     this.syncTextLayer();
@@ -482,6 +486,7 @@ export class WorldRenderer {
   private onTick = (): void => {
     const now = performance.now();
     this.entityRenderer.updateAnimations(now);
+    this.tileEffectStatusRenderer.updateAnimations(now);
     this.unitInfoRenderer.updateAnimations(now);
     this.floatingTextRenderer.update(now);
     this.unitInfoRenderer.syncPositions((id) => this.entityRenderer.getSprite(id));
@@ -540,6 +545,7 @@ export class WorldRenderer {
   destroy(): void {
     this.tileRenderer.clear();
     this.tileEffectRenderer.clear();
+    this.tileEffectStatusRenderer.clear();
     this.targetingRenderer.clear();
     this.entityRenderer.clear();
     this.fogRenderer.clear();

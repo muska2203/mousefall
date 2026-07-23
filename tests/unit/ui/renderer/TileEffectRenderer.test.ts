@@ -129,11 +129,11 @@ describe('TileEffectRenderer', () => {
     vi.clearAllMocks();
   });
 
-  it('creates multiple sprites for tile with multiple overlays', () => {
+  it('creates multiple sprites for tile with multiple material overlays', () => {
     const displayState = makeDisplayState();
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'oil', renderOrder: 1},
-      {type: 'burning', renderOrder: 2},
+      {type: 'oil', kind: 'effect', renderOrder: 1},
+      {type: 'water', kind: 'effect', renderOrder: 2},
     ];
 
     const renderer = new TileEffectRenderer();
@@ -144,11 +144,24 @@ describe('TileEffectRenderer', () => {
     expect(renderer.container.children.every((s) => s.x === 2 * TILE_SIZE && s.y === 2 * TILE_SIZE)).toBe(true);
   });
 
+  it('ignores status overlays', () => {
+    const displayState = makeDisplayState();
+    displayState.map.tiles[2]![2]!.tileEffects = [
+      {type: 'oil', kind: 'effect', renderOrder: 1},
+      {type: 'burning', kind: 'status', renderOrder: 2},
+    ];
+
+    const renderer = new TileEffectRenderer();
+    renderer.update(makeRenderInput(displayState), 0, 0, 320, 320);
+
+    expect(renderer.container.children.length).toBe(1);
+  });
+
   it('sorts sprites by renderOrder via zIndex', () => {
     const displayState = makeDisplayState();
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'burning', renderOrder: 5},
-      {type: 'oil', renderOrder: 1},
+      {type: 'water', kind: 'effect', renderOrder: 5},
+      {type: 'oil', kind: 'effect', renderOrder: 1},
     ];
 
     const renderer = new TileEffectRenderer();
@@ -156,14 +169,14 @@ describe('TileEffectRenderer', () => {
 
     const children = renderer.container.children;
     expect(children.some((s) => s.zIndex === 1)).toBe(true); // oil
-    expect(children.some((s) => s.zIndex === 5)).toBe(true); // burning
+    expect(children.some((s) => s.zIndex === 5)).toBe(true); // water
   });
 
   it('destroys sprites when overlay is removed', () => {
     const displayState = makeDisplayState();
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'oil', renderOrder: 1},
-      {type: 'burning', renderOrder: 2},
+      {type: 'oil', kind: 'effect', renderOrder: 1},
+      {type: 'water', kind: 'effect', renderOrder: 2},
     ];
 
     const renderer = new TileEffectRenderer();
@@ -171,8 +184,8 @@ describe('TileEffectRenderer', () => {
 
     expect(renderer.container.children.length).toBe(2);
 
-    // Убираем статус горения — спрайт огня должен быть уничтожен.
-    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', renderOrder: 1}];
+    // Убираем второй материальный эффект — его спрайт должен быть уничтожен.
+    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', kind: 'effect', renderOrder: 1}];
     renderer.update(makeRenderInput(displayState), 0, 0, 320, 320);
 
     expect(renderer.container.children.length).toBe(1);
@@ -180,15 +193,40 @@ describe('TileEffectRenderer', () => {
 
   it('updates zIndex when overlay renderOrder changes', () => {
     const displayState = makeDisplayState();
-    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', renderOrder: 1}];
+    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', kind: 'effect', renderOrder: 1}];
 
     const renderer = new TileEffectRenderer();
     renderer.update(makeRenderInput(displayState), 0, 0, 320, 320);
     expect(renderer.container.children[0]!.zIndex).toBe(1);
 
     // Меняем renderOrder — у существующего спрайта должен обновиться zIndex.
-    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', renderOrder: 5}];
+    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', kind: 'effect', renderOrder: 5}];
     renderer.update(makeRenderInput(displayState), 0, 0, 320, 320);
     expect(renderer.container.children[0]!.zIndex).toBe(5);
+  });
+
+  it('does not render overlays on cells outside FOV', () => {
+    const displayState = makeDisplayState();
+    displayState.map.visible = Array.from({length: 10}, () => Array(10).fill(false));
+    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', kind: 'effect', renderOrder: 1}];
+
+    const renderer = new TileEffectRenderer();
+    renderer.update(makeRenderInput(displayState), 0, 0, 320, 320);
+
+    expect(renderer.container.children.length).toBe(0);
+  });
+
+  it('renders overlays on non-visible cells when debug is enabled', () => {
+    const displayState = makeDisplayState();
+    displayState.map.visible = Array.from({length: 10}, () => Array(10).fill(false));
+    displayState.map.tiles[2]![2]!.tileEffects = [{type: 'oil', kind: 'effect', renderOrder: 1}];
+
+    const input = makeRenderInput(displayState);
+    input.debugEnabled = true;
+
+    const renderer = new TileEffectRenderer();
+    renderer.update(input, 0, 0, 320, 320);
+
+    expect(renderer.container.children.length).toBe(1);
   });
 });
