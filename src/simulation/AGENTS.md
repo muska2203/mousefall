@@ -22,6 +22,7 @@
 | Добавить интент | `systems/intents/` → добавить executor |
 | Добавить/изменить AI-стратегию | `docs/agents/AI_SYSTEM.md` → `src/simulation/ai/tactics/` для утилит, `src/simulation/ai/*-strategy.ts` для стратегии |
 | Добавить debug-действие | `systems/actions/debug-*.ts` → зарегистрировать в `simulation.ts`. Должно проверять флаг debug-режима. |
+| Добавить/изменить тайловый эффект | `docs/agents/TILE_EFFECTS.md` → `public/content/tile-effects/`, `src/simulation/content-rules/rules.ts`, `src/simulation/skills/executors/` |
 | Добавить реакцию мира | `systems/world-reactions/` |
 | Изменить ход | `simulation.ts`, метод `dispatch` |
 | Изменить генерацию карт | `systems/mapgen.ts` (диспетчер) → `systems/map-generation/*-strategy.ts` |

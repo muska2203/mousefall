@@ -1,0 +1,37 @@
+{
+  "$schemaComment": "Шаблон врага. Скопируйте файл в public/content/entities/enemies/<id>.json и замените значения.",
+  "id": "enemy_template",
+  "maxAp": 2,
+  "aiStrategyId": "hunter",
+  "aiSightRadius": 4,
+  "health": {
+    "max": 15
+  },
+  "baseStats": {
+    "str": 1,
+    "dex": 3,
+    "int": 0,
+    "vit": 0
+  },
+  "equipment": {
+    "weapon": "common_splinter_blade"
+  },
+  "lootTable": [
+    {
+      "templateId": "health_potion",
+      "weight": 3
+    }
+  ],
+  "lootDropTable": [
+    {
+      "count": 0,
+      "weight": 5
+    },
+    {
+      "count": 1,
+      "weight": 1
+    }
+  ],
+  "xpReward": 8,
+  "renderScale": 1.0
+}

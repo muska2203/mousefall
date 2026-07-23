@@ -1,0 +1,9 @@
+{
+  "$schemaComment": "Шаблон способности. Скопируйте файл в public/content/abilities/<id>.json и замените значения.",
+  "id": "ability_template",
+  "spriteId": "ability_template",
+  "cooldown": 2,
+  "apCost": 1,
+  "requiredWeaponTags": ["attack.melee"],
+  "tags": ["delivery.ability", "attack.melee", "target.single"]
+}

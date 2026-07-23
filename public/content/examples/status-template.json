@@ -1,0 +1,9 @@
+{
+  "$schemaComment": "Шаблон статуса. Скопируйте файл в public/content/statuses/<id>.json и замените значения.",
+  "id": "status_template",
+  "ruleIds": [],
+  "statusCategory": "poison",
+  "categoryPriority": 0,
+  "mutuallyExclusiveWith": [],
+  "blockedBy": []
+}

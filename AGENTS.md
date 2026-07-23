@@ -15,6 +15,14 @@
 
 ---
 
+## Поведение агента
+
+Перед каждой задачей агент должен:
+
+1. Прочитать [`docs/agents/PROTOCOL.md`](./docs/agents/PROTOCOL.md) — классификация задач и общие правила.
+2. Прочитать [`docs/agents/SYNC_STATUS.md`](./docs/agents/SYNC_STATUS.md) — каким документам можно доверять.
+3. Следовать соответствующему протоколу из [`docs/agents/protocols/`](./docs/agents/protocols/).
+
 ## Локальные правила по папкам
 
 | Папка | Локальный AGENTS.md |

@@ -1,5 +1,8 @@
 # TURN_FLOW — Ход игры
 
+> **Статус:** `[STABLE]` — ход игры и фракционный порядок реализованы.
+> **Источник правды:** `src/simulation/simulation.ts`; этот файл для обзора.
+
 > Реализован в `GameSimulation` (`src/simulation/simulation.ts`).
 
 ---

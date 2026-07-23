@@ -1,5 +1,8 @@
 # ACTION_SYSTEM — Action / Intent / Event
 
+> **Статус:** `[STABLE]` — архитектура трёх фаз (Action → Intent → Event) не меняется. Конкретные типы `Intent`/`GameEvent` смотри в `src/simulation/core-types.ts`.
+> **Источник правды:** этот файл для общих принципов; `src/simulation/core-types.ts` для конкретных типов.
+
 > Симуляция использует трёхфазную систему. Не путай Action (намерение) с Event (запись о произошедшем).
 
 ---

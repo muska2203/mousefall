@@ -1,0 +1,23 @@
+{
+  "$schemaComment": "Шаблон оружия. Скопируйте файл в public/content/items/weapons/<id>.json и замените значения.",
+  "id": "weapon_template",
+  "spriteId": "weapon_template",
+  "icon": "/assets/items/weapon_template.png",
+  "fallback": "⚔️",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 12,
+  "weapon": {
+    "baseDamage": 5,
+    "damageFormulaId": "sword",
+    "range": 1,
+    "damageDistribution": [
+      { "damageTag": "damage.physical.slashing", "weight": 1.0 }
+    ],
+    "tags": ["attack.melee", "target.single", "delivery.weapon"]
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [],
+  "ruleIds": []
+}
