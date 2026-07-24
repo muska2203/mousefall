@@ -11,6 +11,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useTranslation} from '@i18n/hooks';
 import type {CharacterConfig} from '@presentation/gameSession';
 import {GameSession} from '@presentation/gameSession';
+import type {ToastItem} from '@presentation/types';
 import {useSettingsStore} from '@ui/store/settings';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import type {HeroStat} from '@ui/components/HeroPanel';
@@ -20,6 +21,7 @@ import {PortraitGallery} from '@ui/components/PortraitGallery';
 import type {StarterSlot} from '@ui/components/StarterEquipmentPanel';
 import {StarterEquipmentPanel} from '@ui/components/StarterEquipmentPanel';
 import {Panel} from '@ui/components/Panel';
+import {ToastContainer} from '@ui/components/ToastContainer';
 
 interface Props {
   onStartGame: (config: CharacterConfig, seed: number) => void;
@@ -37,6 +39,7 @@ function getStarterItemInfo(id: string, locale: 'ru' | 'en') {
 
 export function CharacterCreationScreen({onStartGame}: Props) {
   const { t } = useTranslation('screens');
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const locale = useSettingsStore((s) => s.locale);
   const templates = useMemo(() => {
     try {
@@ -113,6 +116,21 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     const seed = seedInput && !Number.isNaN(parsedSeed) ? parsedSeed : Date.now() & 0xffffffff;
     onStartGame(config, seed);
   }, [isValid, selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, seedInput, onStartGame]);
+
+  const showInfoToast = useCallback(
+    (message: string) => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      setToasts((prev) => [
+        ...prev,
+        {id, kind: 'info', title: t('characterCreation.infoTitle'), message, duration: 3000},
+      ]);
+    },
+    [t],
+  );
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
 
   const heroStats: HeroStat[] = [
     {
@@ -267,10 +285,10 @@ export function CharacterCreationScreen({onStartGame}: Props) {
 
       <Panel title={t('characterCreation.infoTitle')} titleId="info-title">
         <div className="cm-welcome-info-body">
-          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => alert(t('characterCreation.hintsAlert'))}>
+          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => showInfoToast(t('characterCreation.hintsAlert'))}>
             {t('characterCreation.hintsButton')}
           </button>
-          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => alert(t('characterCreation.devlogAlert'))}>
+          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => showInfoToast(t('characterCreation.devlogAlert'))}>
             Devlog
           </button>
         </div>
@@ -285,11 +303,14 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   );
 
   return (
-    <ThreeColumnLayout
-      variant="default"
-      left={leftColumn}
-      center={centerColumn}
-      right={rightColumn}
-    />
+    <>
+      <ThreeColumnLayout
+        variant="default"
+        left={leftColumn}
+        center={centerColumn}
+        right={rightColumn}
+      />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+    </>
   );
 }

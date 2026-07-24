@@ -36,14 +36,19 @@ describe('TagBadge', () => {
 describe('TagList', () => {
   it('renders a badge for each tag', () => {
     const html = renderToString(
-      <TagList tags={['attack.melee', 'target.single']} locale="ru" />,
+      <TagList
+        items={[
+          { tag: 'attack.melee', label: 'Ближний бой' },
+          { tag: 'target.single', label: 'Точный' },
+        ]}
+      />,
     );
     expect(html).toContain('Ближний бой');
     expect(html).toContain('Точный');
   });
 
   it('returns null for empty tags', () => {
-    const html = renderToString(<TagList tags={[]} />);
+    const html = renderToString(<TagList items={[]} />);
     expect(html).toBe('');
   });
 });
@@ -68,6 +73,7 @@ describe('SkillDetailPopover', () => {
       maxCooldown: 2,
       apCost: 2,
       tags: ['delivery.spell', 'target.aoe', 'effect.burn'],
+      tagLabels: ['Заклинание', 'По области', 'Поджог'],
     };
     const html = renderToString(<SkillDetailPopover skill={skill} visible x={0} y={0} />);
     expect(html).toContain('Заклинание');
@@ -85,6 +91,7 @@ describe('SkillDetailPopover', () => {
       maxCooldown: 0,
       apCost: 1,
       tags: [],
+      tagLabels: [],
     };
     const html = renderToString(<SkillDetailPopover skill={skill} visible x={0} y={0} />);
     expect(html).not.toContain('cm-tag-list');
@@ -108,6 +115,7 @@ describe('ItemDetailCard', () => {
       grantedAbilities: [],
       abilityPool: [],
       tags: ['attack.melee', 'delivery.weapon'],
+      tagLabels: ['Ближний бой', 'Оружие'],
     };
     const html = renderToString(<ItemDetailCard item={item} />);
     expect(html).toContain('Ближний бой');
@@ -127,6 +135,7 @@ describe('ItemDetailCard', () => {
       sections: [],
       isTemplate: false,
       tags: [],
+      tagLabels: [],
     };
     const html = renderToString(<ItemDetailCard item={item} />);
     expect(html).not.toContain('cm-tag-list');
@@ -148,6 +157,7 @@ describe('ItemDetailCard', () => {
         { ruleId: 'amulet_fire_damage_multiplier', name: 'Угольная искра', description: 'Огненные атаки оружием или способностью наносят на 2 урона больше.' },
       ],
       tags: [],
+      tagLabels: [],
     };
     const html = renderToString(<ItemDetailCard item={item} />);
     expect(html).toContain('Свойства');
@@ -171,6 +181,7 @@ describe('ItemDetailCard', () => {
         { abilityId: 'fireball', name: 'Огненный шар', description: '', icon: null, weight: 1 },
       ],
       tags: [],
+      tagLabels: [],
     };
     const templateItem: ItemDetailViewModel = {
       ...poolItem,

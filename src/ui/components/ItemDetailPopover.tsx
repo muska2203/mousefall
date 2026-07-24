@@ -16,10 +16,10 @@
  * />
  */
 
-import {useLayoutEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
 import type {ItemDetailViewModel} from '@presentation/types';
 import {ItemDetailCard} from './ItemDetailCard';
+import {usePopoverPosition} from './hooks/usePopoverPosition';
 
 interface Props {
   /** Данные предмета для отображения (готовый ViewModel). */
@@ -32,39 +32,8 @@ interface Props {
   y?: number;
 }
 
-const POPOVER_OFFSET = 16;
-const VIEWPORT_PADDING = 8;
-
 export function ItemDetailPopover({ item, visible, x, y }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || x === undefined || y === undefined) return;
-
-    const rect = el.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    let left = x + POPOVER_OFFSET;
-    let top = y + POPOVER_OFFSET;
-
-    // Если карточка не влезает справа — отображаем слева от курсора
-    if (left + rect.width > viewportWidth - VIEWPORT_PADDING) {
-      left = x - rect.width - POPOVER_OFFSET;
-    }
-    // Если карточка не влезает снизу — отображаем сверху от курсора
-    if (top + rect.height > viewportHeight - VIEWPORT_PADDING) {
-      top = y - rect.height - POPOVER_OFFSET;
-    }
-
-    // Не даём уйти за левый/верхний край viewport
-    left = Math.max(VIEWPORT_PADDING, left);
-    top = Math.max(VIEWPORT_PADDING, top);
-
-    el.style.left = `${left}px`;
-    el.style.top = `${top}px`;
-  }, [x, y, visible, item]);
+  const ref = usePopoverPosition<HTMLDivElement>({ x, y, enabled: visible });
 
   if (!visible) {
     return null;

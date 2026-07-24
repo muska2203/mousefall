@@ -4,6 +4,8 @@
  * Клик по занятому слоту снимает предмет.
  */
 
+import {resolveItemFrame} from '@utils/assetResolver';
+
 interface Props {
   label: string;
   icon?: string;
@@ -41,7 +43,7 @@ export function EquipSlot({
           <span className="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true">
             {icon && (
               <>
-                <img className="cm-sprite-stack__frame" src={`/assets/items/loot_frame_${rarity}.png`} alt="" decoding="async" />
+                <img className="cm-sprite-stack__frame" src={resolveItemFrame(rarity)} alt="" decoding="async" />
                 <img className="cm-sprite-stack__body" src={icon} alt="" decoding="async" />
               </>
             )}

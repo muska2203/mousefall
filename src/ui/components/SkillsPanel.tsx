@@ -50,14 +50,9 @@ export function SkillsPanel({
   const { t } = useTranslation('components');
   const resolvedTitle = title ?? t('skillsPanel.title');
   const resolvedEmpty = emptyMessage ?? t('skillsPanel.noSkills');
-  const titleNode = (
-    <>
-      {resolvedTitle}
-    </>
-  );
 
   return (
-    <Panel title={titleNode} className="cm-panel--skills">
+    <Panel title={resolvedTitle} className="cm-panel--skills">
       <div className="cm-skills-viewport cm-scroll-wood">
         <ul className="cm-skills">
           {skills && skills.length > 0 ? (

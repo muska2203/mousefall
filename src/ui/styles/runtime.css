@@ -205,8 +205,7 @@
   min-height: 0;
 }
 
-.cm-panel--inventory .cm-panel__body,
-.cm-panel--consumables .cm-panel__body {
+.cm-panel--inventory .cm-panel__body {
   align-items: center;
 }
 
@@ -216,12 +215,6 @@
   min-height: var(--inv-cell);
   padding-right: 0;
   scrollbar-gutter: auto;
-}
-
-.cm-panel--consumables .cm-cons-wrap {
-  width: 276px;
-  max-width: 276px;
-  padding-right: 0;
 }
 
 .cm-equip-slot__box--drop-target {
@@ -432,26 +425,31 @@
   color: var(--text-muted);
   line-height: 1.3;
 }
-
 /* Rarity visuals for real item cells (Variant 1: Magic Glow). */
-.item-rarity-common {
-  border-color: #7a6855 !important;
+.cm-inv-cell.item-rarity-common,
+.cm-welcome-item.item-rarity-common,
+.cm-equip-slot__box.item-rarity-common {
+  border-color: #7a6855;
 }
 
-.item-rarity-rare {
-  border-color: #00d2ff !important;
-  box-shadow: 
-    inset 0 0 16px rgba(0, 210, 255, 0.35), 
-    0 0 10px rgba(0, 210, 255, 0.4), 
-    0 0 0 1px rgba(0, 210, 255, 0.5) !important;
+.cm-inv-cell.item-rarity-rare,
+.cm-welcome-item.item-rarity-rare,
+.cm-equip-slot__box.item-rarity-rare {
+  border-color: #00d2ff;
+  box-shadow:
+    inset 0 0 16px rgba(0, 210, 255, 0.35),
+    0 0 10px rgba(0, 210, 255, 0.4),
+    0 0 0 1px rgba(0, 210, 255, 0.5);
 }
 
-.item-rarity-unique {
-  border-color: #c445ff !important;
-  box-shadow: 
-    inset 0 0 16px rgba(196, 69, 255, 0.35), 
-    0 0 12px rgba(196, 69, 255, 0.45), 
-    0 0 0 1px rgba(196, 69, 255, 0.6) !important;
+.cm-inv-cell.item-rarity-unique,
+.cm-welcome-item.item-rarity-unique,
+.cm-equip-slot__box.item-rarity-unique {
+  border-color: #c445ff;
+  box-shadow:
+    inset 0 0 16px rgba(196, 69, 255, 0.35),
+    0 0 12px rgba(196, 69, 255, 0.45),
+    0 0 0 1px rgba(196, 69, 255, 0.6);
 }
 
 /* Ensure absolute item badges are anchored to item cells. */
@@ -489,219 +487,6 @@
 .cm-stat-value--down,
 .cm-item-weapon-damage.cm-stat-value--down {
   color: #ff8d8d !important;
-}
-
-/* Consumables qty: circle at bottom-left. */
-.cm-panel--consumables .cm-inv-cell__qty {
-  left: 3px;
-  right: auto;
-  bottom: 3px;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  padding: 0 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  line-height: 1;
-  color: var(--gold);
-  background: rgba(20, 14, 11, 0.92);
-  border: 1px solid var(--bronze-dark);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-
-.cm-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.cm-modal-backdrop.is-open {
-  display: flex;
-}
-
-.cm-modal {
-  width: min(560px, calc(100vw - 32px));
-  max-height: min(70vh, 620px);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.cm-modal.cm-modal--skills {
-  overflow: visible;
-}
-
-.cm-modal.cm-modal--skills .cm-panel__body {
-  overflow: visible;
-}
-
-.cm-modal .cm-panel__body {
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--text-muted);
-}
-
-.cm-modal__actions {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.cm-modal-help p {
-  margin: 0 0 10px;
-}
-
-.cm-modal-help p:last-child {
-  margin-bottom: 0;
-}
-
-.cm-modal-devlog {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.cm-modal-devlog__entry h4 {
-  margin: 0 0 6px;
-  color: var(--gold);
-  font-family: var(--font-panel-title);
-  font-size: 13px;
-}
-
-.cm-modal-devlog__entry ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.cm-modal-devlog__entry li + li {
-  margin-top: 4px;
-}
-
-.cm-skill-choice {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.cm-skill-choice__grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  gap: 10px;
-}
-
-.cm-skill-choice__grid.is-single {
-  display: flex;
-}
-
-.cm-skill-choice-card {
-  flex: 1 1 calc(50% - 5px);
-  min-width: 0;
-  border: 1px solid var(--bronze-dark);
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.04), transparent 55%), var(--slot-inner);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 10px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-  overflow: visible;
-}
-
-.cm-skill-choice-card.is-selected {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1px rgba(232, 212, 168, 0.28), 0 0 10px rgba(232, 212, 168, 0.22);
-}
-
-.cm-skill-choice-card__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.cm-skill-choice-card__head-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cm-skill-choice-card h4 {
-  margin: 0;
-  color: var(--gold);
-  font-family: var(--font-panel-title);
-  font-size: 13px;
-}
-
-.cm-skill-choice-card p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.cm-skill-choice-card__copy {
-  border: 1px solid rgba(196, 163, 90, 0.2);
-  border-radius: 6px;
-  padding: 6px 8px;
-  background: rgba(15, 10, 8, 0.45);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cm-skill-choice-card__lvl {
-  font-size: 11px;
-  color: var(--gold-dim);
-}
-
-.cm-skill-choice-card__mana-badge,
-.cm-skill-choice-card__heal-badge,
-.cm-skill-choice-card__damage-badge {
-  border: 1px solid var(--bronze-dark);
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.cm-skill-choice-card__heal-badge {
-  color: #8fd88a;
-  background: rgba(20, 30, 11, 0.7);
-}
-
-.cm-skill-choice-card__damage-badge {
-  color: #ef4444;
-  background: rgba(30, 11, 11, 0.7);
-}
-
-.cm-skill-choice-card__delta s {
-  color: #b98383;
-  margin-right: 4px;
-  text-decoration: line-through;
-}
-
-.cm-skill-choice-card__delta strong {
-  color: #8fd88a;
-  font-weight: 700;
-}
-
-.cm-skill-choice__grid.is-single .cm-skill-choice-card {
-  flex-basis: 100%;
-}
-
-.cm-start-placeholder {
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--gold-dim);
-  text-align: center;
 }
 
 /* Game screen layout modifier. */
@@ -718,8 +503,7 @@
   min-height: 0;
 }
 
-.cm-panel--inventory .cm-panel__body,
-.cm-panel--consumables .cm-panel__body {
+.cm-panel--inventory .cm-panel__body {
   align-items: center;
 }
 
@@ -729,12 +513,6 @@
   min-height: var(--inv-cell);
   padding-right: 0;
   scrollbar-gutter: auto;
-}
-
-.cm-panel--consumables .cm-cons-wrap {
-  width: 276px;
-  max-width: 276px;
-  padding-right: 0;
 }
 
 .cm-equip-slot__box--drop-target {
@@ -946,33 +724,6 @@
   line-height: 1.3;
 }
 
-/* Rarity visuals for real item cells (Variant 1: Magic Glow). */
-.item-rarity-common {
-  border-color: #7a6855 !important;
-}
-
-.item-rarity-rare {
-  border-color: #00d2ff !important;
-  box-shadow: 
-    inset 0 0 16px rgba(0, 210, 255, 0.35), 
-    0 0 10px rgba(0, 210, 255, 0.4), 
-    0 0 0 1px rgba(0, 210, 255, 0.5) !important;
-}
-
-.item-rarity-unique {
-  border-color: #c445ff !important;
-  box-shadow: 
-    inset 0 0 16px rgba(196, 69, 255, 0.35), 
-    0 0 12px rgba(196, 69, 255, 0.45), 
-    0 0 0 1px rgba(196, 69, 255, 0.6) !important;
-}
-
-/* Ensure absolute item badges are anchored to item cells. */
-.cm-equip-slot__box,
-.cm-welcome-item {
-  position: relative;
-}
-
 /* Weapon total damage badge (single number). */
 .cm-item-weapon-damage {
   position: absolute;
@@ -1002,26 +753,6 @@
 .cm-stat-value--down,
 .cm-item-weapon-damage.cm-stat-value--down {
   color: #ff8d8d !important;
-}
-
-/* Consumables qty: circle at bottom-left. */
-.cm-panel--consumables .cm-inv-cell__qty {
-  left: 3px;
-  right: auto;
-  bottom: 3px;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  padding: 0 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  line-height: 1;
-  color: var(--gold);
-  background: rgba(20, 14, 11, 0.92);
-  border: 1px solid var(--bronze-dark);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
 }
 
 /* --- DetailPopover (универсальный тултип) --- */

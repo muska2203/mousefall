@@ -1,8 +1,9 @@
 import {ruContentTexts} from './ru/index';
 import {enContentTexts} from './en/index';
 import type {ContentText, ContentTexts} from './types';
+import type {Locale} from '@i18n/types';
 
-export type Locale = 'ru' | 'en';
+export type {Locale} from '@i18n/types';
 
 const textsByLocale: Record<Locale, ContentTexts> = {
   ru: ruContentTexts,

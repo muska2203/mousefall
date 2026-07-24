@@ -40,7 +40,7 @@ export function EquipmentPanel({title, slots, onUnequip}: Props) {
       <div className="cm-equip-slots">
         {slots.map((slot, i) => (
           <div
-            key={`${slot.label}-${i}`}
+            key={slot.slotType}
             onMouseEnter={() => setHoveredIndex(i)}
             onMouseMove={(e) => setMousePos({x: e.clientX, y: e.clientY})}
             onMouseLeave={() => setHoveredIndex(null)}

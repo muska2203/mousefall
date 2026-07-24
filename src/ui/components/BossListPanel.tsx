@@ -18,7 +18,7 @@ export function BossListPanel({title, bosses}: Props) {
     <Panel title={title ?? t('bossList.title')}>
       <ul className="cm-ending-loot">
         {bosses.map((name, i) => (
-          <li key={i} className="cm-ending-loot__item">
+          <li key={`boss-${name}-${i}`} className="cm-ending-loot__item">
             {name}
           </li>
         ))}

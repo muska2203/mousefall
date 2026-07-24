@@ -8,11 +8,11 @@
  * Внутри переключает карточку в зависимости от типа объекта.
  */
 
-import {useLayoutEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
 import {useTranslation} from '@i18n/hooks';
 import type {FieldObjectPopoverViewModel} from '@presentation/types';
 import {ItemDetailCard} from './ItemDetailCard';
+import {usePopoverPosition} from './hooks/usePopoverPosition';
 
 interface Props {
   popover: FieldObjectPopoverViewModel;
@@ -21,37 +21,9 @@ interface Props {
   y?: number;
 }
 
-const POPOVER_OFFSET = 16;
-const VIEWPORT_PADDING = 8;
-
 export function FieldObjectPopover({ popover, visible, x, y }: Props) {
   const { t } = useTranslation('components');
-  const ref = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || x === undefined || y === undefined) return;
-
-    const rect = el.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    let left = x + POPOVER_OFFSET;
-    let top = y + POPOVER_OFFSET;
-
-    if (left + rect.width > viewportWidth - VIEWPORT_PADDING) {
-      left = x - rect.width - POPOVER_OFFSET;
-    }
-    if (top + rect.height > viewportHeight - VIEWPORT_PADDING) {
-      top = y - rect.height - POPOVER_OFFSET;
-    }
-
-    left = Math.max(VIEWPORT_PADDING, left);
-    top = Math.max(VIEWPORT_PADDING, top);
-
-    el.style.left = `${left}px`;
-    el.style.top = `${top}px`;
-  }, [x, y, visible, popover]);
+  const ref = usePopoverPosition<HTMLDivElement>({ x, y, enabled: visible });
 
   if (!visible) {
     return null;

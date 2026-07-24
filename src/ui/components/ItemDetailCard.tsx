@@ -154,7 +154,9 @@ export function ItemDetailCard({ item }: Props) {
 
       {item.tags.length > 0 && (
         <div className="item-detail-tags">
-          <TagList tags={item.tags} />
+          <TagList
+            items={item.tags.map((tag, i) => ({ tag, label: item.tagLabels[i]! }))}
+          />
         </div>
       )}
     </div>

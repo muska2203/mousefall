@@ -10,11 +10,12 @@ The UI handles:
 - Character creation screen
 - Keyboard and mouse input routing
 - Combat log
+- Toasts and popovers
 
 The UI does **NOT** handle:
 - Game rules or logic (that's `simulation/`)
-- World rendering (temporary ASCII in `GameField`)
-- State management (that's `presentation/`)
+- World rendering (PixiJS renderer in `renderer/`)
+- Core state management (that's `presentation/`)
 
 ---
 
@@ -37,14 +38,14 @@ ui/
 │   ├── Portrait.tsx           # Circular portrait with level badge
 │   ├── ResourceBar.tsx        # HP / Mana / XP bar
 │   ├── StatRow.tsx            # Stat allocation / readonly row
-│   ├── GameField.tsx          # Phase button + ASCII map + Hotbar
+│   ├── GameField.tsx          # Phase button + PixiJS world + Hotbar
+│   ├── PhaseButton.tsx        # Current turn phase / skip turn button
 │   ├── EffectsPanel.tsx       # Active buffs list
 │   ├── LogPanel.tsx           # Combat log with live region
 │   ├── LogEntry.tsx           # Single log line
 │   ├── EquipmentPanel.tsx     # Weapon / armor / amulet slots
 │   ├── EquipSlot.tsx          # Single equipment slot
 │   ├── InventoryPanel.tsx     # Inventory grid
-│   ├── ConsumablesPanel.tsx   # Consumable items
 │   ├── SkillsPanel.tsx        # Skill list with icons
 │   ├── SkillRow.tsx           # Single skill row
 │   ├── Hotbar.tsx             # Quick access toolbar
@@ -53,16 +54,39 @@ ui/
 │   ├── PortraitGallery.tsx    # Portrait selection grid
 │   ├── StarterEquipmentPanel.tsx  # Starter gear selection
 │   ├── ItemButton.tsx         # Item button with rarity frame
+│   ├── ItemDetailCard.tsx     # Detailed item card
+│   ├── ItemDetailPopover.tsx  # Item detail popover
+│   ├── TagList.tsx            # Localized gameplay tag list
+│   ├── FieldObjectPopover.tsx # Popover for field objects
+│   ├── DetailPopover.tsx      # Generic detail popover
 │   ├── EndingMetricsPanel.tsx # Run metrics
 │   ├── BossListPanel.tsx      # Defeated bosses list
 │   ├── EndingActionsPanel.tsx # Post-run actions
+│   ├── InteractionHint.tsx    # Current interaction hint
+│   ├── DebugPanel.tsx         # Debug spawn panel (dev only)
+│   ├── Toast.tsx              # Toast notification
+│   ├── ToastContainer.tsx     # Toast container portal
 │   └── MetaFooter.tsx         # Footer with version
+│
+├── store/                     # UI-local state
+│   └── settings.ts            # Language and UI settings
+│
+├── input/                     # Input mapping
+│   └── keyboardMap.ts         # Keyboard layout and key map
+│
+├── animation/                 # Animation sequencing and executors
+│   └── sequencer.ts           # Animation sequencer
+│
+├── renderer/                  # PixiJS world renderer
+│   ├── PixiApp.ts
+│   └── WorldRenderer.ts
 │
 └── styles/                    # Global CSS
     ├── game-screen.css        # Base theme, panels, bars, grids
     ├── welcome.css            # Character creation specific
     ├── runtime.css            # Modals, tooltips, rarity glows
-    └── ending.css             # Ending screen specific
+    ├── ending.css             # Ending screen specific
+    └── toasts.css             # Toast notifications
 ```
 
 ---
@@ -113,9 +137,13 @@ Keyboard input is handled in `GameScreen` via global `keydown` listener:
 ## Allowed Dependencies
 
 ```
-ui/ → presentation/      (GameSession, callbacks)
+ui/ → presentation/      (GameSession, callbacks, types)
 ui/ → ui/components/     (shared UI components)
 ui/ → ui/styles/         (global CSS)
+ui/ → ui/store/          (UI-local settings store only)
+ui/ → ui/input/          (input mapping)
+ui/ → ui/animation/      (animation sequencing)
+ui/ → ui/renderer/       (PixiJS world renderer)
 ```
 
 ## Forbidden Dependencies
@@ -123,5 +151,4 @@ ui/ → ui/styles/         (global CSS)
 ```
 ui/ ✗→ simulation/       (no direct simulation calls)
 ui/ ✗→ content/          (no direct content access)
-ui/ ✗→ store/            (store layer removed)
 ```

@@ -161,5 +161,6 @@ export function mapItemTemplateToDetail(
     abilityPool: isTemplate ? abilityPool : null,
     properties,
     tags: template.weapon?.tags ?? [],
+    tagLabels: template.weapon?.tags.map((tag) => getTagText(tag, locale).name) ?? [],
   };
 }

@@ -2,6 +2,8 @@
  * Кнопка предмета для выбора стартовой экипировки.
  */
 
+import {resolveItemFrame} from '@utils/assetResolver';
+
 interface Props {
   icon: string;
   fallback: string;
@@ -28,7 +30,7 @@ export function ItemButton({icon, fallback, label, selected, onClick, damage, ra
       title={label}
     >
       <span className="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true">
-        <img className="cm-sprite-stack__frame" src={`/assets/items/loot_frame_${rarity}.png`} alt="" decoding="async" />
+        <img className="cm-sprite-stack__frame" src={resolveItemFrame(rarity)} alt="" decoding="async" />
         <img className="cm-sprite-stack__body" src={icon} alt="" decoding="async" />
         <span className="cm-sprite-fallback">{fallback}</span>
       </span>

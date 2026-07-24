@@ -74,6 +74,8 @@ export interface ItemDetailViewModel {
   }> | null;
   /** Теги классификации предмета (обычно оружия). */
   tags: GameplayTag[];
+  /** Локализованные метки тегов, соответствующие индексам tags. */
+  tagLabels: string[];
 }
 
 export type Position = { x: number; y: number };
@@ -289,6 +291,8 @@ export type HotbarSkillTooltip = {
   apCost: number | 'all';
   /** Теги классификации способности. */
   tags: GameplayTag[];
+  /** Локализованные метки тегов, соответствующие индексам tags. */
+  tagLabels: string[];
 };
 
 /** Тултип для расходника в хотбаре. */

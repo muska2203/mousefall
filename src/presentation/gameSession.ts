@@ -68,6 +68,7 @@ import {
     tryGetPlayerTemplate,
 } from '@content/registry';
 import type {Locale} from '@content/texts/lookup';
+import {getTagText} from '@content/texts/lookup';
 
 import {buildAnimationTree} from './animation';
 import {extractEventsFromPlan} from './logBuilder';
@@ -239,6 +240,21 @@ export class GameSession {
     return this.locale;
   }
 
+  /**
+   * Список побеждённых боссов для экрана итогов.
+   *
+   * Временно возвращает фиксированный набор боссов из i18n-ключей.
+   * Когда в Simulation появится tracking убийства боссов — заменить на реальные данные.
+   */
+  getDefeatedBosses(): string[] {
+    return [
+      t('ending.boss1'),
+      t('ending.boss2'),
+      t('ending.boss3'),
+      t('ending.boss4'),
+    ];
+  }
+
   /** Текущий ViewModel для отрисовки UI. Кешируется между нотификациями для useSyncExternalStore. */
   getViewModel(): GameViewModel {
     if (!this.viewModelCache) {
@@ -333,6 +349,7 @@ export class GameSession {
             isTemplate: false,
             properties: [],
             tags: [],
+            tagLabels: [],
           };
       const grantedAbilities = invItem.grantedAbilities.map((ability) => {
         const abilityTemplate = this.getAbilityTemplate(ability.templateId, locale);
@@ -1851,6 +1868,7 @@ export class GameSession {
                 maxCooldown,
                 apCost: info?.apCost ?? 1,
                 tags: localized.tags ?? [],
+                tagLabels: (localized.tags ?? []).map((tag) => getTagText(tag, this.locale).name),
               }
             : undefined,
         };

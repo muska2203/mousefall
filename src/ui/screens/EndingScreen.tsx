@@ -29,14 +29,8 @@ interface Props {
   runStats?: RunStats;
   floor?: number;
   turnRound?: number;
+  defeatedBosses?: string[];
 }
-
-const DEFEAT_BOSSES = [
-  '🐈 Подвальный охотник',
-  '👁 Слепой сторож',
-  '🦴 Костяной мурчун',
-  '👑 Кот-хозяин кладовки',
-];
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -45,7 +39,7 @@ function formatDuration(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, playerStats, equipment, runStats, floor, turnRound}: Props) {
+export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, playerStats, equipment, runStats, floor, turnRound, defeatedBosses}: Props) {
   const { t } = useTranslation('screens');
   const isVictory = result === 'victory';
   const ps = playerStats;
@@ -116,7 +110,7 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
   const rightColumn = (
     <>
       <EquipmentPanel title={t('ending.equipmentTitle')} slots={equipSlots} />
-      <BossListPanel bosses={DEFEAT_BOSSES} />
+      <BossListPanel bosses={defeatedBosses ?? []} />
       <EndingActionsPanel onNewRun={onNewRun} onReturnToMenu={onReturnToMenu} />
     </>
   );

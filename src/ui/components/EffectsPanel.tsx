@@ -30,7 +30,7 @@ export function EffectsPanel({title, effects}: Props) {
         <ul className="cm-effects" role="list" aria-label={resolvedTitle}>
           {effects && effects.length > 0 ? (
             effects.map((e, i) => (
-              <EffectCard key={`effect-${e.name}-${i}`} {...e} />
+              <EffectCard key={`effect-${e.name}-${e.turns}-${i}`} {...e} />
             ))
           ) : (
             <EffectCard icon="—" name={t('effectsPanel.noEffectsName')} desc={t('effectsPanel.noEffectsDesc')} turns={0} />

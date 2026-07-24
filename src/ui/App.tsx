@@ -70,6 +70,26 @@ export default function App() {
     setMode(newMode);
   }, []);
 
+  const getEndingProps = useCallback(
+    (result: 'defeat' | 'victory') => {
+      const renderInput = session.getViewModel().renderInput;
+      const templateId = renderInput?.state.player.templateId;
+      return {
+        result,
+        onNewRun: handleNewGame,
+        onReturnToMenu: handleReturnToMenu,
+        portraitSrc: GameSession.getPlayerPortraitSrc(templateId ?? ''),
+        playerStats: renderInput?.playerStats,
+        equipment: renderInput?.equipment,
+        runStats: renderInput?.runStats,
+        floor: renderInput?.state.floor,
+        turnRound: renderInput?.state.turn.round,
+        defeatedBosses: session.getDefeatedBosses(),
+      };
+    },
+    [session, handleNewGame, handleReturnToMenu],
+  );
+
   switch (mode) {
     case 'mainMenu':
       return <MainMenuScreen onNewGame={handleNewGame} />;
@@ -80,53 +100,11 @@ export default function App() {
     case 'playing':
       return <GameScreen session={session} onModeChange={handleModeChange} />;
 
-    case 'gameOver': {
-      const defeatRenderInput = session.getViewModel().renderInput;
-      const defeatTemplateId = defeatRenderInput?.state.player.templateId;
-      const defeatPortraitSrc = GameSession.getPlayerPortraitSrc(defeatTemplateId ?? '');
-      const defeatStats = defeatRenderInput?.playerStats;
-      const defeatEquipment = defeatRenderInput?.equipment;
-      const defeatRunStats = defeatRenderInput?.runStats;
-      const defeatFloor = defeatRenderInput?.state.floor;
-      const defeatTurnRound = defeatRenderInput?.state.turn.round;
-      return (
-        <EndingScreen
-          result="defeat"
-          onNewRun={handleNewGame}
-          onReturnToMenu={handleReturnToMenu}
-          portraitSrc={defeatPortraitSrc}
-          playerStats={defeatStats}
-          equipment={defeatEquipment}
-          runStats={defeatRunStats}
-          floor={defeatFloor}
-          turnRound={defeatTurnRound}
-        />
-      );
-    }
+    case 'gameOver':
+      return <EndingScreen {...getEndingProps('defeat')} />;
 
-    case 'victory': {
-      const victoryRenderInput = session.getViewModel().renderInput;
-      const victoryTemplateId = victoryRenderInput?.state.player.templateId;
-      const victoryPortraitSrc = GameSession.getPlayerPortraitSrc(victoryTemplateId ?? '');
-      const victoryStats = victoryRenderInput?.playerStats;
-      const victoryEquipment = victoryRenderInput?.equipment;
-      const victoryRunStats = victoryRenderInput?.runStats;
-      const victoryFloor = victoryRenderInput?.state.floor;
-      const victoryTurnRound = victoryRenderInput?.state.turn.round;
-      return (
-        <EndingScreen
-          result="victory"
-          onNewRun={handleNewGame}
-          onReturnToMenu={handleReturnToMenu}
-          portraitSrc={victoryPortraitSrc}
-          playerStats={victoryStats}
-          equipment={victoryEquipment}
-          runStats={victoryRunStats}
-          floor={victoryFloor}
-          turnRound={victoryTurnRound}
-        />
-      );
-    }
+    case 'victory':
+      return <EndingScreen {...getEndingProps('victory')} />;
 
     default:
       return <div>{t('ui.unknownMode', { mode })}</div>;

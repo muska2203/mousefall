@@ -21,7 +21,21 @@ interface Props {
 
 export function PortraitGallery({portraits, selectedId, onSelect}: Props) {
   const { t } = useTranslation('components');
-  const selected = portraits.find((p) => p.id === selectedId) ?? portraits[0]!;
+  const selected = portraits.find((p) => p.id === selectedId) ?? portraits[0];
+
+  if (!selected || portraits.length === 0) {
+    return (
+      <div className="cm-welcome-center">
+        <div className="cm-welcome-preview">
+          <div className="cm-welcome-preview-img-wrap">
+            <img src="/assets/portraits/witcher-ready.png" alt={t('portraitGallery.previewAlt')} />
+          </div>
+          <h3 className="cm-welcome-preview-name">—</h3>
+          <p className="cm-welcome-preview-desc">—</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="cm-welcome-center">
