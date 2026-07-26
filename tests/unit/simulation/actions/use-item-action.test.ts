@@ -9,6 +9,7 @@ function mockConsumable(
   id: string,
   effect: NonNullable<ItemTemplate['consumable']>['effect'],
   value?: number,
+  extra?: Partial<NonNullable<ItemTemplate['consumable']>>,
 ): ItemTemplate {
   return {
     id,
@@ -22,7 +23,7 @@ function mockConsumable(
     grantedAbilities: [],
     ruleIds: [],
     apCost: 1,
-    consumable: { effect, value },
+    consumable: { effect, value, ...extra },
   };
 }
 
@@ -38,6 +39,9 @@ beforeEach(() => {
     items: new Map([
       ['heal_potion', mockConsumable('heal_potion', 'heal', 30)],
       ['buff_potion', mockConsumable('buff_potion', 'buff', 5)],
+      ['water_ball', mockConsumable('water_ball', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 5 })],
+      ['oil_bottle', mockConsumable('oil_bottle', 'spawn_tile_effect', 0, { tileEffectType: 'oil', radius: 1, range: 5 })],
+      ['wall_ball', mockConsumable('wall_ball', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 5 })],
       ['test_weapon', {
         id: 'test_weapon',
         type: 'weapon',
@@ -109,6 +113,68 @@ describe('useItemAction.validate', () => {
       expect(result.reasonCode).toBe('not_consumable');
     }
   });
+
+  it('ошибка для spawn_tile_effect без targetPosition', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'ball_1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'ball_1' };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('missing_target_position');
+    }
+  });
+
+  it('ошибка для spawn_tile_effect с targetPosition вне досягаемости', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      inventory: [{ instanceId: 'ball_1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    // Цель не видна и вне радиуса 5.
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'ball_1',
+      targetPosition: { x: 9, y: 9 },
+    };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('invalid_target_position');
+    }
+  });
+
+  it('ошибка при несовпадении templateId', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'ball_1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'ball_1',
+      templateId: 'oil_bottle',
+      targetPosition: { x: 6, y: 5 },
+    };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('template_id_mismatch');
+    }
+  });
 });
 
 describe('useItemAction.resolve', () => {
@@ -142,6 +208,84 @@ describe('useItemAction.resolve', () => {
     expect(intents).toHaveLength(2);
     expect(intents[0]!.type).toBe('APPLY_STATUS');
     expect(intents[1]!.type).toBe('REMOVE_ITEM');
+  });
+
+  it('для spawn_tile_effect возвращает SPAWN_TILE_EFFECT по цели и соседям + REMOVE_ITEM', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'ball_1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    // Клетка (6,5) видима, чтобы валидация не отказала.
+    state.visible[5]![6] = true;
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'ball_1',
+      targetPosition: { x: 6, y: 5 },
+    };
+    const intents = useItemAction.resolve(state, action);
+
+    const spawnIntents = intents.filter(i => i.type === 'SPAWN_TILE_EFFECT');
+    expect(spawnIntents).toHaveLength(9); // радиус 1: 3×3
+    expect(spawnIntents.every(i => i.type === 'SPAWN_TILE_EFFECT' && i.effectType === 'water')).toBe(true);
+    expect(intents.some(i => i.type === 'REMOVE_ITEM')).toBe(true);
+  });
+
+  it('для oil_bottle возвращает SPAWN_TILE_EFFECT с типом oil', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'bottle_1', templateId: 'oil_bottle', quantity: 1, grantedAbilities: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.visible[5]![6] = true;
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'bottle_1',
+      targetPosition: { x: 6, y: 5 },
+    };
+    const intents = useItemAction.resolve(state, action);
+
+    const spawnIntents = intents.filter(i => i.type === 'SPAWN_TILE_EFFECT');
+    expect(spawnIntents).toHaveLength(9);
+    expect(spawnIntents.every(i => i.type === 'SPAWN_TILE_EFFECT' && i.effectType === 'oil')).toBe(true);
+  });
+
+  it('spawn_tile_effect не спавнится на стенах', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 2,
+      y: 2,
+      inventory: [{ instanceId: 'ball_1', templateId: 'wall_ball', quantity: 1, grantedAbilities: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.visible[1]![1] = true;
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'ball_1',
+      targetPosition: { x: 1, y: 1 },
+    };
+    const intents = useItemAction.resolve(state, action);
+
+    const spawnIntents = intents.filter(i => i.type === 'SPAWN_TILE_EFFECT');
+    // В 3×3 вокруг (1,1) четыре клетки floor: (1,1), (2,1), (1,2), (2,2).
+    // Остальные — стены периметра, они должны быть отфильтрованы.
+    expect(spawnIntents).toHaveLength(4);
+    expect(spawnIntents.every(i => i.type === 'SPAWN_TILE_EFFECT' && i.effectType === 'water')).toBe(true);
+    const positions = spawnIntents.map(i => i.position);
+    expect(positions).not.toContainEqual({ x: 0, y: 0 });
+    expect(positions).not.toContainEqual({ x: 1, y: 0 });
+    expect(positions).not.toContainEqual({ x: 2, y: 0 });
+    expect(positions).not.toContainEqual({ x: 0, y: 1 });
+    expect(positions).not.toContainEqual({ x: 0, y: 2 });
   });
 });
 

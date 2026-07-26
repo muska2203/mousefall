@@ -278,6 +278,10 @@ export type UseItemAction = {
   type: 'USE_ITEM';
   entityId: EntityId;
   itemInstanceId: ItemInstanceId;
+  /** ID шаблона предмета. Упрощает анимацию после расходования предмета. */
+  templateId?: string;
+  /** Целевая клетка для расходников с эффектом spawn_tile_effect. */
+  targetPosition?: Position;
 };
 
 export type InteractAction = {

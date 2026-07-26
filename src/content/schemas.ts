@@ -112,9 +112,15 @@ const ArmorStatsSchema = z.object({
 }).describe('Характеристики брони');
 
 const ConsumableEffectSchema = z.object({
-  effect: z.enum(['heal', 'damage', 'teleport', 'identify', 'buff']).describe('Тип эффекта'),
+  effect: z.enum(['heal', 'damage', 'teleport', 'identify', 'buff', 'spawn_tile_effect']).describe('Тип эффекта'),
   value:  z.number().optional().describe('Величина эффекта (восстановлено HP, нанесён урон и т.д.)'),
   duration: z.number().int().positive().optional().describe('Длительность эффекта в ходах (для buff и статусов)'),
+  /** Тип тайлового эффекта для spawn_tile_effect (например, water или oil). */
+  tileEffectType: z.string().min(1).optional().describe('ID тайлового эффекта, который спавнится при spawn_tile_effect'),
+  /** Радиус области действия в клетках (только для spawn_tile_effect). */
+  radius: z.number().int().nonnegative().optional().describe('Радиус области действия в клетках'),
+  /** Дальность броска/применения в клетках (только для spawn_tile_effect). */
+  range: z.number().int().positive().optional().describe('Дальность применения в клетках'),
 }).describe('Определение эффекта расходуемого предмета');
 
 export const ItemTemplateSchema = z.object({

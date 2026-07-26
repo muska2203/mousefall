@@ -48,6 +48,13 @@ export default function App() {
     };
   }, [session]);
 
+  // Синхронизируем локальный mode с GameSession, чтобы внешние/программные
+  // изменения режима (например, из консоли или авто-тестов) отражались в UI.
+  useEffect(() => {
+    const onChange = () => setMode(session.getMode());
+    return session.subscribe(onChange);
+  }, [session]);
+
   const handleNewGame = useCallback(() => {
     session.enterCharacterCreation();
     setMode(session.getMode());

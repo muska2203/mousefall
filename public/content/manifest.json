@@ -24,6 +24,8 @@
     "/content/items/armor/common_spiked_cloak.json",
     "/content/items/armor/common_tin_plate.json",
     "/content/items/consumables/health_potion.json",
+    "/content/items/consumables/oil_bottle.json",
+    "/content/items/consumables/water_ball.json",
     "/content/items/weapons/cat_claw_big.json",
     "/content/items/weapons/cat_claw_mid.json",
     "/content/items/weapons/cat_claw_small.json",
@@ -40,8 +42,6 @@
     "/content/abilities/dash.json",
     "/content/abilities/fireball.json",
     "/content/abilities/magic_slap.json",
-    "/content/abilities/oil_flask.json",
-    "/content/abilities/rain.json",
     "/content/abilities/sudden_strike.json",
     "/content/abilities/swoop.json"
   ],

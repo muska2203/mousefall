@@ -27,3 +27,6 @@ yarn-error.log*
 
 # Coverage
 coverage/
+
+# CDP debug artifacts
+cdp-*.png

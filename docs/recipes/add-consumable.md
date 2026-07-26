@@ -45,12 +45,15 @@
    - `type` — всегда `"consumable"`.
    - `stackable`, `maxStack` — можно ли складывать и максимальный размер стопки.
    - `value` — цена продажи.
-   - `consumable.effect` — тип эффекта: `"heal"`, `"buff"`, `"damage"`, `"teleport"`, `"identify"`.
+   - `consumable.effect` — тип эффекта: `"heal"`, `"buff"`, `"spawn_tile_effect"`, `"damage"`, `"teleport"`, `"identify"`.
    - `consumable.value` — величина эффекта (например, количество восстановленного HP).
    - `consumable.duration` — длительность эффекта в ходах (для `"buff"`).
+   - `consumable.tileEffectType` — ID тайлового эффекта (только для `"spawn_tile_effect"`, например `"water"` или `"oil"`).
+   - `consumable.radius` — радиус области действия в клетках (только для `"spawn_tile_effect"`).
+   - `consumable.range` — дальность броска в клетках (только для `"spawn_tile_effect"`).
    - `apCost` — стоимость использования в AP.
 
-   > **Важно:** на текущий момент полностью реализованы только эффекты `"heal"` и `"buff"`. Эффекты `"damage"`, `"teleport"` и `"identify"` описаны в схеме, но требуют доработки обработчика `src/simulation/systems/actions/use-item-action.ts`.
+   > **Важно:** на текущий момент полностью реализованы эффекты `"heal"`, `"buff"` и `"spawn_tile_effect"`. Эффекты `"damage"`, `"teleport"` и `"identify"` описаны в схеме, но требуют доработки обработчика `src/simulation/systems/actions/use-item-action.ts`.
 
 2. **Добавь тексты** в `src/content/texts/ru/items.ts` и `src/content/texts/en/items.ts`:
 

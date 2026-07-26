@@ -6,14 +6,16 @@
  * - Разрешает эффект в зависимости от consumable.effect:
  *   heal → HEAL + REMOVE_ITEM
  *   buff → APPLY_STATUS + REMOVE_ITEM
+ *   spawn_tile_effect → SPAWN_TILE_EFFECT + REMOVE_ITEM
  *   Прочие эффекты пока не реализованы.
  */
 
-import {GameState} from "@simulation/types.ts";
+import {GameState, Position} from "@simulation/types.ts";
 import {getItem} from "@content/registry";
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
+import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";
 
 export const useItemAction: ActionHandler = {
 
@@ -28,14 +30,32 @@ export const useItemAction: ActionHandler = {
       return { ok: false, reasonCode: 'item_not_found' };
     }
 
+    if (action.templateId !== undefined && action.templateId !== item.templateId) {
+      return { ok: false, reasonCode: 'template_id_mismatch' };
+    }
+
     const template = getItem(item.templateId);
     if (template.type !== 'consumable' || !template.consumable) {
       return { ok: false, reasonCode: 'not_consumable' };
     }
 
-    const supportedEffects = ['heal', 'buff'];
+    const supportedEffects = ['heal', 'buff', 'spawn_tile_effect'];
     if (!supportedEffects.includes(template.consumable.effect)) {
       return { ok: false, reasonCode: 'unsupported_effect' };
+    }
+
+    if (template.consumable.effect === 'spawn_tile_effect') {
+      if (!action.targetPosition) {
+        return { ok: false, reasonCode: 'missing_target_position' };
+      }
+      const range = template.consumable.range ?? 5;
+      const validTargets = getVisiblePositionsWithinRange(state, player, range);
+      const isValid = validTargets.some(
+        (p: Position) => p.x === action.targetPosition!.x && p.y === action.targetPosition!.y,
+      );
+      if (!isValid) {
+        return { ok: false, reasonCode: 'invalid_target_position' };
+      }
     }
 
     return { ok: true };
@@ -52,7 +72,10 @@ export const useItemAction: ActionHandler = {
       return [];
     }
     const template = getItem(item.templateId);
-    const effect = template.consumable!;
+    if (template.type !== 'consumable' || !template.consumable) {
+      return [];
+    }
+    const effect = template.consumable;
 
     const intents: Intent[] = [];
 
@@ -78,6 +101,26 @@ export const useItemAction: ActionHandler = {
             statModifiers: null,
           },
         });
+        break;
+      }
+      case 'spawn_tile_effect': {
+        if (!action.targetPosition) {
+          return [];
+        }
+        const effectType = effect.tileEffectType;
+        if (!effectType) {
+          return [];
+        }
+        const radius = effect.radius ?? 1;
+        const positions = getPositionsInRadius(state, action.targetPosition, radius)
+          .filter(pos => state.map.tiles[pos.y]?.[pos.x] === 'floor');
+        for (const pos of positions) {
+          intents.push({
+            type: 'SPAWN_TILE_EFFECT',
+            effectType,
+            position: pos,
+          });
+        }
         break;
       }
       default: {

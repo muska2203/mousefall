@@ -189,6 +189,8 @@ export class GameSession {
   private toasts = new ToastBuffer();
   private animation = new AnimationState();
   private targeting = new TargetingController();
+  /** Состояние таргетинга для расходников (параллельно ability-таргетингу). */
+  private itemTargeting: { itemInstanceId: string; templateId: string } | null = null;
   private autoPath = new AutoPathController();
   private listeners = new Set<() => void>();
   private viewModelCache: GameViewModel | null = null;
@@ -689,6 +691,29 @@ export class GameSession {
   }
 
   private buildTargetingOverlay(state: Readonly<GameState>): RenderInput['targetingOverlay'] {
+    if (this.itemTargeting && this.simulation) {
+      const valid = this.simulation.getConsumableValidTargets(this.itemTargeting.templateId);
+      const affected = this.targetingHover
+        ? this.simulation.getConsumableAffectedPositions(
+            this.itemTargeting.templateId,
+            state.player.id,
+            this.targetingHover,
+          )
+        : [];
+      const previewIntents = this.targetingHover
+        ? this.simulation.getConsumablePreview(this.itemTargeting.templateId, this.targetingHover)
+        : [];
+      return {
+        valid,
+        hover: this.targetingHover,
+        affected,
+        selected: [],
+        previewIntents: previewIntents
+          .map((intent) => toPresentationIntent(intent, state))
+          .filter((pi): pi is NonNullable<typeof pi> => pi !== null),
+      };
+    }
+
     if (!this.targeting.state) return null;
 
     const preview = this.targetingHover
@@ -1058,6 +1083,9 @@ export class GameSession {
     if (!this.simulation) return;
     if (this.animation.phase === 'animating') return;
 
+    // Сбрасываем возможный активный таргетинг расходника, чтобы не смешивать режимы.
+    this.cancelTargeting();
+
     const info = this.simulation.getAbilityInfo(abilityId);
     if (!info) {
       this.pushToastFromCode('ability_not_found');
@@ -1093,9 +1121,45 @@ export class GameSession {
     this.notify();
   }
 
+  /**
+   * Начать таргетинг расходника, если его эффект требует выбора клетки.
+   * Иначе сразу применить предмет.
+   */
+  private beginItemTargetingIfNeeded(itemInstanceId: string, templateId: string): void {
+    if (!this.simulation) return;
+
+    const targetMode = this.simulation.getConsumableTargetMode(templateId);
+    if (!targetMode) {
+      this.dispatch({ type: 'USE_ITEM', entityId: 'player', itemInstanceId, templateId });
+      return;
+    }
+
+    const action: GameAction = {
+      type: 'USE_ITEM',
+      entityId: 'player',
+      itemInstanceId,
+      templateId,
+      targetPosition: { x: 0, y: 0 },
+    };
+    const cost = this.simulation.getActionCost(action);
+    const currentAp = this.simulation.getPlayerStats().ap;
+    if (currentAp < cost) {
+      this.pushToastFromCode('not_enough_ap');
+      return;
+    }
+
+    this.cancelTargeting();
+    this.itemTargeting = { itemInstanceId, templateId };
+    this.autoPath.cancel();
+    this.targetingHover = null;
+    this.fieldHover = null;
+    this.notify();
+  }
+
   /** Отменить выбор цели. */
   cancelTargeting(): void {
     this.targeting.cancelTargeting();
+    this.itemTargeting = null;
     this.targetingHover = null;
     this.notify();
   }
@@ -1103,6 +1167,26 @@ export class GameSession {
   /** Подтвердить выбор клетки цели. */
   submitTarget(position: Position): void {
     if (!this.simulation) return;
+
+    if (this.itemTargeting) {
+      const validTargets = this.simulation.getConsumableValidTargets(this.itemTargeting.templateId);
+      const isValid = validTargets.some(
+        (p) => p.x === position.x && p.y === position.y,
+      );
+      if (!isValid) return;
+
+      const action: GameAction = {
+        type: 'USE_ITEM',
+        entityId: 'player',
+        itemInstanceId: this.itemTargeting.itemInstanceId,
+        templateId: this.itemTargeting.templateId,
+        targetPosition: position,
+      };
+      this.itemTargeting = null;
+      this.targetingHover = null;
+      this.dispatch(action);
+      return;
+    }
 
     const ok = this.targeting.submitTarget(position);
     if (!ok) return;
@@ -1128,7 +1212,7 @@ export class GameSession {
 
   /** Находимся ли сейчас в режиме таргетинга. */
   isTargeting(): boolean {
-    return this.targeting.phase === 'targeting';
+    return this.targeting.phase === 'targeting' || this.itemTargeting !== null;
   }
 
   /** Установить клетку под мышью в обычном режиме (для popover объекта на поля). */
@@ -1138,7 +1222,7 @@ export class GameSession {
 
     const canShow =
       this.mode === 'playing' &&
-      this.targeting.phase !== 'targeting';
+      !this.isTargeting();
     this.fieldHover = canShow ? hoveredPosition : null;
 
     this.refreshAutoPathPreview();
@@ -1158,7 +1242,7 @@ export class GameSession {
   private refreshAutoPathPreview(): void {
     if (
       this.mode !== 'playing' ||
-      this.targeting.phase === 'targeting' ||
+      this.isTargeting() ||
       !this.simulation ||
       this.autoPath.isCommitted() ||
       this.animation.phase !== 'idle'
@@ -1192,7 +1276,7 @@ export class GameSession {
     }
 
     if (!this.simulation || this.mode !== 'playing' || this.animation.phase === 'animating') return;
-    if (this.targeting.phase === 'targeting') return;
+    if (this.isTargeting()) return;
 
     const state = this.simulation.getState();
 
@@ -1485,6 +1569,32 @@ export class GameSession {
     const prevHover = this.targetingHover;
     this.targetingHover = hoveredPosition;
     const state = this.simulation!.getState();
+
+    if (this.itemTargeting) {
+      const templateId = this.itemTargeting.templateId;
+      const validTargets = this.simulation!.getConsumableValidTargets(templateId);
+      const isValid = hoveredPosition
+        ? validTargets.some((p) => p.x === hoveredPosition.x && p.y === hoveredPosition.y)
+        : false;
+      const affected = isValid
+        ? this.simulation!.getConsumableAffectedPositions(templateId, state.player.id, hoveredPosition)
+        : [];
+      const intents = isValid
+        ? this.simulation!.getConsumablePreview(templateId, hoveredPosition)
+            .map((intent) => toPresentationIntent(intent, state))
+            .filter((pi): pi is NonNullable<typeof pi> => pi !== null)
+        : [];
+      const result: PresentationActionPreview = {
+        valid: isValid,
+        intents,
+        affectedPositions: affected,
+      };
+      if (hoveredPosition?.x !== prevHover?.x || hoveredPosition?.y !== prevHover?.y) {
+        this.notify();
+      }
+      return result;
+    }
+
     const result = this.targeting.previewTarget(hoveredPosition, this.simulation!, state);
     if (hoveredPosition?.x !== prevHover?.x || hoveredPosition?.y !== prevHover?.y) {
       this.notify();
@@ -1504,8 +1614,8 @@ export class GameSession {
       return;
     }
 
-    // Любое действие отменяет подготовку скилла
-    if (this.targeting.phase === 'targeting') {
+    // Любое действие отменяет подготовку скилла или выбор цели расходника
+    if (this.isTargeting()) {
       this.cancelTargeting();
     }
 
@@ -1725,8 +1835,8 @@ export class GameSession {
       return;
     }
 
-    // Движение/атака отменяет подготовку скилла
-    if (this.targeting.phase === 'targeting') {
+    // Движение/атака отменяет подготовку скилла или выбор цели расходника
+    if (this.isTargeting()) {
       this.cancelTargeting();
     }
 
@@ -1885,7 +1995,7 @@ export class GameSession {
     if (template.type === 'weapon' || template.type === 'armor' || template.type === 'amulet') {
       this.dispatch({type: 'EQUIP', entityId: 'player', itemInstanceId: instanceId});
     } else if (template.type === 'consumable') {
-      this.dispatch({type: 'USE_ITEM', entityId: 'player', itemInstanceId: instanceId});
+      this.beginItemTargetingIfNeeded(instanceId, item.templateId);
     }
   }
 
@@ -1908,7 +2018,7 @@ export class GameSession {
       const state = this.simulation.getState();
       const item = state.player.inventory.find(i => i.templateId === assignment.templateId && i.quantity > 0);
       if (!item) return;
-      this.dispatch({ type: 'USE_ITEM', entityId: 'player', itemInstanceId: item.instanceId });
+      this.beginItemTargetingIfNeeded(item.instanceId, item.templateId);
     }
   }
 
@@ -1977,6 +2087,7 @@ export class GameSession {
       const quantity = itemsOfTemplate.reduce((sum, i) => sum + i.quantity, 0);
       const depleted = quantity <= 0;
       const icon = template ? resolveItemIcon(template.spriteId ?? template.id) : null;
+      const isActive = this.itemTargeting?.templateId === assignment.templateId;
       return {
         slotIndex: index,
         kind: 'consumable' as const,
@@ -1987,7 +2098,7 @@ export class GameSession {
         quantity,
         apCost: template?.apCost ?? 1,
         isAvailable: !depleted,
-        isActive: false,
+        isActive,
         depleted,
         tooltip: template
           ? {

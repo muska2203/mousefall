@@ -61,6 +61,14 @@ export const items: Record<string, ContentText> = {
     name: 'Health Potion',
     description: 'A small vial of red liquid. Restores 30 HP.',
   },
+  oil_bottle: {
+    name: 'Oil Bottle',
+    description: 'Throws a bottle of oil into a targeted area, creating an [oil](tag:effect.oil) tile effect.',
+  },
+  water_ball: {
+    name: 'Water Ball',
+    description: 'Throws a water ball into a targeted area, creating a [water](tag:effect.water) tile effect. Extinguishes fire and washes away oil.',
+  },
   cat_guardian_plate: {
     name: 'Cat Guardian Plate',
     description: 'A heavy plate forged from the scales of feline guardians.',

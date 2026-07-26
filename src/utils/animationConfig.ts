@@ -13,6 +13,8 @@ export type AnimationConfigEntry = {
   duration: number;
   blocking: boolean;
   easing: EasingFn;
+  /** Относительный размер спрайта по отношению к TILE_SIZE (только для ITEM_THROW). */
+  relativeSize?: number;
 };
 
 export const ANIMATION_CONFIG = {
@@ -34,6 +36,7 @@ export const ANIMATION_CONFIG = {
   EXPLOSION: { duration: 250, blocking: true, easing: Easing.easeOutQuad },
   STATUS_BURST: { duration: 400, blocking: false, easing: Easing.easeOutQuad },
   ITEM_DROP: { duration: 200, blocking: false, easing: Easing.easeOutQuad },
+  ITEM_THROW: { duration: 350, blocking: true, easing: Easing.easeOutQuad, relativeSize: 0.6 },
   BOUNCE: { duration: 150, blocking: true, easing: Easing.easeOutBack },
 } as const satisfies Record<string, AnimationConfigEntry>;
 

@@ -2,10 +2,12 @@
  * Unit tests for animation builders.
  */
 
-import {describe, expect, it} from 'vitest';
+import {beforeEach, describe, expect, it, afterEach} from 'vitest';
 import {entityMovedBuilder} from '../../../../src/presentation/animation/builders/entityMoved';
 import {actionAppliedBuilder} from '../../../../src/presentation/animation/builders/actionApplied';
 import {entityDamagedBuilder} from '../../../../src/presentation/animation/builders/entityDamaged';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {ItemTemplate} from '../../../../src/content/schemas';
 import {entityDiedBuilder} from '../../../../src/presentation/animation/builders/entityDied';
 import {fogUpdatedBuilder} from '../../../../src/presentation/animation/builders/fogUpdated';
 import {entityBumpedBuilder} from '../../../../src/presentation/animation/builders/entityBumped';
@@ -57,6 +59,42 @@ describe('entityMovedBuilder', () => {
 });
 
 describe('actionAppliedBuilder', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map([
+        ['water_ball', {
+          id: 'water_ball',
+          type: 'consumable',
+          spriteId: 'water_ball',
+          stackable: true,
+          maxStack: 5,
+          value: 15,
+          rarity: 'common',
+          abilityPool: [],
+          equipModifiers: [],
+          grantedAbilities: [],
+          ruleIds: [],
+          apCost: 1,
+          consumable: { effect: 'spawn_tile_effect', tileEffectType: 'water', radius: 1, range: 5 },
+        } as unknown as ItemTemplate],
+      ]),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
   it('creates ATTACK step for attack action', () => {
     const event: GameEvent = { type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 } };
     const nodes = actionAppliedBuilder(event, [], makeMockState());
@@ -70,6 +108,103 @@ describe('actionAppliedBuilder', () => {
     const nodes = actionAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toBeNull();
+  });
+
+  it('creates ITEM_THROW step for USE_ITEM with targetPosition', () => {
+    const state = makeMockState();
+    state.player.inventory = [{ instanceId: 'wb1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }];
+    state.player.x = 1;
+    state.player.y = 1;
+
+    const event: GameEvent = {
+      type: 'ACTION_APPLIED',
+      isFieldEvent: false,
+      action: {
+        type: 'USE_ITEM',
+        entityId: 'player',
+        itemInstanceId: 'wb1',
+        templateId: 'water_ball',
+        targetPosition: { x: 3, y: 3 },
+      },
+    };
+    const child = { step: { type: 'PARTICLE_BURST' as const, x: 3, y: 3, color: 0xffffff, count: 1 }, children: [] };
+    const nodes = actionAppliedBuilder(event, [child], state);
+
+    expect(nodes).toHaveLength(1);
+    const step = nodes![0]!.step;
+    expect(step.type).toBe('ITEM_THROW');
+    if (step.type !== 'ITEM_THROW') return;
+    expect(step.from).toEqual({ x: 1, y: 1 });
+    expect(step.to).toEqual({ x: 3, y: 3 });
+    expect(step.templateId).toBe('water_ball');
+    expect(step.spriteId).toBe('water_ball');
+    expect(step.affectedEntityId).toBe('player');
+    expect(nodes![0]!.children).toHaveLength(1);
+    expect(nodes![0]!.children[0]).toBe(child);
+  });
+
+  it('creates ITEM_THROW step even if item was consumed before animation build', () => {
+    const state = makeMockState();
+    // Предмет уже удалён из инвентаря, но templateId передан в действии.
+    state.player.inventory = [];
+    state.player.x = 1;
+    state.player.y = 1;
+
+    const event: GameEvent = {
+      type: 'ACTION_APPLIED',
+      isFieldEvent: false,
+      action: {
+        type: 'USE_ITEM',
+        entityId: 'player',
+        itemInstanceId: 'wb1',
+        templateId: 'water_ball',
+        targetPosition: { x: 3, y: 3 },
+      },
+    };
+    const nodes = actionAppliedBuilder(event, [], state);
+
+    expect(nodes).toHaveLength(1);
+    const step = nodes![0]!.step;
+    expect(step.type).toBe('ITEM_THROW');
+    if (step.type !== 'ITEM_THROW') return;
+    expect(step.spriteId).toBe('water_ball');
+  });
+
+  it('returns null for USE_ITEM without targetPosition', () => {
+    const state = makeMockState();
+    state.player.inventory = [{ instanceId: 'wb1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }];
+
+    const event: GameEvent = {
+      type: 'ACTION_APPLIED',
+      isFieldEvent: false,
+      action: {
+        type: 'USE_ITEM',
+        entityId: 'player',
+        itemInstanceId: 'wb1',
+        templateId: 'water_ball',
+      },
+    };
+    expect(actionAppliedBuilder(event, [], state)).toBeNull();
+  });
+
+  it('returns null for unknown templateId', () => {
+    const state = makeMockState();
+    state.player.inventory = [];
+    state.player.x = 1;
+    state.player.y = 1;
+
+    const event: GameEvent = {
+      type: 'ACTION_APPLIED',
+      isFieldEvent: false,
+      action: {
+        type: 'USE_ITEM',
+        entityId: 'player',
+        itemInstanceId: 'wb1',
+        templateId: 'unknown_item',
+        targetPosition: { x: 3, y: 3 },
+      },
+    };
+    expect(actionAppliedBuilder(event, [], state)).toBeNull();
   });
 });
 

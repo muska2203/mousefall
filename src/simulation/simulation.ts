@@ -55,7 +55,8 @@ import {cancelPreparedAbility} from "@simulation/ai/ai-helpers.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import "@simulation/ai/simple-boss-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
-import type {GameplayTag} from "@simulation/core-types.ts";
+import type {GameplayTag, TargetMode} from "@simulation/core-types.ts";
+import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
 import {updateFOV} from "@simulation/systems/fov.ts";
@@ -68,7 +69,7 @@ import {getWeaponDamageDistribution, getWeaponWeightForTag} from "@simulation/sy
 import {getAbilityTags} from "@simulation/systems/tags/ability-tags.ts";
 import {meetsWeaponRequirements} from "@simulation/systems/abilities/ability-requirements.ts";
 import {initSkillRegistry} from "@simulation/skills/index.ts";
-import {getItem, tryGetAbility} from "@content/registry";
+import {getItem, tryGetAbility, tryGetItem} from "@content/registry";
 import {tickEntityStatusEffects} from "@simulation/systems/status-effect-ticker.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {resolveInteraction} from "@simulation/systems/interactions/resolve-interaction.ts";
@@ -1005,6 +1006,58 @@ export class GameSimulation implements Simulation {
         } catch {
             return null;
         }
+    }
+
+    getConsumableTargetMode(templateId: string): TargetMode | null {
+        const template = tryGetItem(templateId);
+        if (!template || template.type !== 'consumable' || !template.consumable) return null;
+        if (template.consumable.effect !== 'spawn_tile_effect') return null;
+        return { type: 'single', range: template.consumable.range ?? 5 };
+    }
+
+    getConsumableValidTargets(templateId: string): Position[] {
+        const template = tryGetItem(templateId);
+        if (!template || template.type !== 'consumable' || !template.consumable) return [];
+        if (template.consumable.effect !== 'spawn_tile_effect') return [];
+        const range = template.consumable.range ?? 5;
+        return getVisiblePositionsWithinRange(this.state, this.state.player, range);
+    }
+
+    getConsumablePreview(
+        templateId: string,
+        hoveredTarget: Position | null,
+    ): Intent[] {
+        if (!hoveredTarget) return [];
+        return this.getConsumableAffectedPositions(templateId, this.state.player.id, hoveredTarget)
+            .map(pos => ({
+                type: 'SPAWN_TILE_EFFECT' as const,
+                effectType: this.getSpawnTileEffectType(templateId) ?? '',
+                position: pos,
+            }));
+    }
+
+    getConsumableAffectedPositions(
+        templateId: string,
+        entityId: string,
+        hoveredTarget: Position | null,
+    ): Position[] {
+        if (!hoveredTarget) return [];
+        const template = tryGetItem(templateId);
+        if (!template || template.type !== 'consumable' || !template.consumable) return [];
+        if (template.consumable.effect !== 'spawn_tile_effect') return [];
+        const radius = template.consumable.radius ?? 1;
+        const entity = this.state.entities.get(entityId) ??
+            (entityId === this.state.player.id ? this.state.player : undefined);
+        if (!entity) return [];
+        return getPositionsInRadius(this.state, hoveredTarget, radius)
+            .filter(pos => this.state.map.tiles[pos.y]?.[pos.x] === 'floor');
+    }
+
+    private getSpawnTileEffectType(templateId: string): string | null {
+        const template = tryGetItem(templateId);
+        if (!template || template.type !== 'consumable' || !template.consumable) return null;
+        if (template.consumable.effect !== 'spawn_tile_effect') return null;
+        return template.consumable.tileEffectType ?? null;
     }
 
     getWeaponDamage(player: PlayerEntity): number {

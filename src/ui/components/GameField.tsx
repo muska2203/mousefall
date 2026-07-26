@@ -27,6 +27,7 @@ import '@ui/animation/pixiFloatingTextExecutor';
 import '@ui/animation/hpChangeExecutor';
 import '@ui/animation/skillExecutor';
 import '@ui/animation/projectileExecutor';
+import '@ui/animation/itemThrowExecutor';
 import '@ui/animation/explosionExecutor';
 import '@ui/animation/slashArcExecutor';
 import '@ui/animation/beamExecutor';

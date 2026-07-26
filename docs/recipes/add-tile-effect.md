@@ -93,11 +93,10 @@
    - Рецепт правил: [`add-content-rule.md`](./add-content-rule.md).
 
 8. **Добавь способность или предмет для появления в игре** (опционально):
-   - Например, масло появляется из способности `oil_flask`.
-   - Создай шаблон способности в `public/content/abilities/<id>.json`.
-   - Создай `SkillExecutor` в `src/simulation/skills/executors/<id>Skill.ts`, который порождает интент `SPAWN_TILE_EFFECT`.
-   - Зарегистрируй executor в `src/simulation/skills/index.ts`.
-   - Добавь анимацию в `src/presentation/animation/skills/` и текст/спрайт для UI.
+   - Например, масло появляется из расходника `oil_bottle`, а вода — из `water_ball`.
+   - Для способности: создай шаблон в `public/content/abilities/<id>.json`, `SkillExecutor` в `src/simulation/skills/executors/<id>Skill.ts` и зарегистрируй его в `src/simulation/skills/index.ts`.
+   - Для расходника: создай JSON в `public/content/items/consumables/<id>.json` с эффектом `spawn_tile_effect`, добавь текст в `src/content/texts/{ru,en}/items.ts` и путь в `public/content/manifest.json`.
+   - Добавь анимацию/спрайт для UI.
 
 9. **Напиши тесты** (если эффект влияет на геймплей):
    - `tests/unit/simulation/intents/tile-effect-intent-executor.test.ts` — исполнители интентов.

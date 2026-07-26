@@ -501,6 +501,28 @@ export type Simulation = {
   /** Возвращает базовую информацию о способности для отображения в UI. */
   getAbilityInfo(abilityId: string): { spriteId: string | undefined; cooldown: number; currentCooldown: number; apCost: number | 'all'; tags: import("@simulation/core-types.ts").GameplayTag[] } | null;
 
+  /** Возвращает режим таргетинга для расходника по шаблону, или null если таргетинг не требуется. */
+  getConsumableTargetMode(templateId: string): import("@simulation/core-types.ts").TargetMode | null;
+
+  /** Возвращает доступные клетки для выбора цели расходника по шаблону. */
+  getConsumableValidTargets(templateId: string): import("@simulation/core-types.ts").Position[];
+
+  /** Возвращает превью интентов расходника при наведении на клетку. */
+  getConsumablePreview(
+    templateId: string,
+    hoveredTarget: import("@simulation/core-types.ts").Position | null,
+  ): import("@simulation/core-types.ts").Intent[];
+
+  /**
+   * Возвращает все клетки, попадающие в зону действия расходника,
+   * вычисленные от лица указанной сущности.
+   */
+  getConsumableAffectedPositions(
+    templateId: string,
+    entityId: string,
+    hoveredTarget: import("@simulation/core-types.ts").Position | null,
+  ): import("@simulation/core-types.ts").Position[];
+
   /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
   getWeaponDamage(player: PlayerEntity): number;
 

@@ -1,12 +1,12 @@
 /**
- * Интеграционный тест полного боевого цикла способностей rain и oil_flask.
+ * Интеграционный тест полного боевого цикла расходников water_ball и oil_bottle.
  *
  * Проверяет сквозной сценарий:
- * 1. Игрок кастует rain на клетку → появляется water.
- * 2. Игрок кастует oil_flask на другую клетку → появляется oil.
+ * 1. Игрок использует water_ball на клетку → появляется water.
+ * 2. Игрок использует oil_bottle на другую клетку → появляется oil.
  * 3. Огненный урон по сущности на масле → поджог (burning на tile effect).
  * 4. Завершение хода → burning тикает, уменьшая длительность масла; сам burning не гаснет.
- * 5. Игрок кастует rain на горящее масло → масло заменяется водой, burning удаляется.
+ * 5. Игрок использует water_ball на горящее масло → масло заменяется водой, burning удаляется.
  */
 
 import {beforeEach, describe, expect, it} from 'vitest';
@@ -27,9 +27,9 @@ function createTestPlayer() {
     ap: 3,
     maxAp: 3,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
-    abilities: [
-      { templateId: 'rain', source: 'innate', level: 1, currentCooldown: 0 },
-      { templateId: 'oil_flask', source: 'innate', level: 1, currentCooldown: 0 },
+    inventory: [
+      { instanceId: 'water_ball_1', templateId: 'water_ball', quantity: 5, grantedAbilities: [] },
+      { instanceId: 'oil_bottle_1', templateId: 'oil_bottle', quantity: 5, grantedAbilities: [] },
     ],
   });
 }
@@ -38,47 +38,52 @@ function getTileEffectAt(state: GameState, x: number, y: number, effectType: str
   return state.tileEffects[y]?.[x]?.[effectType];
 }
 
-describe('Цикл способностей rain и oil_flask', () => {
+describe('Цикл расходников water_ball и oil_bottle', () => {
   beforeEach(async () => {
     setupCombatScenario();
     await loadTestContent();
   });
 
-  it('rain → oil → fire → burning tick → rain тушит горящее масло', () => {
+  it('water_ball → oil_bottle → fire → burning tick → water_ball тушит горящее масло', () => {
     const state = makeGameState({ map: makeTestMap() }) as GameState;
     const player = createTestPlayer();
     state.player = player;
     state.entities.set(player.id, player);
+    // Делаем целевые клетки видимыми.
+    state.visible[5]![6] = true;
+    state.visible[5]![7] = true;
 
     const simulation = GameSimulation.loadSavedGame(state);
     simulation.setContentRulesEnabled(true);
 
-    // 1. Игрок кастует rain на (6,5) → появляется water.
-    const rainResult = simulation.dispatch({
-      type: 'USE_ABILITY',
+    // 1. Игрок использует water_ball на (6,5) → появляется water.
+    const waterBallResult = simulation.dispatch({
+      type: 'USE_ITEM',
       entityId: player.id,
-      abilityId: 'rain',
-      targets: [{ x: 6, y: 5 }],
+      itemInstanceId: 'water_ball_1',
+      targetPosition: { x: 6, y: 5 },
     });
-    expect(rainResult.success).toBe(true);
+    expect(waterBallResult.success).toBe(true);
+    expect(player.inventory.find(i => i.instanceId === 'water_ball_1')!.quantity).toBe(4);
 
-    const waterAfterRain = getTileEffectAt(state, 6, 5, 'water');
-    expect(waterAfterRain).toBeDefined();
-    expect(waterAfterRain!.duration).toBe(4);
+    const waterAfterBall = getTileEffectAt(state, 6, 5, 'water');
+    expect(waterAfterBall).toBeDefined();
+    expect(waterAfterBall!.duration).toBe(4);
 
-    // 2. Игрок кастует oil_flask на (7,5) → появляется oil.
+    // 2. Игрок использует oil_bottle на (7,5) → появляется oil.
     const oilResult = simulation.dispatch({
-      type: 'USE_ABILITY',
+      type: 'USE_ITEM',
       entityId: player.id,
-      abilityId: 'oil_flask',
-      targets: [{ x: 7, y: 5 }],
+      itemInstanceId: 'oil_bottle_1',
+      targetPosition: { x: 7, y: 5 },
     });
     expect(oilResult.success).toBe(true);
+    expect(player.inventory.find(i => i.instanceId === 'oil_bottle_1')!.quantity).toBe(4);
 
-    const oilAfterFlask = getTileEffectAt(state, 7, 5, 'oil');
-    expect(oilAfterFlask).toBeDefined();
-    expect(oilAfterFlask!.duration).toBe(5);
-    expect(oilAfterFlask!.statusEffects).toHaveLength(0);
+    const oilAfterBottle = getTileEffectAt(state, 7, 5, 'oil');
+    expect(oilAfterBottle).toBeDefined();
+    expect(oilAfterBottle!.duration).toBe(5);
+    expect(oilAfterBottle!.statusEffects).toHaveLength(0);
 
     // 3. Создаём врага на клетке с маслом и наносим огненный урон.
     const enemy = makeEnemy({ id: 'enemy_test_oil', x: 7, y: 5, hp: 100, maxHp: 100 });
@@ -119,12 +124,12 @@ describe('Цикл способностей rain и oil_flask', () => {
     // Бесконечный статус горения не тратит свою длительность.
     expect(burningAfterTick!.duration).toBe(3);
 
-    // 5. Игрок кастует rain на горящее масло → масло заменяется водой, burning удаляется.
+    // 5. Игрок использует water_ball на горящее масло → масло заменяется водой, burning удаляется.
     const extinguishResult = simulation.dispatch({
-      type: 'USE_ABILITY',
+      type: 'USE_ITEM',
       entityId: player.id,
-      abilityId: 'rain',
-      targets: [{ x: 7, y: 5 }],
+      itemInstanceId: 'water_ball_1',
+      targetPosition: { x: 7, y: 5 },
     });
     expect(extinguishResult.success).toBe(true);
 

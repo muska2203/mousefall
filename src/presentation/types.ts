@@ -207,6 +207,13 @@ export type AnimationStep = AnimationStepBase & (
       templateId: string;
     }
   | {
+      type: 'ITEM_THROW';
+      from: Position;
+      to: Position;
+      templateId: string;
+      spriteId: string;
+    }
+  | {
       type: 'BOUNCE';
       entityId: string;
       /** Клетка, где находится сущность в момент столкновения. */
@@ -504,6 +511,9 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
     case 'SPAWN_ITEM':
       return null;
     case 'PICK_UP':
+      return null;
+    case 'SPAWN_TILE_EFFECT':
+      // Превью тайлового эффекта отображается через affectedPositions, а не intent.
       return null;
     default:
       return null;

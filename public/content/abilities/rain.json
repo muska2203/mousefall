@@ -1,7 +1,0 @@
-{
-  "id": "rain",
-  "spriteId": "rain",
-  "cooldown": 0,
-  "apCost": 1,
-  "tags": ["delivery.ability", "target.aoe", "delivery.spell", "effect.water"]
-}

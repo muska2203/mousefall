@@ -150,6 +150,28 @@ export function bounceNode(event: EntityBumpedEvent): AnimationNode {
   };
 }
 
+/** Создать узел броска предмета. */
+export function itemThrowNode(
+  from: Position,
+  to: Position,
+  templateId: string,
+  spriteId: string,
+  children: AnimationNode[],
+  actorId?: string,
+): AnimationNode {
+  return {
+    step: {
+      type: 'ITEM_THROW',
+      from,
+      to,
+      templateId,
+      spriteId,
+      affectedEntityId: actorId,
+    },
+    children,
+  };
+}
+
 /** Создать узел падения предмета. */
 export function itemDropNode(event: ItemDroppedEvent, children: AnimationNode[]): AnimationNode {
   return {
