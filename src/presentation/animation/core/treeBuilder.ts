@@ -14,21 +14,23 @@ import type {GameState, TurnSide} from '@simulation/types';
 import type {AnimationNode, AnimationPhase, Position} from '@presentation/types';
 import type {PresentationNode} from '@presentation/displayState/types';
 
-/** Возвращает ID сущности, которой принадлежит анимационный узел, или null. */
+/** Возвращает ID сущности, которой принадлежит анимационный узел, или null.
+ *
+ *  Расширяемость: новый шаг может задать поле `affectedEntityId`, тогда правка
+ *  этой функции не требуется. Для legacy шагов используется эвристика по полям
+ *  entityId / attackerId. */
 function getNodeEntityId(node: AnimationNode): string | null {
   const step = node.step;
-  switch (step.type) {
-    case 'MOVE':
-    case 'JUMP':
-    case 'DEATH':
-    case 'ABILITY_CAST':
-    case 'STATUS_BURST':
-      return step.entityId;
-    case 'ATTACK':
-      return step.attackerId;
-    default:
-      return null;
+  if ('affectedEntityId' in step && step.affectedEntityId !== undefined) {
+    return step.affectedEntityId;
   }
+  if ('entityId' in step && step.entityId !== undefined) {
+    return step.entityId;
+  }
+  if ('attackerId' in step && step.attackerId !== undefined) {
+    return step.attackerId;
+  }
+  return null;
 }
 
 /** Сравнить две позиции по координатам. */

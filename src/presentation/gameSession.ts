@@ -15,39 +15,39 @@
 
 import {t} from '@i18n/t';
 import type {
-    ActionPreview,
-    DoorEntity,
-    ExecutionNode,
-    FloorItemContainerEntity,
-    GameAction,
-    GameEvent,
-    GameState,
-    PlayerStatsSnapshot,
-    Position,
-    RuleTriggeredEvent,
-    Simulation,
-    SimulationResult,
-    StatusEffect
+  ActionPreview,
+  DoorEntity,
+  ExecutionNode,
+  FloorItemContainerEntity,
+  GameAction,
+  GameEvent,
+  GameState,
+  PlayerStatsSnapshot,
+  Position,
+  RuleTriggeredEvent,
+  Simulation,
+  SimulationResult,
+  StatusEffect
 } from '@simulation/types';
 import {GameSimulation} from '@simulation/simulation';
 import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
-import type {MapParams} from '@content/schemas';
+import {CHARACTER_CREATION_ATTRIBUTE_POINTS_BUDGET} from '@simulation/characterCreation';
 import type {
-    ActiveEffectViewModel,
-    AIPreparedIntentViewModel,
-    AnimationNode,
-    EquipmentSnapshot,
-    GameplayTag,
-    HighlightedPathTargetKind,
-    InteractionHintViewModel,
-    InteractionOption,
-    InventoryItemViewModel,
-    PlayerSkillViewModel,
-    PresentationActionPreview,
-    PresentationIntent,
-    RenderInput,
-    ToastItem
+  ActiveEffectViewModel,
+  AIPreparedIntentViewModel,
+  AnimationNode,
+  EquipmentSnapshot,
+  GameplayTag,
+  HighlightedPathTargetKind,
+  InteractionHintViewModel,
+  InteractionOption,
+  InventoryItemViewModel,
+  PlayerSkillViewModel,
+  PresentationActionPreview,
+  PresentationIntent,
+  RenderInput,
+  ToastItem
 } from './types';
 import {toPresentationIntent} from './types';
 import type {DisplayPatch, DisplayState} from './displayState/types';
@@ -55,17 +55,19 @@ import {applyPatch, applyPatches, buildDisplayState} from './displayState/builde
 import {resyncDisplayState} from './displayState/sync';
 import {buildPresentationPlan} from './displayState/planner';
 import {
-    getAllLocalizedDoors,
-    getAllLocalizedEntities,
-    getAllLocalizedItems,
-    getAllLocalizedPlayerTemplates,
-    getAllLocalizedStairs,
-    getAllLocalizedTileEffects,
-    tryGetDoor,
-    tryGetItem,
-    tryGetLocalizedAbility,
-    tryGetLocalizedItem,
-    tryGetPlayerTemplate,
+  getAllLocalizedDoors,
+  getAllLocalizedEntities,
+  getAllLocalizedItems,
+  getAllLocalizedPlayerTemplates,
+  getAllLocalizedStairs,
+  getAllLocalizedTileEffects,
+  getMapParams,
+  tryGetDoor,
+  tryGetItem,
+  tryGetLocalizedAbility,
+  tryGetLocalizedItem,
+  tryGetLocalizedStatus,
+  tryGetPlayerTemplate,
 } from '@content/registry';
 import type {Locale} from '@content/texts/lookup';
 import {getTagText} from '@content/texts/lookup';
@@ -107,6 +109,9 @@ export type SessionMode =
 
 export type {LogItem} from './logBuffer';
 
+/** Путь к портрету по умолчанию, если шаблон игрока не найден. */
+const DEFAULT_PLAYER_PORTRAIT_SRC = '/assets/portraits/witcher-ready.png';
+
 export type GameViewModel = {
   /** Текущий режим экрана */
   mode: SessionMode;
@@ -117,6 +122,11 @@ export type GameViewModel = {
   /** Активные всплывающие уведомления */
   toasts: ToastItem[];
 };
+
+/** Вспомогательная функция для формирования i18n-ключа из типа статуса. */
+function capitalizeFirst(value: string): string {
+  return value ? value[0]!.toUpperCase() + value.slice(1) : value;
+}
 
 /** Порядок слотов экипировки для сортировки инвентаря. */
 const SLOT_ORDER: Record<string, number> = {
@@ -243,16 +253,23 @@ export class GameSession {
   /**
    * Список побеждённых боссов для экрана итогов.
    *
-   * Временно возвращает фиксированный набор боссов из i18n-ключей.
-   * Когда в Simulation появится tracking убийства боссов — заменить на реальные данные.
+   * Источник правды — state.runStats.defeatedBossIds из Simulation.
+   * Пока в Content нет шаблонов боссов, имена маппятся на i18n-ключи.
    */
   getDefeatedBosses(): string[] {
-    return [
-      t('ending.boss1'),
-      t('ending.boss2'),
-      t('ending.boss3'),
-      t('ending.boss4'),
-    ];
+    const state = this.simulation?.getState();
+    if (!state) return [];
+
+    const BOSS_NAME_KEYS: Record<string, string> = {
+      cat_king: 'ending.boss1',
+      owl_lord: 'ending.boss2',
+      rat_king: 'ending.boss3',
+      moth_queen: 'ending.boss4',
+    };
+
+    return state.runStats.defeatedBossIds.map((templateId) =>
+      t(BOSS_NAME_KEYS[templateId] ?? 'ending.unknownBoss'),
+    );
   }
 
   /** Текущий ViewModel для отрисовки UI. Кешируется между нотификациями для useSyncExternalStore. */
@@ -301,10 +318,10 @@ export class GameSession {
     const eq = equipment;
 
     const heroStats = [
-      {type: 'readonly' as const, icon: '💪', name: t('system.gameSession.heroStatStrength'), value: String(ps.effectiveStats.str)},
-      {type: 'readonly' as const, icon: '✨', name: t('system.gameSession.heroStatIntelligence'), value: String(ps.effectiveStats.int)},
-      {type: 'readonly' as const, icon: '🐾', name: t('system.gameSession.heroStatDexterity'), value: String(ps.effectiveStats.dex)},
-      {type: 'readonly' as const, icon: '❤️', name: t('system.gameSession.heroStatVitality'), value: String(ps.effectiveStats.vit)},
+      {type: 'readonly' as const, icon: GameSession.resolveStatIcon('str'), name: t('system.gameSession.heroStatStrength'), value: String(ps.effectiveStats.str)},
+      {type: 'readonly' as const, icon: GameSession.resolveStatIcon('int'), name: t('system.gameSession.heroStatIntelligence'), value: String(ps.effectiveStats.int)},
+      {type: 'readonly' as const, icon: GameSession.resolveStatIcon('dex'), name: t('system.gameSession.heroStatDexterity'), value: String(ps.effectiveStats.dex)},
+      {type: 'readonly' as const, icon: GameSession.resolveStatIcon('vit'), name: t('system.gameSession.heroStatVitality'), value: String(ps.effectiveStats.vit)},
     ];
 
     const equippedIds = new Set([
@@ -470,36 +487,26 @@ export class GameSession {
     }
 
     const activeEffects: ActiveEffectViewModel[] = state.player.statusEffects.map(effect => {
-      switch (effect.type) {
-        case 'poisoned':
-          return {icon: '🧪', name: t('system.gameSession.effectPoisoned'), desc: t('system.gameSession.effectPoisonedDesc', { value: effect.value }), turns: effect.duration};
-        case 'burning':
-          return {icon: '🔥', name: t('system.gameSession.effectBurning'), desc: t('system.gameSession.effectBurningDesc', { value: effect.value }), turns: effect.duration};
-        case 'frozen':
-          return {icon: '❄️', name: t('system.gameSession.effectFrozen'), desc: t('system.gameSession.effectFrozenDesc'), turns: effect.duration};
-        case 'stunned':
-          return {icon: '💫', name: t('system.gameSession.effectStunned'), desc: t('system.gameSession.effectStunnedDesc'), turns: effect.duration};
-        case 'regenerating':
-          return {icon: '✨', name: t('system.gameSession.effectRegenerating'), desc: t('system.gameSession.effectRegeneratingDesc', { value: effect.value }), turns: effect.duration};
-        case 'counterattack':
-          return {
-            icon: '⚔️',
-            name: t('system.gameSession.effectCounterattack'),
-            desc: t('system.gameSession.effectCounterattackDesc', { turns: effect.duration }),
-            turns: effect.duration,
-          };
-        case 'silenced':
-          return {
-            icon: resolveStatusIcon('silenced'),
-            name: t('system.gameSession.effectSilenced'),
-            desc: t('system.gameSession.effectSilencedDesc', { turns: effect.duration }),
-            turns: effect.duration,
-          };
-        case 'wet':
-          return {icon: '💧', name: t('system.gameSession.effectWet'), desc: t('system.gameSession.effectWetDesc', { value: effect.value }), turns: effect.duration};
-        default:
-          return {icon: '❓', name: t('system.gameSession.effectUnknown'), desc: '', turns: effect.duration};
-      }
+      const statusTemplate = tryGetLocalizedStatus(effect.type, locale);
+      const name = statusTemplate?.name ?? t(`system.gameSession.effect${capitalizeFirst(effect.type)}` as any) ?? t('system.gameSession.effectUnknown');
+      const icon = statusTemplate ? resolveStatusIcon(effect.type) : '❓';
+
+      const descKeys: Partial<Record<string, string>> = {
+        poisoned: 'system.gameSession.effectPoisonedDesc',
+        burning: 'system.gameSession.effectBurningDesc',
+        frozen: 'system.gameSession.effectFrozenDesc',
+        stunned: 'system.gameSession.effectStunnedDesc',
+        regenerating: 'system.gameSession.effectRegeneratingDesc',
+        counterattack: 'system.gameSession.effectCounterattackDesc',
+        silenced: 'system.gameSession.effectSilencedDesc',
+        wet: 'system.gameSession.effectWetDesc',
+      };
+      const descKey = descKeys[effect.type];
+      const desc = descKey
+        ? t(descKey as any, { value: effect.value, turns: effect.duration })
+        : (statusTemplate?.description ?? '');
+
+      return {icon, name, desc, turns: effect.duration};
     });
 
     const fieldObjectPopover = this.buildFieldObjectPopover(state);
@@ -582,7 +589,7 @@ export class GameSession {
     const options: InteractionOption[] = [];
     const player = state.player;
 
-    for (const entity of this.simulation.findInteractableEntitiesAround(player, 1)) {
+    for (const entity of this.simulation.findInteractableEntitiesAround(player, this.simulation.getInteractionRadius())) {
       const interaction = this.simulation.resolveInteraction(entity, player);
       if (!interaction) continue;
 
@@ -846,11 +853,69 @@ export class GameSession {
   }
 
   /**
+   * Возвращает ID шаблона игрока, выбранного по умолчанию.
+   * Если ни один шаблон не помечен isDefault, возвращает ID первого доступного.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getDefaultPlayerTemplateId(locale: Locale): string {
+    const templates = GameSession.getAvailablePlayerTemplates(locale);
+    return templates[0]?.id ?? '';
+  }
+
+  /**
    * Возвращает путь к портрету игрока по templateId.
    * Статический метод — не требует активной симуляции.
    */
-  static getPlayerPortraitSrc(templateId: string): string | undefined {
-    return tryGetPlayerTemplate(templateId)?.portraitImg;
+  static getPlayerPortraitSrc(templateId: string): string {
+    return tryGetPlayerTemplate(templateId)?.portraitImg ?? DEFAULT_PLAYER_PORTRAIT_SRC;
+  }
+
+  /**
+   * Возвращает ID стартового снаряжения для шаблона игрока, сгруппированные по слотам.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getStarterEquipmentIds(templateId: string): {weapon: string[]; armor: string[]; amulet: string[]} {
+    const ids = tryGetPlayerTemplate(templateId)?.starterEquipment ?? [];
+    return {
+      weapon: ids.filter((id) => tryGetItem(id)?.type === 'weapon'),
+      armor: ids.filter((id) => tryGetItem(id)?.type === 'armor'),
+      amulet: ids.filter((id) => tryGetItem(id)?.type === 'amulet'),
+    };
+  }
+
+  /**
+   * Возвращает бюджет очков характеристик при создании персонажа.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAttributePointsBudget(): number {
+    return CHARACTER_CREATION_ATTRIBUTE_POINTS_BUDGET;
+  }
+
+  /**
+   * Возвращает иконку (эмодзи) для характеристики по её коду.
+   * Статический метод — не требует активной симуляции.
+   */
+  static resolveStatIcon(statType: 'str' | 'int' | 'dex' | 'vit'): string {
+    const icons: Record<string, string> = {
+      str: '💪',
+      int: '✨',
+      dex: '🐾',
+      vit: '❤️',
+    };
+    return icons[statType] ?? '?';
+  }
+
+  /**
+   * Возвращает иконку (эмодзи) для пустого слота экипировки.
+   * Статический метод — не требует активной симуляции.
+   */
+  static resolveEquipmentSlotIcon(slotType: 'weapon' | 'armor' | 'amulet'): string {
+    const icons: Record<string, string> = {
+      weapon: '⚔',
+      armor: '🛡',
+      amulet: '📿',
+    };
+    return icons[slotType] ?? '?';
   }
 
   /**
@@ -950,21 +1015,8 @@ export class GameSession {
    * Presentation не мутирует GameState напрямую.
    */
   startNewGame(config: CharacterConfig, seed: number): void {
-    const defaultMapParams: MapParams = {
-      id: 'floor_1',
-      strategy: 'tree',
-      height: 40,
-      width: 40,
-      minRooms: 5,
-      maxRooms: 20,
-      minRoomSize: 3,
-      maxRoomSize: 8,
-      enemyDensity: 1.0,
-      itemDensity: 0.1,
-      enemyPool: ['cat_small', 'cat_mid', 'cat_big'],
-      itemPool: ['health_potion'],
-    };
-    this.simulation = GameSimulation.createNewGame(seed, config, defaultMapParams, this.debugEnabled);
+    const mapParams = getMapParams('floor_1');
+    this.simulation = GameSimulation.createNewGame(seed, config, mapParams, this.debugEnabled);
     this.displayState = resyncDisplayState(this.simulation.getState());
     this.mode = 'playing';
     this.lastResult = null;
@@ -1182,10 +1234,8 @@ export class GameSession {
   /**
    * Рассчитать индексы тайлов пути, на которых заканчивается ход.
    *
-   * Учитывает реальную стоимость действий:
-   - MOVE — 1 AP;
-   - INTERACT (открытие двери) — 1 AP;
-   - ATTACK по врагу — 1 AP.
+   * Стоимость каждого действия запрашивается у Simulation через getActionCost,
+   * чтобы Presentation не дублировал игровые правила AP.
    *
    * Если действие не перемещает персонажа (открытие/атака), конец хода
    * отмечается на предыдущем достигнутом тайле.
@@ -1209,27 +1259,74 @@ export class GameSession {
         target !== null && pos.x === target.position.x && pos.y === target.position.y;
 
       // Собираем действия, которые нужны для прохождения/взаимодействия с тайлом.
-      const actions: Array<{ type: 'move' | 'interact' | 'attack'; pathIndex: number }> = [];
+      const actions: Array<
+        | { type: 'move'; pathIndex: number; action: GameAction }
+        | { type: 'interact'; pathIndex: number; action: GameAction }
+        | { type: 'attack'; pathIndex: number; action: GameAction }
+      > = [];
 
       if (target?.kind === 'enemy' && isFinalTargetTile) {
-        actions.push({ type: 'attack', pathIndex: i });
+        actions.push({
+          type: 'attack',
+          pathIndex: i,
+          action: {
+            type: 'ATTACK',
+            entityId: state.player.id,
+            dx: pos.x - state.player.x,
+            dy: pos.y - state.player.y,
+          },
+        });
       } else if (target?.kind === 'door' && isFinalTargetTile) {
         const door = this.findSingleClosedDoorAt(pos, state);
         if (door) {
-          actions.push({ type: 'interact', pathIndex: i });
+          actions.push({
+            type: 'interact',
+            pathIndex: i,
+            action: {
+              type: 'INTERACT',
+              entityId: state.player.id,
+              targetId: door.id,
+            },
+          });
         } else {
-          actions.push({ type: 'move', pathIndex: i });
+          actions.push({
+            type: 'move',
+            pathIndex: i,
+            action: {
+              type: 'MOVE',
+              entityId: state.player.id,
+              dx: pos.x - state.player.x,
+              dy: pos.y - state.player.y,
+            },
+          });
         }
       } else {
         const door = this.findSingleClosedDoorAt(pos, state);
         if (door) {
-          actions.push({ type: 'interact', pathIndex: i });
+          actions.push({
+            type: 'interact',
+            pathIndex: i,
+            action: {
+              type: 'INTERACT',
+              entityId: state.player.id,
+              targetId: door.id,
+            },
+          });
         }
-        actions.push({ type: 'move', pathIndex: i });
+        actions.push({
+          type: 'move',
+          pathIndex: i,
+          action: {
+            type: 'MOVE',
+            entityId: state.player.id,
+            dx: pos.x - state.player.x,
+            dy: pos.y - state.player.y,
+          },
+        });
       }
 
       for (const action of actions) {
-        const cost = 1;
+        const cost = this.simulation!.getActionCost(action.action);
         if (remaining < cost) {
           return indices;
         }

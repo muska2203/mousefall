@@ -1,6 +1,7 @@
 import type {ComponentsToastTranslations} from '@i18n/schema';
 
 export const ruToast = {
+  ariaLabel: 'Уведомления',
   skillOnCooldownTitle: 'Способность недоступна',
   skillOnCooldownMessage: 'Эта способность ещё перезаряжается.',
   notEnoughApTitle: 'Недостаточно очков действия',

@@ -7,6 +7,7 @@
 
 import {useTranslation} from '@i18n/hooks';
 import type {HotbarItemViewModel} from '@presentation/types';
+import {DEFAULT_HOTBAR_SIZE} from '@ui/input/keyboardConfig';
 import {HotbarSlot} from './HotbarSlot';
 
 interface Props {
@@ -29,7 +30,7 @@ const EMPTY_ITEM = (index: number): HotbarItemViewModel => ({
   isActive: false,
 });
 
-export function Hotbar({ items, size = 10, disabled, onSlotClick }: Props) {
+export function Hotbar({ items, size = DEFAULT_HOTBAR_SIZE, disabled, onSlotClick }: Props) {
   const { t } = useTranslation('components');
 
   return (

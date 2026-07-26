@@ -1,11 +1,13 @@
-import {describe, expect, it, beforeEach, afterEach} from 'vitest';
-import {createDebugSpawnEntityActionHandler} from '../../../../src/simulation/systems/actions/debug-spawn-entity-action';
-import {makeGameState, makePlayer, makeEnemy, makeStateWithPlayerAndEntity} from '../../../fixtures/gameState';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {
+  createDebugSpawnEntityActionHandler
+} from '../../../../src/simulation/systems/actions/debug-spawn-entity-action';
+import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity} from '../../../fixtures/gameState';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 
 function makeBuilder() {
-  return new ExecutionBuilder({type: 'ACTION_APPLIED', action: {type: 'END_TURN', entityId: 'player'}});
+  return new ExecutionBuilder({type: 'ACTION_APPLIED', isFieldEvent: false, action: {type: 'END_TURN', entityId: 'player'}});
 }
 
 function makeContext(enabled: boolean) {

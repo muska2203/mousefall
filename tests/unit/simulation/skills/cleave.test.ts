@@ -1,19 +1,19 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
+  makeDoor,
+  makeEnemy,
+  makeFloorItemContainer,
   makeGameState,
   makePlayer,
-  makeEnemy,
-  makeDoor,
-  makeFloorItemContainer,
   makeStairs,
 } from '../../../fixtures/gameState';
-import { cleaveSkill } from '../../../../src/simulation/skills/executors/cleaveSkill';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate, ItemTemplate } from '../../../../src/content/schemas';
-import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
+import {cleaveSkill} from '../../../../src/simulation/skills/executors/cleaveSkill';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {AbilityTemplate, ItemTemplate} from '../../../../src/content/schemas';
+import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
+import {initSkillRegistry} from '../../../../src/simulation/skills/index';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -165,7 +165,7 @@ describe('cleaveSkill', () => {
     expect(centerIntent).toBeDefined();
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] },
     });
 
@@ -194,7 +194,7 @@ describe('cleaveSkill', () => {
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] },
     });
 
@@ -228,7 +228,7 @@ describe('cleaveSkill', () => {
     const intents = cleaveSkill.resolve(state, player, [{ x: 6, y: 5 }]);
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'cleave', targets: [{ x: 6, y: 5 }] },
     });
 

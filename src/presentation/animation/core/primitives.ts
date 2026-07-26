@@ -214,6 +214,32 @@ export function projectileNode(
   };
 }
 
+/** Создать узел падения метеорита с неба. */
+export function meteorFallNode(
+  from: Position,
+  to: Position,
+  color: number,
+  children: AnimationNode[],
+): AnimationNode {
+  return {
+    step: { type: 'METEOR_FALL', from, to, color },
+    children,
+  };
+}
+
+/** Создать узел луча от кастера до цели. */
+export function beamNode(
+  from: Position,
+  to: Position,
+  color: number,
+  children: AnimationNode[],
+): AnimationNode {
+  return {
+    step: { type: 'BEAM', from, to, color },
+    children,
+  };
+}
+
 /** Создать узел дуги рассечения. */
 export function slashArcNode(
   from: Position,

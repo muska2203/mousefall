@@ -11,30 +11,30 @@
 
 import type {ItemTemplate, MapParams} from "@content/schemas";
 import {
-    BaseStats,
-    Corridor,
-    CorridorSegment,
-    EntityId,
-    ExecutionNode,
-    FactionId,
-    GameAction,
-    GameEvent,
-    GameMap,
-    GameplayTag,
-    Intent,
-    ItemInstanceId,
-    Position,
-    Room,
-    RuleTriggeredEvent,
-    RuntimeAbility,
-    StatModifier,
-    StatModifierOp,
-    StatusEffect,
-    StatusEffectType,
-    TileType,
-    TurnSide,
-    ValidationError,
-    ValidationResult,
+  BaseStats,
+  Corridor,
+  CorridorSegment,
+  EntityId,
+  ExecutionNode,
+  FactionId,
+  GameAction,
+  GameEvent,
+  GameMap,
+  GameplayTag,
+  Intent,
+  ItemInstanceId,
+  Position,
+  Room,
+  RuleTriggeredEvent,
+  RuntimeAbility,
+  StatModifier,
+  StatModifierOp,
+  StatusEffect,
+  StatusEffectType,
+  TileType,
+  TurnSide,
+  ValidationError,
+  ValidationResult,
 } from "@simulation/core-types.ts";
 import type {AIState} from "./ai/ai-state";
 import type {ActiveRule} from "./content-rules/types";
@@ -405,6 +405,8 @@ export type RunStats = {
   chestsOpened: number;
   /** Суммарное количество подобранных предметов (в штуках). */
   itemsPickedUp: number;
+  /** ID шаблонов боссов, убитых в текущем забеге. */
+  defeatedBossIds: string[];
 };
 
 // ─────────────────────────────────────────────
@@ -536,6 +538,9 @@ export type Simulation = {
 
   /** Возвращает все интерактивные сущности в радиусе от актора (Chebyshev distance). */
   findInteractableEntitiesAround(actor: Entity, radius: number): Entity[];
+
+  /** Возвращает радиус, в котором игрок может взаимодействовать с объектами. */
+  getInteractionRadius(): number;
 };
 
 export type ActionPreview = {

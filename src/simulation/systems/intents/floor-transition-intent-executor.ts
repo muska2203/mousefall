@@ -23,7 +23,7 @@ export const executeFloorTransitionIntent: IntentExecutor<FloorTransitionIntent>
   state.floor = plan.to;
 
   return builder.addChild(parent, {
-    type: 'FLOOR_CHANGED',
+    type: 'FLOOR_CHANGED', isFieldEvent: true,
     from: plan.from,
     to: plan.to,
     plan,

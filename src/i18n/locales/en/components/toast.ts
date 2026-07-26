@@ -1,6 +1,7 @@
 import type {ComponentsToastTranslations} from '@i18n/schema';
 
 export const enToast = {
+  ariaLabel: 'Notifications',
   skillOnCooldownTitle: 'Ability Unavailable',
   skillOnCooldownMessage: 'This ability is still on cooldown.',
   notEnoughApTitle: 'Not Enough Action Points',

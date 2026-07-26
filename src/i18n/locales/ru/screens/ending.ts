@@ -15,6 +15,7 @@ export const ruEnding = {
   boss2: '👁 Слепой сторож',
   boss3: '🦴 Костяной мурчун',
   boss4: '👑 Кот-хозяин кладовки',
+  unknownBoss: 'Неизвестный босс',
   statStrength: 'Сила',
   statIntelligence: 'Интеллект',
   statDexterity: 'Ловкость',

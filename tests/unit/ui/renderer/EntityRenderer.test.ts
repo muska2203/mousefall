@@ -2,8 +2,13 @@
  * Unit tests for EntityRenderer.
  */
 
-import {describe, expect, it, vi, beforeEach, afterEach} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import {EntityRenderer} from '../../../../src/ui/renderer/EntityRenderer';
+import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
+import type {RenderInput} from '../../../../src/presentation/types';
+import {buildDisplayState} from '../../../../src/presentation/displayState/builder';
+import type {GameState} from '../../../../src/simulation/types';
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -60,12 +65,6 @@ vi.mock('pixi.js', () => {
     Graphics: MockGraphics,
   };
 });
-
-import {EntityRenderer} from '../../../../src/ui/renderer/EntityRenderer';
-import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
-import type {RenderInput} from '../../../../src/presentation/types';
-import { buildDisplayState } from '../../../../src/presentation/displayState/builder';
-import type { GameState } from '../../../../src/simulation/types';
 
 function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player']>, visible?: boolean[][]): RenderInput {
   const player = {
@@ -138,6 +137,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,
+      defeatedBossIds: [],
     },
     featureFlags: {
       contentRulesEnabled: false,
@@ -196,6 +196,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,
+      defeatedBossIds: [],
     },
     fieldObjectPopover: null,
     interactionHint: null,

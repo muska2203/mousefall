@@ -43,7 +43,7 @@ export const executeDamageTileIntent: IntentExecutor<DamageTileIntent> = (
   }
 
   return builder.addChild(parent, {
-    type: 'TILE_DAMAGED',
+    type: 'TILE_DAMAGED', isFieldEvent: false,
     position: { x, y },
     sourceEntityId: intent.sourceEntityId,
     damage: intent.damage,

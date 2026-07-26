@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState.ts';
-import { executeTeleportEntityIntent } from '@simulation/systems/intents/teleport-entity-intent-executor';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
-import type { Entity, EntityId } from '@simulation/types';
+import {describe, expect, it} from 'vitest';
+import {makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState.ts';
+import {executeTeleportEntityIntent} from '@simulation/systems/intents/teleport-entity-intent-executor';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
+import type {Entity, EntityId} from '@simulation/types';
 
 describe('executeTeleportEntityIntent', () => {
   it('перемещает сущность и эмитит ENTITY_MOVED с movementType teleport', () => {
@@ -12,7 +12,7 @@ describe('executeTeleportEntityIntent', () => {
     });
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: 'player' },
     });
 
@@ -40,7 +40,7 @@ describe('executeTeleportEntityIntent', () => {
     const state = makeGameState({ player, entities: new Map<EntityId, Entity>([['player', player]]) });
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: 'player' },
     });
 
@@ -58,7 +58,7 @@ describe('executeTeleportEntityIntent', () => {
   it('возвращает null, если сущность не найдена', () => {
     const state = makeGameState();
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: 'player' },
     });
 

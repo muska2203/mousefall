@@ -1,10 +1,10 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { executeDamageIntent } from '../../../../src/simulation/systems/intents/attack-intent-executer';
-import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
-import { makeEnemy, makePlayer, makeStateWithPlayerAndEntity } from '../../../fixtures/gameState';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {executeDamageIntent} from '../../../../src/simulation/systems/intents/attack-intent-executer';
+import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
+import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity} from '../../../fixtures/gameState';
 
 function makeBuilder() {
-  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
+  return new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 describe('damage tag invariant', () => {

@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import { executeJumpIntent } from '../../../../src/simulation/systems/intents/jump-intent-executor';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
+import {describe, expect, it} from 'vitest';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {executeJumpIntent} from '../../../../src/simulation/systems/intents/jump-intent-executor';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
 
 describe('executeJumpIntent', () => {
   it('moves entity and emits ENTITY_MOVED with movementType jump', () => {
@@ -11,7 +11,7 @@ describe('executeJumpIntent', () => {
     state.entities.set(player.id, player);
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'swoop', targets: [{ x: 7, y: 5 }] },
     });
 
@@ -26,7 +26,7 @@ describe('executeJumpIntent', () => {
     expect(player.x).toBe(7);
     expect(player.y).toBe(5);
     expect(node?.event).toMatchObject({
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', isFieldEvent: true,
       entityId: player.id,
       from: { x: 5, y: 5 },
       to: { x: 7, y: 5 },
@@ -42,7 +42,7 @@ describe('executeJumpIntent', () => {
     state.entities.set(player.id, player);
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'swoop', targets: [{ x: 7, y: 5 }] },
     });
 

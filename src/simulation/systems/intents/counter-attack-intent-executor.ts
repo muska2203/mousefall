@@ -41,7 +41,7 @@ export const executeCounterAttackIntent: IntentExecutor<CounterAttackIntent> = (
   const tags = mergeDamageIntentTags([primaryTag], getWeaponTags(counterAttacker), ['reaction.counter']);
 
   return builder.addChild(parent, {
-    type: 'COUNTER_ATTACK_APPLIED',
+    type: 'COUNTER_ATTACK_APPLIED', isFieldEvent: true,
     attackerId: counterAttacker.id,
     targetId: target.id,
     dx,

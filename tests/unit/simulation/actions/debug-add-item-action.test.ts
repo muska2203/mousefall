@@ -1,11 +1,14 @@
-import {describe, expect, it, beforeEach, afterEach} from 'vitest';
-import {createDebugAddItemActionHandler, DebugContext} from '../../../../src/simulation/systems/actions/debug-add-item-action';
-import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {
+  createDebugAddItemActionHandler,
+  DebugContext
+} from '../../../../src/simulation/systems/actions/debug-add-item-action';
+import {makeGameState} from '../../../fixtures/gameState';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 
 function makeBuilder() {
-  return new ExecutionBuilder({type: 'ACTION_APPLIED', action: {type: 'END_TURN', entityId: 'player'}});
+  return new ExecutionBuilder({type: 'ACTION_APPLIED', isFieldEvent: false, action: {type: 'END_TURN', entityId: 'player'}});
 }
 
 function makeContext(enabled: boolean): DebugContext {

@@ -1,16 +1,16 @@
-import { expect } from 'vitest';
-import type { SimulationResult } from '../../src/simulation/types';
+import {expect} from 'vitest';
+import type {SimulationResult} from '../../src/simulation/types';
 
 /**
  * Возвращает первое событие ACTION_REJECTED из результата dispatch.
  * Удобен для проверки кодов отказа без хрупких цепочек `!`.
  */
-export function findRejectedEvent(result: SimulationResult): { type: 'ACTION_REJECTED'; errors: { code: string }[] } | undefined {
+export function findRejectedEvent(result: SimulationResult): { type: 'ACTION_REJECTED', isFieldEvent: false; errors: { code: string }[] } | undefined {
   const rejected = result.phases[0]?.actions[0]?.children.find(
     c => c.event.type === 'ACTION_REJECTED',
   );
   if (!rejected) return undefined;
-  return rejected.event as { type: 'ACTION_REJECTED'; errors: { code: string }[] };
+  return rejected.event as { type: 'ACTION_REJECTED', isFieldEvent: false; errors: { code: string }[] };
 }
 
 /**

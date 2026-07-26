@@ -93,7 +93,7 @@ export const useAbilityAction: ActionHandler = {
     if (!actor || !('abilities' in actor)) return;
 
     const node = executionBuilder.addChild(parentNode, {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: action.entityId,
       abilityId: action.abilityId,
       targets: action.targets,

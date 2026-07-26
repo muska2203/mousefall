@@ -2,15 +2,11 @@
  * Unit tests for TileEffectStatusRenderer.
  */
 
-import {describe, expect, it, vi, beforeEach} from 'vitest';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {Container} from 'pixi.js';
 import type {RenderInput} from '@presentation/types.ts';
 import type {DisplayState} from '@presentation/displayState/types.ts';
-import {
-  TILE_SIZE,
-  TILE_EFFECT_STATUS_SPRITE_SCALE,
-  TILE_EFFECT_STATUS_OFFSET_Y_FACTOR,
-} from '@utils/constants.ts';
+import {TILE_EFFECT_STATUS_OFFSET_Y_FACTOR, TILE_EFFECT_STATUS_SPRITE_SCALE, TILE_SIZE,} from '@utils/constants.ts';
 import {
   BURNING_CLUSTER_PADDING_X,
   BURNING_CLUSTER_SCALE_MAX,
@@ -18,7 +14,8 @@ import {
   BURNING_CLUSTER_SWAY_AMPLITUDE,
   BURNING_CLUSTER_VERTICAL_MAX,
   BURNING_CLUSTER_VERTICAL_MIN,
-} from '@ui/renderer/TileEffectStatusRenderer.ts';
+} from '@ui/renderer/tileEffectStatusStrategies/burningClusterStrategy.ts';
+import {TileEffectStatusRenderer} from '../../../../src/ui/renderer/TileEffectStatusRenderer';
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -75,8 +72,6 @@ vi.mock('../../../../src/ui/renderer/TextureCache', () => ({
   getTextureSync: vi.fn(() => undefined),
   getTexture: vi.fn(() => Promise.resolve({} as any)),
 }));
-
-import {TileEffectStatusRenderer} from '../../../../src/ui/renderer/TileEffectStatusRenderer';
 
 function makeDisplayState(overrides?: Partial<DisplayState>): DisplayState {
   const tiles = Array.from({length: 10}, () =>

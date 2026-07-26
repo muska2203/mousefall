@@ -1,13 +1,13 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
-import { dashSkill } from '../../../../src/simulation/skills/executors/dashSkill';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate } from '../../../../src/content/schemas';
-import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeDoor, makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {dashSkill} from '../../../../src/simulation/skills/executors/dashSkill';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {AbilityTemplate} from '../../../../src/content/schemas';
+import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
+import {initSkillRegistry} from '../../../../src/simulation/skills/index';
+import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 import '@simulation/ai/hunter-strategy';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -23,7 +23,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
 
 function makeBuilder(entityId: string) {
   return new ExecutionBuilder({
-    type: 'ACTION_APPLIED',
+    type: 'ACTION_APPLIED', isFieldEvent: false,
     action: { type: 'USE_ABILITY', entityId, abilityId: 'dash', targets: [{ x: 0, y: 0 }] },
   });
 }
@@ -135,7 +135,7 @@ describe('dashSkill', () => {
 
     const bumpEvents = builder.root.children.flatMap(n => collectEvents(n)).filter((e: any) => e.type === 'ENTITY_BUMPED');
     expect(bumpEvents).toHaveLength(1);
-    expect(bumpEvents[0]).toMatchObject({ type: 'ENTITY_BUMPED', entityId: player.id, position: { x: 6, y: 5 }, dx: 1, dy: 0 });
+    expect(bumpEvents[0]).toMatchObject({ type: 'ENTITY_BUMPED', isFieldEvent: true, entityId: player.id, position: { x: 6, y: 5 }, dx: 1, dy: 0 });
   });
 
   it('opens closed door and passes through when target is behind the door', () => {

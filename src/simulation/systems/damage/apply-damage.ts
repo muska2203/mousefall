@@ -1,4 +1,4 @@
-import type {Entity, EntityId, GameState, Attackable} from '@simulation/types';
+import type {Attackable, Entity, EntityId, GameState} from '@simulation/types';
 import type {GameplayTag} from '@simulation/core-types';
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
 import {DamageCalculationContext, getDamageHandler} from '@simulation/systems/damage/damage-handlers';
@@ -44,7 +44,7 @@ export function applyDamageToEntity(
   target.hp -= finalDamage;
 
   return builder.addChild(parent, {
-    type: 'ENTITY_DAMAGED',
+    type: 'ENTITY_DAMAGED', isFieldEvent: true,
     damage: finalDamage,
     targetId: target.id,
     sourceEntityId,

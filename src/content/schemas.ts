@@ -318,6 +318,8 @@ export const PlayerTemplateSchema = z.object({
     .describe('Стартовые базовые характеристики персонажа. Не могут быть снижены при распределении очков'),
   isDefault: z.boolean().default(false)
     .describe('Является ли шаблон выбранным по умолчанию в экране создания персонажа'),
+  starterEquipment: z.array(z.string().min(1)).optional()
+    .describe('Список ID стартового снаряжения, доступного при создании персонажа по этому шаблону'),
 }).describe('Шаблон класса/внешности игрока');
 
 export type PlayerTemplate = z.output<typeof PlayerTemplateSchema>;

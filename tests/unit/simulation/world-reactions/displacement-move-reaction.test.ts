@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
-import type { GameEvent } from '../../../../src/simulation/core-types';
+import {describe, expect, it} from 'vitest';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import type {GameEvent} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 
 function collectEvents(node: { event: unknown; children: unknown[] }): unknown[] {
   return [node.event, ...node.children.flatMap(child => collectEvents(child as { event: unknown; children: unknown[] }))];
@@ -25,7 +25,7 @@ describe('displacementMoveReaction', () => {
     } as any);
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'push', targets: [] },
     });
 

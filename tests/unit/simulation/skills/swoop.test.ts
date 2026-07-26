@@ -1,13 +1,13 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
-import { swoopSkill } from '../../../../src/simulation/skills/executors/swoopSkill';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate } from '../../../../src/content/schemas';
-import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeDoor, makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {swoopSkill} from '../../../../src/simulation/skills/executors/swoopSkill';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {AbilityTemplate} from '../../../../src/content/schemas';
+import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
+import {initSkillRegistry} from '../../../../src/simulation/skills/index';
+import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 import '@simulation/ai/hunter-strategy';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -24,7 +24,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
 
 function makeBuilder(entityId: string) {
   return new ExecutionBuilder({
-    type: 'ACTION_APPLIED',
+    type: 'ACTION_APPLIED', isFieldEvent: false,
     action: { type: 'USE_ABILITY', entityId, abilityId: 'swoop', targets: [{ x: 0, y: 0 }] },
   });
 }

@@ -10,6 +10,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
+import {registerAnimationExecutor} from './registry';
 
 export class SkillAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {
@@ -23,3 +24,5 @@ export class SkillAnimationExecutor implements AnimationExecutor {
     await ctx.worldRenderer.animateAbilityCast(step.entityId, castConfig);
   }
 }
+
+registerAnimationExecutor(new SkillAnimationExecutor());

@@ -9,14 +9,14 @@
  * 5. Статус `burning` не гаснет по своей длительности — он удаляется только вместе с маслом, когда масло полностью сгорает.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { GameSimulation } from '../../../src/simulation/simulation';
-import { ExecutionBuilder } from '../../../src/simulation/core-types';
-import { executeIntent } from '../../../src/simulation/systems/intents/execute-intent';
-import { makeGameState, makePlayer, makeTestMap } from '../../fixtures/gameState';
-import { loadTestContent, setupCombatScenario } from '../combat-scenarios/helpers';
-import { advanceToPlayerTurn } from '../../helpers/simulation';
-import type { GameState } from '../../../src/simulation/types';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {GameSimulation} from '../../../src/simulation/simulation';
+import {ExecutionBuilder} from '../../../src/simulation/core-types';
+import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
+import {makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
+import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {advanceToPlayerTurn} from '../../helpers/simulation';
+import type {GameState} from '../../../src/simulation/types';
 
 function createTestPlayer() {
   return makePlayer({
@@ -117,7 +117,7 @@ describe('Цикл масла и поджога', () => {
     // 3. Наносим огненный урон по игроку, стоящему на масле.
     // Это имитирует любой источник fire-урона (например, огненное оружие или fireball).
     const damageBuilder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: player.id },
     });
     executeIntent(
@@ -179,7 +179,7 @@ describe('Цикл масла и поджога', () => {
     expect(spawnResult.success).toBe(true);
 
     const damageBuilder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: player.id },
     });
     executeIntent(

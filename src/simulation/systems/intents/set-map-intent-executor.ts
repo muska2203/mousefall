@@ -24,7 +24,7 @@ export const executeSetMapIntent: IntentExecutor<SetMapIntent> = (
   state.explored = intent.explored ?? createBoolGrid(intent.map.width, intent.map.height, false);
 
   return builder.addChild(parent, {
-    type: 'MAP_CHANGED',
+    type: 'MAP_CHANGED', isFieldEvent: false,
     width: intent.map.width,
     height: intent.map.height,
   });

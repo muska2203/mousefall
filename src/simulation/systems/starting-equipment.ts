@@ -41,7 +41,7 @@ export function createStartingEquipment(
     // Локальный builder для синтетического корневого события.
     // Сам builder не сохраняется — он нужен только как родитель для интентов.
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: player.id },
     });
 

@@ -25,8 +25,8 @@ export function MainMenuScreen({onNewGame}: Props) {
       </button>
       <div className="cm-main-menu__locale">
         <select value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')} aria-label={t('mainMenu.languageSelect')}>
-          <option value="ru">Русский</option>
-          <option value="en">English</option>
+          <option value="ru">{t('mainMenu.languageRu')}</option>
+          <option value="en">{t('mainMenu.languageEn')}</option>
         </select>
       </div>
     </div>

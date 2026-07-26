@@ -31,6 +31,7 @@ export const executeSpawnItemIntent: IntentExecutor<SpawnItemIntent> = (
 
     const event = {
         type: 'ITEM_DROPPED' as const,
+        isFieldEvent: true as const,
         dropperEntityId: intent.sourceEntityId,
         itemInstanceId: inventoryItem.instanceId,
         containerId: container.id,

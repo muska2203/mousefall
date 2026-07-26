@@ -1,18 +1,18 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makePlayer, makeGameState } from '../../../fixtures/gameState';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { ItemTemplate, AbilityTemplate, StatusTemplate } from '../../../../src/content/schemas';
-import type { RuntimeAbility } from '../../../../src/simulation/core-types';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import { executeApplyStatusIntent } from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {AbilityTemplate, ItemTemplate, StatusTemplate} from '../../../../src/content/schemas';
+import type {RuntimeAbility} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {executeApplyStatusIntent} from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
 import {
-  addActiveRulesForItem,
-  removeActiveRulesForItem,
-  addActiveRulesForStatus,
-  removeActiveRulesForStatus,
   addActiveRulesForAbility,
-  removeActiveRulesForAbility,
+  addActiveRulesForItem,
+  addActiveRulesForStatus,
   rebuildActiveRules,
+  removeActiveRulesForAbility,
+  removeActiveRulesForItem,
+  removeActiveRulesForStatus,
 } from '../../../../src/simulation/systems/rules/active-rule-lifecycle';
 
 function mockItem(id: string, ruleIds: string[] = []): ItemTemplate {
@@ -56,7 +56,7 @@ function mockStatus(id: string, ruleIds: string[] = []): StatusTemplate {
 
 function makeBuilder() {
   return new ExecutionBuilder({
-    type: 'ACTION_APPLIED',
+    type: 'ACTION_APPLIED', isFieldEvent: false,
     action: { type: 'END_TURN', entityId: 'any' },
   });
 }

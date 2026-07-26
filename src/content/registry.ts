@@ -18,17 +18,17 @@
  */
 
 import type {
-    AbilityTemplate,
-    DoorTemplate,
-    EntityTemplate,
-    ItemTemplate,
-    LoadedContent,
-    MapParams,
-    PlayerTemplate,
-    StairsTemplate,
-    StatusTemplate,
-    TileEffectTemplate,
-    TileEffectStatusTemplate,
+  AbilityTemplate,
+  DoorTemplate,
+  EntityTemplate,
+  ItemTemplate,
+  LoadedContent,
+  MapParams,
+  PlayerTemplate,
+  StairsTemplate,
+  StatusTemplate,
+  TileEffectStatusTemplate,
+  TileEffectTemplate,
 } from './schemas';
 import {getContentText, type Locale} from './texts/lookup';
 
@@ -72,6 +72,11 @@ export type LocalizedTileEffectTemplate = TileEffectTemplate & {
 
 export type LocalizedTileEffectStatusTemplate = TileEffectStatusTemplate & {
   name: string;
+};
+
+export type LocalizedStatusTemplate = StatusTemplate & {
+  name: string;
+  description?: string;
 };
 
 // ─────────────────────────────────────────────
@@ -216,6 +221,16 @@ export function getAllEntities(): EntityTemplate[] {
  */
 export function getAllStatuses(): StatusTemplate[] {
   return Array.from(getRegistry().statuses.values());
+}
+
+/**
+ * Попытаться получить локализованный шаблон статуса по ID.
+ */
+export function tryGetLocalizedStatus(id: string, locale: Locale): LocalizedStatusTemplate | undefined {
+  const template = getRegistry().statuses.get(id);
+  if (!template) return undefined;
+  const text = getContentText('statuses', id, locale);
+  return {...template, name: text.name, description: text.description};
 }
 
 /**

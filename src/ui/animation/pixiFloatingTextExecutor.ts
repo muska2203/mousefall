@@ -15,6 +15,7 @@ import {TILE_SIZE} from '@utils/constants';
 import {t} from '@i18n/t';
 import type {DamageFamily} from '@presentation/damageFamily';
 import {getDamageFamily} from '@presentation/damageFamily';
+import {registerAnimationExecutor} from './registry';
 
 const DAMAGE_COLORS: Record<DamageFamily, string> = {
   piercing: '#ff4444',
@@ -74,3 +75,5 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
     // Floating text — non-blocking, не ждём завершения
   }
 }
+
+registerAnimationExecutor(new PixiFloatingTextExecutor());

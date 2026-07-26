@@ -66,7 +66,7 @@ export function updateFOV(state: GameState): GameEvent[] {
     }
   }
 
-  return [{ type: 'FOG_UPDATED', newlyVisible }];
+  return [{ type: 'FOG_UPDATED', isFieldEvent: true, newlyVisible }];
 }
 
 // ─────────────────────────────────────────────

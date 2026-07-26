@@ -24,11 +24,12 @@ export const tileEffectRemovedBuilder: AnimationBuilder = (event, children, _sta
   return burstAt(event.position, 0x888888, children);
 };
 
+/** Цвет вспышки при наложении любого статуса на тайловый эффект. */
+const TILE_EFFECT_STATUS_APPLIED_COLOR = 0xffaa00;
+
 export const tileEffectStatusAppliedBuilder: AnimationBuilder = (event, children, _state) => {
   if (event.type !== 'TILE_EFFECT_STATUS_APPLIED') return null;
-  // Оранжево-жёлтый для горения, серый для остальных.
-  const color = event.statusType === 'burning' ? 0xffaa00 : 0xcccccc;
-  return burstAt(event.position, color, children);
+  return burstAt(event.position, TILE_EFFECT_STATUS_APPLIED_COLOR, children);
 };
 
 export const tileEffectStatusRemovedBuilder: AnimationBuilder = (event, children, _state) => {

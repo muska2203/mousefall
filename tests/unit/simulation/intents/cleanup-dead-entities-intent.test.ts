@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makeEnemy, makePlayer } from '../../../fixtures/gameState';
-import { executeCleanupDeadEntitiesIntent } from '../../../../src/simulation/systems/intents/cleanup-dead-entities-intent-executor';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import { PLAYER_ID } from '../../../../src/utils/constants';
+import {describe, expect, it} from 'vitest';
+import {makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {
+  executeCleanupDeadEntitiesIntent
+} from '../../../../src/simulation/systems/intents/cleanup-dead-entities-intent-executor';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {PLAYER_ID} from '../../../../src/utils/constants';
 
 describe('executeCleanupDeadEntitiesIntent', () => {
   it('удаляет мёртвых не-игроковых сущностей и порождает DEAD_ENTITIES_CLEANED', () => {
@@ -12,7 +14,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     state.entities.set(aliveEnemy.id, aliveEnemy);
     state.entities.set(deadEnemy.id, deadEnemy);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },
@@ -24,7 +26,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     expect(state.entities.has(deadEnemy.id)).toBe(false);
     expect(node).not.toBeNull();
     expect(node!.event).toMatchObject({
-      type: 'DEAD_ENTITIES_CLEANED',
+      type: 'DEAD_ENTITIES_CLEANED', isFieldEvent: true,
       removed: [{ entityId: deadEnemy.id, position: { x: 4, y: 4 } }],
     });
   });
@@ -33,7 +35,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     const player = makePlayer({ hp: 0, isAlive: false });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },
@@ -51,7 +53,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     const aliveEnemy = makeEnemy({ id: 'alive_1', x: 3, y: 3, hp: 10, isAlive: true });
     state.entities.set(aliveEnemy.id, aliveEnemy);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },
@@ -72,7 +74,7 @@ describe('executeCleanupDeadEntitiesIntent', () => {
     state.entities.set(deadA.id, deadA);
     state.entities.set(deadM.id, deadM);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 2, actorId: PLAYER_ID });
     const node = executeCleanupDeadEntitiesIntent(
       state,
       { type: 'CLEANUP_DEAD_ENTITIES' },

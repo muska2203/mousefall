@@ -3,6 +3,10 @@
  */
 
 import {describe, expect, it, vi} from 'vitest';
+import {TargetingRenderer} from '../../../../src/ui/renderer/TargetingRenderer';
+import type {RenderInput} from '../../../../src/presentation/types';
+import {buildDisplayState} from '../../../../src/presentation/displayState/builder';
+import type {GameState} from '../../../../src/simulation/types';
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -47,11 +51,6 @@ vi.mock('pixi.js', () => {
     Texture: MockTexture,
   };
 });
-
-import {TargetingRenderer} from '../../../../src/ui/renderer/TargetingRenderer';
-import type {RenderInput} from '../../../../src/presentation/types';
-import { buildDisplayState } from '../../../../src/presentation/displayState/builder';
-import type { GameState } from '../../../../src/simulation/types';
 
 function makeRenderInput(
   overlay: RenderInput['targetingOverlay'],
@@ -120,7 +119,7 @@ function makeRenderInput(
     rng: {seed: 1, state: 1},
     runtimeRng: {seed: 1, state: 1},
     nextEntityCounter: 0,
-    runStats: {startTime: Date.now(), enemiesKilled: 0, chestsOpened: 0, itemsPickedUp: 0},
+    runStats: {startTime: Date.now(), enemiesKilled: 0, chestsOpened: 0, itemsPickedUp: 0, defeatedBossIds: []},
     featureFlags: {contentRulesEnabled: false},
   };
 
@@ -171,7 +170,7 @@ function makeRenderInput(
     activeEffects: [],
     statusEffectsByEntity: new Map(),
     aiModeByEntity: new Map(),
-    runStats: {startTime: Date.now(), enemiesKilled: 0, chestsOpened: 0, itemsPickedUp: 0},
+    runStats: {startTime: Date.now(), enemiesKilled: 0, chestsOpened: 0, itemsPickedUp: 0, defeatedBossIds: []},
     fieldObjectPopover: null,
     interactionHint: null,
     aiPreparedIntents,

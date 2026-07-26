@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import { executeDieIntent } from '../../../src/simulation/systems/intents/die-intent-executer';
-import { deathReaction } from '../../../src/simulation/systems/world-reactions/death-reaction';
-import { findAttackableEntity, isBlocked } from '../../../src/simulation/state';
-import { executeCleanupDeadEntitiesIntent } from '../../../src/simulation/systems/intents/cleanup-dead-entities-intent-executor';
-import { ExecutionBuilder } from '../../../src/simulation/core-types';
-import { makeGameState, makeEnemy, makePlayer } from '../../fixtures/gameState';
-import { PLAYER_ID } from '../../../src/utils/constants';
+import {describe, expect, it} from 'vitest';
+import {executeDieIntent} from '../../../src/simulation/systems/intents/die-intent-executer';
+import {deathReaction} from '../../../src/simulation/systems/world-reactions/death-reaction';
+import {findAttackableEntity, isBlocked} from '../../../src/simulation/state';
+import {
+  executeCleanupDeadEntitiesIntent
+} from '../../../src/simulation/systems/intents/cleanup-dead-entities-intent-executor';
+import {ExecutionBuilder} from '../../../src/simulation/core-types';
+import {makeEnemy, makeGameState} from '../../fixtures/gameState';
+import {PLAYER_ID} from '../../../src/utils/constants';
 
 describe('Deferred Deletion', () => {
   it('executeDieIntent помечает врага isAlive=false, но не удаляет из entities', () => {
@@ -13,7 +15,7 @@ describe('Deferred Deletion', () => {
     const enemy = makeEnemy({ id: 'enemy_1', x: 3, y: 3, hp: 1, isAlive: true });
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: enemy.id } });
+    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: enemy.id } });
     const result = executeDieIntent(
       state,
       { type: 'DIE', entityId: enemy.id, position: { x: 3, y: 3 } },
@@ -29,7 +31,7 @@ describe('Deferred Deletion', () => {
 
   it('executeDieIntent помечает игрока isAlive=false и переводит phase в dead', () => {
     const state = makeGameState();
-    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: PLAYER_ID } });
+    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: PLAYER_ID } });
     const result = executeDieIntent(
       state,
       { type: 'DIE', entityId: PLAYER_ID, position: { x: 5, y: 5 } },
@@ -68,7 +70,7 @@ describe('Deferred Deletion', () => {
     state.entities.set(aliveEnemy.id, aliveEnemy);
     state.entities.set(deadEnemy.id, deadEnemy);
 
-    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 2, actorId: PLAYER_ID });
+    const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 2, actorId: PLAYER_ID });
     executeCleanupDeadEntitiesIntent(state, { type: 'CLEANUP_DEAD_ENTITIES' }, builder, builder.root);
 
     expect(state.entities.has(aliveEnemy.id)).toBe(true);
@@ -82,7 +84,7 @@ describe('Deferred Deletion', () => {
 
     const result = deathReaction(
       state,
-      { type: 'ENTITY_DAMAGED', targetId: enemy.id, sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } },
+      { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: enemy.id, sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } },
       null as any,
       null as any,
     );
@@ -97,7 +99,7 @@ describe('Deferred Deletion', () => {
 
     const result = deathReaction(
       state,
-      { type: 'ENTITY_DAMAGED', targetId: enemy.id, sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } },
+      { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: enemy.id, sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } },
       null as any,
       null as any,
     );

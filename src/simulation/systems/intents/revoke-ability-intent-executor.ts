@@ -35,7 +35,7 @@ export const executeRevokeAbilityIntent: IntentExecutor<RevokeAbilityIntent> = (
   actor.abilities = actor.abilities.filter(a => a.sourceItemInstanceId !== intent.sourceItemInstanceId);
 
   return builder.addChild(parent, {
-    type: 'ABILITY_REVOKED',
+    type: 'ABILITY_REVOKED', isFieldEvent: false,
     entityId: intent.entityId,
     abilityId: ability.templateId,
     sourceItemInstanceId: intent.sourceItemInstanceId,

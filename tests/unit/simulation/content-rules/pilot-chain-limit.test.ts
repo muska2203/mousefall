@@ -4,11 +4,11 @@
  * Файл не мокает utils/rng — здесь важен только механизм отсечки циклов.
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { ExecutionBuilder } from '@simulation/core-types.ts';
-import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
-import type { ActiveRule } from '@simulation/content-rules/types.ts';
-import { makePlayer, makeEnemy, makeStateWithPlayerAndEntity } from '../../../fixtures/gameState';
+import {describe, expect, it, vi} from 'vitest';
+import {ExecutionBuilder} from '@simulation/core-types.ts';
+import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
+import type {ActiveRule} from '@simulation/content-rules/types.ts';
+import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity} from '../../../fixtures/gameState';
 
 describe('лимит глубины цепочки реакций', () => {
   it('прерывает бесконечную реакцию после 1000 шагов и не зависает', () => {
@@ -34,7 +34,7 @@ describe('лимит глубины цепочки реакций', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
     });
 

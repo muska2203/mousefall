@@ -49,7 +49,7 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
   holder.statusEffects = holder.statusEffects.filter(e => e.duration > 0);
 
   const node = builder.addChild(parent, {
-    type: 'STATUS_TICKED',
+    type: 'STATUS_TICKED', isFieldEvent: true,
     entityId: entity.id,
     effectTypes: tickedEffectTypes,
     tags: tickedEffectTypes.map((t) => `status.${t}`),
@@ -57,7 +57,7 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
 
   for (const effect of expired) {
     builder.addChild(node, {
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: entity.id,
       effectType: effect.type,
     });

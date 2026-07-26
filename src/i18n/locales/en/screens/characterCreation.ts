@@ -11,6 +11,7 @@ export const enCharacterCreation = {
   infoTitle: 'Information',
   hintsAlert: 'Game hints — in development',
   hintsButton: 'Game Hints',
+  devlogButton: 'Devlog',
   devlogAlert: 'Devlog — in development',
   startRun: 'Start Run',
   statStrength: 'Strength',

@@ -35,7 +35,7 @@ export const executeSetEntitiesIntent: IntentExecutor<SetEntitiesIntent> = (
   const entityIds = Array.from(entities.keys()).sort((a, b) => a.localeCompare(b));
 
   return builder.addChild(parent, {
-    type: 'ENTITIES_REPLACED',
+    type: 'ENTITIES_REPLACED', isFieldEvent: false,
     entityIds,
   });
 };

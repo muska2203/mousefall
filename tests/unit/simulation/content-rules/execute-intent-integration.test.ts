@@ -2,29 +2,24 @@
  * Интеграционные тесты подключения контентных правил к боевому циклу.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
-  testWorldDamageMultiplier,
-  setWorldContentRulesOverride,
   getWorldContentRules,
+  setWorldContentRulesOverride,
+  testWorldDamageMultiplier,
 } from '../../../fixtures/content-rules';
-import { ExecutionBuilder, ExecutionNode } from '@simulation/core-types.ts';
-import type { GameEvent } from '@simulation/types.ts';
-import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
-import { getContentRule } from '../../../../src/simulation/content-rules/registry';
+import {ExecutionBuilder, ExecutionNode} from '@simulation/core-types.ts';
+import type {GameEvent} from '@simulation/types.ts';
+import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
+import {getContentRule} from '../../../../src/simulation/content-rules/registry';
 import * as randomModule from '../../../../src/utils/random';
-import {
-  makePlayer,
-  makeEnemy,
-  makeStateWithPlayerAndEntity,
-} from '../../../fixtures/gameState';
+import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity,} from '../../../fixtures/gameState';
+import {rngChance} from '../../../../src/utils/rng';
 
 vi.mock('../../../../src/utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
 }));
-
-import { rngChance } from '../../../../src/utils/rng';
 
 function findNodeByEventType(root: ExecutionNode, eventType: string): ExecutionNode | null {
   if (root.event.type === eventType) return root;
@@ -57,7 +52,7 @@ describe('executeIntent + content rules integration', () => {
       state.featureFlags.contentRulesEnabled = true;
 
       const builder = new ExecutionBuilder({
-        type: 'ACTION_APPLIED',
+        type: 'ACTION_APPLIED', isFieldEvent: false,
         action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
       });
 
@@ -86,7 +81,7 @@ describe('executeIntent + content rules integration', () => {
       state.featureFlags.contentRulesEnabled = true;
 
       const builder = new ExecutionBuilder({
-        type: 'ACTION_APPLIED',
+        type: 'ACTION_APPLIED', isFieldEvent: false,
         action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
       });
 
@@ -122,7 +117,7 @@ describe('executeIntent + content rules integration', () => {
       state.featureFlags.contentRulesEnabled = true;
 
       const builder = new ExecutionBuilder({
-        type: 'ACTION_APPLIED',
+        type: 'ACTION_APPLIED', isFieldEvent: false,
         action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
       });
 
@@ -154,7 +149,7 @@ describe('executeIntent + content rules integration', () => {
       state.featureFlags.contentRulesEnabled = true;
 
       const builder = new ExecutionBuilder({
-        type: 'ACTION_APPLIED',
+        type: 'ACTION_APPLIED', isFieldEvent: false,
         action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
       });
 
@@ -181,7 +176,7 @@ describe('executeIntent + content rules integration', () => {
       state.featureFlags.contentRulesEnabled = true;
 
       const builder = new ExecutionBuilder({
-        type: 'ACTION_APPLIED',
+        type: 'ACTION_APPLIED', isFieldEvent: false,
         action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
       });
 
@@ -223,7 +218,7 @@ describe('executeIntent + content rules integration', () => {
         state.featureFlags.contentRulesEnabled = false;
 
         const builder = new ExecutionBuilder({
-          type: 'ACTION_APPLIED',
+          type: 'ACTION_APPLIED', isFieldEvent: false,
           action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
         });
 
@@ -263,7 +258,7 @@ describe('executeIntent + content rules integration', () => {
       state.featureFlags.contentRulesEnabled = false;
 
       const builder = new ExecutionBuilder({
-        type: 'ACTION_APPLIED',
+        type: 'ACTION_APPLIED', isFieldEvent: false,
         action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
       });
 

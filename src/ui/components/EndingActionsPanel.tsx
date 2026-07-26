@@ -48,7 +48,7 @@ export function EndingActionsPanel({onNewRun, onReturnToMenu}: Props) {
             type="button"
             onClick={showDevlogToast}
           >
-            Devlog
+            {t('endingActions.devlogButton')}
           </button>
         </div>
       </Panel>

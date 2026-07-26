@@ -1,14 +1,16 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
-import { tickEntityStatusEffects, tickAllStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
-import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import type { StatusEffect } from '../../../../src/simulation/core-types';
-import { GameSimulation } from '../../../../src/simulation/simulation';
-import { advanceToPlayerTurn } from '../../../helpers/simulation';
-import type { Entity, EntityId } from '../../../../src/simulation/types';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { StatusTemplate } from '../../../../src/content/schemas';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {tickAllStatusEffects, tickEntityStatusEffects} from '../../../../src/simulation/systems/status-effect-ticker';
+import {
+  executeTickStatusEffectsIntent
+} from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
+import type {StatusEffect} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {GameSimulation} from '../../../../src/simulation/simulation';
+import {advanceToPlayerTurn} from '../../../helpers/simulation';
+import type {Entity, EntityId} from '../../../../src/simulation/types';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {StatusTemplate} from '../../../../src/content/schemas';
 
 function mockStatus(id: string, ruleIds: string[] = []): StatusTemplate {
   return {
@@ -87,7 +89,7 @@ describe('status effect tick phases', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     const poisoned = enemy.statusEffects.find(e => e.type === 'poisoned');

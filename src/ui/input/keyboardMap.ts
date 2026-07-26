@@ -1,52 +1,17 @@
 /**
- * Карта клавиш для управления в игровом экране.
+ * Обратно-совместимая точка входа для клавиатурной карты.
  *
- * Правила:
- * - UI не решает, что делать с нажатием — только переводит клавишу в направление.
- * - Решение о действии (MOVE vs ATTACK) принимает Presentation.
+ * Источник данных — `keyboardConfig.ts`. Новый код должен импортировать оттуда напрямую.
  */
 
-export const KEY_MAP: Record<string, [number, number]> = {
-  // Основные 4 направления
-  ArrowUp: [0, -1],
-  w: [0, -1],
-  W: [0, -1],
-  ц: [0, -1],
-  Ц: [0, -1],
-  ArrowDown: [0, 1],
-  s: [0, 1],
-  S: [0, 1],
-  ы: [0, 1],
-  Ы: [0, 1],
-  ArrowLeft: [-1, 0],
-  a: [-1, 0],
-  A: [-1, 0],
-  ф: [-1, 0],
-  Ф: [-1, 0],
-  ArrowRight: [1, 0],
-  d: [1, 0],
-  D: [1, 0],
-  в: [1, 0],
-  В: [1, 0],
-
-  // Диагонали (QWE / ZXC раскладка)
-  q: [-1, -1],
-  Q: [-1, -1],
-  й: [-1, -1],
-  Й: [-1, -1],
-  e: [1, -1],
-  E: [1, -1],
-  у: [1, -1],
-  У: [1, -1],
-  z: [-1, 1],
-  Z: [-1, 1],
-  я: [-1, 1],
-  Я: [-1, 1],
-  c: [1, 1],
-  C: [1, 1],
-  с: [1, 1],
-  С: [1, 1],
-};
-
-/** HTML-теги, при фокусе на которых клавиатурный ввод игнорируется. */
-export const INTERACTIVE_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+export {
+  ACTION_KEY_BINDINGS,
+  DEFAULT_HOTBAR_SIZE,
+  HOTBAR_INDEX_BY_KEY,
+  HOTBAR_KEYS,
+  HOTBAR_LABELS,
+  INTERACTIVE_TAGS,
+  KEY_MAP,
+  matchesActionBinding,
+  getHotbarIndexByKey,
+} from './keyboardConfig';

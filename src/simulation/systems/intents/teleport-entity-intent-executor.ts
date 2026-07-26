@@ -35,7 +35,7 @@ export const executeTeleportEntityIntent: IntentExecutor<TeleportEntityIntent> =
   }
 
   return builder.addChild(parent, {
-    type: 'ENTITY_MOVED',
+    type: 'ENTITY_MOVED', isFieldEvent: true,
     entityId: intent.entityId,
     from,
     to,

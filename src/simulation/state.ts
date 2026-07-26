@@ -13,21 +13,21 @@
  */
 
 import type {
-    Actor,
-    AiActor,
-    Attackable,
-    Attacker,
-    DoorEntity,
-    EnemyEntity,
-    Entity,
-    EntityId,
-    EntityInteractionKind,
-    EntityType,
-    FactionId,
-    GameState,
-    PlayerEntity,
-    Position,
-    TileType,
+  Actor,
+  AiActor,
+  Attackable,
+  Attacker,
+  DoorEntity,
+  EnemyEntity,
+  Entity,
+  EntityId,
+  EntityInteractionKind,
+  EntityType,
+  FactionId,
+  GameState,
+  PlayerEntity,
+  Position,
+  TileType,
 } from './types';
 import type {MapParams} from '@content/schemas';
 import {createRNG} from '../utils/rng';
@@ -145,6 +145,7 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,
+      defeatedBossIds: [],
     },
     featureFlags: {
       contentRulesEnabled: true,
@@ -328,4 +329,14 @@ export function findInteractableEntitiesAround(
     const dy = Math.abs(entity.y - actor.y);
     return Math.max(dx, dy) <= radius;
   });
+}
+
+/**
+ * Гарантирует, что у состояния есть поле runStats.defeatedBossIds.
+ * Используется при загрузке старых сохранений, где поле могло отсутствовать.
+ */
+export function ensureDefeatedBossIds(state: GameState): void {
+  if (!state.runStats.defeatedBossIds) {
+    state.runStats.defeatedBossIds = [];
+  }
 }

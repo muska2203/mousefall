@@ -8,14 +8,14 @@
  * 4. Тушение горящего масла водой (замена эффекта и удаление статуса).
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { GameSimulation } from '../../../src/simulation/simulation';
-import { ExecutionBuilder } from '../../../src/simulation/core-types';
-import { executeIntent } from '../../../src/simulation/systems/intents/execute-intent';
-import { makeGameState, makePlayer, makeTestMap } from '../../fixtures/gameState';
-import { loadTestContent, setupCombatScenario } from '../combat-scenarios/helpers';
-import { advanceToPlayerTurn } from '../../helpers/simulation';
-import type { GameState } from '../../../src/simulation/types';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {GameSimulation} from '../../../src/simulation/simulation';
+import {ExecutionBuilder} from '../../../src/simulation/core-types';
+import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
+import {makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
+import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {advanceToPlayerTurn} from '../../helpers/simulation';
+import type {GameState} from '../../../src/simulation/types';
 
 function createTestPlayer() {
   return makePlayer({
@@ -59,7 +59,7 @@ function spawnWater(simulation: GameSimulation, playerId: string, x: number, y: 
 
 function applyBurningToOil(state: GameState, x: number, y: number) {
   const builder = new ExecutionBuilder({
-    type: 'ACTION_APPLIED',
+    type: 'ACTION_APPLIED', isFieldEvent: false,
     action: { type: 'END_TURN', entityId: state.player.id },
   });
   executeIntent(

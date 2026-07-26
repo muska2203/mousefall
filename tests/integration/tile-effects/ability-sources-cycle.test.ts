@@ -9,14 +9,14 @@
  * 5. Игрок кастует rain на горящее масло → масло заменяется водой, burning удаляется.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { GameSimulation } from '../../../src/simulation/simulation';
-import { ExecutionBuilder } from '../../../src/simulation/core-types';
-import { executeIntent } from '../../../src/simulation/systems/intents/execute-intent';
-import { makeGameState, makePlayer, makeTestMap, makeEnemy } from '../../fixtures/gameState';
-import { loadTestContent, setupCombatScenario } from '../combat-scenarios/helpers';
-import { advanceToPlayerTurn } from '../../helpers/simulation';
-import type { GameState } from '../../../src/simulation/types';
+import {beforeEach, describe, expect, it} from 'vitest';
+import {GameSimulation} from '../../../src/simulation/simulation';
+import {ExecutionBuilder} from '../../../src/simulation/core-types';
+import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
+import {makeEnemy, makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
+import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {advanceToPlayerTurn} from '../../helpers/simulation';
+import type {GameState} from '../../../src/simulation/types';
 
 function createTestPlayer() {
   return makePlayer({
@@ -85,7 +85,7 @@ describe('Цикл способностей rain и oil_flask', () => {
     state.entities.set(enemy.id, enemy);
 
     const damageBuilder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: player.id },
     });
     executeIntent(

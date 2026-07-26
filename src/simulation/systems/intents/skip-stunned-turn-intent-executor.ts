@@ -30,7 +30,7 @@ export const executeSkipStunnedTurnIntent: IntentExecutor<SkipStunnedTurnIntent>
   effect.duration -= 1;
 
   const tickNode = builder.addChild(parent, {
-    type: 'STATUS_TICKED',
+    type: 'STATUS_TICKED', isFieldEvent: true,
     entityId: entity.id,
     effectTypes: ['stunned'],
     tags: ['status.stunned'],
@@ -42,7 +42,7 @@ export const executeSkipStunnedTurnIntent: IntentExecutor<SkipStunnedTurnIntent>
     }
     holder.statusEffects.splice(index, 1);
     builder.addChild(tickNode, {
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: entity.id,
       effectType: 'stunned',
     });
@@ -52,7 +52,7 @@ export const executeSkipStunnedTurnIntent: IntentExecutor<SkipStunnedTurnIntent>
   holder.ap = 0;
 
   builder.addChild(tickNode, {
-    type: 'RESOURCE_CONSUMED',
+    type: 'RESOURCE_CONSUMED', isFieldEvent: false,
     entityId: entity.id,
     resource: 'ap',
     amount: apBefore,

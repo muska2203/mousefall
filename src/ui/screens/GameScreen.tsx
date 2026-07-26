@@ -12,7 +12,7 @@ import {useTranslation} from '@i18n/hooks';
 import type {AnimationNode} from '@presentation/types';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
 
-import {INTERACTIVE_TAGS, KEY_MAP} from '@ui/input/keyboardMap';
+import {getHotbarIndexByKey, INTERACTIVE_TAGS, KEY_MAP, matchesActionBinding,} from '@ui/input/keyboardConfig';
 import {ThreeColumnLayout} from '@ui/components/ThreeColumnLayout';
 import {HeroPanel} from '@ui/components/HeroPanel';
 import {EquipmentPanel} from '@ui/components/EquipmentPanel';
@@ -29,15 +29,6 @@ interface Props {
   session: GameSession;
   onModeChange: (mode: SessionMode) => void;
 }
-
-/** Преобразует нажатую цифру в индекс слота хотбара (1→0, ..., 9→8, 0→9). */
-function keyToHotbarIndex(key: string): number {
-  if (key >= '1' && key <= '9') return Number(key) - 1;
-  if (key === '0') return 9;
-  return -1;
-}
-
-
 
 function getSnapshot(session: GameSession) {
   return session.getViewModel();
@@ -269,7 +260,7 @@ export function GameScreen({session, onModeChange}: Props) {
       }
 
       // Отмена таргетинга или ожидания спавна
-      if (e.key === 'Escape') {
+      if (matchesActionBinding('cancelTargeting', e)) {
         e.preventDefault();
         if (pendingDebugSpawn) {
           setPendingDebugSpawn(null);
@@ -280,21 +271,21 @@ export function GameScreen({session, onModeChange}: Props) {
       }
 
       // F / А: выполнить текущее доступное взаимодействие.
-      if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') {
+      if (matchesActionBinding('interact', e)) {
         e.preventDefault();
         handleInteract();
         return;
       }
 
       // Tab: переключиться на следующее доступное взаимодействие.
-      if (e.key === 'Tab') {
+      if (matchesActionBinding('cycleInteraction', e)) {
         e.preventDefault();
         handleCycleInteraction();
         return;
       }
 
       // Пробел: END_TURN (завершение хода игрока). В режиме таргетинга — отмена таргетинга.
-      if (e.key === ' ' || e.key === 'Spacebar') {
+      if (matchesActionBinding('endTurn', e)) {
         e.preventDefault();
         if (session.isTargeting()) {
           session.cancelTargeting();
@@ -305,7 +296,7 @@ export function GameScreen({session, onModeChange}: Props) {
       }
 
       // Backquote: переключить debug-панель (только в dev-сборке)
-      if (e.key === '`' || e.key === '~' || e.code === 'Backquote') {
+      if (matchesActionBinding('toggleDebug', e)) {
         if (import.meta.env.DEV) {
           e.preventDefault();
           session.toggleDebug();
@@ -314,7 +305,7 @@ export function GameScreen({session, onModeChange}: Props) {
       }
 
       // Цифры 1–9, 0: активация слотов хотбара.
-      const hotbarIndex = keyToHotbarIndex(e.key);
+      const hotbarIndex = getHotbarIndexByKey(e.key);
       if (hotbarIndex !== -1) {
         e.preventDefault();
         handleHotbarClick(hotbarIndex);
@@ -351,7 +342,7 @@ export function GameScreen({session, onModeChange}: Props) {
   }
 
   const ps = renderInput.playerStats;
-  const portraitImg = GameSession.getPlayerPortraitSrc(renderInput.state.player.templateId) ?? '/assets/portraits/witcher-ready.png';
+  const portraitImg = GameSession.getPlayerPortraitSrc(renderInput.state.player.templateId);
 
 
 

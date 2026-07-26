@@ -1,12 +1,11 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import { useAbilityAction } from '../../../../src/simulation/systems/actions/use-ability-action';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate } from '../../../../src/content/schemas';
-import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-import { makeEnemy } from '../../../fixtures/gameState';
-import type { EntityId } from '../../../../src/simulation/types';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {useAbilityAction} from '../../../../src/simulation/systems/actions/use-ability-action';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {AbilityTemplate} from '../../../../src/content/schemas';
+import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
+import {initSkillRegistry} from '../../../../src/simulation/skills/index';
+import type {EntityId} from '../../../../src/simulation/types';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -167,7 +166,7 @@ describe('useAbilityAction', () => {
     expect(validation.ok).toBe(true);
 
     const intents = useAbilityAction.resolve(state, action);
-    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action });
+    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action });
     useAbilityAction.execute(state, action, intents, builder, builder.root);
 
     const ability = player.abilities.find(a => a.templateId === 'fireball');
@@ -188,7 +187,7 @@ describe('useAbilityAction', () => {
 
     const action = { type: 'USE_ABILITY' as const, entityId: 'player', abilityId: 'fireball', targets: [{ x: 6, y: 5 }] };
     const intents = useAbilityAction.resolve(state, action);
-    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action });
+    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action });
     useAbilityAction.execute(state, action, intents, builder, builder.root);
 
     // Корень: ACTION_APPLIED

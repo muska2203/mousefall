@@ -1,8 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { aiPerceptionReaction } from '@simulation/systems/world-reactions/ai-perception-reaction';
-import type { GameEvent } from '@simulation/types';
-import { makeGameState, makeEnemy, makePlayer } from '../../../fixtures/gameState';
-import type { Entity, EntityId, GameState } from '@simulation/types';
+import {describe, expect, it} from 'vitest';
+import {aiPerceptionReaction} from '@simulation/systems/world-reactions/ai-perception-reaction';
+import type {Entity, EntityId, GameEvent, GameState} from '@simulation/types';
+import {makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
 
 function createStateWithEnemies(playerX: number, playerY: number, enemies: Entity[]): GameState {
   const player = makePlayer({ x: playerX, y: playerY });
@@ -17,7 +16,7 @@ describe('aiPerceptionReaction', () => {
     const state = createStateWithEnemies(5, 5, [nearEnemy, farEnemy]);
 
     const event: GameEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', isFieldEvent: true,
       entityId: 'player',
       from: { x: 5, y: 4 },
       to: { x: 5, y: 5 },
@@ -44,7 +43,7 @@ describe('aiPerceptionReaction', () => {
     const state = createStateWithEnemies(5, 5, [enemy]);
 
     const event: GameEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', isFieldEvent: true,
       entityId: 'enemy_self',
       from: { x: 5, y: 4 },
       to: { x: 5, y: 3 },
@@ -61,7 +60,7 @@ describe('aiPerceptionReaction', () => {
     const state = createStateWithEnemies(5, 5, [enemy]);
 
     const event: GameEvent = {
-      type: 'DOOR_OPENED',
+      type: 'DOOR_OPENED', isFieldEvent: true,
       position: { x: 5, y: 4 },
     };
 
@@ -80,7 +79,7 @@ describe('aiPerceptionReaction', () => {
     const state = createStateWithEnemies(5, 5, [enemy]);
 
     const event: GameEvent = {
-      type: 'DOOR_CLOSED',
+      type: 'DOOR_CLOSED', isFieldEvent: true,
       position: { x: 5, y: 4 },
     };
 
@@ -99,7 +98,7 @@ describe('aiPerceptionReaction', () => {
     const state = createStateWithEnemies(5, 5, [enemy]);
 
     const event: GameEvent = {
-      type: 'RESOURCE_CONSUMED',
+      type: 'RESOURCE_CONSUMED', isFieldEvent: false,
       entityId: 'player',
       resource: 'ap',
       amount: 1,

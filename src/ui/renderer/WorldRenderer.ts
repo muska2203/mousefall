@@ -6,7 +6,7 @@
  * Поддерживает Promise-based анимации перемещения и плавное следование камеры.
  */
 
-import {Container, Graphics, Ticker} from 'pixi.js';
+import {Container, Ticker} from 'pixi.js';
 import type {Position, RenderInput} from '@presentation/types';
 import {TILE_SIZE} from '@utils/constants';
 import {TileRenderer} from './TileRenderer';
@@ -19,7 +19,7 @@ import {TargetingRenderer} from './TargetingRenderer';
 import {DebugMapRenderer} from './DebugMapRenderer';
 import {UnitInfoRenderer} from './UnitInfoRenderer';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-import {lerp, runTickerTween, type TickerLike, Tween} from '@utils/tween';
+import {lerp, type TickerLike, Tween} from '@utils/tween';
 
 type CameraAnimation = {
   tween: Tween;
@@ -44,7 +44,7 @@ export class WorldRenderer {
 
   private cameraAnimation: CameraAnimation | null = null;
   /** Текущая мировая позиция камеры (в пикселях тайлов), обновляется tween'ом. */
-  private cameraWorldPos: { x: number; y: number } | null = null;
+  private _cameraWorldPos: { x: number; y: number } | null = null;
   private lastInput: RenderInput | null = null;
 
   constructor(viewportWidth: number, viewportHeight: number) {
@@ -113,11 +113,11 @@ export class WorldRenderer {
 
     this.root.scale.set(scale);
 
-    if (this.cameraAnimation && this.cameraWorldPos) {
+    if (this.cameraAnimation && this._cameraWorldPos) {
       // Пока активна камерная анимация, мировая позиция камеры управляется tween'ом.
       // render() только применяет текущий zoom к уже вычисленным мировым координатам.
-      cameraX = this.cameraWorldPos.x;
-      cameraY = this.cameraWorldPos.y;
+      cameraX = this._cameraWorldPos.x;
+      cameraY = this._cameraWorldPos.y;
       this.root.x = -cameraX * scale;
       this.root.y = -cameraY * scale;
     } else {
@@ -130,7 +130,7 @@ export class WorldRenderer {
 
       this.root.x = -cameraX * scale;
       this.root.y = -cameraY * scale;
-      this.cameraWorldPos = { x: cameraX, y: cameraY };
+      this._cameraWorldPos = { x: cameraX, y: cameraY };
     }
 
     this.tileRenderer.update(input, cameraX, cameraY, viewW, viewH);
@@ -208,189 +208,9 @@ export class WorldRenderer {
     return this.entityRenderer.animateCast(entityId, config);
   }
 
-  /** Анимировать дугу рассечения от кастера к нескольким клеткам.
-   *  Рисует одну красную дугу, центр которой совпадает с клеткой кастующего.
-   *  Дуга строится вокруг центральной клетки positions[1] и охватывает 90°.
-   *  Быстро «взмахивает» и затухает.
-   *  Использует runTickerTween, чтобы tween обновлялся через PixiJS ticker. */
-  animateSlashArc(from: Position, positions: Position[], config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
-    const centerX = from.x * TILE_SIZE + TILE_SIZE / 2;
-    const centerY = from.y * TILE_SIZE + TILE_SIZE / 2;
-    const radius = TILE_SIZE * Math.SQRT2;
-    const color = 0xe74c3c;
-    const lineWidth = TILE_SIZE / 3;
-
-    const target = positions[1];
-    if (!target) {
-      return Promise.resolve();
-    }
-
-    const midAngle = Math.atan2(
-      target.y * TILE_SIZE + TILE_SIZE / 2 - centerY,
-      target.x * TILE_SIZE + TILE_SIZE / 2 - centerX,
-    );
-    const startAngle = midAngle - Math.PI / 4;
-    const endAngle = midAngle + Math.PI / 4;
-
-    const g = new Graphics();
-    g.x = centerX;
-    g.y = centerY;
-    g.alpha = 0;
-    this.root.addChild(g);
-
-    return new Promise((resolve) => {
-      runTickerTween({
-        duration: config.duration,
-        easing: config.easing,
-        onUpdate: (p) => {
-          let currentEndAngle: number;
-          let alpha: number;
-
-          if (p <= 0.5) {
-            // Первая половина: дуга «разворачивается» от начального угла к конечному
-            // и одновременно появляется из прозрачности.
-            const t = p * 2;
-            currentEndAngle = lerp(startAngle, endAngle, t);
-            alpha = lerp(0, 0.9, t);
-          } else {
-            // Вторая половина: полная дуга быстро затухает.
-            currentEndAngle = endAngle;
-            const t = (p - 0.5) * 2;
-            alpha = lerp(0.9, 0, t);
-          }
-
-          g.clear();
-          g.arc(0, 0, radius, startAngle, currentEndAngle, false);
-          g.stroke({ width: lineWidth, color });
-          g.alpha = alpha;
-        },
-        onComplete: () => {
-          g.destroy();
-          resolve();
-        },
-      }, ticker);
-    });
-  }
-
-  /** Анимировать полёт снаряда от кастера до цели.
-   *  Рисует красный круг, который движется по прямой между центрами тайлов.
-   *  Если fromSky === true, снаряд стартует за верхней границей viewport.
-   *  Использует runTickerTween, чтобы tween обновлялся через PixiJS ticker. */
-  animateProjectile(from: Position, to: Position, fromSky: boolean, config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
-    return new Promise((resolve) => {
-      const g = new Graphics();
-      const radius = TILE_SIZE / 4;
-      g.circle(0, 0, radius);
-      g.fill({ color: 0xff3300 });
-
-      const fromX = from.x * TILE_SIZE + TILE_SIZE / 2;
-      const fromY = fromSky
-        ? (this.cameraWorldPos?.y ?? 0) - TILE_SIZE
-        : from.y * TILE_SIZE + TILE_SIZE / 2;
-      const toX = to.x * TILE_SIZE + TILE_SIZE / 2;
-      const toY = to.y * TILE_SIZE + TILE_SIZE / 2;
-
-      g.x = fromX;
-      g.y = fromY;
-      this.root.addChild(g);
-
-      runTickerTween({
-        duration: config.duration,
-        easing: config.easing,
-        onUpdate: (p) => {
-          g.x = lerp(fromX, toX, p);
-          g.y = lerp(fromY, toY, p);
-        },
-        onComplete: () => {
-          g.destroy();
-          resolve();
-        },
-      }, ticker);
-    });
-  }
-
-  /** Анимировать взрыв в указанной позиции.
-   *  Красный круг расширяется и растворяется.
-   *  Использует runTickerTween, чтобы tween обновлялся через PixiJS ticker. */
-  animateExplosion(center: Position, config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
-    return new Promise((resolve) => {
-      const g = new Graphics();
-      const baseRadius = TILE_SIZE / 2;
-      g.circle(0, 0, baseRadius);
-      g.fill({ color: 0xff3300, alpha: 0.8 });
-
-      const centerX = center.x * TILE_SIZE + TILE_SIZE / 2;
-      const centerY = center.y * TILE_SIZE + TILE_SIZE / 2;
-      g.x = centerX;
-      g.y = centerY;
-      this.root.addChild(g);
-
-      runTickerTween({
-        duration: config.duration,
-        easing: config.easing,
-        onUpdate: (p) => {
-          g.scale.set(lerp(1, 2.5, p));
-          g.alpha = lerp(0.8, 0, p);
-        },
-        onComplete: () => {
-          g.destroy();
-          resolve();
-        },
-      }, ticker);
-    });
-  }
-
-  /** Анимировать вспышку статус-эффекта: частицы, разлетающиеся от центра.
-   *  Цвет зависит от типа статуса. */
-  animateStatusBurst(center: Position, statusType: string, config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
-    const colors: Record<string, number> = {
-      burning: 0xff4400,
-      poisoned: 0x44ff44,
-      frozen: 0x88ddff,
-      stunned: 0xffff00,
-      regenerating: 0x44ff88,
-      ticked: 0xffaa00,
-    };
-    const color = colors[statusType] ?? 0xffffff;
-    const centerX = center.x * TILE_SIZE + TILE_SIZE / 2;
-    const centerY = center.y * TILE_SIZE + TILE_SIZE / 2;
-    const particleCount = 6;
-
-    const particles = Array.from({ length: particleCount }, (_, i) => {
-      const g = new Graphics();
-      g.circle(0, 0, 3);
-      g.fill({ color, alpha: 0.9 });
-      g.x = centerX;
-      g.y = centerY;
-      this.root.addChild(g);
-
-      const angle = (i / particleCount) * Math.PI * 2;
-      const speed = TILE_SIZE * 0.3 + ((i % 3) * TILE_SIZE * 0.15);
-      const targetX = centerX + Math.cos(angle) * speed;
-      const targetY = centerY + Math.sin(angle) * speed;
-
-      return { g, targetX, targetY };
-    });
-
-    return new Promise((resolve) => {
-      runTickerTween({
-        duration: config.duration,
-        easing: config.easing,
-        onUpdate: (p) => {
-          for (const { g, targetX, targetY } of particles) {
-            g.x = lerp(centerX, targetX, p);
-            g.y = lerp(centerY, targetY, p);
-            g.alpha = lerp(0.9, 0, p);
-          }
-        },
-        onComplete: () => {
-          for (const { g } of particles) {
-            g.destroy();
-          }
-          resolve();
-        },
-      }, ticker);
-    });
+  /** Текущая мировая позиция камеры (в пикселях тайлов) или null до первого render(). */
+  get cameraWorldPos(): { x: number; y: number } | null {
+    return this._cameraWorldPos;
   }
 
   /** Преобразовать экранные координаты в координаты тайла мира.
@@ -399,7 +219,7 @@ export class WorldRenderer {
     const input = this.lastInput;
     if (!input) return { x: 0, y: 0 };
     const scale = input.zoom;
-    const cameraWorldPos = this.cameraWorldPos ?? this.computeCameraWorldPos(input);
+    const cameraWorldPos = this._cameraWorldPos ?? this.computeCameraWorldPos(input);
     return {
       x: Math.floor((screenX / scale + cameraWorldPos.x) / TILE_SIZE),
       y: Math.floor((screenY / scale + cameraWorldPos.y) / TILE_SIZE),
@@ -462,7 +282,7 @@ export class WorldRenderer {
           const x = lerp(fromX, toX, p);
           const y = lerp(fromY, toY, p);
 
-          this.cameraWorldPos = { x, y };
+          this._cameraWorldPos = { x, y };
         },
         onComplete: () => {
           // Защита от устаревшего onComplete: старый tween мог быть отменён.
@@ -471,7 +291,7 @@ export class WorldRenderer {
           const scale = this.root.scale.x || 1;
           const viewW = this.viewportWidth / scale;
           const viewH = this.viewportHeight / scale;
-          this.cameraWorldPos = {
+          this._cameraWorldPos = {
             x: toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
             y: toTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2,
           };
@@ -498,7 +318,7 @@ export class WorldRenderer {
   };
 
   private updateCamera(now: number): void {
-    if (!this.cameraAnimation || !this.cameraWorldPos) return;
+    if (!this.cameraAnimation || !this._cameraWorldPos) return;
     const finished = this.cameraAnimation.tween.update(now);
     if (finished) {
       this.cameraAnimation = null;
@@ -506,8 +326,8 @@ export class WorldRenderer {
     // Применяем текущий zoom к мировой позиции камеры. Это корректно обрабатывает
     // изменение масштаба во время движения камеры.
     const scale = this.root.scale.x || 1;
-    this.root.x = -this.cameraWorldPos.x * scale;
-    this.root.y = -this.cameraWorldPos.y * scale;
+    this.root.x = -this._cameraWorldPos.x * scale;
+    this.root.y = -this._cameraWorldPos.y * scale;
   }
 
   /** Возвращает true, если камера сейчас анимируется. */
@@ -521,7 +341,7 @@ export class WorldRenderer {
       return { x: worldPos.x * TILE_SIZE, y: worldPos.y * TILE_SIZE };
     }
     const scale = this.lastInput.zoom;
-    const cameraWorldPos = this.cameraWorldPos ?? this.computeCameraWorldPos(this.lastInput);
+    const cameraWorldPos = this._cameraWorldPos ?? this.computeCameraWorldPos(this.lastInput);
     return {
       x: (worldPos.x * TILE_SIZE - cameraWorldPos.x) * scale,
       y: (worldPos.y * TILE_SIZE - cameraWorldPos.y) * scale,
@@ -555,7 +375,7 @@ export class WorldRenderer {
     this.floatingTextRenderer.clear();
     this.unitInfoRenderer.destroy();
     this.cameraAnimation = null;
-    this.cameraWorldPos = null;
+    this._cameraWorldPos = null;
     this.lastInput = null;
     this.root.destroy({children: true});
     this.textLayer.destroy({children: true});

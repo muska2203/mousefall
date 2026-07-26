@@ -1,14 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makeTestMap } from '../../../fixtures/gameState.ts';
-import { executeSetMapIntent } from '@simulation/systems/intents/set-map-intent-executor';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
+import {describe, expect, it} from 'vitest';
+import {makeGameState, makeTestMap} from '../../../fixtures/gameState.ts';
+import {executeSetMapIntent} from '@simulation/systems/intents/set-map-intent-executor';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
 
 describe('executeSetMapIntent', () => {
   it('устанавливает карту, пересоздаёт visible и explored', () => {
     const state = makeGameState();
     const newMap = makeTestMap(12, 8);
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: 'player' },
     });
 
@@ -40,7 +40,7 @@ describe('executeSetMapIntent', () => {
     explored[2]![2] = true;
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: 'player' },
     });
 

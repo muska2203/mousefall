@@ -2,24 +2,14 @@
  * Unit tests for DisplayState core.
  */
 
-import { describe, expect, it } from 'vitest';
-import type { Entity, GameEvent, GameState } from '../../../../src/simulation/types';
-import type { TileEffectInstance, TileEffects } from '../../../../src/simulation/core-types';
-import {
-  buildDisplayState,
-  createPatch,
-  applyPatch,
-} from '../../../../src/presentation/displayState/builder';
-import { resyncDisplayState } from '../../../../src/presentation/displayState/sync';
-import {
-  makeGameState,
-  makePlayer,
-  makeEnemy,
-  makeDoor,
-  makeFloorItemContainer,
-} from '../../../fixtures/gameState';
-import { PLAYER_ID } from '../../../../src/utils/constants';
-import type { DisplayPatch } from '../../../../src/presentation/displayState/types';
+import {describe, expect, it} from 'vitest';
+import type {Entity, GameEvent, GameState} from '../../../../src/simulation/types';
+import type {TileEffectInstance, TileEffects} from '../../../../src/simulation/core-types';
+import {applyPatch, buildDisplayState, createPatch,} from '../../../../src/presentation/displayState/builder';
+import {resyncDisplayState} from '../../../../src/presentation/displayState/sync';
+import {makeDoor, makeEnemy, makeFloorItemContainer, makeGameState, makePlayer,} from '../../../fixtures/gameState';
+import {PLAYER_ID} from '../../../../src/utils/constants';
+import type {DisplayPatch} from '../../../../src/presentation/displayState/types';
 
 function makeMinimalState(): GameState {
   return makeGameState({
@@ -114,7 +104,7 @@ describe('buildDisplayState', () => {
 describe('createPatch', () => {
   it('maps ENTITY_MOVED to position patch', () => {
     const event: GameEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', isFieldEvent: true,
       entityId: 'player',
       from: { x: 5, y: 5 },
       to: { x: 6, y: 5 },
@@ -131,7 +121,7 @@ describe('createPatch', () => {
 
   it('maps ENTITY_DAMAGED to hp patch', () => {
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: 'enemy_test_1',
       sourceEntityId: null,
       damage: 7,
@@ -148,7 +138,7 @@ describe('createPatch', () => {
 
   it('maps ENTITY_HEALED to heal patch', () => {
     const event: GameEvent = {
-      type: 'ENTITY_HEALED',
+      type: 'ENTITY_HEALED', isFieldEvent: true,
       entityId: PLAYER_ID,
       amount: 10,
       newHp: 90,
@@ -165,7 +155,7 @@ describe('createPatch', () => {
 
   it('maps ENTITY_DIED to death patch', () => {
     const event: GameEvent = {
-      type: 'ENTITY_DIED',
+      type: 'ENTITY_DIED', isFieldEvent: true,
       entityId: 'enemy_test_1',
       position: { x: 3, y: 3 },
     };
@@ -176,7 +166,7 @@ describe('createPatch', () => {
   it('maps STATUS_APPLIED to status patch', () => {
     const effect = { type: 'poisoned', duration: 3, value: 2 } as any;
     const event: GameEvent = {
-      type: 'STATUS_APPLIED',
+      type: 'STATUS_APPLIED', isFieldEvent: true,
       entityId: 'enemy_test_1',
       sourceEntityId: null,
       effect,
@@ -191,7 +181,7 @@ describe('createPatch', () => {
 
   it('maps STATUS_REMOVED to status removal patch', () => {
     const event: GameEvent = {
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: 'enemy_test_1',
       effectType: 'poisoned',
     };
@@ -205,7 +195,7 @@ describe('createPatch', () => {
 
   it('returns NO_OP for STATUS_BLOCKED', () => {
     const event: GameEvent = {
-      type: 'STATUS_BLOCKED',
+      type: 'STATUS_BLOCKED', isFieldEvent: true,
       entityId: 'enemy_test_1',
       sourceEntityId: null,
       statusType: 'burning',
@@ -228,7 +218,7 @@ describe('createPatch', () => {
       explored,
     });
     const event: GameEvent = {
-      type: 'FOG_UPDATED',
+      type: 'FOG_UPDATED', isFieldEvent: true,
       newlyVisible: [{ x: 6, y: 5 }],
     };
     const patch = createPatch(event, state);
@@ -240,14 +230,14 @@ describe('createPatch', () => {
   });
 
   it('maps DOOR_OPENED to door patch', () => {
-    const event: GameEvent = { type: 'DOOR_OPENED', position: { x: 4, y: 5 } };
+    const event: GameEvent = { type: 'DOOR_OPENED', isFieldEvent: true, position: { x: 4, y: 5 } };
     const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({ type: 'DOOR_OPENED', position: { x: 4, y: 5 } });
   });
 
   it('maps ITEM_DROPPED to container spawn patch', () => {
     const event: GameEvent = {
-      type: 'ITEM_DROPPED',
+      type: 'ITEM_DROPPED', isFieldEvent: true,
       dropperEntityId: 'enemy_test_1',
       itemInstanceId: 'item_1',
       containerId: 'floor_container_1',
@@ -271,13 +261,13 @@ describe('createPatch', () => {
 
   it('returns NO_OP for non-visual events', () => {
     const action: GameEvent = {
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'MOVE', entityId: PLAYER_ID, dx: 1, dy: 0 },
     };
     expect(createPatch(action, makeMinimalState())).toEqual({ type: 'NO_OP' });
 
     const resource: GameEvent = {
-      type: 'RESOURCE_CONSUMED',
+      type: 'RESOURCE_CONSUMED', isFieldEvent: false,
       entityId: PLAYER_ID,
       resource: 'ap',
       amount: 1,
@@ -286,7 +276,7 @@ describe('createPatch', () => {
     expect(createPatch(resource, makeMinimalState())).toEqual({ type: 'NO_OP' });
 
     const cooldown: GameEvent = {
-      type: 'COOLDOWN_SET',
+      type: 'COOLDOWN_SET', isFieldEvent: false,
       entityId: PLAYER_ID,
       abilityId: 'dash',
       turns: 2,
@@ -311,7 +301,7 @@ describe('createPatch', () => {
     };
 
     const event: GameEvent = {
-      type: 'TILE_EFFECT_CHANGED',
+      type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
       effectType: 'oil',
       position: { x: 3, y: 3 },
       isNew: true,
@@ -345,7 +335,7 @@ describe('createPatch', () => {
     };
 
     const event: GameEvent = {
-      type: 'TILE_EFFECT_REMOVED',
+      type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
       effectType: 'oil',
       position: { x: 3, y: 3 },
     };
@@ -377,7 +367,7 @@ describe('createPatch', () => {
     };
 
     const event: GameEvent = {
-      type: 'TILE_EFFECT_STATUS_APPLIED',
+      type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true,
       effectType: 'oil',
       statusType: 'burning',
       position: { x: 3, y: 3 },
@@ -399,7 +389,7 @@ describe('createPatch', () => {
 
   it('returns NO_OP for TILE_EFFECT_STATUS_TICKED and TILE_EFFECT_TICKED', () => {
     const tickedStatus: GameEvent = {
-      type: 'TILE_EFFECT_STATUS_TICKED',
+      type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
       effectType: 'oil',
       statusType: 'burning',
       position: { x: 3, y: 3 },
@@ -407,7 +397,7 @@ describe('createPatch', () => {
     expect(createPatch(tickedStatus, makeMinimalState())).toEqual({ type: 'NO_OP' });
 
     const ticked: GameEvent = {
-      type: 'TILE_EFFECT_TICKED',
+      type: 'TILE_EFFECT_TICKED', isFieldEvent: false,
       effectType: 'oil',
       position: { x: 3, y: 3 },
     };
@@ -419,7 +409,7 @@ describe('applyPatch', () => {
   it('updates entity position', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
     const patch = createPatch({
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', isFieldEvent: true,
       entityId: PLAYER_ID,
       from: { x: 5, y: 5 },
       to: { x: 6, y: 5 },
@@ -435,7 +425,7 @@ describe('applyPatch', () => {
   it('reduces HP on damage and clamps to zero', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
     const patch = createPatch({
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: PLAYER_ID,
       sourceEntityId: null,
       damage: 120,
@@ -452,7 +442,7 @@ describe('applyPatch', () => {
     const player = makePlayer({ hp: 50, maxHp: 100 });
     const state = buildDisplayState(makeGameState({ player, entities: new Map([[player.id, player]]) }));
     const patch = createPatch({
-      type: 'ENTITY_HEALED',
+      type: 'ENTITY_HEALED', isFieldEvent: true,
       entityId: PLAYER_ID,
       amount: 100,
       newHp: 200,
@@ -470,7 +460,7 @@ describe('applyPatch', () => {
     const state = buildDisplayState(makeGameState({ player, entities: new Map([[player.id, player]]) }));
 
     const applied = createPatch({
-      type: 'STATUS_APPLIED',
+      type: 'STATUS_APPLIED', isFieldEvent: true,
       entityId: PLAYER_ID,
       sourceEntityId: null,
       effect: { type: 'poisoned', duration: 5, value: 2 } as any,
@@ -479,7 +469,7 @@ describe('applyPatch', () => {
     expect(withPoison.player.statusEffects!.map((e) => e.type)).toEqual(['burning', 'poisoned']);
 
     const removed = createPatch({
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: PLAYER_ID,
       effectType: 'burning',
     }, makeMinimalState());
@@ -531,7 +521,7 @@ describe('applyPatch', () => {
 
   it('updates door open state', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
-    const patch = createPatch({ type: 'DOOR_OPENED', position: { x: 4, y: 5 } }, makeMinimalState());
+    const patch = createPatch({ type: 'DOOR_OPENED', isFieldEvent: true, position: { x: 4, y: 5 } }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.entities.get('door_1')!.isOpen).toBe(true);
@@ -541,7 +531,7 @@ describe('applyPatch', () => {
   it('adds a floor item container on ITEM_DROPPED', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
     const patch = createPatch({
-      type: 'ITEM_DROPPED',
+      type: 'ITEM_DROPPED', isFieldEvent: true,
       dropperEntityId: 'enemy_test_1',
       itemInstanceId: 'item_2',
       containerId: 'floor_container_2',
@@ -561,7 +551,7 @@ describe('applyPatch', () => {
   it('removes dead entities on DEAD_ENTITIES_CLEANED', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
     const patch = createPatch({
-      type: 'DEAD_ENTITIES_CLEANED',
+      type: 'DEAD_ENTITIES_CLEANED', isFieldEvent: true,
       removed: [{ entityId: 'door_1', position: { x: 4, y: 5 } }],
     }, makeMinimalState());
     const next = applyPatch(state, patch);
@@ -572,7 +562,7 @@ describe('applyPatch', () => {
 
   it('updates player death and phase', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
-    const patch = createPatch({ type: 'PLAYER_DIED' }, makeMinimalState());
+    const patch = createPatch({ type: 'PLAYER_DIED', isFieldEvent: false }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.player.isAlive).toBe(false);
@@ -582,7 +572,7 @@ describe('applyPatch', () => {
 
   it('updates player level on PLAYER_LEVELED_UP', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
-    const patch = createPatch({ type: 'PLAYER_LEVELED_UP', newLevel: 2 }, makeMinimalState());
+    const patch = createPatch({ type: 'PLAYER_LEVELED_UP', isFieldEvent: false, newLevel: 2 }, makeMinimalState());
     const next = applyPatch(state, patch);
 
     expect(next.player.level).toBe(2);
@@ -591,7 +581,7 @@ describe('applyPatch', () => {
   it('updates meta on TURN_BEGAN', () => {
     const state = buildDisplayState(buildStateWithDoorAndItem());
     const patch = createPatch({
-      type: 'TURN_BEGAN',
+      type: 'TURN_BEGAN', isFieldEvent: false,
       side: 'enemies',
       round: 1,
       actorId: 'enemy_test_1',

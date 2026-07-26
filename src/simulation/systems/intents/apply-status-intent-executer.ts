@@ -34,7 +34,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
 
   if (conflictResult.blockedBy) {
     return builder.addChild(parent, {
-      type: 'STATUS_BLOCKED',
+      type: 'STATUS_BLOCKED', isFieldEvent: true,
       entityId: intent.entityId,
       sourceEntityId: intent.sourceEntityId ?? null,
       statusType: intent.status.type,
@@ -50,7 +50,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
         removeActiveRulesForStatus(target, removed.instanceId ?? removed.type);
       }
       builder.addChild(parent, {
-        type: 'STATUS_REMOVED',
+        type: 'STATUS_REMOVED', isFieldEvent: true,
         entityId: intent.entityId,
         effectType: exclusiveType as StatusEffectType,
       });
@@ -87,7 +87,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
     const prepared = cancelPreparedAbility(enemy);
     if (prepared) {
       builder.addChild(parent, {
-        type: 'ABILITY_PREPARED_CANCELLED',
+        type: 'ABILITY_PREPARED_CANCELLED', isFieldEvent: false,
         entityId: intent.entityId,
         abilityId: prepared.abilityId,
         targets: prepared.targets,
@@ -97,7 +97,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   }
 
   return builder.addChild(parent, {
-    type: 'STATUS_APPLIED',
+    type: 'STATUS_APPLIED', isFieldEvent: true,
     entityId: intent.entityId,
     sourceEntityId: intent.sourceEntityId ?? null,
     effect: intent.status,

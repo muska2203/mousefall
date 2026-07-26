@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../fixtures/gameState';
-import type { Entity, EntityId, EnemyEntity, GameMap, GameState } from '@simulation/types';
-import type { ExecutionNode, GameEvent } from '@simulation/core-types';
-import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
-import { initRegistry, resetRegistry } from '../../../src/content/registry';
-import { initSkillRegistry } from '../../../src/simulation/skills/index';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeDoor, makeEnemy, makeGameState, makePlayer} from '../../fixtures/gameState';
+import type {EnemyEntity, Entity, EntityId, GameMap, GameState} from '@simulation/types';
+import type {ExecutionNode, GameEvent} from '@simulation/core-types';
+import {advanceToPlayerTurn, createTestSimulation} from '../../helpers/simulation';
+import {initRegistry, resetRegistry} from '../../../src/content/registry';
+import {initSkillRegistry} from '../../../src/simulation/skills/index';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -124,7 +124,7 @@ describe('AI perception integration', () => {
     const notifiedEvents = findAllEvents(result, 'AI_NOTIFIED');
     expect(notifiedEvents.length).toBeGreaterThan(0);
     expect(notifiedEvents[0]!.event).toMatchObject({
-      type: 'AI_NOTIFIED',
+      type: 'AI_NOTIFIED', isFieldEvent: false,
       entityId: enemy.id,
       change: { kind: 'door_opened', position: { x: 5, y: 4 } },
     });

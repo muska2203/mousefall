@@ -2,15 +2,19 @@
  * Unit-тесты реакции взрыва горящего масла.
  */
 
-import { describe, it, expect } from 'vitest';
-import { burningOilExplosionReaction } from '../../../../src/simulation/systems/world-reactions/burning-oil-explosion-reaction';
-import { tileExplosionDamageReaction } from '../../../../src/simulation/systems/world-reactions/tile-explosion-damage-reaction';
-import { makeGameState } from '../../../fixtures/gameState';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import type { GameEvent } from '../../../../src/simulation/core-types';
+import {describe, expect, it} from 'vitest';
+import {
+  burningOilExplosionReaction
+} from '../../../../src/simulation/systems/world-reactions/burning-oil-explosion-reaction';
+import {
+  tileExplosionDamageReaction
+} from '../../../../src/simulation/systems/world-reactions/tile-explosion-damage-reaction';
+import {makeGameState} from '../../../fixtures/gameState';
+import type {GameEvent} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 
 function makeDummyBuilderAndParent() {
-  const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: null });
+  const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 1, actorId: null });
   return { builder, parent: builder.root };
 }
 
@@ -18,7 +22,7 @@ describe('burningOilExplosionReaction', () => {
   it('порождает TILE_EXPLOSION при первом наложении burning на oil', () => {
     const state = makeGameState();
     const event: GameEvent = {
-      type: 'TILE_EFFECT_STATUS_APPLIED',
+      type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true,
       effectType: 'oil',
       statusType: 'burning',
       position: { x: 3, y: 3 },
@@ -44,7 +48,7 @@ describe('burningOilExplosionReaction', () => {
   it('не срабатывает при обновлении длительности burning (isNew === false)', () => {
     const state = makeGameState();
     const event: GameEvent = {
-      type: 'TILE_EFFECT_STATUS_APPLIED',
+      type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true,
       effectType: 'oil',
       statusType: 'burning',
       position: { x: 3, y: 3 },
@@ -63,7 +67,7 @@ describe('burningOilExplosionReaction', () => {
     const state = makeGameState();
 
     const waterEvent: GameEvent = {
-      type: 'TILE_EFFECT_STATUS_APPLIED',
+      type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true,
       effectType: 'water',
       statusType: 'burning',
       position: { x: 3, y: 3 },
@@ -75,7 +79,7 @@ describe('burningOilExplosionReaction', () => {
     expect(burningOilExplosionReaction(state, waterEvent, b2, p2)).toHaveLength(0);
 
     const frozenEvent: GameEvent = {
-      type: 'TILE_EFFECT_STATUS_APPLIED',
+      type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true,
       effectType: 'oil',
       statusType: 'frozen',
       position: { x: 3, y: 3 },
@@ -92,7 +96,7 @@ describe('tileExplosionDamageReaction', () => {
   it('превращает TILE_EXPLODED в DAMAGE_TILE по всем клеткам радиуса', () => {
     const state = makeGameState();
     const event: GameEvent = {
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       position: { x: 3, y: 3 },
       sourceEntityId: null,
       damage: 2,
@@ -117,7 +121,7 @@ describe('tileExplosionDamageReaction', () => {
   it('работает для радиуса 0 — только центральная клетка', () => {
     const state = makeGameState();
     const event: GameEvent = {
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       position: { x: 3, y: 3 },
       sourceEntityId: null,
       damage: 5,
@@ -140,7 +144,7 @@ describe('tileExplosionDamageReaction', () => {
   it('наследует sourceEntityId в DAMAGE_TILE', () => {
     const state = makeGameState();
     const event: GameEvent = {
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       position: { x: 3, y: 3 },
       sourceEntityId: 'player_1',
       damage: 2,

@@ -17,39 +17,12 @@ import {getAnimationBuilder} from '../animation/core/registry';
 import {isEventVisible} from '../fogFilter';
 import {buildAnimationTree as buildAnimationPhases} from '../animation/core/treeBuilder';
 
-/** Типы событий, которые происходят на поле и подлежат FOV-фильтрации. */
-const FIELD_EVENT_TYPES = new Set<GameEvent['type']>([
-  'ENTITY_MOVED',
-  'ENTITY_DAMAGED',
-  'ENTITY_DIED',
-  'ENTITY_HEALED',
-  'ENTITY_MISSED',
-  'ENTITY_BUMPED',
-  'ENTITY_COLLIDED',
-  'ENTITY_DISPLACED',
-  'STATUS_APPLIED',
-  'STATUS_REMOVED',
-  'STATUS_BLOCKED',
-  'STATUS_TICKED',
-  'FOG_UPDATED',
-  'DOOR_OPENED',
-  'DOOR_CLOSED',
-  'ITEM_DROPPED',
-  'ITEM_PICKED_UP',
-  'DEAD_ENTITIES_CLEANED',
-  'ABILITY_USED',
-  'COUNTER_ATTACK_APPLIED',
-  'FLOOR_CHANGED',
-  'TILE_EFFECT_CHANGED',
-  'TILE_EFFECT_REMOVED',
-  'TILE_EFFECT_STATUS_APPLIED',
-  'TILE_EFFECT_STATUS_REMOVED',
-  'TILE_EXPLODED',
-]);
-
-/** Определить, является ли событие полевым. */
+/** Определить, является ли событие полевым.
+ *
+ *  Расширяемость: флаг `isFieldEvent` задаётся при создании события,
+ *  поэтому добавление нового полевого события не требует правки планировщика. */
 function isFieldEvent(event: GameEvent): boolean {
-  return FIELD_EVENT_TYPES.has(event.type);
+  return event.isFieldEvent;
 }
 
 /** Прикрепить собственный патч к каждому корневому AnimationNode.

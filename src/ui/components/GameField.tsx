@@ -9,6 +9,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from '@i18n/hooks';
 import type {AnimationNode, HotbarItemViewModel, RenderInput, TurnSide} from '@presentation/types';
+import {DEFAULT_HOTBAR_SIZE} from '@ui/input/keyboardConfig';
 import {TILE_SIZE} from '@utils/constants';
 import {Panel} from './Panel';
 import {Hotbar} from './Hotbar';
@@ -17,18 +18,23 @@ import {PhaseButton} from './PhaseButton';
 import {PixiApp} from '@ui/renderer/PixiApp';
 import {WorldRenderer} from '@ui/renderer/WorldRenderer';
 import {AnimationSequencer} from '@ui/animation/sequencer';
-import {SpriteAnimationExecutor} from '@ui/animation/spriteExecutor';
-import {FogAnimationExecutor} from '@ui/animation/fogExecutor';
-import {PixiFloatingTextExecutor} from '@ui/animation/pixiFloatingTextExecutor';
-import {HpChangeAnimationExecutor} from '@ui/animation/hpChangeExecutor';
-import {SkillAnimationExecutor} from '@ui/animation/skillExecutor';
-import {ProjectileAnimationExecutor} from '@ui/animation/projectileExecutor';
-import {ExplosionAnimationExecutor} from '@ui/animation/explosionExecutor';
-import {SlashArcExecutor} from '@ui/animation/slashArcExecutor';
-import {StatusBurstAnimationExecutor} from '@ui/animation/statusBurstExecutor';
-import {BounceAnimationExecutor} from '@ui/animation/bounceExecutor';
-import {TileShakeExecutor} from '@ui/animation/tileShakeExecutor';
 import type {AnimationContext} from '@ui/animation/types';
+import {getAnimationExecutors} from '@ui/animation/registry';
+// Side-effect: каждый импорт регистрирует свой executor в реестре.
+import '@ui/animation/spriteExecutor';
+import '@ui/animation/fogExecutor';
+import '@ui/animation/pixiFloatingTextExecutor';
+import '@ui/animation/hpChangeExecutor';
+import '@ui/animation/skillExecutor';
+import '@ui/animation/projectileExecutor';
+import '@ui/animation/explosionExecutor';
+import '@ui/animation/slashArcExecutor';
+import '@ui/animation/beamExecutor';
+import '@ui/animation/meteorFallExecutor';
+import '@ui/animation/statusBurstExecutor';
+import '@ui/animation/bounceExecutor';
+import '@ui/animation/tileShakeExecutor';
+import '@ui/animation/particleBurstExecutor';
 
 
 interface Props {
@@ -62,7 +68,7 @@ export function GameField({
   onMouseMoveScreen,
   onCameraHoverMove,
   onMouseLeave,
-  hotbarSize = 10,
+  hotbarSize = DEFAULT_HOTBAR_SIZE,
   hotbarItems,
   onHotbarClick,
 }: Props) {
@@ -141,20 +147,8 @@ export function GameField({
       pixi.app.ticker.add(recomputeHoverOnTick);
       removeHoverTickerRef.current = () => pixi.app.ticker.remove(recomputeHoverOnTick);
 
-      // Создаём AnimationSequencer
-      const executors = [
-        new SpriteAnimationExecutor(),
-        new FogAnimationExecutor(),
-        new PixiFloatingTextExecutor(),
-        new HpChangeAnimationExecutor(),
-        new SkillAnimationExecutor(),
-        new ProjectileAnimationExecutor(),
-        new ExplosionAnimationExecutor(),
-        new SlashArcExecutor(),
-        new StatusBurstAnimationExecutor(),
-        new BounceAnimationExecutor(),
-        new TileShakeExecutor(),
-      ];
+      // Создаём AnimationSequencer на основе зарегистрированных executor'ов.
+      const executors = getAnimationExecutors();
       const context: AnimationContext = {
         worldRenderer: renderer,
         ticker: pixi.app.ticker,

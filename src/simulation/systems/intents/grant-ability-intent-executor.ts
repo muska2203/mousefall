@@ -23,7 +23,7 @@ export const executeGrantAbilityIntent: IntentExecutor<GrantAbilityIntent> = (
   addActiveRulesForAbility(actor as Actor, intent.ability);
 
   return builder.addChild(parent, {
-    type: 'ABILITY_GRANTED',
+    type: 'ABILITY_GRANTED', isFieldEvent: false,
     entityId: intent.entityId,
     abilityId: intent.ability.templateId,
     sourceItemInstanceId: intent.ability.sourceItemInstanceId!,

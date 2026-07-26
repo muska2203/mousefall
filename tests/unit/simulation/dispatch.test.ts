@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { createTestSimulation } from '../../helpers/simulation';
-import { makeGameState, makePlayer } from '../../fixtures/gameState';
+import {describe, expect, it} from 'vitest';
+import {createTestSimulation} from '../../helpers/simulation';
+import {makeGameState, makePlayer} from '../../fixtures/gameState';
 
 describe('GameSimulation.dispatch — ACTION_REJECTED', () => {
   it('returns ACTION_REJECTED when moving into a wall', () => {
@@ -18,7 +18,7 @@ describe('GameSimulation.dispatch — ACTION_REJECTED', () => {
     expect(actionNode.event.type).toBe('ACTION_APPLIED');
     expect(actionNode.children).toHaveLength(1);
     expect(actionNode.children[0]!.event.type).toBe('ACTION_REJECTED');
-    const rejected = actionNode.children[0]!.event as { type: 'ACTION_REJECTED'; errors: { code: string; description: string }[] };
+    const rejected = actionNode.children[0]!.event as { type: 'ACTION_REJECTED', isFieldEvent: false; errors: { code: string; description: string }[] };
     expect(rejected.errors[0]!.code).toBe('tile_blocked');
   });
 
@@ -35,7 +35,7 @@ describe('GameSimulation.dispatch — ACTION_REJECTED', () => {
     const actionNode = result.phases[0]!.actions[0]!;
     expect(actionNode.children).toHaveLength(1);
     expect(actionNode.children[0]!.event.type).toBe('ACTION_REJECTED');
-    const rejected = actionNode.children[0]!.event as { type: 'ACTION_REJECTED'; errors: { code: string; description: string }[] };
+    const rejected = actionNode.children[0]!.event as { type: 'ACTION_REJECTED', isFieldEvent: false; errors: { code: string; description: string }[] };
     expect(rejected.errors[0]!.code).toBe('actor_cannot_act');
   });
 

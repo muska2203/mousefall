@@ -1,16 +1,18 @@
 {
   "id": "floor_1",
   "strategy": "tree",
-  "width": 50,
-  "height": 50,
-  "minRooms": 6,
-  "maxRooms": 10,
-  "minRoomSize": 4,
-  "maxRoomSize": 10,
-  "enemyDensity": 0.6,
-  "itemDensity": 0.3,
+  "width": 40,
+  "height": 40,
+  "minRooms": 5,
+  "maxRooms": 20,
+  "minRoomSize": 3,
+  "maxRoomSize": 8,
+  "enemyDensity": 1.0,
+  "itemDensity": 0.1,
   "enemyPool": [
-    "cat_small"
+    "cat_small",
+    "cat_mid",
+    "cat_big"
   ],
   "itemPool": [
     "health_potion"

@@ -7,6 +7,7 @@ import {fireballComposer} from '../../../../src/presentation/animation/skills/fi
 import {dashComposer} from '../../../../src/presentation/animation/skills/dash';
 import {swoopComposer} from '../../../../src/presentation/animation/skills/swoop';
 import {cleaveComposer} from '../../../../src/presentation/animation/skills/cleave';
+import {lightningBoltComposer} from '../../../../src/presentation/animation/skills/beam';
 import type {GameEvent, GameState} from '../../../../src/simulation/types';
 import type {AnimationNode} from '../../../../src/presentation/types';
 
@@ -25,9 +26,9 @@ function makeNode(step: AnimationNode['step']): AnimationNode {
 }
 
 describe('fireballComposer', () => {
-  it('builds ABILITY_CAST → PROJECTILE → EXPLOSION chain', () => {
+  it('builds ABILITY_CAST → METEOR_FALL chain', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'fireball',
       targets: [{ x: 3, y: 3 }],
@@ -37,14 +38,17 @@ describe('fireballComposer', () => {
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('ABILITY_CAST');
-    expect(nodes![0]!.children[0]!.step.type).toBe('PROJECTILE');
-    expect((nodes![0]!.children[0]!.step as any).fromSky).toBe(true);
-    expect(nodes![0]!.children[0]!.children[0]!.step.type).toBe('EXPLOSION');
+    expect(nodes![0]!.children[0]!.step.type).toBe('METEOR_FALL');
+
+    const meteorStep = nodes![0]!.children[0]!.step as Extract<AnimationNode['step'], { type: 'METEOR_FALL' }>;
+    expect(meteorStep.from.y).toBe(-1);
+    expect(meteorStep.to).toEqual({ x: 3, y: 3 });
+    expect(meteorStep.color).toBe(0xff5500);
   });
 
   it('falls back to ABILITY_CAST without target', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'fireball',
       targets: [],
@@ -60,7 +64,7 @@ describe('fireballComposer', () => {
 describe('dashComposer', () => {
   it('skips cast and sets fast MOVE duration', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'dash',
       targets: [{ x: 7, y: 5 }],
@@ -84,7 +88,7 @@ describe('dashComposer', () => {
 
   it('attaches enemy push/damage to the collision MOVE', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'dash',
       targets: [{ x: 7, y: 5 }],
@@ -106,7 +110,7 @@ describe('dashComposer', () => {
 
   it('attaches wall bounce to the last caster MOVE', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'dash',
       targets: [{ x: 6, y: 5 }],
@@ -126,7 +130,7 @@ describe('dashComposer', () => {
 describe('swoopComposer', () => {
   it('builds JUMP with EXPLOSION and TILE_SHAKE on landing', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'swoop',
       targets: [{ x: 7, y: 5 }],
@@ -151,7 +155,7 @@ describe('swoopComposer', () => {
 
   it('returns landing effects without caster jump', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'swoop',
       targets: [{ x: 7, y: 5 }],
@@ -169,7 +173,7 @@ describe('swoopComposer', () => {
 describe('cleaveComposer', () => {
   it('builds ABILITY_CAST → SLASH_ARC with sorted positions for orthogonal direction', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'cleave',
       targets: [{ x: 6, y: 5 }],
@@ -193,7 +197,7 @@ describe('cleaveComposer', () => {
 
   it('builds ABILITY_CAST → SLASH_ARC with sorted positions for diagonal direction', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'cleave',
       targets: [{ x: 6, y: 4 }],
@@ -215,7 +219,7 @@ describe('cleaveComposer', () => {
 
   it('falls back to ABILITY_CAST without target', () => {
     const event: AbilityUsedEvent = {
-      type: 'ABILITY_USED',
+      type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
       abilityId: 'cleave',
       targets: [],
@@ -241,7 +245,7 @@ describe('cleaveComposer', () => {
 
     for (const target of directions) {
       const event: AbilityUsedEvent = {
-        type: 'ABILITY_USED',
+        type: 'ABILITY_USED', isFieldEvent: true,
         entityId: 'player',
         abilityId: 'cleave',
         targets: [target],
@@ -254,5 +258,41 @@ describe('cleaveComposer', () => {
       expect(slashArcStep.positions).toHaveLength(3);
       expect(slashArcStep.positions[1]).toEqual(target);
     }
+  });
+});
+
+describe('lightningBoltComposer', () => {
+  it('builds ABILITY_CAST → BEAM chain', () => {
+    const event: AbilityUsedEvent = {
+      type: 'ABILITY_USED', isFieldEvent: true,
+      entityId: 'player',
+      abilityId: 'lightning_bolt',
+      targets: [{ x: 3, y: 3 }],
+      from: { x: 1, y: 1 },
+    };
+    const nodes = lightningBoltComposer(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('ABILITY_CAST');
+    expect(nodes![0]!.children[0]!.step.type).toBe('BEAM');
+
+    const beamStep = nodes![0]!.children[0]!.step as Extract<AnimationNode['step'], { type: 'BEAM' }>;
+    expect(beamStep.from).toEqual({ x: 1, y: 1 });
+    expect(beamStep.to).toEqual({ x: 3, y: 3 });
+    expect(beamStep.color).toBe(0x88ddff);
+  });
+
+  it('falls back to ABILITY_CAST without target', () => {
+    const event: AbilityUsedEvent = {
+      type: 'ABILITY_USED', isFieldEvent: true,
+      entityId: 'player',
+      abilityId: 'lightning_bolt',
+      targets: [],
+      from: { x: 1, y: 1 },
+    };
+    const nodes = lightningBoltComposer(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes![0]!.step.type).toBe('ABILITY_CAST');
   });
 });

@@ -42,7 +42,7 @@ export const executeUnequipItemIntent: IntentExecutor<UnequipItemIntent> = (
   recalculateActorStats(player);
 
   return builder.addChild(parent, {
-    type: 'ITEM_UNEQUIPPED',
+    type: 'ITEM_UNEQUIPPED', isFieldEvent: false,
     entityId: intent.entityId,
     itemInstanceId,
     slot: intent.slot,

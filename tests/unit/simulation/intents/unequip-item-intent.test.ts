@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import { executeUnequipItemIntent } from '../../../../src/simulation/systems/intents/unequip-item-intent-executor';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { ItemTemplate } from '../../../../src/content/schemas';
-import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {executeUnequipItemIntent} from '../../../../src/simulation/systems/intents/unequip-item-intent-executor';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {ItemTemplate} from '../../../../src/content/schemas';
+import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
 
 function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTemplate['equipModifiers'] = []): ItemTemplate {
   return {
@@ -22,7 +22,7 @@ function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTe
 }
 
 function makeBuilder() {
-  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
+  return new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 beforeEach(() => {

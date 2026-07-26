@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makeEnemy } from '../../../fixtures/gameState';
-import { executeAdjustStatusStacksIntent } from '../../../../src/simulation/systems/intents/adjust-status-stacks-intent-executer';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import type { StatusEffect } from '../../../../src/simulation/core-types';
+import {describe, expect, it} from 'vitest';
+import {makeEnemy, makeGameState} from '../../../fixtures/gameState';
+import {
+  executeAdjustStatusStacksIntent
+} from '../../../../src/simulation/systems/intents/adjust-status-stacks-intent-executer';
+import type {StatusEffect} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 
 function makeStatus(type: StatusEffect['type'], duration: number, stacks?: number): StatusEffect {
   return {
@@ -20,7 +22,7 @@ describe('adjust-status-stacks-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', entityId: enemy.id, statusType: 'counterattack', stacks: 2 });
+    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', isFieldEvent: false, entityId: enemy.id, statusType: 'counterattack', stacks: 2 });
     const node = executeAdjustStatusStacksIntent(
       state,
       { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },
@@ -40,7 +42,7 @@ describe('adjust-status-stacks-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', entityId: enemy.id, effectType: 'counterattack' });
+    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', isFieldEvent: true, entityId: enemy.id, effectType: 'counterattack' });
     const node = executeAdjustStatusStacksIntent(
       state,
       { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },
@@ -59,7 +61,7 @@ describe('adjust-status-stacks-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', entityId: enemy.id, effectType: 'counterattack' });
+    const builder = new ExecutionBuilder({ type: 'STATUS_REMOVED', isFieldEvent: true, entityId: enemy.id, effectType: 'counterattack' });
     executeAdjustStatusStacksIntent(
       state,
       { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },
@@ -75,7 +77,7 @@ describe('adjust-status-stacks-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', entityId: enemy.id, statusType: 'counterattack', stacks: 0 });
+    const builder = new ExecutionBuilder({ type: 'STATUS_STACKS_ADJUSTED', isFieldEvent: false, entityId: enemy.id, statusType: 'counterattack', stacks: 0 });
     const node = executeAdjustStatusStacksIntent(
       state,
       { type: 'ADJUST_STATUS_STACKS', entityId: enemy.id, statusType: 'counterattack', delta: -1 },

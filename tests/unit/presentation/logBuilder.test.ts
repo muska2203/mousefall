@@ -2,17 +2,17 @@
  * Unit-тесты logBuilder для observability-событий RULE_TRIGGERED.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import {beforeEach, describe, expect, it} from 'vitest';
 import '@i18n/config';
 import i18next from 'i18next';
-import { extractEvents, gameEventToLog } from '../../../src/presentation/logBuilder';
-import { ExecutionBuilder } from '../../../src/simulation/core-types';
-import type { GameEvent, SimulationResult, TurnSide } from '@simulation/types';
-import { makeEnemy, makePlayer, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
+import {extractEvents, gameEventToLog} from '../../../src/presentation/logBuilder';
+import {ExecutionBuilder} from '../../../src/simulation/core-types';
+import type {GameEvent, SimulationResult, TurnSide} from '@simulation/types';
+import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity} from '../../fixtures/gameState';
 
 function makeResultWithRuleTriggered(side: TurnSide = 'enemies'): SimulationResult {
   const event: GameEvent = {
-    type: 'ENTITY_DAMAGED',
+    type: 'ENTITY_DAMAGED', isFieldEvent: true,
     targetId: 'enemy',
     sourceEntityId: 'player',
     damage: 5,
@@ -21,7 +21,7 @@ function makeResultWithRuleTriggered(side: TurnSide = 'enemies'): SimulationResu
   };
   const builder = new ExecutionBuilder(event);
   builder.addChild(builder.root, {
-    type: 'RULE_TRIGGERED',
+    type: 'RULE_TRIGGERED', isFieldEvent: false,
     ruleId: 'fire_damage_ignites',
     layer: 'world',
     ownerEntityId: null,
@@ -55,7 +55,7 @@ describe('logBuilder RULE_TRIGGERED', () => {
 
   it('gameEventToLog всегда возвращает null для RULE_TRIGGERED', () => {
     const event: GameEvent = {
-      type: 'RULE_TRIGGERED',
+      type: 'RULE_TRIGGERED', isFieldEvent: false,
       ruleId: 'fire_damage_ignites',
       layer: 'world',
       ownerEntityId: null,
@@ -88,7 +88,7 @@ describe('logBuilder новые события content rules', () => {
 
   it('STATUS_BLOCKED формирует корректную строку на русском', () => {
     const event: GameEvent = {
-      type: 'STATUS_BLOCKED',
+      type: 'STATUS_BLOCKED', isFieldEvent: true,
       entityId: 'player',
       sourceEntityId: 'enemy',
       statusType: 'burning',
@@ -102,7 +102,7 @@ describe('logBuilder новые события content rules', () => {
 
   it('STATUS_REMOVED формирует корректную строку на русском', () => {
     const event: GameEvent = {
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: 'player',
       effectType: 'burning',
     };
@@ -114,7 +114,7 @@ describe('logBuilder новые события content rules', () => {
 
   it('ENTITY_COLLIDED формирует корректную строку на русском', () => {
     const event: GameEvent = {
-      type: 'ENTITY_COLLIDED',
+      type: 'ENTITY_COLLIDED', isFieldEvent: true,
       entityId: 'player',
       targetId: null,
       collisionType: 'wall',
@@ -132,7 +132,7 @@ describe('logBuilder новые события content rules', () => {
 
   it('ENTITY_DISPLACED формирует корректную строку на русском', () => {
     const event: GameEvent = {
-      type: 'ENTITY_DISPLACED',
+      type: 'ENTITY_DISPLACED', isFieldEvent: true,
       entityId: 'player',
       sourceEntityId: 'enemy',
       from: { x: 5, y: 5 },
@@ -148,7 +148,7 @@ describe('logBuilder новые события content rules', () => {
 
   it('ENTITY_MISSED формирует корректную строку на русском', () => {
     const event: GameEvent = {
-      type: 'ENTITY_MISSED',
+      type: 'ENTITY_MISSED', isFieldEvent: true,
       attackerId: 'player',
       targetId: 'player',
     };
@@ -163,7 +163,7 @@ describe('logBuilder новые события content rules', () => {
     const state = makeBaseState();
 
     const blocked = gameEventToLog(state, {
-      type: 'STATUS_BLOCKED',
+      type: 'STATUS_BLOCKED', isFieldEvent: true,
       entityId: 'player',
       sourceEntityId: 'enemy',
       statusType: 'burning',
@@ -172,14 +172,14 @@ describe('logBuilder новые события content rules', () => {
     expect(blocked!.text).toBe('Hero did not gain Burning: blocked by Poisoned');
 
     const removed = gameEventToLog(state, {
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: 'player',
       effectType: 'burning',
     } as GameEvent, 'en');
     expect(removed!.text).toBe('Hero lost Burning');
 
     const collided = gameEventToLog(state, {
-      type: 'ENTITY_COLLIDED',
+      type: 'ENTITY_COLLIDED', isFieldEvent: true,
       entityId: 'player',
       targetId: null,
       collisionType: 'wall',
@@ -192,7 +192,7 @@ describe('logBuilder новые события content rules', () => {
     expect(collided!.text).toBe('Hero collided');
 
     const displaced = gameEventToLog(state, {
-      type: 'ENTITY_DISPLACED',
+      type: 'ENTITY_DISPLACED', isFieldEvent: true,
       entityId: 'player',
       sourceEntityId: 'enemy',
       from: { x: 5, y: 5 },
@@ -203,7 +203,7 @@ describe('logBuilder новые события content rules', () => {
     expect(displaced!.text).toBe('Hero was pushed');
 
     const missed = gameEventToLog(state, {
-      type: 'ENTITY_MISSED',
+      type: 'ENTITY_MISSED', isFieldEvent: true,
       attackerId: 'player',
       targetId: 'player',
     } as GameEvent, 'en');

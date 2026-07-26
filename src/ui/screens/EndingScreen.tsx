@@ -18,12 +18,13 @@ import {EndingMetricsPanel} from '@ui/components/EndingMetricsPanel';
 import {BossListPanel} from '@ui/components/BossListPanel';
 import {EndingActionsPanel} from '@ui/components/EndingActionsPanel';
 import type {EquipmentSnapshot, PlayerStatsSnapshot, RunStats} from '@presentation/gameSession';
+import {GameSession} from '@presentation/gameSession';
 
 interface Props {
   result: 'defeat' | 'victory';
   onNewRun: () => void;
   onReturnToMenu?: () => void;
-  portraitSrc?: string;
+  portraitSrc: string;
   playerStats?: PlayerStatsSnapshot;
   equipment?: EquipmentSnapshot;
   runStats?: RunStats;
@@ -46,28 +47,28 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
 
   const heroStats: HeroStat[] = ps
     ? [
-        {type: 'readonly', icon: '💪', name: t('ending.statStrength'), value: String(ps.effectiveStats.str)},
-        {type: 'readonly', icon: '✨', name: t('ending.statIntelligence'), value: String(ps.effectiveStats.int)},
-        {type: 'readonly', icon: '🐾', name: t('ending.statDexterity'), value: String(ps.effectiveStats.dex)},
-        {type: 'readonly', icon: '❤️', name: t('ending.statVitality'), value: String(ps.effectiveStats.vit)},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('str'), name: t('ending.statStrength'), value: String(ps.effectiveStats.str)},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('int'), name: t('ending.statIntelligence'), value: String(ps.effectiveStats.int)},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('dex'), name: t('ending.statDexterity'), value: String(ps.effectiveStats.dex)},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('vit'), name: t('ending.statVitality'), value: String(ps.effectiveStats.vit)},
       ]
     : [
-        {type: 'readonly', icon: '💪', name: t('ending.statStrength'), value: '0'},
-        {type: 'readonly', icon: '✨', name: t('ending.statIntelligence'), value: '0'},
-        {type: 'readonly', icon: '🐾', name: t('ending.statDexterity'), value: '0'},
-        {type: 'readonly', icon: '❤️', name: t('ending.statVitality'), value: '0'},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('str'), name: t('ending.statStrength'), value: '0'},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('int'), name: t('ending.statIntelligence'), value: '0'},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('dex'), name: t('ending.statDexterity'), value: '0'},
+        {type: 'readonly', icon: GameSession.resolveStatIcon('vit'), name: t('ending.statVitality'), value: '0'},
       ];
 
   const equipSlots: EquipSlotData[] = equipment
     ? [
-        {label: t('ending.slotWeapon'), icon: equipment.weaponId ? `/assets/items/${equipment.weaponId}.png` : undefined, fallback: '⚔', damage: equipment.weaponDamage, slotType: 'weapon', instanceId: equipment.weaponInstanceId},
-        {label: t('ending.slotArmor'), icon: equipment.armorId ? `/assets/items/${equipment.armorId}.png` : undefined, fallback: '🛡', slotType: 'armor', instanceId: equipment.armorInstanceId},
-        {label: t('ending.slotAmulet'), icon: equipment.amuletId ? `/assets/items/${equipment.amuletId}.png` : undefined, fallback: '📿', slotType: 'amulet', instanceId: equipment.amuletInstanceId},
+        {label: t('ending.slotWeapon'), icon: equipment.weaponId ? `/assets/items/${equipment.weaponId}.png` : undefined, fallback: GameSession.resolveEquipmentSlotIcon('weapon'), damage: equipment.weaponDamage, slotType: 'weapon', instanceId: equipment.weaponInstanceId},
+        {label: t('ending.slotArmor'), icon: equipment.armorId ? `/assets/items/${equipment.armorId}.png` : undefined, fallback: GameSession.resolveEquipmentSlotIcon('armor'), slotType: 'armor', instanceId: equipment.armorInstanceId},
+        {label: t('ending.slotAmulet'), icon: equipment.amuletId ? `/assets/items/${equipment.amuletId}.png` : undefined, fallback: GameSession.resolveEquipmentSlotIcon('amulet'), slotType: 'amulet', instanceId: equipment.amuletInstanceId},
       ]
     : [
-        {label: t('ending.slotWeapon'), fallback: '⚔', slotType: 'weapon', instanceId: null},
-        {label: t('ending.slotArmor'), fallback: '🛡', slotType: 'armor', instanceId: null},
-        {label: t('ending.slotAmulet'), fallback: '📿', slotType: 'amulet', instanceId: null},
+        {label: t('ending.slotWeapon'), fallback: GameSession.resolveEquipmentSlotIcon('weapon'), slotType: 'weapon', instanceId: null},
+        {label: t('ending.slotArmor'), fallback: GameSession.resolveEquipmentSlotIcon('armor'), slotType: 'armor', instanceId: null},
+        {label: t('ending.slotAmulet'), fallback: GameSession.resolveEquipmentSlotIcon('amulet'), slotType: 'amulet', instanceId: null},
       ];
 
   const duration = runStats ? formatDuration(Date.now() - runStats.startTime) : '00:00';
@@ -84,7 +85,7 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
   const leftColumn = (
     <HeroPanel
       title={t('ending.heroCardTitle')}
-      portraitSrc={portraitSrc ?? '/assets/portraits/witcher-ready.png'}
+      portraitSrc={portraitSrc}
       level={ps?.level ?? 1}
       hp={ps?.hp ?? 0}
       maxHp={ps?.maxHp ?? 100}

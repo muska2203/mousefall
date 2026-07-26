@@ -1,19 +1,23 @@
-import {describe, expect, it, beforeEach, afterEach, vi} from 'vitest';
-import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
-import { fireballSkill } from '../../../../src/simulation/skills/executors/fireballSkill';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate, LoadedContent, TileEffectTemplate, TileEffectStatusTemplate } from '../../../../src/content/schemas';
-import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {makeDoor, makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {fireballSkill} from '../../../../src/simulation/skills/executors/fireballSkill';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {
+  AbilityTemplate,
+  LoadedContent,
+  TileEffectStatusTemplate,
+  TileEffectTemplate
+} from '../../../../src/content/schemas';
+import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
+import {initSkillRegistry} from '../../../../src/simulation/skills/index';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
+import {rngChance} from '../../../../src/utils/rng';
 
 vi.mock('../../../../src/utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
 }));
-
-import { rngChance } from '../../../../src/utils/rng';
 
 beforeEach(() => {
   initSkillRegistry();
@@ -160,7 +164,7 @@ describe('fireballSkill', () => {
     expect(centerIntent).toBeDefined();
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
     });
 
@@ -182,7 +186,7 @@ describe('fireballSkill', () => {
     expect(centerIntent).toBeDefined();
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
     });
 
@@ -191,7 +195,7 @@ describe('fireballSkill', () => {
     const tileDamagedEvent = builder.root.children.find(e => e.event.type === 'TILE_DAMAGED');
     expect(tileDamagedEvent).toBeDefined();
     expect(tileDamagedEvent!.event).toMatchObject({
-      type: 'TILE_DAMAGED',
+      type: 'TILE_DAMAGED', isFieldEvent: false,
       position: { x: 6, y: 6 },
     });
   });
@@ -262,7 +266,7 @@ describe('fireballSkill', () => {
     expect(centerIntent).toBeDefined();
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
     });
 
@@ -297,7 +301,7 @@ describe('fireballSkill', () => {
     expect(centerIntent).toBeDefined();
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'USE_ABILITY', entityId: player.id, abilityId: 'fireball', targets: [{ x: 6, y: 6 }] },
     });
 

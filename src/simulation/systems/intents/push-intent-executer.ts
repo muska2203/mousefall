@@ -49,7 +49,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
     state.map.tiles[targetY]?.[targetX] === 'wall'
   ) {
     return builder.addChild(parent, {
-      type: 'ENTITY_COLLIDED',
+      type: 'ENTITY_COLLIDED', isFieldEvent: true,
       entityId: entity.id,
       targetId: null,
       collisionType: 'wall',
@@ -67,7 +67,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
   // Столкновение с другим актором.
   if (actorAtTarget) {
     return builder.addChild(parent, {
-      type: 'ENTITY_COLLIDED',
+      type: 'ENTITY_COLLIDED', isFieldEvent: true,
       entityId: entity.id,
       targetId: actorAtTarget.id,
       collisionType: 'actor',
@@ -82,7 +82,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
   // Столкновение с непроходимым не-актором (например, закрытой дверью при пуше).
   if (entitiesAtTarget.some(e => e.blocksMovement) || isBlocked(state, targetX, targetY)) {
     return builder.addChild(parent, {
-      type: 'ENTITY_COLLIDED',
+      type: 'ENTITY_COLLIDED', isFieldEvent: true,
       entityId: entity.id,
       targetId: null,
       collisionType: 'blocking-object',
@@ -96,7 +96,7 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
 
   // Свободная клетка — актор будет перемещён реакцией на ENTITY_DISPLACED.
   return builder.addChild(parent, {
-    type: 'ENTITY_DISPLACED',
+    type: 'ENTITY_DISPLACED', isFieldEvent: true,
     entityId: intent.entityId,
     sourceEntityId: intent.sourceEntityId,
     from,

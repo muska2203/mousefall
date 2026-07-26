@@ -2,13 +2,13 @@
  * Unit-тесты исполнителя TILE_EXPLOSION.
  */
 
-import { describe, it, expect } from 'vitest';
-import { makeGameState } from '../../../fixtures/gameState';
-import { executeTileExplosionIntent } from '../../../../src/simulation/systems/intents/tile-explosion-intent-executor';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
+import {describe, expect, it} from 'vitest';
+import {makeGameState} from '../../../fixtures/gameState';
+import {executeTileExplosionIntent} from '../../../../src/simulation/systems/intents/tile-explosion-intent-executor';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 
 function makeBuilder() {
-  return new ExecutionBuilder({ type: 'TURN_BEGAN', side: 'player', round: 1, actorId: null });
+  return new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 1, actorId: null });
 }
 
 describe('executeTileExplosionIntent', () => {
@@ -32,7 +32,7 @@ describe('executeTileExplosionIntent', () => {
 
     expect(node).not.toBeNull();
     expect(node!.event).toMatchObject({
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       position: { x: 3, y: 3 },
       sourceEntityId: null,
       damage: 2,
@@ -81,7 +81,7 @@ describe('executeTileExplosionIntent', () => {
     );
 
     expect(node!.event).toMatchObject({
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       sourceEntityId: 'player_1',
       damage: 5,
       radius: 2,

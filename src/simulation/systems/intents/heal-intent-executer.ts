@@ -26,7 +26,7 @@ export const executeHealIntent: IntentExecutor<HealIntent> = (
   if (healed <= 0) return null;
 
   return builder.addChild(parent, {
-    type: 'ENTITY_HEALED',
+    type: 'ENTITY_HEALED', isFieldEvent: true,
     entityId: intent.entityId,
     amount: healed,
     newHp: target.hp,

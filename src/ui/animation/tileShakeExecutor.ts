@@ -1,6 +1,11 @@
+/**
+ * Executor дрожания клеток (TILE_SHAKE).
+ */
+
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
+import {registerAnimationExecutor} from './registry';
 
 export class TileShakeExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {
@@ -13,3 +18,5 @@ export class TileShakeExecutor implements AnimationExecutor {
     await ctx.worldRenderer.animateTileShake(step.center, step.radius, config, ctx.ticker);
   }
 }
+
+registerAnimationExecutor(new TileShakeExecutor());

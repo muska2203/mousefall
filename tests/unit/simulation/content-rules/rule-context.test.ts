@@ -2,14 +2,10 @@
  * Тесты построителя контекста правил `buildRuleContext`.
  */
 
-import { describe, it, expect } from 'vitest';
-import { buildRuleContext, type RuleContext } from '../../../../src/simulation/content-rules/rule-context';
-import {
-  makePlayer,
-  makeEnemy,
-  makeStateWithPlayerAndEntity,
-} from '../../../fixtures/gameState';
-import type { GameEvent, Intent, StatusEffect, TileEffects } from '../../../../src/simulation/core-types';
+import {describe, expect, it} from 'vitest';
+import {buildRuleContext, type RuleContext} from '../../../../src/simulation/content-rules/rule-context';
+import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity,} from '../../../fixtures/gameState';
+import type {GameEvent, Intent, StatusEffect, TileEffects} from '../../../../src/simulation/core-types';
 
 type PartialContext = Partial<RuleContext>;
 
@@ -40,7 +36,7 @@ describe('buildRuleContext', () => {
   describe('события', () => {
     it('ENTITY_DAMAGED: заполняет source, target, position, damage и теги', () => {
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 12,
@@ -65,7 +61,7 @@ describe('buildRuleContext', () => {
 
     it('ENTITY_HEALED: заполняет target, position, amount; source равен null', () => {
       const event: GameEvent = {
-        type: 'ENTITY_HEALED',
+        type: 'ENTITY_HEALED', isFieldEvent: true,
         entityId: player.id,
         amount: 8,
         newHp: 80,
@@ -83,7 +79,7 @@ describe('buildRuleContext', () => {
 
     it('ENTITY_COLLIDED: заполняет source, target, collisionTargetId и position', () => {
       const event: GameEvent = {
-        type: 'ENTITY_COLLIDED',
+        type: 'ENTITY_COLLIDED', isFieldEvent: true,
         entityId: player.id,
         targetId: enemy.id,
         collisionType: 'actor',
@@ -110,7 +106,7 @@ describe('buildRuleContext', () => {
         statModifiers: null,
       };
       const event: GameEvent = {
-        type: 'STATUS_APPLIED',
+        type: 'STATUS_APPLIED', isFieldEvent: true,
         entityId: enemy.id,
         sourceEntityId: player.id,
         effect: status,
@@ -127,7 +123,7 @@ describe('buildRuleContext', () => {
 
     it('STATUS_REMOVED: заполняет target и позицию сущности', () => {
       const event: GameEvent = {
-        type: 'STATUS_REMOVED',
+        type: 'STATUS_REMOVED', isFieldEvent: true,
         entityId: enemy.id,
         effectType: 'poisoned',
       };
@@ -142,7 +138,7 @@ describe('buildRuleContext', () => {
 
     it('STATUS_STACKS_ADJUSTED: заполняет target, stacks и позицию сущности', () => {
       const event: GameEvent = {
-        type: 'STATUS_STACKS_ADJUSTED',
+        type: 'STATUS_STACKS_ADJUSTED', isFieldEvent: false,
         entityId: enemy.id,
         statusType: 'poisoned',
         stacks: 3,
@@ -159,7 +155,7 @@ describe('buildRuleContext', () => {
 
     it('RESOURCE_CONSUMED: заполняет source, amount и позицию сущности', () => {
       const event: GameEvent = {
-        type: 'RESOURCE_CONSUMED',
+        type: 'RESOURCE_CONSUMED', isFieldEvent: false,
         entityId: player.id,
         resource: 'ap',
         amount: 2,
@@ -177,7 +173,7 @@ describe('buildRuleContext', () => {
 
     it('ENTITY_DISPLACED: заполняет source, target и позицию назначения', () => {
       const event: GameEvent = {
-        type: 'ENTITY_DISPLACED',
+        type: 'ENTITY_DISPLACED', isFieldEvent: true,
         entityId: enemy.id,
         sourceEntityId: player.id,
         from: { x: 6, y: 5 },
@@ -196,7 +192,7 @@ describe('buildRuleContext', () => {
 
     it('COUNTER_ATTACK_APPLIED: заполняет source, target, позицию цели и урон', () => {
       const event: GameEvent = {
-        type: 'COUNTER_ATTACK_APPLIED',
+        type: 'COUNTER_ATTACK_APPLIED', isFieldEvent: true,
         attackerId: player.id,
         targetId: enemy.id,
         dx: 1,
@@ -216,7 +212,7 @@ describe('buildRuleContext', () => {
 
     it('ENTITY_MOVED: заполняет source и позицию назначения', () => {
       const event: GameEvent = {
-        type: 'ENTITY_MOVED',
+        type: 'ENTITY_MOVED', isFieldEvent: true,
         entityId: player.id,
         from: { x: 5, y: 5 },
         to: { x: 6, y: 5 },
@@ -233,7 +229,7 @@ describe('buildRuleContext', () => {
 
     it('STATUS_TICKED: заполняет target, position, maxHp и теги статуса', () => {
       const event: GameEvent = {
-        type: 'STATUS_TICKED',
+        type: 'STATUS_TICKED', isFieldEvent: true,
         entityId: enemy.id,
         effectTypes: ['burning'],
         tags: ['status.burning'],
@@ -250,7 +246,7 @@ describe('buildRuleContext', () => {
 
     it('ABILITY_USED: заполняет source, target, abilityTargetPosition, abilityTargets и eventPosition', () => {
       const event: GameEvent = {
-        type: 'ABILITY_USED',
+        type: 'ABILITY_USED', isFieldEvent: true,
         entityId: player.id,
         abilityId: 'fireball',
         targets: [{ x: 6, y: 5 }],
@@ -272,7 +268,7 @@ describe('buildRuleContext', () => {
       stateWithTwoEnemies.entities.set(secondEnemy.id, secondEnemy);
 
       const event: GameEvent = {
-        type: 'ABILITY_USED',
+        type: 'ABILITY_USED', isFieldEvent: true,
         entityId: player.id,
         abilityId: 'aoe',
         targets: [{ x: 6, y: 5 }, { x: 7, y: 5 }],
@@ -302,7 +298,7 @@ describe('buildRuleContext', () => {
       stateWithTileEffect.tileEffects[5]![6] = tileEffectsAtPosition;
 
       const event: GameEvent = {
-        type: 'TILE_EFFECT_CHANGED',
+        type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
         effectType: 'oil',
         position: { x: 6, y: 5 },
         isNew: true,
@@ -328,7 +324,7 @@ describe('buildRuleContext', () => {
       stateWithTileEffect.tileEffects[5]![6] = tileEffectsAtPosition;
 
       const event: GameEvent = {
-        type: 'TILE_EFFECT_TICKED',
+        type: 'TILE_EFFECT_TICKED', isFieldEvent: false,
         effectType: 'water',
         position: { x: 6, y: 5 },
       };
@@ -353,7 +349,7 @@ describe('buildRuleContext', () => {
       stateWithTileEffect.tileEffects[5]![6] = tileEffectsAtPosition;
 
       const event: GameEvent = {
-        type: 'TILE_EFFECT_STATUS_TICKED',
+        type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 6, y: 5 },
@@ -367,7 +363,7 @@ describe('buildRuleContext', () => {
 
     it('TURN_BEGAN: заполняет source из actorId и позицию актора', () => {
       const event: GameEvent = {
-        type: 'TURN_BEGAN',
+        type: 'TURN_BEGAN', isFieldEvent: false,
         side: 'player',
         round: 1,
         actorId: player.id,
@@ -382,7 +378,7 @@ describe('buildRuleContext', () => {
 
     it('AP_RESTORED: заполняет source, amount и позицию сущности', () => {
       const event: GameEvent = {
-        type: 'AP_RESTORED',
+        type: 'AP_RESTORED', isFieldEvent: false,
         entityId: enemy.id,
         amount: 2,
         remaining: 3,
@@ -488,7 +484,7 @@ describe('buildRuleContext', () => {
   describe('fallback eventPosition', () => {
     it('AP_RESTORED без собственной позиции использует позицию sourceEntityId', () => {
       const event: GameEvent = {
-        type: 'AP_RESTORED',
+        type: 'AP_RESTORED', isFieldEvent: false,
         entityId: player.id,
         amount: 1,
         remaining: 2,
@@ -519,7 +515,7 @@ describe('buildRuleContext', () => {
 
     it('использует позицию collisionTargetId, если других позиций нет', () => {
       const event: GameEvent = {
-        type: 'ENTITY_COLLIDED',
+        type: 'ENTITY_COLLIDED', isFieldEvent: true,
         entityId: 'unknown_actor',
         targetId: enemy.id,
         collisionType: 'actor',
@@ -542,7 +538,7 @@ describe('buildRuleContext', () => {
   describe('eventTags', () => {
     it('по умолчанию равны пустому массиву, если tags не указаны', () => {
       const event: GameEvent = {
-        type: 'ENTITY_HEALED',
+        type: 'ENTITY_HEALED', isFieldEvent: true,
         entityId: player.id,
         amount: 5,
         newHp: 85,

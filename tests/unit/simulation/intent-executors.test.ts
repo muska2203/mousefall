@@ -1,4 +1,4 @@
-import {describe, expect, it, beforeEach, afterEach} from "vitest";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {ExecutionBuilder} from "@simulation/systems/actions/types.ts";
 import {executeMoveIntent} from "@simulation/systems/intents/move-intent-executer.ts";
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
@@ -6,12 +6,18 @@ import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.
 import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import '@simulation/ai/hunter-strategy';
-import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity, makeFloorItemContainer} from "../../fixtures/gameState.ts";
+import {
+    makeEnemy,
+    makeFloorItemContainer,
+    makeGameState,
+    makePlayer,
+    makeStateWithPlayerAndEntity
+} from "../../fixtures/gameState.ts";
 import {PLAYER_ID} from "@utils/constants.ts";
 import {initRegistry, resetRegistry} from "../../../src/content/registry";
 
 function makeBuilder() {
-    return new ExecutionBuilder({type: 'ACTION_APPLIED', action: {type: 'END_TURN', entityId: 'any'}});
+    return new ExecutionBuilder({type: 'ACTION_APPLIED', isFieldEvent: false, action: {type: 'END_TURN', entityId: 'any'}});
 }
 
 beforeEach(() => {
@@ -181,6 +187,37 @@ describe('executeDieIntent', () => {
         const node = executeDieIntent(state, {type: 'DIE', entityId: 'missing', position: {x: 0, y: 0}}, builder, builder.root);
 
         expect(node).toBeNull();
+    });
+
+    it('добавляет templateId босса в runStats.defeatedBossIds при смерти', () => {
+        const enemy = makeEnemy({templateId: 'cat_king'});
+        const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
+        const builder = makeBuilder();
+
+        executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
+
+        expect(state.runStats.defeatedBossIds).toEqual(['cat_king']);
+    });
+
+    it('не добавляет обычного врага в runStats.defeatedBossIds', () => {
+        const enemy = makeEnemy({templateId: 'cat_small'});
+        const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
+        const builder = makeBuilder();
+
+        executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
+
+        expect(state.runStats.defeatedBossIds).toEqual([]);
+    });
+
+    it('не дублирует templateId босса в runStats.defeatedBossIds', () => {
+        const enemy = makeEnemy({templateId: 'cat_king'});
+        const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
+        state.runStats.defeatedBossIds = ['cat_king'];
+        const builder = makeBuilder();
+
+        executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
+
+        expect(state.runStats.defeatedBossIds).toEqual(['cat_king']);
     });
 });
 

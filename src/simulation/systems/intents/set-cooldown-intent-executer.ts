@@ -16,7 +16,7 @@ export const executeSetCooldownIntent: IntentExecutor<SetCooldownIntent> = (
   }
 
   return builder.addChild(parent, {
-    type: 'COOLDOWN_SET',
+    type: 'COOLDOWN_SET', isFieldEvent: false,
     entityId: intent.entityId,
     abilityId: intent.abilityId,
     turns: intent.turns,

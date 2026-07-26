@@ -29,7 +29,7 @@ export const executeRestoreApIntent: IntentExecutor<RestoreApIntent> = (
   actor.ap = restoredAp;
 
   return builder.addChild(parent, {
-    type: 'AP_RESTORED',
+    type: 'AP_RESTORED', isFieldEvent: false,
     entityId: intent.entityId,
     amount: restoredAp - oldAp,
     remaining: actor.ap,

@@ -30,7 +30,7 @@ export const executeRemoveItemIntent: IntentExecutor<RemoveItemIntent> = (
   }
 
   return builder.addChild(parent, {
-    type: 'ITEM_USED',
+    type: 'ITEM_USED', isFieldEvent: false,
     entityId: intent.entityId,
     itemInstanceId: intent.itemInstanceId,
     templateId: intent.templateId,

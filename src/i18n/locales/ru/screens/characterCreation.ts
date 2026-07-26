@@ -11,6 +11,7 @@ export const ruCharacterCreation = {
   infoTitle: 'Информация',
   hintsAlert: 'Подсказки по игре — в разработке',
   hintsButton: 'Подсказки по игре',
+  devlogButton: 'Devlog',
   devlogAlert: 'Devlog — в разработке',
   startRun: 'Начать забег',
   statStrength: 'Сила',

@@ -2,13 +2,20 @@
  * Unit tests for GameSession presentation logic.
  */
 
-import {describe, expect, it, beforeEach, afterEach} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import '@i18n/config';
-import { GameSession } from '../../../src/presentation/gameSession';
-import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs } from '../../fixtures/gameState';
-import { initRegistry, resetRegistry } from '../../../src/content/registry';
-import type { Entity, EntityId } from '../../../src/simulation/types';
-import { drainAnimations } from '../../helpers/simulation';
+import {GameSession} from '../../../src/presentation/gameSession';
+import {
+  makeDoor,
+  makeEnemy,
+  makeFloorItemContainer,
+  makeGameState,
+  makePlayer,
+  makeStairs
+} from '../../fixtures/gameState';
+import {initRegistry, resetRegistry} from '../../../src/content/registry';
+import type {Entity, EntityId} from '../../../src/simulation/types';
+import {drainAnimations} from '../../helpers/simulation';
 
 describe('GameSession debug mode', () => {
   beforeEach(() => {
@@ -784,6 +791,249 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
   });
 });
 
+describe('GameSession.getPlayerPortraitSrc', () => {
+  beforeEach(() => {
+    resetRegistry();
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('returns portraitImg from registry when template exists', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map([
+        ['witcher', {
+          id: 'witcher',
+          portraitImg: '/assets/portraits/witcher-ready.png',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+          isDefault: false,
+        } as any],
+      ]),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+
+    expect(GameSession.getPlayerPortraitSrc('witcher')).toBe('/assets/portraits/witcher-ready.png');
+  });
+
+  it('returns default portrait when template is missing', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+
+    expect(GameSession.getPlayerPortraitSrc('unknown')).toBe('/assets/portraits/witcher-ready.png');
+  });
+});
+
+describe('GameSession.getStarterEquipmentIds', () => {
+  beforeEach(() => {
+    resetRegistry();
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('groups starter equipment by item type from player template', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map([
+        ['witcher', {
+          id: 'witcher',
+          portraitImg: '',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+          isDefault: false,
+          starterEquipment: [
+            'common_splinter_blade',
+            'common_school_wand',
+            'common_tin_plate',
+            'common_patch_cloak',
+            'common_knotted_fang',
+            'common_glass_bead',
+          ],
+        } as any],
+      ]),
+      items: new Map([
+        ['common_splinter_blade', {id: 'common_splinter_blade', type: 'weapon'} as any],
+        ['common_school_wand', {id: 'common_school_wand', type: 'weapon'} as any],
+        ['common_tin_plate', {id: 'common_tin_plate', type: 'armor'} as any],
+        ['common_patch_cloak', {id: 'common_patch_cloak', type: 'armor'} as any],
+        ['common_knotted_fang', {id: 'common_knotted_fang', type: 'amulet'} as any],
+        ['common_glass_bead', {id: 'common_glass_bead', type: 'amulet'} as any],
+      ]),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+
+    const equipment = GameSession.getStarterEquipmentIds('witcher');
+
+    expect(equipment.weapon).toEqual(['common_splinter_blade', 'common_school_wand']);
+    expect(equipment.armor).toEqual(['common_tin_plate', 'common_patch_cloak']);
+    expect(equipment.amulet).toEqual(['common_knotted_fang', 'common_glass_bead']);
+  });
+
+  it('returns empty groups when template or equipment is missing', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+
+    expect(GameSession.getStarterEquipmentIds('unknown')).toEqual({weapon: [], armor: [], amulet: []});
+  });
+});
+
+describe('GameSession.getDefaultPlayerTemplateId', () => {
+  beforeEach(() => {
+    resetRegistry();
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('returns default template id when marked isDefault', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map([
+        ['witcher', {
+          id: 'witcher',
+          portraitImg: '',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+          isDefault: false,
+        } as any],
+        ['mage', {
+          id: 'mage',
+          portraitImg: '',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+          isDefault: true,
+        } as any],
+      ]),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+
+    expect(GameSession.getDefaultPlayerTemplateId('ru')).toBe('mage');
+  });
+
+  it('returns first available template id when none is default', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map([
+        ['witcher', {
+          id: 'witcher',
+          portraitImg: '',
+          renderScale: 1,
+          maxAp: 2,
+          baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+          isDefault: false,
+        } as any],
+      ]),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+
+    expect(GameSession.getDefaultPlayerTemplateId('ru')).toBe('witcher');
+  });
+
+  it('returns empty string when no templates exist', () => {
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+
+    expect(GameSession.getDefaultPlayerTemplateId('ru')).toBe('');
+  });
+});
+
+describe('GameSession.getAttributePointsBudget', () => {
+  it('returns character creation attribute points budget', () => {
+    expect(GameSession.getAttributePointsBudget()).toBe(10);
+  });
+});
+
+describe('GameSession.resolveStatIcon', () => {
+  it('returns emoji icon for known stat types', () => {
+    expect(GameSession.resolveStatIcon('str')).toBe('💪');
+    expect(GameSession.resolveStatIcon('int')).toBe('✨');
+    expect(GameSession.resolveStatIcon('dex')).toBe('🐾');
+    expect(GameSession.resolveStatIcon('vit')).toBe('❤️');
+  });
+
+  it('returns question mark for unknown stat type', () => {
+    expect(GameSession.resolveStatIcon('unknown' as any)).toBe('?');
+  });
+});
+
+describe('GameSession.resolveEquipmentSlotIcon', () => {
+  it('returns emoji icon for known slot types', () => {
+    expect(GameSession.resolveEquipmentSlotIcon('weapon')).toBe('⚔');
+    expect(GameSession.resolveEquipmentSlotIcon('armor')).toBe('🛡');
+    expect(GameSession.resolveEquipmentSlotIcon('amulet')).toBe('📿');
+  });
+
+  it('returns question mark for unknown slot type', () => {
+    expect(GameSession.resolveEquipmentSlotIcon('unknown' as any)).toBe('?');
+  });
+});
+
 
 describe('GameSession DisplayState', () => {
   beforeEach(() => {
@@ -927,6 +1177,59 @@ describe('GameSession DisplayState', () => {
     expect(displayEnemy?.hp).toBe(gameEnemy?.hp);
     expect(displayEnemy?.x).toBe(gameEnemy?.x);
     expect(displayEnemy?.y).toBe(gameEnemy?.y);
+  });
+});
+
+describe('GameSession active effects', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map([
+        ['poisoned', {
+          id: 'poisoned',
+          ruleIds: [],
+          statusCategory: 'poison',
+          categoryPriority: 0,
+          mutuallyExclusiveWith: [],
+          blockedBy: [],
+        } as any],
+      ]),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('maps status effects to content-driven name and asset icon', () => {
+    const player = makePlayer({
+      statusEffects: [{ type: 'poisoned', duration: 3, value: 2, statModifiers: [] }],
+    });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    const effects = session.getViewModel().renderInput?.activeEffects ?? [];
+    expect(effects).toHaveLength(1);
+    expect(effects[0]).toMatchObject({
+      name: 'Отравление',
+      icon: '/assets/statuses/poisoned.png',
+      desc: 'Урон 2 в ход',
+      turns: 3,
+    });
   });
 });
 

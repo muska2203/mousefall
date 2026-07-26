@@ -2,29 +2,36 @@
  * Unit-тесты реакции контентных правил `runContentRuleReactions`.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { runContentRuleReactions } from '../../../../../src/simulation/content-rules/reaction/content-rule-reaction';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {runContentRuleReactions} from '../../../../../src/simulation/content-rules/reaction/content-rule-reaction';
 import {
-  makePlayer,
   makeEnemy,
+  makePlayer,
   makeStateWithPlayer,
   makeStateWithPlayerAndEntity,
 } from '../../../../fixtures/gameState';
 import {setWorldContentRulesOverride} from '../../../../../src/simulation/content-rules/rules';
 import {setContentRulesOverride} from '../../../../../src/simulation/content-rules/registry';
-import { ExecutionBuilder } from '../../../../../src/simulation/core-types';
-import type { GameEvent, Intent, TileEffectInstance, TileEffectStatusInstance } from '../../../../../src/simulation/core-types';
-import type { ActiveRule, WorldContentRule, RuleCondition } from '../../../../../src/simulation/content-rules/types';
-import { counterattackTriggerRule, counterattackDamageRule } from '../../../../../src/simulation/content-rules/counterattack-rules';
-import { initRegistry, resetRegistry } from '../../../../../src/content/registry';
-import type { LoadedContent, TileEffectTemplate, TileEffectStatusTemplate } from '../../../../../src/content/schemas';
+import type {
+  GameEvent,
+  Intent,
+  TileEffectInstance,
+  TileEffectStatusInstance
+} from '../../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../../src/simulation/core-types';
+import type {ActiveRule, RuleCondition, WorldContentRule} from '../../../../../src/simulation/content-rules/types';
+import {
+  counterattackDamageRule,
+  counterattackTriggerRule
+} from '../../../../../src/simulation/content-rules/counterattack-rules';
+import {initRegistry, resetRegistry} from '../../../../../src/content/registry';
+import type {LoadedContent, TileEffectStatusTemplate, TileEffectTemplate} from '../../../../../src/content/schemas';
+import {rngChance} from '../../../../../src/utils/rng';
 
 vi.mock('../../../../../src/utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
 }));
-
-import { rngChance } from '../../../../../src/utils/rng';
 
 function makeActiveRule(overrides: Partial<ActiveRule> = {}): ActiveRule {
   return {
@@ -141,7 +148,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -172,7 +179,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -212,7 +219,7 @@ describe('runContentRuleReactions', () => {
       const statusesBefore = [...enemy.statusEffects];
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -247,7 +254,7 @@ describe('runContentRuleReactions', () => {
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: enemy.id,
       sourceEntityId: player.id,
       damage: 5,
@@ -286,7 +293,7 @@ describe('runContentRuleReactions', () => {
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: enemy.id,
       sourceEntityId: player.id,
       damage: 5,
@@ -325,7 +332,7 @@ describe('runContentRuleReactions', () => {
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: enemy.id,
       sourceEntityId: player.id,
       damage: 5,
@@ -384,7 +391,7 @@ describe('runContentRuleReactions', () => {
     state.entities.set(bystander.id, bystander);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: enemy.id,
       sourceEntityId: player.id,
       damage: 5,
@@ -417,7 +424,7 @@ describe('runContentRuleReactions', () => {
     const state = makeStateWithPlayerAndEntity(player, player);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: player.id,
       sourceEntityId: player.id,
       damage: 5,
@@ -449,7 +456,7 @@ describe('runContentRuleReactions', () => {
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     const event: GameEvent = {
-      type: 'ENTITY_COLLIDED',
+      type: 'ENTITY_COLLIDED', isFieldEvent: true,
       entityId: player.id,
       targetId: enemy.id,
       collisionType: 'actor',
@@ -498,7 +505,7 @@ describe('runContentRuleReactions', () => {
     state.entities.set(ally.id, ally);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: player.id,
       sourceEntityId: enemyNear.id,
       damage: 3,
@@ -526,7 +533,7 @@ describe('runContentRuleReactions', () => {
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: enemy.id,
       sourceEntityId: player.id,
       damage: 5,
@@ -570,7 +577,7 @@ describe('runContentRuleReactions', () => {
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     const event: GameEvent = {
-      type: 'ENTITY_DAMAGED',
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: enemy.id,
       sourceEntityId: player.id,
       damage: 5,
@@ -612,7 +619,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'STATUS_TICKED',
+        type: 'STATUS_TICKED', isFieldEvent: true,
         entityId: enemy.id,
         effectTypes: ['burning'],
         tags: ['status.burning'],
@@ -656,7 +663,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'STATUS_TICKED',
+        type: 'STATUS_TICKED', isFieldEvent: true,
         entityId: enemy.id,
         effectTypes: ['poisoned'],
         tags: ['status.poisoned'],
@@ -716,7 +723,7 @@ describe('runContentRuleReactions', () => {
       setWorldContentRulesOverride([tileIntrinsicRule, tileEffectRule, globalRule]);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -759,7 +766,7 @@ describe('runContentRuleReactions', () => {
       setWorldContentRulesOverride([ruleB, ruleA]);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -803,7 +810,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: player.id,
         sourceEntityId: enemy.id,
         damage: 5,
@@ -850,7 +857,7 @@ describe('runContentRuleReactions', () => {
       state.entities.set(ally.id, ally);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: player.id,
         sourceEntityId: enemy.id,
         damage: 5,
@@ -883,7 +890,7 @@ describe('runContentRuleReactions', () => {
       state.entities.set(deadEnemy.id, deadEnemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: player.id,
         sourceEntityId: aliveEnemy.id,
         damage: 5,
@@ -923,7 +930,7 @@ describe('runContentRuleReactions', () => {
       state2.entities.set(enemyA.id, enemyA);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: player.id,
         sourceEntityId: enemyA.id,
         damage: 5,
@@ -968,7 +975,7 @@ describe('runContentRuleReactions', () => {
       state.entities.set(normalEnemy.id, normalEnemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: player.id,
         sourceEntityId: burningEnemy.id,
         damage: 5,
@@ -989,7 +996,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_COLLIDED',
+        type: 'ENTITY_COLLIDED', isFieldEvent: true,
         entityId: enemy.id,
         targetId: null,
         collisionType: 'wall',
@@ -1029,7 +1036,7 @@ describe('runContentRuleReactions', () => {
       state.entities.set(target.id, target);
 
       const event: GameEvent = {
-        type: 'ENTITY_COLLIDED',
+        type: 'ENTITY_COLLIDED', isFieldEvent: true,
         entityId: pushed.id,
         targetId: target.id,
         collisionType: 'actor',
@@ -1103,7 +1110,7 @@ describe('runContentRuleReactions', () => {
       ]);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 1,
@@ -1146,7 +1153,7 @@ describe('runContentRuleReactions', () => {
       ]);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 1,
@@ -1183,7 +1190,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1215,7 +1222,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1259,7 +1266,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1294,7 +1301,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1318,7 +1325,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1345,7 +1352,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1373,7 +1380,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1397,7 +1404,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'COUNTER_ATTACK_APPLIED',
+        type: 'COUNTER_ATTACK_APPLIED', isFieldEvent: true,
         attackerId: player.id,
         targetId: enemy.id,
         dx: 1,
@@ -1441,7 +1448,7 @@ describe('runContentRuleReactions', () => {
       };
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1531,7 +1538,7 @@ describe('runContentRuleReactions', () => {
       };
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1580,7 +1587,7 @@ describe('runContentRuleReactions', () => {
       };
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1625,7 +1632,7 @@ describe('runContentRuleReactions', () => {
       };
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1685,7 +1692,7 @@ describe('runContentRuleReactions', () => {
       state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
-        type: 'ENTITY_MOVED',
+        type: 'ENTITY_MOVED', isFieldEvent: true,
         entityId: player.id,
         from: { x: 5, y: 5 },
         to: { x: 6, y: 5 },
@@ -1713,7 +1720,7 @@ describe('runContentRuleReactions', () => {
       state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1742,7 +1749,7 @@ describe('runContentRuleReactions', () => {
       state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', ['burning']) };
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1762,7 +1769,7 @@ describe('runContentRuleReactions', () => {
       const state = makeStateWithPlayerAndEntity(player, enemy);
 
       const event: GameEvent = {
-        type: 'ENTITY_DAMAGED',
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
         targetId: enemy.id,
         sourceEntityId: player.id,
         damage: 5,
@@ -1816,7 +1823,7 @@ describe('runContentRuleReactions', () => {
       }
 
       const event: GameEvent = {
-        type: 'TILE_EFFECT_STATUS_TICKED',
+        type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 5, y: 5 },
@@ -1854,7 +1861,7 @@ describe('runContentRuleReactions', () => {
       state.tileEffects[6]![6] = { oil: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
-        type: 'TILE_EFFECT_STATUS_TICKED',
+        type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 5, y: 5 },
@@ -1905,7 +1912,7 @@ describe('runContentRuleReactions', () => {
       }
 
       const event: GameEvent = {
-        type: 'TILE_EFFECT_STATUS_TICKED',
+        type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 5, y: 5 },
@@ -1931,7 +1938,7 @@ describe('runContentRuleReactions', () => {
       state.tileEffects[6]![6] = { oil: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
-        type: 'TILE_EFFECT_STATUS_TICKED',
+        type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 5, y: 5 },

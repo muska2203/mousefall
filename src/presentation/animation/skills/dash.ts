@@ -35,9 +35,14 @@ function buildDashAnimationNodes(casterId: string, childNodes: AnimationNode[]):
   for (const node of childNodes) {
     const step = node.step;
     if (step.type === 'MOVE' && step.entityId === casterId) {
-      step.duration = DASH_MOVE_DURATION_MS;
-      step.sway = false;
-      casterMoves.push(node);
+      // Composer не должен мутировать входные узлы: создаём новый шаг
+      // с ускоренной длительностью и отключённым покачиванием.
+      const dashStep = {
+        ...step,
+        duration: DASH_MOVE_DURATION_MS,
+        sway: false,
+      };
+      casterMoves.push({ ...node, step: dashStep, children: [] });
     } else if (step.type === 'BOUNCE' && step.entityId === casterId) {
       casterBounces.push(node);
     } else if (step.type === 'MOVE') {

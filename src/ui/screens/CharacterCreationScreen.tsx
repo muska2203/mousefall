@@ -27,12 +27,6 @@ interface Props {
   onStartGame: (config: CharacterConfig, seed: number) => void;
 }
 
-const POINTS_BUDGET = 10;
-
-const STARTER_WEAPON_IDS = ['common_splinter_blade', 'common_school_wand'];
-const STARTER_ARMOR_IDS = ['common_tin_plate', 'common_patch_cloak'];
-const STARTER_AMULET_IDS = ['common_knotted_fang', 'common_glass_bead'];
-
 function getStarterItemInfo(id: string, locale: 'ru' | 'en') {
   return GameSession.getStarterItemInfo(id, locale);
 }
@@ -61,7 +55,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   );
 
   const firstTemplate = templates[0];
-  const firstTemplateId = firstTemplate?.id ?? 'witcher';
+  const firstTemplateId = firstTemplate?.id ?? GameSession.getDefaultPlayerTemplateId(locale);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(firstTemplateId);
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId) ?? firstTemplate;
@@ -80,13 +74,25 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     setVitality(templateBaseStats.vit);
   }, [selectedTemplateId, templateBaseStats.str, templateBaseStats.dex, templateBaseStats.int, templateBaseStats.vit]);
 
-  const [weaponId, setWeaponId] = useState('common_splinter_blade');
-  const [armorId, setArmorId] = useState('common_tin_plate');
-  const [amuletId, setAmuletId] = useState('common_knotted_fang');
+  const starterEquipment = useMemo(
+    () => GameSession.getStarterEquipmentIds(selectedTemplateId),
+    [selectedTemplateId],
+  );
+
+  const [weaponId, setWeaponId] = useState(starterEquipment.weapon[0] ?? '');
+  const [armorId, setArmorId] = useState(starterEquipment.armor[0] ?? '');
+  const [amuletId, setAmuletId] = useState(starterEquipment.amulet[0] ?? '');
   const [seedInput, setSeedInput] = useState('');
 
+  // Сбрасываем выбранное снаряжение на первое доступное при смене шаблона
+  useEffect(() => {
+    setWeaponId(starterEquipment.weapon[0] ?? '');
+    setArmorId(starterEquipment.armor[0] ?? '');
+    setAmuletId(starterEquipment.amulet[0] ?? '');
+  }, [starterEquipment]);
+
   const currentSum = strength + intelligence + agility + vitality;
-  const remaining = POINTS_BUDGET - currentSum;
+  const remaining = GameSession.getAttributePointsBudget() - currentSum;
   const isValid = remaining === 0;
 
   const selectedPortrait = portraits.find((p) => p.id === selectedTemplateId) ?? portraits[0];
@@ -135,7 +141,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   const heroStats: HeroStat[] = [
     {
       type: 'alloc',
-      icon: '💪',
+      icon: GameSession.resolveStatIcon('str'),
       name: t('characterCreation.statStrength'),
       value: strength,
       onChange: setStrength,
@@ -150,7 +156,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     },
     {
       type: 'alloc',
-      icon: '✨',
+      icon: GameSession.resolveStatIcon('int'),
       name: t('characterCreation.statIntelligence'),
       value: intelligence,
       onChange: setIntelligence,
@@ -165,7 +171,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     },
     {
       type: 'alloc',
-      icon: '🐾',
+      icon: GameSession.resolveStatIcon('dex'),
       name: t('characterCreation.statDexterity'),
       value: agility,
       onChange: setAgility,
@@ -180,7 +186,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     },
     {
       type: 'alloc',
-      icon: '❤️',
+      icon: GameSession.resolveStatIcon('vit'),
       name: t('characterCreation.statVitality'),
       value: vitality,
       onChange: setVitality,
@@ -205,7 +211,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
   );
 
   const weaponItemsWithDamage = useMemo(() => {
-    return STARTER_WEAPON_IDS.map((id) => {
+    return starterEquipment.weapon.map((id) => {
       const base = getStarterItemInfo(id, locale);
       try {
         const stats = GameSession.previewCharacterStats({
@@ -218,7 +224,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
         return base;
       }
     });
-  }, [selectedTemplateId, strength, agility, vitality, intelligence, armorId, amuletId]);
+  }, [selectedTemplateId, starterEquipment.weapon, strength, agility, vitality, intelligence, armorId, amuletId, locale]);
 
   const starterSlots: StarterSlot[] = [
     {
@@ -231,19 +237,19 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       label: t('characterCreation.slotArmor'),
       selectedId: armorId,
       onSelect: setArmorId,
-      items: STARTER_ARMOR_IDS.map((id) => getStarterItemInfo(id, locale)),
+      items: starterEquipment.armor.map((id) => getStarterItemInfo(id, locale)),
     },
     {
       label: t('characterCreation.slotAmulet'),
       selectedId: amuletId,
       onSelect: setAmuletId,
-      items: STARTER_AMULET_IDS.map((id) => getStarterItemInfo(id, locale)),
+      items: starterEquipment.amulet.map((id) => getStarterItemInfo(id, locale)),
     },
   ];
 
   const leftColumn = (
     <HeroPanel
-      portraitSrc={selectedPortrait?.img ?? '/assets/portraits/witcher-ready.png'}
+      portraitSrc={GameSession.getPlayerPortraitSrc(selectedTemplateId)}
       portraitAlt={selectedPortrait?.name ?? t('characterCreation.portraitAlt')}
       level={previewStats?.level ?? 1}
       hp={previewStats?.hp ?? 100}
@@ -289,7 +295,7 @@ export function CharacterCreationScreen({onStartGame}: Props) {
             {t('characterCreation.hintsButton')}
           </button>
           <button className="cm-btn cm-btn--secondary" type="button" onClick={() => showInfoToast(t('characterCreation.devlogAlert'))}>
-            Devlog
+            {t('characterCreation.devlogButton')}
           </button>
         </div>
       </Panel>

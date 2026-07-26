@@ -25,7 +25,7 @@ export const executeBeginTurnIntent: IntentExecutor<BeginTurnIntent> = (
   }
 
   return builder.addChild(parent, {
-    type: 'TURN_BEGAN',
+    type: 'TURN_BEGAN', isFieldEvent: false,
     side: intent.side,
     round: state.turn.round,
     actorId: null,

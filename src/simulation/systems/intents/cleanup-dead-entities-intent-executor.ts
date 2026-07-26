@@ -36,7 +36,7 @@ export const executeCleanupDeadEntitiesIntent: IntentExecutor<CleanupDeadEntitie
   }
 
   return builder.addChild(parent, {
-    type: 'DEAD_ENTITIES_CLEANED',
+    type: 'DEAD_ENTITIES_CLEANED', isFieldEvent: true,
     removed,
   });
 };

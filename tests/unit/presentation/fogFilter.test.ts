@@ -2,10 +2,10 @@
  * Unit tests for fogFilter.
  */
 
-import { describe, expect, it } from 'vitest';
-import { filterByFOV, isEventVisible } from '../../../src/presentation/fogFilter';
-import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
-import type { GameState } from '../../../src/simulation/types';
+import {describe, expect, it} from 'vitest';
+import {filterByFOV, isEventVisible} from '../../../src/presentation/fogFilter';
+import type {ExecutionNode, GameEvent} from '../../../src/simulation/core-types';
+import type {GameState} from '../../../src/simulation/types';
 
 function makeState(opts: { width?: number; height?: number; visible?: boolean[][] } = {}): GameState {
   const width = opts.width ?? 5;
@@ -37,10 +37,10 @@ describe('isEventVisible', () => {
       ],
     });
 
-    const visibleMove = { type: 'ENTITY_MOVED' as const, movementType: 'walk' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 2, y: 2 } };
+    const visibleMove = { type: 'ENTITY_MOVED' as const, isFieldEvent: true, movementType: 'walk' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 2, y: 2 } };
     expect(isEventVisible(visibleMove, state)).toBe(true);
 
-    const hiddenMove = { type: 'ENTITY_MOVED' as const, movementType: 'walk' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } };
+    const hiddenMove = { type: 'ENTITY_MOVED' as const, isFieldEvent: true, movementType: 'walk' as const, entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } };
     expect(isEventVisible(hiddenMove, state)).toBe(false);
   });
 
@@ -52,8 +52,8 @@ describe('isEventVisible', () => {
       ],
     });
 
-    expect(isEventVisible({ type: 'ENTITY_DAMAGED', targetId: 'e1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } }, state)).toBe(true);
-    expect(isEventVisible({ type: 'ENTITY_DAMAGED', targetId: 'e1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 0, y: 0 } }, state)).toBe(false);
+    expect(isEventVisible({ type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'e1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } }, state)).toBe(true);
+    expect(isEventVisible({ type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'e1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 0, y: 0 } }, state)).toBe(false);
   });
 
   it('ABILITY_USED: visible if from OR any target is visible', () => {
@@ -65,13 +65,13 @@ describe('isEventVisible', () => {
       ],
     });
 
-    const visibleCaster = { type: 'ABILITY_USED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
+    const visibleCaster = { type: 'ABILITY_USED' as const, isFieldEvent: true, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
     expect(isEventVisible(visibleCaster, state)).toBe(true);
 
-    const visibleTarget = { type: 'ABILITY_USED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
+    const visibleTarget = { type: 'ABILITY_USED' as const, isFieldEvent: true, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
     expect(isEventVisible(visibleTarget, state)).toBe(true);
 
-    const hidden = { type: 'ABILITY_USED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 2, y: 2 } };
+    const hidden = { type: 'ABILITY_USED' as const, isFieldEvent: true, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 2, y: 2 } };
     expect(isEventVisible(hidden, state)).toBe(false);
   });
 
@@ -85,25 +85,25 @@ describe('isEventVisible', () => {
     });
     state.entities.set('player', { id: 'player', x: 1, y: 1 } as any);
 
-    const visibleActor = { type: 'ACTION_APPLIED' as const, action: { type: 'ATTACK' as const, entityId: 'player', dx: 1, dy: 0 } };
+    const visibleActor = { type: 'ACTION_APPLIED' as const, isFieldEvent: false, action: { type: 'ATTACK' as const, entityId: 'player', dx: 1, dy: 0 } };
     expect(isEventVisible(visibleActor, state)).toBe(true);
 
-    const visibleTarget = { type: 'ACTION_APPLIED' as const, action: { type: 'ATTACK' as const, entityId: 'player', dx: 0, dy: -1 } };
+    const visibleTarget = { type: 'ACTION_APPLIED' as const, isFieldEvent: false, action: { type: 'ATTACK' as const, entityId: 'player', dx: 0, dy: -1 } };
     expect(isEventVisible(visibleTarget, state)).toBe(true);
 
     state.entities.set('player', { id: 'player', x: 0, y: 0 } as any);
-    const hidden = { type: 'ACTION_APPLIED' as const, action: { type: 'ATTACK' as const, entityId: 'player', dx: 1, dy: 0 } };
+    const hidden = { type: 'ACTION_APPLIED' as const, isFieldEvent: false, action: { type: 'ATTACK' as const, entityId: 'player', dx: 1, dy: 0 } };
     expect(isEventVisible(hidden, state)).toBe(false);
   });
 
   it('FOG_UPDATED: always visible', () => {
     const state = makeState();
-    expect(isEventVisible({ type: 'FOG_UPDATED', newlyVisible: [] }, state)).toBe(true);
+    expect(isEventVisible({ type: 'FOG_UPDATED', isFieldEvent: true, newlyVisible: [] }, state)).toBe(true);
   });
 
   it('PLAYER_DIED: always visible', () => {
     const state = makeState();
-    expect(isEventVisible({ type: 'PLAYER_DIED' }, state)).toBe(true);
+    expect(isEventVisible({ type: 'PLAYER_DIED', isFieldEvent: false }, state)).toBe(true);
   });
 
   it('ABILITY_PREPARED / ABILITY_PREPARED_CANCELLED: visible if from is visible', () => {
@@ -115,16 +115,16 @@ describe('isEventVisible', () => {
       ],
     });
 
-    const visiblePrepared = { type: 'ABILITY_PREPARED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
+    const visiblePrepared = { type: 'ABILITY_PREPARED' as const, isFieldEvent: false, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
     expect(isEventVisible(visiblePrepared, state)).toBe(true);
 
-    const visibleCancelled = { type: 'ABILITY_PREPARED_CANCELLED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
+    const visibleCancelled = { type: 'ABILITY_PREPARED_CANCELLED' as const, isFieldEvent: false, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 1, y: 1 } };
     expect(isEventVisible(visibleCancelled, state)).toBe(true);
 
-    const hiddenPrepared = { type: 'ABILITY_PREPARED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
+    const hiddenPrepared = { type: 'ABILITY_PREPARED' as const, isFieldEvent: false, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
     expect(isEventVisible(hiddenPrepared, state)).toBe(false);
 
-    const hiddenCancelled = { type: 'ABILITY_PREPARED_CANCELLED' as const, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
+    const hiddenCancelled = { type: 'ABILITY_PREPARED_CANCELLED' as const, isFieldEvent: false, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 1, y: 1 }], from: { x: 0, y: 0 } };
     expect(isEventVisible(hiddenCancelled, state)).toBe(false);
   });
 });
@@ -138,7 +138,7 @@ describe('filterByFOV', () => {
       ],
     });
 
-    const node = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
+    const node = makeNode({ type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
     const result = makeResult([node]);
     const filtered = filterByFOV(result, state);
 
@@ -153,7 +153,7 @@ describe('filterByFOV', () => {
       ],
     });
 
-    const node = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
+    const node = makeNode({ type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
     const result = makeResult([node]);
     const filtered = filterByFOV(result, state);
 
@@ -171,8 +171,8 @@ describe('filterByFOV', () => {
     });
 
     // Невидимый родитель (from и targets в тумане), но ребёнок — урон на видимой клетке
-    const child = makeNode({ type: 'ENTITY_DAMAGED', targetId: 'player', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } });
-    const parent = makeNode({ type: 'ABILITY_USED', entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 0, y: 0 } }, [child]);
+    const child = makeNode({ type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'player', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } });
+    const parent = makeNode({ type: 'ABILITY_USED', isFieldEvent: true, entityId: 'e1', abilityId: 'fireball', targets: [{ x: 0, y: 0 }], from: { x: 0, y: 0 } }, [child]);
     const result = makeResult([parent]);
     const filtered = filterByFOV(result, state);
 
@@ -190,8 +190,8 @@ describe('filterByFOV', () => {
       ],
     });
 
-    const visibleNode = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
-    const hiddenNode = makeNode({ type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'e2', from: { x: 1, y: 1 }, to: { x: 1, y: 0 } });
+    const visibleNode = makeNode({ type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'walk', entityId: 'e1', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } });
+    const hiddenNode = makeNode({ type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'walk', entityId: 'e2', from: { x: 1, y: 1 }, to: { x: 1, y: 0 } });
     const result = makeResult([visibleNode, hiddenNode]);
     const filtered = filterByFOV(result, state);
 

@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import { executeRevokeAbilityIntent } from '../../../../src/simulation/systems/intents/revoke-ability-intent-executor';
-import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
+import {describe, expect, it} from 'vitest';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {executeRevokeAbilityIntent} from '../../../../src/simulation/systems/intents/revoke-ability-intent-executor';
+import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
 
 function makeBuilder() {
-  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
+  return new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 describe('executeRevokeAbilityIntent', () => {

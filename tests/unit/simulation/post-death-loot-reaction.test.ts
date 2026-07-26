@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { postDeathLootReaction } from '../../../src/simulation/systems/world-reactions/post-death-loot-reaction';
-import { makeGameState, makePlayer, makeStateWithPlayerAndEntity, makeEnemy } from '../../fixtures/gameState';
-import { initRegistry, resetRegistry } from '../../../src/content/registry';
-import type { EntityTemplate } from '../../../src/content/schemas';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {postDeathLootReaction} from '../../../src/simulation/systems/world-reactions/post-death-loot-reaction';
+import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity} from '../../fixtures/gameState';
+import {initRegistry, resetRegistry} from '../../../src/content/registry';
+import type {EntityTemplate} from '../../../src/content/schemas';
 
 function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTemplate {
     return {
@@ -48,7 +48,7 @@ describe('postDeathLootReaction', () => {
 
         const enemy = makeEnemy({ templateId: 'no_loot_enemy' });
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-        const event = { type: 'ENTITY_DIED' as const, entityId: enemy.id, position: { x: enemy.x, y: enemy.y } };
+        const event = { type: 'ENTITY_DIED' as const, isFieldEvent: true, entityId: enemy.id, position: { x: enemy.x, y: enemy.y } };
 
         const result = postDeathLootReaction(state, event, null as any, null as any);
         expect(result).toEqual([]);
@@ -76,7 +76,7 @@ describe('postDeathLootReaction', () => {
 
         const enemy = makeEnemy({ templateId: 'loot_enemy' });
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-        const event = { type: 'ENTITY_DIED' as const, entityId: enemy.id, position: { x: enemy.x, y: enemy.y } };
+        const event = { type: 'ENTITY_DIED' as const, isFieldEvent: true, entityId: enemy.id, position: { x: enemy.x, y: enemy.y } };
 
         const result = postDeathLootReaction(state, event, null as any, null as any);
         expect(result.length).toBe(1);
@@ -104,7 +104,7 @@ describe('postDeathLootReaction', () => {
 
         const player = makePlayer();
         const state = makeStateWithPlayerAndEntity(player, makePlayer({ x: 3, y: 3, id: 'other_player' } as any));
-        const event = { type: 'ENTITY_DIED' as const, entityId: 'other_player', position: { x: 3, y: 3 } };
+        const event = { type: 'ENTITY_DIED' as const, isFieldEvent: true, entityId: 'other_player', position: { x: 3, y: 3 } };
 
         const result = postDeathLootReaction(state, event, null as any, null as any);
         expect(result).toEqual([]);
@@ -139,7 +139,7 @@ describe('postDeathLootReaction', () => {
 
         const enemy = makeEnemy({ templateId: 'multi_loot_enemy' });
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
-        const event = { type: 'ENTITY_DIED' as const, entityId: enemy.id, position: { x: enemy.x, y: enemy.y } };
+        const event = { type: 'ENTITY_DIED' as const, isFieldEvent: true, entityId: enemy.id, position: { x: enemy.x, y: enemy.y } };
 
         const result = postDeathLootReaction(state, event, null as any, null as any);
         expect(result.length).toBeGreaterThanOrEqual(2);

@@ -35,6 +35,9 @@ export const VIEWPORT_TILES_Y = 20;
 /** Базовый радиус обзора игрока в клетках. */
 export const PLAYER_SIGHT_RANGE = 8;
 
+/** Радиус, в котором игрок может взаимодействовать с объектами (Chebyshev distance). */
+export const INTERACTION_RADIUS = 1;
+
 /** Максимальное количество предметов в инвентаре игрока. */
 export const MAX_INVENTORY_SIZE = 20;
 

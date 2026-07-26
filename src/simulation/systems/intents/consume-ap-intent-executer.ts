@@ -14,7 +14,7 @@ export const executeConsumeApIntent: IntentExecutor<ConsumeApIntent> = (
   actor.ap = Math.max(0, actor.ap - intent.amount);
 
   return builder.addChild(parent, {
-    type: 'RESOURCE_CONSUMED',
+    type: 'RESOURCE_CONSUMED', isFieldEvent: false,
     entityId: intent.entityId,
     resource: 'ap',
     amount: before - actor.ap,

@@ -5,6 +5,7 @@
  */
 
 import {useTranslation} from '@i18n/hooks';
+import {GameSession} from '@presentation/gameSession';
 
 export type PortraitItem = {
   id: string;
@@ -28,7 +29,7 @@ export function PortraitGallery({portraits, selectedId, onSelect}: Props) {
       <div className="cm-welcome-center">
         <div className="cm-welcome-preview">
           <div className="cm-welcome-preview-img-wrap">
-            <img src="/assets/portraits/witcher-ready.png" alt={t('portraitGallery.previewAlt')} />
+            <img src={GameSession.getPlayerPortraitSrc('')} alt={t('portraitGallery.previewAlt')} />
           </div>
           <h3 className="cm-welcome-preview-name">—</h3>
           <p className="cm-welcome-preview-desc">—</p>

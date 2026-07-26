@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { ItemTemplate } from '../../../src/content/schemas';
-import { executeSpawnItemIntent } from '../../../src/simulation/systems/intents/spawn-item-intent-executor';
-import { makeGameState, makePlayer, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
-import { ExecutionBuilder } from '../../../src/simulation/core-types';
-import { initRegistry, resetRegistry } from '../../../src/content/registry';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import type {ItemTemplate} from '../../../src/content/schemas';
+import {executeSpawnItemIntent} from '../../../src/simulation/systems/intents/spawn-item-intent-executor';
+import {makeGameState, makePlayer, makeStateWithPlayerAndEntity} from '../../fixtures/gameState';
+import {ExecutionBuilder} from '../../../src/simulation/core-types';
+import {initRegistry, resetRegistry} from '../../../src/content/registry';
 
 function makeBuilder() {
-    return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
+    return new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 function makeTestItemTemplate(id: string): ItemTemplate {

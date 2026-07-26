@@ -5,15 +5,15 @@
  * одинаково при одинаковых входных данных.
  */
 
-import { describe, it, expect } from 'vitest';
-import { ExecutionBuilder } from '@simulation/core-types.ts';
-import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
-import { makePlayer, makeEnemy, makeStateWithPlayerAndEntity } from '../../../fixtures/gameState';
+import {describe, expect, it} from 'vitest';
+import {ExecutionBuilder} from '@simulation/core-types.ts';
+import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
+import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity} from '../../../fixtures/gameState';
 
 function castFireDamage(state: ReturnType<typeof makeStateWithPlayerAndEntity>): void {
   const player = state.player;
   const builder = new ExecutionBuilder({
-    type: 'ACTION_APPLIED',
+    type: 'ACTION_APPLIED', isFieldEvent: false,
     action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
   });
 

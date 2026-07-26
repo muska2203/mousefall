@@ -4,9 +4,12 @@
 
 import {randomInt} from '@utils/random';
 import type {AbilityEvent} from '../core/primitives';
-import {abilityCastNode, explosionNode, projectileNode} from '../core/primitives';
+import {abilityCastNode, meteorFallNode} from '../core/primitives';
 import type {SkillComposer} from './registry';
 import {registerSkillComposer} from './registry';
+
+/** Цвет огненного метеорита. */
+const FIREBALL_METEOR_COLOR = 0xff5500;
 
 export const fireballComposer: SkillComposer = (event: AbilityEvent, children, state) => {
   const target = event.targets[0];
@@ -21,9 +24,7 @@ export const fireballComposer: SkillComposer = (event: AbilityEvent, children, s
 
   return [
     abilityCastNode(event, [
-      projectileNode(from, target, [
-        explosionNode(target, 1, children),
-      ], true),
+      meteorFallNode(from, target, FIREBALL_METEOR_COLOR, children),
     ]),
   ];
 };

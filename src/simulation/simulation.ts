@@ -24,11 +24,12 @@ import {ActionHandler, ExecutionBuilder, ExecutionNode, GameAction} from "@simul
 import {getSkillExecutor} from "@simulation/skills/skillExecutor";
 import {runActionHandler} from "@simulation/systems/actions/action-utils.ts";
 import {createStairs, generateMap} from "@simulation/systems/mapgen.ts";
-import {MAX_FLOOR} from "@utils/constants.ts";
+import {INTERACTION_RADIUS, MAX_FLOOR} from "@utils/constants.ts";
 import {
     createBoolGrid,
     createInitialPlayer,
     createNewGameState,
+    ensureDefeatedBossIds,
     findAllAliveActorsOfFaction,
     findAllEntitiesAt,
     findFirstAttackableEntityAt,
@@ -226,6 +227,7 @@ export class GameSimulation implements Simulation {
     static loadSavedGame(state: GameState, debugEnabled: boolean = false): GameSimulation {
         ensureFeatureFlags(state);
         ensureRuntimeRng(state);
+        ensureDefeatedBossIds(state);
         const debugContext: DebugContext = { enabled: debugEnabled };
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
         // Загруженная игра должна продолжаться с хода игрока, если он жив.
@@ -324,7 +326,7 @@ export class GameSimulation implements Simulation {
         }
 
         const builder = new ExecutionBuilder({
-            type: 'ACTION_APPLIED',
+            type: 'ACTION_APPLIED', isFieldEvent: false,
             action,
         });
 
@@ -509,7 +511,7 @@ export class GameSimulation implements Simulation {
      */
     private buildEndTurnPhase(actor: Actor): TurnPhase {
         const builder = new ExecutionBuilder({
-            type: 'ACTION_APPLIED',
+            type: 'ACTION_APPLIED', isFieldEvent: false,
             action: { type: 'END_TURN', entityId: actor.id },
         });
         const root = builder.root;
@@ -519,7 +521,7 @@ export class GameSimulation implements Simulation {
         }
 
         builder.addChild(root, {
-            type: 'TURN_ENDED',
+            type: 'TURN_ENDED', isFieldEvent: false,
             turnNumber: this.state.turn.round,
         });
 
@@ -533,7 +535,7 @@ export class GameSimulation implements Simulation {
         // Временный placeholder-корень: реальное событие TURN_BEGAN создаётся
         // единственный раз через BEGIN_TURN intent и заменяет корень фазы.
         const builder = new ExecutionBuilder({
-            type: 'ACTION_APPLIED',
+            type: 'ACTION_APPLIED', isFieldEvent: false,
             action: { type: 'END_TURN', entityId: factionId },
         });
         const turnBeganNode = executeIntent(this.state, { type: 'BEGIN_TURN', side: factionId }, builder, builder.root);
@@ -582,7 +584,7 @@ export class GameSimulation implements Simulation {
         // Placeholder-корень: реальное событие TURN_BEGAN создаётся
         // единственный раз через BEGIN_TURN intent и заменяет корень фазы.
         const builder = new ExecutionBuilder({
-            type: 'ACTION_APPLIED',
+            type: 'ACTION_APPLIED', isFieldEvent: false,
             action: { type: 'END_TURN', entityId: 'environment' },
         });
         const turnBeganNode = executeIntent(this.state, { type: 'BEGIN_TURN', side: 'environment' }, builder, builder.root);
@@ -603,7 +605,7 @@ export class GameSimulation implements Simulation {
      */
     private runRoundRecovery(): TurnPhase {
         const builder = new ExecutionBuilder({
-            type: 'TURN_BEGAN',
+            type: 'TURN_BEGAN', isFieldEvent: false,
             side: 'round_recovery',
             round: this.state.turn.round,
             actorId: null,
@@ -623,7 +625,7 @@ export class GameSimulation implements Simulation {
 
         if (isStunned(actor)) {
             const action: GameAction = { type: 'END_TURN', entityId: actor.id };
-            const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', action });
+            const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action });
             const root = builder.root;
             const result = this.executeActionInContext(actor, action, builder, root);
 
@@ -631,7 +633,7 @@ export class GameSimulation implements Simulation {
                 const prepared = cancelPreparedAbility(actor);
                 if (prepared) {
                     builder.addChild(root, {
-                        type: 'ABILITY_PREPARED_CANCELLED',
+                        type: 'ABILITY_PREPARED_CANCELLED', isFieldEvent: false,
                         entityId: actor.id,
                         abilityId: prepared.abilityId,
                         targets: prepared.targets,
@@ -651,7 +653,7 @@ export class GameSimulation implements Simulation {
         // эмитить события (например, ABILITY_PREPARED) как side-effect.
         // Корневое событие заменяется на реальное действие после решения стратегии.
         const builder = new ExecutionBuilder({
-            type: 'ACTION_APPLIED',
+            type: 'ACTION_APPLIED', isFieldEvent: false,
             action: { type: 'END_TURN', entityId: actor.id },
         });
         const root = builder.root;
@@ -659,14 +661,14 @@ export class GameSimulation implements Simulation {
         const action = strategy.decideAction(aiActor, this.state, builder, root);
 
         // Подменяем placeholder на реальное действие перед исполнением.
-        builder.root.event = { type: 'ACTION_APPLIED', action };
+        builder.root.event = { type: 'ACTION_APPLIED', isFieldEvent: false, action };
 
         const result = this.executeActionInContext(actor, action, builder, root);
 
         // Fallback: если AI выбрала невыполнимое действие, завершаем ход.
         if (!result.success) {
             const endTurnBuilder = new ExecutionBuilder({
-                type: 'ACTION_APPLIED',
+                type: 'ACTION_APPLIED', isFieldEvent: false,
                 action: { type: 'END_TURN', entityId: actor.id },
             });
             return this.executeActionInContext(
@@ -696,11 +698,11 @@ export class GameSimulation implements Simulation {
      */
     private reject(reasonCode: string, action: GameAction): SimulationResult {
         const builder = new ExecutionBuilder({
-            type: 'ACTION_APPLIED',
+            type: 'ACTION_APPLIED', isFieldEvent: false,
             action,
         });
         builder.addChild(builder.root, {
-            type: 'ACTION_REJECTED',
+            type: 'ACTION_REJECTED', isFieldEvent: false,
             errors: [{ code: reasonCode }],
         });
         return {
@@ -839,7 +841,7 @@ export class GameSimulation implements Simulation {
 
         if (!this.canActorAct(actor, action, actionCost)) {
             executionBuilder.addChild(parentNode, {
-                type: 'ACTION_REJECTED',
+                type: 'ACTION_REJECTED', isFieldEvent: false,
                 errors: [{ code: 'actor_cannot_act' }],
             });
             return false;
@@ -847,7 +849,7 @@ export class GameSimulation implements Simulation {
 
         if (actor.ap < actionCost) {
             executionBuilder.addChild(parentNode, {
-                type: 'ACTION_REJECTED',
+                type: 'ACTION_REJECTED', isFieldEvent: false,
                 errors: [{ code: 'not_enough_ap' }],
             });
             return false;
@@ -865,7 +867,7 @@ export class GameSimulation implements Simulation {
 
         if (!handler) {
             executionBuilder.addChild(parentNode, {
-                type: 'ACTION_REJECTED',
+                type: 'ACTION_REJECTED', isFieldEvent: false,
                 errors: [{ code: 'handler_not_found' }],
             });
             return false;
@@ -881,7 +883,7 @@ export class GameSimulation implements Simulation {
 
         if (!validation.ok) {
             executionBuilder.addChild(parentNode, {
-                type: 'ACTION_REJECTED',
+                type: 'ACTION_REJECTED', isFieldEvent: false,
                 errors: [{ code: validation.reasonCode }],
             });
             return false;
@@ -1083,6 +1085,11 @@ export class GameSimulation implements Simulation {
     /** Возвращает все интерактивные сущности в радиусе от актора (Chebyshev distance). */
     findInteractableEntitiesAround(actor: Entity, radius: number): Entity[] {
         return findInteractableEntitiesAround(this.state, actor, radius);
+    }
+
+    /** Возвращает радиус, в котором игрок может взаимодействовать с объектами. */
+    getInteractionRadius(): number {
+        return INTERACTION_RADIUS;
     }
 }
 

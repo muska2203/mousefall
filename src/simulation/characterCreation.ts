@@ -30,6 +30,9 @@ export type CharacterConfig = {
   startingEquipment: string[];
 };
 
+/** Базовый бюджет очков характеристик, доступных при создании персонажа. */
+export const CHARACTER_CREATION_ATTRIBUTE_POINTS_BUDGET = 10;
+
 /**
  * Применяет конфигурацию персонажа к начальному PlayerEntity.
  *

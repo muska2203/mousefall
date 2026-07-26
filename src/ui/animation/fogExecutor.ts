@@ -7,6 +7,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
+import {registerAnimationExecutor} from './registry';
 
 export class FogAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {
@@ -19,3 +20,5 @@ export class FogAnimationExecutor implements AnimationExecutor {
     await ctx.worldRenderer.animateFogReveal(step.newlyVisible, config, ctx.ticker);
   }
 }
+
+registerAnimationExecutor(new FogAnimationExecutor());

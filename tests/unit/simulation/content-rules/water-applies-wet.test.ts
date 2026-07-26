@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { runContentRuleReactions } from '../../../../src/simulation/content-rules/reaction/content-rule-reaction';
-import { makePlayer, makeGameState } from '../../../fixtures/gameState';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import type { GameEvent } from '../../../../src/simulation/core-types';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { LoadedContent, TileEffectTemplate } from '../../../../src/content/schemas';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {runContentRuleReactions} from '../../../../src/simulation/content-rules/reaction/content-rule-reaction';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import type {GameEvent} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {LoadedContent, TileEffectTemplate} from '../../../../src/content/schemas';
 
 function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: string }): TileEffectTemplate {
   return {
@@ -61,7 +61,7 @@ describe('water_applies_wet', () => {
     };
 
     const event: GameEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', isFieldEvent: true,
       entityId: player.id,
       from: { x: 4, y: 5 },
       to: { x: 5, y: 5 },
@@ -96,7 +96,7 @@ describe('water_applies_wet', () => {
     });
 
     const event: GameEvent = {
-      type: 'ENTITY_MOVED',
+      type: 'ENTITY_MOVED', isFieldEvent: true,
       entityId: player.id,
       from: { x: 4, y: 5 },
       to: { x: 5, y: 5 },
@@ -134,7 +134,7 @@ describe('water_applies_wet_on_spawn', () => {
     };
 
     const event: GameEvent = {
-      type: 'TILE_EFFECT_CHANGED',
+      type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
       effectType: 'water',
       position: { x: 5, y: 5 },
       isNew: true,
@@ -175,7 +175,7 @@ describe('water_applies_wet_on_spawn', () => {
     };
 
     const event: GameEvent = {
-      type: 'TILE_EFFECT_CHANGED',
+      type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
       effectType: 'water',
       position: { x: 5, y: 5 },
       isNew: false,

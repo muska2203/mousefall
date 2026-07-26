@@ -40,7 +40,7 @@ function makeMockState(): GameState {
 
 describe('entityMovedBuilder', () => {
   it('creates MOVE step for walk', () => {
-    const event: GameEvent = { type: 'ENTITY_MOVED', movementType: 'walk', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } };
+    const event: GameEvent = { type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'walk', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } };
     const nodes = entityMovedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -48,7 +48,7 @@ describe('entityMovedBuilder', () => {
   });
 
   it('creates JUMP step for jump', () => {
-    const event: GameEvent = { type: 'ENTITY_MOVED', movementType: 'jump', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } };
+    const event: GameEvent = { type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'jump', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } };
     const nodes = entityMovedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -58,7 +58,7 @@ describe('entityMovedBuilder', () => {
 
 describe('actionAppliedBuilder', () => {
   it('creates ATTACK step for attack action', () => {
-    const event: GameEvent = { type: 'ACTION_APPLIED', action: { type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 } };
+    const event: GameEvent = { type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'ATTACK', entityId: 'player', dx: 1, dy: 0 } };
     const nodes = actionAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -66,7 +66,7 @@ describe('actionAppliedBuilder', () => {
   });
 
   it('returns null for non-attack action', () => {
-    const event: GameEvent = { type: 'ACTION_APPLIED', action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } };
+    const event: GameEvent = { type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'MOVE', entityId: 'player', dx: 1, dy: 0 } };
     const nodes = actionAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toBeNull();
@@ -75,7 +75,7 @@ describe('actionAppliedBuilder', () => {
 
 describe('entityDamagedBuilder', () => {
   it('wraps HP_CHANGE inside DAMAGE for player with HP', () => {
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'player', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 0, y: 0 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'player', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 0, y: 0 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -85,7 +85,7 @@ describe('entityDamagedBuilder', () => {
   });
 
   it('wraps HP_CHANGE inside DAMAGE for enemy with HP', () => {
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -97,7 +97,7 @@ describe('entityDamagedBuilder', () => {
   it('creates only DAMAGE step for target without HP', () => {
     const state = makeMockState();
     state.entities.set('door1', { id: 'door1', x: 1, y: 1 } as any);
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'door1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'door1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } };
     const nodes = entityDamagedBuilder(event, [], state);
 
     expect(nodes).toHaveLength(1);
@@ -106,7 +106,7 @@ describe('entityDamagedBuilder', () => {
   });
 
   it('creates only DAMAGE step for zero damage', () => {
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 0, position: { x: 3, y: 3 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 0, position: { x: 3, y: 3 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -116,7 +116,7 @@ describe('entityDamagedBuilder', () => {
 
   it('preserves passed child nodes inside HP_CHANGE', () => {
     const child = { step: { type: 'DEATH' as const, entityId: 'enemy1' }, children: [] };
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
     const nodes = entityDamagedBuilder(event, [child], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -128,7 +128,7 @@ describe('entityDamagedBuilder', () => {
 
 describe('entityDiedBuilder', () => {
   it('creates DEATH step', () => {
-    const event: GameEvent = { type: 'ENTITY_DIED', entityId: 'enemy1', position: { x: 3, y: 3 } };
+    const event: GameEvent = { type: 'ENTITY_DIED', isFieldEvent: true, entityId: 'enemy1', position: { x: 3, y: 3 } };
     const nodes = entityDiedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -138,7 +138,7 @@ describe('entityDiedBuilder', () => {
 
 describe('fogUpdatedBuilder', () => {
   it('creates FOG_UPDATE step', () => {
-    const event: GameEvent = { type: 'FOG_UPDATED', newlyVisible: [{ x: 1, y: 1 }] };
+    const event: GameEvent = { type: 'FOG_UPDATED', isFieldEvent: true, newlyVisible: [{ x: 1, y: 1 }] };
     const nodes = fogUpdatedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -148,7 +148,7 @@ describe('fogUpdatedBuilder', () => {
 
 describe('entityBumpedBuilder', () => {
   it('creates BOUNCE step', () => {
-    const event: GameEvent = { type: 'ENTITY_BUMPED', entityId: 'player', position: { x: 1, y: 1 }, dx: 1, dy: 0 };
+    const event: GameEvent = { type: 'ENTITY_BUMPED', isFieldEvent: true, entityId: 'player', position: { x: 1, y: 1 }, dx: 1, dy: 0 };
     const nodes = entityBumpedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -159,7 +159,7 @@ describe('entityBumpedBuilder', () => {
 describe('itemDroppedBuilder', () => {
   it('creates ITEM_DROP step', () => {
     const event: GameEvent = {
-      type: 'ITEM_DROPPED',
+      type: 'ITEM_DROPPED', isFieldEvent: true,
       dropperEntityId: 'enemy1',
       itemInstanceId: 'item_1',
       containerId: 'floor_item_container_1',
@@ -176,7 +176,7 @@ describe('itemDroppedBuilder', () => {
 
 describe('door builders', () => {
   it('creates UI_FLOATING_TEXT for DOOR_OPENED', () => {
-    const event: GameEvent = { type: 'DOOR_OPENED', position: { x: 1, y: 1 } };
+    const event: GameEvent = { type: 'DOOR_OPENED', isFieldEvent: true, position: { x: 1, y: 1 } };
     const nodes = doorOpenedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -184,7 +184,7 @@ describe('door builders', () => {
   });
 
   it('creates UI_FLOATING_TEXT for DOOR_CLOSED', () => {
-    const event: GameEvent = { type: 'DOOR_CLOSED', position: { x: 1, y: 1 } };
+    const event: GameEvent = { type: 'DOOR_CLOSED', isFieldEvent: true, position: { x: 1, y: 1 } };
     const nodes = doorClosedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -194,7 +194,7 @@ describe('door builders', () => {
 
 describe('entityHealedBuilder', () => {
   it('creates UI_FLOATING_TEXT with heal amount', () => {
-    const event: GameEvent = { type: 'ENTITY_HEALED', entityId: 'player', amount: 10, newHp: 20, position: { x: 0, y: 0 } };
+    const event: GameEvent = { type: 'ENTITY_HEALED', isFieldEvent: true, entityId: 'player', amount: 10, newHp: 20, position: { x: 0, y: 0 } };
     const nodes = entityHealedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -206,7 +206,7 @@ describe('entityHealedBuilder', () => {
 
 describe('status builders', () => {
   it('creates STATUS_BURST for STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'STATUS_APPLIED', entityId: 'enemy1', sourceEntityId: null, effect: { type: 'poisoned', duration: 3, value: 2 } as any };
+    const event: GameEvent = { type: 'STATUS_APPLIED', isFieldEvent: true, entityId: 'enemy1', sourceEntityId: null, effect: { type: 'poisoned', duration: 3, value: 2 } as any };
     const nodes = statusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -214,7 +214,7 @@ describe('status builders', () => {
   });
 
   it('creates STATUS_BURST for STATUS_TICKED', () => {
-    const event: GameEvent = { type: 'STATUS_TICKED', entityId: 'enemy1', effectTypes: ['burning'], tags: ['status.burning'] };
+    const event: GameEvent = { type: 'STATUS_TICKED', isFieldEvent: true, entityId: 'enemy1', effectTypes: ['burning'], tags: ['status.burning'] };
     const nodes = statusTickedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -222,7 +222,7 @@ describe('status builders', () => {
   });
 
   it('creates STATUS_BURST for STATUS_STACKS_ADJUSTED', () => {
-    const event: GameEvent = { type: 'STATUS_STACKS_ADJUSTED', entityId: 'enemy1', statusType: 'poisoned', stacks: 2 };
+    const event: GameEvent = { type: 'STATUS_STACKS_ADJUSTED', isFieldEvent: false, entityId: 'enemy1', statusType: 'poisoned', stacks: 2 };
     const nodes = statusStacksAdjustedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -230,7 +230,7 @@ describe('status builders', () => {
   });
 
   it('creates UI_FLOATING_TEXT for STATUS_BLOCKED', () => {
-    const event: GameEvent = { type: 'STATUS_BLOCKED', entityId: 'player', sourceEntityId: null, statusType: 'poisoned', blockedBy: 'counterattack' };
+    const event: GameEvent = { type: 'STATUS_BLOCKED', isFieldEvent: true, entityId: 'player', sourceEntityId: null, statusType: 'poisoned', blockedBy: 'counterattack' };
     const nodes = statusBlockedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -238,7 +238,7 @@ describe('status builders', () => {
   });
 
   it('creates UI_FLOATING_TEXT for STATUS_REMOVED', () => {
-    const event: GameEvent = { type: 'STATUS_REMOVED', entityId: 'player', effectType: 'poisoned' };
+    const event: GameEvent = { type: 'STATUS_REMOVED', isFieldEvent: true, entityId: 'player', effectType: 'poisoned' };
     const nodes = statusRemovedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -249,7 +249,7 @@ describe('status builders', () => {
 describe('entityCollidedBuilder', () => {
   it('creates TILE_SHAKE and PARTICLE_BURST for ENTITY_COLLIDED', () => {
     const event: GameEvent = {
-      type: 'ENTITY_COLLIDED',
+      type: 'ENTITY_COLLIDED', isFieldEvent: true,
       entityId: 'player',
       targetId: null,
       collisionType: 'wall',
@@ -271,7 +271,7 @@ describe('entityCollidedBuilder', () => {
 describe('entityDisplacedBuilder', () => {
   it('creates MOVE step for ENTITY_DISPLACED without child MOVE', () => {
     const event: GameEvent = {
-      type: 'ENTITY_DISPLACED',
+      type: 'ENTITY_DISPLACED', isFieldEvent: true,
       entityId: 'enemy1',
       sourceEntityId: null,
       from: { x: 3, y: 3 },
@@ -287,7 +287,7 @@ describe('entityDisplacedBuilder', () => {
 
   it('reuses child MOVE instead of duplicating animation', () => {
     const event: GameEvent = {
-      type: 'ENTITY_DISPLACED',
+      type: 'ENTITY_DISPLACED', isFieldEvent: true,
       entityId: 'enemy1',
       sourceEntityId: null,
       from: { x: 3, y: 3 },
@@ -305,7 +305,7 @@ describe('entityDisplacedBuilder', () => {
 
 describe('entityMissedBuilder', () => {
   it('creates UI_FLOATING_TEXT for ENTITY_MISSED', () => {
-    const event: GameEvent = { type: 'ENTITY_MISSED', attackerId: 'player', targetId: 'enemy1' };
+    const event: GameEvent = { type: 'ENTITY_MISSED', isFieldEvent: true, attackerId: 'player', targetId: 'enemy1' };
     const nodes = entityMissedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -315,7 +315,7 @@ describe('entityMissedBuilder', () => {
 
 describe('tileEffect builders', () => {
   it('creates PARTICLE_BURST for TILE_EFFECT_CHANGED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_CHANGED', effectType: 'oil', position: { x: 2, y: 3 }, isNew: true };
+    const event: GameEvent = { type: 'TILE_EFFECT_CHANGED', isFieldEvent: true, effectType: 'oil', position: { x: 2, y: 3 }, isNew: true };
     const nodes = tileEffectChangedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -326,7 +326,7 @@ describe('tileEffect builders', () => {
   });
 
   it('creates PARTICLE_BURST for TILE_EFFECT_REMOVED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_REMOVED', effectType: 'oil', position: { x: 2, y: 3 } };
+    const event: GameEvent = { type: 'TILE_EFFECT_REMOVED', isFieldEvent: true, effectType: 'oil', position: { x: 2, y: 3 } };
     const nodes = tileEffectRemovedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -334,8 +334,8 @@ describe('tileEffect builders', () => {
     expect((nodes![0]!.step as any).color).toBe(0x888888);
   });
 
-  it('creates orange PARTICLE_BURST for burning TILE_EFFECT_STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null, isNew: true };
+  it('creates orange PARTICLE_BURST for TILE_EFFECT_STATUS_APPLIED', () => {
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true, effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null, isNew: true };
     const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -343,17 +343,17 @@ describe('tileEffect builders', () => {
     expect((nodes![0]!.step as any).color).toBe(0xffaa00);
   });
 
-  it('creates gray PARTICLE_BURST for non-burning TILE_EFFECT_STATUS_APPLIED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', effectType: 'oil', statusType: 'frozen', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null, isNew: true };
+  it('uses the same status-applied color regardless of statusType', () => {
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true, effectType: 'oil', statusType: 'frozen', position: { x: 2, y: 3 }, duration: 3, sourceEntityId: null, isNew: true };
     const nodes = tileEffectStatusAppliedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('PARTICLE_BURST');
-    expect((nodes![0]!.step as any).color).toBe(0xcccccc);
+    expect((nodes![0]!.step as any).color).toBe(0xffaa00);
   });
 
   it('creates PARTICLE_BURST for TILE_EFFECT_STATUS_REMOVED', () => {
-    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_REMOVED', effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 } };
+    const event: GameEvent = { type: 'TILE_EFFECT_STATUS_REMOVED', isFieldEvent: true, effectType: 'oil', statusType: 'burning', position: { x: 2, y: 3 } };
     const nodes = tileEffectStatusRemovedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
@@ -362,7 +362,7 @@ describe('tileEffect builders', () => {
   });
 
   it('returns null for mismatched event type', () => {
-    const event: GameEvent = { type: 'ENTITY_MOVED', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 }, movementType: 'walk' };
+    const event: GameEvent = { type: 'ENTITY_MOVED', isFieldEvent: true, entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 }, movementType: 'walk' };
     expect(tileEffectChangedBuilder(event, [], makeMockState())).toBeNull();
     expect(tileEffectRemovedBuilder(event, [], makeMockState())).toBeNull();
     expect(tileEffectStatusAppliedBuilder(event, [], makeMockState())).toBeNull();
@@ -373,7 +373,7 @@ describe('tileEffect builders', () => {
 describe('tileExplodedBuilder', () => {
   it('creates EXPLOSION step for TILE_EXPLODED', () => {
     const event: GameEvent = {
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       position: { x: 2, y: 3 },
       sourceEntityId: null,
       damage: 5,
@@ -390,7 +390,7 @@ describe('tileExplodedBuilder', () => {
 
   it('uses event radius for explosion', () => {
     const event: GameEvent = {
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       position: { x: 5, y: 5 },
       sourceEntityId: null,
       damage: 8,
@@ -406,7 +406,7 @@ describe('tileExplodedBuilder', () => {
   it('wraps child damage nodes inside explosion', () => {
     const childDamage = { step: { type: 'DAMAGE' as const, targetId: 'enemy1', amount: 5, tags: ['damage.magical.fire'], position: { x: 2, y: 3 } }, children: [] };
     const event: GameEvent = {
-      type: 'TILE_EXPLODED',
+      type: 'TILE_EXPLODED', isFieldEvent: true,
       position: { x: 2, y: 3 },
       sourceEntityId: null,
       damage: 5,
@@ -421,7 +421,7 @@ describe('tileExplodedBuilder', () => {
   });
 
   it('returns null for mismatched event type', () => {
-    const event: GameEvent = { type: 'ENTITY_MOVED', entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 }, movementType: 'walk' };
+    const event: GameEvent = { type: 'ENTITY_MOVED', isFieldEvent: true, entityId: 'player', from: { x: 1, y: 1 }, to: { x: 2, y: 2 }, movementType: 'walk' };
     expect(tileExplodedBuilder(event, [], makeMockState())).toBeNull();
   });
 });

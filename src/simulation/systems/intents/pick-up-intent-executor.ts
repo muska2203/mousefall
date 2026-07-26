@@ -36,7 +36,7 @@ export const executePickUpIntent: IntentExecutor<PickUpIntent> = (
     state.runStats.itemsPickedUp += itemEntity.quantity;
 
     return builder.addChild(parent, {
-        type: 'ITEM_PICKED_UP' as const,
+        type: 'ITEM_PICKED_UP', isFieldEvent: true as const,
         entityId: intent.entityId,
         itemInstanceId: itemEntity.instanceId,
         templateId: itemEntity.templateId,

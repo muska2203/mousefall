@@ -30,7 +30,12 @@ import {statusRemovedBuilder} from './builders/statusRemoved';
 import {entityCollidedBuilder} from './builders/entityCollided';
 import {entityDisplacedBuilder} from './builders/entityDisplaced';
 import {entityMissedBuilder} from './builders/entityMissed';
-import {tileEffectChangedBuilder, tileEffectRemovedBuilder, tileEffectStatusAppliedBuilder, tileEffectStatusRemovedBuilder} from './builders/tileEffect';
+import {
+    tileEffectChangedBuilder,
+    tileEffectRemovedBuilder,
+    tileEffectStatusAppliedBuilder,
+    tileEffectStatusRemovedBuilder
+} from './builders/tileEffect';
 import {tileExplodedBuilder} from './builders/tileExploded';
 
 // Регистрация скилловых composers (side-effect).
@@ -40,6 +45,7 @@ import './skills/swoop';
 import './skills/cleave';
 import './skills/rain';
 import './skills/oilFlask';
+import './skills/beam';
 
 registerAnimationBuilder('ENTITY_MOVED', entityMovedBuilder);
 registerAnimationBuilder('ACTION_APPLIED', actionAppliedBuilder);

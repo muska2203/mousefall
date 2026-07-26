@@ -28,7 +28,7 @@ export function emitEntityMoved(
     entity.y = newY;
     const to = { x: newX, y: newY };
 
-    return builder.addChild(parent, { type: 'ENTITY_MOVED', entityId, from, to, movementType });
+    return builder.addChild(parent, { type: 'ENTITY_MOVED', isFieldEvent: true, entityId, from, to, movementType });
 }
 
 export const executeMoveIntent: IntentExecutor<MoveIntent> = (

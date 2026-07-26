@@ -444,6 +444,12 @@ export type TileExplosionIntent = {
 // Доменные события (Events)
 // ─────────────────────────────────────────────
 
+/** Базовые метаданные любого игрового события. */
+type GameEventBase = {
+  /** True, если событие происходит на игровом поле и подлежит FOV-фильтрации. */
+  isFieldEvent: boolean;
+};
+
 export type GameEvent =
   | ActionAppliedEvent
   | ActionRejectedEvent
@@ -497,23 +503,23 @@ export type GameEvent =
   | TileEffectTickedEvent
   | TileExplodedEvent;
 
-export type ActionAppliedEvent = { type: 'ACTION_APPLIED'; action: GameAction };
+export type ActionAppliedEvent = GameEventBase & { type: 'ACTION_APPLIED'; action: GameAction };
 
-export type ActionRejectedEvent = { type: 'ACTION_REJECTED'; errors: ValidationError[] };
+export type ActionRejectedEvent = GameEventBase & { type: 'ACTION_REJECTED'; errors: ValidationError[] };
 
-export type EntityMovedEvent = { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' | 'dash' | 'teleport' };
+export type EntityMovedEvent = GameEventBase & { type: 'ENTITY_MOVED'; entityId: EntityId; from: Position; to: Position; movementType: 'walk' | 'jump' | 'dash' | 'teleport' };
 
-export type EntityDamagedEvent = { type: 'ENTITY_DAMAGED'; targetId: EntityId; sourceEntityId: EntityId | null; damage: number; position: Position; tags: GameplayTag[] };
+export type EntityDamagedEvent = GameEventBase & { type: 'ENTITY_DAMAGED'; targetId: EntityId; sourceEntityId: EntityId | null; damage: number; position: Position; tags: GameplayTag[] };
 
-export type TileDamagedEvent = { type: 'TILE_DAMAGED'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
+export type TileDamagedEvent = GameEventBase & { type: 'TILE_DAMAGED'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 
-export type EntityDiedEvent = { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
+export type EntityDiedEvent = GameEventBase & { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
 
-export type EntityMissedEvent = { type: 'ENTITY_MISSED'; attackerId: EntityId; targetId: EntityId };
+export type EntityMissedEvent = GameEventBase & { type: 'ENTITY_MISSED'; attackerId: EntityId; targetId: EntityId };
 
-export type ItemPickedUpEvent = { type: 'ITEM_PICKED_UP'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
+export type ItemPickedUpEvent = GameEventBase & { type: 'ITEM_PICKED_UP'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 
-export type ItemDroppedEvent = {
+export type ItemDroppedEvent = GameEventBase & {
   type: 'ITEM_DROPPED';
   dropperEntityId: EntityId;
   /** ID инвентарного экземпляра предмета (консистентно с ITEM_PICKED_UP). */
@@ -525,13 +531,13 @@ export type ItemDroppedEvent = {
   from: Position;
 };
 
-export type ItemUsedEvent = { type: 'ITEM_USED'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
+export type ItemUsedEvent = GameEventBase & { type: 'ITEM_USED'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 
-export type DoorOpenedEvent = { type: 'DOOR_OPENED'; position: Position };
+export type DoorOpenedEvent = GameEventBase & { type: 'DOOR_OPENED'; position: Position };
 
-export type DoorClosedEvent = { type: 'DOOR_CLOSED'; position: Position };
+export type DoorClosedEvent = GameEventBase & { type: 'DOOR_CLOSED'; position: Position };
 
-export type FloorChangedEvent = {
+export type FloorChangedEvent = GameEventBase & {
   type: 'FLOOR_CHANGED';
   from: number;
   to: number;
@@ -560,23 +566,23 @@ export type FloorTransitionPlan = {
   fovEvents: GameEvent[];
 };
 
-export type MapChangedEvent = { type: 'MAP_CHANGED'; width: number; height: number };
+export type MapChangedEvent = GameEventBase & { type: 'MAP_CHANGED'; width: number; height: number };
 
-export type EntitiesReplacedEvent = { type: 'ENTITIES_REPLACED'; entityIds: EntityId[] };
+export type EntitiesReplacedEvent = GameEventBase & { type: 'ENTITIES_REPLACED'; entityIds: EntityId[] };
 
-export type TurnEndedEvent = { type: 'TURN_ENDED'; turnNumber: number };
+export type TurnEndedEvent = GameEventBase & { type: 'TURN_ENDED'; turnNumber: number };
 
-export type PlayerDiedEvent = { type: 'PLAYER_DIED' };
+export type PlayerDiedEvent = GameEventBase & { type: 'PLAYER_DIED' };
 
-export type PlayerLeveledUpEvent = { type: 'PLAYER_LEVELED_UP'; newLevel: number };
+export type PlayerLeveledUpEvent = GameEventBase & { type: 'PLAYER_LEVELED_UP'; newLevel: number };
 
-export type FogUpdatedEvent = { type: 'FOG_UPDATED'; newlyVisible: Position[] };
+export type FogUpdatedEvent = GameEventBase & { type: 'FOG_UPDATED'; newlyVisible: Position[] };
 
-export type StatusAppliedEvent = { type: 'STATUS_APPLIED'; entityId: EntityId; sourceEntityId: EntityId | null; effect: StatusEffect };
+export type StatusAppliedEvent = GameEventBase & { type: 'STATUS_APPLIED'; entityId: EntityId; sourceEntityId: EntityId | null; effect: StatusEffect };
 
-export type StatusRemovedEvent = { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
+export type StatusRemovedEvent = GameEventBase & { type: 'STATUS_REMOVED'; entityId: EntityId; effectType: StatusEffectType };
 
-export type StatusBlockedEvent = {
+export type StatusBlockedEvent = GameEventBase & {
   type: 'STATUS_BLOCKED';
   entityId: EntityId;
   sourceEntityId: EntityId | null;
@@ -584,32 +590,32 @@ export type StatusBlockedEvent = {
   blockedBy: StatusEffectType;
 };
 
-export type StatusTickedEvent = { type: 'STATUS_TICKED'; entityId: EntityId; effectTypes: StatusEffectType[]; tags: GameplayTag[] };
+export type StatusTickedEvent = GameEventBase & { type: 'STATUS_TICKED'; entityId: EntityId; effectTypes: StatusEffectType[]; tags: GameplayTag[] };
 
-export type StatusStacksAdjustedEvent = {
+export type StatusStacksAdjustedEvent = GameEventBase & {
   type: 'STATUS_STACKS_ADJUSTED';
   entityId: EntityId;
   statusType: StatusEffectType;
   stacks: number;
 };
 
-export type AbilityUsedEvent = { type: 'ABILITY_USED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
+export type AbilityUsedEvent = GameEventBase & { type: 'ABILITY_USED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 
-export type AbilityPreparedEvent = { type: 'ABILITY_PREPARED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
+export type AbilityPreparedEvent = GameEventBase & { type: 'ABILITY_PREPARED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 
-export type AbilityPreparedCancelledEvent = { type: 'ABILITY_PREPARED_CANCELLED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
+export type AbilityPreparedCancelledEvent = GameEventBase & { type: 'ABILITY_PREPARED_CANCELLED'; entityId: EntityId; abilityId: string; targets: Position[]; from: Position };
 
-export type ResourceConsumedEvent = { type: 'RESOURCE_CONSUMED'; entityId: EntityId; resource: 'ap'; amount: number; remaining: number };
+export type ResourceConsumedEvent = GameEventBase & { type: 'RESOURCE_CONSUMED'; entityId: EntityId; resource: 'ap'; amount: number; remaining: number };
 
-export type CooldownSetEvent = { type: 'COOLDOWN_SET'; entityId: EntityId; abilityId: string; turns: number };
+export type CooldownSetEvent = GameEventBase & { type: 'COOLDOWN_SET'; entityId: EntityId; abilityId: string; turns: number };
 
-export type ItemEquippedEvent = { type: 'ITEM_EQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
-export type ItemUnequippedEvent = { type: 'ITEM_UNEQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
-export type AbilityGrantedEvent = { type: 'ABILITY_GRANTED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
-export type AbilityRevokedEvent = { type: 'ABILITY_REVOKED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
-export type EntityBumpedEvent = { type: 'ENTITY_BUMPED'; entityId: EntityId; position: Position; dx: number; dy: number };
+export type ItemEquippedEvent = GameEventBase & { type: 'ITEM_EQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
+export type ItemUnequippedEvent = GameEventBase & { type: 'ITEM_UNEQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
+export type AbilityGrantedEvent = GameEventBase & { type: 'ABILITY_GRANTED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
+export type AbilityRevokedEvent = GameEventBase & { type: 'ABILITY_REVOKED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
+export type EntityBumpedEvent = GameEventBase & { type: 'ENTITY_BUMPED'; entityId: EntityId; position: Position; dx: number; dy: number };
 
-export type EntityCollidedEvent = {
+export type EntityCollidedEvent = GameEventBase & {
   type: 'ENTITY_COLLIDED';
   entityId: EntityId;
   targetId: EntityId | null;
@@ -621,7 +627,7 @@ export type EntityCollidedEvent = {
   tags: GameplayTag[];
 };
 
-export type EntityDisplacedEvent = {
+export type EntityDisplacedEvent = GameEventBase & {
   type: 'ENTITY_DISPLACED';
   entityId: EntityId;
   sourceEntityId: EntityId | null;
@@ -631,28 +637,28 @@ export type EntityDisplacedEvent = {
   dy: number;
 };
 
-export type TurnBeganEvent = {
+export type TurnBeganEvent = GameEventBase & {
   type: 'TURN_BEGAN';
   side: TurnSide;
   round: number;
   actorId: EntityId | null;
 };
 
-export type ApRestoredEvent = {
+export type ApRestoredEvent = GameEventBase & {
   type: 'AP_RESTORED';
   entityId: EntityId;
   amount: number;
   remaining: number;
 };
 
-export type CooldownTickedEvent = {
+export type CooldownTickedEvent = GameEventBase & {
   type: 'COOLDOWN_TICKED';
   entityId: EntityId;
   abilityId: string;
   remaining: number;
 };
 
-export type EntityHealedEvent = {
+export type EntityHealedEvent = GameEventBase & {
   type: 'ENTITY_HEALED';
   entityId: EntityId;
   amount: number;
@@ -660,18 +666,18 @@ export type EntityHealedEvent = {
   position: Position;
 };
 
-export type DeadEntitiesCleanedEvent = {
+export type DeadEntitiesCleanedEvent = GameEventBase & {
   type: 'DEAD_ENTITIES_CLEANED';
   removed: { entityId: EntityId; position: Position }[];
 };
 
-export type AiNotifiedEvent = {
+export type AiNotifiedEvent = GameEventBase & {
   type: 'AI_NOTIFIED';
   entityId: EntityId;
   change: WorldChange;
 };
 
-export type CounterAttackAppliedEvent = {
+export type CounterAttackAppliedEvent = GameEventBase & {
   type: 'COUNTER_ATTACK_APPLIED';
   attackerId: EntityId;
   targetId: EntityId;
@@ -687,7 +693,7 @@ export type CounterAttackAppliedEvent = {
  * Observability-событие: контентное правило сработало и породило интенты.
  * Не влияет на игровую логику, нужно только для debug-визуализации цепочек правил.
  */
-export type RuleTriggeredEvent = {
+export type RuleTriggeredEvent = GameEventBase & {
   type: 'RULE_TRIGGERED';
   ruleId: string;
   layer: 'source' | 'target' | 'world' | 'radius';
@@ -698,7 +704,7 @@ export type RuleTriggeredEvent = {
   conditionMatched: boolean;
 };
 
-export type TileEffectChangedEvent = {
+export type TileEffectChangedEvent = GameEventBase & {
   type: 'TILE_EFFECT_CHANGED';
   effectType: string;
   position: Position;
@@ -706,13 +712,13 @@ export type TileEffectChangedEvent = {
   isNew: boolean;
 };
 
-export type TileEffectRemovedEvent = {
+export type TileEffectRemovedEvent = GameEventBase & {
   type: 'TILE_EFFECT_REMOVED';
   effectType: string;
   position: Position;
 };
 
-export type TileEffectStatusAppliedEvent = {
+export type TileEffectStatusAppliedEvent = GameEventBase & {
   type: 'TILE_EFFECT_STATUS_APPLIED';
   effectType: string;
   statusType: string;
@@ -724,27 +730,27 @@ export type TileEffectStatusAppliedEvent = {
   isNew: boolean;
 };
 
-export type TileEffectStatusRemovedEvent = {
+export type TileEffectStatusRemovedEvent = GameEventBase & {
   type: 'TILE_EFFECT_STATUS_REMOVED';
   effectType: string;
   statusType: string;
   position: Position;
 };
 
-export type TileEffectStatusTickedEvent = {
+export type TileEffectStatusTickedEvent = GameEventBase & {
   type: 'TILE_EFFECT_STATUS_TICKED';
   effectType: string;
   statusType: string;
   position: Position;
 };
 
-export type TileEffectTickedEvent = {
+export type TileEffectTickedEvent = GameEventBase & {
   type: 'TILE_EFFECT_TICKED';
   effectType: string;
   position: Position;
 };
 
-export type TileExplodedEvent = {
+export type TileExplodedEvent = GameEventBase & {
   type: 'TILE_EXPLODED';
   position: Position;
   sourceEntityId: EntityId | null;

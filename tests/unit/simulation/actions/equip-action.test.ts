@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import { equipEntity } from '../../../../src/simulation/systems/actions/equip-action';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { ItemTemplate } from '../../../../src/content/schemas';
-import { ExecutionBuilder } from '../../../../src/simulation/systems/actions/types';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {equipEntity} from '../../../../src/simulation/systems/actions/equip-action';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {ItemTemplate} from '../../../../src/content/schemas';
+import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
 
 function mockItem(id: string, type: ItemTemplate['type'], abilityPool: ItemTemplate['abilityPool'] = []): ItemTemplate {
   return {
@@ -22,7 +22,7 @@ function mockItem(id: string, type: ItemTemplate['type'], abilityPool: ItemTempl
 }
 
 function makeBuilder() {
-  return new ExecutionBuilder({ type: 'ACTION_APPLIED', action: { type: 'END_TURN', entityId: 'any' } });
+  return new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: 'any' } });
 }
 
 beforeEach(() => {

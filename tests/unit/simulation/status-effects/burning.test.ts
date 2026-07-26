@@ -1,15 +1,16 @@
-import {describe, expect, it, beforeEach, afterEach} from 'vitest';
-import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
-import { tickEntityStatusEffects } from '../../../../src/simulation/systems/status-effect-ticker';
-import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
-import { executeIntent } from '../../../../src/simulation/systems/intents/execute-intent';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import type { EntityDamagedEvent } from '../../../../src/simulation/core-types';
-import { GameSimulation } from '../../../../src/simulation/simulation';
-import { advanceToPlayerTurn } from '../../../helpers/simulation';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import { rebuildActiveRules } from '../../../../src/simulation/systems/rules/active-rule-lifecycle';
-import type { StatusTemplate } from '../../../../src/content/schemas';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeEnemy, makeGameState} from '../../../fixtures/gameState';
+import {tickEntityStatusEffects} from '../../../../src/simulation/systems/status-effect-ticker';
+import {
+  executeTickStatusEffectsIntent
+} from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
+import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
+import type {EntityDamagedEvent} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {GameSimulation} from '../../../../src/simulation/simulation';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import {rebuildActiveRules} from '../../../../src/simulation/systems/rules/active-rule-lifecycle';
+import type {StatusTemplate} from '../../../../src/content/schemas';
 
 function mockBurningStatus(): StatusTemplate {
   return {
@@ -54,15 +55,15 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder1 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
+    const builder1 = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder1, builder1.root);
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder2 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
+    const builder2 = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder2, builder2.root);
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder3 = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
+    const builder3 = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder3, builder3.root);
     expect(enemy.statusEffects).toHaveLength(0);
   });
@@ -72,7 +73,7 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
     expect(enemy.statusEffects).toHaveLength(0);
   });
@@ -82,7 +83,7 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     const node = executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     expect(node).not.toBeNull();
@@ -99,7 +100,7 @@ describe('burning status effect', () => {
     state.entities.set(enemy.id, enemy);
     rebuildActiveRules(enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', entityId: enemy.id, effectTypes: [], tags: [] });
+    const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     executeIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
 
     const damagedEvents = collectEvents(builder.root).filter(e => e.type === 'ENTITY_DAMAGED');

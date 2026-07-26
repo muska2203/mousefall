@@ -2,11 +2,11 @@
  * Тесты исполнителя интента PICK_UP.
  */
 
-import { describe, it, expect } from 'vitest';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
-import { executeIntent } from '@simulation/systems/intents/execute-intent';
-import { makeGameState, makePlayer, makeEnemy, makeFloorItemContainer } from '../../../fixtures/gameState';
-import type { Entity, EntityId } from '@simulation/types';
+import {describe, expect, it} from 'vitest';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
+import {executeIntent} from '@simulation/systems/intents/execute-intent';
+import {makeEnemy, makeFloorItemContainer, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import type {Entity, EntityId} from '@simulation/types';
 
 describe('executePickUpIntent', () => {
   it('поднимает FloorItemContainerEntity: добавляет предмет в инвентарь игрока и удаляет контейнер с пола', () => {
@@ -21,7 +21,7 @@ describe('executePickUpIntent', () => {
     });
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: container.id },
     });
 
@@ -38,7 +38,7 @@ describe('executePickUpIntent', () => {
     expect(player.inventory[0]).toBe(container.item);
 
     expect(node!.event).toEqual({
-      type: 'ITEM_PICKED_UP',
+      type: 'ITEM_PICKED_UP', isFieldEvent: true,
       entityId: 'player',
       itemInstanceId: container.item.instanceId,
       templateId: container.item.templateId,
@@ -50,7 +50,7 @@ describe('executePickUpIntent', () => {
     const state = makeGameState({ player });
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: 'missing_item' },
     });
 
@@ -75,7 +75,7 @@ describe('executePickUpIntent', () => {
     });
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: enemy.id, targetId: container.id },
     });
 

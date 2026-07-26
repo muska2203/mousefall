@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestSimulation } from '../helpers/simulation';
-import { makeTestMap, makePlayer, makeEnemy } from '../fixtures/gameState';
-import { initRegistry, resetRegistry } from '../../src/content/registry';
-import type { GameState, EntityId, FloorItemContainerEntity } from '../../src/simulation/types';
-import type { EntityTemplate, ItemTemplate } from '../../src/content/schemas';
-import { createRNG } from '../../src/utils/rng';
-import type { ExecutionNode } from '../../src/simulation/core-types';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {createTestSimulation} from '../helpers/simulation';
+import {makeEnemy, makePlayer, makeTestMap} from '../fixtures/gameState';
+import {initRegistry, resetRegistry} from '../../src/content/registry';
+import type {EntityId, FloorItemContainerEntity, GameState} from '../../src/simulation/types';
+import type {EntityTemplate, ItemTemplate} from '../../src/content/schemas';
+import {createRNG} from '../../src/utils/rng';
+import type {ExecutionNode} from '../../src/simulation/core-types';
 
 function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTemplate {
   return {
@@ -105,6 +105,7 @@ function makeLootGameState(): GameState {
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,
+      defeatedBossIds: [],
     },
     featureFlags: {
       contentRulesEnabled: true,

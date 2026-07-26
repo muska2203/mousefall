@@ -45,7 +45,7 @@ export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
   addActiveRulesForItem(player, item.instanceId, template.ruleIds ?? []);
 
   return builder.addChild(parent, {
-    type: 'ITEM_EQUIPPED',
+    type: 'ITEM_EQUIPPED', isFieldEvent: false,
     entityId: intent.entityId,
     itemInstanceId: intent.itemInstanceId,
     slot: intent.slot,

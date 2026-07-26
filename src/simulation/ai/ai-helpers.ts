@@ -174,7 +174,7 @@ export function prepareAbility(
   enemy.aiState.preparedAbility = { abilityId, targets };
 
   builder.addChild(parent, {
-    type: 'ABILITY_PREPARED',
+    type: 'ABILITY_PREPARED', isFieldEvent: false,
     entityId: enemy.id,
     abilityId,
     targets,

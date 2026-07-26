@@ -8,12 +8,12 @@
 
 import type {GameState} from '@simulation/types.ts';
 import type {
+  ApplyTileEffectStatusIntent,
   IntentExecutor,
   RemoveTileEffectIntent,
+  RemoveTileEffectStatusIntent,
   SpawnTileEffectIntent,
   TickTileEffectsIntent,
-  ApplyTileEffectStatusIntent,
-  RemoveTileEffectStatusIntent,
   TileEffectInstance,
 } from '@simulation/systems/intents/types.ts';
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
@@ -103,7 +103,7 @@ export const executeSpawnTileEffectIntent: IntentExecutor<SpawnTileEffectIntent>
   }
 
   return builder.addChild(parent, {
-    type: 'TILE_EFFECT_CHANGED',
+    type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
     effectType: intent.effectType,
     position: { x, y },
     isNew: !existingEffect,
@@ -125,7 +125,7 @@ export const executeRemoveTileEffectIntent: IntentExecutor<RemoveTileEffectInten
   delete cell[intent.effectType];
 
   return builder.addChild(parent, {
-    type: 'TILE_EFFECT_REMOVED',
+    type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
     effectType: intent.effectType,
     position: { x, y },
   });
@@ -165,7 +165,7 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
         if (effect.duration > 0) {
           // Живой тайловый эффект тикает: сначала сам эффект, затем его статусы.
           lastNode = builder.addChild(parent, {
-            type: 'TILE_EFFECT_TICKED',
+            type: 'TILE_EFFECT_TICKED', isFieldEvent: false,
             effectType,
             position: { x, y },
           });
@@ -179,7 +179,7 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
             }
 
             lastNode = builder.addChild(parent, {
-              type: 'TILE_EFFECT_STATUS_TICKED',
+              type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
               effectType,
               statusType: status.type,
               position: { x, y },
@@ -189,7 +189,7 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
               aliveStatuses.push(status);
             } else {
               lastNode = builder.addChild(parent, {
-                type: 'TILE_EFFECT_STATUS_REMOVED',
+                type: 'TILE_EFFECT_STATUS_REMOVED', isFieldEvent: true,
                 effectType,
                 statusType: status.type,
                 position: { x, y },
@@ -212,7 +212,7 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
       delete cell[effectType];
     }
     lastNode = builder.addChild(parent, {
-      type: 'TILE_EFFECT_REMOVED',
+      type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
       effectType,
       position: { x, y },
     });
@@ -281,7 +281,7 @@ export const executeApplyTileEffectStatusIntent: IntentExecutor<ApplyTileEffectS
     if (index >= 0) {
       effect.statusEffects.splice(index, 1);
       builder.addChild(parent, {
-        type: 'TILE_EFFECT_STATUS_REMOVED',
+        type: 'TILE_EFFECT_STATUS_REMOVED', isFieldEvent: true,
         effectType: intent.effectType,
         statusType: exclusiveType,
         position: { x, y },
@@ -307,7 +307,7 @@ export const executeApplyTileEffectStatusIntent: IntentExecutor<ApplyTileEffectS
   }
 
   return builder.addChild(parent, {
-    type: 'TILE_EFFECT_STATUS_APPLIED',
+    type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true,
     effectType: intent.effectType,
     statusType: intent.statusType,
     position: { x, y },
@@ -346,7 +346,7 @@ export const executeRemoveTileEffectStatusIntent: IntentExecutor<RemoveTileEffec
   effect.statusEffects.splice(index, 1);
 
   return builder.addChild(parent, {
-    type: 'TILE_EFFECT_STATUS_REMOVED',
+    type: 'TILE_EFFECT_STATUS_REMOVED', isFieldEvent: true,
     effectType: intent.effectType,
     statusType: intent.statusType,
     position: { x, y },

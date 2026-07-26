@@ -10,13 +10,13 @@
  */
 
 import type {
-    EntityId,
-    ExecutionBuilder,
-    ExecutionNode,
-    GameEvent,
-    GameplayTag,
-    Intent,
-    Position,
+  EntityId,
+  ExecutionBuilder,
+  ExecutionNode,
+  GameEvent,
+  GameplayTag,
+  Intent,
+  Position,
 } from '@simulation/core-types.ts';
 import type {Actor, GameState} from '@simulation/types.ts';
 import {findEntity, getTileEffectsAt, isActor} from '@simulation/state.ts';
@@ -108,7 +108,7 @@ export function runContentRuleReactions(
     intents.push(...ruleIntents);
 
     builder.addChild(parent, {
-      type: 'RULE_TRIGGERED',
+      type: 'RULE_TRIGGERED', isFieldEvent: false,
       ruleId: rule.id,
       layer,
       ownerEntityId: selfId,

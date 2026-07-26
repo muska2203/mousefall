@@ -5,14 +5,14 @@
  * поджигаются одновременно, а не последовательно змейкой.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { GameSimulation } from '../../../src/simulation/simulation';
-import { ExecutionBuilder } from '../../../src/simulation/core-types';
-import { executeIntent } from '../../../src/simulation/systems/intents/execute-intent';
-import { makeGameState, makePlayer, makeTestMap } from '../../fixtures/gameState';
-import { loadTestContent, setupCombatScenario } from '../combat-scenarios/helpers';
-import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
-import type { GameState } from '../../../src/simulation/types';
+import {beforeEach, describe, expect, it} from 'vitest';
+import {GameSimulation} from '../../../src/simulation/simulation';
+import type {ExecutionNode, GameEvent} from '../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../src/simulation/core-types';
+import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
+import {makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
+import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import type {GameState} from '../../../src/simulation/types';
 
 function createTestPlayer() {
   return makePlayer({
@@ -101,7 +101,7 @@ describe('Параллельное распространение взрывов
     }
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: player.id },
     });
     igniteTile(state, builder, { x: 3, y: 3 });
@@ -143,7 +143,7 @@ describe('Параллельное распространение взрывов
     }
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: player.id },
     });
     igniteTile(state, builder, { x: 2, y: 2 });

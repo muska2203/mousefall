@@ -8,6 +8,7 @@
 import {useState} from 'react';
 import {useTranslation} from '@i18n/hooks';
 import type {HotbarItemViewModel} from '@presentation/types';
+import {HOTBAR_LABELS} from '@ui/input/keyboardConfig';
 import {resolveItemFrame} from '@utils/assetResolver';
 import {CircularCooldown} from './CircularCooldown';
 import {ItemDetailPopover} from './ItemDetailPopover';
@@ -22,10 +23,6 @@ interface Props {
   disabled?: boolean;
   /** Вызывается при клике или активации с клавиатуры. */
   onClick?: () => void;
-}
-
-function slotLabel(index: number): string {
-  return index < 9 ? String(index + 1) : '0';
 }
 
 function formatApCost(cost: number | 'all' | undefined): string {
@@ -67,8 +64,8 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
         data-slot-index={index}
         aria-label={
           isEmpty
-            ? t('hotbar.emptySlotAria', { index: slotLabel(index) })
-            : t('hotbar.occupiedSlotAria', { index: slotLabel(index) })
+            ? t('hotbar.emptySlotAria', { index: HOTBAR_LABELS[index] })
+            : t('hotbar.occupiedSlotAria', { index: HOTBAR_LABELS[index] })
         }
         tabIndex={isEmpty ? -1 : 0}
         disabled={isEmpty || disabled}
@@ -77,7 +74,7 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        <span className="cm-quick-slot__key">{slotLabel(index)}</span>
+        <span className="cm-quick-slot__key">{HOTBAR_LABELS[index]}</span>
 
         {!isEmpty && item.icon && item.kind === 'consumable' && (
           <span className="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true">

@@ -1,10 +1,10 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makeEnemy, makeDoor } from '../../../fixtures/gameState';
-import { executeApplyStatusIntent } from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import type { StatusEffect } from '../../../../src/simulation/core-types';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { StatusTemplate } from '../../../../src/content/schemas';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeDoor, makeEnemy, makeGameState} from '../../../fixtures/gameState';
+import {executeApplyStatusIntent} from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
+import type {StatusEffect} from '../../../../src/simulation/core-types';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {StatusTemplate} from '../../../../src/content/schemas';
 
 function makeStatus(type: StatusEffect['type'], duration: number, stacks?: number): StatusEffect {
   return {
@@ -79,7 +79,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('frozen', 3) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('frozen', 3) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('frozen', 3) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -92,7 +92,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('counterattack', 2) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('counterattack', 2) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('counterattack', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -106,7 +106,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('counterattack', 2) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('counterattack', 2) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('counterattack', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -130,7 +130,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('silenced', 1) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('silenced', 1) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('silenced', 1) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -142,7 +142,7 @@ describe('apply-status-intent-executer', () => {
     );
     expect(cancelledEvent).toBeDefined();
     expect(cancelledEvent!.event).toMatchObject({
-      type: 'ABILITY_PREPARED_CANCELLED',
+      type: 'ABILITY_PREPARED_CANCELLED', isFieldEvent: false,
       entityId: enemy.id,
       abilityId: 'fireball',
       targets: [{ x: 5, y: 5 }],
@@ -154,7 +154,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('silenced', 1) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('silenced', 1) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('silenced', 1) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -171,7 +171,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('dazed', 2) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('dazed', 2) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('dazed', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -180,7 +180,7 @@ describe('apply-status-intent-executer', () => {
     const blockedEvent = builder.root.children.find(c => c.event.type === 'STATUS_BLOCKED');
     expect(blockedEvent).toBeDefined();
     expect(blockedEvent!.event).toMatchObject({
-      type: 'STATUS_BLOCKED',
+      type: 'STATUS_BLOCKED', isFieldEvent: true,
       entityId: enemy.id,
       statusType: 'dazed',
       blockedBy: 'stunned',
@@ -192,7 +192,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('stunned', 2) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('stunned', 2) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('stunned', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -201,7 +201,7 @@ describe('apply-status-intent-executer', () => {
     const removedEvent = builder.root.children.find(c => c.event.type === 'STATUS_REMOVED');
     expect(removedEvent).toBeDefined();
     expect(removedEvent!.event).toMatchObject({
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: enemy.id,
       effectType: 'dazed',
     });
@@ -212,7 +212,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: enemy.id, sourceEntityId: null, effect: makeStatus('burning', 2) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: enemy.id, sourceEntityId: null, effect: makeStatus('burning', 2) });
     executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: enemy.id, sourceEntityId: null, status: makeStatus('burning', 2) }, builder, builder.root);
 
     expect(enemy.statusEffects).toHaveLength(1);
@@ -221,7 +221,7 @@ describe('apply-status-intent-executer', () => {
     const removedEvent = builder.root.children.find(c => c.event.type === 'STATUS_REMOVED');
     expect(removedEvent).toBeDefined();
     expect(removedEvent!.event).toMatchObject({
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: enemy.id,
       effectType: 'frozen',
     });
@@ -232,7 +232,7 @@ describe('apply-status-intent-executer', () => {
     const state = makeGameState();
     state.entities.set(door.id, door);
 
-    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', entityId: door.id, sourceEntityId: null, effect: makeStatus('burning', 2) });
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: door.id, sourceEntityId: null, effect: makeStatus('burning', 2) });
     const result = executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: door.id, sourceEntityId: null, status: makeStatus('burning', 2) }, builder, builder.root);
 
     expect(result).toBeNull();

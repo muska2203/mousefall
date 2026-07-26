@@ -17,7 +17,7 @@ export const executeBumpIntent: IntentExecutor<BumpIntent> = (
   parent: ExecutionNode,
 ) => {
   return builder.addChild(parent, {
-    type: 'ENTITY_BUMPED',
+    type: 'ENTITY_BUMPED', isFieldEvent: true,
     entityId: intent.entityId,
     position: intent.position,
     dx: intent.dx,

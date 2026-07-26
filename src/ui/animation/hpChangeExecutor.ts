@@ -10,6 +10,7 @@ import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import type {AnimationConfigKey} from '@utils/animationConfig';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
+import {registerAnimationExecutor} from './registry';
 
 export class HpChangeAnimationExecutor implements AnimationExecutor {
   canExecute(step: AnimationStep): boolean {
@@ -22,3 +23,5 @@ export class HpChangeAnimationExecutor implements AnimationExecutor {
     await ctx.worldRenderer.animateHpChange(step.entityId, step.fromHp, step.toHp, step.maxHp, config);
   }
 }
+
+registerAnimationExecutor(new HpChangeAnimationExecutor());

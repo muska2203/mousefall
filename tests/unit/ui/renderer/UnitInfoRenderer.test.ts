@@ -2,8 +2,13 @@
  * Unit tests for UnitInfoRenderer.
  */
 
-import {describe, expect, it, vi, beforeEach, afterEach} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import {UnitInfoRenderer} from '../../../../src/ui/renderer/UnitInfoRenderer';
+import {Sprite} from 'pixi.js';
+import type {RenderInput, StatusEffect} from '../../../../src/presentation/types';
+import {buildDisplayState} from '../../../../src/presentation/displayState/builder';
+import type {GameState} from '../../../../src/simulation/types';
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -92,12 +97,6 @@ vi.mock('../../../../src/ui/renderer/TextureCache', () => {
   };
 });
 
-import {UnitInfoRenderer} from '../../../../src/ui/renderer/UnitInfoRenderer';
-import {Sprite} from 'pixi.js';
-import type {RenderInput, StatusEffect} from '../../../../src/presentation/types';
-import { buildDisplayState } from '../../../../src/presentation/displayState/builder';
-import type { GameState } from '../../../../src/simulation/types';
-
 function makeRenderInput(debugEnabled: boolean): RenderInput {
   const player = {
     id: 'player' as const,
@@ -168,6 +167,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,
+      defeatedBossIds: [],
     },
     featureFlags: {
       contentRulesEnabled: false,
@@ -226,6 +226,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,
+      defeatedBossIds: [],
     },
     fieldObjectPopover: null,
     interactionHint: null,

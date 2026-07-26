@@ -5,6 +5,7 @@
  */
 
 import {createPortal} from 'react-dom';
+import {useTranslation} from '@i18n/hooks';
 import type {ToastItem} from '@presentation/types';
 import {Toast} from './Toast';
 
@@ -14,12 +15,14 @@ interface Props {
 }
 
 export function ToastContainer({ toasts, onDismiss }: Props) {
+  const { t } = useTranslation('components');
+
   if (toasts.length === 0) {
     return null;
   }
 
   return createPortal(
-    <div className="cm-toast-container" role="region" aria-live="polite" aria-label="Уведомления">
+    <div className="cm-toast-container" role="region" aria-live="polite" aria-label={t('toast.ariaLabel')}>
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onDismiss={onDismiss} />
       ))}

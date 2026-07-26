@@ -30,6 +30,8 @@ export interface CommonTranslations {
 export interface ScreensMainMenuTranslations {
   newGame: string;
   languageSelect: string;
+  languageRu: string;
+  languageEn: string;
 }
 
 export interface ScreensCharacterCreationTranslations {
@@ -43,6 +45,7 @@ export interface ScreensCharacterCreationTranslations {
   infoTitle: string;
   hintsAlert: string;
   hintsButton: string;
+  devlogButton: string;
   devlogAlert: string;
   startRun: string;
   statStrength: string;
@@ -90,6 +93,7 @@ export interface ScreensEndingTranslations {
   boss2: string;
   boss3: string;
   boss4: string;
+  unknownBoss: string;
   statStrength: string;
   statIntelligence: string;
   statDexterity: string;
@@ -156,6 +160,7 @@ export interface ComponentsEndingActionsTranslations {
   title: string;
   newRun: string;
   toMenu: string;
+  devlogButton: string;
   devlogAlert: string;
 }
 
@@ -259,6 +264,7 @@ export interface ComponentsDetailPopoverTranslations {
 }
 
 export interface ComponentsToastTranslations {
+  ariaLabel: string;
   skillOnCooldownTitle: string;
   skillOnCooldownMessage: string;
   notEnoughApTitle: string;

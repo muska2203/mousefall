@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { makeGameState } from '../../../fixtures/gameState';
-import type { GameState } from '../../../../src/simulation/types';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {makeGameState} from '../../../fixtures/gameState';
+import type {GameState} from '../../../../src/simulation/types';
 import {
-  executeSpawnTileEffectIntent,
-  executeRemoveTileEffectIntent,
-  executeTickTileEffectsIntent,
   executeApplyTileEffectStatusIntent,
+  executeRemoveTileEffectIntent,
   executeRemoveTileEffectStatusIntent,
+  executeSpawnTileEffectIntent,
+  executeTickTileEffectsIntent,
 } from '../../../../src/simulation/systems/intents/tile-effect-intent-executor';
-import { ExecutionBuilder } from '../../../../src/simulation/core-types';
-import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { LoadedContent, TileEffectTemplate, TileEffectStatusTemplate } from '../../../../src/content/schemas';
+import {ExecutionBuilder} from '../../../../src/simulation/core-types';
+import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import type {LoadedContent, TileEffectStatusTemplate, TileEffectTemplate} from '../../../../src/content/schemas';
 
 function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: string }): TileEffectTemplate {
   return {
@@ -89,7 +89,7 @@ function getTileEffectAt(state: GameState, x: number, y: number, effectType: str
 }
 
 function makeBuilder(side: 'player' | 'environment' = 'player') {
-  return new ExecutionBuilder({ type: 'TURN_BEGAN', side, round: 1, actorId: null });
+  return new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side, round: 1, actorId: null });
 }
 
 describe('tile-effect-intent-executor', () => {
@@ -111,7 +111,7 @@ describe('tile-effect-intent-executor', () => {
       expect(getTileEffectAt(state, 3, 3, 'water').type).toBe('water');
       expect(node).not.toBeNull();
       expect(node!.event).toMatchObject({
-        type: 'TILE_EFFECT_CHANGED',
+        type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
         effectType: 'water',
         position: { x: 3, y: 3 },
         isNew: true,
@@ -148,7 +148,7 @@ describe('tile-effect-intent-executor', () => {
         duration: 3,
       });
       expect(node!.event).toMatchObject({
-        type: 'TILE_EFFECT_CHANGED',
+        type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
         effectType: 'water',
         isNew: false,
       });
@@ -187,7 +187,7 @@ describe('tile-effect-intent-executor', () => {
         duration: 4,
       });
       expect(node!.event).toMatchObject({
-        type: 'TILE_EFFECT_CHANGED',
+        type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
         effectType: 'oil',
         isNew: false,
       });
@@ -324,7 +324,7 @@ describe('tile-effect-intent-executor', () => {
         (child) => child.event.type === 'TILE_EFFECT_REMOVED',
       );
       expect(removedEvent!.event).toMatchObject({
-        type: 'TILE_EFFECT_REMOVED',
+        type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
         effectType: 'oil',
         position: { x: 3, y: 3 },
       });
@@ -333,7 +333,7 @@ describe('tile-effect-intent-executor', () => {
         (child) => child.event.type === 'TILE_EFFECT_CHANGED' && child.event.effectType === 'water',
       );
       expect(changedEvent!.event).toMatchObject({
-        type: 'TILE_EFFECT_CHANGED',
+        type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
         effectType: 'water',
         position: { x: 3, y: 3 },
         isNew: true,
@@ -397,7 +397,7 @@ describe('tile-effect-intent-executor', () => {
       expect(state.tileEffects[3]![3]!.water).toBeUndefined();
       expect(node).not.toBeNull();
       expect(node!.event).toMatchObject({
-        type: 'TILE_EFFECT_REMOVED',
+        type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
         effectType: 'water',
         position: { x: 3, y: 3 },
       });
@@ -481,7 +481,7 @@ describe('tile-effect-intent-executor', () => {
       );
       expect(removedEvents).toHaveLength(2);
       expect(removedEvents[0]!.event).toMatchObject({
-        type: 'TILE_EFFECT_REMOVED',
+        type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
         effectType: 'water',
       });
     });
@@ -507,7 +507,7 @@ describe('tile-effect-intent-executor', () => {
       expect(getTileEffectAt(state, 3, 3, 'water')).toBeDefined();
       expect(builder.root.children).toHaveLength(1);
       expect(builder.root.children[0]!.event).toMatchObject({
-        type: 'TILE_EFFECT_TICKED',
+        type: 'TILE_EFFECT_TICKED', isFieldEvent: false,
         effectType: 'water',
         position: { x: 3, y: 3 },
       });
@@ -555,7 +555,7 @@ describe('tile-effect-intent-executor', () => {
       );
       expect(tickedEvents).toHaveLength(1);
       expect(tickedEvents[0]!.event).toMatchObject({
-        type: 'TILE_EFFECT_STATUS_TICKED',
+        type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 3, y: 3 },
@@ -593,7 +593,7 @@ describe('tile-effect-intent-executor', () => {
         (child) => child.event.type === 'TILE_EFFECT_STATUS_REMOVED',
       );
       expect(removedEvent!.event).toMatchObject({
-        type: 'TILE_EFFECT_STATUS_REMOVED',
+        type: 'TILE_EFFECT_STATUS_REMOVED', isFieldEvent: true,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 3, y: 3 },
@@ -623,7 +623,7 @@ describe('tile-effect-intent-executor', () => {
       const events = builder.root.children.map((child) => child.event.type);
       expect(events).toEqual(['TILE_EFFECT_REMOVED']);
       expect(builder.root.children[0]!.event).toMatchObject({
-        type: 'TILE_EFFECT_REMOVED',
+        type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
         effectType: 'oil',
         position: { x: 3, y: 3 },
       });
@@ -675,7 +675,7 @@ describe('tile-effect-intent-executor', () => {
       );
       expect(tickedEvents).toHaveLength(1);
       expect(tickedEvents[0]!.event).toMatchObject({
-        type: 'TILE_EFFECT_TICKED',
+        type: 'TILE_EFFECT_TICKED', isFieldEvent: false,
         effectType: 'water',
         position: { x: 3, y: 3 },
       });
@@ -856,7 +856,7 @@ describe('tile-effect-intent-executor', () => {
 
       expect(node).not.toBeNull();
       expect(node!.event).toMatchObject({
-        type: 'TILE_EFFECT_STATUS_APPLIED',
+        type: 'TILE_EFFECT_STATUS_APPLIED', isFieldEvent: true,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 3, y: 3 },
@@ -977,7 +977,7 @@ describe('tile-effect-intent-executor', () => {
       );
       expect(removedEvents).toHaveLength(1);
       expect(removedEvents[0]!.event).toMatchObject({
-        type: 'TILE_EFFECT_STATUS_REMOVED',
+        type: 'TILE_EFFECT_STATUS_REMOVED', isFieldEvent: true,
         effectType: 'oil',
         statusType: 'soaked',
         position: { x: 3, y: 3 },
@@ -1074,7 +1074,7 @@ describe('tile-effect-intent-executor', () => {
 
       expect(node).not.toBeNull();
       expect(node!.event).toMatchObject({
-        type: 'TILE_EFFECT_STATUS_REMOVED',
+        type: 'TILE_EFFECT_STATUS_REMOVED', isFieldEvent: true,
         effectType: 'oil',
         statusType: 'burning',
         position: { x: 3, y: 3 },

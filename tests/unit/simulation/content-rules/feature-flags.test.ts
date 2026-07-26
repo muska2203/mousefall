@@ -2,16 +2,11 @@
  * Тесты feature flag контентных правил.
  */
 
-import { describe, it, expect } from 'vitest';
-import { ExecutionBuilder } from '@simulation/core-types.ts';
-import { executeIntent } from '@simulation/systems/intents/execute-intent.ts';
-import { GameSimulation } from '@simulation/simulation.ts';
-import {
-  makePlayer,
-  makeEnemy,
-  makeStateWithPlayerAndEntity,
-  makeGameState,
-} from '../../../fixtures/gameState';
+import {describe, expect, it} from 'vitest';
+import {ExecutionBuilder} from '@simulation/core-types.ts';
+import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
+import {GameSimulation} from '@simulation/simulation.ts';
+import {makeEnemy, makeGameState, makePlayer, makeStateWithPlayerAndEntity,} from '../../../fixtures/gameState';
 
 describe('content-rules feature flags', () => {
   it('makeGameState создаёт состояние с включённой системой контентных правил', () => {
@@ -25,7 +20,7 @@ describe('content-rules feature flags', () => {
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
     });
 
@@ -50,7 +45,7 @@ describe('content-rules feature flags', () => {
     const state = makeStateWithPlayerAndEntity(player, makeEnemy({ x: 7, y: 5 }));
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'MOVE', entityId: player.id, dx: 1, dy: 0 },
     });
 

@@ -11,20 +11,20 @@
  */
 
 import type {
+  DoorEntity,
   EnemyEntity,
   Entity,
   EntityId,
-  GameState,
   FloorItemContainerEntity,
+  GameState,
   PlayerEntity,
-  DoorEntity,
   StairsEntity,
   TileType
 } from '../../src/simulation/types';
-import type { MapParams } from '../../src/content/schemas';
-import type { TileEffects } from '../../src/simulation/core-types';
+import type {MapParams} from '../../src/content/schemas';
+import type {TileEffects} from '../../src/simulation/core-types';
 import {createRNG} from '../../src/utils/rng';
-import { createDefaultAIState } from '../../src/simulation/ai/ai-state';
+import {createDefaultAIState} from '../../src/simulation/ai/ai-state';
 import {PLAYER_ID} from '../../src/utils/constants';
 
 // ─────────────────────────────────────────────
@@ -245,6 +245,7 @@ export function makeGameState(overrides: Partial<GameState> = {}): GameState {
       enemiesKilled: 0,
       chestsOpened: 0,
       itemsPickedUp: 0,
+      defeatedBossIds: [],
     },
     featureFlags: {
       contentRulesEnabled: true,

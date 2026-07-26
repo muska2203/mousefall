@@ -30,7 +30,7 @@ export const executeAdjustStatusStacksIntent: IntentExecutor<AdjustStatusStacksI
     }
     holder.statusEffects.splice(index, 1);
     return builder.addChild(parent, {
-      type: 'STATUS_REMOVED',
+      type: 'STATUS_REMOVED', isFieldEvent: true,
       entityId: entity.id,
       effectType: intent.statusType,
     });
@@ -38,7 +38,7 @@ export const executeAdjustStatusStacksIntent: IntentExecutor<AdjustStatusStacksI
 
   effect.stacks = newStacks;
   return builder.addChild(parent, {
-    type: 'STATUS_STACKS_ADJUSTED',
+    type: 'STATUS_STACKS_ADJUSTED', isFieldEvent: false,
     entityId: entity.id,
     statusType: intent.statusType,
     stacks: newStacks,

@@ -2,13 +2,13 @@
  * Тесты исполнителя интента FLOOR_TRANSITION.
  */
 
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
-import { executeIntent } from '@simulation/systems/intents/execute-intent';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
-import type { StairsEntity } from '@simulation/types';
-import type { DoorTemplate } from '@content/schemas';
-import { initRegistry, resetRegistry } from '@content/registry';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
+import {executeIntent} from '@simulation/systems/intents/execute-intent';
+import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import type {StairsEntity} from '@simulation/types';
+import type {DoorTemplate} from '@content/schemas';
+import {initRegistry, resetRegistry} from '@content/registry';
 
 function childEventTypes(node: { children: { event: { type: string } }[] }): string[] {
   return node.children.map(child => child.event.type);
@@ -47,7 +47,7 @@ describe('executeFloorTransitionIntent', () => {
     const oldMap = state.map;
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: 'stairs_1' },
     });
 
@@ -82,7 +82,7 @@ describe('executeFloorTransitionIntent', () => {
     state.explored[5]![5] = true;
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: 'stairs_1' },
     });
 
@@ -103,7 +103,7 @@ describe('executeFloorTransitionIntent', () => {
     const state = makeGameState({ player, floor: 1 });
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: 'stairs_1' },
     });
 
@@ -127,7 +127,7 @@ describe('executeFloorTransitionIntent', () => {
     const state = makeGameState({ player, floor: 1 });
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: 'stairs_1' },
     });
 
@@ -148,7 +148,7 @@ describe('executeFloorTransitionIntent', () => {
     const floor1Map = state.map;
 
     const downBuilder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: 'stairs_1' },
     });
 
@@ -163,7 +163,7 @@ describe('executeFloorTransitionIntent', () => {
     expect(state.map).not.toBe(floor1Map);
 
     const upBuilder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'INTERACT', entityId: 'player', targetId: 'stairs_1' },
     });
 

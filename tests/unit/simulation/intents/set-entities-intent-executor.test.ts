@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState.ts';
-import { executeSetEntitiesIntent } from '@simulation/systems/intents/set-entities-intent-executor';
-import { ExecutionBuilder } from '@simulation/systems/actions/types';
-import type { Entity, EntityId } from '@simulation/types';
+import {describe, expect, it} from 'vitest';
+import {makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState.ts';
+import {executeSetEntitiesIntent} from '@simulation/systems/intents/set-entities-intent-executor';
+import {ExecutionBuilder} from '@simulation/systems/actions/types';
+import type {Entity, EntityId} from '@simulation/types';
 
 describe('executeSetEntitiesIntent', () => {
   it('заменяет сущности и эмитит ENTITIES_REPLACED с отсортированными ID', () => {
@@ -17,7 +17,7 @@ describe('executeSetEntitiesIntent', () => {
     ]);
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: 'player' },
     });
 
@@ -42,7 +42,7 @@ describe('executeSetEntitiesIntent', () => {
     const entities = new Map<EntityId, Entity>([['enemy_1', makeEnemy({ id: 'enemy_1' })]]) as Map<EntityId, unknown>;
 
     const builder = new ExecutionBuilder({
-      type: 'ACTION_APPLIED',
+      type: 'ACTION_APPLIED', isFieldEvent: false,
       action: { type: 'END_TURN', entityId: 'player' },
     });
 

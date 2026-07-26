@@ -9,14 +9,14 @@
  */
 
 import type {
-    GameAction,
-    GameState,
-    Intent,
-    InteractionId,
-    PlayerStatsSnapshot,
-    RunStats,
-    StatusEffect,
-    TurnSide
+  GameAction,
+  GameState,
+  Intent,
+  InteractionId,
+  PlayerStatsSnapshot,
+  RunStats,
+  StatusEffect,
+  TurnSide
 } from '@simulation/types';
 import type {DisplayPatch, DisplayState} from './displayState/types';
 
@@ -80,9 +80,16 @@ export interface ItemDetailViewModel {
 
 export type Position = { x: number; y: number };
 
+/** Базовые метаданные для любого шага анимации. */
+type AnimationStepBase = {
+  /** ID сущности, к которой привязан шаг (для цепочек анимаций одного актора).
+   *  Если не задан, treeBuilder использует эвристику по полям entityId/attackerId. */
+  affectedEntityId?: string;
+};
+
 /** Один конкретный шаг анимации.
  *  Длительность, blocking и easing живут в ANIMATION_CONFIG — здесь только параметры шага. */
-export type AnimationStep =
+export type AnimationStep = AnimationStepBase & (
   | {
       type: 'MOVE';
       entityId: string;
@@ -163,6 +170,20 @@ export type AnimationStep =
       fromSky?: boolean;
     }
   | {
+      type: 'METEOR_FALL';
+      from: Position;
+      to: Position;
+      /** Цвет метеорита. */
+      color: number;
+    }
+  | {
+      type: 'BEAM';
+      from: Position;
+      to: Position;
+      /** Цвет луча. */
+      color: number;
+    }
+  | {
       type: 'SLASH_ARC';
       from: Position;
       positions: Position[];
@@ -194,7 +215,8 @@ export type AnimationStep =
       /** Направление отскока (в сторону препятствия). */
       dx: number;
       dy: number;
-    };
+    }
+);
 
 /** Узел дерева анимаций.
  *  Сиблинги (дети одного родителя) выполняются параллельно.

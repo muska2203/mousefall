@@ -8,7 +8,7 @@
  */
 
 import type {GameState} from '@simulation/types.ts';
-import type {TileExplosionIntent, IntentExecutor} from '@simulation/systems/intents/types.ts';
+import type {IntentExecutor, TileExplosionIntent} from '@simulation/systems/intents/types.ts';
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
 
 export const executeTileExplosionIntent: IntentExecutor<TileExplosionIntent> = (
@@ -24,7 +24,7 @@ export const executeTileExplosionIntent: IntentExecutor<TileExplosionIntent> = (
   }
 
   return builder.addChild(parent, {
-    type: 'TILE_EXPLODED',
+    type: 'TILE_EXPLODED', isFieldEvent: true,
     position: { x, y },
     sourceEntityId: intent.sourceEntityId,
     damage: intent.damage,

@@ -26,7 +26,7 @@ export const executeOpenDoorIntent: OpenDoorIntentExecutor = (
   door.blocksMovement = false;
 
   return executionBuilder.addChild(parent, {
-    type: 'DOOR_OPENED',
+    type: 'DOOR_OPENED', isFieldEvent: true,
     position: { x: door.x, y: door.y },
   });
 };
@@ -44,7 +44,7 @@ export const executeCloseDoorIntent: CloseDoorIntentExecutor = (
   door.blocksMovement = true;
 
   return executionBuilder.addChild(parent, {
-    type: 'DOOR_CLOSED',
+    type: 'DOOR_CLOSED', isFieldEvent: true,
     position: { x: door.x, y: door.y },
   });
 };

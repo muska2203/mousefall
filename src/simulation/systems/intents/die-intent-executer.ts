@@ -2,6 +2,7 @@ import {DieIntent, IntentExecutor} from "@simulation/systems/intents/types.ts";
 import {GameState} from "@simulation/types.ts";
 import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {PLAYER_ID} from "@utils/constants.ts";
+import {isBossTemplateId} from "@simulation/systems/bossTracking.ts";
 
 export const executeDieIntent: IntentExecutor<DieIntent> = (
     state: GameState,
@@ -16,7 +17,7 @@ export const executeDieIntent: IntentExecutor<DieIntent> = (
         state.player.hp = 0;
         state.player.isAlive = false;
         state.phase = 'dead';
-        return builder.addChild(parent, {type: 'PLAYER_DIED'});
+        return builder.addChild(parent, {type: 'PLAYER_DIED', isFieldEvent: false});
     } else {
         if ('isAlive' in entity) {
             entity.isAlive = false;
@@ -26,9 +27,14 @@ export const executeDieIntent: IntentExecutor<DieIntent> = (
             }
             if (entity.type === 'enemy') {
                 state.runStats.enemiesKilled++;
+                if ('templateId' in entity && isBossTemplateId(entity.templateId)) {
+                    if (!state.runStats.defeatedBossIds.includes(entity.templateId)) {
+                        state.runStats.defeatedBossIds.push(entity.templateId);
+                    }
+                }
             }
             return builder.addChild(parent, {
-                type: 'ENTITY_DIED',
+                type: 'ENTITY_DIED', isFieldEvent: true,
                 entityId: intent.entityId,
                 position: intent.position,
             });

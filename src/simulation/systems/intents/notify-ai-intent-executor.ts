@@ -34,7 +34,7 @@ export const executeNotifyAIIntent: IntentExecutor<NotifyAIIntent> = (
   strategy.onWorldChange?.(actor, state, intent.change);
 
   return builder.addChild(parent, {
-    type: 'AI_NOTIFIED',
+    type: 'AI_NOTIFIED', isFieldEvent: false,
     entityId: actor.id,
     change: intent.change,
   });

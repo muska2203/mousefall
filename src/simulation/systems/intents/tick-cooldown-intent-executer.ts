@@ -26,7 +26,7 @@ export const executeTickCooldownIntent: IntentExecutor<TickCooldownIntent> = (
   ability.currentCooldown = Math.max(0, ability.currentCooldown - 1);
 
   return builder.addChild(parent, {
-    type: 'COOLDOWN_TICKED',
+    type: 'COOLDOWN_TICKED', isFieldEvent: false,
     entityId: intent.entityId,
     abilityId: intent.abilityId,
     remaining: ability.currentCooldown,
