@@ -6,9 +6,10 @@
   "type": "module",
   "scripts": {
     "generate-manifest": "node scripts/generate-manifest.js",
-    "predev": "node scripts/generate-manifest.js",
+    "generate-asset-manifest": "node scripts/generate-asset-manifest.js",
+    "predev": "npm run generate-manifest && npm run generate-asset-manifest",
     "dev": "vite",
-    "prebuild": "node scripts/generate-manifest.js",
+    "prebuild": "npm run generate-manifest && npm run generate-asset-manifest",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",

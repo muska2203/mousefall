@@ -26,6 +26,9 @@ public/assets/
 1. Поместите PNG-файл в соответствующую подпапку.
 2. Рекомендуемый размер для иконок статусов — **32×32 px**.
 3. Убедитесь, что путь совпадает с соглашением в `src/ui/renderer/spriteRegistry.ts`.
+4. Перезапустите `npm run dev` / `npm run build` — манифест ассетов `public/assets/manifest.json` перегенерируется автоматически через `scripts/generate-asset-manifest.js`.
+
+> При старте приложения все ассеты из `public/assets/` предзагружаются через `src/ui/renderer/assetPreloader.ts`. Ручное редактирование манифеста не требуется.
 
 ---
 
