@@ -14,6 +14,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/perf/**/*.test.ts'],
     exclude: ['node_modules/**', 'dist/**'],
+    setupFiles: ['./tests/setup/vitest-env.ts'],
   },
   resolve: {
     alias: {

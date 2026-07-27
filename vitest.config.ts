@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     exclude: ['tests/perf/**', 'node_modules/**', 'dist/**'],
+    setupFiles: ['./tests/setup/vitest-env.ts'],
     coverage: {
       provider: 'v8',
       // Измерять покрытие для слоя симуляции и презентации, так как фаза 05.5
