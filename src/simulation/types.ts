@@ -89,10 +89,11 @@ export type Entity =
     | EnemyEntity
     | FloorItemContainerEntity
     | StairsEntity
-    | DoorEntity;
+    | DoorEntity
+    | PropEntity;
 
 
-export type EntityType = 'player' | 'enemy' | 'floor_item_container' | 'stairs' | 'door';
+export type EntityType = 'player' | 'enemy' | 'floor_item_container' | 'stairs' | 'door' | 'prop';
 
 export interface BaseEntity {
   id: EntityId;
@@ -246,7 +247,8 @@ export type EntityInteractionKind =
   | 'door'
   | 'stairs'
   | 'item'
-  | 'lever';
+  | 'lever'
+  | 'prop';
 
 /** Идентификатор конкретного взаимодействия, разрешённого `resolveInteraction`. */
 export type InteractionId =
@@ -274,12 +276,22 @@ export interface StairsEntity extends BaseEntity, TemplateIdHolder {
 }
 
 /** Дверь — объект, который может быть открыт или закрыт. Может быть разрушена атаками. */
-export interface DoorEntity extends BaseEntity, Attackable, TemplateIdHolder {
+export interface DoorEntity extends BaseEntity, Attackable, TemplateIdHolder, StatusEffectHolder {
   type: 'door';
   blocksMovement: boolean;
   interactionKind: 'door';
   /** true — дверь открыта, проходима и не блокирует обзор. */
   isOpen: boolean;
+}
+
+/** Разрушаемый объект окружения (проп). Не является актором и не ходит. */
+export interface PropEntity extends BaseEntity, Attackable, TemplateIdHolder, StatusEffectHolder {
+  type: 'prop';
+  blocksMovement: boolean;
+  blocksLOS: boolean;
+  interactionKind: 'prop';
+  /** Вид пропа: barrel, crate и т.д. */
+  propKind: string;
 }
 
 // ─────────────────────────────────────────────

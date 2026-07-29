@@ -28,6 +28,7 @@ export {
   createFloorItem,
   createStairs,
   createDoor,
+  createProp,
 } from './map-generation/shared';
 
 /**

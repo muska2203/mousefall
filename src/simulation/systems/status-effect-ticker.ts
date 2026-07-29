@@ -1,5 +1,6 @@
 import {Entity, GameState, StatusEffectHolder, TurnSide} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
+import {isActor} from '@simulation/state';
 
 /**
  * Возвращает интент на тик статус-эффектов для сущности в заданной фазе.
@@ -33,6 +34,29 @@ export function tickAllStatusEffects(
   const results: { entity: Entity; intents: Intent[] }[] = [];
 
   for (const entity of state.entities.values()) {
+    if (!('statusEffects' in entity)) continue;
+    if ('isAlive' in entity && !entity.isAlive) continue;
+    const intents = tickEntityStatusEffects(entity, phase);
+    if (intents.length > 0) {
+      results.push({ entity, intents });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Возвращает массив кортежей [entity, intents] для тика статусов
+ * не-акторов (дверей, пропов). Используется на ходу окружения.
+ */
+export function tickObjectStatusEffects(
+  state: GameState,
+  phase: TurnSide,
+): { entity: Entity; intents: Intent[] }[] {
+  const results: { entity: Entity; intents: Intent[] }[] = [];
+
+  for (const entity of state.entities.values()) {
+    if (isActor(entity)) continue;
     if (!('statusEffects' in entity)) continue;
     if ('isAlive' in entity && !entity.isAlive) continue;
     const intents = tickEntityStatusEffects(entity, phase);

@@ -59,6 +59,21 @@ describe('buildRuleContext', () => {
       });
     });
 
+    it('ENTITY_DIED: заполняет target и позицию умершей сущности', () => {
+      const event: GameEvent = {
+        type: 'ENTITY_DIED', isFieldEvent: true,
+        entityId: enemy.id,
+        position: { x: 6, y: 5 },
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: null,
+        targetEntityId: enemy.id,
+        eventPosition: { x: 6, y: 5 },
+        eventTags: [],
+      });
+    });
+
     it('ENTITY_HEALED: заполняет target, position, amount; source равен null', () => {
       const event: GameEvent = {
         type: 'ENTITY_HEALED', isFieldEvent: true,

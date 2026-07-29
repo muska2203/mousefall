@@ -18,14 +18,16 @@ import type {
   FloorItemContainerEntity,
   GameState,
   PlayerEntity,
+  PropEntity,
   StairsEntity,
   TileType
 } from '../../src/simulation/types';
-import type {MapParams} from '../../src/content/schemas';
+import type {DoorTemplate, LoadedContent, MapParams, PropTemplate} from '../../src/content/schemas';
 import type {TileEffects} from '../../src/simulation/core-types';
 import {createRNG} from '../../src/utils/rng';
 import {createDefaultAIState} from '../../src/simulation/ai/ai-state';
 import {PLAYER_ID} from '../../src/utils/constants';
+import {initRegistry, resetRegistry} from '../../src/content/registry';
 
 // ─────────────────────────────────────────────
 // Фикстуры карты
@@ -169,8 +171,92 @@ export function makeDoor(overrides: Partial<DoorEntity> = {}): DoorEntity {
     maxHp: 30,
     armor: 2,
     isAlive: true,
+    statusEffects: [],
     ...overrides,
   };
+}
+
+export function makeProp(overrides: Partial<PropEntity> = {}): PropEntity {
+  return {
+    id: 'prop_test_1',
+    type: 'prop',
+    displayName: 'Бочка с маслом',
+    templateId: 'oil_barel',
+    x: 4,
+    y: 5,
+    blocksMovement: true,
+    blocksLOS: false,
+    interactionKind: 'prop',
+    propKind: 'barrel',
+    hp: 10,
+    maxHp: 10,
+    armor: 0,
+    isAlive: true,
+    statusEffects: [],
+    ...overrides,
+  };
+}
+
+// ─────────────────────────────────────────────
+// Мок-шаблоны дверей и пропов для тестов
+// ─────────────────────────────────────────────
+
+/** Минимальный шаблон деревянной двери, поддерживающий горение. */
+export function mockWoodenDoorTemplate(): DoorTemplate {
+  return {
+    id: 'wooden_door',
+    interactionKind: 'door',
+    maxHp: 30,
+    armor: 2,
+    renderScale: 1,
+    tags: ['flammable'],
+    canHaveStatus: ['burning'],
+  };
+}
+
+/** Минимальный шаблон бочки с маслом, поддерживающий горение. */
+export function mockOilBarrelTemplate(): PropTemplate {
+  return {
+    id: 'oil_barel',
+    maxHp: 10,
+    armor: 0,
+    renderScale: 1,
+    blocksMovement: true,
+    blocksLOS: false,
+    propKind: 'barrel',
+    tags: ['flammable'],
+    canHaveStatus: ['burning'],
+  };
+}
+
+/**
+ * Создаёт минимальный LoadedContent с мок-шаблонами горючих объектов.
+ * Используется в тестах, где правила опираются на теги шаблонов дверей/пропов.
+ */
+export function createObjectContent(overrides: Partial<LoadedContent> = {}): LoadedContent {
+  return {
+    entities: new Map(),
+    players: new Map(),
+    items: new Map(),
+    abilities: new Map(),
+    statuses: new Map(),
+    tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
+    maps: new Map(),
+    stairs: new Map(),
+    doors: new Map([['wooden_door', mockWoodenDoorTemplate()]]),
+    props: new Map([['oil_barel', mockOilBarrelTemplate()]]),
+    ...overrides,
+  };
+}
+
+/**
+ * Инициализирует content registry мок-шаблонами дверей/пропов.
+ * Вызывать в тестах перед использованием правил, завязанных на `entityHasTag`.
+ */
+export function initObjectContentRegistry(overrides: Partial<LoadedContent> = {}): void {
+  resetRegistry();
+  initRegistry(createObjectContent(overrides));
 }
 
 export function makeStairs(

@@ -75,5 +75,8 @@
   ],
   "doors": [
     "/content/entities/doors/wooden_door.json"
+  ],
+  "props": [
+    "/content/entities/props/oil_barel.json"
   ]
 }

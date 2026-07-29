@@ -13,8 +13,15 @@ import type {GameEvent} from '@simulation/types.ts';
 import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
 import {getContentRule} from '../../../../src/simulation/content-rules/registry';
 import * as randomModule from '../../../../src/utils/random';
-import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity,} from '../../../fixtures/gameState';
+import {
+  initObjectContentRegistry,
+  makeEnemy,
+  makePlayer,
+  makeProp,
+  makeStateWithPlayerAndEntity,
+} from '../../../fixtures/gameState';
 import {rngChance} from '../../../../src/utils/rng';
+import {resetRegistry} from '../../../../src/content/registry';
 
 vi.mock('../../../../src/utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
@@ -33,6 +40,7 @@ function findNodeByEventType(root: ExecutionNode, eventType: string): ExecutionN
 describe('executeIntent + content rules integration', () => {
   beforeEach(() => {
     vi.mocked(rngChance).mockReturnValue(true);
+    initObjectContentRegistry();
     setWorldContentRulesOverride([
       ...getWorldContentRules(),
       testWorldDamageMultiplier,
@@ -42,6 +50,7 @@ describe('executeIntent + content rules integration', () => {
   afterEach(() => {
     vi.clearAllMocks();
     setWorldContentRulesOverride(null);
+    resetRegistry();
   });
 
   describe('при включённом флаге', () => {
@@ -74,10 +83,10 @@ describe('executeIntent + content rules integration', () => {
       expect(enemy.hp).toBe(89);
     });
 
-    it('реакция на огненный урон накладывает горение (fire_damage_ignites)', () => {
+    it('реакция на огненный урон поджигает горючий объект (fire_damage_ignites)', () => {
       const player = makePlayer({ x: 5, y: 5 });
-      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
-      const state = makeStateWithPlayerAndEntity(player, enemy);
+      const barrel = makeProp({ id: 'barrel_test_1', x: 6, y: 5, hp: 100, armor: 0 });
+      const state = makeStateWithPlayerAndEntity(player, barrel);
       state.featureFlags.contentRulesEnabled = true;
 
       const builder = new ExecutionBuilder({
@@ -89,7 +98,7 @@ describe('executeIntent + content rules integration', () => {
         state,
         {
           type: 'DAMAGE',
-          entityId: enemy.id,
+          entityId: barrel.id,
           sourceEntityId: player.id,
           damage: 10,
           tags: ['damage.magical.fire'],
@@ -98,7 +107,7 @@ describe('executeIntent + content rules integration', () => {
         builder.root,
       );
 
-      const burning = enemy.statusEffects.find((e) => e.type === 'burning');
+      const burning = barrel.statusEffects.find((e) => e.type === 'burning');
       expect(burning).toBeDefined();
       expect(burning!.duration).toBe(3);
     });
@@ -171,8 +180,8 @@ describe('executeIntent + content rules integration', () => {
 
     it('при full-chain появляются RULE_TRIGGERED как children событий', () => {
       const player = makePlayer({ x: 5, y: 5 });
-      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
-      const state = makeStateWithPlayerAndEntity(player, enemy);
+      const barrel = makeProp({ id: 'barrel_test_1', x: 6, y: 5, hp: 100, armor: 0 });
+      const state = makeStateWithPlayerAndEntity(player, barrel);
       state.featureFlags.contentRulesEnabled = true;
 
       const builder = new ExecutionBuilder({
@@ -184,7 +193,7 @@ describe('executeIntent + content rules integration', () => {
         state,
         {
           type: 'DAMAGE',
-          entityId: enemy.id,
+          entityId: barrel.id,
           sourceEntityId: player.id,
           damage: 10,
           tags: ['damage.magical.fire'],

@@ -17,3 +17,10 @@ export const doors: Record<string, ContentText> = {
     flavorText: 'Fragile, but better than nothing.',
   },
 };
+
+export const props: Record<string, ContentText> = {
+  oil_barel: {
+    name: 'Oil Barrel',
+    flavorText: "Wooden, cracked, and unmistakably greasy. Don't hit it with fire.",
+  },
+};

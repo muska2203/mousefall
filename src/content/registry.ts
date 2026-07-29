@@ -25,6 +25,7 @@ import type {
   LoadedContent,
   MapParams,
   PlayerTemplate,
+  PropTemplate,
   StairsTemplate,
   StatusTemplate,
   TileEffectStatusTemplate,
@@ -62,6 +63,11 @@ export type LocalizedStairsTemplate = StairsTemplate & {
 };
 
 export type LocalizedDoorTemplate = DoorTemplate & {
+  name: string;
+  flavorText?: string;
+};
+
+export type LocalizedPropTemplate = PropTemplate & {
   name: string;
   flavorText?: string;
 };
@@ -550,6 +556,61 @@ export function getAllStairs(): StairsTemplate[] {
 export function getAllLocalizedStairs(locale: Locale): LocalizedStairsTemplate[] {
   return Array.from(getRegistry().stairs.values()).map((template) => {
     const text = getContentText('stairs', template.id, locale);
+    return { ...template, name: text.name, flavorText: text.flavorText };
+  });
+}
+
+/**
+ * Получить шаблон пропа по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getProp(id: string): PropTemplate {
+  const template = (getRegistry().props ?? new Map()).get(id);
+  if (!template) throw new Error(`Prop template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить локализованный шаблон пропа. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedProp(id: string, locale: Locale): LocalizedPropTemplate | undefined {
+  const template = tryGetProp(id);
+  if (!template) return undefined;
+  const text = getContentText('props', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Получить локализованный шаблон пропа по ID.
+ */
+export function getLocalizedProp(id: string, locale: Locale): LocalizedPropTemplate {
+  const template = getProp(id);
+  const text = getContentText('props', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Попытаться получить шаблон пропа.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetProp(id: string): PropTemplate | undefined {
+  if (_registry === null) return undefined;
+  return (_registry.props ?? new Map()).get(id);
+}
+
+/**
+ * Получить все шаблоны пропов.
+ */
+export function getAllProps(): PropTemplate[] {
+  return Array.from((getRegistry().props ?? new Map()).values());
+}
+
+/**
+ * Получить все локализованные шаблоны пропов.
+ */
+export function getAllLocalizedProps(locale: Locale): LocalizedPropTemplate[] {
+  return Array.from((getRegistry().props ?? new Map()).values()).map((template) => {
+    const text = getContentText('props', template.id, locale);
     return { ...template, name: text.name, flavorText: text.flavorText };
   });
 }

@@ -24,6 +24,7 @@ const CATEGORY_MAP = {
   'entities/player': 'players',
   'entities/stairs': 'stairs',
   'entities/doors': 'doors',
+  'entities/props': 'props',
   items: 'items',
   abilities: 'abilities',
   statuses: 'statuses',
@@ -60,6 +61,7 @@ function categorize(files) {
     maps: [],
     stairs: [],
     doors: [],
+    props: [],
   };
 
   for (const file of files.sort()) {

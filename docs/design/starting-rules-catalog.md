@@ -30,15 +30,20 @@
 | `armor_spiked_thorns` | Броня (`common_spiked_cloak`) | `ENTITY_DAMAGED` `attack.melee` | `eventRole target` | `dealDamage` 2 `damage.physical.piercing` по атакующему | ответный урон 2 |
 | `amulet_restore_ap_on_hit` | Амулет (`common_energized_bead`) | `ENTITY_DAMAGED` `attack.melee` `delivery.weapon` | `chance 15` | `restoreAp` себе | шанс 15%, восстановление 1 AP |
 | `amulet_fire_damage_multiplier` | Амулет (`common_ember_amulet`) | `DAMAGE` `damage.magical.fire` | `hasTag delivery.weapon` или `delivery.ability` | `modifyDamage add` 2 | +2 к огненному урону от оружия или способности |
-| `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30%, длительность 3 |
-| `burning_tick_damage` | Статус `burning` | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1, тег `damage.magical.fire` | 10% max HP, округление |
+| `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `entityHasTag flammable target` | `applyStatus burning` 3 хода | поджигает горючий объект (дверь, бочку и т.п.); если объект уже горит — обновляет длительность горения |
+| `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1, тег `damage.magical.fire` | 10% max HP, округление; действует на любую горящую сущность, включая объекты |
 | `status_poison_tick_damage` | Статус `poisoned` | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1, тег `damage.magical.poison` | 8% max HP, округление |
 | `status_burning_vulnerability` | Мир | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
 | `collision_damage` | Мир | `ENTITY_COLLIDED` `displacement.push` | — | `dealDamage` 5 `damage.physical.blunt` | урон 5 |
 | `collision_damage_actor` | Мир | `ENTITY_COLLIDED` `displacement.push` `collision.actor` | — | `dealDamage` 5 `damage.physical.blunt` по `collisionTarget` | урон 5 |
 | `collision_daze` | Мир | `ENTITY_COLLIDED` `displacement.push` | — | `applyStatus dazed` 2 хода | длительность 2 |
 | `collision_daze_actor` | Мир | `ENTITY_COLLIDED` `displacement.push` `collision.actor` | — | `applyStatus dazed` 2 хода по `collisionTarget` | длительность 2 |
+| `prop_contains_oil_spills_on_death` | Мир | `ENTITY_DIED` | `entityHasTag contains.oil target` + `not hasStatus burning target` | `spawnTileEffect oil` в радиусе 1 | разливает масло при уничтожении объекта с маслом, если он не горит |
+| `flammable_oil_barrel_explodes_on_fire_death` | Мир | `ENTITY_DIED` | `entityHasTag contains.oil target` + `hasStatus burning target` | `spawnTileEffect oil` + `statusType burning` в радиусе 1 | горящая бочка с маслом при уничтожении разливает горящее масло, которое взрывается |
 | `burning_oil_explosion` | Мир (системная реакция) | `TILE_EFFECT_STATUS_APPLIED` | `effectType === 'oil'`, `statusType === 'burning'`, `isNew === true` | `TILE_EXPLOSION` 2 урона, радиус 1, тег `damage.magical.fire` | цепная реакция поджога масла |
+| `oil_ignition_near_burning` | Мир (системная реакция) | `TILE_EFFECT_CHANGED` | `effectType === 'oil'`, `isNew === true`, в радиусе 1 есть горящее масло | `APPLY_TILE_EFFECT_STATUS` `burning` 3 хода | масло воспламеняется от соседнего огня |
+| `burning_tile_status_applied_deals_damage` | Статус тайлового эффекта `burning` | `TILE_EFFECT_STATUS_APPLIED` | `effectType === 'oil'`, `statusType === 'burning'`, `isNew === true` | `dealDamage` 3 `damage.magical.fire` по сущностям на клетке | вспышка пламени при поджоге |
+| `burning_tile_status_applied_applies_burning` | Статус тайлового эффекта `burning` | `TILE_EFFECT_STATUS_APPLIED` | `effectType === 'oil'`, `statusType === 'burning'`, `isNew === true` | `applyStatus` `burning` 3 хода по сущностям на клетке | сущности на клетке загораются |
 
 ---
 
@@ -56,8 +61,8 @@
 | 6 | `amulet_fire_damage_multiplier` | Амулет (`common_ember_amulet`) | `DAMAGE` `damage.magical.fire` | `hasTag delivery.weapon` или `delivery.ability` | `modifyDamage add` 2 | +2 к огненному урону от оружия или способности |
 | 7 | `counterattack_trigger` | Статус `counterattack` | `ENTITY_DAMAGED` `attack.melee` `target.single` `delivery.weapon` | `hasStatus counterattack self` + `eventRole target` + `chance 50` + `not target.aoe/multi` | `counterAttack` | шанс 50% |
 | 8 | `counterattack_damage` | Статус `counterattack` | `COUNTER_ATTACK_APPLIED` | — | `dealDamage` от `eventDamage` | урон контратаки |
-| 9 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `chance 30` | `applyStatus burning` 3 хода | шанс 30% |
-| 10 | `burning_tick_damage` | Статус `burning` | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1 `damage.magical.fire` | 10% max HP/ход |
+| 9 | `fire_damage_ignites` | Мир | `ENTITY_DAMAGED` `damage.magical.fire` | `entityHasTag flammable target` | `applyStatus burning` 3 хода | поджигает горючий объект; если объект уже горит — обновляет длительность горения |
+| 10 | `burning_tick_damage` | Мир | `STATUS_TICKED` `status.burning` | — | `dealDamage` `eventMaxHp×0.1` min 1 `damage.magical.fire` | 10% max HP/ход, включая объекты |
 | 11 | `status_poison_tick_damage` | Статус `poisoned` | `STATUS_TICKED` `status.poisoned` | — | `dealDamage` `eventMaxHp×0.08` min 1 `damage.magical.poison` | 8% max HP/ход |
 | 12 | `status_burning_vulnerability` | Мир | `DAMAGE` `damage.magical.fire` | `hasStatus burning self` | `modifyDamage multiply` 1.2 | +20% входящего огненного урона по горящей цели |
 
@@ -66,8 +71,8 @@
 - **Оружие:** 2 правила (яд, оглушение) + множитель огня на мече.
 - **Броня/щит:** 1 правило (шипы).
 - **Кольца/амулеты:** 2 правила (AP при ударе, бонусный огненный урон).
-- **Статусы:** 3 правила (контратака состоит из 2 правил, тик горения, тик яда).
-- **Мир:** 2 правила (поджигание, уязвимость к огню) + правила столкновений (`collision_*`).
+- **Статусы:** 2 правила (контратака состоит из 2 правил, тик яда).
+- **Мир:** 3 правила (поджигание, тик горения, уязвимость к огню) + правила столкновений (`collision_*`).
 
 ---
 
@@ -78,11 +83,11 @@
 1. Игрок экипирует `common_flaming_sword`.
 2. Обычная атака наносит урон `damage.magical.fire`.
 3. `item_fire_damage_multiplier` увеличивает урон на 50%.
-4. Мировое правило `fire_damage_ignites` (30%) накладывает `burning` на 3 хода.
-5. Правило статуса `burning_tick_damage` наносит 10% max HP огнём в начале хода врага.
+4. Мировое правило `fire_damage_ignites` накладывает `burning` на 3 хода на **горючий объект** в клетке удара (например, деревянную дверь или бочку с маслом); если объект уже горит — обновляет длительность горения.
+5. Мировое правило `burning_tick_damage` наносит 10% max HP огнём при тике статуса горения любой сущности, включая объекты.
 6. Если цель уже горит, `status_burning_vulnerability` усиливает последующий огненный урон ещё на 20%.
 
-**Баланс:** один удар сильно ранит крысу (≈14 урона против 15 HP), но не убивает сразу; горение добавляет ~2 HP/ход. Комбо сильно, но не мгновенно.
+**Баланс:** один удар сильно ранит крысу (≈14 урона против 15 HP), но не убивает сразу; горящий объект получает урон от тика. Комбо сильно, но не мгновенно.
 
 ### 3.2 «Ядовитый кинжал + контратака»
 
@@ -109,7 +114,7 @@
 
 | Параметр | Значение | Обоснование |
 |---|---|---|
-| Шанс поджечь (мир) | 30% | Достаточно часто, чтобы быть заметным, но не гарантированно. |
+| Поджог горючих объектов | гарантированно при `flammable` | Любой огненный урон по деревянной двери, бочке с маслом и т.п. накладывает `burning`. |
 | Тик горения | 10% max HP, min 1 | Для крысы 15 HP — 2/ход; для босса 100 HP — 10/ход. Масштабируется. |
 | Урон яда | 8% max HP, min 1 | Медленнее горения, компенсируется длительностью 3 хода. |
 | Урон шипов | 2 piercing | Небольшой ответный урон, не доминирует. |

@@ -8,7 +8,14 @@ import {
   tryGetLocalizedTileEffectStatus,
   getAllLocalizedTileEffectStatuses,
 } from '../../../src/content/registry';
-import type { LoadedContent, TileEffectStatusTemplate } from '../../../src/content/schemas';
+import {
+  getAllProps,
+  getLocalizedProp,
+  getProp,
+  tryGetLocalizedProp,
+  tryGetProp,
+} from '../../../src/content/registry';
+import type { LoadedContent, PropTemplate, TileEffectStatusTemplate } from '../../../src/content/schemas';
 
 function mockTileEffectStatusTemplate(
   overrides: Partial<TileEffectStatusTemplate> & { id: string },
@@ -39,6 +46,38 @@ function createContentWithStatuses(): LoadedContent {
     tileEffects: new Map(),
     tileEffectStatuses: new Map([
       ['burning', mockTileEffectStatusTemplate({ id: 'burning', statusCategory: 'elemental', renderOrder: 10 })],
+    ]),
+  };
+}
+
+function mockPropTemplate(overrides: Partial<PropTemplate> & { id: string }): PropTemplate {
+  return {
+    maxHp: 10,
+    armor: 0,
+    blocksMovement: true,
+    blocksLOS: false,
+    renderScale: 1,
+    propKind: 'barrel',
+    tags: [],
+    canHaveStatus: [],
+    ...overrides,
+  };
+}
+
+function createContentWithProps(): LoadedContent {
+  return {
+    entities: new Map(),
+    players: new Map(),
+    items: new Map(),
+    abilities: new Map(),
+    statuses: new Map(),
+    maps: new Map(),
+    stairs: new Map(),
+    doors: new Map(),
+    tileEffects: new Map(),
+    tileEffectStatuses: new Map(),
+    props: new Map([
+      ['oil_barel', mockPropTemplate({ id: 'oil_barel', propKind: 'barrel', tags: ['prop.barrel', 'contains.oil'] })],
     ]),
   };
 }
@@ -88,5 +127,46 @@ describe('Реестр контента — статусы тайловых эф
     const localized = getAllLocalizedTileEffectStatuses('ru');
     expect(localized).toHaveLength(1);
     expect(localized[0]!.name).toBe('Горящая поверхность');
+  });
+});
+
+describe('Реестр контента — пропы', () => {
+  beforeEach(() => {
+    initRegistry(createContentWithProps());
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('getProp возвращает шаблон по ID', () => {
+    const prop = getProp('oil_barel');
+    expect(prop.id).toBe('oil_barel');
+    expect(prop.propKind).toBe('barrel');
+    expect(prop.maxHp).toBe(10);
+  });
+
+  it('tryGetProp возвращает undefined для отсутствующего ID', () => {
+    expect(tryGetProp('missing')).toBeUndefined();
+  });
+
+  it('getAllProps возвращает все шаблоны', () => {
+    const props = getAllProps();
+    expect(props).toHaveLength(1);
+    expect(props[0]!.id).toBe('oil_barel');
+  });
+
+  it('getLocalizedProp возвращает локализованный шаблон', () => {
+    const localized = getLocalizedProp('oil_barel', 'ru');
+    expect(localized.name).toBe('Бочка с маслом');
+    expect(localized.propKind).toBe('barrel');
+  });
+
+  it('tryGetLocalizedProp возвращает локализованный шаблон или undefined', () => {
+    const found = tryGetLocalizedProp('oil_barel', 'en');
+    expect(found).toBeDefined();
+    expect(found!.name).toBe('Oil Barrel');
+
+    expect(tryGetLocalizedProp('missing', 'ru')).toBeUndefined();
   });
 });

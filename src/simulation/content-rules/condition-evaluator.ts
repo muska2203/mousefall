@@ -8,6 +8,7 @@
 import type {EntityId} from '@simulation/core-types.ts';
 import {findEntity} from '@simulation/state.ts';
 import {hasTag} from '@simulation/systems/tags/tag-helpers.ts';
+import {tryGetDoor, tryGetProp} from '@content/registry';
 import {rngChance} from '@utils/rng.ts';
 import type {RuleContext} from './rule-context.ts';
 import {resolveParametrizedValue} from './value-resolver.ts';
@@ -69,6 +70,11 @@ export function evaluateCondition(
       if (condition.role === 'target') return selfId === ctx.targetEntityId;
       return false;
     }
+    case 'entityHasTag': {
+      const subjectId = resolveSubjectId(condition.subject, selfId, ctx, candidateId);
+      if (subjectId === null) return false;
+      return entityHasTag(subjectId, condition.tag, ctx);
+    }
     case 'and':
       return condition.conditions.every((c) => evaluateCondition(c, ctx, selfId, candidateId));
     case 'or':
@@ -81,10 +87,10 @@ export function evaluateCondition(
 }
 
 /**
- * Преобразует субъект условия (`self` / `target` / `candidate`) в EntityId.
+ * Преобразует субъект условия (`self` / `source` / `target` / `candidate`) в EntityId.
  */
 function resolveSubjectId(
-  subject: 'self' | 'target' | 'candidate',
+  subject: 'self' | 'source' | 'target' | 'candidate',
   selfId: EntityId | null,
   ctx: RuleContext,
   candidateId?: EntityId,
@@ -92,6 +98,8 @@ function resolveSubjectId(
   switch (subject) {
     case 'self':
       return selfId;
+    case 'source':
+      return ctx.sourceEntityId;
     case 'target':
       return ctx.targetEntityId;
     case 'candidate':
@@ -108,4 +116,36 @@ function hasStatus(entityId: EntityId, statusType: string, ctx: RuleContext): bo
   const entity = findEntity(ctx.state, entityId);
   if (!entity || !('statusEffects' in entity)) return false;
   return entity.statusEffects.some((effect) => effect.type === statusType);
+}
+
+/**
+ * Проверяет, есть ли у шаблона сущности указанный тег.
+ *
+ * Использует теги из шаблона (prop / enemy), чтобы правила могли
+ * ориентироваться на содержимое объекта (например, `contains.oil`).
+ */
+function entityHasTag(entityId: EntityId, tag: string, ctx: RuleContext): boolean {
+  const entity = findEntity(ctx.state, entityId);
+  if (!entity || !('templateId' in entity)) return false;
+
+  const tags = getEntityTemplateTags(entity);
+  if (tags === undefined) return false;
+  return hasTag(tags, tag);
+}
+
+/**
+ * Возвращает теги шаблона сущности или undefined, если шаблон не найден
+ * или не поддерживает теги.
+ *
+ * На текущий момент теги поддерживаются для пропов (`PropTemplate`) и дверей (`DoorTemplate`).
+ * При добавлении тегов к другим шаблонам сущностей расширить этот хелпер.
+ */
+function getEntityTemplateTags(entity: NonNullable<ReturnType<typeof findEntity>>): string[] | undefined {
+  if (entity.type === 'prop') {
+    return tryGetProp(entity.templateId)?.tags;
+  }
+  if (entity.type === 'door') {
+    return tryGetDoor(entity.templateId)?.tags;
+  }
+  return undefined;
 }

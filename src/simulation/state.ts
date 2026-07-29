@@ -27,6 +27,7 @@ import type {
   GameState,
   PlayerEntity,
   Position,
+  PropEntity,
   TileType,
 } from './types';
 import type {MapParams} from '@content/schemas';
@@ -206,6 +207,7 @@ export const TARGET_PRIORITY: Record<EntityType, number> = {
   player: 100,
   enemy: 90,
   door: 50,
+  prop: 40,
   floor_item_container: 0,
   stairs: 0,
 };
@@ -260,7 +262,10 @@ export function blocksLOS(state: GameState, x: number, y: number): boolean {
   if (tile === 'wall') return true;
   const door = findDoorAt(state, x, y);
   // Закрытая живая дверь блокирует обзор, открытая — нет.
-  return door ? door.isAlive && !door.isOpen : false;
+  if (door) return door.isAlive && !door.isOpen;
+  const prop = findPropAt(state, x, y);
+  // Живой проп с blocksLOS блокирует обзор.
+  return prop ? prop.isAlive && prop.blocksLOS : false;
 }
 
 
@@ -288,6 +293,15 @@ export function findDoorAt(state: GameState, x: number, y: number): DoorEntity |
   const entities = findAllEntitiesAt(state, x, y);
   return entities
     .filter((e): e is DoorEntity => e.type === 'door' && e.isAlive)[0];
+}
+
+/**
+ * Возвращает проп на заданной клетке или undefined.
+ */
+export function findPropAt(state: GameState, x: number, y: number): PropEntity | undefined {
+  const entities = findAllEntitiesAt(state, x, y);
+  return entities
+    .filter((e): e is PropEntity => e.type === 'prop' && e.isAlive)[0];
 }
 
 /**

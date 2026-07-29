@@ -1,5 +1,5 @@
 import {abilities} from './abilities';
-import {doors, stairs} from './environment';
+import {doors, props, stairs} from './environment';
 import {entities} from './entities';
 import {items} from './items';
 import {players} from './players';
@@ -16,6 +16,7 @@ export const enContentTexts: ContentTexts = {
   entities,
   items,
   players,
+  props,
   rules,
   statuses,
   tileEffects,

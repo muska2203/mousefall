@@ -43,7 +43,7 @@ describe('status effect tick phases', () => {
       stairs: new Map(),
       doors: new Map(),
       statuses: new Map([
-        ['burning', mockStatus('burning', ['burning_tick_damage'])],
+        ['burning', mockStatus('burning', [])],
         ['poisoned', mockStatus('poisoned', ['status_poison_tick_damage'])],
       ]),
       tileEffects: new Map(),

@@ -5,12 +5,15 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {runContentRuleReactions} from '../../../../../src/simulation/content-rules/reaction/content-rule-reaction';
 import {
+  initObjectContentRegistry,
+  makeDoor,
   makeEnemy,
   makePlayer,
+  makeProp,
   makeStateWithPlayer,
   makeStateWithPlayerAndEntity,
 } from '../../../../fixtures/gameState';
-import {setWorldContentRulesOverride} from '../../../../../src/simulation/content-rules/rules';
+import {getWorldContentRules, setWorldContentRulesOverride} from '../../../../../src/simulation/content-rules/rules';
 import {setContentRulesOverride} from '../../../../../src/simulation/content-rules/registry';
 import type {
   GameEvent,
@@ -174,13 +177,14 @@ describe('runContentRuleReactions', () => {
     });
 
     it('RULE_TRIGGERED от мирового правила имеет layer world и ownerEntityId null', () => {
+      initObjectContentRegistry();
       const player = makePlayer({ x: 5, y: 5 });
-      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
-      const state = makeStateWithPlayerAndEntity(player, enemy);
+      const door = makeDoor({ id: 'door_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, door);
 
       const event: GameEvent = {
         type: 'ENTITY_DAMAGED', isFieldEvent: true,
-        targetId: enemy.id,
+        targetId: door.id,
         sourceEntityId: player.id,
         damage: 5,
         position: { x: 6, y: 5 },
@@ -345,6 +349,20 @@ describe('runContentRuleReactions', () => {
   });
 
   it('соблюдает порядок слоёв source → target → world → radius', () => {
+    // Подменяем мировое правило, чтобы оно срабатывало на акторе независимо от горючести.
+    setWorldContentRulesOverride([
+      ...getWorldContentRules().filter((rule) => rule.id !== 'fire_damage_ignites'),
+      {
+        id: 'world_frozen_on_damage',
+        trigger: { event: 'ENTITY_DAMAGED' },
+        effect: { type: 'applyStatus', statusType: 'frozen', duration: 1 },
+        target: { type: 'eventTarget' },
+        priority: 0,
+        ownerContext: { type: 'world' },
+        worldLayer: 'global',
+      },
+    ]);
+
     const player = makePlayer({
       x: 5,
       y: 5,
@@ -404,8 +422,8 @@ describe('runContentRuleReactions', () => {
       .filter((intent) => intent.type === 'APPLY_STATUS')
       .map((intent) => intent.status.type);
 
-    // source (burning), target (poisoned), world (burning от fire_damage_ignites), radius (silenced)
-    expect(statusTypes).toEqual(['burning', 'poisoned', 'burning', 'silenced']);
+    // source (burning), target (poisoned), world (frozen), radius (silenced)
+    expect(statusTypes).toEqual(['burning', 'poisoned', 'frozen', 'silenced']);
   });
 
   it('не дублирует self-эффекты, когда source совпадает с target', () => {
@@ -435,8 +453,8 @@ describe('runContentRuleReactions', () => {
     const intents = runReactions(state, event);
 
     // source и target — один и тот же актор, activeRules должны быть собраны один раз.
-    // Плюс мировое правило также срабатывает.
-    expect(intents.filter((intent) => intent.type === 'APPLY_STATUS' && intent.status.type === 'burning')).toHaveLength(2);
+    // Мировое правило fire_damage_ignites больше не срабатывает на акторов.
+    expect(intents.filter((intent) => intent.type === 'APPLY_STATUS' && intent.status.type === 'burning')).toHaveLength(1);
   });
 
   it('разрешает collisionTarget в качестве цели', () => {
@@ -527,14 +545,15 @@ describe('runContentRuleReactions', () => {
     expect(nearestIntent).toMatchObject({ entityId: enemyNear.id, damage: 7 });
   });
 
-  it('срабатывает глобальное мировое правило и применяет burning', () => {
+  it('срабатывает глобальное мировое правило и применяет burning на горючий объект', () => {
+    initObjectContentRegistry();
     const player = makePlayer({ x: 5, y: 5 });
-    const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
-    const state = makeStateWithPlayerAndEntity(player, enemy);
+    const barrel = makeProp({ id: 'barrel_test_1', x: 6, y: 5 });
+    const state = makeStateWithPlayerAndEntity(player, barrel);
 
     const event: GameEvent = {
       type: 'ENTITY_DAMAGED', isFieldEvent: true,
-      targetId: enemy.id,
+      targetId: barrel.id,
       sourceEntityId: player.id,
       damage: 5,
       position: { x: 6, y: 5 },
@@ -553,7 +572,7 @@ describe('runContentRuleReactions', () => {
     expect(worldIntent).toBeDefined();
     expect(worldIntent).toMatchObject({
       type: 'APPLY_STATUS',
-      entityId: enemy.id,
+      entityId: barrel.id,
       status: { type: 'burning', duration: 3, value: 0, statModifiers: null },
     });
   });

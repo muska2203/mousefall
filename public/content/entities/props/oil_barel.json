@@ -1,0 +1,15 @@
+{
+  "id": "oil_barel",
+  "maxHp": 3,
+  "armor": 0,
+  "blocksMovement": true,
+  "blocksLOS": false,
+  "renderScale": 1.0,
+  "propKind": "barrel",
+  "tags": [
+    "prop.barrel",
+    "contains.oil",
+    "flammable"
+  ],
+  "canHaveStatus": ["burning"]
+}

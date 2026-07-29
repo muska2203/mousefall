@@ -169,6 +169,42 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     priority: 0,
   },
   {
+    id: 'burning_tile_status_applied_deals_damage',
+    trigger: {
+      event: 'TILE_EFFECT_STATUS_APPLIED',
+    },
+    conditions: [
+      { type: 'eventFieldEquals', field: 'effectType', value: 'oil' },
+      { type: 'eventFieldEquals', field: 'statusType', value: 'burning' },
+      { type: 'eventFieldEquals', field: 'isNew', value: true },
+    ],
+    effect: {
+      type: 'dealDamage',
+      amount: 3,
+      tags: ['damage.magical.fire'],
+    },
+    target: { type: 'allInRadius', radius: 0, center: 'eventPosition' },
+    priority: 0,
+  },
+  {
+    id: 'burning_tile_status_applied_applies_burning',
+    trigger: {
+      event: 'TILE_EFFECT_STATUS_APPLIED',
+    },
+    conditions: [
+      { type: 'eventFieldEquals', field: 'effectType', value: 'oil' },
+      { type: 'eventFieldEquals', field: 'statusType', value: 'burning' },
+      { type: 'eventFieldEquals', field: 'isNew', value: true },
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'burning',
+      duration: 3,
+    },
+    target: { type: 'allInRadius', radius: 0, center: 'eventPosition' },
+    priority: 0,
+  },
+  {
     id: 'item_fire_damage_multiplier',
     trigger: {
       event: 'DAMAGE',
@@ -277,20 +313,6 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     priority: 0,
   },
   // ── Стартовые правила статусов (WP6.3) ─────────────────────────────────────
-  {
-    id: 'burning_tick_damage',
-    trigger: {
-      event: 'STATUS_TICKED',
-      tags: ['status.burning'],
-    },
-    effect: {
-      type: 'dealDamage',
-      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.1, min: 1, round: true},
-      tags: ['damage.magical.fire'],
-    },
-    target: {type: 'eventTarget'},
-    priority: 0,
-  },
   {
     id: 'status_poison_tick_damage',
     trigger: {

@@ -20,6 +20,7 @@ import {
     ItemTemplateSchema,
     MapParamsSchema,
     PlayerTemplateSchema,
+    PropTemplateSchema,
     StairsTemplateSchema,
     StatusTemplateSchema,
     TileEffectTemplateSchema,
@@ -50,6 +51,7 @@ const ManifestSchema = z.object({
   maps: z.array(z.string()),
   stairs: z.array(z.string()),
   doors: z.array(z.string()),
+  props: z.array(z.string()),
 });
 
 type Manifest = z.infer<typeof ManifestSchema>;
@@ -80,7 +82,7 @@ export async function browserFetchJson(path: string): Promise<unknown> {
 export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
   const manifest = await loadManifest(fetchJson);
 
-  const [entities, players, items, abilities, statuses, tileEffects, tileEffectStatuses, maps, stairs, doors] = await Promise.all([
+  const [entities, players, items, abilities, statuses, tileEffects, tileEffectStatuses, maps, stairs, doors, props] = await Promise.all([
     loadCategory(manifest.entities, EntityTemplateSchema, fetchJson),
     loadCategory(manifest.players, PlayerTemplateSchema, fetchJson),
     loadCategory(manifest.items, ItemTemplateSchema, fetchJson),
@@ -91,6 +93,7 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
     loadCategory(manifest.maps, MapParamsSchema, fetchJson),
     loadCategory(manifest.stairs, StairsTemplateSchema, fetchJson),
     loadCategory(manifest.doors, DoorTemplateSchema, fetchJson),
+    loadCategory(manifest.props, PropTemplateSchema, fetchJson),
   ]);
 
   const content: LoadedContent = {
@@ -104,6 +107,7 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
     maps:      new Map(maps.map(m => [m.id, m])),
     stairs:    new Map(stairs.map(s => [s.id, s])),
     doors:     new Map(doors.map(d => [d.id, d])),
+    props:     new Map(props.map(p => [p.id, p])),
   };
 
   initRegistry(content);

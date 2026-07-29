@@ -6,11 +6,11 @@
  */
 
 import {GameState} from '@simulation/types.ts';
-import {tryGetDoor, tryGetEntity, tryGetItem, tryGetStairs} from '@content/registry';
+import {tryGetDoor, tryGetEntity, tryGetItem, tryGetProp, tryGetStairs} from '@content/registry';
 import {findAllEntitiesAt} from '@simulation/state.ts';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory.ts';
 import {createInventoryItem} from '@simulation/systems/inventory-factory.ts';
-import {createDoor, createEnemy, createStairs} from '@simulation/systems/mapgen.ts';
+import {createDoor, createEnemy, createProp, createStairs} from '@simulation/systems/mapgen.ts';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
 import {Intent} from '@simulation/systems/intents/types.ts';
 import type {DebugContext} from './debug-add-item-action.ts';
@@ -44,12 +44,14 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
       const entityTemplate = tryGetEntity(templateId);
       const doorTemplate = tryGetDoor(templateId);
       const stairsTemplate = tryGetStairs(templateId);
+      const propTemplate = tryGetProp(templateId);
 
       const templateExists =
         (spawnType === 'item' && itemTemplate !== undefined) ||
         (spawnType === 'enemy' && entityTemplate !== undefined) ||
         (spawnType === 'door' && doorTemplate !== undefined) ||
-        (spawnType === 'stairs' && stairsTemplate !== undefined);
+        (spawnType === 'stairs' && stairsTemplate !== undefined) ||
+        (spawnType === 'prop' && propTemplate !== undefined);
 
       if (!templateExists) {
         return { ok: false, reasonCode: 'template_not_found' };
@@ -57,8 +59,8 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
 
       const entitiesHere = findAllEntitiesAt(state, x, y);
 
-      // Врагов и двери нельзя ставить на любую занятую клетку (включая игрока).
-      if ((spawnType === 'enemy' || spawnType === 'door') && entitiesHere.length > 0) {
+      // Врагов, двери и пропы нельзя ставить на любую занятую клетку (включая игрока).
+      if ((spawnType === 'enemy' || spawnType === 'door' || spawnType === 'prop') && entitiesHere.length > 0) {
         return { ok: false, reasonCode: 'tile_occupied' };
       }
 
@@ -107,6 +109,9 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
           entity = createStairs(state, templateId, direction, x, y);
           break;
         }
+        case 'prop':
+          entity = createProp(state, templateId, x, y);
+          break;
         default:
           return;
       }

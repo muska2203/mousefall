@@ -299,7 +299,7 @@ export type DebugAddItemAction = {
 export type DebugSpawnEntityAction = {
   type: 'DEBUG_SPAWN_ENTITY';
   entityId: EntityId;
-  spawnType: 'item' | 'enemy' | 'door' | 'stairs';
+  spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop';
   templateId: string;
   position: Position;
 };
@@ -417,7 +417,16 @@ export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: TurnSide; round?: numb
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
 export type NotifyAIIntent = { type: 'NOTIFY_AI'; entityId: EntityId; change: WorldChange };
 export type CounterAttackIntent = { type: 'COUNTER_ATTACK'; counterAttackerId: EntityId; targetId: EntityId; dx?: number; dy?: number };
-export type SpawnTileEffectIntent = { type: 'SPAWN_TILE_EFFECT'; effectType: string; position: Position; duration?: number };
+export type SpawnTileEffectIntent = {
+  type: 'SPAWN_TILE_EFFECT';
+  effectType: string;
+  position: Position;
+  duration?: number;
+  /** Опциональный статус, который сразу накладывается на созданный тайловый эффект. */
+  statusType?: string;
+  /** Длительность начального статуса; если не указана — берётся из шаблона статуса. */
+  statusDuration?: number;
+};
 export type RemoveTileEffectIntent = { type: 'REMOVE_TILE_EFFECT'; effectType: string; position: Position };
 export type TickTileEffectsIntent = { type: 'TICK_TILE_EFFECTS' };
 export type ApplyTileEffectStatusIntent = {

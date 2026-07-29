@@ -73,6 +73,7 @@ export type RuleCondition =
   | { type: 'tileEffectHasStatus'; effectType: string; statusType: string }
   | { type: 'eventFieldEquals'; field: string; value: unknown }
   | { type: 'eventRole'; role: 'source' | 'target' }
+  | { type: 'entityHasTag'; tag: GameplayTag; subject: 'self' | 'target' | 'source' | 'candidate' }
   | { type: 'and'; conditions: RuleCondition[] }
   | { type: 'or'; conditions: RuleCondition[] }
   | { type: 'not'; condition: RuleCondition };
@@ -88,7 +89,8 @@ export type TargetSelector =
   | { type: 'eventTileEffect'; effectType: string }
   | { type: 'allInRadius'; radius: number; center: 'eventPosition' | 'self'; faction?: 'enemy' | 'ally'; excludeSelf?: boolean }
   | { type: 'nearestEnemy'; radius: number; center: 'eventPosition' | 'self' }
-  | { type: 'tilesInRadius'; radius: number; center: 'eventPosition' | 'self'; effectType: string };
+  | { type: 'tilesInRadius'; radius: number; center: 'eventPosition' | 'self'; effectType: string }
+  | { type: 'positionsInRadius'; radius: number; center: 'eventPosition' | 'self'; includeCenter?: boolean };
 
 /**
  * Эффект правила.
@@ -130,6 +132,15 @@ export type RuleEffect =
       type: 'applyTileEffectStatus';
       statusType: string;
       duration: number | ParametrizedValue;
+    }
+  | {
+      type: 'spawnTileEffect';
+      effectType: string;
+      duration?: number | ParametrizedValue;
+      /** Опциональный статус, который сразу накладывается на созданный тайловый эффект. */
+      statusType?: string;
+      /** Длительность начального статуса; если не указана — берётся из шаблона статуса. */
+      statusDuration?: number | ParametrizedValue;
     };
 
 /**

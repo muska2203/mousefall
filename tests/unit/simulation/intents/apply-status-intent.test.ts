@@ -1,10 +1,10 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
-import {makeDoor, makeEnemy, makeGameState} from '../../../fixtures/gameState';
+import {makeDoor, makeEnemy, makeGameState, makeProp} from '../../../fixtures/gameState';
 import {executeApplyStatusIntent} from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
 import type {StatusEffect} from '../../../../src/simulation/core-types';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
-import type {StatusTemplate} from '../../../../src/content/schemas';
+import type {DoorTemplate, PropTemplate, StatusTemplate} from '../../../../src/content/schemas';
 
 function makeStatus(type: StatusEffect['type'], duration: number, stacks?: number): StatusEffect {
   return {
@@ -27,6 +27,32 @@ function mockStatusTemplate(overrides: Partial<StatusTemplate> & { id: string })
   };
 }
 
+function mockDoorTemplate(overrides: Partial<DoorTemplate> & { id: string }): DoorTemplate {
+  return {
+    interactionKind: 'door',
+    maxHp: 30,
+    armor: 0,
+    renderScale: 1,
+    tags: [],
+    canHaveStatus: [],
+    ...overrides,
+  };
+}
+
+function mockPropTemplate(overrides: Partial<PropTemplate> & { id: string }): PropTemplate {
+  return {
+    maxHp: 10,
+    armor: 0,
+    blocksMovement: true,
+    blocksLOS: false,
+    renderScale: 1,
+    propKind: 'barrel',
+    tags: [],
+    canHaveStatus: [],
+    ...overrides,
+  };
+}
+
 describe('apply-status-intent-executer', () => {
   beforeEach(() => {
     initRegistry({
@@ -36,7 +62,12 @@ describe('apply-status-intent-executer', () => {
       abilities: new Map(),
       maps: new Map(),
       stairs: new Map(),
-      doors: new Map(),
+      doors: new Map([
+        ['wooden_door', mockDoorTemplate({ id: 'wooden_door', tags: ['flammable'], canHaveStatus: ['burning'] })],
+      ]),
+      props: new Map([
+        ['oil_barel', mockPropTemplate({ id: 'oil_barel', tags: ['flammable'], canHaveStatus: ['burning'] })],
+      ]),
       statuses: new Map([
         ['burning', mockStatusTemplate({
           id: 'burning',
@@ -227,8 +258,32 @@ describe('apply-status-intent-executer', () => {
     });
   });
 
-  it('does not apply status to non-actor entities', () => {
+  it('applies burning to a flammable door', () => {
     const door = makeDoor();
+    const state = makeGameState();
+    state.entities.set(door.id, door);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: door.id, sourceEntityId: null, effect: makeStatus('burning', 2) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: door.id, sourceEntityId: null, status: makeStatus('burning', 2) }, builder, builder.root);
+
+    expect(door.statusEffects).toHaveLength(1);
+    expect(door.statusEffects[0]!.type).toBe('burning');
+  });
+
+  it('applies burning to a flammable prop', () => {
+    const prop = makeProp();
+    const state = makeGameState();
+    state.entities.set(prop.id, prop);
+
+    const builder = new ExecutionBuilder({ type: 'STATUS_APPLIED', isFieldEvent: true, entityId: prop.id, sourceEntityId: null, effect: makeStatus('burning', 2) });
+    executeApplyStatusIntent(state, { type: 'APPLY_STATUS', entityId: prop.id, sourceEntityId: null, status: makeStatus('burning', 2) }, builder, builder.root);
+
+    expect(prop.statusEffects).toHaveLength(1);
+    expect(prop.statusEffects[0]!.type).toBe('burning');
+  });
+
+  it('does not apply status to objects without canHaveStatus', () => {
+    const door = makeDoor({ templateId: 'stone_door' });
     const state = makeGameState();
     state.entities.set(door.id, door);
 

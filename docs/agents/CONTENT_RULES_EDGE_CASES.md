@@ -274,13 +274,15 @@ source → target → world → radius
 
 ```text
 source:  item_fire_damage_multiplier (multiply ×1.5)
-world:   fire_damage_ignites       (applyStatus burning)
+world:   fire_damage_ignites       (applyStatus burning на горючий объект)
 world:   status_burning_vulnerability (multiply ×1.2)
+world:   burning_tick_damage       (dealDamage при STATUS_TICKED status.burning)
 ```
 
 - Модификаторы урона: `source` и `world` применяются к `DAMAGE`-интенту до нанесения урона.
-- Реакция на событие: `world` срабатывает после `ENTITY_DAMAGED` и может наложить `burning`.
+- Реакция на событие: `world` срабатывает после `ENTITY_DAMAGED` и может наложить `burning` на **горючий объект** (шаблон с тегом `flammable`, например деревянная дверь или бочка с маслом).
 - Если у цели уже есть `burning`, мировое правило `status_burning_vulnerability` усилит входящий огненный урон на 20%.
+- `burning_tick_damage` — мировое правило слоя `global`, поэтому тик горения наносит урон любой сущности со статусом `burning`, включая не-акторов (двери, пропы).
 
 ### Слой radius
 
@@ -301,6 +303,7 @@ world:   status_burning_vulnerability (multiply ×1.2)
 | `chance` | Шанс срабатывания в процентах (`probability: number \| ParametrizedValue`). |
 | `hasStatus` | У субъекта (`self` / `target` / `candidate`) есть указанный статус. |
 | `hasTag` | Событие содержит указанный игровой тег. |
+| `entityHasTag` | Шаблон сущности (`self` / `source` / `target` / `candidate`) содержит указанный тег. Поддерживаются шаблоны врагов, дверей (`DoorTemplate`) и пропов (`PropTemplate`). |
 | `inTileEffect` | На `eventPosition` есть указанный тайловый эффект. |
 | `tileEffectHasStatus` | Указанный тайловый эффект на `eventPosition` имеет указанный статус. |
 | `eventFieldEquals` | Поле события равно заданному значению. |
@@ -325,6 +328,7 @@ world:   status_burning_vulnerability (multiply ×1.2)
 | `allInRadius` | Все живые акторы в радиусе (Chebyshev) от центра с опциональным фильтром по фракции. |
 | `nearestEnemy` | Ближайший враждебный актор в радиусе. |
 | `tilesInRadius` | Клетки в радиусе с указанным тайловым эффектом (поддерживается только для `applyTileEffectStatus`). |
+| `positionsInRadius` | Клетки в радиусе от центра (поддерживается только для `spawnTileEffect`). |
 
 ---
 

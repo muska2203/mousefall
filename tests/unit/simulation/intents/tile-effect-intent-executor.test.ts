@@ -242,6 +242,21 @@ describe('tile-effect-intent-executor', () => {
       expect(node).toBeNull();
     });
 
+    it('блокирует спавн тайлового эффекта на стене', () => {
+      const state = makeGameState();
+      const builder = makeBuilder();
+
+      const node = executeSpawnTileEffectIntent(
+        state,
+        { type: 'SPAWN_TILE_EFFECT', effectType: 'water', position: { x: 0, y: 0 }, duration: 5 },
+        builder,
+        builder.root,
+      );
+
+      expect(node).toBeNull();
+      expect(state.tileEffects[0]![0]!.water).toBeUndefined();
+    });
+
     it('блокирует спавн water, если на тайле есть эффект из blockedByTileEffects', () => {
       initRegistry(createContentWithOilAndStatuses({}, {}, { blockedByTileEffects: ['oil'] }));
       const state = makeGameState();

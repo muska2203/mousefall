@@ -306,9 +306,33 @@ export const DoorTemplateSchema = z.object({
   armor:           z.number().int().nonnegative().default(0).describe('Броня двери'),
   renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
   openSpriteId:    z.string().min(1).optional().describe('ID спрайта открытой двери. Если не указан — используется <id>_open'),
+  tags:            TagsSchema.describe('Иерархические игровые теги двери (например, flammable).'),
+  canHaveStatus:   z.array(z.string().min(1))
+    .default([])
+    .describe('Статусы, которые могут быть наложены на дверь'),
 }).describe('Шаблон двери');
 
 export type DoorTemplate = z.output<typeof DoorTemplateSchema>;
+
+// ─────────────────────────────────────────────
+// Шаблон разрушаемого объекта (пропа)
+// ─────────────────────────────────────────────
+
+export const PropTemplateSchema = z.object({
+  id:              z.string().min(1).describe('Уникальный идентификатор пропа (совпадает с именем файла)'),
+  maxHp:           z.number().int().positive().describe('Максимальное здоровье пропа'),
+  armor:           z.number().int().nonnegative().default(0).describe('Броня пропа'),
+  blocksMovement:  z.boolean().default(true).describe('Блокирует ли проход через клетку'),
+  blocksLOS:       z.boolean().default(false).describe('Блокирует ли линию видимости'),
+  renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  propKind:        z.string().min(1).describe('Вид пропа: barrel, crate и т.д.'),
+  tags:            TagsSchema,
+  canHaveStatus:   z.array(z.string().min(1))
+    .default([])
+    .describe('Статусы, которые могут быть наложены на проп'),
+}).describe('Шаблон разрушаемого объекта окружения');
+
+export type PropTemplate = z.output<typeof PropTemplateSchema>;
 
 // ─────────────────────────────────────────────
 // Шаблон игрока
@@ -346,4 +370,6 @@ export type LoadedContent = {
   maps:      Map<string, MapParams>;
   stairs:    Map<string, StairsTemplate>;
   doors:     Map<string, DoorTemplate>;
+  /** Разрушаемые объекты окружения. Опционально для обратной совместимости с тестовыми моками. */
+  props?:    Map<string, PropTemplate>;
 };

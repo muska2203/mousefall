@@ -1,4 +1,4 @@
-import {EnemyEntity, GameState, StatusEffectHolder} from '@simulation/types';
+import {EnemyEntity, Entity, GameState, StatusEffectHolder} from '@simulation/types';
 import {ApplyStatusIntent, IntentExecutor} from '@simulation/systems/intents/types';
 import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
 import {findEntity, isActor, nextEntityId} from '@simulation/state';
@@ -7,6 +7,7 @@ import {addActiveRulesForStatus, removeActiveRulesForStatus} from '@simulation/s
 import {cancelPreparedAbility} from '@simulation/ai/ai-helpers';
 import {getStatusTemplate} from '@simulation/systems/statuses/status-template';
 import {resolveStatusConflicts} from '@simulation/systems/statuses/resolve-status-conflicts';
+import {tryGetDoor, tryGetProp} from '@content/registry';
 import type {StatusEffectType} from '@simulation/core-types';
 
 export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
@@ -18,8 +19,8 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
   const target = findEntity(state, intent.entityId);
   if (!target || !('statusEffects' in target)) return null;
 
-  if (!isActor(target)) {
-    // Не-акторы не получают статусы.
+  if (!canEntityHaveStatus(target, intent.status.type)) {
+    // Сущность не может иметь этот статус (например, неflammable объект).
     return null;
   }
 
@@ -103,3 +104,29 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
     effect: intent.status,
   });
 };
+
+/**
+ * Проверяет, может ли сущность получить указанный статус.
+ *
+ * - Акторы могут получать любые статусы.
+ * - Двери и пропы — только те статусы, что перечислены в их шаблоне
+ *   в поле `canHaveStatus`.
+ * - Остальные сущности (лестницы, контейнеры предметов) не получают статусы.
+ */
+function canEntityHaveStatus(entity: Entity, statusType: string): boolean {
+  if (isActor(entity)) {
+    return true;
+  }
+
+  if (entity.type === 'door') {
+    const template = tryGetDoor(entity.templateId);
+    return template?.canHaveStatus.includes(statusType) ?? false;
+  }
+
+  if (entity.type === 'prop') {
+    const template = tryGetProp(entity.templateId);
+    return template?.canHaveStatus.includes(statusType) ?? false;
+  }
+
+  return false;
+}

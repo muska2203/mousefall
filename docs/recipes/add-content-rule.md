@@ -47,10 +47,11 @@
    - `id` — уникальный ID правила.
    - `trigger.event` — событие или интент (`ENTITY_DAMAGED`, `DAMAGE`, `ENTITY_MOVED` и т.д.).
    - `trigger.tags` — обязательные теги.
-   - `conditions` — глобальные условия (`chance`, `hasStatus`, `hasTag`, `inTileEffect`, `tileEffectHasStatus`, `eventFieldEquals`, `eventRole`, `and`, `or`, `not`).
+   - `conditions` — глобальные условия (`chance`, `hasStatus`, `hasTag`, `entityHasTag`, `inTileEffect`, `tileEffectHasStatus`, `eventFieldEquals`, `eventRole`, `and`, `or`, `not`).
    - `targetConditions` — условия, проверяемые для каждой цели.
-   - `effect` — что делает правило (`applyStatus`, `applyTileEffectStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `modifyDamage`, `counterAttack`).
-   - `target` — селектор целей (`eventTarget`, `eventSource`, `self`, `collisionTarget`, `eventTileEffect`, `allInRadius`, `nearestEnemy`, `tilesInRadius`).
+   - `effect` — что делает правило (`applyStatus`, `applyTileEffectStatus`, `spawnTileEffect`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `modifyDamage`, `counterAttack`).
+     `spawnTileEffect` может сразу наложить статус на созданный тайловый эффект через опциональные поля `statusType` и `statusDuration`.
+   - `target` — селектор целей (`eventTarget`, `eventSource`, `self`, `collisionTarget`, `eventTileEffect`, `allInRadius`, `nearestEnemy`, `tilesInRadius`, `positionsInRadius`).
    - `priority` — порядок срабатывания (меньше — раньше).
 
 3. **Добавь текст правила** в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`:

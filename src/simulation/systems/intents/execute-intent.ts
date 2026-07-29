@@ -198,11 +198,25 @@ function executeIntentBatch(
         if (resultNode !== null) {
             const newChildren = parent.children.slice(childrenBefore);
             const nodesToProcess = newChildren.length > 0 ? newChildren : [resultNode];
-            createdNodes.push(...nodesToProcess);
+            for (const node of nodesToProcess) {
+                collectCreatedEventNodes(node, createdNodes);
+            }
         }
     }
 
     return { resultNodes, createdNodes };
+}
+
+/**
+ * Рекурсивно собирает узел и всех его потомков, порождённые одним интентом.
+ * Гарантирует, что вложенные события (например, наложение статуса при спавне
+ * тайлового эффекта) тоже участвуют в фазах реакций.
+ */
+function collectCreatedEventNodes(node: ExecutionNode, out: ExecutionNode[]): void {
+    out.push(node);
+    for (const child of node.children) {
+        collectCreatedEventNodes(child, out);
+    }
 }
 
 /**

@@ -10,7 +10,7 @@ import type {AnimationNode, Position, RenderInput} from '@presentation/types';
 import type {DisplayState} from '@presentation/displayState/types';
 import {FOG_EXPLORED_SPRITE_ALPHA, TILE_SIZE} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
-import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getStairsSprite} from './spriteRegistry';
+import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getPropSprite, getStairsSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 import type {Animatable} from '@utils/tween';
 import {lerp, Tween, Vec2Tween} from '@utils/tween';
@@ -121,6 +121,21 @@ export class EntityRenderer {
         // Не рендерим разрушенные двери, даже если они ещё не удалены из DisplayState
         if (entity.isAlive === false) continue;
         const path = input.doorSprites.get(entity.id) ?? getDoorSprite(entity.templateId, entity.isOpen ?? false);
+        texturePaths.set(path, path);
+        const texture = getTextureSync(path);
+        const scale = getRenderScale(entity.templateId, false);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
+        const sprite = this.sprites.get(entity.id);
+        if (sprite && !this.activeAnimations.has(entity.id)) {
+          sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
+          sprite.alpha = getStaticEntityAlpha(displayState, entity.x, entity.y, input.debugEnabled);
+        }
+        existingIds.add(entity.id);
+      }
+      if (entity.type === 'prop') {
+        // Не рендерим разрушенные пропы, даже если они ещё не удалены из DisplayState
+        if (entity.isAlive === false) continue;
+        const path = getPropSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);

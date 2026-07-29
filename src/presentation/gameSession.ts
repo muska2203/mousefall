@@ -24,6 +24,7 @@ import type {
   GameState,
   PlayerStatsSnapshot,
   Position,
+  PropEntity,
   RuleTriggeredEvent,
   Simulation,
   SimulationResult,
@@ -59,6 +60,7 @@ import {
   getAllLocalizedEntities,
   getAllLocalizedItems,
   getAllLocalizedPlayerTemplates,
+  getAllLocalizedProps,
   getAllLocalizedStairs,
   getAllLocalizedTileEffects,
   getMapParams,
@@ -80,6 +82,7 @@ import {mapItemTemplateToDetail} from './itemDetailMapper';
 import {mapEnemyToPopover} from './enemyDetailMapper';
 import {mapStairsToPopover} from './stairsDetailMapper';
 import {mapDoorToPopover} from './doorDetailMapper';
+import {mapPropToPopover} from './propDetailMapper';
 import {resolveAbilityIcon, resolveDoorSprite, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
@@ -791,6 +794,7 @@ export class GameSession {
     // Ищем объект на клетке, исключая игрока
     let enemy = null;
     let door = null;
+    let prop = null;
     let item = null;
     let stairs = null;
 
@@ -802,6 +806,9 @@ export class GameSession {
       }
       if (entity.type === 'door' && !door) {
         door = entity;
+      }
+      if (entity.type === 'prop' && !prop) {
+        prop = entity;
       }
       if (entity.type === 'floor_item_container') {
         item = entity;
@@ -819,6 +826,10 @@ export class GameSession {
 
     if (door) {
       return { kind: 'door', data: mapDoorToPopover(door, currentLocale) };
+    }
+
+    if (prop) {
+      return { kind: 'prop', data: mapPropToPopover(prop as PropEntity, currentLocale) };
     }
 
     if (item && (item.type === 'floor_item_container' || item.type === 'item')) {
@@ -981,6 +992,14 @@ export class GameSession {
    */
   static getAllTileEffects(locale: Locale) {
     return getAllLocalizedTileEffects(locale);
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны пропов.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllProps(locale: Locale) {
+    return getAllLocalizedProps(locale);
   }
 
   /**
@@ -2224,7 +2243,7 @@ export class GameSession {
 
   /** Debug: заспавнить объект на карте. */
   debugSpawnEntity(
-    spawnType: 'item' | 'enemy' | 'door' | 'stairs',
+    spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop',
     templateId: string,
     position: Position,
   ): void {

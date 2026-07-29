@@ -72,6 +72,11 @@ export const executeSpawnTileEffectIntent: IntentExecutor<SpawnTileEffectIntent>
     return null;
   }
 
+  // Блокировка: тайловые эффекты нельзя спавнить в стенах.
+  if (state.map.tiles[y]![x] === 'wall') {
+    return null;
+  }
+
   const cell = ensureTileEffectsCell(state, x, y);
   const template = tryGetTileEffect(intent.effectType);
   const duration = intent.duration ?? template?.duration ?? 4;
@@ -102,12 +107,31 @@ export const executeSpawnTileEffectIntent: IntentExecutor<SpawnTileEffectIntent>
     existingEffect.duration = duration;
   }
 
-  return builder.addChild(parent, {
+  const changedNode = builder.addChild(parent, {
     type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
     effectType: intent.effectType,
     position: { x, y },
     isNew: !existingEffect,
   });
+
+  // Если указан начальный статус — накладываем его сразу после создания эффекта.
+  if (intent.statusType !== undefined) {
+    executeApplyTileEffectStatusIntent(
+      state,
+      {
+        type: 'APPLY_TILE_EFFECT_STATUS',
+        effectType: intent.effectType,
+        statusType: intent.statusType,
+        position: { x, y },
+        duration: intent.statusDuration,
+        sourceEntityId: null,
+      },
+      builder,
+      changedNode,
+    );
+  }
+
+  return changedNode;
 };
 
 export const executeRemoveTileEffectIntent: IntentExecutor<RemoveTileEffectIntent> = (

@@ -231,6 +231,7 @@ export interface ComponentsDebugPanelTranslations {
   spawnTypeEnemy: string;
   spawnTypeDoor: string;
   spawnTypeStairs: string;
+  spawnTypeProp: string;
   spawnTypeTileEffect: string;
   selectTileHint: string;
   spawnButtonIdle: string;

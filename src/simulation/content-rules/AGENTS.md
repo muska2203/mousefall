@@ -60,6 +60,8 @@ src/simulation/content-rules/
    - `applyStatus.statusType` должен существовать в `public/content/statuses/`.
    - `applyTileEffectStatus.statusType` должен существовать в `public/content/tile-effect-statuses/`.
    - `applyTileEffectStatus` требует `target.type === 'eventTileEffect'` или `'tilesInRadius'`.
+   - `spawnTileEffect.effectType` должен существовать в `public/content/tile-effects/`.
+   - `spawnTileEffect` требует `target.type === 'positionsInRadius'`.
 
 5. **Обновить тексты.**
    - Тексты самого правила — в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.

@@ -60,6 +60,7 @@ describe('buildDisplayState', () => {
 
     expect(display.entities.size).toBe(3);
     expect(display.entities.get('door_1')!.isOpen).toBe(false);
+    expect(display.entities.get('door_1')!.statusEffects).toEqual([]);
     expect(display.entities.get('item_1')!.type).toBe('floor_item_container');
 
     expect(display.meta.floor).toBe(1);
@@ -453,7 +454,7 @@ describe('applyPatch', () => {
     expect(next.player.hp).toBe(100);
   });
 
-  it('adds and removes status effects', () => {
+  it('adds and removes status effects on actors', () => {
     const player = makePlayer({
       statusEffects: [{ type: 'burning', duration: 2, value: 3 } as any],
     });
@@ -475,6 +476,24 @@ describe('applyPatch', () => {
     }, makeMinimalState());
     const withoutBurning = applyPatch(withPoison, removed);
     expect(withoutBurning.player.statusEffects!.map((e) => e.type)).toEqual(['poisoned']);
+  });
+
+  it('adds status effects to objects', () => {
+    const door = makeDoor({ id: 'door_1', x: 4, y: 5 });
+    const state = buildDisplayState(makeGameState({
+      player: makePlayer({ x: 5, y: 5 }),
+      entities: new Map<string, Entity>([[door.id, door]]),
+    }));
+
+    const applied = createPatch({
+      type: 'STATUS_APPLIED', isFieldEvent: true,
+      entityId: door.id,
+      sourceEntityId: null,
+      effect: { type: 'burning', duration: 3, value: 0 } as any,
+    }, makeMinimalState());
+    const next = applyPatch(state, applied);
+
+    expect(next.entities.get(door.id)!.statusEffects!.map((e) => e.type)).toEqual(['burning']);
   });
 
   it('updates visibility and exploration on FOG_UPDATED', () => {

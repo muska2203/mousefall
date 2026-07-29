@@ -405,4 +405,55 @@ describe('validateContentRuleSemantics', () => {
 
     expect(validateContentRuleSemantics(content)).toEqual([]);
   });
+
+  it('проходит, когда spawnTileEffect ссылается на существующий тайловый эффект и positionsInRadius', () => {
+    const rule: ContentRule = {
+      id: 'test_spawn_oil',
+      trigger: { event: 'ENTITY_DIED' },
+      effect: { type: 'spawnTileEffect', effectType: 'oil' },
+      target: { type: 'positionsInRadius', radius: 1, center: 'eventPosition' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    expect(validateContentRuleSemantics(createContent())).toEqual([]);
+  });
+
+  it('возвращает ошибку, когда spawnTileEffect ссылается на отсутствующий тайловый эффект', () => {
+    const rule: ContentRule = {
+      id: 'test_spawn_unknown_tile_effect',
+      trigger: { event: 'ENTITY_DIED' },
+      effect: { type: 'spawnTileEffect', effectType: 'unknown_tile_effect' },
+      target: { type: 'positionsInRadius', radius: 1, center: 'eventPosition' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_spawn_unknown_tile_effect',
+      field: 'effect.effectType',
+      problem: expect.stringContaining('unknown_tile_effect'),
+    });
+  });
+
+  it('возвращает ошибку, когда spawnTileEffect использует target.type !== positionsInRadius', () => {
+    const rule: ContentRule = {
+      id: 'test_spawn_tile_effect_wrong_target',
+      trigger: { event: 'ENTITY_DIED' },
+      effect: { type: 'spawnTileEffect', effectType: 'oil' },
+      target: { type: 'eventTarget' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const errors = validateContentRuleSemantics(createContent());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleId: 'test_spawn_tile_effect_wrong_target',
+      field: 'target.type',
+      problem: expect.stringContaining('positionsInRadius'),
+    });
+  });
 });

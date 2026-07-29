@@ -13,6 +13,7 @@ import type {
     EnemyEntity,
     FloorItemContainerEntity,
     GameState,
+    PropEntity,
     RNGState,
     Room,
     RuntimeAbility,
@@ -23,7 +24,7 @@ import type {MapParams} from '@content/schemas';
 import {rngChance, rngInt} from '@utils/rng';
 import {nextEntityId} from '@simulation/state';
 import {createDefaultAIState} from '@simulation/ai/ai-state';
-import {getDoor, getEntity, getItem} from '@content/registry';
+import {getDoor, getEntity, getItem, getProp} from '@content/registry';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory';
 import {createInventoryItem} from '@simulation/systems/inventory-factory';
 import {addModifier} from '@simulation/systems/stats/modifier-engine';
@@ -280,5 +281,27 @@ export function createDoor(state: GameState, templateId: string, x: number, y: n
     maxHp: template.maxHp,
     armor: template.armor,
     isAlive: true,
+    statusEffects: [],
+  };
+}
+
+export function createProp(state: GameState, templateId: string, x: number, y: number): PropEntity {
+  const template = getProp(templateId);
+  return {
+    id: nextEntityId(state, 'prop'),
+    type: 'prop',
+    x,
+    y,
+    displayName: templateId,
+    templateId,
+    blocksMovement: template.blocksMovement,
+    blocksLOS: template.blocksLOS,
+    interactionKind: 'prop',
+    propKind: template.propKind,
+    hp: template.maxHp,
+    maxHp: template.maxHp,
+    armor: template.armor,
+    isAlive: true,
+    statusEffects: [],
   };
 }

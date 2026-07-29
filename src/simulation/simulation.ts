@@ -70,7 +70,7 @@ import {getAbilityTags} from "@simulation/systems/tags/ability-tags.ts";
 import {meetsWeaponRequirements} from "@simulation/systems/abilities/ability-requirements.ts";
 import {initSkillRegistry} from "@simulation/skills/index.ts";
 import {getItem, tryGetAbility, tryGetItem} from "@content/registry";
-import {tickEntityStatusEffects} from "@simulation/systems/status-effect-ticker.ts";
+import {tickEntityStatusEffects, tickObjectStatusEffects} from "@simulation/systems/status-effect-ticker.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {resolveInteraction} from "@simulation/systems/interactions/resolve-interaction.ts";
 import {
@@ -596,6 +596,13 @@ export class GameSimulation implements Simulation {
 
         // Тик тайловых эффектов: уменьшение длительности и удаление истёкших.
         executeIntent(this.state, { type: 'TICK_TILE_EFFECTS' }, builder, root);
+
+        // Тик статусов не-акторов (дверей, пропов), например горение.
+        for (const { entity, intents } of tickObjectStatusEffects(this.state, 'environment')) {
+            for (const intent of intents) {
+                executeIntent(this.state, intent, builder, root);
+            }
+        }
 
         return { side: 'environment', actions: [root] };
     }

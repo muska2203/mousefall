@@ -25,4 +25,20 @@ export const rules: Record<string, ContentText> = {
     name: 'Ember Spark',
     description: 'Fire attacks made with a weapon or ability deal 2 additional damage.',
   },
+  prop_contains_oil_spills_on_death: {
+    name: 'Spilled Oil',
+    description: 'When an oil-containing object is destroyed, oil spills in a 1-tile radius.',
+  },
+  flammable_oil_barrel_explodes_on_fire_death: {
+    name: 'Burning Barrel Explosion',
+    description: 'If a burning oil barrel is destroyed, the spilled oil immediately ignites and explodes.',
+  },
+  burning_tile_status_applied_deals_damage: {
+    name: 'Flame Burst',
+    description: 'When oil ignites, creatures on the tile take 3 fire damage.',
+  },
+  burning_tile_status_applied_applies_burning: {
+    name: 'Ignited by Flames',
+    description: 'When oil ignites, creatures on the tile catch fire for 3 turns.',
+  },
 };

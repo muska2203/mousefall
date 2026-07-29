@@ -181,6 +181,9 @@ function validateRuleEffect(
     case 'heal':
       validateHealEffect(rule, effect, errors);
       break;
+    case 'spawnTileEffect':
+      validateSpawnTileEffectEffect(rule, effect, knownTileEffectIds, knownTileEffectStatusIds, errors);
+      break;
   }
 }
 
@@ -239,6 +242,46 @@ function validateApplyTileEffectStatusEffect(
       ruleId: rule.id,
       field: 'target.effectType',
       problem: `Тайловый эффект "${rule.target.effectType}" не найден в реестре`,
+    });
+  }
+}
+
+/**
+ * Проверяет ссылку на тайловый эффект и целевой селектор
+ * в эффекте spawnTileEffect.
+ */
+function validateSpawnTileEffectEffect(
+  rule: ContentRule,
+  effect: Extract<RuleEffect, { type: 'spawnTileEffect' }>,
+  knownTileEffectIds: ReadonlySet<string>,
+  knownTileEffectStatusIds: ReadonlySet<string>,
+  errors: ContentRuleValidationError[],
+): void {
+  if (!knownTileEffectIds.has(effect.effectType)) {
+    errors.push({
+      path: `rule.${rule.id}.effect`,
+      ruleId: rule.id,
+      field: 'effect.effectType',
+      problem: `Тайловый эффект "${effect.effectType}" не найден в реестре`,
+    });
+  }
+
+  if (rule.target.type !== 'positionsInRadius') {
+    errors.push({
+      path: `rule.${rule.id}.target`,
+      ruleId: rule.id,
+      field: 'target.type',
+      problem: 'Эффект spawnTileEffect требует target.type === "positionsInRadius"',
+    });
+  }
+
+  const statusType = (effect as { statusType?: string }).statusType;
+  if (statusType !== undefined && !knownTileEffectStatusIds.has(statusType)) {
+    errors.push({
+      path: `rule.${rule.id}.effect`,
+      ruleId: rule.id,
+      field: 'effect.statusType',
+      problem: `Статус тайлового эффекта "${statusType}" не найден в реестре`,
     });
   }
 }
@@ -330,6 +373,24 @@ function validateCondition(
           ruleId: rule.id,
           field: 'condition.tag',
           problem: 'Условие hasTag содержит пустой тег',
+        });
+      }
+      break;
+    case 'entityHasTag':
+      if (typeof condition.tag !== 'string' || condition.tag.length === 0) {
+        errors.push({
+          path: `rule.${rule.id}.conditions[${index}]`,
+          ruleId: rule.id,
+          field: 'condition.tag',
+          problem: 'Условие entityHasTag содержит пустой тег',
+        });
+      }
+      if (condition.subject !== 'self' && condition.subject !== 'source' && condition.subject !== 'target' && condition.subject !== 'candidate') {
+        errors.push({
+          path: `rule.${rule.id}.conditions[${index}]`,
+          ruleId: rule.id,
+          field: 'condition.subject',
+          problem: 'Условие entityHasTag должно иметь subject из "self" / "source" / "target" / "candidate"',
         });
       }
       break;

@@ -8,6 +8,7 @@ import {floorTransitionReaction} from "@simulation/systems/world-reactions/floor
 import {aiPerceptionReaction} from "@simulation/systems/world-reactions/ai-perception-reaction.ts";
 import {tileExplosionDamageReaction} from "@simulation/systems/world-reactions/tile-explosion-damage-reaction.ts";
 import {burningOilExplosionReaction} from "@simulation/systems/world-reactions/burning-oil-explosion-reaction.ts";
+import {oilIgnitionNearBurningReaction} from "@simulation/systems/world-reactions/oil-ignition-near-burning-reaction.ts";
 
 // ─────────────────────────────────────────────
 // Хранилище реакций
@@ -73,3 +74,4 @@ registerReaction('DOOR_OPENED', aiPerceptionReaction, 0);
 registerReaction('DOOR_CLOSED', aiPerceptionReaction, 0);
 registerReaction('TILE_EXPLODED', tileExplosionDamageReaction, 0);
 registerReaction('TILE_EFFECT_STATUS_APPLIED', burningOilExplosionReaction, 0);
+registerReaction('TILE_EFFECT_CHANGED', oilIgnitionNearBurningReaction, 0);

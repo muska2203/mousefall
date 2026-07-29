@@ -45,6 +45,13 @@ export function resolveDoorSprite(templateId: string, isOpen: boolean = false, o
 }
 
 /**
+ * Возвращает путь к спрайту пропа по templateId.
+ */
+export function resolvePropSprite(templateId: string): string {
+  return `/assets/objects/props/${templateId}.png`;
+}
+
+/**
  * Возвращает путь к иконке способности по spriteId.
  */
 export function resolveAbilityIcon(spriteId: string): string {

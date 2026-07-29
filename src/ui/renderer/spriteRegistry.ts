@@ -70,3 +70,8 @@ export function getDoorSprite(templateId: string, isOpen: boolean = false): stri
   }
   return `/assets/objects/doors/${templateId}.png`;
 }
+
+/** Путь к спрайту пропа по templateId. */
+export function getPropSprite(templateId: string): string {
+  return `/assets/objects/props/${templateId}.png`;
+}

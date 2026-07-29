@@ -410,11 +410,22 @@ export type DoorPopoverViewModel = {
   armor: number;
 };
 
+export type PropPopoverViewModel = {
+  name: string;
+  sprite: string;
+  flavorText: string;
+  hp: number;
+  maxHp: number;
+  armor: number;
+  propKind: string;
+};
+
 export type FieldObjectPopoverViewModel =
   | { kind: 'enemy'; data: EnemyPopoverViewModel }
   | { kind: 'item'; data: ItemDetailViewModel }
   | { kind: 'stairs'; data: StairsPopoverViewModel }
-  | { kind: 'door'; data: DoorPopoverViewModel };
+  | { kind: 'door'; data: DoorPopoverViewModel }
+  | { kind: 'prop'; data: PropPopoverViewModel };
 
 /** Одна доступная опция взаимодействия на кнопку F. */
 export type InteractionOption = {

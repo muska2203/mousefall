@@ -30,6 +30,7 @@
 | Где архитектурный обзор боевой системы? | [`../plans/Архитектура_боевой_системы_на_основе_реакций.md`](../plans/Архитектура_боевой%20системы%20на%20основе%20реакций.md) |
 | Каталог стартовых правил | [`../design/starting-rules-catalog.md`](../design/starting-rules-catalog.md) |
 | Архитектура тайловых эффектов | [`../architecture/TILE_EFFECTS.md`](../architecture/TILE_EFFECTS.md) |
+| Концепт HP-обводки в стиле стикера | [`../concepts/sticker-hp-outline.md`](../concepts/sticker-hp-outline.md) |
 | Как добавить тайловый эффект? | [`TILE_EFFECTS.md`](./TILE_EFFECTS.md) |
 | Как работают сохранения и загрузки? | [`SAVES.md`](./SAVES.md) |
 | Как добавить/изменить перевод или текст? | [`I18N.md`](./I18N.md) |

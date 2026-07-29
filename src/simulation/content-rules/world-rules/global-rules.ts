@@ -19,7 +19,9 @@ export const GLOBAL_WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
       event: 'ENTITY_DAMAGED',
       tags: ['damage.magical.fire'],
     },
-    conditions: [{type: 'chance', probability: 30}],
+    conditions: [
+      { type: 'entityHasTag', tag: 'flammable', subject: 'target' },
+    ],
     effect: {
       type: 'applyStatus',
       statusType: 'burning',
@@ -41,6 +43,22 @@ export const GLOBAL_WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
       type: 'modifyDamage',
       op: 'multiply',
       value: 1.2,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
+    id: 'burning_tick_damage',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.burning'],
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.1, min: 1, round: true},
+      tags: ['damage.magical.fire'],
     },
     target: {type: 'eventTarget'},
     priority: 0,
@@ -108,6 +126,57 @@ export const GLOBAL_WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
     },
     target: {type: 'collisionTarget'},
     priority: 1,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
+    id: 'prop_contains_oil_spills_on_death',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      { type: 'entityHasTag', subject: 'target', tag: 'contains.oil' },
+      {
+        type: 'not',
+        condition: { type: 'hasStatus', statusType: 'burning', subject: 'target' },
+      },
+    ],
+    effect: {
+      type: 'spawnTileEffect',
+      effectType: 'oil',
+    },
+    target: {
+      type: 'positionsInRadius',
+      radius: 1,
+      center: 'eventPosition',
+      includeCenter: true,
+    },
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
+    id: 'flammable_oil_barrel_explodes_on_fire_death',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      { type: 'entityHasTag', subject: 'target', tag: 'contains.oil' },
+      { type: 'hasStatus', statusType: 'burning', subject: 'target' },
+    ],
+    effect: {
+      type: 'spawnTileEffect',
+      effectType: 'oil',
+      statusType: 'burning',
+      statusDuration: 3,
+    },
+    target: {
+      type: 'positionsInRadius',
+      radius: 1,
+      center: 'eventPosition',
+      includeCenter: true,
+    },
+    priority: 0,
     ownerContext: {type: 'world'},
     worldLayer: 'global',
   },

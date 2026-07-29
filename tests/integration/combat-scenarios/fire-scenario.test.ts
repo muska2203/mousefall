@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameSimulation } from '../../../src/simulation/simulation';
 import { createStartingEquipment } from '../../../src/simulation/systems/starting-equipment';
-import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeTestMap } from '../../fixtures/gameState';
 import type { PlayerEntity, EnemyEntity, Entity, EntityId } from '../../../src/simulation/types';
 import { loadTestContent, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
@@ -85,7 +85,7 @@ describe('Fire scenario', () => {
     vi.clearAllMocks();
   });
 
-  it('flaming sword applies burning and burning ticks deal damage', () => {
+  it('flaming sword deals amplified damage to enemies and ignites flammable objects', () => {
     const state = makeGameState({ map: makeTestMap() });
     const player = createWitcherPlayer();
     state.player = player;
@@ -93,39 +93,35 @@ describe('Fire scenario', () => {
 
     createStartingEquipment(state, player, ['common_flaming_sword']);
 
-    const rat1 = createRat({ x: 6, y: 5 });
-    const rat2 = createRat({ x: 5, y: 6 });
-    state.entities.set(rat1.id, rat1);
-    state.entities.set(rat2.id, rat2);
+    const door = makeDoor({ id: 'door_1', x: 6, y: 5 });
+    const rat = createRat({ x: 5, y: 6 });
+    state.entities.set(door.id, door);
+    state.entities.set(rat.id, rat);
 
     const sim = GameSimulation.loadSavedGame(state);
     sim.initializeTestTurnState('player', player.id);
 
-    const playerHpStart = player.hp;
-
-    // Атакуем обеих крыс; третья атака добивает первую.
+    // Атакуем дверь и крысу; третья атака добивает дверь.
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 0, dy: 1 });
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
     // Без модификатора огненного меча урон был бы 9; с ×1.5 округляется до 14.
-    expect(rat1.hp).toBeLessThanOrEqual(5);
-    expect(rat2.hp).toBeLessThanOrEqual(5);
+    expect(door.hp).toBeLessThanOrEqual(5);
+    expect(rat.hp).toBeLessThanOrEqual(5);
 
-    // Хотя бы одна крыса должна гореть.
-    expect(
-      [rat1, rat2].some((rat) => rat.statusEffects.some((s) => s.type === 'burning')),
-    ).toBe(true);
+    // Дверь должна гореть, крыса — нет (прямой огненный урон по акторам не поджигает).
+    expect(door.statusEffects.some((s) => s.type === 'burning')).toBe(true);
+    expect(rat.statusEffects.some((s) => s.type === 'burning')).toBe(false);
 
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
 
     // Прокручиваем ходы до возвращения игрока.
     advanceToPlayerTurn(sim);
 
-    // Горение должно было тикнуть и уменьшить HP выжившей крысы.
-    const survivingRat = [rat1, rat2].find((rat) => rat.isAlive);
-    if (survivingRat) {
-      expect(survivingRat.statusEffects.some((s) => s.type === 'burning')).toBe(true);
+    // Горение должно было тикнуть и уменьшить HP двери.
+    if (door.isAlive) {
+      expect(door.statusEffects.some((s) => s.type === 'burning')).toBe(true);
     }
 
     // Добиваем оставшихся врагов.
@@ -153,7 +149,7 @@ describe('Fire scenario', () => {
     expect(state.phase).toBe('playing');
   });
 
-  it('produces presentation plan, animations and matching DisplayState for fire attacks', () => {
+  it('produces presentation plan, animations and matching DisplayState for burning object', () => {
     const state = makeGameState({ map: makeTestMap() });
     const player = createWitcherPlayer();
     state.player = player;
@@ -161,10 +157,10 @@ describe('Fire scenario', () => {
 
     createStartingEquipment(state, player, ['common_flaming_sword']);
 
-    const rat = createRat({ x: 6, y: 5 });
-    state.entities.set(rat.id, rat);
+    const door = makeDoor({ id: 'door_1', x: 6, y: 5 });
+    state.entities.set(door.id, door);
 
-    // Делаем клетку врага видимой, чтобы анимации не отфильтровались.
+    // Делаем клетку двери видимой, чтобы анимации не отфильтровывались.
     state.visible[5]![6] = true;
     state.explored[5]![6] = true;
 
@@ -192,8 +188,8 @@ describe('Fire scenario', () => {
     const displayState = resyncDisplayState(sim.getState());
     expect(displayState.player.x).toBe(sim.getState().player.x);
     expect(displayState.player.y).toBe(sim.getState().player.y);
-    const displayRat = displayState.entities.get(rat.id);
-    expect(displayRat?.hp).toBe(rat.hp);
-    expect(displayRat?.statusEffects?.some((s) => s.type === 'burning')).toBe(true);
+    const displayDoor = displayState.entities.get(door.id);
+    expect(displayDoor?.hp).toBe(door.hp);
+    expect(displayDoor?.statusEffects?.some((s) => s.type === 'burning')).toBe(true);
   });
 });

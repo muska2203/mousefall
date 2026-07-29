@@ -1,8 +1,10 @@
 {
   "id": "wooden_door",
   "interactionKind": "door",
-  "maxHp": 30,
+  "maxHp": 3,
   "armor": 2,
   "renderScale": 1.0,
-  "openSpriteId": "wooden_door_open"
+  "openSpriteId": "wooden_door_open",
+  "tags": ["flammable"],
+  "canHaveStatus": ["burning"]
 }

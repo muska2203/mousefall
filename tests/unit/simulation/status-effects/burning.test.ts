@@ -15,7 +15,7 @@ import type {StatusTemplate} from '../../../../src/content/schemas';
 function mockBurningStatus(): StatusTemplate {
   return {
     id: 'burning',
-    ruleIds: ['burning_tick_damage'],
+    ruleIds: [],
     statusCategory: 'elemental',
     categoryPriority: 1,
     mutuallyExclusiveWith: ['frozen'],

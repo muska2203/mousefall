@@ -89,7 +89,8 @@
 7. **Добавь контентные правила**, если эффект должен что-то делать (наносить урон, распространяться, накладывать статус и т.п.):
    - Материал и статус тайлового эффекта автоматически попадают в мировые слои `tileEffect` и `tileEffectStatus` соответственно.
    - Глобальные правила без привязки к конкретному эффекту добавляй в `GLOBAL_WORLD_CONTENT_RULES` в `src/simulation/content-rules/world-rules/global-rules.ts`.
-   - Полезные условия и селекторы: `inTileEffect`, `tileEffectHasStatus`, `tilesInRadius`.
+   - Полезные условия и селекторы: `inTileEffect`, `tileEffectHasStatus`, `tilesInRadius`, `entityHasTag`, `positionsInRadius`.
+   - Эффект `spawnTileEffect` порождает новый тайловый эффект в выбранных клетках (например, при уничтожении объекта).
    - Рецепт правил: [`add-content-rule.md`](./add-content-rule.md).
 
 8. **Добавь способность или предмет для появления в игре** (опционально):

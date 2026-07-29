@@ -280,6 +280,9 @@ function sortRules(rules: LayeredRule[]): LayeredRule[] {
 /** Префикс псевдо-ID тайловой позиции, используемого вместо EntityId. */
 const TILE_CANDIDATE_PREFIX = 'tile:';
 
+/** Префикс псевдо-ID произвольной клетки (без привязки к существующему эффекту). */
+const POSITION_CANDIDATE_PREFIX = 'pos:';
+
 /**
  * Кодирует позицию тайлового эффекта в псевдо-ID.
  * Необходим, потому что resolveTarget возвращает EntityId[], а позиции — не сущности.
@@ -302,6 +305,27 @@ function parseTileCandidateId(id: EntityId): { effectType: string; position: Pos
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
 
   return { effectType, position: { x, y } };
+}
+
+/**
+ * Кодирует произвольную клетку в псевдо-ID.
+ */
+function encodePositionCandidateId(x: number, y: number): EntityId {
+  return `${POSITION_CANDIDATE_PREFIX}${x}:${y}`;
+}
+
+/**
+ * Декодирует псевдо-ID клетки, созданный encodePositionCandidateId.
+ */
+function parsePositionCandidateId(id: EntityId): Position | null {
+  const parts = id.split(':');
+  if (parts.length !== 3 || parts[0] !== 'pos') return null;
+
+  const x = parseInt(parts[1]!, 10);
+  const y = parseInt(parts[2]!, 10);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+  return { x, y };
 }
 
 /**
@@ -330,6 +354,8 @@ function resolveTarget(
       return resolveNearestEnemy(selector, ctx, selfId);
     case 'tilesInRadius':
       return resolveTilesInRadius(selector, ctx, selfId);
+    case 'positionsInRadius':
+      return resolvePositionsInRadius(selector, ctx, selfId);
     default:
       return [];
   }
@@ -366,6 +392,38 @@ function resolveTilesInRadius(
   return positions
     .sort((a, b) => a.x - b.x || a.y - b.y)
     .map((pos) => encodeTileCandidateId(selector.effectType, pos.x, pos.y));
+}
+
+/**
+ * Возвращает позиции клеток в заданном радиусе (Chebyshev distance) от центра.
+ * Результат отсортирован по x, затем по y, для детерминизма.
+ * Клетки за пределами карты исключаются.
+ */
+function resolvePositionsInRadius(
+  selector: Extract<TargetSelector, { type: 'positionsInRadius' }>,
+  ctx: RuleContext,
+  selfId: EntityId | null,
+): EntityId[] {
+  const center = resolveCenter(selector.center, ctx, selfId);
+  if (!center) return [];
+
+  const includeCenter = selector.includeCenter ?? true;
+  const { map } = ctx.state;
+  const positions: Position[] = [];
+  for (let dx = -selector.radius; dx <= selector.radius; dx++) {
+    for (let dy = -selector.radius; dy <= selector.radius; dy++) {
+      if (!includeCenter && dx === 0 && dy === 0) continue;
+
+      const x = center.x + dx;
+      const y = center.y + dy;
+      if (x < 0 || x >= map.width || y < 0 || y >= map.height) continue;
+      positions.push({ x, y });
+    }
+  }
+
+  return positions
+    .sort((a, b) => a.x - b.x || a.y - b.y)
+    .map((pos) => encodePositionCandidateId(pos.x, pos.y));
 }
 
 /**
@@ -461,8 +519,12 @@ function buildIntents(
   selfId: EntityId | null,
   target: TargetSelector,
 ): Intent[] {
-  // Пока tilesInRadius поддерживается только для applyTileEffectStatus.
+  // Пока tilesInRadius поддерживается только для applyTileEffectStatus,
+  // а positionsInRadius — только для spawnTileEffect.
   if (target.type === 'tilesInRadius' && effect.type !== 'applyTileEffectStatus') {
+    return [];
+  }
+  if (target.type === 'positionsInRadius' && effect.type !== 'spawnTileEffect') {
     return [];
   }
 
@@ -580,6 +642,31 @@ function buildIntents(
       }
 
       return [];
+    }
+    case 'spawnTileEffect': {
+      if (target.type !== 'positionsInRadius') return [];
+
+      const duration = effect.duration !== undefined
+        ? resolveParametrizedValue(effect.duration, ctx)
+        : undefined;
+      const statusDuration = effect.statusDuration !== undefined
+        ? resolveParametrizedValue(effect.statusDuration, ctx)
+        : undefined;
+
+      return targetIds
+        .map((candidateId) => {
+          const position = parsePositionCandidateId(candidateId);
+          if (!position) return null;
+          return {
+            type: 'SPAWN_TILE_EFFECT' as const,
+            effectType: effect.effectType,
+            position,
+            duration,
+            statusType: effect.statusType,
+            statusDuration,
+          };
+        })
+        .filter((intent): intent is NonNullable<typeof intent> => intent !== null);
     }
     default:
       return [];

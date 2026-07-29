@@ -11,6 +11,7 @@ import {
   makeFloorItemContainer,
   makeGameState,
   makePlayer,
+  makeProp,
   makeStairs
 } from '../../fixtures/gameState';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
@@ -50,6 +51,9 @@ describe('GameSession debug mode', () => {
       ]),
       stairs: new Map([
         ['stairs_down', {id: 'stairs_down'} as any],
+      ]),
+      props: new Map([
+        ['oil_barel', {id: 'oil_barel', maxHp: 10, armor: 0, blocksMovement: true, blocksLOS: false, renderScale: 1, propKind: 'barrel', tags: ['prop.barrel', 'contains.oil']} as any],
       ]),
     statuses: new Map(),
     tileEffects: new Map([
@@ -100,6 +104,30 @@ describe('GameSession debug mode', () => {
     const spawned = vm.renderInput?.itemsOnFloor.find(i => i.x === 3 && i.y === 3);
     expect(spawned).toBeDefined();
     expect(spawned?.templateId).toBe('health_potion');
+  });
+
+  it('debugSpawnEntity spawns prop on map when debug is enabled', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.toggleDebug();
+    session.loadGame(state);
+
+    session.debugSpawnEntity('prop', 'oil_barel', {x: 3, y: 3});
+    session.onAnimationsComplete();
+
+    const newState = session.getViewModel().renderInput!.state;
+    const spawned = Array.from(newState.entities.values()).find(
+      (e): e is import('../../../src/simulation/types').PropEntity =>
+        e.type === 'prop' && e.x === 3 && e.y === 3,
+    );
+    expect(spawned).toBeDefined();
+    expect(spawned?.templateId).toBe('oil_barel');
+    expect(spawned?.propKind).toBe('barrel');
   });
 
   it('debugSpawnTileEffect spawns tile effect on map when debug is enabled', () => {

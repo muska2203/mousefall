@@ -90,6 +90,12 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
       break;
     }
 
+    case 'ENTITY_DIED': {
+      base.targetEntityId = event.entityId;
+      base.eventPosition = event.position;
+      break;
+    }
+
     case 'TILE_DAMAGED': {
       base.sourceEntityId = event.sourceEntityId;
       base.eventPosition = event.position;
@@ -161,6 +167,13 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     case 'TILE_EFFECT_TICKED':
     case 'TILE_EFFECT_STATUS_TICKED': {
       base.eventPosition = event.position;
+      break;
+    }
+
+    case 'TILE_EFFECT_STATUS_APPLIED': {
+      base.eventPosition = event.position;
+      base.eventDuration = event.duration;
+      base.sourceEntityId = event.sourceEntityId ?? null;
       break;
     }
 
