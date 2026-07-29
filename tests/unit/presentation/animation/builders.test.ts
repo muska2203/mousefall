@@ -209,55 +209,32 @@ describe('actionAppliedBuilder', () => {
 });
 
 describe('entityDamagedBuilder', () => {
-  it('wraps HP_CHANGE inside DAMAGE for player with HP', () => {
+  it('creates DAMAGE step for player with HP', () => {
     const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'player', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 0, y: 0 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('DAMAGE');
-    expect(nodes![0]!.children).toHaveLength(1);
-    expect(nodes![0]!.children[0]!.step.type).toBe('HP_CHANGE');
+    expect(nodes![0]!.children).toHaveLength(0);
   });
 
-  it('wraps HP_CHANGE inside DAMAGE for enemy with HP', () => {
+  it('creates DAMAGE step for enemy with HP', () => {
     const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('DAMAGE');
-    expect(nodes![0]!.children).toHaveLength(1);
-    expect(nodes![0]!.children[0]!.step.type).toBe('HP_CHANGE');
-  });
-
-  it('creates only DAMAGE step for target without HP', () => {
-    const state = makeMockState();
-    state.entities.set('door1', { id: 'door1', x: 1, y: 1 } as any);
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'door1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 1, y: 1 } };
-    const nodes = entityDamagedBuilder(event, [], state);
-
-    expect(nodes).toHaveLength(1);
-    expect(nodes![0]!.step.type).toBe('DAMAGE');
     expect(nodes![0]!.children).toHaveLength(0);
   });
 
-  it('creates only DAMAGE step for zero damage', () => {
-    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 0, position: { x: 3, y: 3 } };
-    const nodes = entityDamagedBuilder(event, [], makeMockState());
-
-    expect(nodes).toHaveLength(1);
-    expect(nodes![0]!.step.type).toBe('DAMAGE');
-    expect(nodes![0]!.children).toHaveLength(0);
-  });
-
-  it('preserves passed child nodes inside HP_CHANGE', () => {
+  it('preserves passed child nodes inside DAMAGE', () => {
     const child = { step: { type: 'DEATH' as const, entityId: 'enemy1' }, children: [] };
     const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 } };
     const nodes = entityDamagedBuilder(event, [child], makeMockState());
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('DAMAGE');
-    expect(nodes![0]!.children[0]!.step.type).toBe('HP_CHANGE');
-    expect(nodes![0]!.children[0]!.children).toContain(child);
+    expect(nodes![0]!.children).toContain(child);
   });
 });
 

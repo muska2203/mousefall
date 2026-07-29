@@ -52,6 +52,15 @@ export function resolvePropSprite(templateId: string): string {
 }
 
 /**
+ * Возвращает путь к frame-ассету для sticker-HP по пути основного спрайта.
+ * Если путь не заканчивается на .png, возвращает null.
+ */
+export function resolveEntityFrameSprite(baseSpritePath: string): string | null {
+  if (!baseSpritePath.endsWith('.png')) return null;
+  return `${baseSpritePath.slice(0, -'.png'.length)}-frame.png`;
+}
+
+/**
  * Возвращает путь к иконке способности по spriteId.
  */
 export function resolveAbilityIcon(spriteId: string): string {

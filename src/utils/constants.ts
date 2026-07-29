@@ -93,3 +93,19 @@ export const SAVE_KEY_PREFIX = 'mousefall:save:';
 
 /** Идентификатор игрока всегда равен этому значению. */
 export const PLAYER_ID = 'player';
+
+// ─────────────────────────────────────────────
+// Sticker-HP: цвета фракций
+// ─────────────────────────────────────────────
+
+/** «Магический» цвет зоны HP на frame-ассете. Заменяется на цвета фракции. */
+export const STICKER_HP_MAGIC_COLOR = 0x00ff00;
+
+/** Цвета sticker-HP рамки по фракциям.
+ *  primary — нижняя часть (текущее HP), secondary — верхняя часть (потерянное HP). */
+export const FACTION_STICKER_COLORS: Record<string, { primary: number; secondary: number }> = {
+  player: { primary: 0xd3af37, secondary: 0x504316 },
+  allies: { primary: 0x27d54e, secondary: 0x154c21 },
+  enemies: { primary: 0xd33937, secondary: 0x4a1413 },
+  neutrals: { primary: 0xb8c5ba, secondary: 0x414541 },
+};

@@ -1,36 +1,16 @@
 /**
  * Builder для события ENTITY_DAMAGED.
  *
- * Возвращает DAMAGE-узел и, для целей с HP, оборачивает детей
- * (например, смерть) в HP_CHANGE, чтобы полоска HP анимировалась
- * одновременно с всплывающим уроном.
+ * Возвращает DAMAGE-узел с детьми (например, смерть).
+ * HP отображается через sticker-рамку сущности, отдельная анимация
+ * HP-бара больше не требуется.
  */
 
 import type {AnimationBuilder} from '../core/registry';
-import {damageNode, hpChangeNode, isAttackableEntity} from '../core/primitives';
+import {damageNode} from '../core/primitives';
 
-export const entityDamagedBuilder: AnimationBuilder = (event, children, state) => {
+export const entityDamagedBuilder: AnimationBuilder = (event, children) => {
   if (event.type !== 'ENTITY_DAMAGED') return null;
-
-  // Полоска HP анимируется для любой цели с hp/maxHp.
-  // Оборачиваем исходных детей (например, смерть) в HP_CHANGE,
-  // который выполняется после всплывающего текста урона и перед смертью.
-  // Это предотвращает уничтожение спрайта во время анимации полоски HP.
-  if (event.damage > 0) {
-    const target = state.entities.get(event.targetId) ??
-      (event.targetId === state.player.id ? state.player : undefined);
-    if (target && isAttackableEntity(target)) {
-      const toHp = target.hp;
-      const fromHp = toHp + event.damage;
-      if (fromHp !== toHp) {
-        return [
-          damageNode(event, [
-            hpChangeNode(event, target, children),
-          ]),
-        ];
-      }
-    }
-  }
 
   return [damageNode(event, children)];
 };

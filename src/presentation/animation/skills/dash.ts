@@ -49,8 +49,6 @@ function buildDashAnimationNodes(casterId: string, childNodes: AnimationNode[]):
       pushToMap(enemyNodes, step.entityId, node);
     } else if (step.type === 'DAMAGE') {
       pushToMap(enemyNodes, step.targetId, node);
-    } else if (step.type === 'HP_CHANGE') {
-      pushToMap(enemyNodes, step.entityId, node);
     } else if (step.type === 'STATUS_BURST') {
       pushToMap(enemyNodes, step.entityId, node);
     } else {
@@ -71,14 +69,11 @@ function buildDashAnimationNodes(casterId: string, childNodes: AnimationNode[]):
   for (const nodes of enemyNodes.values()) {
     const enemyMove = nodes.find((n) => n.step.type === 'MOVE');
     const damageNode = nodes.find((n) => n.step.type === 'DAMAGE');
-    const hpChangeNode = nodes.find((n) => n.step.type === 'HP_CHANGE');
     const collisionPos = enemyMove?.step.type === 'MOVE'
       ? enemyMove.step.from
       : damageNode?.step.type === 'DAMAGE'
         ? damageNode.step.position
-        : hpChangeNode?.step.type === 'HP_CHANGE'
-          ? hpChangeNode.step.position
-          : undefined;
+        : undefined;
     const collisionMove = collisionPos !== undefined ? findCollisionMove(collisionPos) : casterMoves[casterMoves.length - 1]!;
     for (const n of nodes) {
       collisionMove.children.push(n);

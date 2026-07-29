@@ -12,6 +12,9 @@ import {FOG_EXPLORED_SPRITE_ALPHA, TILE_SIZE} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
 import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getPropSprite, getStairsSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
+import {resolveEntityFrameSprite} from '@utils/assetResolver';
+import {clearStickerTextures, getStickerTexture} from './stickerComposer';
+import type {FactionId} from '@presentation/types';
 import type {Animatable} from '@utils/tween';
 import {lerp, Tween, Vec2Tween} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
@@ -29,6 +32,9 @@ export class EntityRenderer {
   public readonly container = new Container();
   private sprites = new Map<string, Sprite>();
   private activeAnimations = new Map<string, ActiveAnimation>();
+  private stickerTextures = new Map<string, Texture>();
+  private stickerKeys = new Map<string, string>();
+  private stickerPending = new Map<string, Promise<void>>();
 
   constructor() {
     this.container.sortableChildren = true;
@@ -64,7 +70,9 @@ export class EntityRenderer {
     // Игрок всегда виден себе
     const playerTexture = getTextureSync(playerPath);
     const playerScale = getRenderScale(displayState.player.templateId, true);
-    this.renderEntitySync(displayState.player.id, displayState.player.x, displayState.player.y, playerTexture, playerPath, true, playerScale);
+    const playerStickerTexture = this.stickerTextures.get(displayState.player.id);
+    this.renderEntitySync(displayState.player.id, displayState.player.x, displayState.player.y, playerStickerTexture ?? playerTexture, playerPath, true, playerScale);
+    this.updateSticker(displayState.player.id, playerPath, displayState.player.factionId ?? 'player', displayState.player.hp, displayState.player.maxHp, playerScale);
     const playerSprite = this.sprites.get(displayState.player.id);
     if (playerSprite) playerSprite.visible = true;
     existingIds.add(displayState.player.id);
@@ -77,7 +85,9 @@ export class EntityRenderer {
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, true);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, true, scale);
+        const stickerTexture = this.stickerTextures.get(entity.id);
+        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, true, scale);
+        this.updateSticker(entity.id, path, entity.factionId ?? 'enemies', entity.hp, entity.maxHp, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellVisible(displayState, entity.x, entity.y);
@@ -124,7 +134,9 @@ export class EntityRenderer {
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
+        const stickerTexture = this.stickerTextures.get(entity.id);
+        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, false, scale);
+        this.updateSticker(entity.id, path, 'neutrals', entity.hp, entity.maxHp, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -139,7 +151,9 @@ export class EntityRenderer {
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
+        const stickerTexture = this.stickerTextures.get(entity.id);
+        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, false, scale);
+        this.updateSticker(entity.id, path, 'neutrals', entity.hp, entity.maxHp, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -174,6 +188,17 @@ export class EntityRenderer {
         this.sprites.delete(id);
         this.activeAnimations.delete(id);
       }
+    }
+
+    // Очищаем sticker-состояние для исчезнувших сущностей.
+    for (const id of this.stickerTextures.keys()) {
+      if (!existingIds.has(id)) this.stickerTextures.delete(id);
+    }
+    for (const id of this.stickerKeys.keys()) {
+      if (!existingIds.has(id)) this.stickerKeys.delete(id);
+    }
+    for (const id of this.stickerPending.keys()) {
+      if (!existingIds.has(id)) this.stickerPending.delete(id);
     }
   }
 
@@ -588,6 +613,10 @@ export class EntityRenderer {
       sprite.destroy();
     }
     this.sprites.clear();
+    this.stickerTextures.clear();
+    this.stickerKeys.clear();
+    this.stickerPending.clear();
+    clearStickerTextures();
     this.container.removeChildren();
   }
 
@@ -656,6 +685,45 @@ export class EntityRenderer {
       }
       sprite.zIndex = sprite.y;
     }
+  }
+
+  private updateSticker(
+    id: string,
+    basePath: string,
+    factionId: FactionId,
+    hp: number | undefined,
+    maxHp: number | undefined,
+    renderScale: number,
+  ): void {
+    if (hp === undefined || maxHp === undefined || maxHp <= 0) return;
+
+    const framePath = resolveEntityFrameSprite(basePath);
+    if (!framePath) return;
+
+    const key = `${basePath}|${framePath}|${factionId}|${hp}|${maxHp}`;
+    if (this.stickerKeys.get(id) === key) return;
+    if (this.stickerPending.has(id)) return;
+
+    const hpRatio = hp / maxHp;
+    const request = getStickerTexture(basePath, framePath, factionId, hpRatio)
+      .then((texture) => {
+        if (!texture) return;
+        this.stickerTextures.set(id, texture);
+        this.stickerKeys.set(id, key);
+        const sprite = this.sprites.get(id);
+        if (sprite && !sprite.destroyed) {
+          sprite.texture = texture;
+          const size = TILE_SIZE * renderScale;
+          sprite.width = size;
+          sprite.height = size;
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        this.stickerPending.delete(id);
+      });
+
+    this.stickerPending.set(id, request);
   }
 
 }

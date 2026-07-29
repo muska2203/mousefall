@@ -30,6 +30,7 @@
 | [`COMBAT_SYSTEM_CONCEPT_CONTEXT.md`](./COMBAT_SYSTEM_CONCEPT_CONTEXT.md) | `[DRAFT]` | `docs/plans/Концепт боевой системы.md` | Концепт боевой системы в проработке. |
 | [`SAVES.md`](./SAVES.md) | `[DRAFT]` | этот файл | Сохранения не реализованы; дока описывает намеренную архитектуру. |
 | [`CONTENT_RULES_EDGE_CASES.md`](./CONTENT_RULES_EDGE_CASES.md) | `[STABLE]` | этот файл | Отражает текущую реализацию контентных правил. |
+| [`sticker-hp-outline.md`](../concepts/sticker-hp-outline.md) | `[EXPERIMENTAL]` | `src/ui/renderer/stickerComposer.ts` | Sticker-HP рамка в проработке; код может опережать доку. |
 
 ---
 

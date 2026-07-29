@@ -62,17 +62,6 @@ vi.mock('pixi.js', () => {
     removeChildren() { this.children = []; }
     destroy() {}
   }
-  class MockGraphics {
-    x = 0;
-    y = 0;
-    visible = true;
-    scale = { x: 1, y: 1 };
-    rect() { return this; }
-    circle() { return this; }
-    fill() { return this; }
-    clear() { return this; }
-    destroy() {}
-  }
   class MockAssets {
     static load() {
       return Promise.resolve(new MockTexture());
@@ -82,7 +71,6 @@ vi.mock('pixi.js', () => {
     Container: MockContainer,
     Sprite: MockSprite,
     Texture: MockTexture,
-    Graphics: MockGraphics,
     Assets: MockAssets,
   };
 });
@@ -347,155 +335,6 @@ describe('UnitInfoRenderer', () => {
     expect((renderer as any).widgets.has('enemy1')).toBe(false);
   });
 
-  it('animates HP change with tween', async () => {
-    const renderer = new UnitInfoRenderer();
-    const input = makeRenderInput(false);
-    const sprites = new Map<string, Sprite>();
-    sprites.set('player', new Sprite());
-
-    renderer.update(input, (id) => sprites.get(id));
-    const widget = (renderer as any).widgets.get('player');
-    expect(widget).toBeDefined();
-
-    const p = renderer.animateHpChange('player', 10, 5, 10, {duration: 10, blocking: false, easing: (t) => t});
-    expect(p).toBeInstanceOf(Promise);
-
-    renderer.updateAnimations(performance.now() + 20);
-    await p;
-
-    expect(widget.lastHpRatio).toBe(0.5);
-  });
-
-  it('starts chained HP change from current visual value, not from step fromHp', async () => {
-    const renderer = new UnitInfoRenderer();
-    const input = makeRenderInput(false);
-    input.state.player.hp = 100;
-    input.state.player.maxHp = 100;
-    refreshDisplayState(input);
-    const sprites = new Map<string, Sprite>();
-    sprites.set('player', new Sprite());
-
-    renderer.update(input, (id) => sprites.get(id));
-    const widget = (renderer as any).widgets.get('player');
-
-    // Первая анимация 100 → 80, останавливаем на середине (90).
-    const first = renderer.animateHpChange('player', 100, 80, 100, {duration: 10, blocking: false, easing: (t) => t});
-    renderer.updateAnimations(performance.now() + 5);
-    expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
-
-    // Вторая анимация приходит до завершения первой: 80 → 60.
-    // Она прерывает первую и стартует от текущего визуального значения (90),
-    // поэтому полоска не рывком сбрасывается к 80, а продолжает падать с 90 до 60.
-    const second = renderer.animateHpChange('player', 80, 60, 100, {duration: 10, blocking: false, easing: (t) => t});
-    expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
-
-    renderer.updateAnimations(performance.now() + 50);
-    renderer.updateAnimations(performance.now() + 100);
-    await Promise.all([first, second]);
-
-    expect(widget.lastHpRatio).toBe(0.6);
-  });
-
-  it('replaces earlier HP change animations with the latest target for one entity', async () => {
-    const renderer = new UnitInfoRenderer();
-    const input = makeRenderInput(false);
-    input.state.player.hp = 100;
-    input.state.player.maxHp = 100;
-    refreshDisplayState(input);
-    const sprites = new Map<string, Sprite>();
-    sprites.set('player', new Sprite());
-
-    renderer.update(input, (id) => sprites.get(id));
-    const widget = (renderer as any).widgets.get('player');
-
-    const first = renderer.animateHpChange('player', 100, 80, 100, {duration: 10, blocking: false, easing: (t) => t});
-    renderer.updateAnimations(performance.now() + 5);
-    const second = renderer.animateHpChange('player', 80, 60, 100, {duration: 10, blocking: false, easing: (t) => t});
-    const third = renderer.animateHpChange('player', 60, 40, 100, {duration: 10, blocking: false, easing: (t) => t});
-
-    renderer.updateAnimations(performance.now() + 50);
-    renderer.updateAnimations(performance.now() + 100);
-    renderer.updateAnimations(performance.now() + 150);
-    await Promise.all([first, second, third]);
-
-    expect(widget.lastHpRatio).toBe(0.4);
-  });
-
-  it('cancels active HP change animation and resolves pending promises', async () => {
-    const renderer = new UnitInfoRenderer();
-    const input = makeRenderInput(false);
-    input.state.player.hp = 100;
-    input.state.player.maxHp = 100;
-    refreshDisplayState(input);
-    const sprites = new Map<string, Sprite>();
-    sprites.set('player', new Sprite());
-
-    renderer.update(input, (id) => sprites.get(id));
-    const widget = (renderer as any).widgets.get('player');
-
-    const first = renderer.animateHpChange('player', 100, 80, 100, {duration: 10, blocking: false, easing: (t) => t});
-    renderer.updateAnimations(performance.now() + 5);
-    const second = renderer.animateHpChange('player', 80, 60, 100, {duration: 10, blocking: false, easing: (t) => t});
-    const third = renderer.animateHpChange('player', 60, 40, 100, {duration: 10, blocking: false, easing: (t) => t});
-
-    renderer.cancelAnimations();
-
-    await Promise.all([first, second, third]);
-
-    expect(widget.lastHpRatio).toBeCloseTo(0.9, 3);
-    expect((renderer as any).hpChangeAnimations.size).toBe(0);
-  });
-
-  it('does not snap HP bar to final value when HP_CHANGE animation is planned', () => {
-    const renderer = new UnitInfoRenderer();
-    const input = makeRenderInput(false);
-    // DisplayState ещё не обновлён (патч применится по завершении анимации),
-    // поэтому HP-бар остаётся на текущем значении из DisplayState.
-    input.state.player.hp = 5;
-    input.animations = [
-      {
-        side: 'player',
-        nodes: [
-          {
-            step: {type: 'HP_CHANGE', entityId: 'player', fromHp: 10, toHp: 5, maxHp: 10, position: {x: 0, y: 0}},
-            children: [],
-          },
-        ],
-      },
-    ];
-
-    const sprites = new Map<string, Sprite>();
-    sprites.set('player', new Sprite());
-
-    renderer.update(input, (id) => sprites.get(id));
-    const widget = (renderer as any).widgets.get('player');
-
-    // Полоска не должна резко упасть до 0.5: анимация сама установит начальное
-    // заполнение (fromHp) при старте.
-    expect(widget.lastHpRatio).toBe(1);
-  });
-
-  it('hides HP bar when HP is full and shows it when HP is not full', () => {
-    const renderer = new UnitInfoRenderer();
-    const input = makeRenderInput(false);
-    const sprites = new Map<string, Sprite>();
-    sprites.set('player', new Sprite());
-
-    renderer.update(input, (id) => sprites.get(id));
-    const widget = (renderer as any).widgets.get('player');
-
-    expect(widget.hpBarBg.visible).toBe(false);
-    expect(widget.hpBarFill.visible).toBe(false);
-
-    input.state.player.hp = 5;
-    refreshDisplayState(input);
-    renderer.update(input, (id) => sprites.get(id));
-
-    expect(widget.hpBarBg.visible).toBe(true);
-    expect(widget.hpBarFill.visible).toBe(true);
-    expect(widget.lastHpRatio).toBe(0.5);
-  });
-
   it('hides effect slots when entity has no status effects', () => {
     const renderer = new UnitInfoRenderer();
     const input = makeRenderInput(false);
@@ -676,5 +515,61 @@ describe('UnitInfoRenderer', () => {
 
     const widget = (renderer as any).widgets.get('player');
     expect(widget.statusIcon.visible).toBe(true);
+  });
+
+  it('positions widget above the actual sprite bounds for a tall actor', () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprite = new Sprite();
+    // Актор в клетке (0,0): якорь снизу по центру, масштаб 1.5.
+    sprite.x = 16;
+    sprite.y = 27.2;
+    sprite.width = 32;
+    sprite.height = 48;
+    sprite.anchor.x = 0.5;
+    sprite.anchor.y = 1;
+
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', sprite);
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+    const scale = 32 / 80; // TILE_SIZE / BASE_WIDTH
+
+    const spriteTop = sprite.y - sprite.height * sprite.anchor.y;
+    // Виджет шириной BASE_WIDTH масштабируется до TILE_SIZE, поэтому его
+    // горизонтальный центр совпадает с центром спрайта.
+    const halfWidgetWidth = (80 * scale) / 2;
+    expect(widget.container.x).toBeCloseTo(sprite.x - halfWidgetWidth);
+    expect(widget.container.y).toBeCloseTo(
+      spriteTop - widget.contentHeight * scale - 1,
+    );
+    expect(widget.container.y).toBeLessThan(spriteTop);
+  });
+
+  it('centers widget horizontally over a top-left anchored sprite', () => {
+    const renderer = new UnitInfoRenderer();
+    const input = makeRenderInput(false);
+    const sprite = new Sprite();
+    sprite.x = 64;
+    sprite.y = 32;
+    sprite.width = 40;
+    sprite.height = 40;
+    sprite.anchor.x = 0;
+    sprite.anchor.y = 0;
+
+    const sprites = new Map<string, Sprite>();
+    sprites.set('player', sprite);
+
+    renderer.update(input, (id) => sprites.get(id));
+    const widget = (renderer as any).widgets.get('player');
+    const scale = 32 / 80;
+
+    const spriteCenterX = sprite.x + sprite.width * 0.5;
+    const halfWidgetWidth = (80 * scale) / 2;
+    expect(widget.container.x).toBeCloseTo(spriteCenterX - halfWidgetWidth);
+    expect(widget.container.y).toBeCloseTo(
+      sprite.y - widget.contentHeight * scale - 1,
+    );
   });
 });

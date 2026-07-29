@@ -91,28 +91,6 @@ export function damageNode(event: EntityDamagedEvent, children: AnimationNode[])
   };
 }
 
-/** Создать узел изменения полоски HP. */
-export function hpChangeNode(
-  event: EntityDamagedEvent,
-  target: Extract<Entity, { hp: number }>,
-  children: AnimationNode[],
-): AnimationNode {
-  const toHp = target.hp;
-  const fromHp = toHp + event.damage;
-
-  return {
-    step: {
-      type: 'HP_CHANGE',
-      entityId: event.targetId,
-      fromHp,
-      toHp,
-      maxHp: target.maxHp,
-      position: event.position,
-    },
-    children,
-  };
-}
-
 /** Создать узел смерти сущности. */
 export function deathNode(event: EntityDiedEvent, children: AnimationNode[]): AnimationNode {
   return {

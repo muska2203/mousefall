@@ -5,7 +5,7 @@
  * Она строится из GameState и обновляется патчами, порождёнными событиями Simulation.
  */
 
-import type {EntityType, GameEvent, GamePhase, Position, StatusEffect, TileType, TurnSide,} from '@simulation/types';
+import type {EntityType, FactionId, GameEvent, GamePhase, Position, StatusEffect, TileType, TurnSide,} from '@simulation/types';
 import type {StatusEffectType} from '@simulation/core-types.ts';
 import type {AnimationNode} from '@presentation/types';
 
@@ -20,6 +20,8 @@ export type DisplayEntity = {
   maxHp?: number;
   isAlive?: boolean;
   statusEffects?: StatusEffect[];
+  /** Фракция сущности (есть только у акторов: player/enemy). */
+  factionId?: FactionId;
   /** Для дверей: открыта или закрыта. */
   isOpen?: boolean;
   /** Для игрока: текущий уровень. */

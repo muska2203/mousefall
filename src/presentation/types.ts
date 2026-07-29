@@ -24,7 +24,7 @@ import type {AIMode} from '@simulation/ai/ai-state';
 import type {GameplayTag as CoreGameplayTag} from '@simulation/core-types';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
-export type { TileType, TurnSide, StatusEffect, InteractionId } from '@simulation/types';
+export type { TileType, TurnSide, StatusEffect, InteractionId, FactionId } from '@simulation/types';
 export type { AIMode } from '@simulation/ai/ai-state';
 export type { AnimationConfigKey } from '@utils/animationConfig';
 export type GameplayTag = CoreGameplayTag;
@@ -122,14 +122,6 @@ export type AnimationStep = AnimationStepBase & (
       targetId: string;
       amount: number;
       tags: GameplayTag[];
-      position: Position;
-    }
-  | {
-      type: 'HP_CHANGE';
-      entityId: string;
-      fromHp: number;
-      toHp: number;
-      maxHp: number;
       position: Position;
     }
   | {

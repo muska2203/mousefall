@@ -7,6 +7,7 @@ import {
   resolveDoorSprite,
   resolveAbilityIcon,
   resolveStatusIcon,
+  resolveEntityFrameSprite,
 } from '../../../src/utils/assetResolver';
 
 describe('assetResolver', () => {
@@ -23,5 +24,12 @@ describe('assetResolver', () => {
     expect(resolveDoorSprite('wooden_door')).toBe('/assets/objects/doors/wooden_door.png');
     expect(resolveDoorSprite('wooden_door', true)).toBe('/assets/objects/doors/wooden_door_open.png');
     expect(resolveAbilityIcon('cleave')).toBe('/assets/skills/cleave.png');
+  });
+
+  it('resolveEntityFrameSprite возвращает путь к frame-ассету или null', () => {
+    expect(resolveEntityFrameSprite('/assets/enemies/cat_big.png')).toBe('/assets/enemies/cat_big-frame.png');
+    expect(resolveEntityFrameSprite('/assets/actors/player_witcher.png')).toBe('/assets/actors/player_witcher-frame.png');
+    expect(resolveEntityFrameSprite('/assets/items/loot_frame_rare.png')).toBe('/assets/items/loot_frame_rare-frame.png');
+    expect(resolveEntityFrameSprite('/assets/no-extension')).toBeNull();
   });
 });

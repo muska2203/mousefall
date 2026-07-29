@@ -57,6 +57,7 @@ describe('buildDisplayState', () => {
     expect(display.player.isAlive).toBe(true);
     expect(display.player.level).toBe(1);
     expect(display.player.statusEffects).toEqual([]);
+    expect(display.player.factionId).toBe('player');
 
     expect(display.entities.size).toBe(3);
     expect(display.entities.get('door_1')!.isOpen).toBe(false);
@@ -67,6 +68,24 @@ describe('buildDisplayState', () => {
     expect(display.meta.round).toBe(0);
     expect(display.meta.turnSide).toBe('player');
     expect(display.meta.phase).toBe('playing');
+  });
+
+  it('copies factionId for actors and omits it for non-actors', () => {
+    const player = makePlayer();
+    const enemy = makeEnemy();
+    const door = makeDoor({ id: 'door_faction_test' });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([
+        [enemy.id, enemy],
+        [door.id, door],
+      ]),
+    });
+    const display = buildDisplayState(state);
+
+    expect(display.player.factionId).toBe('player');
+    expect(display.entities.get(enemy.id)!.factionId).toBe('enemies');
+    expect(display.entities.get(door.id)!.factionId).toBeUndefined();
   });
 
   it('copies grids and entities, not sharing references', () => {

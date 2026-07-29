@@ -7,7 +7,7 @@
  * - applyPatch возвращает новый DisplayState, не мутируя исходный.
  */
 
-import type {Entity, GameEvent, GameState, Position} from '@simulation/types';
+import type {Entity, FactionId, GameEvent, GameState, Position} from '@simulation/types';
 import type {DisplayEntity, DisplayMap, DisplayPatch, DisplayState, DisplayTile, PresentationNode, TileEffectOverlay,} from './types';
 
 /** Преобразовать Entity из Simulation в DisplayEntity. */
@@ -34,6 +34,9 @@ function toDisplayEntity(entity: Entity): DisplayEntity {
   }
   if ('statusEffects' in entity && Array.isArray(entity.statusEffects)) {
     display.statusEffects = entity.statusEffects.slice();
+  }
+  if ('factionId' in entity) {
+    display.factionId = (entity as { factionId: FactionId }).factionId;
   }
   if (entity.type === 'door' && 'isOpen' in entity) {
     display.isOpen = entity.isOpen as boolean;

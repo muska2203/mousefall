@@ -4,7 +4,7 @@ import {executeMoveIntent} from "@simulation/systems/intents/move-intent-execute
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
 import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
-import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
+import {executeIntent, executeIntents} from "@simulation/systems/intents/execute-intent.ts";
 import '@simulation/ai/hunter-strategy';
 import {
     makeEnemy,
@@ -245,6 +245,36 @@ describe('executeIntent с мировыми реакциями', () => {
         expect(state.entities.has(enemy.id)).toBe(true);
         expect(enemy.isAlive).toBe(false);
         expect(enemy.blocksMovement).toBe(false);
+    });
+
+    it('два урона, суммарно убивающих врага, порождают ровно один интент смерти', () => {
+        const enemy = makeEnemy({hp: 5, armor: 0});
+        const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
+        const builder = makeBuilder();
+
+        executeIntents(state, [
+            {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 3, tags: ['damage.physical.blunt']},
+            {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 3, tags: ['damage.physical.blunt']},
+        ], builder, builder.root);
+
+        function collectNodes(
+            node: typeof builder.root,
+            predicate: (n: typeof builder.root) => boolean,
+        ): typeof builder.root[] {
+            const result: typeof builder.root[] = [];
+            if (predicate(node)) result.push(node);
+            for (const child of node.children) {
+                result.push(...collectNodes(child, predicate));
+            }
+            return result;
+        }
+
+        const damageNodes = collectNodes(builder.root, n => n.event.type === 'ENTITY_DAMAGED');
+        const dieNodes = collectNodes(builder.root, n => n.event.type === 'ENTITY_DIED');
+
+        expect(damageNodes.length).toBe(2);
+        expect(dieNodes.length).toBe(1);
+        expect(enemy.isAlive).toBe(false);
     });
 
     it('урон, не убивающий врага, не порождает ENTITY_DIED', () => {

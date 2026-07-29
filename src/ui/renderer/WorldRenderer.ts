@@ -188,11 +188,6 @@ export class WorldRenderer {
     return this.entityRenderer.animateDeath(entityId, config);
   }
 
-  /** Анимировать изменение заполнения полоски HP сущности. */
-  animateHpChange(entityId: string, fromHp: number, toHp: number, maxHp: number, config: AnimationConfigEntry): Promise<void> {
-    return this.unitInfoRenderer.animateHpChange(entityId, fromHp, toHp, maxHp, config);
-  }
-
   /** Анимировать отскок сущности при столкновении с препятствием. */
   animateBounce(entityId: string, x: number, y: number, dx: number, dy: number, config: AnimationConfigEntry): Promise<void> {
     return this.entityRenderer.animateBounce(entityId, x, y, dx, dy, config);
@@ -310,7 +305,6 @@ export class WorldRenderer {
     const now = performance.now();
     this.entityRenderer.updateAnimations(now);
     this.tileEffectStatusRenderer.updateAnimations(now);
-    this.unitInfoRenderer.updateAnimations(now);
     this.floatingTextRenderer.update(now);
     this.unitInfoRenderer.syncPositions((id) => this.entityRenderer.getSprite(id));
     this.updateCamera(now);

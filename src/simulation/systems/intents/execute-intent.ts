@@ -7,6 +7,7 @@ import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-exe
 import {executeDamageTileIntent} from "@simulation/systems/intents/damage-tile-intent-executor.ts";
 import {Intent, IntentExecutor} from "@simulation/systems/intents/types.ts";
 import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
+import {EntityId} from "@simulation/core-types.ts";
 import {runWorldReactions} from "@simulation/systems/world-reactions/reactions.ts";
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
 import {executeApplyStatusIntent} from "@simulation/systems/intents/apply-status-intent-executer.ts";
@@ -268,6 +269,11 @@ function runContentPhase(
 
 /**
  * Собирает интенты мировых реакций на переданных узлах.
+ *
+ * В пределах одной волны для каждой сущности может быть создан только один
+ * интент смерти (DIE). Если несколько событий урона одновременно доводят HP
+ * сущности до нуля, deathReaction породит несколько DIE, но здесь мы
+ * дедуплицируем их по entityId, чтобы смерть произошла ровно один раз.
  */
 function collectWorldReactionIntents(
     state: GameState,
@@ -275,11 +281,18 @@ function collectWorldReactionIntents(
     nodes: ExecutionNode[],
 ): PendingIntent[] {
     const worldIntents: PendingIntent[] = [];
+    const pendingDeathIds = new Set<EntityId>();
 
     for (const node of nodes) {
         const nodeIntents = runWorldReactions(state, builder, node);
         const resolved = resolveStatusBatch(state, nodeIntents);
         for (const intent of resolved) {
+            if (intent.type === 'DIE') {
+                if (pendingDeathIds.has(intent.entityId)) {
+                    continue;
+                }
+                pendingDeathIds.add(intent.entityId);
+            }
             worldIntents.push({ intent, parent: node });
         }
     }

@@ -24,7 +24,6 @@ import {getAnimationExecutors} from '@ui/animation/registry';
 import '@ui/animation/spriteExecutor';
 import '@ui/animation/fogExecutor';
 import '@ui/animation/pixiFloatingTextExecutor';
-import '@ui/animation/hpChangeExecutor';
 import '@ui/animation/skillExecutor';
 import '@ui/animation/projectileExecutor';
 import '@ui/animation/itemThrowExecutor';
