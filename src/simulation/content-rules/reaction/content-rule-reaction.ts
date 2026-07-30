@@ -20,7 +20,7 @@ import type {
 } from '@simulation/core-types.ts';
 import type {Actor, GameState} from '@simulation/types.ts';
 import {findAllEntitiesAt, findEntity, getTileEffectsAt, isActor} from '@simulation/state.ts';
-import {tryGetPoi, tryGetTileEffect, tryGetTileEffectStatus} from '@content/registry';
+import {tryGetPoi, tryGetTileEffect, tryGetTileEffectStatus, tryGetTrap} from '@content/registry';
 import {hasAllTags} from '@simulation/systems/tags/tag-helpers.ts';
 import {ensureRuntimeRng} from '../runtime-rng.ts';
 import {getWorldContentRules} from '../rules.ts';
@@ -118,6 +118,12 @@ export function runContentRuleReactions(
       intents: ruleIntents,
       conditionMatched: true,
     });
+
+    // Жизненный цикл ловушки: срабатывание её правила раскрывает ловушку,
+    // а одноразовую — уничтожает (процедурно, по образцу charges у poi).
+    if (rule.ownerContext.type === 'object' && selfId !== null) {
+      intents.push(...buildTrapLifecycleIntents(state, selfId));
+    }
   }
 
   return intents;
@@ -128,6 +134,20 @@ export function runContentRuleReactions(
  */
 function toActiveRule(rule: ContentRule, ownerContext: OwnerContext): ActiveRule {
   return { ...rule, ownerContext };
+}
+
+/**
+ * Строит интенты жизненного цикла ловушки после срабатывания её правила:
+ * одноразовая (oneShot) уничтожается, постоянная раскрывается (hidden = false).
+ * Для не-ловушек возвращает пустой массив.
+ */
+function buildTrapLifecycleIntents(state: GameState, trapId: EntityId): Intent[] {
+  const entity = findEntity(state, trapId);
+  if (!entity || entity.type !== 'trap') return [];
+  const template = tryGetTrap(entity.templateId);
+  if (!template) return [];
+  if (template.oneShot) return [{ type: 'DESTROY_OBJECT', entityId: trapId }];
+  return entity.hidden ? [{ type: 'REVEAL_OBJECT', entityId: trapId }] : [];
 }
 
 /**
@@ -218,6 +238,22 @@ function collectRules(ctx: RuleContext): LayeredRule[] {
 
       if (entity.type === 'poi') {
         const template = tryGetPoi(entity.templateId);
+        if (!template) continue;
+        for (const ruleId of template.ruleIds) {
+          const rule = tryGetContentRule(ruleId);
+          if (!rule) continue;
+          result.push({
+            layer: 'world',
+            rule: toActiveRule(rule, { type: 'object', position: ctx.eventPosition, entityId: entity.id }),
+            selfId: entity.id,
+            worldLayer: 'object',
+          });
+        }
+      }
+
+      // Правила ловушки собираются НЕЗАВИСИМО от hidden: скрытая ловушка срабатывает.
+      if (entity.type === 'trap') {
+        const template = tryGetTrap(entity.templateId);
         if (!template) continue;
         for (const ruleId of template.ruleIds) {
           const rule = tryGetContentRule(ruleId);

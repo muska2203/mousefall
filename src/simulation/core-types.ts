@@ -310,7 +310,7 @@ export type DebugAddItemAction = {
 export type DebugSpawnEntityAction = {
   type: 'DEBUG_SPAWN_ENTITY';
   entityId: EntityId;
-  spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi';
+  spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi' | 'trap';
   templateId: string;
   position: Position;
 };
@@ -394,7 +394,9 @@ export type Intent =
   | ApplyTileEffectStatusIntent
   | RemoveTileEffectStatusIntent
   | TileExplosionIntent
-  | ActivatePoiIntent;
+  | ActivatePoiIntent
+  | DestroyObjectIntent
+  | RevealObjectIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -472,6 +474,8 @@ export type TileExplosionIntent = {
   tags: GameplayTag[];
 };
 export type ActivatePoiIntent = { type: 'ACTIVATE_POI'; entityId: EntityId; targetPosition: Position };
+export type DestroyObjectIntent = { type: 'DESTROY_OBJECT'; entityId: EntityId };
+export type RevealObjectIntent = { type: 'REVEAL_OBJECT'; entityId: EntityId };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -535,7 +539,9 @@ export type GameEvent =
   | TileEffectStatusTickedEvent
   | TileEffectTickedEvent
   | TileExplodedEvent
-  | PoiUsedEvent;
+  | PoiUsedEvent
+  | ObjectDestroyedEvent
+  | ObjectRevealedEvent;
 
 export type ActionAppliedEvent = GameEventBase & { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -807,4 +813,24 @@ export type PoiUsedEvent = GameEventBase & {
   position: Position;
   /** Заряды, оставшиеся после этой активации. */
   remainingCharges: number;
+};
+
+/** Событие уничтожения объекта на поле (например, одноразовой ловушки после срабатывания). */
+export type ObjectDestroyedEvent = GameEventBase & {
+  type: 'OBJECT_DESTROYED';
+  /** ID удалённой сущности. */
+  entityId: EntityId;
+  /** ID шаблона сущности (если был). */
+  objectType?: string;
+  position: Position;
+};
+
+/** Событие раскрытия скрытого объекта (постоянная ловушка после срабатывания). */
+export type ObjectRevealedEvent = GameEventBase & {
+  type: 'OBJECT_REVEALED';
+  /** ID раскрытой сущности. */
+  entityId: EntityId;
+  /** ID шаблона сущности (если был). */
+  objectType?: string;
+  position: Position;
 };

@@ -29,7 +29,8 @@ import type {
   RuleTriggeredEvent,
   Simulation,
   SimulationResult,
-  StatusEffect
+  StatusEffect,
+  TrapEntity
 } from '@simulation/types';
 import {GameSimulation, buildEntityPositionIndex} from '@simulation/simulation';
 import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
@@ -66,6 +67,7 @@ import {
   getAllLocalizedStairs,
   getAllLocalizedTerrains,
   getAllLocalizedTileEffects,
+  getAllLocalizedTraps,
   getMapParams,
   tryGetDoor,
   tryGetItem,
@@ -87,6 +89,7 @@ import {mapStairsToPopover} from './stairsDetailMapper';
 import {mapDoorToPopover} from './doorDetailMapper';
 import {mapPropToPopover} from './propDetailMapper';
 import {mapPoiToPopover} from './poiDetailMapper';
+import {mapTrapToPopover} from './trapDetailMapper';
 import {resolveAbilityIcon, resolveDoorSprite, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
@@ -800,6 +803,7 @@ export class GameSession {
     let door = null;
     let prop = null;
     let poi = null;
+    let trap = null;
     let item = null;
     let stairs = null;
 
@@ -817,6 +821,10 @@ export class GameSession {
       }
       if (entity.type === 'poi' && !poi) {
         poi = entity;
+      }
+      // Скрытая ловушка не показывается в popover.
+      if (entity.type === 'trap' && !entity.hidden && !trap) {
+        trap = entity;
       }
       if (entity.type === 'floor_item_container') {
         item = entity;
@@ -842,6 +850,10 @@ export class GameSession {
 
     if (poi) {
       return { kind: 'poi', data: mapPoiToPopover(poi as PointOfInterestEntity, currentLocale) };
+    }
+
+    if (trap) {
+      return { kind: 'trap', data: mapTrapToPopover(trap as TrapEntity, currentLocale) };
     }
 
     if (item && (item.type === 'floor_item_container' || item.type === 'item')) {
@@ -1028,6 +1040,14 @@ export class GameSession {
    */
   static getAllPois(locale: Locale) {
     return getAllLocalizedPois(locale);
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны ловушек.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllTraps(locale: Locale) {
+    return getAllLocalizedTraps(locale);
   }
 
   /**
@@ -2290,7 +2310,7 @@ export class GameSession {
 
   /** Debug: заспавнить объект на карте. */
   debugSpawnEntity(
-    spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi',
+    spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi' | 'trap',
     templateId: string,
     position: Position,
   ): void {

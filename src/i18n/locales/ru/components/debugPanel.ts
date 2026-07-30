@@ -11,6 +11,7 @@ export const ruDebugPanel: ComponentsDebugPanelTranslations = {
   spawnTypeStairs: 'Лестница',
   spawnTypeProp: 'Проп',
   spawnTypePoi: 'Точка интереса',
+  spawnTypeTrap: 'Ловушка',
   spawnTypeTileEffect: 'Тайловый эффект',
   spawnTypeTerrain: 'Террейн',
   selectTileHint: 'Выберите клетку на поле',

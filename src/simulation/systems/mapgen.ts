@@ -30,6 +30,7 @@ export {
   createDoor,
   createProp,
   createPoi,
+  createTrap,
 } from './map-generation/shared';
 
 /**

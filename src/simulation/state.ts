@@ -251,6 +251,7 @@ export const TARGET_PRIORITY: Record<EntityType, number> = {
   floor_item_container: 0,
   stairs: 0,
   poi: 0,
+  trap: 0,
 };
 
 /**
@@ -404,7 +405,7 @@ export function findPoiAt(state: GameState, x: number, y: number, index?: Entity
 /**
  * Слот размещения объекта на клетке.
  * - `solid` — дверь, проп, точка интереса. Несовместим со всеми другими объектами.
- * - `floorFixture` — лестница (в будущем — ловушка). Несовместим с `solid` и `floorFixture`.
+ * - `floorFixture` — лестница, ловушка. Несовместим с `solid` и `floorFixture`.
  * - `loot` — контейнер лута. Совместим с `floorFixture`, максимум один `loot` на клетку.
  */
 export type PlacementSlot = 'solid' | 'floorFixture' | 'loot';
@@ -420,6 +421,7 @@ export function getPlacementSlot(entity: Entity): PlacementSlot | null {
     case 'poi':
       return 'solid';
     case 'stairs':
+    case 'trap':
       return 'floorFixture';
     case 'floor_item_container':
       return 'loot';

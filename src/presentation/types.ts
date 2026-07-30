@@ -420,13 +420,20 @@ export type PoiPopoverViewModel = {
   charges: number;
 };
 
+export type TrapPopoverViewModel = {
+  name: string;
+  sprite: string;
+  flavorText: string;
+};
+
 export type FieldObjectPopoverViewModel =
   | { kind: 'enemy'; data: EnemyPopoverViewModel }
   | { kind: 'item'; data: ItemDetailViewModel }
   | { kind: 'stairs'; data: StairsPopoverViewModel }
   | { kind: 'door'; data: DoorPopoverViewModel }
   | { kind: 'prop'; data: PropPopoverViewModel }
-  | { kind: 'poi'; data: PoiPopoverViewModel };
+  | { kind: 'poi'; data: PoiPopoverViewModel }
+  | { kind: 'trap'; data: TrapPopoverViewModel };
 
 /** Одна доступная опция взаимодействия на кнопку F. */
 export type InteractionOption = {

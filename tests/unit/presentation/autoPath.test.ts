@@ -5,7 +5,7 @@ import { AutoPathController, type AutoPathQueries } from '../../../src/presentat
 import { findPathTowards } from '../../../src/presentation/pathfinding';
 import { GameSimulation } from '../../../src/simulation/simulation';
 import { drainAnimations } from '../../helpers/simulation';
-import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs, createTestTerrains } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs, makeTrap, createTestTerrains } from '../../fixtures/gameState';
 import type { Entity, EnemyEntity, DoorEntity, Position } from '../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 
@@ -162,6 +162,22 @@ describe('Simulation pathfinding', () => {
     const path = queries.findPathTowards({ x: 5, y: 5 }, { position: { x: 5, y: 6 }, kind: 'move', entityId: null });
 
     expect(path).toBeNull();
+  });
+
+  it('builds path through a hidden trap tile (trap does not affect walkability)', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const trap = makeTrap({ x: 5, y: 6, hidden: true });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [trap.id, trap]]),
+    });
+    state.explored[6]![5] = true;
+    state.explored[7]![5] = true;
+    const simulation = GameSimulation.loadSavedGame(state, false);
+
+    const path = simulation.findPathForPlayer({ x: 5, y: 5 }, { x: 5, y: 7 });
+
+    expect(path).toEqual([{ x: 5, y: 6 }, { x: 5, y: 7 }]);
   });
 });
 

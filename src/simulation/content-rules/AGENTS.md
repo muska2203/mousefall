@@ -56,6 +56,7 @@ src/simulation/content-rules/
    - Способность: `public/content/abilities/...json`, поле `ruleIds`.
    - Тайловый эффект: `public/content/tile-effects/...json`, поле `ruleIds` (слой `tileEffect`).
    - Точка интереса: `public/content/entities/pois/...json`, поле `ruleIds` (слой `object`).
+   - Ловушка: `public/content/entities/traps/...json`, поле `ruleIds` (слой `object`).
 
 4. **Проверить валидацию.**
    - `npm run validate:content` должен проходить.
@@ -138,7 +139,7 @@ src/simulation/content-rules/
 - **Конфликты статусов:** `mutuallyExclusiveWith` снимает, `blockedBy` блокирует.
 - **Пустые селекторы:** правило пропускается без ошибки.
 - **Порядок слоёв:** `source` → `target` → `world` → `radius`; внутри `world` — `global` → `tileEffect` → `tileEffectStatus` → `object` → `tileIntrinsic`, затем `priority`, затем `ruleId`.
-- **Слой `object`:** правила из `ruleIds` объектов (poi и т.п.) на клетке события; разовость — процедурно через `charges` в исполнителе интента, правило остаётся декларативным.
+- **Слой `object`:** правила из `ruleIds` объектов (poi, ловушки) на клетке события; разовость — процедурно (`charges` в исполнителе интента у poi; `DESTROY_OBJECT`/`REVEAL_OBJECT` из lifecycle-хука у ловушек), правило остаётся декларативным. Правила ловушек собираются независимо от `hidden` (скрытая ловушка срабатывает).
 - **Модификаторы на интенте:** только `DAMAGE` и `DAMAGE_TILE`; порядок `multiply` → `add`; условия пока не оцениваются.
 
 ---

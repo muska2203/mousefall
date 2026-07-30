@@ -19,6 +19,7 @@ import {
   makePoi,
   makeProp,
   makeStairs,
+  makeTrap,
 } from '../../fixtures/gameState';
 import type { Entity } from '../../../src/simulation/types';
 
@@ -35,8 +36,9 @@ describe('getPlacementSlot', () => {
     expect(getPlacementSlot(makePoi())).toBe('solid');
   });
 
-  it('лестница — слот floorFixture', () => {
+  it('лестница и ловушка — слот floorFixture', () => {
     expect(getPlacementSlot(makeStairs('stairs_down'))).toBe('floorFixture');
+    expect(getPlacementSlot(makeTrap())).toBe('floorFixture');
   });
 
   it('контейнер лута — слот loot', () => {
@@ -71,7 +73,13 @@ describe('canPlaceObjectAt', () => {
   it('floorFixture несовместим с solid и floorFixture, но совместим с loot', () => {
     expect(canPlaceObjectAt(stateWith([makeDoor(CELL)]), 'floorFixture', CELL)).toBe(false);
     expect(canPlaceObjectAt(stateWith([makeStairs('stairs_down', CELL)]), 'floorFixture', CELL)).toBe(false);
+    expect(canPlaceObjectAt(stateWith([makeTrap(CELL)]), 'floorFixture', CELL)).toBe(false);
     expect(canPlaceObjectAt(stateWith([makeFloorItemContainer(CELL)]), 'floorFixture', CELL)).toBe(true);
+  });
+
+  it('ловушка несовместима с дверью и лестницей, контейнер лута может лежать на клетке с ловушкой', () => {
+    expect(canPlaceObjectAt(stateWith([makeTrap(CELL)]), 'solid', CELL)).toBe(false);
+    expect(canPlaceObjectAt(stateWith([makeTrap(CELL)]), 'loot', CELL)).toBe(true);
   });
 
   it('loot совместим с floorFixture, но не стакуется со вторым loot и несовместим с solid', () => {

@@ -19,13 +19,14 @@ import type {
     Room,
     RuntimeAbility,
     StairsEntity,
-    TileType
+    TileType,
+    TrapEntity
 } from '@simulation/types';
 import type {MapParams} from '@content/schemas';
 import {rngChance, rngInt} from '@utils/rng';
 import {buildEntityPositionIndex, canPlaceObjectAt, EntityPositionIndex, nextEntityId} from '@simulation/state';
 import {createDefaultAIState} from '@simulation/ai/ai-state';
-import {getDoor, getEntity, getItem, getPoi, getProp} from '@content/registry';
+import {getDoor, getEntity, getItem, getPoi, getProp, getTrap} from '@content/registry';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory';
 import {createInventoryItem} from '@simulation/systems/inventory-factory';
 import {addModifier} from '@simulation/systems/stats/modifier-engine';
@@ -339,5 +340,19 @@ export function createPoi(state: GameState, templateId: string, x: number, y: nu
     blocksMovement: true,
     interactionKind: 'poi',
     charges: template.charges,
+  };
+}
+
+export function createTrap(state: GameState, templateId: string, x: number, y: number): TrapEntity {
+  const template = getTrap(templateId);
+  return {
+    id: nextEntityId(state, 'trap'),
+    type: 'trap',
+    x,
+    y,
+    displayName: templateId,
+    templateId,
+    blocksMovement: false,
+    hidden: template.initiallyHidden,
   };
 }

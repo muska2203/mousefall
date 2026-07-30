@@ -73,6 +73,7 @@ function validateTranslations(): { ru: string[]; en: string[] } {
     { key: 'doors', map: registry.doors },
     { key: 'props', map: registry.props ?? new Map() },
     { key: 'pois', map: registry.pois ?? new Map() },
+    { key: 'traps', map: registry.traps ?? new Map() },
     { key: 'terrain', map: registry.terrains ?? new Map() },
   ];
 

@@ -31,3 +31,10 @@ export const pois: Record<string, ContentText> = {
     flavorText: 'Старый каменный алтарь. От него веет слабым, но добрым теплом.',
   },
 };
+
+export const traps: Record<string, ContentText> = {
+  spikes: {
+    name: 'Колючки',
+    flavorText: 'Ржавые шипы, спрятанные в полу. Уже поздно.',
+  },
+};

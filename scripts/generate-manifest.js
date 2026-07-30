@@ -26,6 +26,7 @@ const CATEGORY_MAP = {
   'entities/doors': 'doors',
   'entities/props': 'props',
   'entities/pois': 'pois',
+  'entities/traps': 'traps',
   items: 'items',
   abilities: 'abilities',
   statuses: 'statuses',
@@ -65,6 +66,7 @@ function categorize(files) {
     doors: [],
     props: [],
     pois: [],
+    traps: [],
     terrains: [],
   };
 

@@ -84,6 +84,9 @@
   "pois": [
     "/content/entities/pois/altar.json"
   ],
+  "traps": [
+    "/content/entities/traps/spikes.json"
+  ],
   "terrains": [
     "/content/terrains/floor.json",
     "/content/terrains/sand.json",

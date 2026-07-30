@@ -21,9 +21,10 @@ import type {
   PointOfInterestEntity,
   PropEntity,
   StairsEntity,
-  TileType
+  TileType,
+  TrapEntity
 } from '../../src/simulation/types';
-import type {DoorTemplate, LoadedContent, MapParams, PoiTemplate, PropTemplate, TerrainTemplate} from '../../src/content/schemas';
+import type {DoorTemplate, LoadedContent, MapParams, PoiTemplate, PropTemplate, TerrainTemplate, TrapTemplate} from '../../src/content/schemas';
 import type {TileEffects} from '../../src/simulation/core-types';
 import {createRNG} from '../../src/utils/rng';
 import {createDefaultAIState} from '../../src/simulation/ai/ai-state';
@@ -213,6 +214,20 @@ export function makePoi(overrides: Partial<PointOfInterestEntity> = {}): PointOf
   };
 }
 
+export function makeTrap(overrides: Partial<TrapEntity> = {}): TrapEntity {
+  return {
+    id: 'trap_test_1',
+    type: 'trap',
+    displayName: 'Колючки',
+    templateId: 'spikes',
+    x: 4,
+    y: 5,
+    blocksMovement: false,
+    hidden: true,
+    ...overrides,
+  };
+}
+
 // ─────────────────────────────────────────────
 // Мок-шаблоны террейнов для тестов
 // ─────────────────────────────────────────────
@@ -288,6 +303,30 @@ export function mockAltarTemplate(): PoiTemplate {
   };
 }
 
+/** Минимальный шаблон одноразовых колючек (ловушка с уроном при входе). */
+export function mockSpikesTemplate(): TrapTemplate {
+  return {
+    id: 'spikes',
+    ruleIds: ['spikes_deal_damage'],
+    oneShot: true,
+    initiallyHidden: true,
+    renderScale: 1,
+    tags: [],
+  };
+}
+
+/** Минимальный шаблон постоянной ловушки (раскрывается при срабатывании, остаётся). */
+export function mockPersistentSpikesTemplate(): TrapTemplate {
+  return {
+    id: 'spikes_persistent',
+    ruleIds: ['spikes_deal_damage'],
+    oneShot: false,
+    initiallyHidden: true,
+    renderScale: 1,
+    tags: [],
+  };
+}
+
 /**
  * Создаёт минимальный LoadedContent с мок-шаблонами горючих объектов.
  * Используется в тестах, где правила опираются на теги шаблонов дверей/пропов.
@@ -306,6 +345,10 @@ export function createObjectContent(overrides: Partial<LoadedContent> = {}): Loa
     doors: new Map([['wooden_door', mockWoodenDoorTemplate()]]),
     props: new Map([['oil_barel', mockOilBarrelTemplate()]]),
     pois: new Map([['altar', mockAltarTemplate()]]),
+    traps: new Map([
+      ['spikes', mockSpikesTemplate()],
+      ['spikes_persistent', mockPersistentSpikesTemplate()],
+    ]),
     terrains: createTestTerrains(),
     ...overrides,
   };

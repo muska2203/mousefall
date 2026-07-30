@@ -55,6 +55,9 @@ beforeEach(() => {
     pois: new Map([
       ['altar', {id: 'altar', interactionKind: 'poi', ruleIds: [], charges: 1} as any],
     ]),
+    traps: new Map([
+      ['spikes', {id: 'spikes', ruleIds: [], oneShot: true, initiallyHidden: true} as any],
+    ]),
 });
 });
 
@@ -322,6 +325,50 @@ describe('createDebugSpawnEntityActionHandler', () => {
     });
 
     expect(validation.ok).toBe(true);
+  });
+
+  it('спавнит ловушку (trap) на пустой клетке', () => {
+    const state = makeGameState();
+    const handler = createDebugSpawnEntityActionHandler(makeContext(true));
+    const action = {
+      type: 'DEBUG_SPAWN_ENTITY' as const,
+      entityId: 'player',
+      spawnType: 'trap' as const,
+      templateId: 'spikes',
+      position: {x: 3, y: 3},
+    };
+    const builder = makeBuilder();
+
+    expect(handler.validate(state, action).ok).toBe(true);
+    handler.execute(state, action, [], builder, builder.root);
+
+    const spawned = Array.from(state.entities.values()).find(e => e.type === 'trap');
+    expect(spawned).toBeDefined();
+    expect(spawned?.templateId).toBe('spikes');
+    expect((spawned as any)?.hidden).toBe(true);
+  });
+
+  it('отклоняет спавн ловушки на клетке с лестницей (floorFixture несовместим с floorFixture)', () => {
+    const state = makeGameState();
+    const handler = createDebugSpawnEntityActionHandler(makeContext(true));
+    handler.execute(state, {
+      type: 'DEBUG_SPAWN_ENTITY' as const,
+      entityId: 'player',
+      spawnType: 'stairs' as const,
+      templateId: 'stairs_down',
+      position: {x: 3, y: 3},
+    }, [], makeBuilder(), makeBuilder().root);
+
+    const validation = handler.validate(state, {
+      type: 'DEBUG_SPAWN_ENTITY' as const,
+      entityId: 'player',
+      spawnType: 'trap' as const,
+      templateId: 'spikes',
+      position: {x: 3, y: 3},
+    });
+
+    expect(validation.ok).toBe(false);
+    expect((validation as any).reasonCode).toBe('tile_occupied');
   });
 
   it('отклоняет спавн второго предмета на клетке с предметом (loot не стакуется)', () => {

@@ -11,7 +11,7 @@ import {createPortal} from 'react-dom';
 import {useTranslation} from '@i18n/hooks';
 import {GameSession} from '@presentation/gameSession';
 
-export type SpawnType = 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi' | 'tileEffect' | 'terrain';
+export type SpawnType = 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi' | 'trap' | 'tileEffect' | 'terrain';
 
 type TilePosition = {
   x: number;
@@ -53,6 +53,7 @@ export function DebugPanel({
   const stairs = useMemo(() => GameSession.getAllStairs(locale), [locale]);
   const props = useMemo(() => GameSession.getAllProps(locale), [locale]);
   const pois = useMemo(() => GameSession.getAllPois(locale), [locale]);
+  const traps = useMemo(() => GameSession.getAllTraps(locale), [locale]);
   const tileEffects = useMemo(() => GameSession.getAllTileEffects(locale), [locale]);
   const terrains = useMemo(() => GameSession.getAllTerrains(locale), [locale]);
 
@@ -81,12 +82,14 @@ export function DebugPanel({
         return props;
       case 'poi':
         return pois;
+      case 'trap':
+        return traps;
       case 'tileEffect':
         return tileEffects;
       case 'terrain':
         return terrains;
     }
-  }, [spawnType, items, entities, doors, stairs, props, pois, tileEffects, terrains]);
+  }, [spawnType, items, entities, doors, stairs, props, pois, traps, tileEffects, terrains]);
 
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [spawnTemplateId, setSpawnTemplateId] = useState<string>('');
@@ -124,6 +127,7 @@ export function DebugPanel({
     stairs: t('debugPanel.spawnTypeStairs'),
     prop: t('debugPanel.spawnTypeProp'),
     poi: t('debugPanel.spawnTypePoi'),
+    trap: t('debugPanel.spawnTypeTrap'),
     tileEffect: t('debugPanel.spawnTypeTileEffect'),
     terrain: t('debugPanel.spawnTypeTerrain'),
   };

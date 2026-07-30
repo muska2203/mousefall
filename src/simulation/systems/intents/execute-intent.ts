@@ -47,6 +47,8 @@ import {
 } from "@simulation/systems/intents/tile-effect-intent-executor.ts";
 import {executeTileExplosionIntent} from "@simulation/systems/intents/tile-explosion-intent-executor.ts";
 import {executeActivatePoiIntent} from "@simulation/systems/intents/activate-poi-intent-executor.ts";
+import {executeDestroyObjectIntent} from "@simulation/systems/intents/destroy-object-intent-executor.ts";
+import {executeRevealObjectIntent} from "@simulation/systems/intents/reveal-object-intent-executor.ts";
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
 import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
 import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
@@ -95,6 +97,8 @@ const intentExecutors = {
   REMOVE_TILE_EFFECT_STATUS: executeRemoveTileEffectStatusIntent,
   TILE_EXPLOSION: executeTileExplosionIntent,
   ACTIVATE_POI: executeActivatePoiIntent,
+  DESTROY_OBJECT: executeDestroyObjectIntent,
+  REVEAL_OBJECT: executeRevealObjectIntent,
 };
 
 /** Максимальное количество волн реакций защиты от бесконечного цикла. */

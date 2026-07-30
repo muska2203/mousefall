@@ -31,3 +31,10 @@ export const pois: Record<string, ContentText> = {
     flavorText: 'An old stone altar. It radiates a faint but kindly warmth.',
   },
 };
+
+export const traps: Record<string, ContentText> = {
+  spikes: {
+    name: 'Spikes',
+    flavorText: 'Rusty spikes hidden in the floor. Too late now.',
+  },
+};

@@ -75,3 +75,8 @@ export function getPropSprite(templateId: string): string {
 export function getPoiSprite(templateId: string): string {
   return `/assets/objects/pois/${templateId}.png`;
 }
+
+/** Путь к спрайту ловушки по templateId. */
+export function getTrapSprite(templateId: string): string {
+  return `/assets/objects/traps/${templateId}.png`;
+}

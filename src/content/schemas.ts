@@ -364,6 +364,23 @@ export const PoiTemplateSchema = z.object({
 export type PoiTemplate = z.output<typeof PoiTemplateSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон ловушки (trap)
+// ─────────────────────────────────────────────
+
+export const TrapTemplateSchema = z.object({
+  id:              z.string().min(1).describe('Уникальный идентификатор ловушки (совпадает с именем файла)'),
+  ruleIds:         RuleIdsSchema,
+  oneShot:         z.boolean().default(true)
+    .describe('Одноразовая ловушка уничтожается при срабатывании; постоянная раскрывается и остаётся'),
+  initiallyHidden: z.boolean().default(true)
+    .describe('Ловушка создаётся скрытой: не рисуется и не попадает в popover до срабатывания'),
+  renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  tags:            TagsSchema,
+}).describe('Шаблон ловушки (проходимый объект, срабатывающий на вход на клетку)');
+
+export type TrapTemplate = z.output<typeof TrapTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Шаблон игрока
 // ─────────────────────────────────────────────
 
@@ -405,4 +422,6 @@ export type LoadedContent = {
   terrains?: Map<string, TerrainTemplate>;
   /** Точки интереса (непроходимые неразрушаемые интерактивные объекты). Опционально для обратной совместимости с тестовыми моками. */
   pois?:     Map<string, PoiTemplate>;
+  /** Ловушки (проходимые объекты, срабатывающие на вход на клетку). Опционально для обратной совместимости с тестовыми моками. */
+  traps?:    Map<string, TrapTemplate>;
 };

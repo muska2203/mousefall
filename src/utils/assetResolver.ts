@@ -59,6 +59,13 @@ export function resolvePoiSprite(templateId: string): string {
 }
 
 /**
+ * Возвращает путь к спрайту ловушки по templateId.
+ */
+export function resolveTrapSprite(templateId: string): string {
+  return `/assets/objects/traps/${templateId}.png`;
+}
+
+/**
  * Возвращает путь к frame-ассету для sticker-HP по пути основного спрайта.
  * Если путь не заканчивается на .png, возвращает null.
  */

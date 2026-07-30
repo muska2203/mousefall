@@ -91,10 +91,11 @@ export type Entity =
     | StairsEntity
     | DoorEntity
     | PropEntity
-    | PointOfInterestEntity;
+    | PointOfInterestEntity
+    | TrapEntity;
 
 
-export type EntityType = 'player' | 'enemy' | 'floor_item_container' | 'stairs' | 'door' | 'prop' | 'poi';
+export type EntityType = 'player' | 'enemy' | 'floor_item_container' | 'stairs' | 'door' | 'prop' | 'poi' | 'trap';
 
 export interface BaseEntity {
   id: EntityId;
@@ -310,6 +311,22 @@ export interface PointOfInterestEntity extends BaseEntity, TemplateIdHolder {
   interactionKind: 'poi';
   /** Оставшиеся заряды использования. При 0 взаимодействие недоступно. */
   charges: number;
+}
+
+/** Ловушка — проходимый объект, срабатывающий на вход сущности на её клетку.
+ *
+ *  Намеренно НЕ реализует `Attackable` и `interactionKind`:
+ *  - разрушение атаками не поддерживается (одноразовая ловушка удаляется
+ *    процедурно через интент DESTROY_OBJECT при срабатывании своего правила);
+ *  - обезвреживание (взаимодействие) отложено, в этой фазе не реализуется.
+ *  Эффекты срабатывания описываются декларативно через `ruleIds` шаблона
+ *  (мировой слой правил `object`, триггер ENTITY_MOVED).
+ */
+export interface TrapEntity extends BaseEntity, TemplateIdHolder {
+  type: 'trap';
+  blocksMovement: false;
+  /** Скрытая ловушка не рисуется и не попадает в popover, но срабатывает. */
+  hidden: boolean;
 }
 
 // ─────────────────────────────────────────────

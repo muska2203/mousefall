@@ -5,7 +5,7 @@
  * UI вызывает эту функцию, не обращаясь к реестру напрямую.
  */
 
-import {tryGetDoor, tryGetEntity, tryGetPlayerTemplate, tryGetPoi, tryGetProp, tryGetStairs} from '@content/registry';
+import {tryGetDoor, tryGetEntity, tryGetPlayerTemplate, tryGetPoi, tryGetProp, tryGetStairs, tryGetTrap} from '@content/registry';
 
 /** Масштаб по умолчанию для не-акторов. */
 const DEFAULT_RENDER_SCALE = 1.0;
@@ -42,6 +42,10 @@ export function getRenderScale(templateId: string, isActor: boolean): number {
   const fromPoi = tryGetPoi(templateId);
   if (fromPoi) {
     return fromPoi.renderScale;
+  }
+  const fromTrap = tryGetTrap(templateId);
+  if (fromTrap) {
+    return fromTrap.renderScale;
   }
   return isActor ? ACTOR_DEFAULT_RENDER_SCALE : DEFAULT_RENDER_SCALE;
 }

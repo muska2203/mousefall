@@ -32,6 +32,7 @@ import type {
   TerrainTemplate,
   TileEffectStatusTemplate,
   TileEffectTemplate,
+  TrapTemplate,
 } from './schemas';
 import {getContentText, type Locale} from './texts/lookup';
 
@@ -93,6 +94,11 @@ export type LocalizedTerrainTemplate = TerrainTemplate & {
 };
 
 export type LocalizedPoiTemplate = PoiTemplate & {
+  name: string;
+  flavorText?: string;
+};
+
+export type LocalizedTrapTemplate = TrapTemplate & {
   name: string;
   flavorText?: string;
 };
@@ -733,6 +739,61 @@ export function getAllPois(): PoiTemplate[] {
 export function getAllLocalizedPois(locale: Locale): LocalizedPoiTemplate[] {
   return Array.from((getRegistry().pois ?? new Map()).values()).map((template) => {
     const text = getContentText('pois', template.id, locale);
+    return { ...template, name: text.name, flavorText: text.flavorText };
+  });
+}
+
+/**
+ * Получить шаблон ловушки по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getTrap(id: string): TrapTemplate {
+  const template = (getRegistry().traps ?? new Map()).get(id);
+  if (!template) throw new Error(`Trap template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон ловушки.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetTrap(id: string): TrapTemplate | undefined {
+  if (_registry === null) return undefined;
+  return (_registry.traps ?? new Map()).get(id);
+}
+
+/**
+ * Получить локализованный шаблон ловушки по ID.
+ */
+export function getLocalizedTrap(id: string, locale: Locale): LocalizedTrapTemplate {
+  const template = getTrap(id);
+  const text = getContentText('traps', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Попытаться получить локализованный шаблон ловушки. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedTrap(id: string, locale: Locale): LocalizedTrapTemplate | undefined {
+  const template = tryGetTrap(id);
+  if (!template) return undefined;
+  const text = getContentText('traps', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Получить все шаблоны ловушек.
+ */
+export function getAllTraps(): TrapTemplate[] {
+  return Array.from((getRegistry().traps ?? new Map()).values());
+}
+
+/**
+ * Получить все локализованные шаблоны ловушек.
+ */
+export function getAllLocalizedTraps(locale: Locale): LocalizedTrapTemplate[] {
+  return Array.from((getRegistry().traps ?? new Map()).values()).map((template) => {
+    const text = getContentText('traps', template.id, locale);
     return { ...template, name: text.name, flavorText: text.flavorText };
   });
 }

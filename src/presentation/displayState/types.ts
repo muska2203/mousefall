@@ -24,6 +24,8 @@ export type DisplayEntity = {
   factionId?: FactionId;
   /** Для дверей: открыта или закрыта. */
   isOpen?: boolean;
+  /** Для ловушек: скрыта (не рисуется вне debug-режима, не попадает в popover). */
+  hidden?: boolean;
   /** Для игрока: текущий уровень. */
   level?: number;
 };
@@ -194,6 +196,16 @@ export type ItemPickedUpPatch = {
   itemInstanceId: string;
 };
 
+export type ObjectDestroyedPatch = {
+  type: 'OBJECT_DESTROYED';
+  entityId: string;
+};
+
+export type ObjectRevealedPatch = {
+  type: 'OBJECT_REVEALED';
+  entityId: string;
+};
+
 /** Union всех патчей, которые могут изменить DisplayState. */
 export type DisplayPatch =
   | NoOpPatch
@@ -215,7 +227,9 @@ export type DisplayPatch =
   | TurnBeganPatch
   | TileEffectChangedPatch
   | TileEffectRemovedPatch
-  | ItemPickedUpPatch;
+  | ItemPickedUpPatch
+  | ObjectDestroyedPatch
+  | ObjectRevealedPatch;
 
 /** Узел плана презентации: событие, патч и анимации для одного шага. */
 export type PresentationNode = {

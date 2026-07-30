@@ -6,11 +6,11 @@
  */
 
 import {GameState} from '@simulation/types.ts';
-import {tryGetDoor, tryGetEntity, tryGetItem, tryGetPoi, tryGetProp, tryGetStairs} from '@content/registry';
+import {tryGetDoor, tryGetEntity, tryGetItem, tryGetPoi, tryGetProp, tryGetStairs, tryGetTrap} from '@content/registry';
 import {canPlaceObjectAt, findAllEntitiesAt, PlacementSlot, terrainHasTag} from '@simulation/state.ts';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory.ts';
 import {createInventoryItem} from '@simulation/systems/inventory-factory.ts';
-import {createDoor, createEnemy, createPoi, createProp, createStairs} from '@simulation/systems/mapgen.ts';
+import {createDoor, createEnemy, createPoi, createProp, createStairs, createTrap} from '@simulation/systems/mapgen.ts';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
 import {Intent} from '@simulation/systems/intents/types.ts';
 import type {DebugContext} from './debug-add-item-action.ts';
@@ -46,6 +46,7 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
       const stairsTemplate = tryGetStairs(templateId);
       const propTemplate = tryGetProp(templateId);
       const poiTemplate = tryGetPoi(templateId);
+      const trapTemplate = tryGetTrap(templateId);
 
       const templateExists =
         (spawnType === 'item' && itemTemplate !== undefined) ||
@@ -53,7 +54,8 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
         (spawnType === 'door' && doorTemplate !== undefined) ||
         (spawnType === 'stairs' && stairsTemplate !== undefined) ||
         (spawnType === 'prop' && propTemplate !== undefined) ||
-        (spawnType === 'poi' && poiTemplate !== undefined);
+        (spawnType === 'poi' && poiTemplate !== undefined) ||
+        (spawnType === 'trap' && trapTemplate !== undefined);
 
       if (!templateExists) {
         return { ok: false, reasonCode: 'template_not_found' };
@@ -67,12 +69,13 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
       }
 
       // Слоты размещения объектов: дверь/проп/точка интереса — solid,
-      // лестница — floorFixture, предмет — loot. Проверка единая — canPlaceObjectAt.
+      // лестница/ловушка — floorFixture, предмет — loot. Проверка единая — canPlaceObjectAt.
       const slotBySpawnType: Partial<Record<typeof spawnType, PlacementSlot>> = {
         door: 'solid',
         prop: 'solid',
         poi: 'solid',
         stairs: 'floorFixture',
+        trap: 'floorFixture',
         item: 'loot',
       };
       const slot = slotBySpawnType[spawnType];
@@ -134,6 +137,9 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
           break;
         case 'poi':
           entity = createPoi(state, templateId, x, y);
+          break;
+        case 'trap':
+          entity = createTrap(state, templateId, x, y);
           break;
         default:
           return;

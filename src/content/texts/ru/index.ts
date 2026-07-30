@@ -1,5 +1,5 @@
 import {abilities} from './abilities';
-import {doors, pois, props, stairs} from './environment';
+import {doors, pois, props, stairs, traps} from './environment';
 import {entities} from './entities';
 import {items} from './items';
 import {players} from './players';
@@ -26,4 +26,5 @@ export const ruContentTexts: ContentTexts = {
   tileEffectStatuses,
   stairs,
   tags,
+  traps,
 };

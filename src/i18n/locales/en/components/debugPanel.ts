@@ -11,6 +11,7 @@ export const enDebugPanel: ComponentsDebugPanelTranslations = {
   spawnTypeStairs: 'Stairs',
   spawnTypeProp: 'Prop',
   spawnTypePoi: 'Point of interest',
+  spawnTypeTrap: 'Trap',
   spawnTypeTileEffect: 'Tile effect',
   spawnTypeTerrain: 'Terrain',
   selectTileHint: 'Select a tile on the field',

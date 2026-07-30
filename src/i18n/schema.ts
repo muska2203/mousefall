@@ -235,6 +235,7 @@ export interface ComponentsDebugPanelTranslations {
   spawnTypeStairs: string;
   spawnTypeProp: string;
   spawnTypePoi: string;
+  spawnTypeTrap: string;
   spawnTypeTileEffect: string;
   spawnTypeTerrain: string;
   selectTileHint: string;

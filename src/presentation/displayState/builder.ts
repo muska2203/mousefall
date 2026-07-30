@@ -42,6 +42,9 @@ function toDisplayEntity(entity: Entity): DisplayEntity {
   if (entity.type === 'door' && 'isOpen' in entity) {
     display.isOpen = entity.isOpen as boolean;
   }
+  if (entity.type === 'trap' && 'hidden' in entity) {
+    display.hidden = entity.hidden as boolean;
+  }
 
   return display;
 }
@@ -264,6 +267,12 @@ export function createPatch(event: GameEvent, state: GameState): DisplayPatch {
         itemInstanceId: event.itemInstanceId,
       };
 
+    case 'OBJECT_DESTROYED':
+      return { type: 'OBJECT_DESTROYED', entityId: event.entityId };
+
+    case 'OBJECT_REVEALED':
+      return { type: 'OBJECT_REVEALED', entityId: event.entityId };
+
     case 'DEAD_ENTITIES_CLEANED':
       return {
         type: 'DEAD_ENTITIES_CLEANED',
@@ -473,6 +482,19 @@ export function applyPatch(state: DisplayState, patch: DisplayPatch): DisplaySta
       const player = newEntities.get(state.player.id) ?? state.player;
       return { ...state, entities: newEntities, player };
     }
+
+    case 'OBJECT_DESTROYED': {
+      const newEntities = cloneEntities(state.entities);
+      newEntities.delete(patch.entityId);
+      const player = newEntities.get(state.player.id) ?? state.player;
+      return { ...state, entities: newEntities, player };
+    }
+
+    case 'OBJECT_REVEALED':
+      return updateEntity(state, patch.entityId, (entity) => ({
+        ...entity,
+        hidden: false,
+      }));
 
     case 'FLOOR_CHANGED': {
       return { ...state, meta: { ...state.meta, floor: patch.floor } };

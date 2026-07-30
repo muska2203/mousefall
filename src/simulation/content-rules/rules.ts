@@ -344,6 +344,26 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: {type: 'eventSource'},
     priority: 0,
   },
+  // ── Правила ловушек (фаза 5 слоистой модели клетки) ────────────────────────
+  // Владелец правила — ловушка на клетке события (слой object), поэтому правило
+  // срабатывает только при входе сущности на клетку с этой ловушкой.
+  // Урон получает вошедший (игрок или враг) — target eventSource.
+  // Уничтожение одноразовой ловушки / раскрытие постоянной — процедурные
+  // (DESTROY_OBJECT / REVEAL_OBJECT из lifecycle-хука), правило остаётся
+  // декларативным по эффекту.
+  {
+    id: 'spikes_deal_damage',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: 10,
+      tags: ['damage.physical.piercing'],
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
 ];
 
 /**
