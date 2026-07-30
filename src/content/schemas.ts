@@ -179,6 +179,23 @@ export const AbilityTemplateSchema = z.object({
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон террейна
+// ─────────────────────────────────────────────
+
+export const TerrainTemplateSchema = z.object({
+  id: z.string().min(1).describe('Уникальный идентификатор террейна (совпадает с именем файла)'),
+  walkable: z.boolean().describe('Проходим ли террейн для движения'),
+  moveCost: z.number().int().min(1).default(1)
+    .describe('Стоимость входа на клетку в очках действий (AP)'),
+  blocksLOS: z.boolean().default(false)
+    .describe('Блокирует ли террейн линию видимости (отделено от проходимости)'),
+  tags: TagsSchema,
+  ruleIds: RuleIdsSchema,
+}).describe('Шаблон террейна (основа пола клетки)');
+
+export type TerrainTemplate = z.output<typeof TerrainTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Шаблон статуса
 // ─────────────────────────────────────────────
 
@@ -207,20 +224,17 @@ export type StatusTemplate = z.output<typeof StatusTemplateSchema>;
 
 export const TileEffectTemplateSchema = z.object({
   id: z.string().min(1).describe('Уникальный идентификатор тайлового эффекта (совпадает с именем файла)'),
-  layer: z.enum(['foundation', 'cover', 'aboveGround'])
+  layer: z.enum(['cover', 'aboveGround'])
     .default('cover')
-    .describe('Слой эффекта; на первом этапе все эффекты — cover'),
+    .describe('Слой эффекта. Уникальность по слою: на клетке максимум один эффект каждого слоя, новый эффект слоя заменяет старый'),
   duration: z.number().int().positive()
     .describe('Базовая длительность эффекта в ходах'),
   renderOrder: z.number().int().default(1)
     .describe('Порядок отрисовки относительно других тайловых эффектов'),
+  blocksLOS: z.boolean()
+    .default(false)
+    .describe('Блокирует ли эффект линию видимости (дым и т.п.). Движение не блокируется никогда'),
   ruleIds: RuleIdsSchema,
-  blockedByTileEffects: z.array(z.string().min(1))
-    .default([])
-    .describe('Типы тайловых эффектов, блокирующие наложение этого эффекта'),
-  mutuallyExclusiveWithTileEffects: z.array(z.string().min(1))
-    .default([])
-    .describe('Типы тайловых эффектов, заменяемые этим эффектом при наложении'),
   canHaveStatus: z.array(z.string().min(1))
     .default([])
     .describe('Статусы тайловых эффектов, которые могут быть наложены на этот эффект'),
@@ -335,6 +349,21 @@ export const PropTemplateSchema = z.object({
 export type PropTemplate = z.output<typeof PropTemplateSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон точки интереса (poi)
+// ─────────────────────────────────────────────
+
+export const PoiTemplateSchema = z.object({
+  id:              z.string().min(1).describe('Уникальный идентификатор точки интереса (совпадает с именем файла)'),
+  interactionKind: z.literal('poi').describe('Вид интерактивного объекта'),
+  ruleIds:         RuleIdsSchema,
+  charges:         z.number().int().nonnegative().default(1).describe('Количество использований (зарядов). При 0 взаимодействие недоступно'),
+  renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  tags:            TagsSchema,
+}).describe('Шаблон точки интереса (непроходимый неразрушаемый интерактивный объект)');
+
+export type PoiTemplate = z.output<typeof PoiTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Шаблон игрока
 // ─────────────────────────────────────────────
 
@@ -372,4 +401,8 @@ export type LoadedContent = {
   doors:     Map<string, DoorTemplate>;
   /** Разрушаемые объекты окружения. Опционально для обратной совместимости с тестовыми моками. */
   props?:    Map<string, PropTemplate>;
+  /** Террейны (основа пола клетки). Опционально для обратной совместимости с тестовыми моками. */
+  terrains?: Map<string, TerrainTemplate>;
+  /** Точки интереса (непроходимые неразрушаемые интерактивные объекты). Опционально для обратной совместимости с тестовыми моками. */
+  pois?:     Map<string, PoiTemplate>;
 };

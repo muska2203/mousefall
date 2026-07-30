@@ -10,6 +10,7 @@ import {tryGetTileEffect} from '@content/registry';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
 import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
 import {Intent} from '@simulation/systems/intents/types.ts';
+import {terrainHasTag} from '@simulation/state.ts';
 import type {DebugContext} from './debug-add-item-action.ts';
 
 export function createDebugSpawnTileEffectActionHandler(context: DebugContext): ActionHandler {
@@ -32,7 +33,7 @@ export function createDebugSpawnTileEffectActionHandler(context: DebugContext): 
         return { ok: false, reasonCode: 'position_out_of_bounds' };
       }
 
-      if (state.map.tiles[y]![x] !== 'floor') {
+      if (!terrainHasTag(state.map.tiles[y]?.[x], 'ground')) {
         return { ok: false, reasonCode: 'not_a_floor_tile' };
       }
 

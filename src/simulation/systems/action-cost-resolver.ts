@@ -5,7 +5,7 @@
  * состояния игры. Центральное списание AP происходит в `GameSimulation.executeAction`.
  */
 
-import {tryGetAbility, tryGetItem} from '@content/registry';
+import {tryGetAbility, tryGetItem, tryGetTerrain} from '@content/registry';
 import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
 import type {GameAction} from '@simulation/core-types.ts';
 import type {GameState} from '@simulation/types.ts';
@@ -18,20 +18,30 @@ export type ActionPointCostResolver = {
  * Базовая реализация резолвера стоимости AP.
  *
  * Правила:
- * - MOVE — 1 AP
+ * - MOVE — стоимость входа на целевую клетку из шаблона террейна (`moveCost`), fallback = 1
  * - ATTACK — 1 AP
  * - END_TURN — 0 AP
  * - USE_ABILITY — берётся из `apCost` шаблона способности, fallback = 1
  * - USE_ITEM — берётся из `apCost` шаблона предмета, fallback = 1
  * - EQUIP / UNEQUIP — 1 AP
  * - INTERACT — 1 AP
+ *
+ * Известное ограничение итерации: автопуть и AI-pathfinding (`findPath`)
+ * остаются равностоимостными — `moveCost` учитывается только при списании AP
+ * за одиночный шаг, а не при выборе маршрута.
  */
 export class DefaultActionPointCostResolver
     implements ActionPointCostResolver {
 
   getCost(action: GameAction, state: GameState): number {
     switch (action.type) {
-      case 'MOVE':
+      case 'MOVE': {
+        const actor = state.entities.get(action.entityId);
+        if (!actor) return 1;
+        const terrainId = state.map.tiles[actor.y + action.dy]?.[actor.x + action.dx];
+        return (terrainId !== undefined ? tryGetTerrain(terrainId)?.moveCost : undefined) ?? 1;
+      }
+
       case 'INTERACT':
       case 'ATTACK':
         return 1;
@@ -68,6 +78,7 @@ export class DefaultActionPointCostResolver
       case 'DEBUG_ADD_ITEM':
       case 'DEBUG_SPAWN_ENTITY':
       case 'DEBUG_SPAWN_TILE_EFFECT':
+      case 'DEBUG_SET_TERRAIN':
         return 0;
 
       default: {

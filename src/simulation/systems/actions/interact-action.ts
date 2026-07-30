@@ -12,7 +12,7 @@
 import type {FloorItemContainerEntity, GameState, Position, ValidationResult} from '@simulation/types';
 import type {Intent, InteractAction} from '@simulation/core-types';
 import type {ActionHandler} from './types';
-import {findAllEntitiesAt, findDoorAt, findEntity} from '@simulation/state';
+import {findAllEntitiesAt, findDoorAt, findEntity, getPlacementSlot} from '@simulation/state';
 import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
 import {resolveInteraction} from '@simulation/systems/interactions/resolve-interaction.ts';
 import {MAX_FLOOR} from '@utils/constants';
@@ -102,8 +102,10 @@ function validateInteractionSpecifics(
         if (actor.x === target.x && actor.y === target.y) {
           return { ok: false, reasonCode: 'cannot_close_door_from_inside' };
         }
+        // Закрытая дверь занимает слот solid: на её клетке не должно быть
+        // ни других объектов размещения, ни блокирующих движение сущностей.
         const hasObstacle = findAllEntitiesAt(state, target.x, target.y).some(
-          (e) => e.id !== door.id && e.blocksMovement,
+          (e) => e.id !== door.id && (e.blocksMovement || getPlacementSlot(e) !== null),
         );
         if (hasObstacle) {
           return { ok: false, reasonCode: 'door_tile_blocked' };
@@ -126,6 +128,16 @@ function validateInteractionSpecifics(
       }
       if (target.type !== 'stairs') {
         return { ok: false, reasonCode: 'not_stairs' };
+      }
+      return { ok: true };
+    }
+
+    case 'use_poi': {
+      if (target.type !== 'poi') {
+        return { ok: false, reasonCode: 'not_a_poi' };
+      }
+      if (target.charges <= 0) {
+        return { ok: false, reasonCode: 'poi_depleted' };
       }
       return { ok: true };
     }
@@ -192,6 +204,13 @@ export const interactAction: ActionHandler = {
           type: 'FLOOR_TRANSITION',
           entityId: action.entityId,
           direction: interaction.interactionId === 'descend' ? 'down' : 'up',
+        }];
+
+      case 'use_poi':
+        return [{
+          type: 'ACTIVATE_POI',
+          entityId: action.entityId,
+          targetPosition: { x: target.x, y: target.y },
         }];
 
       default:

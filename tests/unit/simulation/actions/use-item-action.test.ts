@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
-import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import { makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
 import {useItemAction} from '../../../../src/simulation/systems/actions/use-item-action';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {ItemTemplate} from '../../../../src/content/schemas';
@@ -34,6 +34,7 @@ function makeBuilder() {
 beforeEach(() => {
   resetRegistry();
   initRegistry({
+    terrains: createTestTerrains(),
     entities: new Map(),
     players: new Map(),
     items: new Map([

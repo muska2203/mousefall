@@ -62,6 +62,10 @@ function ownerContextEquals(a: OwnerContext, b: OwnerContext): boolean {
     }
     case 'world':
       return true;
+    case 'object': {
+      const other = b as Extract<OwnerContext, { type: 'object' }>;
+      return a.entityId === other.entityId;
+    }
   }
 }
 

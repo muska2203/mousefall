@@ -7,7 +7,7 @@
  * - Стоимость AP не вычисляется здесь — она всегда 1 для `INTERACT`.
  */
 
-import type {DoorEntity, Entity, EntityInteractionKind, GameState, ResolvedInteraction} from '@simulation/types';
+import type {DoorEntity, Entity, EntityInteractionKind, GameState, PointOfInterestEntity, ResolvedInteraction} from '@simulation/types';
 
 /**
  * Возвращает разрешённое взаимодействие для целевой сущности от лица актора.
@@ -57,6 +57,15 @@ export function resolveInteractionForEntity(
 
     case 'item':
       return { interactionId: 'pickup', usableFromAdjacent: false };
+
+    case 'poi': {
+      const poi = entity as PointOfInterestEntity;
+      // Точка интереса с исчерпанными зарядами не предоставляет взаимодействий.
+      if (poi.charges <= 0) {
+        return null;
+      }
+      return { interactionId: 'use_poi', usableFromAdjacent: true };
+    }
 
     // 'lever' будет добавлен в следующих блоках.
     default:

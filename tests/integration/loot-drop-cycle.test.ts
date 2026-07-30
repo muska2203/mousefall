@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {createTestSimulation} from '../helpers/simulation';
-import {makeEnemy, makePlayer, makeTestMap} from '../fixtures/gameState';
+import { makeEnemy, makePlayer, makeTestMap, createTestTerrains } from '../fixtures/gameState';
 import {initRegistry, resetRegistry} from '../../src/content/registry';
 import type {EntityId, FloorItemContainerEntity, GameState} from '../../src/simulation/types';
 import type {EntityTemplate, ItemTemplate} from '../../src/content/schemas';
@@ -126,6 +126,7 @@ describe('Интеграция: цикл выпадения лута', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map([
         ['test_enemy', makeEntityTemplate({
           id: 'test_enemy',
@@ -277,6 +278,7 @@ describe('Интеграция: цикл выпадения лута', () => {
   it('несколько предметов из одного дропа разбрасываются по соседним клеткам', () => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map([
         ['test_enemy', makeEntityTemplate({
           id: 'test_enemy',

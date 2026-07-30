@@ -34,6 +34,7 @@ function makeEffect(type: StatusEffect['type'], duration: number): StatusEffect 
 
 describe('status effect tick phases', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry({
       entities: new Map(),
       players: new Map(),

@@ -46,6 +46,7 @@ import {
   executeTickTileEffectsIntent,
 } from "@simulation/systems/intents/tile-effect-intent-executor.ts";
 import {executeTileExplosionIntent} from "@simulation/systems/intents/tile-explosion-intent-executor.ts";
+import {executeActivatePoiIntent} from "@simulation/systems/intents/activate-poi-intent-executor.ts";
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
 import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
 import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
@@ -93,6 +94,7 @@ const intentExecutors = {
   APPLY_TILE_EFFECT_STATUS: executeApplyTileEffectStatusIntent,
   REMOVE_TILE_EFFECT_STATUS: executeRemoveTileEffectStatusIntent,
   TILE_EXPLOSION: executeTileExplosionIntent,
+  ACTIVATE_POI: executeActivatePoiIntent,
 };
 
 /** Максимальное количество волн реакций защиты от бесконечного цикла. */

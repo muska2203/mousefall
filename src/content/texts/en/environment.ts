@@ -24,3 +24,10 @@ export const props: Record<string, ContentText> = {
     flavorText: "Wooden, cracked, and unmistakably greasy. Don't hit it with fire.",
   },
 };
+
+export const pois: Record<string, ContentText> = {
+  altar: {
+    name: 'Altar',
+    flavorText: 'An old stone altar. It radiates a faint but kindly warmth.',
+  },
+};

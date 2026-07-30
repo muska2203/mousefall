@@ -204,6 +204,7 @@ export interface ComponentsFieldObjectPopoverTranslations {
   damageLabel: string;
   hpLabel: string;
   armorLabel: string;
+  chargesLabel: string;
   skillsTitle: string;
   cooldownSuffix: string;
   cooldownReady: string;
@@ -217,6 +218,7 @@ export interface ComponentsInteractionHintTranslations {
   ascend: string;
   openDoor: string;
   closeDoor: string;
+  usePoi: string;
   unknown: string;
   keyF: string;
   keyTab: string;
@@ -232,7 +234,9 @@ export interface ComponentsDebugPanelTranslations {
   spawnTypeDoor: string;
   spawnTypeStairs: string;
   spawnTypeProp: string;
+  spawnTypePoi: string;
   spawnTypeTileEffect: string;
+  spawnTypeTerrain: string;
   selectTileHint: string;
   spawnButtonIdle: string;
   spawnButtonPending: string;

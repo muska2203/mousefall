@@ -10,7 +10,7 @@ import type {AnimationNode, Position, RenderInput} from '@presentation/types';
 import type {DisplayState} from '@presentation/displayState/types';
 import {FOG_EXPLORED_SPRITE_ALPHA, TILE_SIZE} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
-import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getPropSprite, getStairsSprite} from './spriteRegistry';
+import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getPoiSprite, getPropSprite, getStairsSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 import {resolveEntityFrameSprite} from '@utils/assetResolver';
 import {clearStickerTextures, getStickerTexture} from './stickerComposer';
@@ -154,6 +154,20 @@ export class EntityRenderer {
         const stickerTexture = this.stickerTextures.get(entity.id);
         this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, false, scale);
         this.updateSticker(entity.id, path, 'neutrals', entity.hp, entity.maxHp, scale);
+        const sprite = this.sprites.get(entity.id);
+        if (sprite && !this.activeAnimations.has(entity.id)) {
+          sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
+          sprite.alpha = getStaticEntityAlpha(displayState, entity.x, entity.y, input.debugEnabled);
+        }
+        existingIds.add(entity.id);
+      }
+      if (entity.type === 'poi') {
+        // poi неразрушаемы (нет hp/isAlive), рендерятся как статические объекты
+        const path = getPoiSprite(entity.templateId);
+        texturePaths.set(path, path);
+        const texture = getTextureSync(path);
+        const scale = getRenderScale(entity.templateId, false);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);

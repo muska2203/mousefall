@@ -15,6 +15,7 @@ import {getItem} from "@content/registry";
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
+import {terrainHasTag} from "@simulation/state.ts";
 import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";
 
 export const useItemAction: ActionHandler = {
@@ -113,7 +114,7 @@ export const useItemAction: ActionHandler = {
         }
         const radius = effect.radius ?? 1;
         const positions = getPositionsInRadius(state, action.targetPosition, radius)
-          .filter(pos => state.map.tiles[pos.y]?.[pos.x] === 'floor');
+          .filter(pos => terrainHasTag(state.map.tiles[pos.y]?.[pos.x], 'ground'));
         for (const pos of positions) {
           intents.push({
             type: 'SPAWN_TILE_EFFECT',

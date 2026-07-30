@@ -30,11 +30,11 @@ function createTestPlayer() {
 }
 
 function getOilAt(state: GameState, x: number, y: number) {
-  return state.tileEffects[y]?.[x]?.['oil'];
+  return Object.values(state.tileEffects[y]?.[x] ?? {}).find(e => e.type === 'oil');
 }
 
 function getWaterAt(state: GameState, x: number, y: number) {
-  return state.tileEffects[y]?.[x]?.['water'];
+  return Object.values(state.tileEffects[y]?.[x] ?? {}).find(e => e.type === 'water');
 }
 
 function spawnOil(simulation: GameSimulation, playerId: string, x: number, y: number) {

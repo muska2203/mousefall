@@ -1,7 +1,7 @@
 import {GameState} from '@simulation/types';
 import {IntentExecutor, PushIntent} from '@simulation/systems/intents/types';
 import {ExecutionBuilder, ExecutionNode, GameplayTag} from '@simulation/core-types';
-import {findAllEntitiesAt, findEntity, isActor, isBlocked} from '@simulation/state';
+import {findAllEntitiesAt, findEntity, isActor, isBlocked, isTerrainWalkable} from '@simulation/state';
 
 /**
  * Формирует теги события столкновения без дублирования.
@@ -40,13 +40,13 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
   const targetX = entity.x + intent.dx;
   const targetY = entity.y + intent.dy;
 
-  // За пределами карты или стена — столкновение с препятствием.
+  // За пределами карты или непроходимый террейн — столкновение с препятствием.
   if (
     targetX < 0 ||
     targetX >= state.map.width ||
     targetY < 0 ||
     targetY >= state.map.height ||
-    state.map.tiles[targetY]?.[targetX] === 'wall'
+    !isTerrainWalkable(state.map.tiles[targetY]?.[targetX])
   ) {
     return builder.addChild(parent, {
       type: 'ENTITY_COLLIDED', isFieldEvent: true,

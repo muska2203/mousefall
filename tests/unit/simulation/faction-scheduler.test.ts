@@ -4,7 +4,7 @@
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
-import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, createTestTerrains } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { EntityId, Entity, EnemyEntity, SimulationResult } from '../../../src/simulation/types';
 import type { ExecutionNode } from '../../../src/simulation/systems/actions/types';
@@ -22,6 +22,7 @@ describe('Faction scheduler', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),

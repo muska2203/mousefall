@@ -84,6 +84,7 @@ function createContentWithProps(): LoadedContent {
 
 describe('Реестр контента — статусы тайловых эффектов', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry(createContentWithStatuses());
   });
 
@@ -132,6 +133,7 @@ describe('Реестр контента — статусы тайловых эф
 
 describe('Реестр контента — пропы', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry(createContentWithProps());
   });
 

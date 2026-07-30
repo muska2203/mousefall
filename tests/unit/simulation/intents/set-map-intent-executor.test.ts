@@ -54,4 +54,55 @@ describe('executeSetMapIntent', () => {
     expect(state.explored[2]![2]).toBe(true);
     expect(state.explored[0]![0]).toBe(false);
   });
+
+  it('пересоздаёт сетку тайловых эффектов под размер новой карты, если она не передана', () => {
+    const state = makeGameState();
+    // Старый эффект на старой карте — не должен пережить смену карты.
+    state.tileEffects[3]![3] = {
+      cover: { type: 'water', duration: 5, layer: 'cover', statusEffects: [], renderOrder: 1 },
+    };
+    const newMap = makeTestMap(12, 8);
+
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED', isFieldEvent: false,
+      action: { type: 'END_TURN', entityId: 'player' },
+    });
+
+    executeSetMapIntent(
+      state,
+      { type: 'SET_MAP', map: newMap },
+      builder,
+      builder.root,
+    );
+
+    expect(state.tileEffects.length).toBe(8);
+    expect(state.tileEffects[0]!.length).toBe(12);
+    expect(state.tileEffects.every(row => row.every(cell => Object.keys(cell).length === 0))).toBe(true);
+  });
+
+  it('использует переданную сетку тайловых эффектов (восстановление этажа)', () => {
+    const state = makeGameState();
+    const newMap = makeTestMap(6, 6);
+    const tileEffects = Array.from({ length: 6 }, () =>
+      Array.from({ length: 6 }, () => ({} as import('@simulation/core-types').TileEffects)),
+    );
+    tileEffects[1]![1] = {
+      cover: { type: 'oil', duration: 7, layer: 'cover', statusEffects: [], renderOrder: 1 },
+    };
+
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED', isFieldEvent: false,
+      action: { type: 'END_TURN', entityId: 'player' },
+    });
+
+    executeSetMapIntent(
+      state,
+      { type: 'SET_MAP', map: newMap, tileEffects },
+      builder,
+      builder.root,
+    );
+
+    expect(state.tileEffects).toBe(tileEffects);
+    expect(state.tileEffects[1]![1]!['cover']).toBeDefined();
+  });
 });

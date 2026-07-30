@@ -55,8 +55,7 @@ function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectT
     layer: 'cover',
     duration: 3,
     renderOrder: 1,
-    blockedByTileEffects: [],
-    mutuallyExclusiveWithTileEffects: [],
+    blocksLOS: false,
     canHaveStatus: ['burning'],
     durationDecreasesWhenHasStatus: [],
   };
@@ -1463,7 +1462,7 @@ describe('runContentRuleReactions', () => {
       const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
       const state = makeStateWithPlayerAndEntity(player, enemy);
       state.tileEffects[5]![6] = {
-        oil: makeTileEffectInstance('oil', ['burning']),
+        cover: makeTileEffectInstance('oil', ['burning']),
       };
 
       const event: GameEvent = {
@@ -1553,7 +1552,7 @@ describe('runContentRuleReactions', () => {
       const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
       const state = makeStateWithPlayerAndEntity(player, enemy);
       state.tileEffects[5]![6] = {
-        oil: makeTileEffectInstance('oil', ['burning']),
+        cover: makeTileEffectInstance('oil', ['burning']),
       };
 
       const event: GameEvent = {
@@ -1602,7 +1601,7 @@ describe('runContentRuleReactions', () => {
       const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
       const state = makeStateWithPlayerAndEntity(player, enemy);
       state.tileEffects[5]![6] = {
-        oil: makeTileEffectInstance('oil', ['burning']),
+        cover: makeTileEffectInstance('oil', ['burning']),
       };
 
       const event: GameEvent = {
@@ -1647,7 +1646,7 @@ describe('runContentRuleReactions', () => {
       const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
       const state = makeStateWithPlayerAndEntity(player, enemy);
       state.tileEffects[5]![6] = {
-        oil: makeTileEffectInstance('oil', []),
+        cover: makeTileEffectInstance('oil', []),
       };
 
       const event: GameEvent = {
@@ -1708,7 +1707,7 @@ describe('runContentRuleReactions', () => {
     it('при ENTITY_MOVED накладывает oiled на актора в клетке с oil', () => {
       const player = makePlayer({ x: 5, y: 5 });
       const state = makeStateWithPlayer(player);
-      state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', []) };
+      state.tileEffects[5]![6] = { cover: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
         type: 'ENTITY_MOVED', isFieldEvent: true,
@@ -1736,7 +1735,7 @@ describe('runContentRuleReactions', () => {
       const player = makePlayer({ x: 5, y: 5 });
       const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
       const state = makeStateWithPlayerAndEntity(player, enemy);
-      state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', []) };
+      state.tileEffects[5]![6] = { cover: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
         type: 'ENTITY_DAMAGED', isFieldEvent: true,
@@ -1765,7 +1764,7 @@ describe('runContentRuleReactions', () => {
       const player = makePlayer({ x: 5, y: 5 });
       const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
       const state = makeStateWithPlayerAndEntity(player, enemy);
-      state.tileEffects[5]![6] = { oil: makeTileEffectInstance('oil', ['burning']) };
+      state.tileEffects[5]![6] = { cover: makeTileEffectInstance('oil', ['burning']) };
 
       const event: GameEvent = {
         type: 'ENTITY_DAMAGED', isFieldEvent: true,
@@ -1837,7 +1836,7 @@ describe('runContentRuleReactions', () => {
         for (let dy = -1; dy <= 1; dy++) {
           const x = 5 + dx;
           const y = 5 + dy;
-          state.tileEffects[y]![x] = { oil: makeTileEffectInstance('oil', []) };
+          state.tileEffects[y]![x] = { cover: makeTileEffectInstance('oil', []) };
         }
       }
 
@@ -1875,9 +1874,9 @@ describe('runContentRuleReactions', () => {
 
       const player = makePlayer({ x: 5, y: 5 });
       const state = makeStateWithPlayer(player);
-      state.tileEffects[5]![5] = { oil: makeTileEffectInstance('oil', []) };
-      state.tileEffects[4]![4] = { oil: makeTileEffectInstance('oil', []) };
-      state.tileEffects[6]![6] = { oil: makeTileEffectInstance('oil', []) };
+      state.tileEffects[5]![5] = { cover: makeTileEffectInstance('oil', []) };
+      state.tileEffects[4]![4] = { cover: makeTileEffectInstance('oil', []) };
+      state.tileEffects[6]![6] = { cover: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
         type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,
@@ -1921,12 +1920,12 @@ describe('runContentRuleReactions', () => {
         { x: 6, y: 6 },
       ];
 
-      state.tileEffects[5]![5] = { oil: makeTileEffectInstance('oil', ['burning']) };
+      state.tileEffects[5]![5] = { cover: makeTileEffectInstance('oil', ['burning']) };
       for (const pos of neighbors) {
         // Нечётные клетки получают горение, чётные — нет.
         const isBurning = (pos.x + pos.y) % 2 === 1;
         state.tileEffects[pos.y]![pos.x] = {
-          oil: makeTileEffectInstance('oil', isBurning ? ['burning'] : []),
+          cover: makeTileEffectInstance('oil', isBurning ? ['burning'] : []),
         };
       }
 
@@ -1953,8 +1952,8 @@ describe('runContentRuleReactions', () => {
 
       const player = makePlayer({ x: 5, y: 5 });
       const state = makeStateWithPlayer(player);
-      state.tileEffects[5]![5] = { oil: makeTileEffectInstance('oil', ['burning']) };
-      state.tileEffects[6]![6] = { oil: makeTileEffectInstance('oil', []) };
+      state.tileEffects[5]![5] = { cover: makeTileEffectInstance('oil', ['burning']) };
+      state.tileEffects[6]![6] = { cover: makeTileEffectInstance('oil', []) };
 
       const event: GameEvent = {
         type: 'TILE_EFFECT_STATUS_TICKED', isFieldEvent: false,

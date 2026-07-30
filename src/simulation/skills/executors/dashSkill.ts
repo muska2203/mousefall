@@ -3,7 +3,7 @@ import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {damageFormulas} from '@simulation/skills/damageFormula';
-import {findDoorAt, isActor, isBlocked, isCombatEntity, isDamageable} from '@simulation/state';
+import {findDoorAt, isActor, isBlocked, isCombatEntity, isDamageable, isTerrainWalkable} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
@@ -42,7 +42,7 @@ function isDashStartAllowed(state: GameState, caster: Entity, dx: number, dy: nu
   const y = caster.y + dy;
 
   if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) return false;
-  if (state.map.tiles[y]?.[x] === 'wall') return false;
+  if (!isTerrainWalkable(state.map.tiles[y]?.[x])) return false;
 
   const door = findDoorAt(state, x, y);
   if (door && !door.isOpen) return true;
@@ -161,13 +161,13 @@ function resolveDashIntents(state: GameState, caster: Entity, target: Position, 
     const cellX = currentX + stepX;
     const cellY = currentY + stepY;
 
-    // Стена или граница карты — кастер остаётся на предыдущей клетке и отскакивает.
+    // Непроходимый террейн или граница карты — кастер остаётся на предыдущей клетке и отскакивает.
     if (
       cellX < 0 ||
       cellX >= state.map.width ||
       cellY < 0 ||
       cellY >= state.map.height ||
-      state.map.tiles[cellY]?.[cellX] === 'wall'
+      !isTerrainWalkable(state.map.tiles[cellY]?.[cellX])
     ) {
       intents.push({
         type: 'BUMP',

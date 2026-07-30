@@ -23,6 +23,7 @@ import type {
   GameEvent,
   GameState,
   PlayerStatsSnapshot,
+  PointOfInterestEntity,
   Position,
   PropEntity,
   RuleTriggeredEvent,
@@ -30,7 +31,7 @@ import type {
   SimulationResult,
   StatusEffect
 } from '@simulation/types';
-import {GameSimulation} from '@simulation/simulation';
+import {GameSimulation, buildEntityPositionIndex} from '@simulation/simulation';
 import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import {CHARACTER_CREATION_ATTRIBUTE_POINTS_BUDGET} from '@simulation/characterCreation';
@@ -60,8 +61,10 @@ import {
   getAllLocalizedEntities,
   getAllLocalizedItems,
   getAllLocalizedPlayerTemplates,
+  getAllLocalizedPois,
   getAllLocalizedProps,
   getAllLocalizedStairs,
+  getAllLocalizedTerrains,
   getAllLocalizedTileEffects,
   getMapParams,
   tryGetDoor,
@@ -83,6 +86,7 @@ import {mapEnemyToPopover} from './enemyDetailMapper';
 import {mapStairsToPopover} from './stairsDetailMapper';
 import {mapDoorToPopover} from './doorDetailMapper';
 import {mapPropToPopover} from './propDetailMapper';
+import {mapPoiToPopover} from './poiDetailMapper';
 import {resolveAbilityIcon, resolveDoorSprite, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
 
 import {CameraState} from './cameraState';
@@ -795,6 +799,7 @@ export class GameSession {
     let enemy = null;
     let door = null;
     let prop = null;
+    let poi = null;
     let item = null;
     let stairs = null;
 
@@ -809,6 +814,9 @@ export class GameSession {
       }
       if (entity.type === 'prop' && !prop) {
         prop = entity;
+      }
+      if (entity.type === 'poi' && !poi) {
+        poi = entity;
       }
       if (entity.type === 'floor_item_container') {
         item = entity;
@@ -830,6 +838,10 @@ export class GameSession {
 
     if (prop) {
       return { kind: 'prop', data: mapPropToPopover(prop as PropEntity, currentLocale) };
+    }
+
+    if (poi) {
+      return { kind: 'poi', data: mapPoiToPopover(poi as PointOfInterestEntity, currentLocale) };
     }
 
     if (item && (item.type === 'floor_item_container' || item.type === 'item')) {
@@ -995,11 +1007,27 @@ export class GameSession {
   }
 
   /**
+   * Возвращает все локализованные шаблоны террейнов.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllTerrains(locale: Locale) {
+    return getAllLocalizedTerrains(locale);
+  }
+
+  /**
    * Возвращает все локализованные шаблоны пропов.
    * Статический метод — не требует активной симуляции.
    */
   static getAllProps(locale: Locale) {
     return getAllLocalizedProps(locale);
+  }
+
+  /**
+   * Возвращает все локализованные шаблоны точек интереса.
+   * Статический метод — не требует активной симуляции.
+   */
+  static getAllPois(locale: Locale) {
+    return getAllLocalizedPois(locale);
   }
 
   /**
@@ -1507,8 +1535,19 @@ export class GameSession {
       isTileWalkable: (pos) => simulation.isTileWalkableForPlayer(pos),
       isTilePassable,
       findPathTowards: (start, target) => {
-        const isWalkable = (p: Position) => simulation.isTileWalkableForPlayer(p);
-        return findPathTowards(start, target, isWalkable, isTilePassable);
+        // Позиционный индекс строится один раз на поиск пути:
+        // проверки проходимости вызываются для каждой клетки A*.
+        const index = buildEntityPositionIndex(simulation.getState().entities);
+        const isWalkable = (p: Position) => simulation.isTileWalkableForPlayer(p, index);
+        const isPassable = (pos: Position): boolean => {
+          if (simulation.isTileWalkableForPlayer(pos, index)) return true;
+          const blockers = simulation.findEntitiesAt(pos, undefined, index).filter((e) => e.blocksMovement);
+          if (blockers.length !== 1) return false;
+          const door = blockers[0];
+          if (!door) return false;
+          return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+        };
+        return findPathTowards(start, target, isWalkable, isPassable);
       },
       findEntityAt: (pos, filter) => simulation.findEntityAt(pos, filter),
       findEntitiesAt: (pos, filter) => simulation.findEntitiesAt(pos, filter),
@@ -1517,7 +1556,7 @@ export class GameSession {
 
   /**
    * Определяет цель автопути по клетке клика / hover.
-   * Приоритет: враг → дверь → лестница → предмет → пустой тайл.
+   * Приоритет: враг → дверь → лестница → точка интереса → предмет → пустой тайл.
    * Возвращает null, если клетка не изведана.
    */
   private resolveAutoPathTarget(state: Readonly<GameState>, pos: Position): AutoPathTarget | null {
@@ -1547,6 +1586,14 @@ export class GameSession {
     );
     if (stairs) {
       return { position: pos, kind: 'interactable', entityId: stairs.id };
+    }
+
+    const poi = simulation.findEntityAt(
+      pos,
+      (e) => e.type === 'poi',
+    );
+    if (poi) {
+      return { position: pos, kind: 'interactable', entityId: poi.id };
     }
 
     const item = simulation.findEntitiesAt(pos).find(
@@ -2243,7 +2290,7 @@ export class GameSession {
 
   /** Debug: заспавнить объект на карте. */
   debugSpawnEntity(
-    spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop',
+    spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi',
     templateId: string,
     position: Position,
   ): void {
@@ -2271,6 +2318,22 @@ export class GameSession {
       type: 'DEBUG_SPAWN_TILE_EFFECT',
       entityId: 'player',
       effectType,
+      position,
+    });
+  }
+
+  /** Debug: установить террейн на выбранной клетке. */
+  debugSetTerrain(
+    terrainId: string,
+    position: Position,
+  ): void {
+    if (!this.simulation || this.mode !== 'playing') {
+      return;
+    }
+    this.dispatch({
+      type: 'DEBUG_SET_TERRAIN',
+      entityId: 'player',
+      terrainId,
       position,
     });
   }

@@ -190,6 +190,8 @@ export function GameScreen({session, onModeChange}: Props) {
       if (pendingDebugSpawn && import.meta.env.DEV) {
         if (pendingDebugSpawn.spawnType === 'tileEffect') {
           session.debugSpawnTileEffect(pendingDebugSpawn.templateId, pos);
+        } else if (pendingDebugSpawn.spawnType === 'terrain') {
+          session.debugSetTerrain(pendingDebugSpawn.templateId, pos);
         } else {
           session.debugSpawnEntity(pendingDebugSpawn.spawnType, pendingDebugSpawn.templateId, pos);
         }

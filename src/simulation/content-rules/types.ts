@@ -32,6 +32,12 @@ export type OwnerContext =
       statusType: string;
     }
   | {
+      type: 'object';
+      position: Position;
+      /** ID сущности-объекта (точка интереса, в будущем — ловушка и т.п.). */
+      entityId: EntityId;
+    }
+  | {
       type: 'world';
     };
 
@@ -170,7 +176,7 @@ export type ActiveRule = ContentRule & {
  * Используется для глобальных мировых правил и тайловых эффектов.
  */
 export type WorldContentRule = ContentRule & {
-  ownerContext: Extract<OwnerContext, { type: 'world' } | { type: 'tileEffect' } | { type: 'tileEffectStatus' }>;
+  ownerContext: Extract<OwnerContext, { type: 'world' } | { type: 'tileEffect' } | { type: 'tileEffectStatus' } | { type: 'object' }>;
   /** Подтип слоя world для сортировки. */
-  worldLayer: 'global' | 'tileEffect' | 'tileEffectStatus' | 'tileIntrinsic';
+  worldLayer: 'global' | 'tileEffect' | 'tileEffectStatus' | 'object' | 'tileIntrinsic';
 };

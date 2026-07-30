@@ -71,6 +71,9 @@ function validateTranslations(): { ru: string[]; en: string[] } {
     { key: 'tileEffectStatuses', map: registry.tileEffectStatuses },
     { key: 'stairs', map: registry.stairs },
     { key: 'doors', map: registry.doors },
+    { key: 'props', map: registry.props ?? new Map() },
+    { key: 'pois', map: registry.pois ?? new Map() },
+    { key: 'terrain', map: registry.terrains ?? new Map() },
   ];
 
   const ruMissing: string[] = [];

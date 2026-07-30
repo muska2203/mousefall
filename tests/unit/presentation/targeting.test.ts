@@ -1,6 +1,6 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { GameSession } from '../../../src/presentation/gameSession';
-import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, createTestTerrains } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate } from '../../../src/content/schemas';
 
@@ -17,6 +17,7 @@ describe('GameSession targeting', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer, makeEnemy } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, createTestTerrains } from '../../fixtures/gameState';
 import type { Entity, EntityId } from '../../../src/simulation/types';
 import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
@@ -37,6 +37,7 @@ describe('AP-система: мульти-AP сценарии', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map([

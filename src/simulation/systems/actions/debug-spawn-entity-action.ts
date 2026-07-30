@@ -6,11 +6,11 @@
  */
 
 import {GameState} from '@simulation/types.ts';
-import {tryGetDoor, tryGetEntity, tryGetItem, tryGetProp, tryGetStairs} from '@content/registry';
-import {findAllEntitiesAt} from '@simulation/state.ts';
+import {tryGetDoor, tryGetEntity, tryGetItem, tryGetPoi, tryGetProp, tryGetStairs} from '@content/registry';
+import {canPlaceObjectAt, findAllEntitiesAt, PlacementSlot, terrainHasTag} from '@simulation/state.ts';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory.ts';
 import {createInventoryItem} from '@simulation/systems/inventory-factory.ts';
-import {createDoor, createEnemy, createProp, createStairs} from '@simulation/systems/mapgen.ts';
+import {createDoor, createEnemy, createPoi, createProp, createStairs} from '@simulation/systems/mapgen.ts';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
 import {Intent} from '@simulation/systems/intents/types.ts';
 import type {DebugContext} from './debug-add-item-action.ts';
@@ -36,7 +36,7 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
         return { ok: false, reasonCode: 'position_out_of_bounds' };
       }
 
-      if (state.map.tiles[y]![x] !== 'floor') {
+      if (!terrainHasTag(state.map.tiles[y]?.[x], 'ground')) {
         return { ok: false, reasonCode: 'not_a_floor_tile' };
       }
 
@@ -45,13 +45,15 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
       const doorTemplate = tryGetDoor(templateId);
       const stairsTemplate = tryGetStairs(templateId);
       const propTemplate = tryGetProp(templateId);
+      const poiTemplate = tryGetPoi(templateId);
 
       const templateExists =
         (spawnType === 'item' && itemTemplate !== undefined) ||
         (spawnType === 'enemy' && entityTemplate !== undefined) ||
         (spawnType === 'door' && doorTemplate !== undefined) ||
         (spawnType === 'stairs' && stairsTemplate !== undefined) ||
-        (spawnType === 'prop' && propTemplate !== undefined);
+        (spawnType === 'prop' && propTemplate !== undefined) ||
+        (spawnType === 'poi' && poiTemplate !== undefined);
 
       if (!templateExists) {
         return { ok: false, reasonCode: 'template_not_found' };
@@ -59,8 +61,26 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
 
       const entitiesHere = findAllEntitiesAt(state, x, y);
 
-      // Врагов, двери и пропы нельзя ставить на любую занятую клетку (включая игрока).
-      if ((spawnType === 'enemy' || spawnType === 'door' || spawnType === 'prop') && entitiesHere.length > 0) {
+      // Врага (актора) нельзя ставить на любую занятую клетку (включая игрока).
+      if (spawnType === 'enemy' && entitiesHere.length > 0) {
+        return { ok: false, reasonCode: 'tile_occupied' };
+      }
+
+      // Слоты размещения объектов: дверь/проп/точка интереса — solid,
+      // лестница — floorFixture, предмет — loot. Проверка единая — canPlaceObjectAt.
+      const slotBySpawnType: Partial<Record<typeof spawnType, PlacementSlot>> = {
+        door: 'solid',
+        prop: 'solid',
+        poi: 'solid',
+        stairs: 'floorFixture',
+        item: 'loot',
+      };
+      const slot = slotBySpawnType[spawnType];
+      if (slot !== undefined && !canPlaceObjectAt(state, slot, { x, y })) {
+        return { ok: false, reasonCode: 'tile_occupied' };
+      }
+      // solid нельзя ставить на клетку с блокирующей движение сущностью (актором, включая игрока).
+      if (slot === 'solid' && entitiesHere.some(e => e.blocksMovement)) {
         return { ok: false, reasonCode: 'tile_occupied' };
       }
 
@@ -111,6 +131,9 @@ export function createDebugSpawnEntityActionHandler(context: DebugContext): Acti
         }
         case 'prop':
           entity = createProp(state, templateId, x, y);
+          break;
+        case 'poi':
+          entity = createPoi(state, templateId, x, y);
           break;
         default:
           return;

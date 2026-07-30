@@ -1,11 +1,12 @@
 import {abilities} from './abilities';
-import {doors, props, stairs} from './environment';
+import {doors, pois, props, stairs} from './environment';
 import {entities} from './entities';
 import {items} from './items';
 import {players} from './players';
 import {rules} from './rules';
 import {statuses} from './statuses';
 import {tags} from './tags';
+import {terrain} from './terrain';
 import {tileEffects} from './tile-effects';
 import {tileEffectStatuses} from './tile-effect-statuses';
 import type {ContentTexts} from '../types';
@@ -16,9 +17,11 @@ export const ruContentTexts: ContentTexts = {
   entities,
   items,
   players,
+  pois,
   props,
   rules,
   statuses,
+  terrain,
   tileEffects,
   tileEffectStatuses,
   stairs,

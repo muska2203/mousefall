@@ -32,6 +32,7 @@ function makeApplyStatusIntent(statusType: StatusEffectType, entityId: string = 
 
 describe('resolveStatusBatch', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry({
       entities: new Map(),
       players: new Map(),

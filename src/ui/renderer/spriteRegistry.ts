@@ -10,14 +10,9 @@
 import type {TileType} from '@presentation/types';
 import {resolveStatusIcon} from '@utils/assetResolver';
 
-/** Путь к спрайту тайла. */
+/** Путь к спрайту тайла: конвенция /assets/tiles/<id террейна>.png. */
 export function getTileSprite(tile: TileType): string {
-  switch (tile) {
-    case 'floor':
-      return '/assets/tiles/floor1.png';
-    case 'wall':
-      return '/assets/tiles/wall.png';
-  }
+  return `/assets/tiles/${tile}.png`;
 }
 
 /** Путь к спрайту игрока по templateId. */
@@ -74,4 +69,9 @@ export function getDoorSprite(templateId: string, isOpen: boolean = false): stri
 /** Путь к спрайту пропа по templateId. */
 export function getPropSprite(templateId: string): string {
   return `/assets/objects/props/${templateId}.png`;
+}
+
+/** Путь к спрайту точки интереса по templateId. */
+export function getPoiSprite(templateId: string): string {
+  return `/assets/objects/pois/${templateId}.png`;
 }

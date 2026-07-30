@@ -104,7 +104,7 @@ describe('buildDisplayState', () => {
     });
     const tileEffects = state.tileEffects as TileEffects[][];
     tileEffects[5]![5]! = {
-      oil: {
+      cover: {
         type: 'oil',
         duration: 5,
         layer: 'cover',
@@ -311,7 +311,7 @@ describe('createPatch', () => {
     });
     const tileEffects = state.tileEffects as TileEffects[][];
     tileEffects[3]![3]! = {
-      oil: {
+      cover: {
         type: 'oil',
         duration: 5,
         layer: 'cover',
@@ -345,7 +345,7 @@ describe('createPatch', () => {
     });
     const tileEffects = state.tileEffects as TileEffects[][];
     tileEffects[3]![3]! = {
-      water: {
+      cover: {
         type: 'water',
         duration: 5,
         layer: 'cover',
@@ -375,7 +375,7 @@ describe('createPatch', () => {
     });
     const tileEffects = state.tileEffects as TileEffects[][];
     tileEffects[3]![3]! = {
-      oil: {
+      cover: {
         type: 'oil',
         duration: 5,
         layer: 'cover',

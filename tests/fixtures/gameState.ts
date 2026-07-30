@@ -18,11 +18,12 @@ import type {
   FloorItemContainerEntity,
   GameState,
   PlayerEntity,
+  PointOfInterestEntity,
   PropEntity,
   StairsEntity,
   TileType
 } from '../../src/simulation/types';
-import type {DoorTemplate, LoadedContent, MapParams, PropTemplate} from '../../src/content/schemas';
+import type {DoorTemplate, LoadedContent, MapParams, PoiTemplate, PropTemplate, TerrainTemplate} from '../../src/content/schemas';
 import type {TileEffects} from '../../src/simulation/core-types';
 import {createRNG} from '../../src/utils/rng';
 import {createDefaultAIState} from '../../src/simulation/ai/ai-state';
@@ -197,6 +198,52 @@ export function makeProp(overrides: Partial<PropEntity> = {}): PropEntity {
   };
 }
 
+export function makePoi(overrides: Partial<PointOfInterestEntity> = {}): PointOfInterestEntity {
+  return {
+    id: 'poi_test_1',
+    type: 'poi',
+    displayName: 'Алтарь',
+    templateId: 'altar',
+    x: 4,
+    y: 5,
+    blocksMovement: true,
+    interactionKind: 'poi',
+    charges: 1,
+    ...overrides,
+  };
+}
+
+// ─────────────────────────────────────────────
+// Мок-шаблоны террейнов для тестов
+// ─────────────────────────────────────────────
+
+/** Минимальный шаблон террейна с разумными дефолтами (проходимый пол). */
+export function mockTerrainTemplate(
+  overrides: Partial<TerrainTemplate> & { id: string },
+): TerrainTemplate {
+  return {
+    walkable: true,
+    moveCost: 1,
+    blocksLOS: false,
+    tags: ['ground'],
+    ruleIds: [],
+    ...overrides,
+  };
+}
+
+/**
+ * Базовый набор тестовых террейнов: floor (проходим), wall (непроходим, блокирует LOS),
+ * sand (проходим, moveCost 2). Без этих шаблонов fail-safe семантика
+ * (`isTerrainWalkable` для неизвестного id = непроходим) блокирует всю карту.
+ */
+export function createTestTerrains(): Map<string, TerrainTemplate> {
+  return new Map([
+    ['floor', mockTerrainTemplate({ id: 'floor' })],
+    ['wall', mockTerrainTemplate({ id: 'wall', walkable: false, blocksLOS: true, tags: [] })],
+    ['sand', mockTerrainTemplate({ id: 'sand', moveCost: 2 })],
+  ]);
+}
+
 // ─────────────────────────────────────────────
 // Мок-шаблоны дверей и пропов для тестов
 // ─────────────────────────────────────────────
@@ -229,6 +276,18 @@ export function mockOilBarrelTemplate(): PropTemplate {
   };
 }
 
+/** Минимальный шаблон алтаря (точка интереса с одним зарядом лечения). */
+export function mockAltarTemplate(): PoiTemplate {
+  return {
+    id: 'altar',
+    interactionKind: 'poi',
+    ruleIds: ['altar_heals_player'],
+    charges: 1,
+    renderScale: 1,
+    tags: [],
+  };
+}
+
 /**
  * Создаёт минимальный LoadedContent с мок-шаблонами горючих объектов.
  * Используется в тестах, где правила опираются на теги шаблонов дверей/пропов.
@@ -246,6 +305,8 @@ export function createObjectContent(overrides: Partial<LoadedContent> = {}): Loa
     stairs: new Map(),
     doors: new Map([['wooden_door', mockWoodenDoorTemplate()]]),
     props: new Map([['oil_barel', mockOilBarrelTemplate()]]),
+    pois: new Map([['altar', mockAltarTemplate()]]),
+    terrains: createTestTerrains(),
     ...overrides,
   };
 }

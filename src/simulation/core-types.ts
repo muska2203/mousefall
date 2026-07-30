@@ -31,9 +31,12 @@ export type GameplayTag = string;
 // Карта / Мир
 // ─────────────────────────────────────────────
 
-export type TileType =
-  | 'floor'
-  | 'wall';
+/**
+ * Идентификатор террейна клетки (ключ шаблона TerrainTemplate из контентного реестра).
+ * Имя типа сохранено для минимизации диффа; семантика — строковый id террейна
+ * (например, 'floor', 'wall', 'sand').
+ */
+export type TileType = string;
 
 export type Room = {
   /** Левый верхний угол */
@@ -130,8 +133,11 @@ export type StatusEffect = {
 // Тайловые эффекты
 // ─────────────────────────────────────────────
 
-/** Слой тайлового эффекта. На первом этапе все эффекты относятся к слою cover. */
-export type TileEffectLayer = 'foundation' | 'cover' | 'aboveGround';
+/**
+ * Слой тайлового эффекта. На клетке может быть максимум один эффект каждого слоя:
+ * новый эффект слоя заменяет старый. Слой foundation занят террейном (см. GameMap.tiles).
+ */
+export type TileEffectLayer = 'cover' | 'aboveGround';
 
 /** Экземпляр статуса тайлового эффекта (например, горение на луже масла). */
 export type TileEffectStatusInstance = {
@@ -155,8 +161,12 @@ export type TileEffectInstance = {
   renderOrder: number;
 };
 
-/** Набор тайловых эффектов на одной клетке: ключ — тип эффекта. */
-export type TileEffects = Record<string, TileEffectInstance>;
+/**
+ * Набор тайловых эффектов на одной клетке: ключ — слой эффекта.
+ * На клетке максимум один эффект каждого слоя; производное представление
+ * «по типу эффекта» возвращает getTileEffectsAt.
+ */
+export type TileEffects = Partial<Record<TileEffectLayer, TileEffectInstance>>;
 
 export type RuntimeAbility = {
   templateId: string;
@@ -234,6 +244,7 @@ export type GameAction =
   | DebugAddItemAction
   | DebugSpawnEntityAction
   | DebugSpawnTileEffectAction
+  | DebugSetTerrainAction
 ;
 
 export type MoveAction = {
@@ -299,7 +310,7 @@ export type DebugAddItemAction = {
 export type DebugSpawnEntityAction = {
   type: 'DEBUG_SPAWN_ENTITY';
   entityId: EntityId;
-  spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop';
+  spawnType: 'item' | 'enemy' | 'door' | 'stairs' | 'prop' | 'poi';
   templateId: string;
   position: Position;
 };
@@ -308,6 +319,13 @@ export type DebugSpawnTileEffectAction = {
   type: 'DEBUG_SPAWN_TILE_EFFECT';
   entityId: EntityId;
   effectType: string;
+  position: Position;
+};
+
+export type DebugSetTerrainAction = {
+  type: 'DEBUG_SET_TERRAIN';
+  entityId: EntityId;
+  terrainId: TileType;
   position: Position;
 };
 
@@ -375,7 +393,8 @@ export type Intent =
   | TickTileEffectsIntent
   | ApplyTileEffectStatusIntent
   | RemoveTileEffectStatusIntent
-  | TileExplosionIntent;
+  | TileExplosionIntent
+  | ActivatePoiIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -384,7 +403,7 @@ export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId:
 export type DamageTileIntent = { type: 'DAMAGE_TILE'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; sourceEntityId: EntityId | null; status: StatusEffect; tags?: GameplayTag[] };
-export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][] };
+export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][]; tileEffects?: TileEffects[][] };
 export type SetEntitiesIntent = { type: 'SET_ENTITIES'; entities: Map<EntityId, unknown> };
 export type TeleportEntityIntent = { type: 'TELEPORT_ENTITY'; entityId: EntityId; x: number; y: number };
 export type UpdateFogIntent = { type: 'UPDATE_FOG' };
@@ -452,6 +471,7 @@ export type TileExplosionIntent = {
   radius: number;
   tags: GameplayTag[];
 };
+export type ActivatePoiIntent = { type: 'ACTIVATE_POI'; entityId: EntityId; targetPosition: Position };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -514,7 +534,8 @@ export type GameEvent =
   | TileEffectStatusRemovedEvent
   | TileEffectStatusTickedEvent
   | TileEffectTickedEvent
-  | TileExplodedEvent;
+  | TileExplodedEvent
+  | PoiUsedEvent;
 
 export type ActionAppliedEvent = GameEventBase & { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -575,6 +596,8 @@ export type FloorTransitionPlan = {
   turn: { activeSide: TurnSide; round: number };
   /** Сетка исследованных клеток целевого этажа. */
   explored: boolean[][];
+  /** Тайловые эффекты целевого этажа (восстановленные из снапшота или пустая сетка). */
+  tileEffects: TileEffects[][];
   /** События FOV, полученные после пересчёта на целевом состоянии. */
   fovEvents: GameEvent[];
 };
@@ -770,4 +793,18 @@ export type TileExplodedEvent = GameEventBase & {
   damage: number;
   radius: number;
   tags: GameplayTag[];
+};
+
+/** Событие активации точки интереса (алтарь и т.п.). */
+export type PoiUsedEvent = GameEventBase & {
+  type: 'POI_USED';
+  /** Сущность, активировавшая точку интереса. */
+  entityId: EntityId;
+  /** ID сущности точки интереса. */
+  poiId: EntityId;
+  /** ID шаблона точки интереса. */
+  poiType: string;
+  position: Position;
+  /** Заряды, оставшиеся после этой активации. */
+  remainingCharges: number;
 };

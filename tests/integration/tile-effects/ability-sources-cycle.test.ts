@@ -35,7 +35,7 @@ function createTestPlayer() {
 }
 
 function getTileEffectAt(state: GameState, x: number, y: number, effectType: string) {
-  return state.tileEffects[y]?.[x]?.[effectType];
+  return Object.values(state.tileEffects[y]?.[x] ?? {}).find(e => e.type === effectType);
 }
 
 describe('Цикл расходников water_ball и oil_bottle', () => {

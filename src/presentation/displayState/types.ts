@@ -5,7 +5,7 @@
  * Она строится из GameState и обновляется патчами, порождёнными событиями Simulation.
  */
 
-import type {EntityType, FactionId, GameEvent, GamePhase, Position, StatusEffect, TileType, TurnSide,} from '@simulation/types';
+import type {EntityType, FactionId, GameEvent, GamePhase, Position, StatusEffect, TurnSide,} from '@simulation/types';
 import type {StatusEffectType} from '@simulation/core-types.ts';
 import type {AnimationNode} from '@presentation/types';
 
@@ -39,7 +39,8 @@ export type TileEffectOverlay = {
 
 /** Один тайл, отображаемый на поле. */
 export type DisplayTile = {
-  type: TileType;
+  /** Id террейна (совпадает с GameMap.tiles[y][x]). */
+  type: string;
   /** Оверлеи тайловых эффектов, отсортированные для отрисовки. */
   tileEffects?: TileEffectOverlay[];
 };

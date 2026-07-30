@@ -412,12 +412,21 @@ export type PropPopoverViewModel = {
   propKind: string;
 };
 
+export type PoiPopoverViewModel = {
+  name: string;
+  sprite: string;
+  flavorText: string;
+  /** Оставшиеся заряды использования точки интереса. */
+  charges: number;
+};
+
 export type FieldObjectPopoverViewModel =
   | { kind: 'enemy'; data: EnemyPopoverViewModel }
   | { kind: 'item'; data: ItemDetailViewModel }
   | { kind: 'stairs'; data: StairsPopoverViewModel }
   | { kind: 'door'; data: DoorPopoverViewModel }
-  | { kind: 'prop'; data: PropPopoverViewModel };
+  | { kind: 'prop'; data: PropPopoverViewModel }
+  | { kind: 'poi'; data: PoiPopoverViewModel };
 
 /** Одна доступная опция взаимодействия на кнопку F. */
 export type InteractionOption = {

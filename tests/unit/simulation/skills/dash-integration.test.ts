@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer } from '../../../fixtures/gameState';
+import { makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
 import { createTestSimulation, advanceToPlayerTurn } from '../../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
@@ -22,6 +22,7 @@ describe('dash integration', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),

@@ -28,7 +28,7 @@ function makeOilInstance(burning: boolean): TileEffectInstance {
 describe('oilIgnitionNearBurningReaction', () => {
   it('поджигает свежее масло, появившееся в соседней клетке от горящего масла', () => {
     const state = makeGameState();
-    state.tileEffects[4]![4] = { oil: makeOilInstance(true) };
+    state.tileEffects[4]![4] = { cover: makeOilInstance(true) };
 
     const event: GameEvent = {
       type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
@@ -53,7 +53,7 @@ describe('oilIgnitionNearBurningReaction', () => {
 
   it('не поджигает масло, если рядом нет горящего масла', () => {
     const state = makeGameState();
-    state.tileEffects[4]![4] = { oil: makeOilInstance(false) };
+    state.tileEffects[4]![4] = { cover: makeOilInstance(false) };
 
     const event: GameEvent = {
       type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
@@ -70,7 +70,7 @@ describe('oilIgnitionNearBurningReaction', () => {
 
   it('не срабатывает при обновлении длительности масла (isNew === false)', () => {
     const state = makeGameState();
-    state.tileEffects[4]![4] = { oil: makeOilInstance(true) };
+    state.tileEffects[4]![4] = { cover: makeOilInstance(true) };
 
     const event: GameEvent = {
       type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
@@ -87,7 +87,7 @@ describe('oilIgnitionNearBurningReaction', () => {
 
   it('не срабатывает для тайловых эффектов, отличных от масла', () => {
     const state = makeGameState();
-    state.tileEffects[4]![4] = { oil: makeOilInstance(true) };
+    state.tileEffects[4]![4] = { cover: makeOilInstance(true) };
 
     const event: GameEvent = {
       type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,

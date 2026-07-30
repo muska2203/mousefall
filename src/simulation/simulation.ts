@@ -29,13 +29,18 @@ import {
     createBoolGrid,
     createInitialPlayer,
     createNewGameState,
+    createTileEffectsGrid,
+    buildEntityPositionIndex,
     ensureDefeatedBossIds,
     findAllAliveActorsOfFaction,
     findAllEntitiesAt,
     findFirstAttackableEntityAt,
     findInteractableEntitiesAround,
     findStairsAt,
-    isActor
+    isActor,
+    isTerrainWalkable,
+    terrainHasTag,
+    type EntityPositionIndex
 } from "@simulation/state.ts";
 import {isStunned} from "@simulation/systems/stun-helper.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
@@ -49,6 +54,7 @@ import {interactAction} from "@simulation/systems/actions/interact-action.ts";
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {createDebugSpawnTileEffectActionHandler} from "@simulation/systems/actions/debug-spawn-tile-effect-action.ts";
+import {createDebugSetTerrainActionHandler} from "@simulation/systems/actions/debug-set-terrain-action.ts";
 import {getStrategy} from "@simulation/ai/strategy-registry.ts";
 import {isEnemyEntity} from "@simulation/ai/ai-state.ts";
 import {cancelPreparedAbility} from "@simulation/ai/ai-helpers.ts";
@@ -80,7 +86,8 @@ import {
 import {ensureRuntimeRng} from "@simulation/content-rules/runtime-rng.ts";
 import {findPath, posEqual} from "@utils/math.ts";
 
-export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt};
+export {findFirstAttackableEntityAt, findAllEntitiesAt, findStairsAt, buildEntityPositionIndex};
+export type {EntityPositionIndex};
 
 /** Состояние конечного автомата хода. */
 type TurnState =
@@ -770,6 +777,8 @@ export class GameSimulation implements Simulation {
         // так как tree-стратегия может расширять карту за пределы mapParams.width/height.
         this.state.visible = createBoolGrid(generatedMap.map.width, generatedMap.map.height, false);
         this.state.explored = createBoolGrid(generatedMap.map.width, generatedMap.map.height, false);
+        // Новая карта — тайловые эффекты сбрасываются в пустую сетку её размера.
+        this.state.tileEffects = createTileEffectsGrid(generatedMap.map.width, generatedMap.map.height);
 
         this.state.player.x =
             generatedMap.playerStart.x;
@@ -1057,7 +1066,7 @@ export class GameSimulation implements Simulation {
             (entityId === this.state.player.id ? this.state.player : undefined);
         if (!entity) return [];
         return getPositionsInRadius(this.state, hoveredTarget, radius)
-            .filter(pos => this.state.map.tiles[pos.y]?.[pos.x] === 'floor');
+            .filter(pos => terrainHasTag(this.state.map.tiles[pos.y]?.[pos.x], 'ground'));
     }
 
     private getSpawnTileEffectType(templateId: string): string | null {
@@ -1098,42 +1107,44 @@ export class GameSimulation implements Simulation {
 
     /** Проверяет, может ли игрок переместиться на указанный тайл с учётом видимости.
      *  Невидимые объекты не блокируют путь. */
-    isTileWalkableForPlayer(pos: Position): boolean {
+    isTileWalkableForPlayer(pos: Position, index?: EntityPositionIndex): boolean {
         const state = this.state;
         if (pos.x < 0 || pos.x >= state.map.width || pos.y < 0 || pos.y >= state.map.height) return false;
-        const tile = state.map.tiles[pos.y]?.[pos.x];
-        if (tile === 'wall') return false;
+        if (!isTerrainWalkable(state.map.tiles[pos.y]?.[pos.x])) return false;
         if (!state.visible[pos.y]?.[pos.x]) return true;
-        return !findAllEntitiesAt(state, pos.x, pos.y).some((entity) => entity.blocksMovement);
+        return !findAllEntitiesAt(state, pos.x, pos.y, index).some((entity) => entity.blocksMovement);
     }
 
     /** Ищет кратчайший путь для игрока от start до target. */
     findPathForPlayer(start: Position, target: Position): Position[] | null {
         const MAX_PATH_STEPS = 500;
+        // Позиционный индекс строится один раз на поиск пути:
+        // проверка проходимости вызывается для каждой клетки A*.
+        const index = buildEntityPositionIndex(this.state.entities);
         if (posEqual(start, target)) {
-            return this.isTileWalkableForPlayer(target) ? [] : null;
+            return this.isTileWalkableForPlayer(target, index) ? [] : null;
         }
         const path = findPath(
             start,
             target,
-            (pos) => this.isTileWalkableForPlayer(pos),
+            (pos) => this.isTileWalkableForPlayer(pos, index),
             MAX_PATH_STEPS,
             true,
         );
         if (!path) return null;
-        if (!this.isTileWalkableForPlayer(target)) return null;
+        if (!this.isTileWalkableForPlayer(target, index)) return null;
         return path;
     }
 
     /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
-    findEntityAt(pos: Position, filter?: (entity: Entity) => boolean): Entity | null {
-        const entities = findAllEntitiesAt(this.state, pos.x, pos.y);
+    findEntityAt(pos: Position, filter?: (entity: Entity) => boolean, index?: EntityPositionIndex): Entity | null {
+        const entities = findAllEntitiesAt(this.state, pos.x, pos.y, index);
         return filter ? entities.find(filter) ?? null : entities[0] ?? null;
     }
 
     /** Возвращает все сущности на тайле, удовлетворяющие фильтру. */
-    findEntitiesAt(pos: Position, filter?: (entity: Entity) => boolean): Entity[] {
-        const entities = findAllEntitiesAt(this.state, pos.x, pos.y);
+    findEntitiesAt(pos: Position, filter?: (entity: Entity) => boolean, index?: EntityPositionIndex): Entity[] {
+        const entities = findAllEntitiesAt(this.state, pos.x, pos.y, index);
         return filter ? entities.filter(filter) : entities;
     }
 
@@ -1188,6 +1199,7 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
     registry.register('DEBUG_ADD_ITEM', createDebugAddItemActionHandler(debugContext));
     registry.register('DEBUG_SPAWN_ENTITY', createDebugSpawnEntityActionHandler(debugContext));
     registry.register('DEBUG_SPAWN_TILE_EFFECT', createDebugSpawnTileEffectActionHandler(debugContext));
+    registry.register('DEBUG_SET_TERRAIN', createDebugSetTerrainActionHandler(debugContext));
     return registry;
 }
 

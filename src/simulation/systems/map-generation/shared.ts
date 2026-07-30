@@ -13,6 +13,7 @@ import type {
     EnemyEntity,
     FloorItemContainerEntity,
     GameState,
+    PointOfInterestEntity,
     PropEntity,
     RNGState,
     Room,
@@ -22,14 +23,24 @@ import type {
 } from '@simulation/types';
 import type {MapParams} from '@content/schemas';
 import {rngChance, rngInt} from '@utils/rng';
-import {nextEntityId} from '@simulation/state';
+import {buildEntityPositionIndex, canPlaceObjectAt, EntityPositionIndex, nextEntityId} from '@simulation/state';
 import {createDefaultAIState} from '@simulation/ai/ai-state';
-import {getDoor, getEntity, getItem, getProp} from '@content/registry';
+import {getDoor, getEntity, getItem, getPoi, getProp} from '@content/registry';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory';
 import {createInventoryItem} from '@simulation/systems/inventory-factory';
 import {addModifier} from '@simulation/systems/stats/modifier-engine';
 import {recalculateActorStats} from '@simulation/systems/stats/recalculate';
 import {rebuildActiveRules} from '@simulation/systems/rules/active-rule-lifecycle';
+
+// ─────────────────────────────────────────────
+// Террейны по умолчанию
+// ─────────────────────────────────────────────
+
+/** Id террейна непроходимой стены (базовая геометрия карты до вырезания комнат). */
+export const DEFAULT_WALL_TERRAIN: TileType = 'wall';
+
+/** Id террейна обычного пола (вырезанные комнаты и коридоры). */
+export const DEFAULT_FLOOR_TERRAIN: TileType = 'floor';
 
 // ─────────────────────────────────────────────
 // Вырезание тайлов
@@ -38,7 +49,7 @@ import {rebuildActiveRules} from '@simulation/systems/rules/active-rule-lifecycl
 export function carveRoom(tiles: TileType[][], room: Room): void {
   for (let y = room.y; y < room.y + room.height; y++) {
     for (let x = room.x; x < room.x + room.width; x++) {
-      tiles[y]![x] = 'floor';
+      tiles[y]![x] = DEFAULT_FLOOR_TERRAIN;
     }
   }
 }
@@ -46,14 +57,14 @@ export function carveRoom(tiles: TileType[][], room: Room): void {
 export function carveHCorridor(tiles: TileType[][], x1: number, x2: number, y: number): void {
   const [minX, maxX] = x1 < x2 ? [x1, x2] : [x2, x1];
   for (let x = minX; x <= maxX; x++) {
-    tiles[y]![x] = 'floor';
+    tiles[y]![x] = DEFAULT_FLOOR_TERRAIN;
   }
 }
 
 export function carveVCorridor(tiles: TileType[][], y1: number, y2: number, x: number): void {
   const [minY, maxY] = y1 < y2 ? [y1, y2] : [y2, y1];
   for (let y = minY; y <= maxY; y++) {
-    tiles[y]![x] = 'floor';
+    tiles[y]![x] = DEFAULT_FLOOR_TERRAIN;
   }
 }
 
@@ -89,6 +100,11 @@ export function spawnEnemiesAndItems(
   const items: FloorItemContainerEntity[] = [];
   // Отслеживаем занятые тайлы, чтобы несколько врагов не спавнились в одной клетке.
   const occupied = new Set<string>();
+  // Индекс уже размещённых сущностей — для проверки слотов размещения объектов.
+  let placedIndex: EntityPositionIndex = new Map();
+  const rebuildPlacedIndex = () => {
+    placedIndex = buildEntityPositionIndex(new Map([...enemies, ...items].map(e => [e.id, e])));
+  };
 
   for (let i = 1; i < rooms.length; i++) {
     const room = rooms[i]!;
@@ -110,7 +126,12 @@ export function spawnEnemiesAndItems(
     if (rngChance(rng, params.itemDensity * 100)) {
       const templateId = params.itemPool[rngInt(rng, 0, params.itemPool.length - 1)] ?? 'health_potion';
       const pos = randomPosInRoom(rng, room);
-      items.push(createFloorItem(state, templateId, pos.x, pos.y));
+      rebuildPlacedIndex();
+      // Слот loot: предмет не ставится на клетку с несовместимым объектом
+      // (второй лут или solid). Акторы размещению лута не мешают.
+      if (canPlaceObjectAt(state, 'loot', pos, placedIndex)) {
+        items.push(createFloorItem(state, templateId, pos.x, pos.y));
+      }
     }
   }
 
@@ -303,5 +324,20 @@ export function createProp(state: GameState, templateId: string, x: number, y: n
     armor: template.armor,
     isAlive: true,
     statusEffects: [],
+  };
+}
+
+export function createPoi(state: GameState, templateId: string, x: number, y: number): PointOfInterestEntity {
+  const template = getPoi(templateId);
+  return {
+    id: nextEntityId(state, 'poi'),
+    type: 'poi',
+    x,
+    y,
+    displayName: templateId,
+    templateId,
+    blocksMovement: true,
+    interactionKind: 'poi',
+    charges: template.charges,
   };
 }

@@ -31,6 +31,18 @@
 | Добавить/изменить тип урона | `src/simulation/systems/damage/damage-handlers.ts` + `src/simulation/systems/tags/weapon-tags.ts` + `src/simulation/systems/stats/effective-stats.ts` + `src/content/schemas.ts` |
 | Добавить исполнитель способности | `src/simulation/skills/` |
 | Добавить обработчик входящего урона | `src/simulation/systems/world-reactions/` (проверяй теги через `hasTag`) |
+| Добавить/изменить террейн | `docs/recipes/add-terrain.md` → `public/content/terrains/`; хелперы `state.ts` |
+
+---
+
+## Террейны (основа пола клетки)
+
+- `GameMap.tiles[y][x]` хранит строковый id террейна (`TileType = string`, `core-types.ts`). Стена — тоже террейн (`walkable: false`).
+- Дефолтные id для генерации: `DEFAULT_WALL_TERRAIN` / `DEFAULT_FLOOR_TERRAIN` (`systems/map-generation/shared.ts`).
+- Проходимость — только через `isTerrainWalkable(id)` (`state.ts`): fail-safe, неизвестный id = непроходим. Не сравнивай тайлы с литералами `'wall'`/`'floor'`.
+- «Можно ставить эффекты/спавнить» — отдельный критерий: `terrainHasTag(id, 'ground')` (`state.ts`). Не путать с проходимостью.
+- Обзор: `blocksLOS` читает `blocksLOS` шаблона террейна; стоимость MOVE: `moveCost` террейна целевой клетки в `DefaultActionPointCostResolver`.
+- Известное ограничение итерации: автопуть и AI-pathfinding (`findPath`, `utils/math.ts`) равностоимостные — `moveCost` влияет только на списание AP за одиночный шаг, а не на выбор маршрута.
 
 ---
 
@@ -48,7 +60,14 @@
 - query-методы способностей, pathfinding'а и взаимодействий
 
 Также из `@simulation/simulation` реэкспортируются read-only хелперы запросов к состоянию:
-`findFirstAttackableEntityAt`, `findAllEntitiesAt`, `findStairsAt`.
+`findFirstAttackableEntityAt`, `findAllEntitiesAt`, `findStairsAt`, `buildEntityPositionIndex`.
+
+---
+
+## Позиционный индекс сущностей
+
+- Сущности хранятся в `GameState.entities` (реестр по id); позиционного индекса в состоянии **нет** — запросы «что на клетке» идут через хелперы `state.ts` (`findAllEntitiesAt`, `findDoorAt`, `isBlocked`, `blocksLOS` и др.).
+- В горячих циклах (поклеточные проверки в FOV, A*-pathfinding) строй локальный индекс один раз через `buildEntityPositionIndex(state.entities)` и передавай его опциональным параметром `index` в read-хелперы — это O(1) на клетку вместо O(N) скана. Индекс не хранится в `GameState` и не переживает пересчёт.
 
 ---
 

@@ -4,6 +4,7 @@ export const ruFieldObjectPopover = {
   damageLabel: 'Урон: ',
   hpLabel: 'HP: ',
   armorLabel: 'Броня: ',
+  chargesLabel: 'Заряды: ',
   skillsTitle: 'Скиллы',
   cooldownSuffix: ' ходов',
   cooldownReady: 'Готов',

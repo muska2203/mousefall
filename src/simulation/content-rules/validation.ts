@@ -2,7 +2,7 @@
  * Валидация ссылок на контентные правила и семантика декларативных правил.
  *
  * Проверяет, что все ruleIds, указанные в шаблонах предметов, способностей,
- * статусов, тайловых эффектов и статусов тайловых эффектов, существуют в реестре правил,
+ * статусов, тайловых эффектов, статусов тайловых эффектов, террейнов и точек интереса, существуют в реестре правил,
  * что внутри одного шаблона нет дублирующихся ruleIds, а также что сами правила
  * ссылаются на реально существующий контент (статусы, формулы урона, способности,
  * тайловые эффекты и их статусы) и содержат корректные теги.
@@ -74,6 +74,14 @@ export function validateContentRuleReferences(content: LoadedContent): void {
   }
 
   for (const [id, template] of content.tileEffectStatuses) {
+    validateTemplateRuleIds(template.ruleIds, id);
+  }
+
+  for (const [id, template] of content.terrains ?? new Map()) {
+    validateTemplateRuleIds(template.ruleIds, id);
+  }
+
+  for (const [id, template] of content.pois ?? new Map()) {
     validateTemplateRuleIds(template.ruleIds, id);
   }
 }

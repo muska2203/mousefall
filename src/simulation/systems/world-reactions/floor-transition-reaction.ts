@@ -26,7 +26,7 @@ export const floorTransitionReaction: WorldReaction = (
   );
 
   return [
-    { type: 'SET_MAP', map: plan.map, explored: plan.explored },
+    { type: 'SET_MAP', map: plan.map, explored: plan.explored, tileEffects: plan.tileEffects },
     { type: 'SET_ENTITIES', entities: plan.entities },
     {
       type: 'TELEPORT_ENTITY',

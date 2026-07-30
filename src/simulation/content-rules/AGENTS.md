@@ -54,6 +54,8 @@ src/simulation/content-rules/
    - Предмет: `public/content/items/...json`, поле `ruleIds`.
    - Статус: `public/content/statuses/...json`, поле `ruleIds`.
    - Способность: `public/content/abilities/...json`, поле `ruleIds`.
+   - Тайловый эффект: `public/content/tile-effects/...json`, поле `ruleIds` (слой `tileEffect`).
+   - Точка интереса: `public/content/entities/pois/...json`, поле `ruleIds` (слой `object`).
 
 4. **Проверить валидацию.**
    - `npm run validate:content` должен проходить.
@@ -135,7 +137,8 @@ src/simulation/content-rules/
 - **Mid-chain статусы:** статус, наложенный реакцией, не участвует в текущей цепочке.
 - **Конфликты статусов:** `mutuallyExclusiveWith` снимает, `blockedBy` блокирует.
 - **Пустые селекторы:** правило пропускается без ошибки.
-- **Порядок слоёв:** `source` → `target` → `world` → `radius`; внутри слоя — `priority`, затем `ruleId`.
+- **Порядок слоёв:** `source` → `target` → `world` → `radius`; внутри `world` — `global` → `tileEffect` → `tileEffectStatus` → `object` → `tileIntrinsic`, затем `priority`, затем `ruleId`.
+- **Слой `object`:** правила из `ruleIds` объектов (poi и т.п.) на клетке события; разовость — процедурно через `charges` в исполнителе интента, правило остаётся декларативным.
 - **Модификаторы на интенте:** только `DAMAGE` и `DAMAGE_TILE`; порядок `multiply` → `add`; условия пока не оцениваются.
 
 ---

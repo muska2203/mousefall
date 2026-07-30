@@ -444,6 +444,7 @@ public/content/entities/cat_small.json  # Content: lowercase
 - **Renderer (PixiJS):** полностью реализован (`ui/renderer/` — WorldRenderer, TileRenderer, EntityRenderer, FogRenderer и др.)
 - **World Reactions:** динамическая регистрация с приоритетами (`registerReaction`)
 - **Content Rules:** data-driven система реакций и модификаторов (`src/simulation/content-rules/`) — статические TS-объекты, на которые ссылаются JSON-шаблоны по `ruleIds`, с валидацией ссылок при загрузке.
+- **Terrain (основа пола клетки):** `GameMap.tiles[y][x]` хранит строковый id террейна (`TileType = string`); шаблоны (`walkable`, `moveCost`, `blocksLOS`, `tags`, `ruleIds`) — JSON-контент (`public/content/terrains/`, `TerrainTemplateSchema`). Проходимость — через `isTerrainWalkable` (неизвестный id = непроходим), спавн эффектов/объектов — через `terrainHasTag(id, 'ground')`, обзор — через `blocksLOS` шаблона, стоимость шага — `moveCost` террейна в `DefaultActionPointCostResolver`. **Известное ограничение итерации:** автопуть и AI-pathfinding (`findPath`, `utils/math.ts`) равностоимостные — `moveCost` учитывается только при списании AP за одиночный шаг, а не при выборе маршрута.
 
 ### Удалено / не реализовано
 - **Save/Load** — модули `src/simulation/serialization.ts` и `src/simulation/turn.ts` удалены; сохранения не реализованы.

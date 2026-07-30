@@ -4,7 +4,7 @@ import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {damageFormulas} from '@simulation/skills/damageFormula';
 import {getEntitiesInRadius} from '@simulation/skills/targeting';
-import {isBlocked, isCombatEntity, isDamageable} from '@simulation/state';
+import {isBlocked, isCombatEntity, isDamageable, isTerrainWalkable} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
@@ -39,7 +39,7 @@ function getJumpTargets(state: GameState, caster: Entity): Position[] {
       const y = caster.y + dy;
 
       if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) continue;
-      if (state.map.tiles[y]?.[x] === 'wall') continue;
+      if (!isTerrainWalkable(state.map.tiles[y]?.[x])) continue;
       if (isBlocked(state, x, y)) continue;
 
       positions.push({ x, y });
@@ -70,7 +70,7 @@ function isValidJumpTarget(state: GameState, caster: Entity, target: Position): 
     return false;
   }
 
-  if (state.map.tiles[target.y]?.[target.x] === 'wall') return false;
+  if (!isTerrainWalkable(state.map.tiles[target.y]?.[target.x])) return false;
   if (isBlocked(state, target.x, target.y)) return false;
 
   const dx = target.x - caster.x;

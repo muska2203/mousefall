@@ -90,10 +90,11 @@ export type Entity =
     | FloorItemContainerEntity
     | StairsEntity
     | DoorEntity
-    | PropEntity;
+    | PropEntity
+    | PointOfInterestEntity;
 
 
-export type EntityType = 'player' | 'enemy' | 'floor_item_container' | 'stairs' | 'door' | 'prop';
+export type EntityType = 'player' | 'enemy' | 'floor_item_container' | 'stairs' | 'door' | 'prop' | 'poi';
 
 export interface BaseEntity {
   id: EntityId;
@@ -248,7 +249,8 @@ export type EntityInteractionKind =
   | 'stairs'
   | 'item'
   | 'lever'
-  | 'prop';
+  | 'prop'
+  | 'poi';
 
 /** Идентификатор конкретного взаимодействия, разрешённого `resolveInteraction`. */
 export type InteractionId =
@@ -256,7 +258,8 @@ export type InteractionId =
   | 'close_door'
   | 'pickup'
   | 'descend'
-  | 'ascend';
+  | 'ascend'
+  | 'use_poi';
 
 /** Описание разрешённого взаимодействия. */
 export type ResolvedInteraction = {
@@ -292,6 +295,21 @@ export interface PropEntity extends BaseEntity, Attackable, TemplateIdHolder, St
   interactionKind: 'prop';
   /** Вид пропа: barrel, crate и т.д. */
   propKind: string;
+}
+
+/** Точка интереса — непроходимый неразрушаемый интерактивный объект.
+ *
+ *  Намеренно НЕ реализует `Attackable`: неразрушаемость выражена на уровне
+ *  типов (атаковать точку интереса нельзя), а не через «бесконечное HP».
+ *  Эффекты взаимодействия описываются декларативно через `ruleIds` шаблона;
+ *  разовость обеспечивается процедурно — исполнитель ACTIVATE_POI тратит `charges`.
+ */
+export interface PointOfInterestEntity extends BaseEntity, TemplateIdHolder {
+  type: 'poi';
+  blocksMovement: true;
+  interactionKind: 'poi';
+  /** Оставшиеся заряды использования. При 0 взаимодействие недоступно. */
+  charges: number;
 }
 
 // ─────────────────────────────────────────────
@@ -555,17 +573,18 @@ export type Simulation = {
   ): number;
 
   /** Проверяет, может ли игрок переместиться на указанный тайл с учётом видимости.
-   *  Невидимые объекты не блокируют путь. */
-  isTileWalkableForPlayer(pos: Position): boolean;
+   *  Невидимые объекты не блокируют путь.
+   *  При передаче позиционного индекса проверка по сущностям — O(1). */
+  isTileWalkableForPlayer(pos: Position, index?: import('@simulation/state.ts').EntityPositionIndex): boolean;
 
   /** Ищет кратчайший путь для игрока от start до target. */
   findPathForPlayer(start: Position, target: Position): Position[] | null;
 
   /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
-  findEntityAt(pos: Position, filter?: EntityFilter): Entity | null;
+  findEntityAt(pos: Position, filter?: EntityFilter, index?: import('@simulation/state.ts').EntityPositionIndex): Entity | null;
 
   /** Возвращает все сущности на тайле, удовлетворяющие фильтру. */
-  findEntitiesAt(pos: Position, filter?: EntityFilter): Entity[];
+  findEntitiesAt(pos: Position, filter?: EntityFilter, index?: import('@simulation/state.ts').EntityPositionIndex): Entity[];
 
   /** Возвращает разрешённое взаимодействие для целевой сущности от лица актора. */
   resolveInteraction(entity: Entity, actor: Entity): ResolvedInteraction | null;
@@ -592,6 +611,8 @@ export type FloorSnapshot = {
   /** Сущности этажа без игрока. При десериализации восстанавливается в Map. */
   entities: Entity[];
   explored: boolean[][];
+  /** Тайловые эффекты этажа на момент ухода с него. */
+  tileEffects: import('@simulation/core-types.ts').TileEffects[][];
   /** Состояние RNG на момент сохранения этажа. */
   rngState: number;
 };

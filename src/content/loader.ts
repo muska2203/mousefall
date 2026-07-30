@@ -21,8 +21,10 @@ import {
     MapParamsSchema,
     PlayerTemplateSchema,
     PropTemplateSchema,
+    PoiTemplateSchema,
     StairsTemplateSchema,
     StatusTemplateSchema,
+    TerrainTemplateSchema,
     TileEffectTemplateSchema,
     TileEffectStatusTemplateSchema,
 } from './schemas';
@@ -52,6 +54,10 @@ const ManifestSchema = z.object({
   stairs: z.array(z.string()),
   doors: z.array(z.string()),
   props: z.array(z.string()),
+  // Опционально с дефолтом, чтобы старый манифест без террейнов не падал до перегенерации.
+  terrains: z.array(z.string()).default([]),
+  // Опционально с дефолтом, чтобы старый манифест без точек интереса не падал до перегенерации.
+  pois: z.array(z.string()).default([]),
 });
 
 type Manifest = z.infer<typeof ManifestSchema>;
@@ -82,7 +88,7 @@ export async function browserFetchJson(path: string): Promise<unknown> {
 export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
   const manifest = await loadManifest(fetchJson);
 
-  const [entities, players, items, abilities, statuses, tileEffects, tileEffectStatuses, maps, stairs, doors, props] = await Promise.all([
+  const [entities, players, items, abilities, statuses, tileEffects, tileEffectStatuses, maps, stairs, doors, props, terrains, pois] = await Promise.all([
     loadCategory(manifest.entities, EntityTemplateSchema, fetchJson),
     loadCategory(manifest.players, PlayerTemplateSchema, fetchJson),
     loadCategory(manifest.items, ItemTemplateSchema, fetchJson),
@@ -94,6 +100,8 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
     loadCategory(manifest.stairs, StairsTemplateSchema, fetchJson),
     loadCategory(manifest.doors, DoorTemplateSchema, fetchJson),
     loadCategory(manifest.props, PropTemplateSchema, fetchJson),
+    loadCategory(manifest.terrains, TerrainTemplateSchema, fetchJson),
+    loadCategory(manifest.pois, PoiTemplateSchema, fetchJson),
   ]);
 
   const content: LoadedContent = {
@@ -108,6 +116,8 @@ export async function loadAllContent(fetchJson: FetchJson): Promise<void> {
     stairs:    new Map(stairs.map(s => [s.id, s])),
     doors:     new Map(doors.map(d => [d.id, d])),
     props:     new Map(props.map(p => [p.id, p])),
+    terrains:  new Map(terrains.map(t => [t.id, t])),
+    pois:      new Map(pois.map(p => [p.id, p])),
   };
 
   initRegistry(content);

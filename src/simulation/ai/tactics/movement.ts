@@ -13,7 +13,7 @@
 
 import type {DoorEntity, EnemyEntity, GameState, Position} from '@simulation/types';
 import type {AttackAction, InteractAction} from '@simulation/core-types';
-import {findAllEntitiesAt, findDoorAt} from '@simulation/state';
+import {buildEntityPositionIndex, findAllEntitiesAt, findDoorAt, isTerrainWalkable, type EntityPositionIndex} from '@simulation/state';
 import {chebyshevDistance, findPath} from '@utils/math';
 import type {CloseCombatResult, MoveTowardResult} from './types';
 
@@ -55,19 +55,19 @@ export function attackTarget(actor: EnemyEntity, target: Position): AttackAction
  * Проверяет, может ли враг пройти клетку при поиске пути.
  * Закрытые двери считаются проходимыми — враг откроет их по пути.
  */
-function isTilePassableForEnemy(state: GameState, pos: Position): boolean {
+function isTilePassableForEnemy(state: GameState, pos: Position, index?: EntityPositionIndex): boolean {
   if (pos.x < 0 || pos.x >= state.map.width || pos.y < 0 || pos.y >= state.map.height) {
     return false;
   }
-  if (state.map.tiles[pos.y]?.[pos.x] === 'wall') {
+  if (!isTerrainWalkable(state.map.tiles[pos.y]?.[pos.x])) {
     return false;
   }
 
-  const blockers = findAllEntitiesAt(state, pos.x, pos.y).filter(e => e.blocksMovement);
+  const blockers = findAllEntitiesAt(state, pos.x, pos.y, index).filter(e => e.blocksMovement);
   if (blockers.length === 0) return true;
   if (blockers.length !== 1) return false;
 
-  const door = findDoorAt(state, pos.x, pos.y);
+  const door = findDoorAt(state, pos.x, pos.y, index);
   return door !== undefined && door.isAlive && !door.isOpen;
 }
 
@@ -107,10 +107,13 @@ export function moveToward(
   state: GameState,
   target: Position,
 ): MoveTowardResult {
+  // Позиционный индекс строится один раз на поиск пути:
+  // проверка проходимости вызывается для каждой клетки A*.
+  const index = buildEntityPositionIndex(state.entities);
   const path = findPath(
     { x: actor.x, y: actor.y },
     target,
-    (pos) => isTilePassableForEnemy(state, pos),
+    (pos) => isTilePassableForEnemy(state, pos, index),
     DEFAULT_PATHFINDING_LIMIT,
     DEFAULT_ALLOW_DIAGONAL,
   );

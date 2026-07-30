@@ -29,6 +29,7 @@ export {
   createStairs,
   createDoor,
   createProp,
+  createPoi,
 } from './map-generation/shared';
 
 /**

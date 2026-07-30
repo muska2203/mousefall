@@ -26,8 +26,10 @@ import type {
   MapParams,
   PlayerTemplate,
   PropTemplate,
+  PoiTemplate,
   StairsTemplate,
   StatusTemplate,
+  TerrainTemplate,
   TileEffectStatusTemplate,
   TileEffectTemplate,
 } from './schemas';
@@ -83,6 +85,16 @@ export type LocalizedTileEffectStatusTemplate = TileEffectStatusTemplate & {
 export type LocalizedStatusTemplate = StatusTemplate & {
   name: string;
   description?: string;
+};
+
+export type LocalizedTerrainTemplate = TerrainTemplate & {
+  name: string;
+  flavorText?: string;
+};
+
+export type LocalizedPoiTemplate = PoiTemplate & {
+  name: string;
+  flavorText?: string;
 };
 
 // ─────────────────────────────────────────────
@@ -611,6 +623,116 @@ export function getAllProps(): PropTemplate[] {
 export function getAllLocalizedProps(locale: Locale): LocalizedPropTemplate[] {
   return Array.from((getRegistry().props ?? new Map()).values()).map((template) => {
     const text = getContentText('props', template.id, locale);
+    return { ...template, name: text.name, flavorText: text.flavorText };
+  });
+}
+
+/**
+ * Получить шаблон террейна по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getTerrain(id: string): TerrainTemplate {
+  const template = (getRegistry().terrains ?? new Map()).get(id);
+  if (!template) throw new Error(`Terrain template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон террейна.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetTerrain(id: string): TerrainTemplate | undefined {
+  if (_registry === null) return undefined;
+  return (_registry.terrains ?? new Map()).get(id);
+}
+
+/**
+ * Получить локализованный шаблон террейна по ID.
+ */
+export function getLocalizedTerrain(id: string, locale: Locale): LocalizedTerrainTemplate {
+  const template = getTerrain(id);
+  const text = getContentText('terrain', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Попытаться получить локализованный шаблон террейна. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedTerrain(id: string, locale: Locale): LocalizedTerrainTemplate | undefined {
+  const template = tryGetTerrain(id);
+  if (!template) return undefined;
+  const text = getContentText('terrain', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Получить все шаблоны террейнов.
+ */
+export function getAllTerrains(): TerrainTemplate[] {
+  return Array.from((getRegistry().terrains ?? new Map()).values());
+}
+
+/**
+ * Получить все локализованные шаблоны террейнов.
+ */
+export function getAllLocalizedTerrains(locale: Locale): LocalizedTerrainTemplate[] {
+  return Array.from((getRegistry().terrains ?? new Map()).values()).map((template) => {
+    const text = getContentText('terrain', template.id, locale);
+    return { ...template, name: text.name, flavorText: text.flavorText };
+  });
+}
+
+/**
+ * Получить шаблон точки интереса по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getPoi(id: string): PoiTemplate {
+  const template = (getRegistry().pois ?? new Map()).get(id);
+  if (!template) throw new Error(`Poi template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон точки интереса.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetPoi(id: string): PoiTemplate | undefined {
+  if (_registry === null) return undefined;
+  return (_registry.pois ?? new Map()).get(id);
+}
+
+/**
+ * Получить локализованный шаблон точки интереса по ID.
+ */
+export function getLocalizedPoi(id: string, locale: Locale): LocalizedPoiTemplate {
+  const template = getPoi(id);
+  const text = getContentText('pois', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Попытаться получить локализованный шаблон точки интереса. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedPoi(id: string, locale: Locale): LocalizedPoiTemplate | undefined {
+  const template = tryGetPoi(id);
+  if (!template) return undefined;
+  const text = getContentText('pois', id, locale);
+  return { ...template, name: text.name, flavorText: text.flavorText };
+}
+
+/**
+ * Получить все шаблоны точек интереса.
+ */
+export function getAllPois(): PoiTemplate[] {
+  return Array.from((getRegistry().pois ?? new Map()).values());
+}
+
+/**
+ * Получить все локализованные шаблоны точек интереса.
+ */
+export function getAllLocalizedPois(locale: Locale): LocalizedPoiTemplate[] {
+  return Array.from((getRegistry().pois ?? new Map()).values()).map((template) => {
+    const text = getContentText('pois', template.id, locale);
     return { ...template, name: text.name, flavorText: text.flavorText };
   });
 }

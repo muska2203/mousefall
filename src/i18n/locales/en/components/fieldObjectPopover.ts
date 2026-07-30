@@ -4,6 +4,7 @@ export const enFieldObjectPopover = {
   damageLabel: 'Damage: ',
   hpLabel: 'HP: ',
   armorLabel: 'Armor: ',
+  chargesLabel: 'Charges: ',
   skillsTitle: 'Skills',
   cooldownSuffix: ' turns',
   cooldownReady: 'Ready',

@@ -25,12 +25,14 @@ const CATEGORY_MAP = {
   'entities/stairs': 'stairs',
   'entities/doors': 'doors',
   'entities/props': 'props',
+  'entities/pois': 'pois',
   items: 'items',
   abilities: 'abilities',
   statuses: 'statuses',
   'tile-effects': 'tileEffects',
   'tile-effect-statuses': 'tileEffectStatuses',
   maps: 'maps',
+  terrains: 'terrains',
 };
 
 function scanDir(dir, baseDir, result = []) {
@@ -62,6 +64,8 @@ function categorize(files) {
     stairs: [],
     doors: [],
     props: [],
+    pois: [],
+    terrains: [],
   };
 
   for (const file of files.sort()) {

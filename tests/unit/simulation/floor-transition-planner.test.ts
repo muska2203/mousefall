@@ -113,4 +113,28 @@ describe('computeFloorTransition', () => {
 
     expect(Array.isArray(plan.fovEvents)).toBe(true);
   });
+
+  it('сохраняет tileEffects в снапшот и восстанавливает при возвращении', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const state = makeGameState({ player, floor: 1 });
+    state.tileEffects[3]![3] = {
+      cover: { type: 'oil', duration: 7, layer: 'cover', statusEffects: [], renderOrder: 1 },
+    };
+
+    const planDown = computeFloorTransition(state, 'down');
+
+    // Снапшот первого этажа содержит эффекты.
+    expect(state.floorSnapshots[0]!.tileEffects[3]![3]!['cover']).toBeDefined();
+    // Новый этаж — пустая сетка под фактический размер новой карты.
+    expect(planDown.tileEffects.length).toBe(planDown.map.height);
+    expect(planDown.tileEffects[0]!.length).toBe(planDown.map.width);
+    expect(
+      planDown.tileEffects.every(row => row.every(cell => Object.keys(cell).length === 0)),
+    ).toBe(true);
+
+    // Возврат на первый этаж восстанавливает эффекты.
+    state.floor = planDown.to;
+    const planUp = computeFloorTransition(state, 'up');
+    expect(planUp.tileEffects[3]![3]!['cover']).toBeDefined();
+  });
 });

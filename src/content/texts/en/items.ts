@@ -69,6 +69,10 @@ export const items: Record<string, ContentText> = {
     name: 'Water Ball',
     description: 'Throws a water ball into a targeted area, creating a [water](tag:effect.water) tile effect. Extinguishes fire and washes away oil.',
   },
+  smoke_bomb: {
+    name: 'Smoke Bomb',
+    description: 'Throws a smoke bomb into a targeted area, creating a [smoke](tag:effect.smoke) tile effect that blocks line of sight.',
+  },
   cat_guardian_plate: {
     name: 'Cat Guardian Plate',
     description: 'A heavy plate forged from the scales of feline guardians.',

@@ -231,6 +231,7 @@ function refreshDisplayState(input: RenderInput): void {
 
 describe('UnitInfoRenderer', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry({
       entities: new Map(),
       players: new Map(),

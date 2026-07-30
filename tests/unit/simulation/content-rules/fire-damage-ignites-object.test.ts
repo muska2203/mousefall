@@ -55,6 +55,7 @@ function createContent(): LoadedContent {
 
 describe('fire_damage_ignites_flammable_object', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry(createContent());
   });
 

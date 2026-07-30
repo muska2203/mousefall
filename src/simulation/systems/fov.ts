@@ -10,7 +10,7 @@
  */
 
 import type {GameEvent, GameState, Position} from '../types';
-import {blocksLOS} from '../state';
+import {blocksLOS, buildEntityPositionIndex, type EntityPositionIndex} from '../state';
 import {PLAYER_SIGHT_RANGE} from '@utils/constants.ts';
 import {inBounds} from '@utils/math.ts';
 
@@ -27,8 +27,12 @@ export function computeFOV(
   const visible = new Set<string>();
   visible.add(`${originX},${originY}`);
 
+  // Позиционный индекс строится один раз на пересчёт: проверки blocksLOS
+  // выполняются для каждой клетки октантов, скан по entities здесь был бы O(N) на клетку.
+  const index = buildEntityPositionIndex(state.entities);
+
   for (let octant = 0; octant < 8; octant++) {
-    castOctant(state, originX, originY, radius, octant, visible);
+    castOctant(state, index, originX, originY, radius, octant, visible);
   }
 
   return Array.from(visible).map((key) => {
@@ -75,17 +79,19 @@ export function updateFOV(state: GameState): GameEvent[] {
 
 function castOctant(
   state: GameState,
+  index: EntityPositionIndex,
   originX: number,
   originY: number,
   radius: number,
   octant: number,
   visible: Set<string>,
 ): void {
-  castRow(state, originX, originY, radius, octant, 1, 1.0, 0.0, visible);
+  castRow(state, index, originX, originY, radius, octant, 1, 1.0, 0.0, visible);
 }
 
 function castRow(
   state: GameState,
+  index: EntityPositionIndex,
   originX: number,
   originY: number,
   radius: number,
@@ -119,7 +125,7 @@ function castRow(
       visible.add(`${x},${y}`);
     }
 
-    const isWall = blocksLOS(state, x, y);
+    const isWall = blocksLOS(state, x, y, index);
 
     if (blocked) {
       if (isWall) {
@@ -130,13 +136,13 @@ function castRow(
       }
     } else if (isWall) {
       blocked = true;
-      castRow(state, originX, originY, radius, octant, row + 1, startSlope, leftSlope, visible);
+      castRow(state, index, originX, originY, radius, octant, row + 1, startSlope, leftSlope, visible);
       newStartSlope = rightSlope;
     }
   }
 
   if (!blocked) {
-    castRow(state, originX, originY, radius, octant, row + 1, startSlope, endSlope, visible);
+    castRow(state, index, originX, originY, radius, octant, row + 1, startSlope, endSlope, visible);
   }
 }
 

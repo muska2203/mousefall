@@ -31,6 +31,7 @@ public/content/
   items/             # Оружие, броня, расходники
   abilities/         # Шаблоны способностей
   maps/              # Параметры генерации карт
+  terrains/          # Шаблоны террейнов (основа пола клетки)
 ```
 
 ---
@@ -40,6 +41,7 @@ public/content/
 | Задача | Куда идти |
 |--------|-----------|
 | Добавить новый шаблон сущности | `public/content/entities/...` + `manifest.json` |
+| Добавить новый террейн | `docs/recipes/add-terrain.md` → `public/content/terrains/`, `texts/{ru,en}/terrain.ts` |
 | Изменить схему валидации | `src/content/schemas.ts` |
 | Добавить поле в реестр | `src/content/registry.ts` + `loader.ts` |
 | Добавить/изменить текст врага/предмета/способности | `src/content/texts/{ru,en}.ts` |
@@ -57,6 +59,13 @@ public/content/
 > JSON-шаблоны содержат только механику (`tags`, `damageDistribution`, статы, пулы). Все `name` / `description` / `flavorText` живут в `src/content/texts/{ru,en}.ts` и мержатся через `getLocalizedItem()` / `getLocalizedEntity()`.
 >
 > Предпочтительный способ классифицировать урон и эффекты — иерархические теги (`damage.physical.slashing`, `damage.magical.fire`, `attack.melee` и т.д.).
+
+### Террейны: `public/content/terrains/`
+
+Террейн — структурная основа клетки (стена — тоже террейн с `walkable: false`).
+Шаблон (`TerrainTemplateSchema`): `walkable`, `moveCost` (≥ 1, default 1), `blocksLOS` (default false), `tags`, `ruleIds`.
+Тег `ground` означает «на клетку можно ставить тайловые эффекты и спавнить объекты» — это не то же самое, что `walkable`.
+Тексты террейнов — в `src/content/texts/{ru,en}/terrain.ts`. Рецепт: `docs/recipes/add-terrain.md`.
 
 ### Оружие: `damageDistribution`
 

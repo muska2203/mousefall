@@ -5,13 +5,14 @@ import { AutoPathController, type AutoPathQueries } from '../../../src/presentat
 import { findPathTowards } from '../../../src/presentation/pathfinding';
 import { GameSimulation } from '../../../src/simulation/simulation';
 import { drainAnimations } from '../../helpers/simulation';
-import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs } from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeFloorItemContainer, makeStairs, createTestTerrains } from '../../fixtures/gameState';
 import type { Entity, EnemyEntity, DoorEntity, Position } from '../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 
 function initEmptyRegistry() {
   resetRegistry();
   initRegistry({
+    terrains: createTestTerrains(),
     entities: new Map(),
     players: new Map(),
     items: new Map(),
@@ -919,6 +920,7 @@ describe('GameSession auto-path integration', () => {
   it('beginTargeting cancels auto-path', () => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),

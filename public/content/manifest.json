@@ -25,6 +25,7 @@
     "/content/items/armor/common_tin_plate.json",
     "/content/items/consumables/health_potion.json",
     "/content/items/consumables/oil_bottle.json",
+    "/content/items/consumables/smoke_bomb.json",
     "/content/items/consumables/water_ball.json",
     "/content/items/weapons/cat_claw_big.json",
     "/content/items/weapons/cat_claw_mid.json",
@@ -59,6 +60,7 @@
   ],
   "tileEffects": [
     "/content/tile-effects/oil.json",
+    "/content/tile-effects/smoke.json",
     "/content/tile-effects/water.json"
   ],
   "tileEffectStatuses": [
@@ -78,5 +80,13 @@
   ],
   "props": [
     "/content/entities/props/oil_barel.json"
+  ],
+  "pois": [
+    "/content/entities/pois/altar.json"
+  ],
+  "terrains": [
+    "/content/terrains/floor.json",
+    "/content/terrains/sand.json",
+    "/content/terrains/wall.json"
   ]
 }

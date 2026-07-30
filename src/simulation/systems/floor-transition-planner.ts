@@ -14,8 +14,8 @@
  */
 
 import type {Entity, EntityId, GameMap, GameState, Position, StairsEntity} from '@simulation/types';
-import type {FloorTransitionPlan, TurnSide} from '@simulation/core-types';
-import {createBoolGrid} from '@simulation/state';
+import type {FloorTransitionPlan, TileEffects, TurnSide} from '@simulation/core-types';
+import {createBoolGrid, createTileEffectsGrid} from '@simulation/state';
 import {createStairs, generateMap} from '@simulation/systems/mapgen';
 import {updateFOV} from '@simulation/systems/fov';
 import {MAX_FLOOR} from '@utils/constants';
@@ -36,6 +36,7 @@ export function computeFloorTransition(
     map: state.map,
     entities: currentFloorEntities,
     explored: state.explored,
+    tileEffects: state.tileEffects,
     rngState: state.rng.state,
   };
 
@@ -46,12 +47,14 @@ export function computeFloorTransition(
   let targetMap: GameMap;
   let targetEntities: Entity[];
   let targetExplored: boolean[][];
+  let targetTileEffects: TileEffects[][];
 
   const savedSnapshot = state.floorSnapshots[to - 1];
   if (savedSnapshot) {
     targetMap = savedSnapshot.map;
     targetEntities = savedSnapshot.entities.slice();
     targetExplored = savedSnapshot.explored;
+    targetTileEffects = savedSnapshot.tileEffects;
   } else {
     const generated = generateMap(state.mapParams, state, to, MAX_FLOOR);
 
@@ -70,6 +73,8 @@ export function computeFloorTransition(
     }
 
     targetExplored = createBoolGrid(targetMap.width, targetMap.height, false);
+    // Новый этаж — пустая сетка эффектов под фактический размер карты.
+    targetTileEffects = createTileEffectsGrid(targetMap.width, targetMap.height);
   }
 
   // 3. Целевая коллекция сущностей всегда содержит игрока.
@@ -124,6 +129,7 @@ export function computeFloorTransition(
     playerPosition,
     turn,
     explored: targetExplored,
+    tileEffects: targetTileEffects,
     fovEvents,
   };
 }

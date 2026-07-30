@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import type {ItemTemplate} from '../../../src/content/schemas';
 import {executeSpawnItemIntent} from '../../../src/simulation/systems/intents/spawn-item-intent-executor';
-import {makeGameState, makePlayer, makeStateWithPlayerAndEntity} from '../../fixtures/gameState';
+import { makeGameState, makePlayer, makeStateWithPlayerAndEntity, createTestTerrains } from '../../fixtures/gameState';
 import {ExecutionBuilder} from '../../../src/simulation/core-types';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
 
@@ -29,6 +29,7 @@ describe('executeSpawnItemIntent', () => {
     beforeEach(() => {
         resetRegistry();
         initRegistry({
+          terrains: createTestTerrains(),
             entities: new Map(),
             players: new Map(),
             items: new Map([['test_item', makeTestItemTemplate('test_item')]]),

@@ -25,6 +25,7 @@ function mockBurningStatus(): StatusTemplate {
 
 describe('burning status effect', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry({
       entities: new Map(),
       players: new Map(),

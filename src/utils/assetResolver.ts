@@ -52,6 +52,13 @@ export function resolvePropSprite(templateId: string): string {
 }
 
 /**
+ * Возвращает путь к спрайту точки интереса по templateId.
+ */
+export function resolvePoiSprite(templateId: string): string {
+  return `/assets/objects/pois/${templateId}.png`;
+}
+
+/**
  * Возвращает путь к frame-ассету для sticker-HP по пути основного спрайта.
  * Если путь не заканчивается на .png, возвращает null.
  */

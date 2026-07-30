@@ -27,7 +27,7 @@ function createTestPlayer() {
 }
 
 function getOilAt(state: GameState, x: number, y: number) {
-  return state.tileEffects[y]?.[x]?.['oil'];
+  return state.tileEffects[y]?.[x]?.['cover'];
 }
 
 describe('Правила поджога масла', () => {

@@ -15,6 +15,8 @@ export interface ContentTexts {
   stairs: Record<string, ContentText>;
   doors: Record<string, ContentText>;
   props: Record<string, ContentText>;
+  pois: Record<string, ContentText>;
+  terrain: Record<string, ContentText>;
   tags: Record<string, ContentText>;
   rules: Record<string, ContentText>;
 }

@@ -11,9 +11,8 @@ function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: s
     layer: 'cover',
     duration: 4,
     renderOrder: 1,
+    blocksLOS: false,
     ruleIds: [],
-    blockedByTileEffects: [],
-    mutuallyExclusiveWithTileEffects: [],
     canHaveStatus: [],
     durationDecreasesWhenHasStatus: [],
     ...overrides,
@@ -39,6 +38,7 @@ function createContentWithWater(): LoadedContent {
 
 describe('water_applies_wet', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry(createContentWithWater());
   });
 
@@ -52,7 +52,7 @@ describe('water_applies_wet', () => {
       player,
       entities: new Map([[player.id, player]]),
     });
-    state.tileEffects[5]![5]!.water = {
+    state.tileEffects[5]![5]!.cover = {
       type: 'water',
       duration: 3,
       layer: 'cover',
@@ -112,6 +112,7 @@ describe('water_applies_wet', () => {
 
 describe('water_applies_wet_on_spawn', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry(createContentWithWater());
   });
 
@@ -125,7 +126,7 @@ describe('water_applies_wet_on_spawn', () => {
       player,
       entities: new Map([[player.id, player]]),
     });
-    state.tileEffects[5]![5]!.water = {
+    state.tileEffects[5]![5]!.cover = {
       type: 'water',
       duration: 3,
       layer: 'cover',
@@ -166,7 +167,7 @@ describe('water_applies_wet_on_spawn', () => {
       player,
       entities: new Map([[player.id, player]]),
     });
-    state.tileEffects[5]![5]!.water = {
+    state.tileEffects[5]![5]!.cover = {
       type: 'water',
       duration: 3,
       layer: 'cover',

@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
-import {makeDoor, makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
+import { makeDoor, makeEnemy, makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
 import {dashSkill} from '../../../../src/simulation/skills/executors/dashSkill';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate} from '../../../../src/content/schemas';
@@ -32,6 +32,7 @@ describe('dashSkill', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),

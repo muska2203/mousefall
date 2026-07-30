@@ -9,6 +9,7 @@ import {aiPerceptionReaction} from "@simulation/systems/world-reactions/ai-perce
 import {tileExplosionDamageReaction} from "@simulation/systems/world-reactions/tile-explosion-damage-reaction.ts";
 import {burningOilExplosionReaction} from "@simulation/systems/world-reactions/burning-oil-explosion-reaction.ts";
 import {oilIgnitionNearBurningReaction} from "@simulation/systems/world-reactions/oil-ignition-near-burning-reaction.ts";
+import {tileEffectFovReaction} from "@simulation/systems/world-reactions/tile-effect-fov-reaction.ts";
 
 // ─────────────────────────────────────────────
 // Хранилище реакций
@@ -75,3 +76,5 @@ registerReaction('DOOR_CLOSED', aiPerceptionReaction, 0);
 registerReaction('TILE_EXPLODED', tileExplosionDamageReaction, 0);
 registerReaction('TILE_EFFECT_STATUS_APPLIED', burningOilExplosionReaction, 0);
 registerReaction('TILE_EFFECT_CHANGED', oilIgnitionNearBurningReaction, 0);
+registerReaction('TILE_EFFECT_CHANGED', tileEffectFovReaction, 0);
+registerReaction('TILE_EFFECT_REMOVED', tileEffectFovReaction, 0);

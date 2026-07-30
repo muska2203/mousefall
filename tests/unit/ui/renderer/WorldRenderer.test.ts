@@ -232,6 +232,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
 
 describe('WorldRenderer camera', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry({
       entities: new Map(),
       players: new Map(),

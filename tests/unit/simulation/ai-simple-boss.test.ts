@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
-import {makeEnemy, makeGameState, makePlayer} from '../../fixtures/gameState';
+import { makeEnemy, makeGameState, makePlayer, createTestTerrains } from '../../fixtures/gameState';
 import type {EnemyEntity, Entity, EntityId} from '../../../src/simulation/types';
 import type {ExecutionNode, GameEvent} from '../../../src/simulation/core-types';
 import {advanceToPlayerTurn, createTestSimulation} from '../../helpers/simulation';
@@ -47,6 +47,7 @@ describe('AI: simple-boss', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),

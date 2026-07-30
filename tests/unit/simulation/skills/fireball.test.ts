@@ -37,9 +37,8 @@ function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: s
     layer: 'cover',
     duration: 4,
     renderOrder: 1,
+    blocksLOS: false,
     ruleIds: ['fire_damage_ignites_oil', 'fire_tile_damage_ignites_oil'],
-    blockedByTileEffects: [],
-    mutuallyExclusiveWithTileEffects: [],
     canHaveStatus: ['burning'],
     durationDecreasesWhenHasStatus: [],
     ...overrides,
@@ -84,7 +83,7 @@ function createContentWithOilAndBurning(): LoadedContent {
 }
 
 function placeOil(state: ReturnType<typeof makeGameState>, x: number, y: number) {
-  state.tileEffects[y]![x]!.oil = {
+  state.tileEffects[y]![x]!.cover = {
     type: 'oil',
     duration: 5,
     layer: 'cover',
@@ -272,7 +271,7 @@ describe('fireballSkill', () => {
 
     executeIntent(state, centerIntent!, builder, builder.root);
 
-    const oil = state.tileEffects[6]![6]!.oil;
+    const oil = state.tileEffects[6]![6]!.cover;
     expect(oil).toBeDefined();
     const burning = oil!.statusEffects.find(s => s.type === 'burning');
     expect(burning).toBeDefined();
@@ -307,7 +306,7 @@ describe('fireballSkill', () => {
 
     executeIntent(state, centerIntent!, builder, builder.root);
 
-    const oil = state.tileEffects[6]![6]!.oil;
+    const oil = state.tileEffects[6]![6]!.cover;
     expect(oil).toBeDefined();
     const burning = oil!.statusEffects.find(s => s.type === 'burning');
     expect(burning).toBeDefined();

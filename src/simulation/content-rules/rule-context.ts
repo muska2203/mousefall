@@ -7,7 +7,7 @@
 
 import type {GameState} from '@simulation/types.ts';
 import {findAllEntitiesAt, findEntity, getTileEffectsAt} from '@simulation/state.ts';
-import type {EntityId, GameEvent, GameplayTag, Intent, Position,} from '@simulation/core-types.ts';
+import type {EntityId, GameEvent, GameplayTag, Intent, Position, TileEffectInstance,} from '@simulation/core-types.ts';
 
 /**
  * Контекст правила, передаваемый в условия и эффекты.
@@ -27,8 +27,8 @@ export type RuleContext = {
   abilityTargets: EntityId[] | null;
 
   eventPosition: Position | null;
-  /** Тайловые эффекты на позиции события (для условий inTileEffect / tileEffectHasStatus). */
-  tileEffectsAtEventPosition: import('@simulation/core-types.ts').TileEffects | null;
+  /** Тайловые эффекты на позиции события, ключ — тип эффекта (для условий inTileEffect / tileEffectHasStatus). */
+  tileEffectsAtEventPosition: Record<string, TileEffectInstance> | null;
   eventTags: GameplayTag[];
 
   eventDamage: number | null;
@@ -159,6 +159,12 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     case 'ENTITY_MOVED': {
       base.sourceEntityId = event.entityId;
       base.eventPosition = event.to;
+      break;
+    }
+
+    case 'POI_USED': {
+      base.sourceEntityId = event.entityId;
+      base.eventPosition = event.position;
       break;
     }
 

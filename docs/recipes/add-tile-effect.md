@@ -29,8 +29,6 @@
      "duration": 5,
      "renderOrder": 2,
      "ruleIds": ["oil_applies_oiled", "fire_damage_ignites_oil", "fire_tile_damage_ignites_oil"],
-     "blockedByTileEffects": [],
-     "mutuallyExclusiveWithTileEffects": ["water"],
      "canHaveStatus": ["burning"],
      "durationDecreasesWhenHasStatus": ["burning"]
    }
@@ -38,12 +36,10 @@
 
    Поля:
    - `id` — уникальный ID, совпадает с именем файла.
-   - `layer` — на текущем этапе всегда `"cover"`.
+   - `layer` — слой эффекта: `"cover"` (по умолчанию) или `"aboveGround"`. На клетке максимум один эффект каждого слоя: новый эффект слоя заменяет старый (поэтому вода и масло, оба `cover`, вытесняют друг друга без дополнительных настроек).
    - `duration` — базовая длительность материала в ходах.
-   - `renderOrder` — порядок отрисовки относительно других эффектов на клетке.
+   - `renderOrder` — порядок отрисовки относительно других эффектов на клетке (внутри своего слоя).
    - `ruleIds` — ID контентных правил, которые срабатывают на клетке с эффектом.
-   - `blockedByTileEffects` — эффекты, при наличии которых этот не накладывается.
-   - `mutuallyExclusiveWithTileEffects` — эффекты, которые заменяются этим при наложении.
    - `canHaveStatus` — статусы тайловых эффектов, которые можно наложить на этот материал.
    - `durationDecreasesWhenHasStatus` — материал тикает только при указанных статусах (например, масло исчезает, пока горит).
 
@@ -104,7 +100,7 @@
    - `tests/unit/simulation/content-rules/<правило>.test.ts` — отдельные правила.
    - `tests/integration/tile-effects/<сценарий>.test.ts` — сквозные сценарии.
 
-   Проверь edge cases: замена через `mutuallyExclusiveWithTileEffects`, блокировка через `blockedByTileEffects`, обновление длительности при повторном спавне, удаление вместе со статусами.
+   Проверь edge cases: замена эффекта того же слоя при спавне (вытеснение), сосуществование эффектов разных слоёв на одной клетке, обновление длительности при повторном спавне, удаление вместе со статусами.
 
 10. **Запусти проверки**:
     ```bash

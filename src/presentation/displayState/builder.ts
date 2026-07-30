@@ -8,6 +8,7 @@
  */
 
 import type {Entity, FactionId, GameEvent, GameState, Position} from '@simulation/types';
+import type {TileEffectLayer, TileType} from '@simulation/core-types.ts';
 import type {DisplayEntity, DisplayMap, DisplayPatch, DisplayState, DisplayTile, PresentationNode, TileEffectOverlay,} from './types';
 
 /** Преобразовать Entity из Simulation в DisplayEntity. */
@@ -45,26 +46,31 @@ function toDisplayEntity(entity: Entity): DisplayEntity {
   return display;
 }
 
-/** Преобразовать TileType в DisplayTile. */
-function toDisplayTile(type: 'floor' | 'wall'): DisplayTile {
+/** Преобразовать id террейна в DisplayTile. */
+function toDisplayTile(type: TileType): DisplayTile {
   return { type };
 }
 
 /** Собирает и сортирует оверлеи тайловых эффектов на клетке, включая их статусы. */
 function getTileEffectOverlays(tileEffects: import('@simulation/core-types.ts').TileEffects): TileEffectOverlay[] {
-  const overlays: TileEffectOverlay[] = [];
+  // Вес слоя: cover рисуется ниже aboveGround. Статусы наследуют слой своего эффекта.
+  const layerWeight = (layer: TileEffectLayer): number => (layer === 'aboveGround' ? 1 : 0);
+  const overlays: Array<TileEffectOverlay & { layerWeight: number }> = [];
   for (const effect of Object.values(tileEffects)) {
-    overlays.push({ type: effect.type, kind: 'effect', renderOrder: effect.renderOrder });
+    const weight = layerWeight(effect.layer);
+    overlays.push({ type: effect.type, kind: 'effect', renderOrder: effect.renderOrder, layerWeight: weight });
     for (const status of effect.statusEffects) {
-      overlays.push({ type: status.type, kind: 'status', renderOrder: status.renderOrder });
+      overlays.push({ type: status.type, kind: 'status', renderOrder: status.renderOrder, layerWeight: weight });
     }
   }
-  // Сначала по возрастанию renderOrder, при равенстве — по типу для стабильности.
+  // Сначала по слою (cover → aboveGround), внутри слоя по renderOrder,
+  // при равенстве — по типу для стабильности.
   overlays.sort((a, b) => {
+    if (a.layerWeight !== b.layerWeight) return a.layerWeight - b.layerWeight;
     if (a.renderOrder !== b.renderOrder) return a.renderOrder - b.renderOrder;
     return a.type.localeCompare(b.type);
   });
-  return overlays;
+  return overlays.map(({ layerWeight: _ignored, ...overlay }) => overlay);
 }
 
 /** Создать копию DisplayMap. */

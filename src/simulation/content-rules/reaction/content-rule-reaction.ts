@@ -19,8 +19,8 @@ import type {
   Position,
 } from '@simulation/core-types.ts';
 import type {Actor, GameState} from '@simulation/types.ts';
-import {findEntity, getTileEffectsAt, isActor} from '@simulation/state.ts';
-import {tryGetTileEffect, tryGetTileEffectStatus} from '@content/registry';
+import {findAllEntitiesAt, findEntity, getTileEffectsAt, isActor} from '@simulation/state.ts';
+import {tryGetPoi, tryGetTileEffect, tryGetTileEffectStatus} from '@content/registry';
 import {hasAllTags} from '@simulation/systems/tags/tag-helpers.ts';
 import {ensureRuntimeRng} from '../runtime-rng.ts';
 import {getWorldContentRules} from '../rules.ts';
@@ -38,8 +38,8 @@ type LayeredRule = {
   layer: RuleLayer;
   rule: ActiveRule;
   selfId: EntityId | null;
-  /** Подтип слоя `world`: global → tileEffect → tileEffectStatus → tileIntrinsic. */
-  worldLayer?: 'global' | 'tileEffect' | 'tileEffectStatus' | 'tileIntrinsic';
+  /** Подтип слоя `world`: global → tileEffect → tileEffectStatus → object → tileIntrinsic. */
+  worldLayer?: 'global' | 'tileEffect' | 'tileEffectStatus' | 'object' | 'tileIntrinsic';
 };
 
 /** Радиус слоя `radius` — Chebyshev distance от позиции события. */
@@ -53,12 +53,13 @@ const LAYER_ORDER: Record<RuleLayer, number> = {
   radius: 3,
 };
 
-/** Порядок подтипов внутри слоя `world`: global → tileEffect → tileEffectStatus → tileIntrinsic. */
+/** Порядок подтипов внутри слоя `world`: global → tileEffect → tileEffectStatus → object → tileIntrinsic. */
 const WORLD_LAYER_ORDER: Record<NonNullable<LayeredRule['worldLayer']>, number> = {
   global: 0,
   tileEffect: 1,
   tileEffectStatus: 2,
-  tileIntrinsic: 3,
+  object: 3,
+  tileIntrinsic: 4,
 };
 
 /**
@@ -208,6 +209,30 @@ function collectRules(ctx: RuleContext): LayeredRule[] {
     }
   }
 
+  // ── Слой world: объекты на клетке события ─────────────────────────────────
+  // Правила собираются из шаблонов объектов (не акторов) на позиции события:
+  // точки интереса (poi), в будущем — ловушки и другие объекты с ruleIds.
+  if (ctx.eventPosition !== null) {
+    for (const entity of findAllEntitiesAt(state, ctx.eventPosition.x, ctx.eventPosition.y)) {
+      if (isActor(entity)) continue;
+
+      if (entity.type === 'poi') {
+        const template = tryGetPoi(entity.templateId);
+        if (!template) continue;
+        for (const ruleId of template.ruleIds) {
+          const rule = tryGetContentRule(ruleId);
+          if (!rule) continue;
+          result.push({
+            layer: 'world',
+            rule: toActiveRule(rule, { type: 'object', position: ctx.eventPosition, entityId: entity.id }),
+            selfId: entity.id,
+            worldLayer: 'object',
+          });
+        }
+      }
+    }
+  }
+
   // ── Слой world: global / tileIntrinsic ────────────────────────────────────
   for (const rule of getWorldContentRules()) {
     result.push({
@@ -264,7 +289,7 @@ function sortRules(rules: LayeredRule[]): LayeredRule[] {
     const layerDiff = LAYER_ORDER[a.layer] - LAYER_ORDER[b.layer];
     if (layerDiff !== 0) return layerDiff;
 
-    // Внутри слоя `world` фиксированный порядок: global → tileEffect → tileEffectStatus → tileIntrinsic.
+    // Внутри слоя `world` фиксированный порядок: global → tileEffect → tileEffectStatus → object → tileIntrinsic.
     if (a.layer === 'world' && b.layer === 'world') {
       const worldLayerDiff = WORLD_LAYER_ORDER[a.worldLayer!] - WORLD_LAYER_ORDER[b.worldLayer!];
       if (worldLayerDiff !== 0) return worldLayerDiff;

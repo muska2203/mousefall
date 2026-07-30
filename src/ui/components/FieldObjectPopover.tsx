@@ -202,6 +202,31 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
           </div>
         </div>
       )}
+
+      {popover.kind === 'poi' && (
+        <div className="field-popover-card">
+          <div className="field-popover-head">
+            <img
+              className="field-popover-sprite"
+              src={popover.data.sprite}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <span className="field-popover-name">{popover.data.name}</span>
+          </div>
+
+          {popover.data.flavorText && (
+            <p className="field-popover-flavor">{popover.data.flavorText}</p>
+          )}
+
+          <div className="field-popover-stats">
+            <span className="field-popover-stat">
+              {t('fieldObjectPopover.chargesLabel')}<strong>{popover.data.charges}</strong>
+            </span>
+          </div>
+        </div>
+      )}
     </div>,
     document.body,
   );

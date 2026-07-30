@@ -6,6 +6,7 @@ export const enInteractionHint = {
   ascend: 'Ascend',
   openDoor: 'Open door',
   closeDoor: 'Close door',
+  usePoi: 'Use',
   unknown: 'Interact',
   keyF: 'F',
   keyTab: 'Tab',

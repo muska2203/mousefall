@@ -15,6 +15,7 @@ import {
 } from "../../fixtures/gameState.ts";
 import {PLAYER_ID} from "@utils/constants.ts";
 import {initRegistry, resetRegistry} from "../../../src/content/registry";
+import { createTestTerrains } from '../../fixtures/gameState';
 
 function makeBuilder() {
     return new ExecutionBuilder({type: 'ACTION_APPLIED', isFieldEvent: false, action: {type: 'END_TURN', entityId: 'any'}});
@@ -23,6 +24,7 @@ function makeBuilder() {
 beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
         entities: new Map(),
         players: new Map(),
         items: new Map([

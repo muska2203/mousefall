@@ -26,8 +26,7 @@ function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectT
     layer: 'cover',
     duration: 3,
     renderOrder: 1,
-    blockedByTileEffects: [],
-    mutuallyExclusiveWithTileEffects: [],
+    blocksLOS: false,
     canHaveStatus: [],
     durationDecreasesWhenHasStatus: [],
   };

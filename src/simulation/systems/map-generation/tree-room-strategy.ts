@@ -20,11 +20,11 @@
  */
 
 import type {MapParams} from '@content/schemas';
-import type {Corridor, CorridorSegment, DoorEntity, GameMap, GameState, RNGState, Room} from '@simulation/types';
+import type {Corridor, CorridorSegment, DoorEntity, Entity, EntityId, GameMap, GameState, RNGState, Room} from '@simulation/types';
 import {rngInt, rngShuffle} from '@utils/rng';
-import {createTileGrid} from '@simulation/state';
+import {buildEntityPositionIndex, canPlaceObjectAt, createTileGrid, EntityPositionIndex} from '@simulation/state';
 import type {GeneratedMap, MapGenerationStrategy} from './types';
-import {carveHCorridor, carveRoom, carveVCorridor, createDoor, roomCenter, spawnEnemiesAndItems,} from './shared';
+import {carveHCorridor, carveRoom, carveVCorridor, createDoor, DEFAULT_FLOOR_TERRAIN, roomCenter, spawnEnemiesAndItems,} from './shared';
 
 /** Узел дерева комнат. Содержит топологию и ссылку на размещённую Room. */
 type TreeNode = {
@@ -83,7 +83,13 @@ export const treeRoomStrategy: MapGenerationStrategy = {
     const stairsUp = currentFloor > 1 ? playerStart : null;
 
     const { enemies, items } = spawnEnemiesAndItems(rng, map.rooms, params, state);
-    const doors = buildDoors(shiftedDoorPositions, state);
+    // Индекс уже размещённых сущностей: двери (solid) не ставятся на клетки,
+    // занятые другими объектами размещения (например, лутом).
+    const spawnedEntities = new Map<EntityId, Entity>();
+    for (const entity of [...enemies, ...items] as Entity[]) {
+      spawnedEntities.set(entity.id, entity);
+    }
+    const doors = buildDoors(shiftedDoorPositions, state, buildEntityPositionIndex(spawnedEntities));
 
     return {
       map,
@@ -652,11 +658,13 @@ function collectDoorPositions(corridor: CorridorPath): { x: number; y: number }[
 /**
  * Создаёт закрытые двери на указанных позициях.
  * Пропускает позицию, если в радиусе 1 клетки (включая диагонали)
- * уже есть другая дверь.
+ * уже есть другая дверь или если слот solid занят другим объектом
+ * размещения (проверка по индексу уже заспавленных сущностей).
  */
 function buildDoors(
   positions: { x: number; y: number }[],
   state: GameState,
+  index?: EntityPositionIndex,
 ): DoorEntity[] {
   const doors: DoorEntity[] = [];
 
@@ -664,7 +672,7 @@ function buildDoors(
     const hasNearby = doors.some(
       d => Math.abs(d.x - pos.x) <= 1 && Math.abs(d.y - pos.y) <= 1,
     );
-    if (!hasNearby) {
+    if (!hasNearby && canPlaceObjectAt(state, 'solid', pos, index)) {
       doors.push(createDoor(state, 'wooden_door', pos.x, pos.y));
     }
   }
@@ -743,7 +751,7 @@ function buildGameMap(layout: Layout): { map: GameMap; nodeToRoom: Map<TreeNode,
     if (shiftedPath.length === 1) {
       // Коридор из одной клетки (расстояние между комнатами 1 тайл).
       const p = shiftedPath[0]!;
-      tiles[p.y]![p.x] = 'floor';
+      tiles[p.y]![p.x] = DEFAULT_FLOOR_TERRAIN;
       segments.push({ x1: p.x, y1: p.y, x2: p.x, y2: p.y });
     } else {
       for (let i = 1; i < shiftedPath.length; i++) {

@@ -300,14 +300,15 @@ describe('buildRuleContext', () => {
     });
 
     it('TILE_EFFECT_CHANGED: заполняет позицию и tileEffectsAtEventPosition', () => {
+      const oilInstance = {
+        type: 'oil',
+        duration: 3,
+        layer: 'cover' as const,
+        statusEffects: [],
+        renderOrder: 1,
+      };
       const tileEffectsAtPosition: TileEffects = {
-        oil: {
-          type: 'oil',
-          duration: 3,
-          layer: 'cover',
-          statusEffects: [],
-          renderOrder: 1,
-        },
+        cover: oilInstance,
       };
       const stateWithTileEffect = makeStateWithPlayerAndEntity(player, enemy);
       stateWithTileEffect.tileEffects[5]![6] = tileEffectsAtPosition;
@@ -321,19 +322,21 @@ describe('buildRuleContext', () => {
 
       expectContext(buildRuleContext(stateWithTileEffect, event), {
         eventPosition: { x: 6, y: 5 },
-        tileEffectsAtEventPosition: tileEffectsAtPosition,
+        // getTileEffectsAt возвращает производную запись: ключ — тип эффекта.
+        tileEffectsAtEventPosition: { oil: oilInstance },
       });
     });
 
     it('TILE_EFFECT_TICKED: заполняет позицию и tileEffectsAtEventPosition', () => {
+      const waterInstance = {
+        type: 'water',
+        duration: 2,
+        layer: 'cover' as const,
+        statusEffects: [],
+        renderOrder: 1,
+      };
       const tileEffectsAtPosition: TileEffects = {
-        water: {
-          type: 'water',
-          duration: 2,
-          layer: 'cover',
-          statusEffects: [],
-          renderOrder: 1,
-        },
+        cover: waterInstance,
       };
       const stateWithTileEffect = makeStateWithPlayerAndEntity(player, enemy);
       stateWithTileEffect.tileEffects[5]![6] = tileEffectsAtPosition;
@@ -346,19 +349,20 @@ describe('buildRuleContext', () => {
 
       expectContext(buildRuleContext(stateWithTileEffect, event), {
         eventPosition: { x: 6, y: 5 },
-        tileEffectsAtEventPosition: tileEffectsAtPosition,
+        tileEffectsAtEventPosition: { water: waterInstance },
       });
     });
 
     it('TILE_EFFECT_STATUS_TICKED: заполняет позицию и tileEffectsAtEventPosition', () => {
+      const oilInstance = {
+        type: 'oil',
+        duration: 4,
+        layer: 'cover' as const,
+        statusEffects: [{ type: 'burning', duration: 2, renderOrder: 10 }],
+        renderOrder: 1,
+      };
       const tileEffectsAtPosition: TileEffects = {
-        oil: {
-          type: 'oil',
-          duration: 4,
-          layer: 'cover',
-          statusEffects: [{ type: 'burning', duration: 2, renderOrder: 10 }],
-          renderOrder: 1,
-        },
+        cover: oilInstance,
       };
       const stateWithTileEffect = makeStateWithPlayerAndEntity(player, enemy);
       stateWithTileEffect.tileEffects[5]![6] = tileEffectsAtPosition;
@@ -372,7 +376,7 @@ describe('buildRuleContext', () => {
 
       expectContext(buildRuleContext(stateWithTileEffect, event), {
         eventPosition: { x: 6, y: 5 },
-        tileEffectsAtEventPosition: tileEffectsAtPosition,
+        tileEffectsAtEventPosition: { oil: oilInstance },
       });
     });
 

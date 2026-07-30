@@ -19,6 +19,7 @@ const INTERACTION_HINT_KEYS: Record<InteractionId, string> = {
   pickup: 'components.interactionHint.pickup',
   descend: 'components.interactionHint.descend',
   ascend: 'components.interactionHint.ascend',
+  use_poi: 'components.interactionHint.usePoi',
 };
 
 /**
@@ -35,6 +36,7 @@ const PRIORITIES: Record<InteractionId, number> = {
   pickup: 0,
   descend: 1,
   ascend: 1,
+  use_poi: 1,
   open_door: 2,
   close_door: 2,
 };

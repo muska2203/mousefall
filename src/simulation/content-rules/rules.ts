@@ -327,6 +327,23 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: {type: 'eventTarget'},
     priority: 0,
   },
+  // ── Правила точек интереса (фаза 4 слоистой модели клетки) ─────────────────
+  // Правило собирается из ruleIds шаблона poi на клетке события (слой object),
+  // поэтому срабатывает только при активации соответствующей точки интереса.
+  // Разовость обеспечивает исполнитель ACTIVATE_POI (charges), правило остаётся
+  // декларативным по эффекту.
+  {
+    id: 'altar_heals_player',
+    trigger: {
+      event: 'POI_USED',
+    },
+    effect: {
+      type: 'heal',
+      amount: 25,
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
 ];
 
 /**

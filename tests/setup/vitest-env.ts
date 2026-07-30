@@ -18,3 +18,25 @@ if (typeof globalThis.navigator === 'undefined') {
     },
   });
 }
+
+/**
+ * Fallback-реестр контента для тестов, не инициализирующих его явно.
+ *
+ * С переходом на контентные террейны проверки проходимости/LOS/спавна читают
+ * шаблоны террейнов из реестра (fail-safe: неизвестный id = непроходим).
+ * Тесты, которые вообще не трогают реестр (fov, movement, навыки и т.п.),
+ * получают здесь минимальный контент с базовыми террейнами floor/wall/sand.
+ * Тесты, инициализирующие реестр сами (initRegistry в beforeEach), перекрывают
+ * этот fallback — им нужно включать террейны в свой мок-контент.
+ */
+import {beforeEach} from 'vitest';
+import {getRegistry, initRegistry} from '../../src/content/registry';
+import {createObjectContent} from '../fixtures/gameState';
+
+beforeEach(() => {
+  try {
+    getRegistry();
+  } catch {
+    initRegistry(createObjectContent());
+  }
+});

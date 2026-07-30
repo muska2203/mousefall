@@ -5,23 +5,23 @@
  * - Сначала ищет полностью пустую клетку (нет стен и нет вообще никаких сущностей)
  *   в радиусе 2 от origin.
  * - Если не нашёл — fallback: ближайшая клетка, не занятая блокирующими объектами
- *   и стенами, до maxRadius.
+ *   и стенами, до maxRadius. Клетка должна принимать слот размещения `loot`
+ *   (лут совместим с floorFixture, но не стакуется со вторым лутом и solid).
  * - Детерминированный fallback: если ничего не найдено, возвращает origin.
  */
 
 import type {GameState} from '@simulation/types';
 import type {Position} from '@simulation/core-types';
-import {findAllEntitiesAt, isBlocked} from '@simulation/state';
+import {canPlaceObjectAt, findAllEntitiesAt, isBlocked, isTerrainWalkable} from '@simulation/state';
 
 function isCompletelyEmpty(state: GameState, x: number, y: number): boolean {
   if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) return false;
-  const tile = state.map.tiles[y]?.[x];
-  if (tile === 'wall') return false;
+  if (!isTerrainWalkable(state.map.tiles[y]?.[x])) return false;
   return findAllEntitiesAt(state, x, y).length === 0;
 }
 
-function isNotBlocked(state: GameState, x: number, y: number): boolean {
-  return !isBlocked(state, x, y);
+function canAcceptLoot(state: GameState, x: number, y: number): boolean {
+  return !isBlocked(state, x, y) && canPlaceObjectAt(state, 'loot', { x, y });
 }
 
 function collectCandidates(
@@ -65,9 +65,9 @@ export function findFreeTileNear(
     }
   }
 
-  // Этап 2: fallback — клетка без блокирующих сущностей и стен
+  // Этап 2: fallback — клетка без блокирующих сущностей и стен, принимающая слот loot
   for (let radius = 0; radius <= maxRadius; radius++) {
-    const candidates = collectCandidates(state, origin, radius, isNotBlocked);
+    const candidates = collectCandidates(state, origin, radius, canAcceptLoot);
     if (candidates.length > 0) {
       return candidates[0]!;
     }

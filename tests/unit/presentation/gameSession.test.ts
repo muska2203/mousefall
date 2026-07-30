@@ -5,15 +5,7 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import '@i18n/config';
 import {GameSession} from '../../../src/presentation/gameSession';
-import {
-  makeDoor,
-  makeEnemy,
-  makeFloorItemContainer,
-  makeGameState,
-  makePlayer,
-  makeProp,
-  makeStairs
-} from '../../fixtures/gameState';
+import { makeDoor, makeEnemy, makeFloorItemContainer, makeGameState, makePlayer, makeProp, makeStairs, createTestTerrains } from '../../fixtures/gameState';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
 import type {Entity, EntityId} from '../../../src/simulation/types';
 import {drainAnimations} from '../../helpers/simulation';
@@ -22,6 +14,7 @@ describe('GameSession debug mode', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map([
         ['cat_small', {
           id: 'cat_small',
@@ -57,7 +50,7 @@ describe('GameSession debug mode', () => {
       ]),
     statuses: new Map(),
     tileEffects: new Map([
-      ['water', {id: 'water', layer: 'cover', duration: 4, renderOrder: 1, ruleIds: [], blockedByTileEffects: [], mutuallyExclusiveWithTileEffects: [], canHaveStatus: []} as any],
+      ['water', {id: 'water', layer: 'cover', duration: 4, renderOrder: 1, ruleIds: [], canHaveStatus: []} as any],
     ]),
     tileEffectStatuses: new Map(),
 });
@@ -144,8 +137,25 @@ describe('GameSession debug mode', () => {
     session.debugSpawnTileEffect('water', {x: 3, y: 3});
 
     const vm = session.getViewModel();
-    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.water).toBeDefined();
-    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.water?.type).toBe('water');
+    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.cover).toBeDefined();
+    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.cover?.type).toBe('water');
+  });
+
+  it('debugSetTerrain sets terrain on map tile when debug is enabled', () => {
+    const player = makePlayer({x: 5, y: 5});
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const session = new GameSession();
+    session.toggleDebug();
+    session.loadGame(state);
+
+    session.debugSetTerrain('wall', {x: 3, y: 3});
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.state.map.tiles[3]?.[3]).toBe('wall');
   });
 
   it('debug actions are rejected when debug is disabled', () => {
@@ -163,11 +173,13 @@ describe('GameSession debug mode', () => {
     session.debugAddItem('health_potion');
     session.debugSpawnEntity('item', 'health_potion', {x: 3, y: 3});
     session.debugSpawnTileEffect('water', {x: 3, y: 3});
+    session.debugSetTerrain('wall', {x: 3, y: 3});
 
     const vm = session.getViewModel();
     expect(vm.renderInput?.inventory.length).toBe(0);
     expect(vm.renderInput?.itemsOnFloor.length).toBe(0);
-    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.water).toBeUndefined();
+    expect(vm.renderInput?.state.tileEffects[3]?.[3]?.cover).toBeUndefined();
+    expect(vm.renderInput?.state.map.tiles[3]?.[3]).toBe('floor');
   });
 
   it('debugAddItem works after toggling debug on already loaded game', () => {
@@ -218,6 +230,7 @@ describe('GameSession AP display during animations', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
@@ -297,6 +310,7 @@ describe('GameSession moveOrAttack with doors', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map([
         ['cat_small', {
           id: 'cat_small',
@@ -432,6 +446,7 @@ describe('GameSession interactions (F / Tab)', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map([
@@ -774,7 +789,9 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
   });
 
   it('sorts default template first while preserving manifest order for others', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map([
         ['orc', {
@@ -829,7 +846,9 @@ describe('GameSession.getPlayerPortraitSrc', () => {
   });
 
   it('returns portraitImg from registry when template exists', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map([
         ['witcher', {
@@ -855,7 +874,9 @@ describe('GameSession.getPlayerPortraitSrc', () => {
   });
 
   it('returns default portrait when template is missing', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
@@ -882,7 +903,9 @@ describe('GameSession.getStarterEquipmentIds', () => {
   });
 
   it('groups starter equipment by item type from player template', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map([
         ['witcher', {
@@ -927,7 +950,9 @@ describe('GameSession.getStarterEquipmentIds', () => {
   });
 
   it('returns empty groups when template or equipment is missing', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
@@ -954,7 +979,9 @@ describe('GameSession.getDefaultPlayerTemplateId', () => {
   });
 
   it('returns default template id when marked isDefault', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map([
         ['witcher', {
@@ -988,7 +1015,9 @@ describe('GameSession.getDefaultPlayerTemplateId', () => {
   });
 
   it('returns first available template id when none is default', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map([
         ['witcher', {
@@ -1014,7 +1043,9 @@ describe('GameSession.getDefaultPlayerTemplateId', () => {
   });
 
   it('returns empty string when no templates exist', () => {
+    resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
@@ -1067,6 +1098,7 @@ describe('GameSession DisplayState', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map([
         ['cat_small', {
           id: 'cat_small',
@@ -1212,6 +1244,7 @@ describe('GameSession active effects', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
@@ -1265,6 +1298,7 @@ describe('GameSession fieldObjectPopover', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map([
         ['cat_small', {
           id: 'cat_small',

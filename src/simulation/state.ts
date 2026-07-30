@@ -31,9 +31,11 @@ import type {
   TileType,
 } from './types';
 import type {MapParams} from '@content/schemas';
+import type {TileEffectInstance} from './core-types.ts';
 import {createRNG} from '../utils/rng';
 import {PLAYER_ID} from '../utils/constants';
-import {tryGetPlayerTemplate} from '@content/registry';
+import {tryGetPlayerTemplate, tryGetTerrain, tryGetTileEffect} from '@content/registry';
+import {DEFAULT_WALL_TERRAIN} from './systems/map-generation/shared.ts';
 import {rebuildActiveRules} from './systems/rules/active-rule-lifecycle.ts';
 
 // ─────────────────────────────────────────────
@@ -98,10 +100,10 @@ export function createBoolGrid(width: number, height: number, value: boolean): b
 }
 
 /**
- * Создаёт пустую двумерную сетку тайлов, заполненную стенами.
+ * Создаёт пустую двумерную сетку тайлов, заполненную террейном стены по умолчанию.
  */
 export function createTileGrid(width: number, height: number): TileType[][] {
-  return Array.from({ length: height }, () => Array<TileType>(width).fill('wall'));
+  return Array.from({ length: height }, () => Array<TileType>(width).fill(DEFAULT_WALL_TERRAIN));
 }
 
 /**
@@ -152,6 +154,44 @@ export function createNewGameState(seed: number, mapParams: MapParams, playerTem
       contentRulesEnabled: true,
     },
   };
+}
+
+// ─────────────────────────────────────────────
+// Локальный позиционный индекс сущностей
+// ─────────────────────────────────────────────
+
+/**
+ * Ключ клетки позиционного индекса.
+ */
+export function positionKey(x: number, y: number): string {
+  return `${x},${y}`;
+}
+
+/**
+ * Позиционный индекс: клетка → сущности на ней.
+ *
+ * Локальная производная структура: строится за O(N) на время одного пересчёта
+ * (FOV, pathfinding) и не хранится в GameState. Порядок сущностей внутри клетки
+ * совпадает с порядком обхода `entities`, поэтому результат эквивалентен
+ * `findAllEntitiesAt` без индекса.
+ */
+export type EntityPositionIndex = Map<string, Entity[]>;
+
+/**
+ * Строит позиционный индекс из реестра сущностей.
+ */
+export function buildEntityPositionIndex(entities: Map<EntityId, Entity>): EntityPositionIndex {
+  const index: EntityPositionIndex = new Map();
+  for (const entity of entities.values()) {
+    const key = positionKey(entity.x, entity.y);
+    const bucket = index.get(key);
+    if (bucket) {
+      bucket.push(entity);
+    } else {
+      index.set(key, [entity]);
+    }
+  }
+  return index;
 }
 
 // ─────────────────────────────────────────────
@@ -210,6 +250,7 @@ export const TARGET_PRIORITY: Record<EntityType, number> = {
   prop: 40,
   floor_item_container: 0,
   stairs: 0,
+  poi: 0,
 };
 
 /**
@@ -220,52 +261,95 @@ export function isDamageable(e: Entity): e is Entity & Attackable {
   return 'hp' in e && (e as Entity & Attackable).isAlive;
 }
 
-export function findFirstAttackableEntityAt(state: GameState, x: number, y: number): (Entity & Attackable) | undefined {
-  return findAllEntitiesAt(state, x, y)
+export function findFirstAttackableEntityAt(state: GameState, x: number, y: number, index?: EntityPositionIndex): (Entity & Attackable) | undefined {
+  return findAllEntitiesAt(state, x, y, index)
       .filter(isDamageable)
       .sort((a, b) => TARGET_PRIORITY[b.type] - TARGET_PRIORITY[a.type])[0];
 }
 
-export function findAllEntitiesAt(state: GameState, x: number, y: number): Entity[] {
+/**
+ * Возвращает все сущности на клетке (x, y).
+ * Если передан позиционный индекс — O(1) по нему, иначе O(N) скан по реестру.
+ */
+export function findAllEntitiesAt(state: GameState, x: number, y: number, index?: EntityPositionIndex): Entity[] {
+  if (index) {
+    return index.get(positionKey(x, y)) ?? [];
+  }
   return Array.from(state.entities.values())
       .filter(e => e.x === x && e.y === y);
 }
 
 /**
- * Возвращает тайловые эффекты клетки или пустой объект, если клетка вне карты.
+ * Возвращает тайловые эффекты клетки в виде производной записи
+ * «ключ — тип эффекта» (ссылки на те же экземпляры, без копирования).
+ * Хранение ведётся по слоям (TileEffects), это представление — для читателей,
+ * которым нужен доступ по типу. Результат мутировать нельзя.
+ * Для клетки вне карты возвращает пустой объект.
  */
-export function getTileEffectsAt(state: GameState, x: number, y: number): import('@simulation/core-types.ts').TileEffects {
+export function getTileEffectsAt(state: GameState, x: number, y: number): Record<string, TileEffectInstance> {
   if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) {
     return {};
   }
   const row = state.tileEffects[y];
   if (!row) return {};
-  return row[x] ?? {};
+  const cell = row[x];
+  if (!cell) return {};
+  const byType: Record<string, TileEffectInstance> = {};
+  for (const effect of Object.values(cell)) {
+    byType[effect.type] = effect;
+  }
+  return byType;
+}
+
+/**
+ * Проверяет, проходим ли террейн для движения.
+ * Fail-safe: неизвестный или отсутствующий id террейна считается непроходимым.
+ */
+export function isTerrainWalkable(terrainId: TileType | undefined): boolean {
+  if (terrainId === undefined) return false;
+  return tryGetTerrain(terrainId)?.walkable === true;
+}
+
+/**
+ * Проверяет, есть ли у террейна указанный тег (например, 'ground' —
+ * «на эту клетку можно ставить эффекты и спавнить объекты»).
+ * Неизвестный id террейна тегов не имеет.
+ */
+export function terrainHasTag(terrainId: TileType | undefined, tag: string): boolean {
+  if (terrainId === undefined) return false;
+  return (tryGetTerrain(terrainId)?.tags ?? []).includes(tag);
 }
 
 /**
  * Возвращает true, если клетка в (x, y) блокирует движение.
  */
-export function isBlocked(state: GameState, x: number, y: number): boolean {
+export function isBlocked(state: GameState, x: number, y: number, index?: EntityPositionIndex): boolean {
   if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) return true;
-  const tile = state.map.tiles[y]?.[x];
-  if (tile === 'wall') return true;
-  return findAllEntitiesAt(state, x, y).filter(e => e.blocksMovement).length !== 0;
+  if (!isTerrainWalkable(state.map.tiles[y]?.[x])) return true;
+  return findAllEntitiesAt(state, x, y, index).filter(e => e.blocksMovement).length !== 0;
 }
 
 /**
  * Возвращает true, если клетка в (x, y) блокирует линию видимости.
+ * Обзор блокируют слои независимо: террейн с blocksLOS, закрытая дверь,
+ * проп с blocksLOS, тайловый эффект с blocksLOS (дым и т.п.).
  */
-export function blocksLOS(state: GameState, x: number, y: number): boolean {
+export function blocksLOS(state: GameState, x: number, y: number, index?: EntityPositionIndex): boolean {
   if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) return true;
   const tile = state.map.tiles[y]?.[x];
-  if (tile === 'wall') return true;
-  const door = findDoorAt(state, x, y);
-  // Закрытая живая дверь блокирует обзор, открытая — нет.
-  if (door) return door.isAlive && !door.isOpen;
-  const prop = findPropAt(state, x, y);
-  // Живой проп с blocksLOS блокирует обзор.
-  return prop ? prop.isAlive && prop.blocksLOS : false;
+  if (tile !== undefined && tryGetTerrain(tile)?.blocksLOS === true) return true;
+  const door = findDoorAt(state, x, y, index);
+  if (door) {
+    // Закрытая живая дверь блокирует обзор, открытая — нет.
+    if (door.isAlive && !door.isOpen) return true;
+  } else {
+    const prop = findPropAt(state, x, y, index);
+    // Живой проп с blocksLOS блокирует обзор.
+    if (prop && prop.isAlive && prop.blocksLOS) return true;
+  }
+  // Тайловые эффекты с blocksLOS (дым и др.) блокируют обзор, но не движение.
+  return Object.values(getTileEffectsAt(state, x, y))
+    .some((effect) => tryGetTileEffect(effect.type)?.blocksLOS === true);
 }
 
 
@@ -279,8 +363,8 @@ export function playerPos(state: GameState): Position {
 /**
  * Возвращает лестницу на заданной клетке или undefined.
  */
-export function findStairsAt(state: GameState, x: number, y: number, templateId?: string): import('./types').StairsEntity | undefined {
-  const entities = findAllEntitiesAt(state, x, y);
+export function findStairsAt(state: GameState, x: number, y: number, templateId?: string, index?: EntityPositionIndex): import('./types').StairsEntity | undefined {
+  const entities = findAllEntitiesAt(state, x, y, index);
   return entities
     .filter((e): e is import('./types').StairsEntity => e.type === 'stairs' && (!templateId || e.templateId === templateId))
     [0];
@@ -289,8 +373,8 @@ export function findStairsAt(state: GameState, x: number, y: number, templateId?
 /**
  * Возвращает дверь на заданной клетке или undefined.
  */
-export function findDoorAt(state: GameState, x: number, y: number): DoorEntity | undefined {
-  const entities = findAllEntitiesAt(state, x, y);
+export function findDoorAt(state: GameState, x: number, y: number, index?: EntityPositionIndex): DoorEntity | undefined {
+  const entities = findAllEntitiesAt(state, x, y, index);
   return entities
     .filter((e): e is DoorEntity => e.type === 'door' && e.isAlive)[0];
 }
@@ -298,10 +382,72 @@ export function findDoorAt(state: GameState, x: number, y: number): DoorEntity |
 /**
  * Возвращает проп на заданной клетке или undefined.
  */
-export function findPropAt(state: GameState, x: number, y: number): PropEntity | undefined {
-  const entities = findAllEntitiesAt(state, x, y);
+export function findPropAt(state: GameState, x: number, y: number, index?: EntityPositionIndex): PropEntity | undefined {
+  const entities = findAllEntitiesAt(state, x, y, index);
   return entities
     .filter((e): e is PropEntity => e.type === 'prop' && e.isAlive)[0];
+}
+
+/**
+ * Возвращает точку интереса на заданной клетке или undefined.
+ */
+export function findPoiAt(state: GameState, x: number, y: number, index?: EntityPositionIndex): import('./types').PointOfInterestEntity | undefined {
+  const entities = findAllEntitiesAt(state, x, y, index);
+  return entities
+    .filter((e): e is import('./types').PointOfInterestEntity => e.type === 'poi')[0];
+}
+
+// ─────────────────────────────────────────────
+// Слоты размещения объектов (слой 4 слоистой модели клетки)
+// ─────────────────────────────────────────────
+
+/**
+ * Слот размещения объекта на клетке.
+ * - `solid` — дверь, проп, точка интереса. Несовместим со всеми другими объектами.
+ * - `floorFixture` — лестница (в будущем — ловушка). Несовместим с `solid` и `floorFixture`.
+ * - `loot` — контейнер лута. Совместим с `floorFixture`, максимум один `loot` на клетку.
+ */
+export type PlacementSlot = 'solid' | 'floorFixture' | 'loot';
+
+/**
+ * Выводит слот размещения из типа сущности.
+ * Акторы (player/enemy) не являются объектами размещения и возвращают null.
+ */
+export function getPlacementSlot(entity: Entity): PlacementSlot | null {
+  switch (entity.type) {
+    case 'door':
+    case 'prop':
+    case 'poi':
+      return 'solid';
+    case 'stairs':
+      return 'floorFixture';
+    case 'floor_item_container':
+      return 'loot';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Единая проверка совместимости объектов на клетке.
+ * Возвращает true, если объект с указанным слотом можно разместить в (x, y)
+ * с учётом уже стоящих там объектов. Акторы слотами не ограничиваются.
+ */
+export function canPlaceObjectAt(
+  state: GameState,
+  slot: PlacementSlot,
+  position: Position,
+  index?: EntityPositionIndex,
+): boolean {
+  for (const entity of findAllEntitiesAt(state, position.x, position.y, index)) {
+    const existing = getPlacementSlot(entity);
+    if (existing === null) continue;
+    // solid несовместим с любыми объектами на клетке (в обе стороны).
+    if (existing === 'solid' || slot === 'solid') return false;
+    // Одинаковые слоты не стакуются: floorFixture + floorFixture, loot + loot.
+    if (existing === slot) return false;
+  }
+  return true;
 }
 
 /**

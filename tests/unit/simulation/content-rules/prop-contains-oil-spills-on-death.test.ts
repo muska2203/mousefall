@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {runContentRuleReactions} from '../../../../src/simulation/content-rules/reaction/content-rule-reaction';
 import {executeIntents} from '../../../../src/simulation/systems/intents/execute-intent';
-import {makeGameState, makePlayer, makeProp} from '../../../fixtures/gameState';
+import {createTestTerrains, makeGameState, makePlayer, makeProp} from '../../../fixtures/gameState';
 import type {EntityId, GameEvent} from '../../../../src/simulation/core-types';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import type {Entity} from '../../../../src/simulation/types';
@@ -15,9 +15,8 @@ function mockTileEffectTemplate(
     layer: 'cover',
     duration: 5,
     renderOrder: 1,
+    blocksLOS: false,
     ruleIds: [],
-    blockedByTileEffects: [],
-    mutuallyExclusiveWithTileEffects: [],
     canHaveStatus: [],
     durationDecreasesWhenHasStatus: [],
     ...overrides,
@@ -86,11 +85,13 @@ function createContentWithOilBarrel(): LoadedContent {
         }),
       ],
     ]),
+    terrains: createTestTerrains(),
   };
 }
 
 describe('prop_contains_oil_spills_on_death', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry(createContentWithOilBarrel());
   });
 
@@ -201,15 +202,15 @@ describe('prop_contains_oil_spills_on_death', () => {
     executeIntents(state, intents, builder, builder.root);
 
     // Позиции в радиусе 1 от (4,5): x ∈ [3,5], y ∈ [4,6].
-    expect(state.tileEffects[4]![3]!.oil).toBeDefined();
-    expect(state.tileEffects[4]![4]!.oil).toBeDefined();
-    expect(state.tileEffects[4]![5]!.oil).toBeDefined();
-    expect(state.tileEffects[5]![3]!.oil).toBeDefined();
-    expect(state.tileEffects[5]![4]!.oil).toBeDefined();
-    expect(state.tileEffects[5]![5]!.oil).toBeDefined();
-    expect(state.tileEffects[6]![3]!.oil).toBeDefined();
-    expect(state.tileEffects[6]![4]!.oil).toBeDefined();
-    expect(state.tileEffects[6]![5]!.oil).toBeDefined();
+    expect(state.tileEffects[4]![3]!.cover).toBeDefined();
+    expect(state.tileEffects[4]![4]!.cover).toBeDefined();
+    expect(state.tileEffects[4]![5]!.cover).toBeDefined();
+    expect(state.tileEffects[5]![3]!.cover).toBeDefined();
+    expect(state.tileEffects[5]![4]!.cover).toBeDefined();
+    expect(state.tileEffects[5]![5]!.cover).toBeDefined();
+    expect(state.tileEffects[6]![3]!.cover).toBeDefined();
+    expect(state.tileEffects[6]![4]!.cover).toBeDefined();
+    expect(state.tileEffects[6]![5]!.cover).toBeDefined();
   });
 
   it('не разливает обычное масло, если горящая бочка с маслом умерла от огня', () => {
@@ -268,7 +269,7 @@ describe('prop_contains_oil_spills_on_death', () => {
     // Во всех клетках радиуса 1 должно появиться горящее масло.
     for (let y = 4; y <= 6; y++) {
       for (let x = 3; x <= 5; x++) {
-        const effect = state.tileEffects[y]![x]!.oil;
+        const effect = state.tileEffects[y]![x]!.cover;
         expect(effect).toBeDefined();
         expect(effect!.statusEffects.some((s) => s.type === 'burning')).toBe(true);
       }

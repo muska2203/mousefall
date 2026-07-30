@@ -55,6 +55,7 @@ function mockPropTemplate(overrides: Partial<PropTemplate> & { id: string }): Pr
 
 describe('apply-status-intent-executer', () => {
   beforeEach(() => {
+    resetRegistry();
     initRegistry({
       entities: new Map(),
       players: new Map(),

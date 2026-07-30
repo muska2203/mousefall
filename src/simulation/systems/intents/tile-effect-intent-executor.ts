@@ -19,13 +19,14 @@ import type {
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
 import type {TileEffectStatusInstance} from '@simulation/core-types.ts';
 import {tryGetTileEffect} from '@content/registry.ts';
+import {terrainHasTag} from '@simulation/state.ts';
 import {getTileEffectStatusTemplate} from '@simulation/systems/tile-effects/tile-effect-status-template.ts';
 import {resolveStatusConflicts} from '@simulation/systems/statuses/resolve-status-conflicts.ts';
 
 /**
  * Создаёт экземпляр тайлового эффекта с заданными параметрами.
  * Если шаблон загружен, длительность, слой и порядок отрисовки берутся из него.
- * Совместимость тайловых эффектов (blockedBy / mutuallyExclusive) проверяется
+ * Уникальность эффектов внутри слоя обеспечивается
  * в executeSpawnTileEffectIntent перед вызовом этой функции.
  */
 function createTileEffectInstance(effectType: string, duration: number): TileEffectInstance {
@@ -37,6 +38,28 @@ function createTileEffectInstance(effectType: string, duration: number): TileEff
     statusEffects: [],
     renderOrder: template?.renderOrder ?? 1,
   };
+}
+
+/** Ищет эффект в ячейке по типу (ячейка хранит эффекты по слоям). */
+function findEffectInCell(
+  cell: import('@simulation/core-types.ts').TileEffects,
+  effectType: string,
+): TileEffectInstance | undefined {
+  return Object.values(cell).find((effect) => effect.type === effectType);
+}
+
+/** Удаляет эффект из ячейки по типу. Возвращает true, если эффект был найден и удалён. */
+function deleteEffectFromCell(
+  cell: import('@simulation/core-types.ts').TileEffects,
+  effectType: string,
+): boolean {
+  for (const [layer, effect] of Object.entries(cell)) {
+    if (effect.type === effectType) {
+      delete cell[layer as keyof typeof cell];
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -72,46 +95,41 @@ export const executeSpawnTileEffectIntent: IntentExecutor<SpawnTileEffectIntent>
     return null;
   }
 
-  // Блокировка: тайловые эффекты нельзя спавнить в стенах.
-  if (state.map.tiles[y]![x] === 'wall') {
+  // Блокировка: тайловые эффекты можно спавнить только на террейне с тегом 'ground'.
+  if (!terrainHasTag(state.map.tiles[y]?.[x], 'ground')) {
     return null;
   }
 
   const cell = ensureTileEffectsCell(state, x, y);
   const template = tryGetTileEffect(intent.effectType);
   const duration = intent.duration ?? template?.duration ?? 4;
+  const layer = template?.layer ?? 'cover';
 
-  // Блокировка: если на клетке есть эффект из blockedByTileEffects, спавн не происходит.
-  for (const blocker of template?.blockedByTileEffects ?? []) {
-    if (cell[blocker] !== undefined) {
-      return null;
-    }
+  // Уникальность по слою: эффект того же слоя другого типа вытесняется новым.
+  // Порядок событий REMOVED → CHANGED обязателен (от него зависят реакции и патчи).
+  const existing = cell[layer];
+  const isSameEffect = existing?.type === intent.effectType;
+  if (existing && !isSameEffect) {
+    executeRemoveTileEffectIntent(
+      state,
+      { type: 'REMOVE_TILE_EFFECT', effectType: existing.type, position: { x, y } },
+      builder,
+      parent,
+    );
   }
 
-  // Удаляем конфликтующие эффекты перед созданием нового, чтобы породить TILE_EFFECT_REMOVED.
-  for (const existingType of Object.keys(cell)) {
-    if (template?.mutuallyExclusiveWithTileEffects.includes(existingType)) {
-      executeRemoveTileEffectIntent(
-        state,
-        { type: 'REMOVE_TILE_EFFECT', effectType: existingType, position: { x, y } },
-        builder,
-        parent,
-      );
-    }
-  }
-
-  const existingEffect = cell[intent.effectType];
-  if (!existingEffect) {
-    cell[intent.effectType] = createTileEffectInstance(intent.effectType, duration);
+  if (isSameEffect && existing) {
+    // Повторный спавн того же эффекта продлевает длительность, статусы не сбрасываются.
+    existing.duration = duration;
   } else {
-    existingEffect.duration = duration;
+    cell[layer] = createTileEffectInstance(intent.effectType, duration);
   }
 
   const changedNode = builder.addChild(parent, {
     type: 'TILE_EFFECT_CHANGED', isFieldEvent: true,
     effectType: intent.effectType,
     position: { x, y },
-    isNew: !existingEffect,
+    isNew: !isSameEffect,
   });
 
   // Если указан начальный статус — накладываем его сразу после создания эффекта.
@@ -142,11 +160,9 @@ export const executeRemoveTileEffectIntent: IntentExecutor<RemoveTileEffectInten
 ) => {
   const { x, y } = intent.position;
   const cell = ensureTileEffectsCell(state, x, y);
-  if (cell[intent.effectType] === undefined) {
+  if (!deleteEffectFromCell(cell, intent.effectType)) {
     return null;
   }
-
-  delete cell[intent.effectType];
 
   return builder.addChild(parent, {
     type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
@@ -171,9 +187,9 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
     for (let x = 0; x < state.map.width; x++) {
       const cell = row[x];
       if (!cell) continue;
-      for (const effectType of Object.keys(cell)) {
-        const effect = cell[effectType];
-        if (!effect) continue;
+      // Обход по слоям; effectType берётся из экземпляра.
+      for (const effect of Object.values(cell)) {
+        const effectType = effect.type;
 
         // Некоторые материалы (например, масло) не исчезают сами по себе.
         // Их длительность уменьшается только при наличии указанных статусов.
@@ -233,7 +249,7 @@ export const executeTickTileEffectsIntent: IntentExecutor<TickTileEffectsIntent>
   for (const { effectType, x, y } of removed) {
     const cell = state.tileEffects[y]?.[x];
     if (cell) {
-      delete cell[effectType];
+      deleteEffectFromCell(cell, effectType);
     }
     lastNode = builder.addChild(parent, {
       type: 'TILE_EFFECT_REMOVED', isFieldEvent: true,
@@ -271,7 +287,7 @@ export const executeApplyTileEffectStatusIntent: IntentExecutor<ApplyTileEffectS
   }
 
   const cell = ensureTileEffectsCell(state, x, y);
-  const effect = cell[intent.effectType];
+  const effect = findEffectInCell(cell, intent.effectType);
   if (!effect) {
     return null;
   }
@@ -357,7 +373,7 @@ export const executeRemoveTileEffectStatusIntent: IntentExecutor<RemoveTileEffec
   }
 
   const cell = ensureTileEffectsCell(state, x, y);
-  const effect = cell[intent.effectType];
+  const effect = findEffectInCell(cell, intent.effectType);
   if (!effect) {
     return null;
   }

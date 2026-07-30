@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { interactAction } from '../../../../src/simulation/systems/actions/interact-action';
 import { resolveInteraction } from '../../../../src/simulation/systems/interactions/resolve-interaction';
 import { DefaultActionPointCostResolver } from '../../../../src/simulation/systems/action-cost-resolver';
-import { makeGameState, makePlayer, makeEnemy, makeDoor, makeStairs, makeStateWithPlayerAndEntity, makeFloorItemContainer } from '../../../fixtures/gameState';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeStairs, makeStateWithPlayerAndEntity, makeFloorItemContainer, createTestTerrains } from '../../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import { MAX_FLOOR } from '../../../../src/utils/constants';
 import type { DoorEntity, StairsEntity, Entity, EntityId } from '../../../../src/simulation/types';
@@ -129,6 +129,7 @@ describe('interactAction.validate', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
@@ -384,6 +385,7 @@ describe('interactAction.resolve', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map([
@@ -513,6 +515,7 @@ describe('interactAction.validate — дополнительные провер�
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
@@ -576,6 +579,7 @@ describe('INTERACT — полные flow', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map([
@@ -680,6 +684,7 @@ describe('авто-спуск по лестнице удалён', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
+      terrains: createTestTerrains(),
       entities: new Map(),
       players: new Map(),
       items: new Map(),
