@@ -2,9 +2,9 @@
 
 ## Responsibility
 
-Loads JSON content files from `public/content/`, validates them with Zod schemas, and exposes a typed lookup interface to all layers.
+Defines Zod schemas and types for all game content, builds it from TypeScript template modules at startup, and exposes a typed read-only lookup interface to all layers.
 
-This module is the **only** place that touches async I/O (at startup). After loading, all access is synchronous and read-only.
+Content is authored as TypeScript modules under `templates/`. At startup `buildContent()` parses every template through its Zod schema (defaults applied, invariants checked, duplicate ids rejected) and the result is loaded into the registry. After that, all access is synchronous and read-only — no I/O, no fetch, no manifest.
 
 ---
 
@@ -12,10 +12,26 @@ This module is the **only** place that touches async I/O (at startup). After loa
 
 ```
 src/content/
-├── README.md      # This file
-├── schemas.ts     # Zod schemas + TypeScript types for all content
-├── registry.ts    # In-memory content store + typed getters
-└── loader.ts      # Async fetch + Zod validation for each content type
+├── README.md         # This file
+├── schemas.ts        # Zod schemas + TypeScript types for all content (input types at the bottom)
+├── registry.ts       # In-memory content store + typed getters
+├── templates/        # Content templates as TS modules, grouped by category
+│   ├── index.ts      # buildContent(): Zod parsing → LoadedContent
+│   ├── entities/     # Enemy templates
+│   ├── players/      # Player templates
+│   ├── items/        # weapons/, armor/, amulet/, consumables/
+│   ├── abilities/    # Active skills
+│   ├── statuses/     # Status effects
+│   ├── tile-effects/         # Tile effects
+│   ├── tile-effect-statuses/ # Statuses from tile effects
+│   ├── terrains/     # Terrain templates
+│   ├── maps/         # Procedural generation parameters
+│   ├── stairs/       # Stairway transitions
+│   ├── doors/        # Doors
+│   ├── props/        # Props
+│   ├── pois/         # Points of interest
+│   └── traps/        # Traps
+└── texts/            # Localized texts (name/description/flavorText) per locale
 ```
 
 ---
@@ -29,6 +45,37 @@ Zod schemas and inferred TypeScript types for:
 - `AbilityTemplate` — active skills
 - `MapParams` — procedural generation parameters
 - `StairsTemplate` — stairway transitions
+- Plus statuses, terrains, tile effects, doors, props, pois, traps
+
+At the bottom of the file are the `*Input` types (`z.input<typeof ...Schema>`) used for authoring templates — fields with defaults are optional in input.
+
+---
+
+## `templates/`
+
+Each template is a TS module named after its id in kebab-case, exporting a camelCase constant:
+
+```typescript
+// templates/entities/cat-big.ts
+import type {EntityTemplateInput} from '../../schemas';
+
+export const catBig = {
+  id: 'cat_big',
+  // ...
+} satisfies EntityTemplateInput;
+```
+
+Every category folder has an `index.ts` with an array of all its templates (`entityTemplates`, `itemTemplates`, ...). Adding a template = new file + import + one line in that array.
+
+`templates/index.ts` exports the build entry point:
+
+```typescript
+// Parses all template arrays through their Zod schemas
+// (fail fast on error, fills defaults, rejects duplicate ids)
+export function buildContent(): LoadedContent
+```
+
+Called once at app startup: `initRegistry(buildContent())` in `src/bootstrap.ts` (synchronous).
 
 ---
 
@@ -45,29 +92,12 @@ export function getItemTemplate(id: string): ItemTemplate
 export function getAbilityTemplate(id: string): AbilityTemplate
 export function getMapParams(id: string): MapParams
 
-// Called once at app startup by loader.ts
+// Called once at app startup with the buildContent() result
 export function initRegistry(data: LoadedContent): void
 
-// For testing: inject mock content without fetching files
+// For testing: inject mock content
 export function resetRegistry(): void
 ```
-
----
-
-## `loader.ts`
-
-Fetches all JSON files and validates them. Called once at app startup.
-
-```typescript
-// Main entry point — called from App.tsx before game starts
-export async function loadAllContent(fetchJson: FetchJson): Promise<void>
-```
-
-Load sequence:
-1. Fetch all JSON files from `public/content/` subdirectories
-2. Parse JSON
-3. Validate each file against its Zod schema (fail fast on error)
-4. Call `initRegistry()` with validated data
 
 ---
 
@@ -76,7 +106,7 @@ Load sequence:
 Content errors are **fatal** — the game will not start with invalid content:
 
 ```
-ContentLoadError: Invalid entity in public/content/entities/enemies/cat_small.json
+ContentLoadError: Invalid entity template 'cat_big'
   health.max: Expected number, received string
 ```
 
@@ -86,7 +116,7 @@ This is intentional. Silent content bugs are worse than startup failures.
 
 ## Testing
 
-For unit tests, use `initRegistry()` to inject mock content without fetching files:
+For unit tests, use `initRegistry()` to inject mock content directly, without calling `buildContent()`:
 
 ```typescript
 // In test setup
@@ -105,9 +135,10 @@ initRegistry({
 ## Dependency Rules
 
 ```
-content/schemas.ts  → (nothing — pure types + Zod)
-content/registry.ts → content/schemas.ts
-content/loader.ts   → content/registry.ts, content/schemas.ts
+content/schemas.ts          → (nothing — pure types + Zod)
+content/templates/**        → content/schemas.ts
+content/templates/index.ts  → content/templates/**, content/schemas.ts
+content/registry.ts         → content/schemas.ts
 ```
 
 ```

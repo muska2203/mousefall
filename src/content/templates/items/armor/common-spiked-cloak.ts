@@ -1,0 +1,20 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const commonSpikedCloak = {
+  "id": "common_spiked_cloak",
+  "spriteId": "common_spiked_cloak",
+  "icon": "/assets/items/common_spiked_cloak.png",
+  "fallback": "🧥",
+  "type": "armor",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 8,
+  "armor": {
+    "baseArmor": 1
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [],
+  "ruleIds": [
+    "armor_spiked_thorns"
+  ]
+} satisfies ItemTemplateInput;

@@ -92,7 +92,7 @@ src/simulation/ai/
    - Исключение: явные side-effect helpers в `ai-helpers.ts` (`prepareAbility`, `cancelPreparedAbility`).
 
 5. **Новая стратегия регистрируется через `registerStrategy(id, {...})`**.
-   - `id` совпадает с `aiStrategyId` из JSON-шаблона врага.
+   - `id` совпадает с `aiStrategyId` из TS-шаблона врага.
    - `strategy` в `AIState` — строка, поэтому core-типы править не нужно.
 
 ### Запрещено
@@ -155,7 +155,7 @@ src/simulation/ai/
    - `onWorldChange` — вызывается для каждого заметного события мира (движение, двери), пока ходит игрок.
    - `decideAction` — вызывается один раз за `step()` в фазе `actor-turn`, возвращает одно `GameAction`.
 
-4. **Указать `aiStrategyId`** в JSON-шаблоне врага в `public/content/entities/enemies/`.
+4. **Указать `aiStrategyId`** в TS-шаблоне врага в `src/content/templates/entities/`.
 
 5. **Добавить интеграционные тесты** для нового поведения.
 

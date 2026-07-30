@@ -11,31 +11,35 @@
 
 ## Что понадобится
 
-- JSON-шаблон в `public/content/entities/pois/`.
+- TS-шаблон в `src/content/templates/pois/`.
 - Тексты в `src/content/texts/ru/environment.ts` и `src/content/texts/en/environment.ts` (секция `pois`).
 - Спрайт в `public/assets/objects/pois/` (или placeholder через `scripts/gen-placeholder-sprite.py`).
 - Контентное правило эффекта в `src/simulation/content-rules/rules.ts` (`CONTENT_RULES`).
-- Запись в `public/content/manifest.json` в массиве `pois` (генерируется скриптом).
+- Регистрация в `src/content/templates/pois/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Создай JSON-шаблон** в `public/content/entities/pois/{id}.json`:
+1. **Создай TS-шаблон** в `src/content/templates/pois/altar.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "altar",
-     "interactionKind": "poi",
-     "ruleIds": ["altar_heals_player"],
-     "charges": 1,
-     "renderScale": 1.0,
-     "tags": []
-   }
+   ```ts
+   import type {PoiTemplateInput} from '../../schemas';
+
+   export const altar = {
+     id: 'altar',
+     interactionKind: 'poi',
+     ruleIds: ['altar_heals_player'],
+     charges: 1,
+     renderScale: 1.0,
+     tags: [],
+   } satisfies PoiTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный идентификатор, совпадает с именем файла.
+   - `id` — уникальный идентификатор, совпадает с именем файла в kebab-case.
    - `interactionKind` — всегда `"poi"`.
    - `ruleIds` — декларативные правила эффекта; срабатывают на событие `POI_USED` (слой `object`).
    - `charges` — количество использований; при 0 взаимодействие недоступно (`resolveInteraction` → null).
@@ -75,9 +79,15 @@
    py scripts/gen-placeholder-sprite.py --name altar --dir public/assets/objects/pois --size 32 --color "#c9a227"
    ```
 
-5. **Перегенерируй манифест**:
-   ```bash
-   node scripts/generate-manifest.js
+5. **Зарегистрируй шаблон** в `src/content/templates/pois/index.ts` — добавь импорт и строку в массив `poiTemplates`:
+
+   ```ts
+   import {altar} from './altar';
+   // ...
+   export const poiTemplates: PoiTemplateInput[] = [
+     // ...
+     altar,
+   ];
    ```
 
 6. **Проверь валидацию**:
@@ -100,12 +110,12 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/entities/pois/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/pois/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Правило эффекта добавлено в `CONTENT_RULES` и перечислено в `ruleIds` шаблона.
 - [ ] Тексты добавлены в `ru/environment.ts` и `en/environment.ts` (секция `pois`).
 - [ ] Спрайт добавлен в `public/assets/objects/pois/`.
-- [ ] Манифест перегенерирован.
+- [ ] Шаблон зарегистрирован в `src/content/templates/pois/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.

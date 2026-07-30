@@ -8,40 +8,44 @@
 
 ## Что понадобится
 
-- JSON-шаблон брони в `public/content/items/armor/`.
+- TS-шаблон брони в `src/content/templates/items/armor/`.
 - Тексты в `src/content/texts/ru/items.ts` и `src/content/texts/en/items.ts`.
 - Если броня даёт пассивный эффект — контентное правило в `src/simulation/content-rules/rules.ts`.
 - Текст правила в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.
 - Спрайт и иконка в `public/assets/items/`.
-- Запись в `public/content/manifest.json`.
+- Регистрация в `src/content/templates/items/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Возьми шаблон** [`public/content/items/armor/common_patch_cloak.json`](../../public/content/items/armor/common_patch_cloak.json) или создай JSON по образцу:
+1. **Создай TS-шаблон** в `src/content/templates/items/armor/my-armor.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "my_armor",
-     "spriteId": "my_armor",
-     "icon": "/assets/items/my_armor.png",
-     "fallback": "🛡️",
-     "type": "armor",
-     "stackable": false,
-     "maxStack": 1,
-     "value": 10,
-     "armor": {
-       "baseArmor": 2
+   ```ts
+   import type {ItemTemplateInput} from '../../../schemas';
+
+   export const myArmor = {
+     id: 'my_armor',
+     spriteId: 'my_armor',
+     icon: '/assets/items/my_armor.png',
+     fallback: '🛡️',
+     type: 'armor',
+     stackable: false,
+     maxStack: 1,
+     value: 10,
+     armor: {
+       baseArmor: 2,
      },
-     "grantedAbilities": [],
-     "equipModifiers": [],
-     "ruleIds": ["my_armor_rule"]
-   }
+     grantedAbilities: [],
+     equipModifiers: [],
+     ruleIds: ['my_armor_rule'],
+   } satisfies ItemTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный ID, совпадает с именем файла.
+   - `id` — уникальный ID, совпадает с именем файла в kebab-case (`my_armor` → `my-armor.ts`).
    - `spriteId` — ID спрайта.
    - `icon` — путь к иконке.
    - `fallback` — эмодзи, если иконка не загрузилась.
@@ -67,7 +71,16 @@
 
 4. **Добавь спрайт и иконку** в `public/assets/items/my_armor.png`.
 
-5. **Зарегистрируй в манифесте**. Добавь путь в массив `items` в `public/content/manifest.json`.
+5. **Зарегистрируй шаблон** в `src/content/templates/items/index.ts` — добавь импорт и строку в массив `itemTemplates`:
+
+   ```ts
+   import {myArmor} from './armor/my-armor';
+   // ...
+   export const itemTemplates: ItemTemplateInput[] = [
+     // ...
+     myArmor,
+   ];
+   ```
 
 6. **Запусти проверки**:
    ```bash
@@ -80,12 +93,12 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/items/armor/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/items/armor/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/items.ts` и `en/items.ts`.
 - [ ] Если есть `ruleIds` — правила существуют и тексты правил добавлены.
 - [ ] Спрайт/иконка добавлены в `public/assets/items/`.
-- [ ] Путь добавлен в `public/content/manifest.json`.
+- [ ] Шаблон зарегистрирован в `src/content/templates/items/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.

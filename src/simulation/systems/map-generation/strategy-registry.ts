@@ -8,9 +8,10 @@
  */
 
 import type {MapGenerationStrategy} from './types';
+import type {MapStrategyId} from '@content/ids';
 import {treeRoomStrategy} from './tree-room-strategy';
 
-const strategies = new Map<string, MapGenerationStrategy>([
+const strategies = new Map<MapStrategyId, MapGenerationStrategy>([
   [treeRoomStrategy.id, treeRoomStrategy],
 ]);
 
@@ -21,7 +22,7 @@ const strategies = new Map<string, MapGenerationStrategy>([
  * @returns Стратегия или стратегия по умолчанию (tree), если ID неизвестен.
  */
 export function getMapGenerationStrategy(id: string | undefined): MapGenerationStrategy {
-  const strategy = strategies.get(id ?? 'tree');
+  const strategy = strategies.get((id ?? 'tree') as MapStrategyId);
   if (strategy) return strategy;
 
   console.warn(`[mapgen] Unknown strategy "${id}", falling back to tree room strategy.`);

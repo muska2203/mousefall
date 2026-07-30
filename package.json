@@ -5,11 +5,10 @@
   "description": "2D turn-based roguelike",
   "type": "module",
   "scripts": {
-    "generate-manifest": "node scripts/generate-manifest.js",
     "generate-asset-manifest": "node scripts/generate-asset-manifest.js",
-    "predev": "npm run generate-manifest && npm run generate-asset-manifest",
+    "predev": "npm run generate-asset-manifest",
     "dev": "vite",
-    "prebuild": "npm run generate-manifest && npm run generate-asset-manifest",
+    "prebuild": "npm run generate-asset-manifest",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",

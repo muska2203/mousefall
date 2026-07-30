@@ -16,11 +16,11 @@
    - контентное правило → [`docs/recipes/add-content-rule.md`](../../recipes/add-content-rule.md)
    - другие типы — см. [`docs/recipes/README.md`](../../recipes/README.md)
 
-2. **Возьми образец**: скопируй существующий JSON из `public/content/` или `public/content/examples/`.
+2. **Возьми образец**: скопируй существующий TS-шаблон из `src/content/templates/<категория>/`.
 
-3. **Заполни данные** по шаблону. Не меняй игровую логику.
+3. **Заполни данные** по шаблону. Не меняй игровую логику. Шаблон — экспорт константы с `satisfies XTemplateInput` (Input-типы — в `src/content/schemas.ts`).
 
-4. **Добавь путь** в `public/content/manifest.json`.
+4. **Зарегистрируй шаблон**: добавь импорт и строку в массиве `index.ts` соответствующей категории в `src/content/templates/`.
 
 5. **Проверь валидацию**:
    ```bash

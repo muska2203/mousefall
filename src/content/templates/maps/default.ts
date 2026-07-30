@@ -1,0 +1,20 @@
+import type {MapParamsInput} from '../../schemas';
+
+export const defaultMap = {
+  "id": "default",
+  "strategy": "tree",
+  "width": 30,
+  "height": 30,
+  "minRooms": 5,
+  "maxRooms": 20,
+  "minRoomSize": 2,
+  "maxRoomSize": 4,
+  "enemyDensity": 1,
+  "itemDensity": 0,
+  "enemyPool": [
+    "cat_small",
+    "cat_mid",
+    "cat_big"
+  ],
+  "itemPool": []
+} satisfies MapParamsInput;

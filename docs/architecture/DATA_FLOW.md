@@ -239,10 +239,11 @@ actor-turn 'player' — ожидание ввода
 Игровой клиент инициализируется
     │
     ▼
-UI entry (`src/main.tsx`) вызывает loadAllContent(browserFetchJson)
+`src/bootstrap.ts` вызывает initRegistry(buildContent())
     │
-    ├── fetch JSON-файлов из public/content/
-    │   ├── Zod-валидация каждого файла
+    ├── buildContent() собирает TS-шаблоны из src/content/templates/
+    │   ├── Zod-парс каждого шаблона (с применением дефолтов)
+    │   ├── проверка дублей id
     │   ├── throw on validation error (fail fast)
     │   └── populate ContentRegistry
     │
@@ -263,10 +264,10 @@ UI entry (`src/main.tsx`) вызывает loadAllContent(browserFetchJson)
 
 Content-rules включены по умолчанию (`contentRulesEnabled`).
 
-Реализация загрузки: `src/content/loader.ts`.
+Реализация сборки: `src/content/templates/index.ts` (`buildContent()`).
 Реализация реестра: `src/content/registry.ts`.
 
-**Fail fast:** Если любой JSON-файл невалиден — игра не стартует. Это предотвращает скрытые баги контента.
+**Fail fast:** Если любой шаблон невалиден — игра не стартует. Это предотвращает скрытые баги контента.
 
 ---
 

@@ -10,30 +10,34 @@
 
 ## Что понадобится
 
-- JSON-шаблон террейна в `public/content/terrains/`.
+- TS-шаблон террейна в `src/content/templates/terrains/`.
 - Тексты в `src/content/texts/ru/terrain.ts` и `src/content/texts/en/terrain.ts`.
 - Спрайт в `public/assets/tiles/` (или placeholder через `scripts/gen-placeholder-sprite.py`).
-- Запись в `public/content/manifest.json` в массиве `terrains` (генерируется скриптом).
+- Регистрация в `src/content/templates/terrains/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Создай JSON-шаблон** в `public/content/terrains/{id}.json`:
+1. **Создай TS-шаблон** в `src/content/templates/terrains/sand.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "sand",
-     "walkable": true,
-     "moveCost": 2,
-     "blocksLOS": false,
-     "tags": ["ground"],
-     "ruleIds": []
-   }
+   ```ts
+   import type {TerrainTemplateInput} from '../../schemas';
+
+   export const sand = {
+     id: 'sand',
+     walkable: true,
+     moveCost: 2,
+     blocksLOS: false,
+     tags: ['ground'],
+     ruleIds: [],
+   } satisfies TerrainTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный идентификатор, совпадает с именем файла.
+   - `id` — уникальный идентификатор, совпадает с именем файла в kebab-case.
    - `walkable` — проходим ли террейн для движения.
    - `moveCost` — стоимость входа на клетку в AP (int ≥ 1, default 1).
      Учитывается только при списании AP за одиночный шаг: автопуть и
@@ -63,13 +67,23 @@
    py scripts/gen-placeholder-sprite.py --name sand --dir public/assets/tiles --size 64 --color "#d2b48c"
    ```
 
-4. **Перегенерируй манифесты**:
+4. **Зарегистрируй шаблон** в `src/content/templates/terrains/index.ts` — добавь импорт и строку в массив `terrainTemplates`:
+
+   ```ts
+   import {sand} from './sand';
+   // ...
+   export const terrainTemplates: TerrainTemplateInput[] = [
+     // ...
+     sand,
+   ];
+   ```
+
+5. **Перегенерируй манифест ассетов** (новый спрайт должен попасть в манифест):
    ```bash
-   npm run generate-manifest
    npm run generate-asset-manifest
    ```
 
-5. **Проверь валидацию**:
+6. **Проверь валидацию**:
    ```bash
    npm run validate:content
    npm run typecheck
@@ -97,11 +111,11 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/terrains/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/terrains/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/terrain.ts` и `en/terrain.ts`.
 - [ ] Спрайт добавлен в `public/assets/tiles/`.
-- [ ] Манифесты перегенерированы (`terrains` в `public/content/manifest.json`).
+- [ ] Шаблон зарегистрирован в `src/content/templates/terrains/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.

@@ -10,6 +10,7 @@
  * - Этот реестр — чистая таблица поиска; он не содержит изменяемого состояния.
  */
 
+import type {AiStrategyId} from '@content/ids';
 import type {AiActor, GameState} from '../types';
 import type {ExecutionBuilder, ExecutionNode, GameAction} from '../systems/actions/types';
 import type {WorldChange} from './perception-types';
@@ -34,7 +35,11 @@ export type AIStrategy = {
 
 const strategies: Record<string, AIStrategy> = {};
 
-export function registerStrategy(id: string, strategy: AIStrategy): void {
+/**
+ * Регистрирует стратегию по ID из каталога `AI_STRATEGY_IDS` (src/content/ids.ts).
+ * Добавление новой стратегии требует расширить каталог — компилятор подскажет.
+ */
+export function registerStrategy(id: AiStrategyId, strategy: AIStrategy): void {
   strategies[id] = strategy;
 }
 

@@ -7,6 +7,7 @@
 
 import type {StatActor} from '@simulation/types.ts';
 import type {ItemTemplate} from '@content/schemas';
+import type {WeaponFormulaId} from '@content/ids';
 import {getEffectiveBaseStats} from './effective-base-stats.ts';
 
 export type WeaponFormula = (owner: StatActor, weapon: ItemTemplate | null) => number;
@@ -15,7 +16,7 @@ function single(damage: number): number {
   return damage;
 }
 
-const weaponFormulas: Record<string, WeaponFormula> = {
+const weaponFormulas: Record<WeaponFormulaId, WeaponFormula> = {
   unarmed: (owner) => {
     const s = getEffectiveBaseStats(owner);
     return single(Math.max(0, Math.round(1 + s.str)));
@@ -53,18 +54,13 @@ const weaponFormulas: Record<string, WeaponFormula> = {
 /**
  * Вычисляет суммарный базовый урон для оружия.
  * Если formulaId не найден — используется unarmed.
+ * Для шаблонов невалидный id невозможен (z.enum в схеме); fallback — защита
+ * рантайм-данных из GameState, которые схемой не проверяются.
  */
 export function getWeaponDamage(owner: StatActor, weapon: ItemTemplate | null): number {
   const formulaId = weapon?.weapon?.damageFormulaId ?? 'unarmed';
   const formula = weaponFormulas[formulaId] ?? weaponFormulas.unarmed;
   return formula ? formula(owner, weapon) : 0;
-}
-
-/**
- * Регистрирует новую формулу урона (для модов или расширения).
- */
-export function registerWeaponFormula(id: string, formula: WeaponFormula): void {
-  weaponFormulas[id] = formula;
 }
 
 /**

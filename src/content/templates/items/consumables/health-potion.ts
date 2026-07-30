@@ -1,0 +1,17 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const healthPotion = {
+  "id": "health_potion",
+  "spriteId": "health_potion",
+  "icon": "/assets/items/health_potion.png",
+  "fallback": "🧪",
+  "type": "consumable",
+  "stackable": true,
+  "maxStack": 10,
+  "value": 25,
+  "consumable": {
+    "effect": "heal",
+    "value": 30
+  },
+  "apCost": 1
+} satisfies ItemTemplateInput;

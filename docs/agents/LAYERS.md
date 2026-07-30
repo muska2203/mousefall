@@ -28,9 +28,9 @@ utils/        → (ничего — чистые функции)
 
 ## Ответственность слоёв
 
-### Content (`src/content/` + `public/content/`)
-- **Data:** `public/content/` — JSON-файлы сущностей, предметов, способностей, карт. Модифицируемый без пересборки.
-- **Code:** `src/content/` — Zod-схемы, загрузчик (`loader.ts`), in-memory реестр (`registry.ts`).
+### Content (`src/content/`)
+- **Data:** `src/content/templates/` — TypeScript-шаблоны сущностей, предметов, способностей, карт. Собираются синхронно через `buildContent()` (`src/content/templates/index.ts`).
+- **Code:** `src/content/` — Zod-схемы (`schemas.ts`), in-memory реестр (`registry.ts`).
 - Read-only после инициализации.
 - Доступен для чтения из `simulation/` и `presentation/`.
 
@@ -86,7 +86,7 @@ utils/        → (ничего — чистые функции)
 ## Добавление фичи: куда идти
 
 ### Новый тип врага
-1. JSON-определение в `public/content/entities/`
+1. TS-шаблон в `src/content/templates/entities/` (регистрация в `index.ts` категории)
 2. AI-стратегия (код поведения) в `src/simulation/ai/`
 3. Спрайт в `public/assets/` (регистрация через `src/ui/renderer/spriteRegistry.ts` / `utils/assetResolver.ts`)
 4. Не требует изменений в Presentation и UI (если нет новых анимаций)

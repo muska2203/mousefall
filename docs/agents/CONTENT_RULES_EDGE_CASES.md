@@ -516,4 +516,4 @@ target: add -2
 - [`docs/design/starting-rules-catalog.md`](../design/starting-rules-catalog.md) — каталог стартовых правил и чисел.
 - [`src/simulation/content-rules/AGENTS.md`](../../src/simulation/content-rules/AGENTS.md) — локальные правила слоя content-rules.
 - [`src/simulation/AGENTS.md`](../../src/simulation/AGENTS.md) — общие правила слоя simulation.
-- [`docs/agents/CONTENT.md`](./CONTENT.md) — контент-пайплайн и добавление JSON-шаблонов.
+- [`docs/agents/CONTENT.md`](./CONTENT.md) — контент-пайплайн и добавление шаблонов.

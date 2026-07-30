@@ -2,10 +2,9 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { EntityTemplateSchema, ItemTemplateSchema } from '../../../src/content/schemas';
-
-function readJson(relativePath: string) {
-  return JSON.parse(fs.readFileSync(path.resolve(__dirname, `../../../${relativePath}`), 'utf-8'));
-}
+import { catGuardian } from '../../../src/content/templates/entities/cat-guardian';
+import { catGuardianMaul } from '../../../src/content/templates/items/weapons/cat-guardian-maul';
+import { catGuardianPlate } from '../../../src/content/templates/items/armor/cat-guardian-plate';
 
 function readPngSize(relativePath: string) {
   const buf = fs.readFileSync(path.resolve(__dirname, `../../../${relativePath}`));
@@ -20,8 +19,7 @@ function readPngSize(relativePath: string) {
 
 describe('Шаблон босса cat_guardian', () => {
   it('валидируется как EntityTemplate и имеет корректную структуру', () => {
-    const template = readJson('public/content/entities/enemies/cat_guardian.json');
-    const parsed = EntityTemplateSchema.parse(template);
+    const parsed = EntityTemplateSchema.parse(catGuardian);
 
     expect(parsed.id).toBe('cat_guardian');
     expect(typeof parsed.maxAp).toBe('number');
@@ -44,11 +42,8 @@ describe('Шаблон босса cat_guardian', () => {
   });
 
   it('имеет валидное оружие и броню с корректной структурой', () => {
-    const weapon = readJson('public/content/items/weapons/cat_guardian_maul.json');
-    const armor = readJson('public/content/items/armor/cat_guardian_plate.json');
-
-    const parsedWeapon = ItemTemplateSchema.parse(weapon);
-    const parsedArmor = ItemTemplateSchema.parse(armor);
+    const parsedWeapon = ItemTemplateSchema.parse(catGuardianMaul);
+    const parsedArmor = ItemTemplateSchema.parse(catGuardianPlate);
 
     expect(parsedWeapon.type).toBe('weapon');
     expect(parsedWeapon.weapon).toBeDefined();

@@ -1,0 +1,23 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const catGuardianPlate = {
+  "id": "cat_guardian_plate",
+  "spriteId": "cat_guardian_plate",
+  "icon": "/assets/items/cat_guardian_plate.png",
+  "fallback": "🛡",
+  "type": "armor",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 35,
+  "armor": {
+    "baseArmor": 6
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [
+    {
+      "stat": "maxHp",
+      "value": 10,
+      "op": "add"
+    }
+  ]
+} satisfies ItemTemplateInput;

@@ -1,8 +1,0 @@
-{
-  "id": "fireball",
-  "spriteId": "fireball",
-  "cooldown": 0,
-  "apCost": 1,
-  "damageTag": "damage.magical.fire",
-  "tags": ["delivery.ability", "attack.ranged", "target.aoe", "delivery.projectile", "delivery.spell", "effect.burn"]
-}

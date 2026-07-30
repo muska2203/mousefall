@@ -8,6 +8,7 @@ import {initSkillRegistry} from '../../../src/simulation/skills/index';
 import type {ExecutionNode, GameEvent} from '../../../src/simulation/core-types';
 import {createDefaultAIState, getDerivedAIMode, isEnemyEntity} from '../../../src/simulation/ai/ai-state';
 import {registerStrategy} from '../../../src/simulation/ai/strategy-registry';
+import type {AiStrategyId} from '../../../src/content/ids';
 import {endTurn, tryPrepareAbility} from '../../../src/simulation/ai/ai-helpers';
 import {closeCombat, findVisibleAttackTarget} from '../../../src/simulation/ai/tactics';
 import {registerSkill} from '../../../src/simulation/skills/skillExecutor';
@@ -50,8 +51,9 @@ function getEnemy(state: ReturnType<typeof makeGameState>): EnemyEntity {
  *
  * Используется только в этом файле для проверки механики prepared-скиллов
  * независимо от реальной hunter-стратегии, которая сейчас не использует скиллы.
+ * ID намеренно вне каталога AI_STRATEGY_IDS — поэтому приведение типа.
  */
-registerStrategy('prepared-test-hunter', {
+registerStrategy('prepared-test-hunter' as AiStrategyId, {
   updateState() {
     // В тестах FSM не нужен.
   },

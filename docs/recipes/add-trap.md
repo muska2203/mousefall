@@ -13,31 +13,35 @@
 
 ## Что понадобится
 
-- JSON-шаблон в `public/content/entities/traps/`.
+- TS-шаблон в `src/content/templates/traps/`.
 - Тексты в `src/content/texts/ru/environment.ts` и `src/content/texts/en/environment.ts` (секция `traps`).
 - Спрайт в `public/assets/objects/traps/` (или placeholder через `scripts/gen-placeholder-sprite.py`).
 - Контентное правило эффекта в `src/simulation/content-rules/rules.ts` (`CONTENT_RULES`).
-- Запись в `public/content/manifest.json` в массиве `traps` (генерируется скриптом).
+- Регистрация в `src/content/templates/traps/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Создай JSON-шаблон** в `public/content/entities/traps/{id}.json`:
+1. **Создай TS-шаблон** в `src/content/templates/traps/spikes.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "spikes",
-     "ruleIds": ["spikes_deal_damage"],
-     "oneShot": true,
-     "initiallyHidden": true,
-     "renderScale": 1.0,
-     "tags": []
-   }
+   ```ts
+   import type {TrapTemplateInput} from '../../schemas';
+
+   export const spikes = {
+     id: 'spikes',
+     ruleIds: ['spikes_deal_damage'],
+     oneShot: true,
+     initiallyHidden: true,
+     renderScale: 1.0,
+     tags: [],
+   } satisfies TrapTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный идентификатор, совпадает с именем файла.
+   - `id` — уникальный идентификатор, совпадает с именем файла в kebab-case.
    - `ruleIds` — декларативные правила эффекта; срабатывают на `ENTITY_MOVED` (слой `object`).
    - `oneShot` — `true`: ловушка уничтожается при срабатывании; `false`: раскрывается и остаётся.
    - `initiallyHidden` — `true`: ловушка создаётся скрытой (не рисуется вне debug-режима,
@@ -79,13 +83,23 @@
    py scripts/gen-placeholder-sprite.py --name spikes --dir public/assets/objects/traps --size 32 --color "#8b4513"
    ```
 
-5. **Перегенерируй манифесты**:
+5. **Зарегистрируй шаблон** в `src/content/templates/traps/index.ts` — добавь импорт и строку в массив `trapTemplates`:
+
+   ```ts
+   import {spikes} from './spikes';
+   // ...
+   export const trapTemplates: TrapTemplateInput[] = [
+     // ...
+     spikes,
+   ];
+   ```
+
+6. **Перегенерируй манифест ассетов** (новый спрайт должен попасть в манифест):
    ```bash
-   node scripts/generate-manifest.js
    node scripts/generate-asset-manifest.js
    ```
 
-6. **Проверь валидацию**:
+7. **Проверь валидацию**:
    ```bash
    npm run validate:content
    npm run typecheck
@@ -106,12 +120,12 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/entities/traps/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/traps/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Правило эффекта добавлено в `CONTENT_RULES` и перечислено в `ruleIds` шаблона.
 - [ ] Тексты добавлены в `ru/environment.ts` и `en/environment.ts` (секция `traps`).
 - [ ] Спрайт добавлен в `public/assets/objects/traps/`.
-- [ ] Манифесты перегенерированы.
+- [ ] Шаблон зарегистрирован в `src/content/templates/traps/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.

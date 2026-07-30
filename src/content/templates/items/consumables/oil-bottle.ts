@@ -1,0 +1,19 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const oilBottle = {
+  "id": "oil_bottle",
+  "spriteId": "oil_bottle",
+  "icon": "/assets/items/oil_bottle.png",
+  "fallback": "🫗",
+  "type": "consumable",
+  "stackable": true,
+  "maxStack": 5,
+  "value": 15,
+  "consumable": {
+    "effect": "spawn_tile_effect",
+    "tileEffectType": "oil",
+    "radius": 1,
+    "range": 5
+  },
+  "apCost": 1
+} satisfies ItemTemplateInput;

@@ -45,9 +45,9 @@
 Агент сам:
 - выберет `content-addition` протокол;
 - откроет `docs/recipes/add-enemy.md`;
-- возьмёт шаблон `public/content/examples/enemy-template.json`;
+- возьмёт за образец существующий шаблон из `src/content/templates/entities/`;
 - добавит тексты;
-- зарегистрирует в манифесте;
+- зарегистрирует шаблон в `index.ts` категории;
 - запустит проверки.
 
 ---

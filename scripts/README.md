@@ -4,23 +4,9 @@
 
 ---
 
-## `generate-manifest.js`
-
-Сканирует `public/content/` и перегенерирует `public/content/manifest.json`.
-
-Запуск:
-
-```bash
-node scripts/generate-manifest.js
-```
-
-Вызывается автоматически перед `npm run dev` и `npm run build`.
-
----
-
 ## `validate-content.ts`
 
-Валидирует JSON-контент из `public/content/`:
+Собирает игровой контент через `buildContent()` из TypeScript-шаблонов `src/content/templates/` и валидирует его:
 
 - ссылки `ruleIds` на декларативные правила,
 - семантику правил (статусы, формулы урона, способности),

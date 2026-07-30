@@ -8,31 +8,35 @@
 
 ## Что понадобится
 
-- JSON-шаблон статуса в `public/content/statuses/`.
+- TS-шаблон статуса в `src/content/templates/statuses/`.
 - Тексты в `src/content/texts/ru/statuses.ts` и `src/content/texts/en/statuses.ts`.
 - Если статус что-то делает — контентное правило в `src/simulation/content-rules/rules.ts`.
 - Текст правила в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.
-- Запись в `public/content/manifest.json`.
+- Регистрация в `src/content/templates/statuses/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Возьми шаблон** [`public/content/examples/status-template.json`](../../public/content/examples/status-template.json) или создай JSON по образцу:
+1. **Создай TS-шаблон** в `src/content/templates/statuses/my-status.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "my_status",
-     "ruleIds": ["my_status_tick"],
-     "statusCategory": "poison",
-     "categoryPriority": 0,
-     "mutuallyExclusiveWith": [],
-     "blockedBy": []
-   }
+   ```ts
+   import type {StatusTemplateInput} from '../../schemas';
+
+   export const myStatus = {
+     id: 'my_status',
+     ruleIds: ['my_status_tick'],
+     statusCategory: 'poison',
+     categoryPriority: 0,
+     mutuallyExclusiveWith: [],
+     blockedBy: [],
+   } satisfies StatusTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный ID, совпадает с именем файла.
+   - `id` — уникальный ID, совпадает с именем файла в kebab-case (`my_status` → `my-status.ts`).
    - `ruleIds` — ID контентных правил, активируемых статусом.
    - `statusCategory` — категория для разрешения конфликтов.
    - `categoryPriority` — приоритет внутри категории (выше — важнее).
@@ -52,7 +56,16 @@
    - Например, урон в начале хода, восстановление HP, контратака.
    - Рецепт: [`add-content-rule.md`](./add-content-rule.md).
 
-4. **Зарегистрируй в манифесте**. Добавь путь в массив `statuses` в `public/content/manifest.json`.
+4. **Зарегистрируй шаблон** в `src/content/templates/statuses/index.ts` — добавь импорт и строку в массив `statusTemplates`:
+
+   ```ts
+   import {myStatus} from './my-status';
+   // ...
+   export const statusTemplates: StatusTemplateInput[] = [
+     // ...
+     myStatus,
+   ];
+   ```
 
 5. **Запусти проверки**:
    ```bash
@@ -65,11 +78,11 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/statuses/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/statuses/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/statuses.ts` и `en/statuses.ts`.
 - [ ] Если статус делает что-то в игре — правило создано и зарегистрировано.
-- [ ] Путь добавлен в `public/content/manifest.json`.
+- [ ] Шаблон зарегистрирован в `src/content/templates/statuses/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.

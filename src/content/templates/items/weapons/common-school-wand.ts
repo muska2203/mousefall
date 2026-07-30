@@ -1,0 +1,40 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const commonSchoolWand = {
+  "id": "common_school_wand",
+  "spriteId": "common_school_wand",
+  "icon": "/assets/items/common_school_wand.png",
+  "fallback": "🪄",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 10,
+  "abilityPool": [
+    {
+      "abilityId": "fireball",
+      "weight": 1
+    },
+    {
+      "abilityId": "magic_slap",
+      "weight": 1
+    }
+  ],
+  "grantedAbilities": [],
+  "weapon": {
+    "baseDamage": 2,
+    "damageFormulaId": "staff",
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.physical.blunt",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
+  },
+  "equipModifiers": []
+} satisfies ItemTemplateInput;

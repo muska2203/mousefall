@@ -1,6 +1,6 @@
 # Правила слоя Content
 
-> Работая в `src/content/` или `public/content/`, соблюдай эти правила. Они приоритетнее общих.
+> Работая в `src/content/`, соблюдай эти правила. Они приоритетнее общих.
 
 ---
 
@@ -17,21 +17,31 @@
 
 ```
 src/content/
-  schemas.ts         # Zod-схемы и типы шаблонов
+  ids.ts             # Замкнутые наборы ID (WEAPON_FORMULA_IDS, AI_STRATEGY_IDS, MAP_STRATEGY_IDS) — источник истины для z.enum и реестров simulation
+  schemas.ts         # Zod-схемы и типы шаблонов; в конце — Input-типы для авторства
+  validate-references.ts  # Валидация перекрёстных ссылок между шаблонами (equipment, lootTable, пулы карт и т.д.)
   registry.ts        # In-memory реестр загруженного контента
-  loader.ts          # Async fetch + валидация JSON-контента
+  templates/         # Шаблоны контента как TypeScript-модули
+    index.ts         # buildContent(): парс через Zod (дефолты, инварианты, дубли id) → LoadedContent
+    entities/        # Шаблоны врагов
+    players/         # Шаблоны игрока
+    items/           # Оружие, броня, амулеты, расходники (weapons/, armor/, amulet/, consumables/)
+    abilities/       # Шаблоны способностей
+    statuses/        # Шаблоны статусов
+    tile-effects/    # Тайловые эффекты
+    tile-effect-statuses/  # Статусы от тайловых эффектов
+    terrains/        # Шаблоны террейнов (основа пола клетки)
+    maps/            # Параметры генерации карт
+    stairs/          # Лестницы
+    doors/           # Двери
+    props/           # Пропсы
+    pois/            # POI
+    traps/           # Ловушки
   texts/             # Локализованные тексты врагов, предметов, способностей
     types.ts         # Типы игровых текстов
     ru.ts            # Русские тексты
     en.ts            # Английские тексты
     lookup.ts        # getContentText(category, id, locale)
-
-public/content/
-  entities/          # Шаблоны врагов и игрока
-  items/             # Оружие, броня, расходники
-  abilities/         # Шаблоны способностей
-  maps/              # Параметры генерации карт
-  terrains/          # Шаблоны террейнов (основа пола клетки)
 ```
 
 ---
@@ -40,10 +50,10 @@ public/content/
 
 | Задача | Куда идти |
 |--------|-----------|
-| Добавить новый шаблон сущности | `public/content/entities/...` + `manifest.json` |
-| Добавить новый террейн | `docs/recipes/add-terrain.md` → `public/content/terrains/`, `texts/{ru,en}/terrain.ts` |
+| Добавить новый шаблон сущности | `src/content/templates/entities/<id>.ts` + строка в `templates/entities/index.ts` |
+| Добавить новый террейн | `docs/recipes/add-terrain.md` → `src/content/templates/terrains/`, `texts/{ru,en}/terrain.ts` |
 | Изменить схему валидации | `src/content/schemas.ts` |
-| Добавить поле в реестр | `src/content/registry.ts` + `loader.ts` |
+| Добавить поле в реестр | `src/content/registry.ts` + `templates/index.ts` |
 | Добавить/изменить текст врага/предмета/способности | `src/content/texts/{ru,en}.ts` |
 | Добавить/изменить игровой тег | `src/content/schemas.ts` (`TagsSchema`) + `src/content/texts/{ru,en}.ts` |
 | Добавить/изменить тип урона | `src/content/schemas.ts` (`WeaponStatsSchema` / `AbilityTemplateSchema`) + `src/simulation/systems/damage/damage-handlers.ts` + `src/simulation/systems/tags/weapon-tags.ts` |
@@ -52,15 +62,27 @@ public/content/
 
 ## Добавление контента
 
-1. Создать JSON-файл по существующей схеме.
-2. Добавить путь в `public/content/manifest.json`.
-3. Пересборка не требуется.
+1. Создать файл `src/content/templates/<категория>/<id>.ts` (имя файла = id в kebab-case, константа — camelCase):
 
-> JSON-шаблоны содержат только механику (`tags`, `damageDistribution`, статы, пулы). Все `name` / `description` / `flavorText` живут в `src/content/texts/{ru,en}.ts` и мержатся через `getLocalizedItem()` / `getLocalizedEntity()`.
+   ```typescript
+   import type {EntityTemplateInput} from '../../schemas';
+
+   export const catBig = {
+     id: 'cat_big',
+     // ...
+   } satisfies EntityTemplateInput;
+   ```
+
+   Input-типы (`EntityTemplateInput`, `ItemTemplateInput`, ...) определены в конце `src/content/schemas.ts` через `z.input<>` — поля с дефолтами в них опциональны.
+2. Импортировать константу и добавить её в массив шаблонов в `index.ts` соответствующей категории (`entityTemplates`, `itemTemplates`, ...).
+3. Добавить тексты в `src/content/texts/{ru,en}.ts`.
+4. Прогнать `npm run validate:content` — собирает контент через `buildContent()` и проверяет `ruleIds`, семантику правил, перекрёстные ссылки между шаблонами (`validate-references.ts`) и переводы.
+
+> Шаблоны содержат только механику (`tags`, `damageDistribution`, статы, пулы). Все `name` / `description` / `flavorText` живут в `src/content/texts/{ru,en}.ts` и мержатся через `getLocalizedItem()` / `getLocalizedEntity()`.
 >
 > Предпочтительный способ классифицировать урон и эффекты — иерархические теги (`damage.physical.slashing`, `damage.magical.fire`, `attack.melee` и т.д.).
 
-### Террейны: `public/content/terrains/`
+### Террейны: `src/content/templates/terrains/`
 
 Террейн — структурная основа клетки (стена — тоже террейн с `walkable: false`).
 Шаблон (`TerrainTemplateSchema`): `walkable`, `moveCost` (≥ 1, default 1), `blocksLOS` (default false), `tags`, `ruleIds`.
@@ -71,7 +93,7 @@ public/content/
 
 В `WeaponStatsSchema` (`src/content/schemas.ts`) урон оружия задаётся полем `damageDistribution` — массивом записей:
 
-```json
+```typescript
 {
   "weapon": {
     "baseDamage": 4,
@@ -99,7 +121,7 @@ public/content/
 
 Примеры:
 
-```json
+```typescript
 // Ability-based: урон от формулы + тег fire
 {
   "id": "fireball",

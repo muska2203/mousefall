@@ -1,20 +1,22 @@
 /**
- * Точка входа для загрузки и валидации контента при старте приложения.
+ * Точка входа для инициализации и валидации контента при старте приложения.
  *
- * Загружает все JSON-шаблоны контента, заполняет реестр, проверяет
- * ссылки на контентные правила и предзагружает игровые ассеты.
+ * Собирает контент из TypeScript-шаблонов (src/content/templates/),
+ * заполняет реестр, проверяет ссылки на контентные правила
+ * и предзагружает игровые ассеты.
  */
 
-import {browserFetchJson, loadAllContent} from '@content/loader';
+import {buildContent} from '@content/templates';
+import {initRegistry, getRegistry} from '@content/registry';
+import {validateContentReferences} from '@content/validate-references';
 import {validateContentRuleReferences, validateContentRuleSemantics,} from '@simulation/content-rules/validation';
-import {getRegistry} from '@content/registry';
 import {loadAssetManifest, preloadTextures} from '@ui/renderer/assetPreloader';
 
 /**
- * Загружает контент и валидирует ссылки на декларативные правила.
+ * Собирает контент и валидирует ссылки на декларативные правила.
  */
 export async function bootstrapContent(): Promise<void> {
-  await loadAllContent(browserFetchJson);
+  initRegistry(buildContent());
   validateContentRuleReferences(getRegistry());
 
   const semanticsErrors = validateContentRuleSemantics(getRegistry());
@@ -23,6 +25,14 @@ export async function bootstrapContent(): Promise<void> {
       .map((e) => `[${e.path}] ${e.field}: ${e.problem}`)
       .join('\n');
     throw new Error(`Семантические ошибки контентных правил:\n${messages}`);
+  }
+
+  const referenceErrors = validateContentReferences(getRegistry());
+  if (referenceErrors.length > 0) {
+    const messages = referenceErrors
+      .map((e) => `[${e.path}] ${e.field}: ${e.problem}`)
+      .join('\n');
+    throw new Error(`Ошибки ссылок между шаблонами контента:\n${messages}`);
   }
 }
 

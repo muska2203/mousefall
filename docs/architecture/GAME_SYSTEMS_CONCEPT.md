@@ -32,7 +32,7 @@
 
 Теги проверяются через `hasTag` / `hasAllTags` / `hasAnyTag` (`src/simulation/systems/tags/tag-helpers.ts`). Родительские теги выводятся автоматически: `damage.physical.slashing` удовлетворяет `damage.physical`.
 
-`DamageType` в `src/simulation/core-types.ts` и поле `damageType` в JSON-шаблонах сохраняются для совместимости с интентами и событиями, но новые механики должны опираться на теги.
+`DamageType` в `src/simulation/core-types.ts` и поле `damageType` в шаблонах контента сохраняются для совместимости с интентами и событиями, но новые механики должны опираться на теги.
 
 ### Броня
 

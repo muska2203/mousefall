@@ -8,33 +8,37 @@
 
 ## Что понадобится
 
-- JSON-шаблон способности в `public/content/abilities/`.
+- TS-шаблон способности в `src/content/templates/abilities/`.
 - Тексты в `src/content/texts/ru/abilities.ts` и `src/content/texts/en/abilities.ts`.
 - `SkillExecutor` в `src/simulation/skills/executors/<id>Skill.ts` (для способностей с уникальной логикой).
 - Регистрация executor'а в `src/simulation/skills/index.ts`.
 - Анимация в `src/presentation/animation/skills/<id>.ts` и импорт в `src/presentation/animation/register.ts` (если нужна визуализация).
 - Спрайт и иконка в `public/assets/skills/`.
-- Запись в `public/content/manifest.json`.
+- Регистрация в `src/content/templates/abilities/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Возьми шаблон** [`public/content/abilities/cleave.json`](../../public/content/abilities/cleave.json) или [`public/content/examples/ability-template.json`](../../public/content/examples/ability-template.json), затем создай JSON в `public/content/abilities/<id>.json`:
+1. **Создай TS-шаблон** в `src/content/templates/abilities/my-ability.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "my_ability",
-     "spriteId": "my_ability",
-     "cooldown": 2,
-     "apCost": 1,
-     "requiredWeaponTags": ["attack.melee"],
-     "tags": ["delivery.ability", "attack.melee", "target.single"]
-   }
+   ```ts
+   import type {AbilityTemplateInput} from '../../schemas';
+
+   export const myAbility = {
+     id: 'my_ability',
+     spriteId: 'my_ability',
+     cooldown: 2,
+     apCost: 1,
+     requiredWeaponTags: ['attack.melee'],
+     tags: ['delivery.ability', 'attack.melee', 'target.single'],
+   } satisfies AbilityTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный ID, совпадает с именем файла.
+   - `id` — уникальный ID, совпадает с именем файла в kebab-case (`my_ability` → `my-ability.ts`).
    - `spriteId` — ID спрайта.
    - `cooldown` — ходов до повторного использования.
    - `apCost` — стоимость в AP (число или `"all"`).
@@ -128,7 +132,16 @@
 
 6. **Добавь спрайт и иконку** в `public/assets/skills/my_ability.png`.
 
-7. **Зарегистрируй в манифесте**. Добавь путь в массив `abilities` в `public/content/manifest.json`.
+7. **Зарегистрируй шаблон** в `src/content/templates/abilities/index.ts` — добавь импорт и строку в массив `abilityTemplates`:
+
+   ```ts
+   import {myAbility} from './my-ability';
+   // ...
+   export const abilityTemplates: AbilityTemplateInput[] = [
+     // ...
+     myAbility,
+   ];
+   ```
 
 8. **Запусти проверки**:
    ```bash
@@ -150,14 +163,14 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/abilities/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/abilities/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/abilities.ts` и `en/abilities.ts`.
 - [ ] `SkillExecutor` создан в `src/simulation/skills/executors/` (если требуется).
 - [ ] Executor зарегистрирован в `src/simulation/skills/index.ts`.
 - [ ] Анимация добавлена и зарегистрирована в `src/presentation/animation/register.ts` (если требуется).
 - [ ] Спрайт/иконка добавлены в `public/assets/skills/`.
-- [ ] Путь добавлен в `public/content/manifest.json`.
+- [ ] Шаблон зарегистрирован в `src/content/templates/abilities/index.ts`.
 - [ ] Если есть `ruleIds` — правила существуют и тексты правил добавлены.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.

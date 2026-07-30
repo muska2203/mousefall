@@ -9,7 +9,7 @@
 
 ## Быстрый обзор
 
-Тайловые эффекты — это динамические материалы на клетках карты: вода, масло, огонь и т.п. Они живут в `public/content/tile-effects/` как JSON-шаблоны, а своё игровое поведение получают через контентные правила и статусы.
+Тайловые эффекты — это динамические материалы на клетках карты: вода, масло, огонь и т.п. Они живут в `src/content/templates/tile-effects/` как TypeScript-шаблоны, а своё игровое поведение получают через контентные правила и статусы.
 
 Есть два вида объектов:
 
@@ -24,9 +24,18 @@
 
 В качестве примера используется уже реализованная пара `water` / `oil`.
 
-### Шаг 1. Создать JSON-шаблон
+### Шаг 1. Создать TS-шаблон
 
-Создайте файл `public/content/tile-effects/<идентификатор>.json`. Имя файла должно совпадать с полем `id` внутри.
+Создайте файл `src/content/templates/tile-effects/<идентификатор>.ts`. Имя файла должно совпадать с полем `id` внутри. Шаблон экспортируется как константа:
+
+```ts
+import type {TileEffectTemplateInput} from '../../schemas';
+
+export const myEffect = {
+  id: 'my_effect',
+  // ...остальные поля
+} satisfies TileEffectTemplateInput;
+```
 
 Основные поля шаблона:
 
@@ -46,9 +55,9 @@
 
 Поместите файл спрайта в `public/assets/tile-effects/<идентификатор>.png`. Рендерер использует соглашение об именовании: путь строится как `/assets/tile-effects/<effectType>.png`.
 
-### Шаг 4. Зарегистрировать в манифесте
+### Шаг 4. Зарегистрировать в index.ts категории
 
-Добавьте путь к JSON-файлу в массив `tileEffects` в `public/content/manifest.json`. Без этого шаблон не загрузится.
+Добавьте импорт и строку с константой в массив `tileEffectTemplates` в `src/content/templates/tile-effects/index.ts`. Без этого шаблон не попадёт в сборку контента.
 
 ### Шаг 5. Добавить контентные правила
 
@@ -78,19 +87,19 @@
 
 #### Через расходник (предпочтительно)
 
-1. Создайте шаблон предмета в `public/content/items/consumables/<id>.json`.
+1. Создайте шаблон предмета в `src/content/templates/items/consumables/<id>.ts` (экспорт константы с `satisfies ItemTemplateInput`).
    - `type: "consumable"`.
    - `consumable.effect: "spawn_tile_effect"`.
    - Укажите `tileEffectType`, `radius` (зона спавна) и `range` (дальность броска).
 2. Добавьте спрайт в `public/assets/items/<id>.png`.
-3. Зарегистрируйте предмет в массиве `items` в `public/content/manifest.json`.
+3. Зарегистрируйте предмет импортом и строкой в массиве `itemTemplates` в `src/content/templates/items/index.ts`.
 4. Добавьте название и описание в `src/content/texts/{ru,en}/items.ts`.
 5. Анимация броска (`ITEM_THROW`) добавляется автоматически для расходников с `spawn_tile_effect` — отдельный исполнитель не требуется.
 6. Для тестов используйте `USE_ITEM` вместо `USE_ABILITY`.
 
 #### Через способность
 
-1. Создайте шаблон способности в `public/content/abilities/<id>.json`.
+1. Создайте шаблон способности в `src/content/templates/abilities/<id>.ts` (экспорт константы с `satisfies AbilityTemplateInput`) и зарегистрируйте его в `index.ts` категории.
 2. Создайте исполнитель способности в `src/simulation/skills/executors/<id>Skill.ts`, который порождает интенты `SPAWN_TILE_EFFECT`.
 3. Зарегистрируйте исполнитель в реестре скиллов.
 4. Добавьте анимацию применения в `src/presentation/animation/skills/`.
@@ -116,9 +125,9 @@
 
 Если материал должен временно менять своё поведение (гореть, электризоваться, замерзать), добавьте статус тайлового эффекта.
 
-### Шаг 1. Создать JSON-шаблон статуса
+### Шаг 1. Создать TS-шаблон статуса
 
-Создайте файл `public/content/tile-effect-statuses/<идентификатор>.json`:
+Создайте файл `src/content/templates/tile-effect-statuses/<идентификатор>.ts` — экспорт константы с `satisfies TileEffectStatusTemplateInput`. Основные поля:
 
 - `duration` — базовая длительность.
 - `ruleIds` — правила, активируемые, когда статус присутствует на клетке события.
@@ -136,9 +145,9 @@
 - Локализованное название — в `src/content/texts/{ru,en}/tile-effect-statuses.ts`.
 - Спрайт — в `public/assets/tile-effects/<идентификатор>.png` (рендерер использует ту же директорию, что и для материалов).
 
-### Шаг 4. Зарегистрировать в манифесте
+### Шаг 4. Зарегистрировать в index.ts категории
 
-Добавьте путь к JSON-файлу в массив `tileEffectStatuses` в `public/content/manifest.json`.
+Добавьте импорт и строку с константой в массив `tileEffectStatusTemplates` в `src/content/templates/tile-effect-statuses/index.ts`.
 
 ### Шаг 5. Добавить правила
 
@@ -181,7 +190,7 @@
 
 - **Забыли добавить `canHaveStatus`.** Статус не наложится, даже если правило сработает.
 - **Забыли `ruleIds` в шаблоне.** Правило существует, но не активируется на клетке с эффектом.
-- **Статус не добавлен в манифест.** Игра не загрузит шаблон и не сможет его найти.
+- **Статус не добавлен в index.ts категории.** Шаблон не попадёт в сборку контента, и игра не сможет его найти.
 - **Спрайт положили не в ту папку.** Рендерер ищет спрайты только в `public/assets/tile-effects/`.
 - **`neverExpires` без `durationDecreasesWhenHasStatus`.** Материал никогда не исчезнет, если статус не снимается другим способом.
 

@@ -8,37 +8,41 @@
 
 ## Что понадобится
 
-- JSON-шаблон расходника в `public/content/items/consumables/`.
+- TS-шаблон расходника в `src/content/templates/items/consumables/`.
 - Тексты в `src/content/texts/ru/items.ts` и `src/content/texts/en/items.ts`.
 - Спрайт и иконка в `public/assets/items/`.
-- Запись в `public/content/manifest.json`.
+- Регистрация в `src/content/templates/items/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Возьми шаблон** [`public/content/items/consumables/health_potion.json`](../../public/content/items/consumables/health_potion.json) или создай JSON по образцу:
+1. **Создай TS-шаблон** в `src/content/templates/items/consumables/my-consumable.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "my_consumable",
-     "spriteId": "my_consumable",
-     "icon": "/assets/items/my_consumable.png",
-     "fallback": "🧪",
-     "type": "consumable",
-     "stackable": true,
-     "maxStack": 10,
-     "value": 25,
-     "consumable": {
-       "effect": "heal",
-       "value": 30
+   ```ts
+   import type {ItemTemplateInput} from '../../../schemas';
+
+   export const myConsumable = {
+     id: 'my_consumable',
+     spriteId: 'my_consumable',
+     icon: '/assets/items/my_consumable.png',
+     fallback: '🧪',
+     type: 'consumable',
+     stackable: true,
+     maxStack: 10,
+     value: 25,
+     consumable: {
+       effect: 'heal',
+       value: 30,
      },
-     "apCost": 1
-   }
+     apCost: 1,
+   } satisfies ItemTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный ID, совпадает с именем файла.
+   - `id` — уникальный ID, совпадает с именем файла в kebab-case (`my_consumable` → `my-consumable.ts`).
    - `spriteId` — ID спрайта.
    - `icon` — путь к иконке.
    - `fallback` — эмодзи, если иконка не загрузилась.
@@ -66,7 +70,16 @@
 
 3. **Добавь спрайт и иконку** в `public/assets/items/my_consumable.png`.
 
-4. **Зарегистрируй в манифесте**. Добавь путь в массив `items` в `public/content/manifest.json`.
+4. **Зарегистрируй шаблон** в `src/content/templates/items/index.ts` — добавь импорт и строку в массив `itemTemplates`:
+
+   ```ts
+   import {myConsumable} from './consumables/my-consumable';
+   // ...
+   export const itemTemplates: ItemTemplateInput[] = [
+     // ...
+     myConsumable,
+   ];
+   ```
 
 5. **Запусти проверки**:
    ```bash
@@ -79,11 +92,11 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/items/consumables/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/items/consumables/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/items.ts` и `en/items.ts`.
 - [ ] Спрайт/иконка добавлены в `public/assets/items/`.
-- [ ] Путь добавлен в `public/content/manifest.json`.
+- [ ] Шаблон зарегистрирован в `src/content/templates/items/index.ts`.
 - [ ] Выбранный `consumable.effect` реализован в `use-item-action.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.

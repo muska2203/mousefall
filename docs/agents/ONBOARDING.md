@@ -59,10 +59,14 @@ npm run typecheck
 
 ```
 src/
-  content/             # Реестр контента: Zod-схемы, загрузчик, read-only доступ
+  content/             # Реестр контента: Zod-схемы, шаблоны, read-only доступ
     schemas.ts         # Zod-схемы и типы шаблонов
     registry.ts        # In-memory реестр загруженного контента
-    loader.ts          # Async fetch + валидация JSON-контента
+    templates/         # TS-шаблоны контента, сборка через buildContent()
+      entities/        # Враги (players/ — шаблоны игрока)
+      items/           # weapons/, armor/, amulet/, consumables/
+      abilities/ statuses/ terrains/ maps/ stairs/ doors/ props/ pois/ traps/
+      tile-effects/ tile-effect-statuses/
   simulation/          # Ядро игры (headless, детерминированное)
     systems/           # Игровые системы
       actions/         # Обработчики действий
@@ -83,19 +87,6 @@ src/
 
 public/
   assets/              # Графические ассеты
-  content/             # Игровой контент в JSON (модифицируемый)
-    abilities/
-    entities/
-      enemies/
-      player/
-      doors/
-      stairs/
-    items/
-      weapons/
-      armor/
-      amulet/
-      consumables/
-    maps/
 
 tests/
   unit/
@@ -117,7 +108,7 @@ tests/
 | Добавить новую игровую систему | `src/simulation/systems/` + `src/simulation/types.ts` |
 | Добавить новый тип действия | `src/simulation/core-types.ts` (union `GameAction`) |
 | Добавить новый тип события | `src/simulation/core-types.ts` (union `GameEvent`) |
-| Добавить контент (враг, предмет, карта) | `public/content/` + `src/content/loader.ts` |
+| Добавить контент (враг, предмет, карта) | `src/content/templates/<категория>/` (шаблон + регистрация в `index.ts`) |
 | Изменить генерацию карт | `src/simulation/systems/mapgen.ts` |
 | Добавить тест | `tests/unit/simulation/` или `tests/integration/` |
 | Изучить схемы контента | `src/content/schemas.ts` |
@@ -136,7 +127,7 @@ src/simulation/types.ts                 # Types: lowercase
 src/presentation/gameSession.ts         # Presentation: PascalCase для классов
 src/ui/components/Grid.tsx              # React components: PascalCase
 src/ui/renderer/WorldRenderer.ts        # Renderer classes: PascalCase
-public/content/entities/cat_small.json  # Content: lowercase
+src/content/templates/entities/cat-small.ts  # Content templates: kebab-case
 ```
 
 ---

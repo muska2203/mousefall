@@ -1,0 +1,22 @@
+import type {MapParamsInput} from '../../schemas';
+
+export const floor1 = {
+  "id": "floor_1",
+  "strategy": "tree",
+  "width": 40,
+  "height": 40,
+  "minRooms": 5,
+  "maxRooms": 20,
+  "minRoomSize": 3,
+  "maxRoomSize": 8,
+  "enemyDensity": 1,
+  "itemDensity": 0.1,
+  "enemyPool": [
+    "cat_small",
+    "cat_mid",
+    "cat_big"
+  ],
+  "itemPool": [
+    "health_potion"
+  ]
+} satisfies MapParamsInput;

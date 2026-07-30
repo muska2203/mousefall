@@ -1,0 +1,53 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const commonSplinterBlade = {
+  "id": "common_splinter_blade",
+  "spriteId": "common_splinter_blade",
+  "icon": "/assets/items/common_splinter_blade.png",
+  "fallback": "🗡",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 10,
+  "abilityPool": [
+    {
+      "abilityId": "dash",
+      "weight": 1
+    },
+    {
+      "abilityId": "counterattack",
+      "weight": 1
+    },
+    {
+      "abilityId": "swoop",
+      "weight": 1
+    },
+    {
+      "abilityId": "cleave",
+      "weight": 1
+    }
+  ],
+  "weapon": {
+    "baseDamage": 4,
+    "damageFormulaId": "sword",
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.physical.slashing",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
+  },
+  "grantedAbilities": [
+    "sudden_strike"
+  ],
+  "equipModifiers": [],
+  "ruleIds": [
+    "weapon_poison_on_hit"
+  ]
+} satisfies ItemTemplateInput;

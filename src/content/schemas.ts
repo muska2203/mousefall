@@ -1,18 +1,24 @@
 /**
- * Zod-схемы для JSON-файлов контента (сущности, предметы, способности, карты).
+ * Zod-схемы игрового контента (сущности, предметы, способности, карты и т.д.).
  *
  * Эти схемы:
- * - Валидируют контент при загрузке (fail fast на невалидном контенте)
+ * - Валидируют контент при сборке (fail fast на невалидном контенте)
  * - Выводят TypeScript-типы (единственный источник истины)
- * - Дают понятные сообщения об ошибках авторам контента
+ * - Заполняют дефолты и проверяют инварианты при Schema.parse()
+ *
+ * Шаблоны контента — TypeScript-модули в src/content/templates/,
+ * пишутся через `satisfies XTemplateInput` (input-типы в конце файла)
+ * и собираются в LoadedContent через buildContent() (templates/index.ts).
  *
  * Правила:
- * - Схемы точно отражают формат JSON-файла
+ * - Схемы точно отражают структуру шаблона
  * - Используйте .default() для опциональных полей с разумными значениями по умолчанию
  * - Используйте .describe() для документации
  */
 
 import {z} from 'zod';
+
+import {AI_STRATEGY_IDS, MAP_STRATEGY_IDS, WEAPON_FORMULA_IDS} from './ids';
 
 // ─────────────────────────────────────────────
 // Общие подсхемы
@@ -68,7 +74,7 @@ const RuleIdsSchema = z.array(z.string().min(1))
 
 export const EntityTemplateSchema = z.object({
   id:       z.string().min(1).describe('Уникальный идентификатор сущности (совпадает с именем файла)'),
-  aiStrategyId: z.string().min(1).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
+  aiStrategyId: z.enum(AI_STRATEGY_IDS).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
   aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Манхэттен + LOS). По умолчанию 6.'),
   health:   HealthSchema,
   combat:   CombatSchema.optional(),
@@ -91,7 +97,7 @@ export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
 
 const WeaponStatsSchema = z.object({
   baseDamage: z.number().int().nonnegative().describe('Базовый урон оружия'),
-  damageFormulaId: z.string().min(1).describe('ID формулы урона в коде'),
+  damageFormulaId: z.enum(WEAPON_FORMULA_IDS).describe('ID формулы урона в коде (каталог — src/content/ids.ts)'),
   range: z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
   damageDistribution: z.array(
     z.object({
@@ -281,7 +287,7 @@ export type TileEffectStatusTemplate = z.output<typeof TileEffectStatusTemplateS
 
 export const MapParamsSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор параметров карты'),
-  strategy:    z.string().min(1).default('tree').describe('Алгоритм генерации карты: tree — дерево комнат от спавна до выхода'),
+  strategy:    z.enum(MAP_STRATEGY_IDS).default('tree').describe('Алгоритм генерации карты: tree — дерево комнат от спавна до выхода'),
   width:       z.number().int().min(20).max(100).describe('Ширина карты в клетках'),
   height:      z.number().int().min(20).max(100).describe('Высота карты в клетках'),
   minRooms:    z.number().int().positive().describe('Минимальное количество комнат'),
@@ -425,3 +431,41 @@ export type LoadedContent = {
   /** Ловушки (проходимые объекты, срабатывающие на вход на клетку). Опционально для обратной совместимости с тестовыми моками. */
   traps?:    Map<string, TrapTemplate>;
 };
+
+// ─────────────────────────────────────────────
+// Input-типы для авторства шаблонов в TypeScript
+// ─────────────────────────────────────────────
+//
+// Шаблоны контента живут в src/content/templates/ как TypeScript-модули
+// и пишутся через `satisfies XTemplateInput`. В отличие от output-типов
+// (XTemplate), поля с Zod-дефолтами здесь опциональны: их заполняет
+// Schema.parse() при сборке контента (см. templates/index.ts).
+
+/** Входная форма шаблона сущности: поля с дефолтами опциональны. */
+export type EntityTemplateInput = z.input<typeof EntityTemplateSchema>;
+/** Входная форма шаблона игрока: поля с дефолтами опциональны. */
+export type PlayerTemplateInput = z.input<typeof PlayerTemplateSchema>;
+/** Входная форма шаблона предмета: поля с дефолтами опциональны. */
+export type ItemTemplateInput = z.input<typeof ItemTemplateSchema>;
+/** Входная форма шаблона способности: поля с дефолтами опциональны. */
+export type AbilityTemplateInput = z.input<typeof AbilityTemplateSchema>;
+/** Входная форма шаблона статуса: поля с дефолтами опциональны. */
+export type StatusTemplateInput = z.input<typeof StatusTemplateSchema>;
+/** Входная форма шаблона террейна: поля с дефолтами опциональны. */
+export type TerrainTemplateInput = z.input<typeof TerrainTemplateSchema>;
+/** Входная форма шаблона тайлового эффекта: поля с дефолтами опциональны. */
+export type TileEffectTemplateInput = z.input<typeof TileEffectTemplateSchema>;
+/** Входная форма шаблона статуса тайлового эффекта: поля с дефолтами опциональны. */
+export type TileEffectStatusTemplateInput = z.input<typeof TileEffectStatusTemplateSchema>;
+/** Входная форма параметров карты: поля с дефолтами опциональны. */
+export type MapParamsInput = z.input<typeof MapParamsSchema>;
+/** Входная форма шаблона лестницы: поля с дефолтами опциональны. */
+export type StairsTemplateInput = z.input<typeof StairsTemplateSchema>;
+/** Входная форма шаблона двери: поля с дефолтами опциональны. */
+export type DoorTemplateInput = z.input<typeof DoorTemplateSchema>;
+/** Входная форма шаблона пропа: поля с дефолтами опциональны. */
+export type PropTemplateInput = z.input<typeof PropTemplateSchema>;
+/** Входная форма шаблона точки интереса: поля с дефолтами опциональны. */
+export type PoiTemplateInput = z.input<typeof PoiTemplateSchema>;
+/** Входная форма шаблона ловушки: поля с дефолтами опциональны. */
+export type TrapTemplateInput = z.input<typeof TrapTemplateSchema>;

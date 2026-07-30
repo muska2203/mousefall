@@ -1,0 +1,33 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const catGuardianMaul = {
+  "id": "cat_guardian_maul",
+  "spriteId": "cat_guardian_maul",
+  "icon": "/assets/items/cat_guardian_maul.png",
+  "fallback": "🔨",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 40,
+  "weapon": {
+    "baseDamage": 8,
+    "damageFormulaId": "club",
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.physical.blunt",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [],
+  "ruleIds": [
+    "weapon_blunt_daze"
+  ]
+} satisfies ItemTemplateInput;

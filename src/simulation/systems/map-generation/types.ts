@@ -7,6 +7,7 @@
 
 import type {DoorEntity, EnemyEntity, FloorItemContainerEntity, GameMap, GameState} from '@simulation/types';
 import type {MapParams} from '@content/schemas';
+import type {MapStrategyId} from '@content/ids';
 
 /**
  * Результат генерации одного этажа.
@@ -32,8 +33,8 @@ export type GeneratedMap = {
  * - Возвращает полный GeneratedMap.
  */
 export interface MapGenerationStrategy {
-  /** Уникальный ID стратегии, совпадающий со значением MapParams.strategy. */
-  readonly id: string;
+  /** Уникальный ID стратегии из каталога MAP_STRATEGY_IDS, совпадающий со значением MapParams.strategy. */
+  readonly id: MapStrategyId;
 
   generate(
     params: MapParams,

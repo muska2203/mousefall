@@ -1,8 +1,0 @@
-{
-  "id": "sand",
-  "walkable": true,
-  "moveCost": 2,
-  "blocksLOS": false,
-  "tags": ["ground"],
-  "ruleIds": []
-}

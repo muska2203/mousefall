@@ -8,65 +8,69 @@
 
 ## Что понадобится
 
-- JSON-шаблон врага в `public/content/entities/enemies/`.
+- TS-шаблон врага в `src/content/templates/entities/`.
 - Тексты в `src/content/texts/ru/entities.ts` и `src/content/texts/en/entities.ts`.
 - AI-стратегия в `src/simulation/ai/` (если врагу нужно нестандартное поведение).
 - Спрайт в `public/assets/entities/`.
-- Запись в `public/content/manifest.json`.
+- Регистрация в `src/content/templates/entities/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Возьми шаблон** [`public/content/examples/enemy-template.json`](../../public/content/examples/enemy-template.json) или создай JSON по образцу:
+1. **Создай TS-шаблон** в `src/content/templates/entities/my-enemy.ts`. Имя файла — `id` в kebab-case (`my_enemy` → `my-enemy.ts`), константа — camelCase:
 
-   ```json
-   {
-     "id": "my_enemy",
-     "maxAp": 2,
-     "aiStrategyId": "hunter",
-     "aiSightRadius": 4,
-     "health": {
-       "max": 15
+   ```ts
+   import type {EntityTemplateInput} from '../../schemas';
+
+   export const myEnemy = {
+     id: 'my_enemy',
+     maxAp: 2,
+     aiStrategyId: 'hunter',
+     aiSightRadius: 4,
+     health: {
+       max: 15,
      },
-     "baseStats": {
-       "str": 1,
-       "dex": 3,
-       "int": 0,
-       "vit": 0
+     baseStats: {
+       str: 1,
+       dex: 3,
+       int: 0,
+       vit: 0,
      },
-     "equipment": {
-       "weapon": "common_splinter_blade"
+     equipment: {
+       weapon: 'common_splinter_blade',
      },
-     "lootTable": [
+     lootTable: [
        {
-         "templateId": "health_potion",
-         "weight": 3
-       }
+         templateId: 'health_potion',
+         weight: 3,
+       },
      ],
-     "lootDropTable": [
+     lootDropTable: [
        {
-         "count": 0,
-         "weight": 5
+         count: 0,
+         weight: 5,
        },
        {
-         "count": 1,
-         "weight": 1
-       }
+         count: 1,
+         weight: 1,
+       },
      ],
-     "xpReward": 8,
-     "renderScale": 1.0
-   }
+     xpReward: 8,
+     renderScale: 1.0,
+   } satisfies EntityTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный идентификатор, совпадает с именем файла.
+   - `id` — уникальный идентификатор, совпадает с именем файла в kebab-case (`my_enemy` → `my-enemy.ts`).
    - `maxAp` — максимум очков действий за ход.
-   - `aiStrategyId` — ID стратегии из `src/simulation/ai/`. Если нужна новая — сначала добавь стратегию (`system_design`).
+   - `aiStrategyId` — ID стратегии из каталога `AI_STRATEGY_IDS` (`src/content/ids.ts`): `hunter`, `simple-boss`. Enum — опечатка ловится typecheck'ом. Если нужна новая — сначала добавь стратегию (`system_design`) и её ID в каталог.
    - `aiSightRadius` — радиус обнаружения.
    - `health.max` — максимальное HP.
    - `baseStats` — базовые характеристики (`str`, `dex`, `int`, `vit`).
-   - `equipment.weapon` — ID оружия из `public/content/items/weapons/`.
+   - `equipment.weapon` — ID оружия из `src/content/templates/items/weapons/`.
    - `lootTable` — предметы, которые может нести в инвентаре.
    - `lootDropTable` — сколько предметов из `lootTable` выпадет при смерти.
    - `xpReward` — опыт за убийство.
@@ -83,7 +87,16 @@
 
 3. **Добавь спрайт** в `public/assets/entities/my_enemy.png`.
 
-4. **Зарегистрируй в манифесте**. Добавь путь в массив `entities` в `public/content/manifest.json`.
+4. **Зарегистрируй шаблон** в `src/content/templates/entities/index.ts` — добавь импорт и строку в массив `entityTemplates`:
+
+   ```ts
+   import {myEnemy} from './my-enemy';
+   // ...
+   export const entityTemplates: EntityTemplateInput[] = [
+     // ...
+     myEnemy,
+   ];
+   ```
 
 5. **Добавь тест** (опционально, но рекомендуется):
    - `tests/unit/simulation/content-loading.test.ts` — проверка загрузки шаблона.
@@ -100,11 +113,11 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/entities/enemies/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/entities/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/entities.ts` и `en/entities.ts`.
 - [ ] Спрайт добавлен в `public/assets/entities/`.
-- [ ] Путь добавлен в `public/content/manifest.json`.
+- [ ] Шаблон зарегистрирован в `src/content/templates/entities/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.

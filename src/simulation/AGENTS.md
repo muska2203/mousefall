@@ -22,7 +22,7 @@
 | Добавить интент | `systems/intents/` → добавить executor |
 | Добавить/изменить AI-стратегию | `docs/agents/AI_SYSTEM.md` → `src/simulation/ai/tactics/` для утилит, `src/simulation/ai/*-strategy.ts` для стратегии |
 | Добавить debug-действие | `systems/actions/debug-*.ts` → зарегистрировать в `simulation.ts`. Должно проверять флаг debug-режима. |
-| Добавить/изменить тайловый эффект | `docs/agents/TILE_EFFECTS.md` → `public/content/tile-effects/`, `src/simulation/content-rules/rules.ts`, `src/simulation/skills/executors/` |
+| Добавить/изменить тайловый эффект | `docs/agents/TILE_EFFECTS.md` → `src/content/templates/tile-effects/`, `src/simulation/content-rules/rules.ts`, `src/simulation/skills/executors/` |
 | Добавить реакцию мира | `systems/world-reactions/` |
 | Изменить ход | `simulation.ts`, метод `dispatch` |
 | Изменить генерацию карт | `systems/mapgen.ts` (диспетчер) → `systems/map-generation/*-strategy.ts` |
@@ -31,7 +31,7 @@
 | Добавить/изменить тип урона | `src/simulation/systems/damage/damage-handlers.ts` + `src/simulation/systems/tags/weapon-tags.ts` + `src/simulation/systems/stats/effective-stats.ts` + `src/content/schemas.ts` |
 | Добавить исполнитель способности | `src/simulation/skills/` |
 | Добавить обработчик входящего урона | `src/simulation/systems/world-reactions/` (проверяй теги через `hasTag`) |
-| Добавить/изменить террейн | `docs/recipes/add-terrain.md` → `public/content/terrains/`; хелперы `state.ts` |
+| Добавить/изменить террейн | `docs/recipes/add-terrain.md` → `src/content/templates/terrains/`; хелперы `state.ts` |
 
 ---
 

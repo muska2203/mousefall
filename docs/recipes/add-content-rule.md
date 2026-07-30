@@ -63,11 +63,11 @@
    },
    ```
 
-4. **Привяжи правило к контенту**. Добавь `ruleIds: ["my_rule"]` в шаблон:
-   - предмета (`public/content/items/...`);
-   - статуса (`public/content/statuses/...`);
-   - способности (`public/content/abilities/...`);
-   - тайлового эффекта (`public/content/tile-effects/...`).
+4. **Привяжи правило к контенту**. Добавь `ruleIds: ['my_rule']` в шаблон:
+   - предмета (`src/content/templates/items/...`);
+   - статуса (`src/content/templates/statuses/...`);
+   - способности (`src/content/templates/abilities/...`);
+   - тайлового эффекта (`src/content/templates/tile-effects/...`).
 
 5. **Напиши тест** в `tests/unit/simulation/content-rules/`. Проверь:
    - что правило срабатывает при нужном событии;
@@ -100,4 +100,4 @@
 
 - [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../agents/CONTENT_RULES_EDGE_CASES.md) — крайние случаи, порядок исполнения и отладка.
 - [`src/simulation/content-rules/AGENTS.md`](../../src/simulation/content-rules/AGENTS.md) — локальные правила слоя content-rules.
-- [`docs/agents/CONTENT.md`](../agents/CONTENT.md) — контент-пайплайн и добавление JSON-шаблонов.
+- [`docs/agents/CONTENT.md`](../agents/CONTENT.md) — контент-пайплайн и добавление TS-шаблонов.

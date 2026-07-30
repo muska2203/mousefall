@@ -1,0 +1,16 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const commonEnergizedBead = {
+  "id": "common_energized_bead",
+  "spriteId": "common_energized_bead",
+  "icon": "/assets/items/common_energized_bead.png",
+  "fallback": "⚡",
+  "type": "amulet",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 5,
+  "equipModifiers": [],
+  "ruleIds": [
+    "amulet_restore_ap_on_hit"
+  ]
+} satisfies ItemTemplateInput;

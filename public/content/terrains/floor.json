@@ -1,8 +1,0 @@
-{
-  "id": "floor",
-  "walkable": true,
-  "moveCost": 1,
-  "blocksLOS": false,
-  "tags": ["ground"],
-  "ruleIds": []
-}

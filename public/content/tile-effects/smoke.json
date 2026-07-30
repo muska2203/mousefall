@@ -1,9 +1,0 @@
-{
-  "id": "smoke",
-  "layer": "aboveGround",
-  "duration": 4,
-  "renderOrder": 1,
-  "blocksLOS": true,
-  "ruleIds": [],
-  "canHaveStatus": []
-}

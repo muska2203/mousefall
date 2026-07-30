@@ -51,25 +51,25 @@ src/simulation/content-rules/
    - `id` должен быть уникален среди всех правил. Дубликат на этапе импорта выбросит ошибку.
 
 3. **Привязать правило к контенту.**
-   - Предмет: `public/content/items/...json`, поле `ruleIds`.
-   - Статус: `public/content/statuses/...json`, поле `ruleIds`.
-   - Способность: `public/content/abilities/...json`, поле `ruleIds`.
-   - Тайловый эффект: `public/content/tile-effects/...json`, поле `ruleIds` (слой `tileEffect`).
-   - Точка интереса: `public/content/entities/pois/...json`, поле `ruleIds` (слой `object`).
-   - Ловушка: `public/content/entities/traps/...json`, поле `ruleIds` (слой `object`).
+   - Предмет: `src/content/templates/items/...ts`, поле `ruleIds`.
+   - Статус: `src/content/templates/statuses/...ts`, поле `ruleIds`.
+   - Способность: `src/content/templates/abilities/...ts`, поле `ruleIds`.
+   - Тайловый эффект: `src/content/templates/tile-effects/...ts`, поле `ruleIds` (слой `tileEffect`).
+   - Точка интереса: `src/content/templates/pois/...ts`, поле `ruleIds` (слой `object`).
+   - Ловушка: `src/content/templates/traps/...ts`, поле `ruleIds` (слой `object`).
 
 4. **Проверить валидацию.**
    - `npm run validate:content` должен проходить.
-   - `applyStatus.statusType` должен существовать в `public/content/statuses/`.
-   - `applyTileEffectStatus.statusType` должен существовать в `public/content/tile-effect-statuses/`.
+   - `applyStatus.statusType` должен существовать в `src/content/templates/statuses/`.
+   - `applyTileEffectStatus.statusType` должен существовать в `src/content/templates/tile-effect-statuses/`.
    - `applyTileEffectStatus` требует `target.type === 'eventTileEffect'` или `'tilesInRadius'`.
-   - `spawnTileEffect.effectType` должен существовать в `public/content/tile-effects/`.
+   - `spawnTileEffect.effectType` должен существовать в `src/content/templates/tile-effects/`.
    - `spawnTileEffect` требует `target.type === 'positionsInRadius'`.
 
 5. **Обновить тексты.**
    - Тексты самого правила — в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.
    - Тексты связанных предметов/статусов/способностей — в соответствующих файлах `src/content/texts/ru/` и `src/content/texts/en/`.
-   - JSON-шаблоны не содержат текстов.
+   - Шаблоны не содержат текстов.
 
 6. **Написать тесты.**
    - Unit: `tests/unit/simulation/content-rules/`.

@@ -1,8 +1,0 @@
-{
-  "id": "wall",
-  "walkable": false,
-  "moveCost": 1,
-  "blocksLOS": true,
-  "tags": [],
-  "ruleIds": []
-}

@@ -12,7 +12,7 @@
 | [docs/architecture/DATA_FLOW.md](./docs/architecture/DATA_FLOW.md) | How data moves from input to screen |
 | [docs/architecture/EVENT_FLOW.md](./docs/architecture/EVENT_FLOW.md) | Domain events: production, consumption, lifecycle |
 | [docs/architecture/SAVE_SYSTEM.md](./docs/architecture/SAVE_SYSTEM.md) | Snapshot saves, serialization, version migration |
-| [docs/architecture/CONTENT_PIPELINE.md](./docs/architecture/CONTENT_PIPELINE.md) | JSON content, Zod schemas, modding |
+| [docs/architecture/CONTENT_PIPELINE.md](./docs/architecture/CONTENT_PIPELINE.md) | TypeScript content templates, Zod schemas |
 | [docs/architecture/TESTING_STRATEGY.md](./docs/architecture/TESTING_STRATEGY.md) | What to test, how to test, test fixtures |
 
 ---
@@ -32,7 +32,7 @@ Mousefall/
 │   │   ├── schemas.ts       # Zod schemas for save validation
 │   │   ├── systems/         # Game systems (movement, combat, fov, mapgen)
 │   │   ├── ai/              # Enemy AI behaviors
-│   │   └── content/         # Content registry (loads JSON, exposes templates)
+│   │   └── content/         # Content registry (builds TS templates, exposes them)
 │   │
 │   ├── store/               # Zustand store: bridges simulation ↔ UI
 │   │   ├── gameStore.ts     # Game state + player actions
@@ -60,11 +60,7 @@ Mousefall/
 │       └── constants.ts     # TILE_SIZE, SAVE_VERSION, etc.
 │
 ├── public/
-│   └── content/             # Game content as JSON (moddable)
-│       ├── entities/        # Enemy and player templates
-│       ├── items/           # Weapon, armor, consumable templates
-│       ├── abilities/       # Ability templates
-│       └── maps/            # Map generation parameters
+│   └── assets/              # Graphical assets
 │
 └── tests/
     ├── unit/                # Unit tests for simulation systems
@@ -96,7 +92,7 @@ utils/      → (nothing)
 3. **All randomness is seeded** — `state.rng` is the only source of randomness
 4. **UI never mutates state** — only calls store actions
 5. **Renderer is read-only** — reads state, never writes
-6. **Content is data** — JSON files, no logic, fully moddable
+6. **Content is data** — TypeScript templates (`src/content/templates/`), no logic
 7. **Events are explicit** — returned from simulation functions, not emitted globally
 
 ---
@@ -126,7 +122,7 @@ npm run build
 
 See [docs/architecture/CONTENT_PIPELINE.md](./docs/architecture/CONTENT_PIPELINE.md) for full details.
 
-**Quick start:** Add a JSON file to `public/content/entities/enemies/` following the existing format. No code changes required.
+**Quick start:** Add a TypeScript template to `src/content/templates/entities/` following the existing format, then register it in that category's `index.ts`. No game-logic changes required.
 
 ---
 

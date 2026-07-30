@@ -1,0 +1,19 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const smokeBomb = {
+  "id": "smoke_bomb",
+  "spriteId": "smoke_bomb",
+  "icon": "/assets/items/smoke_bomb.png",
+  "fallback": "💨",
+  "type": "consumable",
+  "stackable": true,
+  "maxStack": 5,
+  "value": 15,
+  "consumable": {
+    "effect": "spawn_tile_effect",
+    "tileEffectType": "smoke",
+    "radius": 1,
+    "range": 5
+  },
+  "apCost": 1
+} satisfies ItemTemplateInput;

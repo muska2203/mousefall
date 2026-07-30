@@ -1,22 +1,20 @@
 /**
  * Скрипт валидации игрового контента.
  *
- * Загружает все JSON-шаблоны из public/content/, проверяет:
- * - валидность по Zod-схемам (loadAllContent),
+ * Собирает контент из TypeScript-шаблонов (src/content/templates/) и проверяет:
+ * - валидность по Zod-схемам (buildContent),
  * - ссылки ruleIds в шаблонах (validateContentRuleReferences),
  * - семантику декларативных правил (validateContentRuleSemantics),
+ * - перекрёстные ссылки между шаблонами (validateContentReferences),
  * - наличие переводов для каждого content ID в ru и en.
  *
  * Запуск:
  *   npm run validate:content
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-import { loadAllContent } from '../src/content/loader';
-import { getRegistry } from '../src/content/registry';
+import { buildContent } from '../src/content/templates';
+import { getRegistry, initRegistry } from '../src/content/registry';
+import { validateContentReferences } from '../src/content/validate-references';
 import {
   validateContentRuleReferences,
   validateContentRuleSemantics,
@@ -25,14 +23,6 @@ import {
 import { ruContentTexts } from '../src/content/texts/ru/index';
 import { enContentTexts } from '../src/content/texts/en/index';
 import type { ContentTexts } from '../src/content/texts/types';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PROJECT_ROOT = path.resolve(__dirname, '..');
-const CONTENT_DIR = process.env.VALIDATE_CONTENT_DIR
-  ? path.resolve(PROJECT_ROOT, process.env.VALIDATE_CONTENT_DIR)
-  : path.join(PROJECT_ROOT, 'public/content');
 
 /**
  * ID, для которых переводы не обязательны.
@@ -44,17 +34,6 @@ const CONTENT_DIR = process.env.VALIDATE_CONTENT_DIR
 const OPTIONAL_TEXT_IDS = new Set<string>([]);
 
 type TextCategory = keyof ContentTexts;
-
-/**
- * Функция загрузки JSON для Node: пути в манифесте начинаются с `/content/`,
- * заменяем на `public/content/` относительно корня проекта.
- */
-async function nodeFetchJson(manifestPath: string): Promise<unknown> {
-  const relativePath = manifestPath.replace(/^\/content\//, '');
-  const filePath = path.join(CONTENT_DIR, relativePath);
-  const raw = await fs.promises.readFile(filePath, 'utf-8');
-  return JSON.parse(raw);
-}
 
 /**
  * Проверяет, что для каждого content ID есть перевод в обеих локалях.
@@ -109,17 +88,17 @@ function printRuleErrors(errors: ContentRuleValidationError[]): void {
 }
 
 async function main(): Promise<number> {
-  console.log('[validate-content] Загрузка контента...');
+  console.log('[validate-content] Сборка контента...');
 
   try {
-    await loadAllContent(nodeFetchJson);
+    initRegistry(buildContent());
   } catch (err) {
-    console.error('[validate-content] Ошибка загрузки или схемной валидации контента:');
+    console.error('[validate-content] Ошибка сборки или схемной валидации контента:');
     console.error(`  ${err instanceof Error ? err.message : String(err)}`);
     return 1;
   }
 
-  console.log('[validate-content] Контент загружен. Проверка ссылок на правила...');
+  console.log('[validate-content] Контент собран. Проверка ссылок на правила...');
 
   let hasErrors = false;
 
@@ -139,6 +118,17 @@ async function main(): Promise<number> {
     printRuleErrors(semanticsErrors);
   } else {
     console.log('[validate-content] Семантика правил в порядке.');
+  }
+
+  const referenceErrors = validateContentReferences(getRegistry());
+  if (referenceErrors.length > 0) {
+    hasErrors = true;
+    console.error('[validate-content] Ошибки ссылок между шаблонами:');
+    for (const error of referenceErrors) {
+      console.error(`  [${error.path}] ${error.field}: ${error.problem}`);
+    }
+  } else {
+    console.log('[validate-content] Ссылки между шаблонами в порядке.');
   }
 
   const { ru: ruMissing, en: enMissing } = validateTranslations();

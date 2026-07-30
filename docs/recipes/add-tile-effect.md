@@ -8,11 +8,11 @@
 
 ## Что понадобится
 
-- JSON-шаблон тайлового эффекта в `public/content/tile-effects/`.
-- (Опционально) JSON-шаблон статуса тайлового эффекта в `public/content/tile-effect-statuses/`.
+- TS-шаблон тайлового эффекта в `src/content/templates/tile-effects/`.
+- (Опционально) TS-шаблон статуса тайлового эффекта в `src/content/templates/tile-effect-statuses/`.
 - Тексты в `src/content/texts/{ru,en}/tile-effects.ts` и `src/content/texts/{ru,en}/tile-effect-statuses.ts`.
 - Спрайты в `public/assets/tile-effects/`.
-- Записи в `public/content/manifest.json`.
+- Регистрация в `src/content/templates/tile-effects/index.ts` (и `src/content/templates/tile-effect-statuses/index.ts`, если есть статус).
 - Контентные правила в `src/simulation/content-rules/rules.ts` или `src/simulation/content-rules/world-rules/global-rules.ts`, если эффект должен что-то делать.
 - Тесты, если эффект влияет на геймплей.
 
@@ -20,22 +20,26 @@
 
 ## Шаги
 
-1. **Создай шаблон материала** в `public/content/tile-effects/<id>.json`:
+1. **Создай шаблон материала** в `src/content/templates/tile-effects/oil.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "oil",
-     "layer": "cover",
-     "duration": 5,
-     "renderOrder": 2,
-     "ruleIds": ["oil_applies_oiled", "fire_damage_ignites_oil", "fire_tile_damage_ignites_oil"],
-     "canHaveStatus": ["burning"],
-     "durationDecreasesWhenHasStatus": ["burning"]
-   }
+   ```ts
+   import type {TileEffectTemplateInput} from '../../schemas';
+
+   export const oil = {
+     id: 'oil',
+     layer: 'cover',
+     duration: 5,
+     renderOrder: 2,
+     ruleIds: ['oil_applies_oiled', 'fire_damage_ignites_oil', 'fire_tile_damage_ignites_oil'],
+     canHaveStatus: ['burning'],
+     durationDecreasesWhenHasStatus: ['burning'],
+   } satisfies TileEffectTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный ID, совпадает с именем файла.
+   - `id` — уникальный ID, совпадает с именем файла в kebab-case.
    - `layer` — слой эффекта: `"cover"` (по умолчанию) или `"aboveGround"`. На клетке максимум один эффект каждого слоя: новый эффект слоя заменяет старый (поэтому вода и масло, оба `cover`, вытесняют друг друга без дополнительных настроек).
    - `duration` — базовая длительность материала в ходах.
    - `renderOrder` — порядок отрисовки относительно других эффектов на клетке (внутри своего слоя).
@@ -43,24 +47,26 @@
    - `canHaveStatus` — статусы тайловых эффектов, которые можно наложить на этот материал.
    - `durationDecreasesWhenHasStatus` — материал тикает только при указанных статусах (например, масло исчезает, пока горит).
 
-2. **Если материал может менять поведение**, создай статус тайлового эффекта в `public/content/tile-effect-statuses/<id>.json`:
+2. **Если материал может менять поведение**, создай статус тайлового эффекта в `src/content/templates/tile-effect-statuses/burning.ts`:
 
-   ```json
-   {
-     "id": "burning",
-     "duration": 3,
-     "neverExpires": true,
-     "ruleIds": ["burning_spreads_to_flammable", "burning_deals_damage_on_entry", "burning_applies_burning"],
-     "statusCategory": "elemental",
-     "categoryPriority": 1,
-     "mutuallyExclusiveWith": [],
-     "blockedBy": [],
-     "renderOrder": 10
-   }
+   ```ts
+   import type {TileEffectStatusTemplateInput} from '../../schemas';
+
+   export const burning = {
+     id: 'burning',
+     duration: 3,
+     neverExpires: true,
+     ruleIds: ['burning_spreads_to_flammable', 'burning_deals_damage_on_entry', 'burning_applies_burning'],
+     statusCategory: 'elemental',
+     categoryPriority: 1,
+     mutuallyExclusiveWith: [],
+     blockedBy: [],
+     renderOrder: 10,
+   } satisfies TileEffectStatusTemplateInput;
    ```
 
    Поля:
-   - `id` — уникальный ID, совпадает с именем файла.
+   - `id` — уникальный ID, совпадает с именем файла в kebab-case.
    - `duration` — базовая длительность статуса.
    - `neverExpires` — если `true`, статус не тикает по длительности и снимается только вместе с родительским эффектом.
    - `ruleIds` — правила, активируемые, когда статус присутствует на клетке события.
@@ -80,7 +86,16 @@
 
 5. **Добавь спрайты** в `public/assets/tile-effects/<id>.png`. Рендерер ищет спрайты только в этой папке.
 
-6. **Зарегистрируй в манифесте**. Добавь пути в массивы `tileEffects` и `tileEffectStatuses` в `public/content/manifest.json`.
+6. **Зарегистрируй шаблоны**. Добавь импорт и строку в массив `tileEffectTemplates` в `src/content/templates/tile-effects/index.ts` (и в массив `tileEffectStatusTemplates` в `src/content/templates/tile-effect-statuses/index.ts`, если есть статус):
+
+   ```ts
+   import {oil} from './oil';
+   // ...
+   export const tileEffectTemplates: TileEffectTemplateInput[] = [
+     // ...
+     oil,
+   ];
+   ```
 
 7. **Добавь контентные правила**, если эффект должен что-то делать (наносить урон, распространяться, накладывать статус и т.п.):
    - Материал и статус тайлового эффекта автоматически попадают в мировые слои `tileEffect` и `tileEffectStatus` соответственно.
@@ -91,8 +106,8 @@
 
 8. **Добавь способность или предмет для появления в игре** (опционально):
    - Например, масло появляется из расходника `oil_bottle`, а вода — из `water_ball`.
-   - Для способности: создай шаблон в `public/content/abilities/<id>.json`, `SkillExecutor` в `src/simulation/skills/executors/<id>Skill.ts` и зарегистрируй его в `src/simulation/skills/index.ts`.
-   - Для расходника: создай JSON в `public/content/items/consumables/<id>.json` с эффектом `spawn_tile_effect`, добавь текст в `src/content/texts/{ru,en}/items.ts` и путь в `public/content/manifest.json`.
+   - Для способности: создай шаблон в `src/content/templates/abilities/<id-kebab>.ts`, `SkillExecutor` в `src/simulation/skills/executors/<id>Skill.ts` и зарегистрируй его в `src/simulation/skills/index.ts`.
+   - Для расходника: создай шаблон в `src/content/templates/items/consumables/<id-kebab>.ts` с эффектом `spawn_tile_effect`, добавь текст в `src/content/texts/{ru,en}/items.ts` и зарегистрируй шаблон в `src/content/templates/items/index.ts`.
    - Добавь анимацию/спрайт для UI.
 
 9. **Напиши тесты** (если эффект влияет на геймплей):
@@ -113,12 +128,12 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон тайлового эффекта создан в `public/content/tile-effects/`.
-- [ ] `id` совпадает с именем файла.
-- [ ] Если есть статус — JSON-шаблон создан в `public/content/tile-effect-statuses/` и статус разрешён в `canHaveStatus`.
+- [ ] TS-шаблон тайлового эффекта создан в `src/content/templates/tile-effects/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
+- [ ] Если есть статус — TS-шаблон создан в `src/content/templates/tile-effect-statuses/` и статус разрешён в `canHaveStatus`.
 - [ ] Тексты добавлены в `ru/en/tile-effects.ts` (и `tile-effect-statuses.ts`, если есть статус).
 - [ ] Спрайты добавлены в `public/assets/tile-effects/`.
-- [ ] Пути добавлены в `public/content/manifest.json`.
+- [ ] Шаблоны зарегистрированы в `index.ts` своих категорий.
 - [ ] Контентные правила созданы и привязаны через `ruleIds` (если эффект делает что-то в игре).
 - [ ] Тесты написаны (если эффект влияет на геймплей).
 - [ ] `npm run validate:content` проходит.

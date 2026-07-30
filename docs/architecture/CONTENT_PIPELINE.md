@@ -6,72 +6,82 @@
 
 ## Overview
 
-Content is **data-driven**: game entities, items, abilities, and map parameters are defined in JSON files. The simulation layer reads these definitions at startup and uses them to create game objects.
+Content is **data-driven**: game entities, items, abilities, and map parameters are defined as TypeScript modules in `src/content/templates/`. The simulation layer reads these definitions at startup and uses them to create game objects.
 
 This means:
-- Balance tweaks require **no rebuild**
-- Content can be modded by editing JSON files
-- Adding a new enemy type requires **no code changes** if it reuses an existing AI strategy; new behavior requires an AI strategy in `src/simulation/ai/`
+- Content is **compile-time type-checked** — mistakes are caught by TypeScript before the game even runs
+- Adding a new enemy type requires **no code changes** beyond the template file itself if it reuses an existing AI strategy; new behavior requires an AI strategy in `src/simulation/ai/`
+- Runtime safety is preserved: all templates are validated with Zod at startup
 
 ---
 
 ## Decision: TypeScript vs JSON Content
 
-### Why JSON (Chosen)
+### Why TypeScript (Chosen)
 
 | Aspect | TypeScript | JSON |
 |--------|-----------|------|
-| Type safety | Compile-time | Runtime (Zod) |
+| Type safety | Compile-time (`satisfies`) | Runtime only (Zod) |
 | Edit without rebuild | ❌ | ✅ |
-| Moddable | ❌ (requires build tools) | ✅ (edit and reload) |
+| Moddable | ❌ (part of the bundle) | ✅ (edit and reload) |
 | Designer-friendly | ❌ | ✅ |
 | IDE support | Excellent | Good (with JSON schema) |
-| Validation | Compile-time | Runtime (Zod) |
+| Refactoring | ✅ (IDE rename/find-usages) | ❌ (strings, no tooling) |
+| Validation | Compile-time + Runtime (Zod) | Runtime (Zod) |
 
-**Verdict:** JSON is the right choice for game content. Runtime validation with Zod provides sufficient safety. TypeScript is used for the schema definitions, not the content itself.
+**Verdict:** TypeScript is the right choice for this project's content. The project is developed solo with AI agents — there is no non-programmer designer who would benefit from JSON. The previous JSON decision was reconsidered because:
+
+- JSON stripped type safety at authoring time: mistakes were caught only by runtime validation, after the game started.
+- JSON hindered refactoring: renaming a field or a rule id required fragile text searches instead of IDE tooling.
+- Modding "replace files without a build" was rejected as an unneeded feature.
+
+Zod is deliberately kept: it remains the engine for defaults and numeric invariants (`int`/`positive`, `weight > 0`, duplicate `ruleIds` checks) and the single source of types. Templates are typed via `satisfies XTemplateInput`, where Input-types are `z.input<>` of the schemas — fields with Zod defaults stay optional at authoring time.
 
 ---
 
 ## Content Directory Structure
 
 ```
-public/content/
-├── entities/
-│   ├── enemies/
-│   │   ├── cat_small.json
-│   │   ├── cat_mid.json
-│   │   └── cat_big.json
-│   ├── player/
-│   │   └── witcher.json
-│   ├── doors/
-│   │   └── wooden_door.json
-│   └── stairs/
-│       └── stone_stairs.json
+src/content/templates/
+├── entities/             # Сущности (враги и др.)
+│   ├── cat-small.ts
+│   ├── cat-mid.ts
+│   └── cat-big.ts
+├── players/              # Шаблоны игроков
 ├── items/
 │   ├── weapons/
-│   │   ├── sword.json
-│   │   └── dagger.json
 │   ├── armor/
 │   ├── amulet/
 │   └── consumables/
-│       ├── health_potion.json
-│       └── scroll_of_fireball.json
 ├── abilities/
-│   ├── counterattack.json
-│   ├── dash.json
-│   ├── fireball.json
-│   ├── magic_slap.json
-│   └── swoop.json
-└── maps/
-    ├── dungeon_params.json
-    └── boss_room.json
+├── statuses/
+├── tile-effects/
+├── tile-effect-statuses/
+├── terrains/
+├── maps/
+├── stairs/
+├── doors/
+├── props/
+├── pois/
+├── traps/
+└── index.ts              # buildContent(): сборка и Zod-валидация всех шаблонов
 ```
 
-**Why `public/content/`:**
-- Served as static files (no bundling required)
-- Can be replaced/extended without rebuilding
-- Supports hot-reload in development
-- Supports modding (replace files in `public/content/`)
+**Конвенция файла шаблона:** имя файла = `id` в kebab-case, имя константы = camelCase, объект типизируется через `satisfies`:
+
+```ts
+import type {EntityTemplateInput} from '../../schemas';
+
+export const catBig = {
+  id: 'cat_big',
+  // ...
+} satisfies EntityTemplateInput;
+```
+
+**Why `src/content/` (not `public/`):**
+- Templates are compiled and bundled with the code — full compile-time type checking
+- Input-types in `src/content/schemas.ts` give autocompletion and instant feedback in the IDE
+- No fetch, no manifest: the content list is the static import graph of each category's `index.ts`
 
 ---
 
@@ -84,20 +94,20 @@ public/content/
 - **Ability Template** — поля: id, targetMode, apCost, cooldown, skillExecutor и др.
 - **Map Parameters** — поля: id, width, height, min/max rooms, enemy/item density, pools.
 
-Все схемы используют Zod для runtime-валидации.
+Все схемы используют Zod для runtime-валидации при сборке контента. Input-типы (`EntityTemplateInput`, `ItemTemplateInput` и т.д.) объявлены в конце `src/content/schemas.ts` через `z.input<>` — поля с Zod-дефолтами в них опциональны.
 
-**Примеры JSON-контента:** см. `public/content/entities/enemies/cat_small.json`, `public/content/items/consumables/health_potion.json`, `public/content/maps/default.json`.
+**Примеры контента:** см. `src/content/templates/entities/`, `src/content/templates/items/consumables/`, `src/content/templates/maps/`.
 
 ---
 
 ## Content Rules
 
-Контентные правила (content rules) — это data-driven способ описывать **реакции** на игровые события и **модификаторы** интентов (например, модификаторы урона). Они хранятся отдельно от JSON-шаблонов, но шаблоны предметов, способностей и статусов ссылаются на них по `ruleIds`.
+Контентные правила (content rules) — это data-driven способ описывать **реакции** на игровые события и **модификаторы** интентов (например, модификаторы урона). Они хранятся отдельно от шаблонов, но шаблоны предметов, способностей и статусов ссылаются на них по `ruleIds`.
 
 ### Почему правила — статические TypeScript-объекты
 
 - Правила — это **код**, а не данные: они описывают семантику игровой механики (триггеры, условия, эффекты, селекторы целей).
-- JSON-шаблоны должны оставаться простыми и редактироваться без пересборки; правила же меняются реже и требуют компиляции.
+- Шаблоны должны оставаться простыми декларативными данными; правила же меняются реже и требуют полной выразительности TypeScript.
 - TypeScript даёт compile-time проверку типов `RuleTrigger`, `RuleCondition`, `RuleEffect` и `TargetSelector`.
 
 ### Где хранятся правила
@@ -111,17 +121,19 @@ public/content/
 
 Шаблоны предметов, способностей и статусов содержат поле `ruleIds` — массив строковых идентификаторов правил. При создании экземпляра актора кэшируются активные правила (`activeRules`) из экипировки, статусов и т.д. Этот кэш используется системами реакций и модификаторов.
 
-Пример JSON-шаблона статуса:
+Пример шаблона статуса:
 
-```json
-{
-  "id": "burning",
-  "ruleIds": ["status_burning_vulnerability"],
-  "statusCategory": "elemental",
-  "categoryPriority": 1,
-  "mutuallyExclusiveWith": ["frozen"],
-  "blockedBy": []
-}
+```ts
+import type {StatusTemplateInput} from '../../schemas';
+
+export const burning = {
+  id: 'burning',
+  ruleIds: ['status_burning_vulnerability'],
+  statusCategory: 'elemental',
+  categoryPriority: 1,
+  mutuallyExclusiveWith: ['frozen'],
+  blockedBy: [],
+} satisfies StatusTemplateInput;
 ```
 
 Пример контентного правила (TypeScript-объект):
@@ -168,9 +180,9 @@ public/content/
 
 ## Content Registry
 
-Реестр контента загружает все JSON-файлы при старте и предоставляет интерфейс lookup:
+Реестр контента собирает все шаблоны при старте и предоставляет интерфейс lookup:
 
-- `loadAllContent(fetchJson)` — асинхронная загрузка всех JSON-файлов
+- `buildContent()` — синхронная сборка всех шаблонов с Zod-валидацией (`src/content/templates/index.ts`)
 - `getEntityTemplate(id)` — получить шаблон сущности
 - `getItemTemplate(id)` — получить шаблон предмета
 - `getAbilityTemplate(id)` — получить шаблон способности
@@ -185,12 +197,13 @@ public/content/
 Игровой клиент инициализируется
     │
     ▼
-UI entry (`src/main.tsx`) вызывает loadAllContent(browserFetchJson)
+Bootstrap (`src/bootstrap.ts`) вызывает initRegistry(buildContent())
     │
-    ├── fetch all JSON files
-    ├── validate each with Zod schema
-    ├── throw on validation error (fail fast)
-    └── populate ContentRegistry
+    ├── buildContent() собирает шаблоны из src/content/templates/
+    ├── validate each with Zod schema (дефолты и refine-проверки)
+    ├── throw on validation error or duplicate id (fail fast)
+    ├── populate ContentRegistry
+    └── validateContentRuleReferences / validateContentRuleSemantics
     │
     ▼
 Game initializes (content is available)
@@ -199,40 +212,24 @@ Game initializes (content is available)
 Simulation uses getEntityTemplate('cat_small') etc.
 ```
 
-**Fail fast:** If any content file is invalid, the game refuses to start and shows a clear error. This prevents silent content bugs.
+**Fail fast:** If any template is invalid or an `id` is duplicated, the game refuses to start and shows a clear error. This prevents silent content bugs.
 
 ---
 
 ## Modding Support
 
-To mod the game, replace or add files in `public/content/`:
-
-```
-public/content/entities/enemies/my_custom_enemy.json
-```
-
-Then add the new file path to `public/content/manifest.json`. The content loader reads files strictly from the manifest (`src/content/loader.ts`). To regenerate the manifest from the current file tree, run:
-
-```bash
-npm run generate-manifest
-```
-
-**Mod constraints:**
-- Must pass Zod schema validation
-- IDs must be unique across all content
-- File must be listed in `public/content/manifest.json`
-- Cannot override core game logic (only data)
+Modding by replacing files is **not supported**. Content is part of the code and the bundle: templates are TypeScript modules compiled together with the game. To change content, edit the templates and rebuild the project. This is a deliberate trade-off — see the decision section above.
 
 ---
 
 ## Content Validation Errors
 
 При невалидном контенте игра отказывается стартовать. Ошибки содержат:
-- Имя файла
+- Идентификатор шаблона
 - Путь к полю
 - Сообщение об ошибке Zod
 
-Реализация валидации: `src/content/loader.ts`.
+Сборка и валидация: `src/content/templates/index.ts` (`buildContent()`). Отдельная проверка контента без запуска игры: `npm run validate:content` (`scripts/validate-content.ts`) — проверяет `ruleIds`, семантику правил и покрытие переводами ru/en.
 
 ---
 

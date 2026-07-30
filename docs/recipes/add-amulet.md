@@ -8,36 +8,40 @@
 
 ## Что понадобится
 
-- JSON-шаблон амулета в `public/content/items/amulets/`.
+- TS-шаблон амулета в `src/content/templates/items/amulet/`.
 - Тексты в `src/content/texts/ru/items.ts` и `src/content/texts/en/items.ts`.
 - Контентное правило в `src/simulation/content-rules/rules.ts` (если амулет что-то меняет в бою).
 - Текст правила в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.
 - Спрайт и иконка в `public/assets/items/`.
-- Запись в `public/content/manifest.json`.
+- Регистрация в `src/content/templates/items/index.ts`.
 
 ---
 
 ## Шаги
 
-1. **Возьми шаблон** [`public/content/items/amulet/common_ember_amulet.json`](../../public/content/items/amulet/common_ember_amulet.json) или создай JSON по образцу:
+1. **Создай TS-шаблон** в `src/content/templates/items/amulet/my-amulet.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
 
-   ```json
-   {
-     "id": "my_amulet",
-     "spriteId": "my_amulet",
-     "icon": "/assets/items/my_amulet.png",
-     "fallback": "📿",
-     "type": "amulet",
-     "stackable": false,
-     "maxStack": 1,
-     "value": 8,
-     "equipModifiers": [],
-     "ruleIds": ["my_amulet_rule"]
-   }
+   ```ts
+   import type {ItemTemplateInput} from '../../../schemas';
+
+   export const myAmulet = {
+     id: 'my_amulet',
+     spriteId: 'my_amulet',
+     icon: '/assets/items/my_amulet.png',
+     fallback: '📿',
+     type: 'amulet',
+     stackable: false,
+     maxStack: 1,
+     value: 8,
+     equipModifiers: [],
+     ruleIds: ['my_amulet_rule'],
+   } satisfies ItemTemplateInput;
    ```
 
+   Поля с дефолтами опциональны — Zod заполнит их при сборке.
+
    Поля:
-   - `id` — уникальный ID, совпадает с именем файла.
+   - `id` — уникальный ID, совпадает с именем файла в kebab-case (`my_amulet` → `my-amulet.ts`).
    - `spriteId` — ID спрайта.
    - `icon` — путь к иконке.
    - `fallback` — эмодзи, если иконка не загрузилась.
@@ -65,7 +69,16 @@
 
 4. **Добавь спрайт и иконку** в `public/assets/items/my_amulet.png`.
 
-5. **Зарегистрируй в манифесте**. Добавь путь в массив `items` в `public/content/manifest.json`.
+5. **Зарегистрируй шаблон** в `src/content/templates/items/index.ts` — добавь импорт и строку в массив `itemTemplates`:
+
+   ```ts
+   import {myAmulet} from './amulet/my-amulet';
+   // ...
+   export const itemTemplates: ItemTemplateInput[] = [
+     // ...
+     myAmulet,
+   ];
+   ```
 
 6. **Запусти проверки**:
    ```bash
@@ -78,12 +91,12 @@
 
 ## Чеклист
 
-- [ ] JSON-шаблон создан в `public/content/items/amulets/`.
-- [ ] `id` совпадает с именем файла.
+- [ ] TS-шаблон создан в `src/content/templates/items/amulet/`.
+- [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/items.ts` и `en/items.ts`.
 - [ ] Если есть `ruleIds` — правила существуют и тексты правил добавлены.
 - [ ] Спрайт/иконка добавлены в `public/assets/items/`.
-- [ ] Путь добавлен в `public/content/manifest.json`.
+- [ ] Шаблон зарегистрирован в `src/content/templates/items/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.
 - [ ] `npm test` проходит.

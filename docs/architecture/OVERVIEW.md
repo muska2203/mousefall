@@ -56,9 +56,9 @@ UI не знает о существовании Simulation. Content не зна
                       │
 ┌─────────────────────▼───────────────────────────────────┐
 │                  Content Layer                           │
-│  src/content/  +  public/content/                       │
-│  Code: Zod-схемы, загрузчик, in-memory реестр           │
-│  Data: JSON-шаблоны сущностей, карт, способностей       │
+│  src/content/                                         │
+│  Code: Zod-схемы, сборка шаблонов, in-memory реестр   │
+│  Data: TS-шаблоны сущностей, карт, способностей       │
 │  Чистые данные и read-only код                          │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -67,11 +67,11 @@ UI не знает о существовании Simulation. Content не зна
 
 ## Layer Responsibilities
 
-### Content Layer (`src/content/` + `public/content/`)
+### Content Layer (`src/content/`)
 
 **Ответственность:**
-- **Data:** `public/content/` — JSON-шаблоны сущностей, предметов, способностей, карт.
-- **Code:** `src/content/` — Zod-схемы валидации, async-загрузчик, in-memory реестр для read-only доступа.
+- **Data:** `src/content/templates/` — TypeScript-шаблоны сущностей, предметов, способностей, карт. Сборка — синхронный `buildContent()` из `src/content/templates/index.ts`.
+- **Code:** `src/content/` — Zod-схемы валидации (`schemas.ts`), in-memory реестр для read-only доступа (`registry.ts`).
 - Игровые баланс-значения.
 
 **Разрешено зависеть от:**
@@ -350,11 +350,11 @@ UI Layer исполняет анимацию атаки.
 
 **Tradeoff:** Два источника случайности вместо одного, но зато seed гарантирует только геометрию уровня и начальный спавн, а игровые события могут варьироваться между забегами с одним seed.
 
-### 5. JSON Content with Runtime Validation
+### 5. TypeScript Content with Runtime Validation
 
-Контент в JSON, валидация при загрузке через Zod.
+Контент — TypeScript-модули (`src/content/templates/`), валидация при сборке через Zod (`buildContent()`).
 
-**Tradeoff:** Нет compile-time проверки контента, но можно редактировать без пересборки.
+**Tradeoff:** Контент нельзя редактировать без пересборки (моддинг заменой файлов не поддерживается), зато шаблоны проверяются на этапе компиляции (`satisfies XTemplateInput`) и не требуют async-загрузки.
 
 ### 6. Action → Intent → Event Tree
 
@@ -401,7 +401,7 @@ src/simulation/types.ts              # Types: lowercase
 src/presentation/gameSession.ts      # Presentation: PascalCase для классов
 src/ui/components/Grid.tsx           # React components: PascalCase
 src/ui/renderer/WorldRenderer.ts     # Renderer classes: PascalCase
-public/content/entities/cat_small.json  # Content: lowercase
+src/content/templates/entities/cat-small.ts  # Content templates: kebab-case
 ```
 
 ---
@@ -409,7 +409,7 @@ public/content/entities/cat_small.json  # Content: lowercase
 ## Adding New Features
 
 ### Новый тип врага
-1. Добавить JSON-определение в `public/content/entities/`
+1. Добавить TS-шаблон в `src/content/templates/entities/` (регистрация в `index.ts` категории)
 2. Добавить AI-стратегию (код поведения) в `src/simulation/ai/`
 3. Добавить спрайт в `public/assets/` (регистрация через `src/ui/renderer/spriteRegistry.ts` / `utils/assetResolver.ts`)
 4. Не требует изменений в Presentation и UI (если нет новых анимаций)
@@ -436,15 +436,15 @@ public/content/entities/cat_small.json  # Content: lowercase
 ### Реализовано и работает
 - **Simulation:** ядро полностью работает (`types.ts`, `state.ts`, `simulation.ts`)
 - **Action/Intent/Event:** система полностью реализована (`systems/actions/`, `systems/intents/`, `systems/world-reactions/`)
-- **Content:** загрузка и валидация JSON через Zod (`content/loader.ts`, `content/registry.ts`)
+- **Content:** сборка TS-шаблонов и валидация через Zod (`content/templates/index.ts` — `buildContent()`, `content/registry.ts`)
 - **Map generation:** процедурная генерация подземелий (`systems/mapgen.ts`)
 - **RNG / Math:** seeded PRNG (`utils/rng.ts`), runtime random (`utils/random.ts`), сеточная математика, pathfinding (`utils/math.ts`)
 - **Presentation:** полностью реализован (`gameSession.ts`, `animation/`, `logBuilder.ts`, `types.ts`)
 - **UI Layer:** полностью реализован (`screens/`, `components/`, `input/`, `styles/`)
 - **Renderer (PixiJS):** полностью реализован (`ui/renderer/` — WorldRenderer, TileRenderer, EntityRenderer, FogRenderer и др.)
 - **World Reactions:** динамическая регистрация с приоритетами (`registerReaction`)
-- **Content Rules:** data-driven система реакций и модификаторов (`src/simulation/content-rules/`) — статические TS-объекты, на которые ссылаются JSON-шаблоны по `ruleIds`, с валидацией ссылок при загрузке.
-- **Terrain (основа пола клетки):** `GameMap.tiles[y][x]` хранит строковый id террейна (`TileType = string`); шаблоны (`walkable`, `moveCost`, `blocksLOS`, `tags`, `ruleIds`) — JSON-контент (`public/content/terrains/`, `TerrainTemplateSchema`). Проходимость — через `isTerrainWalkable` (неизвестный id = непроходим), спавн эффектов/объектов — через `terrainHasTag(id, 'ground')`, обзор — через `blocksLOS` шаблона, стоимость шага — `moveCost` террейна в `DefaultActionPointCostResolver`. **Известное ограничение итерации:** автопуть и AI-pathfinding (`findPath`, `utils/math.ts`) равностоимостные — `moveCost` учитывается только при списании AP за одиночный шаг, а не при выборе маршрута.
+- **Content Rules:** data-driven система реакций и модификаторов (`src/simulation/content-rules/`) — статические TS-объекты, на которые ссылаются шаблоны по `ruleIds`, с валидацией ссылок при сборке контента.
+- **Terrain (основа пола клетки):** `GameMap.tiles[y][x]` хранит строковый id террейна (`TileType = string`); шаблоны (`walkable`, `moveCost`, `blocksLOS`, `tags`, `ruleIds`) — TS-контент (`src/content/templates/terrains/`, `TerrainTemplateSchema`). Проходимость — через `isTerrainWalkable` (неизвестный id = непроходим), спавн эффектов/объектов — через `terrainHasTag(id, 'ground')`, обзор — через `blocksLOS` шаблона, стоимость шага — `moveCost` террейна в `DefaultActionPointCostResolver`. **Известное ограничение итерации:** автопуть и AI-pathfinding (`findPath`, `utils/math.ts`) равностоимостные — `moveCost` учитывается только при списании AP за одиночный шаг, а не при выборе маршрута.
 
 ### Удалено / не реализовано
 - **Save/Load** — модули `src/simulation/serialization.ts` и `src/simulation/turn.ts` удалены; сохранения не реализованы.

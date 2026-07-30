@@ -1,0 +1,17 @@
+import type {AbilityTemplateInput} from '../../schemas';
+
+export const suddenStrike = {
+  "id": "sudden_strike",
+  "spriteId": "sudden_strike",
+  "cooldown": 4,
+  "apCost": 1,
+  "requiredWeaponTags": [
+    "attack.melee"
+  ],
+  "tags": [
+    "delivery.ability",
+    "attack.melee",
+    "target.single",
+    "delivery.weapon"
+  ]
+} satisfies AbilityTemplateInput;

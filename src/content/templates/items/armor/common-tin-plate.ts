@@ -1,0 +1,20 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const commonTinPlate = {
+  "id": "common_tin_plate",
+  "spriteId": "common_tin_plate",
+  "icon": "/assets/items/common_tin_plate.png",
+  "fallback": "🥋",
+  "type": "armor",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 10,
+  "armor": {
+    "baseArmor": 2
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [],
+  "ruleIds": [
+    "armor_spiked_thorns"
+  ]
+} satisfies ItemTemplateInput;

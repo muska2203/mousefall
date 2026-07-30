@@ -1,0 +1,33 @@
+import type {ItemTemplateInput} from '../../../schemas';
+
+export const commonFlamingSword = {
+  "id": "common_flaming_sword",
+  "spriteId": "common_flaming_sword",
+  "icon": "/assets/items/common_flaming_sword.png",
+  "fallback": "🔥",
+  "type": "weapon",
+  "stackable": false,
+  "maxStack": 1,
+  "value": 12,
+  "weapon": {
+    "baseDamage": 5,
+    "damageFormulaId": "sword",
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.magical.fire",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
+  },
+  "grantedAbilities": [],
+  "equipModifiers": [],
+  "ruleIds": [
+    "item_fire_damage_multiplier"
+  ]
+} satisfies ItemTemplateInput;
