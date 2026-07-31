@@ -95,7 +95,7 @@ export class EntityRenderer {
         existingIds.add(entity.id);
       }
       if (entity.type === 'stairs') {
-        const path = getStairsSprite(entity.templateId);
+        const path = input.objectSprites.get(entity.id) ?? getStairsSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
@@ -130,7 +130,7 @@ export class EntityRenderer {
       if (entity.type === 'door') {
         // Не рендерим разрушенные двери, даже если они ещё не удалены из DisplayState
         if (entity.isAlive === false) continue;
-        const path = input.doorSprites.get(entity.id) ?? getDoorSprite(entity.templateId, entity.isOpen ?? false);
+        const path = input.objectSprites.get(entity.id) ?? getDoorSprite(entity.templateId, entity.isOpen ?? false);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
@@ -147,7 +147,7 @@ export class EntityRenderer {
       if (entity.type === 'prop') {
         // Не рендерим разрушенные пропы, даже если они ещё не удалены из DisplayState
         if (entity.isAlive === false) continue;
-        const path = getPropSprite(entity.templateId);
+        const path = input.objectSprites.get(entity.id) ?? getPropSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
@@ -163,7 +163,7 @@ export class EntityRenderer {
       }
       if (entity.type === 'poi') {
         // poi неразрушаемы (нет hp/isAlive), рендерятся как статические объекты
-        const path = getPoiSprite(entity.templateId);
+        const path = input.objectSprites.get(entity.id) ?? getPoiSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
@@ -178,7 +178,7 @@ export class EntityRenderer {
       if (entity.type === 'trap') {
         // Скрытая ловушка не рисуется вне debug-режима.
         if (entity.hidden && !input.debugEnabled) continue;
-        const path = getTrapSprite(entity.templateId);
+        const path = input.objectSprites.get(entity.id) ?? getTrapSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);

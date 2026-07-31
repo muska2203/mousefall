@@ -68,6 +68,16 @@ const RuleIdsSchema = z.array(z.string().min(1))
   })
   .describe('ID декларативных контентных правил, применяемых шаблоном');
 
+/**
+ * Варианты спрайтов объекта по визуальным стейтам: ключ состояния → spriteId.
+ * Стейт вычисляется Presentation из полей сущности (например, door: 'open', poi: 'depleted');
+ * базовый стейт — 'default'. Если стейт не переопределён здесь, действует конвенция
+ * имён файлов: '<id>.png' для 'default' и '<id>_<state>.png' для остальных.
+ */
+const SpriteVariantsSchema = z.record(z.string().min(1), z.string().min(1))
+  .optional()
+  .describe('Варианты спрайтов по визуальным стейтам объекта (например, open, depleted)');
+
 // ─────────────────────────────────────────────
 // Шаблон сущности
 // ─────────────────────────────────────────────
@@ -311,6 +321,7 @@ export const StairsTemplateSchema = z.object({
   interactionKind: z.enum(['stairs']).describe('Вид интерактивного объекта'),
   direction:      z.enum(['up', 'down']).describe('Направление лестницы (up — вверх/на поверхность, down — вниз в подземелье)'),
   renderScale:    z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  spriteVariants: SpriteVariantsSchema,
 }).describe('Шаблон лестницы');
 
 export type StairsTemplate = z.output<typeof StairsTemplateSchema>;
@@ -326,6 +337,7 @@ export const DoorTemplateSchema = z.object({
   armor:           z.number().int().nonnegative().default(0).describe('Броня двери'),
   renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
   openSpriteId:    z.string().min(1).optional().describe('ID спрайта открытой двери. Если не указан — используется <id>_open'),
+  spriteVariants: SpriteVariantsSchema,
   tags:            TagsSchema.describe('Иерархические игровые теги двери (например, flammable).'),
   canHaveStatus:   z.array(z.string().min(1))
     .default([])
@@ -346,6 +358,7 @@ export const PropTemplateSchema = z.object({
   blocksLOS:       z.boolean().default(false).describe('Блокирует ли линию видимости'),
   renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
   propKind:        z.string().min(1).describe('Вид пропа: barrel, crate и т.д.'),
+  spriteVariants: SpriteVariantsSchema,
   tags:            TagsSchema,
   canHaveStatus:   z.array(z.string().min(1))
     .default([])
@@ -363,6 +376,7 @@ export const PoiTemplateSchema = z.object({
   interactionKind: z.literal('poi').describe('Вид интерактивного объекта'),
   ruleIds:         RuleIdsSchema,
   charges:         z.number().int().nonnegative().default(1).describe('Количество использований (зарядов). При 0 взаимодействие недоступно'),
+  spriteVariants: SpriteVariantsSchema,
   renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
   tags:            TagsSchema,
 }).describe('Шаблон точки интереса (непроходимый неразрушаемый интерактивный объект)');
@@ -380,6 +394,7 @@ export const TrapTemplateSchema = z.object({
     .describe('Одноразовая ловушка уничтожается при срабатывании; постоянная раскрывается и остаётся'),
   initiallyHidden: z.boolean().default(true)
     .describe('Ловушка создаётся скрытой: не рисуется и не попадает в popover до срабатывания'),
+  spriteVariants: SpriteVariantsSchema,
   renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
   tags:            TagsSchema,
 }).describe('Шаблон ловушки (проходимый объект, срабатывающий на вход на клетку)');

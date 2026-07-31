@@ -65,6 +65,10 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 В каждой категории есть `index.ts`, который импортирует все шаблоны и экспортирует массив (`entityTemplates`, `playerTemplates`, `itemTemplates`, `abilityTemplates`, `statusTemplates`, `tileEffectTemplates`, `tileEffectStatusTemplates`, `terrainTemplates`, `mapParams`, `stairsTemplates`, `doorTemplates`, `propTemplates`, `poiTemplates`, `trapTemplates`).
 
+### Варианты спрайтов объектов (`spriteVariants`)
+
+Объектные шаблоны (`stairs`, `doors`, `props`, `pois`, `traps`) поддерживают опциональное поле `spriteVariants: Record<стейт, spriteId>` — переопределение спрайта по визуальному стейту объекта. Стейт вычисляет Presentation из полей сущности (`src/presentation/objectSpriteResolver.ts`); если стейт не переопределён в шаблоне, действует конвенция `{id}.png` для `default` и `{id}_{state}.png` для остальных (например, `altar_depleted.png` при `charges: 0`). Подробнее — `docs/recipes/add-poi.md`, раздел «Варианты спрайтов по состоянию».
+
 ---
 
 ## Добавление контента

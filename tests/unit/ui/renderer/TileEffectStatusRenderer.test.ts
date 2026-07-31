@@ -111,7 +111,7 @@ function makeRenderInput(displayState: DisplayState): RenderInput {
     highlightedPathCommitted: false,
     highlightedPathTargetKind: 'none',
     highlightedPathTurnEndIndices: [],
-    doorSprites: new Map(),
+    objectSprites: new Map(),
     animations: null,
     phase: 'idle',
     zoom: 1,

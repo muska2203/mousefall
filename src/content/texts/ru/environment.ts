@@ -27,8 +27,8 @@ export const props: Record<string, ContentText> = {
 
 export const pois: Record<string, ContentText> = {
   altar: {
-    name: 'Алтарь',
-    flavorText: 'Старый каменный алтарь. От него веет слабым, но добрым теплом.',
+    name: 'Сырный куст',
+    flavorText: 'Редкое подземное растение, плодоносящее чистым чеддером. Оторви ломтик — и жизнь сразу налаживается. Врачи его, правда, не признают.',
   },
 };
 

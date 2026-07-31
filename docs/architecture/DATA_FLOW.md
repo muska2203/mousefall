@@ -353,7 +353,7 @@ Presentation Layer
     │     heroStats,            // характеристики для HeroPanel
     │     equipSlots,           // слоты экипировки
     │     itemsOnFloor,         // предметы на полу
-    │     doorSprites,          // entityId → spritePath
+    │     objectSprites,        // entityId → spritePath (с учётом визуального стейта)
     │     inventory,            // инвентарь игрока
     │     hotbar,               // 10 слотов хотбара
     │     activeEffects,        // активные статус-эффекты игрока

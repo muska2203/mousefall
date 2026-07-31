@@ -130,7 +130,7 @@ function makeRenderInput(
     highlightedPathCommitted: false,
     highlightedPathTargetKind: 'none',
     highlightedPathTurnEndIndices,
-    doorSprites: new Map(),
+    objectSprites: new Map(),
     animations: null,
     phase: 'idle' as const,
     zoom: 1,

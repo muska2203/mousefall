@@ -65,6 +65,35 @@ export function resolveTrapSprite(templateId: string): string {
   return `/assets/objects/traps/${templateId}.png`;
 }
 
+/** Категория объекта окружения для разрешения путей к спрайтам. */
+export type ObjectSpriteCategory = 'doors' | 'props' | 'pois' | 'traps' | 'stairs';
+
+/** Папки ассетов по категориям объектов. */
+const OBJECT_SPRITE_FOLDERS: Record<ObjectSpriteCategory, string> = {
+  doors: '/assets/objects/doors',
+  props: '/assets/objects/props',
+  pois: '/assets/objects/pois',
+  traps: '/assets/objects/traps',
+  stairs: '/assets/objects',
+};
+
+/**
+ * Возвращает путь к спрайту объекта по категории, templateId и визуальному стейту.
+ *
+ * Конвенция имён файлов: '<id>.png' для стейта 'default', '<id>_<state>.png' для остальных.
+ * Явный spriteId (например, из spriteVariants шаблона или openSpriteId двери) имеет приоритет
+ * над конвенцией.
+ */
+export function resolveObjectSprite(
+  category: ObjectSpriteCategory,
+  templateId: string,
+  state: string = 'default',
+  spriteIdOverride?: string,
+): string {
+  const spriteId = spriteIdOverride ?? (state === 'default' ? templateId : `${templateId}_${state}`);
+  return `${OBJECT_SPRITE_FOLDERS[category]}/${spriteId}.png`;
+}
+
 /**
  * Возвращает путь к frame-ассету для sticker-HP по пути основного спрайта.
  * Если путь не заканчивается на .png, возвращает null.

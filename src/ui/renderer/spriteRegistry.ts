@@ -3,8 +3,9 @@
  *
  * Ответственность:
  * - Соглашения об именовании файлов в public/assets/.
- * - UI не обращается к Content-реестру напрямую; кастомные спрайты дверей
- *   приходят через RenderInput.doorSprites от Presentation.
+ * - UI не обращается к Content-реестру напрямую; спрайты объектов с учётом
+ *   визуального стейта (spriteVariants, openSpriteId) приходят через
+ *   RenderInput.objectSprites от Presentation.
  */
 
 import type {TileType} from '@presentation/types';
@@ -57,7 +58,7 @@ export function getTileEffectSprite(effectType: string): string {
 
 /**
  * Fallback-путь к спрайту двери по templateId и состоянию.
- * Для кастомных openSpriteId используется RenderInput.doorSprites.
+ * Для кастомных openSpriteId и spriteVariants используется RenderInput.objectSprites.
  */
 export function getDoorSprite(templateId: string, isOpen: boolean = false): string {
   if (isOpen) {

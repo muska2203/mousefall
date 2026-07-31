@@ -44,6 +44,8 @@
    - `ruleIds` — декларативные правила эффекта; срабатывают на событие `POI_USED` (слой `object`).
    - `charges` — количество использований; при 0 взаимодействие недоступно (`resolveInteraction` → null).
    - `renderScale` — масштаб спрайта относительно тайла.
+   - `spriteVariants` — опциональные переопределения спрайтов по визуальным стейтам
+     (например, `{depleted: 'altar_drained'}`); см. раздел «Варианты спрайтов по состоянию».
    - `tags` — игровые теги для классификации.
 
 2. **Добавь правило эффекта** в `CONTENT_RULES` (`src/simulation/content-rules/rules.ts`):
@@ -79,6 +81,10 @@
    py scripts/gen-placeholder-sprite.py --name altar --dir public/assets/objects/pois --size 32 --color "#c9a227"
    ```
 
+   Если у poi есть состояние с исчерпанными зарядами (`charges: 0`), добавь спрайт
+   `public/assets/objects/pois/{id}_depleted.png` — он подхватится автоматически
+   (см. «Варианты спрайтов по состоянию» ниже).
+
 5. **Зарегистрируй шаблон** в `src/content/templates/pois/index.ts` — добавь импорт и строку в массив `poiTemplates`:
 
    ```ts
@@ -96,6 +102,27 @@
    npm run typecheck
    npm test
    ```
+
+---
+
+## Варианты спрайтов по состоянию
+
+Спрайт объекта зависит от его **визуального стейта** — производной строки, которую Presentation
+вычисляет из полей сущности при каждом перестроении `RenderInput`
+(`src/presentation/objectSpriteResolver.ts`, реестр `STATE_RESOLVERS`). Стейт нигде не хранится:
+Simulation меняет исходные поля (например, `charges` тратит исполнитель `ACTIVATE_POI`),
+а стейт пересчитывается при ближайшем рендере.
+
+Известные стейты poi:
+- `default` — есть заряды (`charges > 0`), спрайт `{id}.png`;
+- `depleted` — заряды исчерпаны (`charges === 0`), спрайт `{id}_depleted.png`.
+
+Приоритет выбора spriteId: `spriteVariants[state]` из шаблона → конвенция `{id}_{state}.png`.
+Предвычисленные пути приходят в UI через `RenderInput.objectSprites` (entityId → путь);
+тот же resolver используется для спрайта в popover'е.
+
+Новый стейт для любого объекта (дверь, проп, лестница, ловушка) = запись в `STATE_RESOLVERS`
++ ассет по конвенции (или `spriteVariants` в шаблоне).
 
 ---
 

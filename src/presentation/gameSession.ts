@@ -69,7 +69,6 @@ import {
   getAllLocalizedTileEffects,
   getAllLocalizedTraps,
   getMapParams,
-  tryGetDoor,
   tryGetItem,
   tryGetLocalizedAbility,
   tryGetLocalizedItem,
@@ -90,7 +89,8 @@ import {mapDoorToPopover} from './doorDetailMapper';
 import {mapPropToPopover} from './propDetailMapper';
 import {mapPoiToPopover} from './poiDetailMapper';
 import {mapTrapToPopover} from './trapDetailMapper';
-import {resolveAbilityIcon, resolveDoorSprite, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
+import {resolveAbilityIcon, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
+import {buildObjectSprites} from './objectSpriteResolver';
 
 import {CameraState} from './cameraState';
 import {LogBuffer, type LogItem} from './logBuffer';
@@ -450,17 +450,8 @@ export class GameSession {
         templateId: e.item.templateId,
       }));
 
-    // Предвычисляем пути к спрайтам дверей, чтобы UI не обращался к Content-реестру напрямую.
-    const doorSprites = new Map<string, string>();
-    for (const entity of state.entities.values()) {
-      if (entity.type === 'door' && entity.isAlive !== false) {
-        const template = tryGetDoor(entity.templateId);
-        doorSprites.set(
-          entity.id,
-          resolveDoorSprite(entity.templateId, entity.isOpen, template?.openSpriteId),
-        );
-      }
-    }
+    // Предвычисляем пути к спрайтам объектов окружения, чтобы UI не обращался к Content-реестру напрямую.
+    const objectSprites = buildObjectSprites(state);
 
     const inventory = state.player.inventory
       .filter(invItem => !equippedIds.has(invItem.instanceId))
@@ -573,7 +564,7 @@ export class GameSession {
       heroStats,
       equipSlots,
       itemsOnFloor,
-      doorSprites,
+      objectSprites,
       inventory,
       hotbar: this.buildHotbar(state),
       activeEffects,

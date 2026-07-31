@@ -241,8 +241,8 @@ export type AnimationPhase = {
 /** Readonly псевдоним GameState для renderer и UI. */
 export type RenderState = Readonly<GameState>;
 
-/** Предвычисленные пути к спрайтам дверей. Ключ — ID сущности двери. */
-export type DoorSpriteMap = Map<string, string>;
+/** Предвычисленные пути к спрайтам объектов окружения. Ключ — ID сущности. */
+export type ObjectSpriteMap = Map<string, string>;
 
 /** Снапшот экипировки для отображения в UI. */
 export type EquipmentSnapshot = {
@@ -586,8 +586,8 @@ export type RenderInput = {
   equipSlots: EquipSlotViewModel[];
   /** Предметы на полу для отображения на карте. */
   itemsOnFloor: Array<{ id: string; x: number; y: number; templateId: string }>;
-  /** Предвычисленные пути к спрайтам дверей (entityId → spritePath). */
-  doorSprites: DoorSpriteMap;
+  /** Предвычисленные пути к спрайтам объектов окружения (entityId → spritePath). */
+  objectSprites: ObjectSpriteMap;
   /** Инвентарь игрока. */
   inventory: InventoryItemViewModel[];
   /** Хотбар игрока (10 слотов: 1–9, 0). */
