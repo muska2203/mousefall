@@ -10,7 +10,7 @@ import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from '@i18n/hooks';
 import type {AnimationNode, HotbarItemViewModel, RenderInput, TurnSide} from '@presentation/types';
 import {DEFAULT_HOTBAR_SIZE} from '@ui/input/keyboardConfig';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_SIZE, TILE_HEIGHT} from '@utils/constants';
 import {Panel} from './Panel';
 import {Hotbar} from './Hotbar';
 import {InteractionHint} from './InteractionHint';
@@ -216,10 +216,11 @@ export function GameField({
       // (справа-снизу от целевой клетки). Показываем только после завершения анимаций.
       if (renderInput.interactionHint && renderInput.phase !== 'animating') {
         const pos = rendererRef.current.worldToScreen(renderInput.interactionHint.targetPosition);
-        const tileScreenSize = TILE_SIZE * renderInput.zoom;
+        const tileScreenWidth = TILE_SIZE * renderInput.zoom;
+        const tileScreenHeight = TILE_HEIGHT * renderInput.zoom;
         setHintScreenPos({
-          x: pos.x + tileScreenSize,
-          y: pos.y + tileScreenSize / 4 * 3,
+          x: pos.x + tileScreenWidth,
+          y: pos.y + tileScreenHeight / 4 * 3,
         });
       } else {
         setHintScreenPos(null);

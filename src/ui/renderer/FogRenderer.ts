@@ -9,16 +9,29 @@
 
 import {Container, Graphics} from 'pixi.js';
 import type {Position, RenderInput} from '@presentation/types';
-import {FOG_EXPLORED_ALPHA, TILE_SIZE} from '@utils/constants';
+import type {DisplayTile} from '@presentation/displayState/types';
+import {FOG_EXPLORED_ALPHA, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {type EasingFn, lerp, runTickerTween, type TickerLike} from '@utils/tween';
 
 const COLOR_EXPLORED = 0x000000;
 const ALPHA_EXPLORED = FOG_EXPLORED_ALPHA;
 const ALPHA_HIDDEN = 1.0;
 
+/** Нарисовать прямоугольник тумана для клетки: стоячий террейн покрывается целиком,
+ *  остальные клетки — по геометрии сжатой сетки. */
+function rectCell(g: Graphics, x: number, y: number, standing: boolean): void {
+  if (standing) {
+    g.rect(x * TILE_SIZE, (y + 1) * TILE_HEIGHT - TILE_SIZE, TILE_SIZE, TILE_SIZE);
+  } else {
+    g.rect(x * TILE_SIZE, y * TILE_HEIGHT, TILE_SIZE, TILE_HEIGHT);
+  }
+}
+
 export class FogRenderer {
   public readonly container = new Container();
   private graphics = new Graphics();
+  /** Тайлы карты из последнего update (нужны animateReveal для формы клеток). */
+  private lastTiles: DisplayTile[][] | null = null;
 
   constructor() {
     this.container.addChild(this.graphics);
@@ -30,14 +43,15 @@ export class FogRenderer {
       return;
     }
 
-    const {visible, explored, width, height} = input.displayState.map;
+    const {visible, explored, width, height, tiles} = input.displayState.map;
+    this.lastTiles = tiles;
 
     // Рисуем туман на всей видимой области, включая пространство за пределами карты
     const overrender = 1;
     const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
-    const startRow = Math.floor(cameraY / TILE_SIZE) - overrender;
+    const startRow = Math.floor(cameraY / TILE_HEIGHT) - overrender;
     const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE) + overrender;
-    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE) + overrender;
+    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_HEIGHT) + overrender;
 
     this.graphics.clear();
 
@@ -47,7 +61,7 @@ export class FogRenderer {
         const inBounds = x >= 0 && x < width && y >= 0 && y < height;
         if (inBounds && visible[y]![x]) continue;
         if (inBounds && explored[y]![x]) {
-          this.graphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          rectCell(this.graphics, x, y, tiles[y]?.[x]?.standing === true);
         }
       }
     }
@@ -59,7 +73,7 @@ export class FogRenderer {
         const inBounds = x >= 0 && x < width && y >= 0 && y < height;
         if (inBounds && visible[y]![x]) continue;
         if (!inBounds || !explored[y]![x]) {
-          this.graphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          rectCell(this.graphics, x, y, inBounds && tiles[y]?.[x]?.standing === true);
         }
       }
     }
@@ -77,7 +91,7 @@ export class FogRenderer {
 
     const overlay = new Graphics();
     for (const pos of positions) {
-      overlay.rect(pos.x * TILE_SIZE, pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      rectCell(overlay, pos.x, pos.y, this.lastTiles?.[pos.y]?.[pos.x]?.standing === true);
     }
     overlay.fill({color: COLOR_EXPLORED, alpha: ALPHA_EXPLORED});
     overlay.alpha = ALPHA_EXPLORED;

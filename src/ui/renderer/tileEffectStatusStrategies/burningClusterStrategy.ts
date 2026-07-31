@@ -7,7 +7,7 @@
 
 import {Sprite, Texture} from 'pixi.js';
 import type {TileEffectOverlay} from '@presentation/displayState/types';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {getTileEffectSprite} from '../spriteRegistry';
 import {getTexture, getTextureSync} from '../TextureCache';
 import type {SpriteMeta, TileEffectStatusStrategy} from './types';
@@ -80,7 +80,7 @@ export class BurningClusterStrategy implements TileEffectStatusStrategy {
     ) + BURNING_CLUSTER_COUNT_MIN;
 
     const baseX = x * TILE_SIZE;
-    const baseY = y * TILE_SIZE;
+    const baseY = y * TILE_HEIGHT;
     const path = getTileEffectSprite(overlay.type);
 
     for (let i = 0; i < count; i++) {
@@ -100,7 +100,7 @@ export class BurningClusterStrategy implements TileEffectStatusStrategy {
         const px = baseX + BURNING_CLUSTER_PADDING_X + rand() * (TILE_SIZE - BURNING_CLUSTER_PADDING_X * 2);
         const py =
           baseY +
-          TILE_SIZE * (BURNING_CLUSTER_VERTICAL_MIN + rand() * (BURNING_CLUSTER_VERTICAL_MAX - BURNING_CLUSTER_VERTICAL_MIN));
+          TILE_HEIGHT * (BURNING_CLUSTER_VERTICAL_MIN + rand() * (BURNING_CLUSTER_VERTICAL_MAX - BURNING_CLUSTER_VERTICAL_MIN));
 
         const size = TILE_SIZE * scale;
         sprite.x = px;

@@ -8,7 +8,7 @@
 
 import {Container} from 'pixi.js';
 import type {RenderInput} from '@presentation/types';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {SingleSpriteStrategy} from './tileEffectStatusStrategies/singleSpriteStrategy';
 import {BurningClusterStrategy} from './tileEffectStatusStrategies/burningClusterStrategy';
 import {registerTileEffectStatusStrategy} from './tileEffectStatusStrategies/registry';
@@ -35,9 +35,9 @@ export class TileEffectStatusRenderer {
     const map = input.displayState.map;
     const overrender = 1;
     const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
-    const startRow = Math.floor(cameraY / TILE_SIZE) - overrender;
+    const startRow = Math.floor(cameraY / TILE_HEIGHT) - overrender;
     const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE) + overrender;
-    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE) + overrender;
+    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_HEIGHT) + overrender;
 
     const visibleKeys = new Set<string>();
 

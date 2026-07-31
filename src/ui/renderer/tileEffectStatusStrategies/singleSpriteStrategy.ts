@@ -6,7 +6,7 @@
 
 import {Sprite, Texture} from 'pixi.js';
 import type {TileEffectOverlay} from '@presentation/displayState/types';
-import {TILE_EFFECT_STATUS_OFFSET_Y_FACTOR, TILE_EFFECT_STATUS_SPRITE_SCALE, TILE_SIZE,} from '@utils/constants';
+import {TILE_EFFECT_STATUS_OFFSET_Y_FACTOR, TILE_EFFECT_STATUS_SPRITE_SCALE, TILE_HEIGHT, TILE_SIZE,} from '@utils/constants';
 import {getTileEffectSprite} from '../spriteRegistry';
 import {getTexture, getTextureSync} from '../TextureCache';
 import type {TileEffectStatusStrategy} from './types';
@@ -36,7 +36,7 @@ export class SingleSpriteStrategy implements TileEffectStatusStrategy {
     }
 
     const size = TILE_SIZE * TILE_EFFECT_STATUS_SPRITE_SCALE;
-    const py = y * TILE_SIZE + TILE_SIZE * TILE_EFFECT_STATUS_OFFSET_Y_FACTOR;
+    const py = y * TILE_HEIGHT + TILE_HEIGHT * TILE_EFFECT_STATUS_OFFSET_Y_FACTOR;
     sprite.zIndex = py;
     sprite.x = x * TILE_SIZE + TILE_SIZE / 2;
     sprite.y = py;

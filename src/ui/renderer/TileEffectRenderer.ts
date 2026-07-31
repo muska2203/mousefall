@@ -7,7 +7,7 @@
 
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput} from '@presentation/types';
-import {TILE_SIZE} from '@utils/constants';
+import {STANDING_Y_FACTOR, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {getTileEffectSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 
@@ -23,9 +23,9 @@ export class TileEffectRenderer {
     const map = input.displayState.map;
     const overrender = 1;
     const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
-    const startRow = Math.floor(cameraY / TILE_SIZE) - overrender;
+    const startRow = Math.floor(cameraY / TILE_HEIGHT) - overrender;
     const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE) + overrender;
-    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE) + overrender;
+    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_HEIGHT) + overrender;
 
     const visibleKeys = new Set<string>();
 
@@ -55,9 +55,17 @@ export class TileEffectRenderer {
 
           sprite.zIndex = overlay.renderOrder;
           sprite.x = x * TILE_SIZE;
-          sprite.y = y * TILE_SIZE;
-          sprite.width = TILE_SIZE;
-          sprite.height = TILE_SIZE;
+          if (overlay.layer === 'aboveGround') {
+            // Слой aboveGround (дым и т.п.): полный размер, низ — на STANDING_Y_FACTOR сжатой клетки.
+            sprite.y = y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - TILE_SIZE;
+            sprite.width = TILE_SIZE;
+            sprite.height = TILE_SIZE;
+          } else {
+            // Слой cover (вода, масло): рисуется в плоскости пола, сжат по вертикали.
+            sprite.y = y * TILE_HEIGHT;
+            sprite.width = TILE_SIZE;
+            sprite.height = TILE_HEIGHT;
+          }
           sprite.visible = true;
 
           if (!getTextureSync(path)) {

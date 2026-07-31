@@ -4,7 +4,7 @@ export const witcher = {
   "id": "witcher",
   "maxAp": 3,
   "portraitImg": "/assets/portraits/witcher-ready.png",
-  "renderScale": 1,
+  "renderScale": 0.7,
   "isDefault": true,
   "baseStats": {
     "str": 4,

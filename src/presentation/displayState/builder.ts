@@ -9,6 +9,7 @@
 
 import type {Entity, FactionId, GameEvent, GameState, Position} from '@simulation/types';
 import type {TileEffectLayer, TileType} from '@simulation/core-types.ts';
+import {tryGetTerrain} from '@content/registry';
 import type {DisplayEntity, DisplayMap, DisplayPatch, DisplayState, DisplayTile, PresentationNode, TileEffectOverlay,} from './types';
 
 /** Преобразовать Entity из Simulation в DisplayEntity. */
@@ -51,7 +52,11 @@ function toDisplayEntity(entity: Entity): DisplayEntity {
 
 /** Преобразовать id террейна в DisplayTile. */
 function toDisplayTile(type: TileType): DisplayTile {
-  return { type };
+  const display: DisplayTile = { type };
+  if (tryGetTerrain(type)?.standing === true) {
+    display.standing = true;
+  }
+  return display;
 }
 
 /** Собирает и сортирует оверлеи тайловых эффектов на клетке, включая их статусы. */
@@ -61,9 +66,9 @@ function getTileEffectOverlays(tileEffects: import('@simulation/core-types.ts').
   const overlays: Array<TileEffectOverlay & { layerWeight: number }> = [];
   for (const effect of Object.values(tileEffects)) {
     const weight = layerWeight(effect.layer);
-    overlays.push({ type: effect.type, kind: 'effect', renderOrder: effect.renderOrder, layerWeight: weight });
+    overlays.push({ type: effect.type, kind: 'effect', layer: effect.layer, renderOrder: effect.renderOrder, layerWeight: weight });
     for (const status of effect.statusEffects) {
-      overlays.push({ type: status.type, kind: 'status', renderOrder: status.renderOrder, layerWeight: weight });
+      overlays.push({ type: status.type, kind: 'status', layer: effect.layer, renderOrder: status.renderOrder, layerWeight: weight });
     }
   }
   // Сначала по слою (cover → aboveGround), внутри слоя по renderOrder,

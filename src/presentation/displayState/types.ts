@@ -6,7 +6,7 @@
  */
 
 import type {EntityType, FactionId, GameEvent, GamePhase, Position, StatusEffect, TurnSide,} from '@simulation/types';
-import type {StatusEffectType} from '@simulation/core-types.ts';
+import type {StatusEffectType, TileEffectLayer} from '@simulation/core-types.ts';
 import type {AnimationNode} from '@presentation/types';
 
 /** Сущность, отображаемая на поле. */
@@ -35,6 +35,8 @@ export type TileEffectOverlay = {
   type: string;
   /** Тип оверлея: материал (например, масло) или наложенный на него статус (например, горение). */
   kind: 'effect' | 'status';
+  /** Слой эффекта: cover рисуется в плоскости пола (сжимается), aboveGround — «стоя» в полный размер. Статусы наследуют слой своего эффекта. */
+  layer: TileEffectLayer;
   /** Порядок отрисовки относительно других оверлеев на той же клетке. */
   renderOrder: number;
 };
@@ -43,6 +45,8 @@ export type TileEffectOverlay = {
 export type DisplayTile = {
   /** Id террейна (совпадает с GameMap.tiles[y][x]). */
   type: string;
+  /** Террейн рисуется «стоя» в полный размер, без вертикального сжатия (стены). */
+  standing?: boolean;
   /** Оверлеи тайловых эффектов, отсортированные для отрисовки. */
   tileEffects?: TileEffectOverlay[];
 };

@@ -205,6 +205,8 @@ export const TerrainTemplateSchema = z.object({
     .describe('Стоимость входа на клетку в очках действий (AP)'),
   blocksLOS: z.boolean().default(false)
     .describe('Блокирует ли террейн линию видимости (отделено от проходимости)'),
+  standing: z.boolean().optional()
+    .describe('Террейн рисуется «стоя» в полный размер, без вертикального сжатия плоскости пола'),
   tags: TagsSchema,
   ruleIds: RuleIdsSchema,
 }).describe('Шаблон террейна (основа пола клетки)');

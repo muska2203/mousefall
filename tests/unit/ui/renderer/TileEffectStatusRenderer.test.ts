@@ -6,7 +6,7 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {Container} from 'pixi.js';
 import type {RenderInput} from '@presentation/types.ts';
 import type {DisplayState} from '@presentation/displayState/types.ts';
-import {TILE_EFFECT_STATUS_OFFSET_Y_FACTOR, TILE_EFFECT_STATUS_SPRITE_SCALE, TILE_SIZE,} from '@utils/constants.ts';
+import {TILE_EFFECT_STATUS_OFFSET_Y_FACTOR, TILE_EFFECT_STATUS_SPRITE_SCALE, TILE_HEIGHT, TILE_SIZE,} from '@utils/constants.ts';
 import {
   BURNING_CLUSTER_PADDING_X,
   BURNING_CLUSTER_SCALE_MAX,
@@ -146,8 +146,8 @@ describe('TileEffectStatusRenderer', () => {
   it('creates a cluster for burning status and ignores material effects', () => {
     const displayState = makeDisplayState();
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'oil', kind: 'effect', renderOrder: 1},
-      {type: 'burning', kind: 'status', renderOrder: 2},
+      {type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1},
+      {type: 'burning', kind: 'status', layer: 'cover', renderOrder: 2},
     ];
 
     const parent = new Container();
@@ -161,7 +161,7 @@ describe('TileEffectStatusRenderer', () => {
   it('creates a single sprite for non-cluster statuses', () => {
     const displayState = makeDisplayState();
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'frozen', kind: 'status', renderOrder: 1},
+      {type: 'frozen', kind: 'status', layer: 'cover', renderOrder: 1},
     ];
 
     const parent = new Container();
@@ -175,7 +175,7 @@ describe('TileEffectStatusRenderer', () => {
     const displayState = makeDisplayState();
     // tiles[y][x]
     displayState.map.tiles[4]![3]!.tileEffects = [
-      {type: 'frozen', kind: 'status', renderOrder: 2},
+      {type: 'frozen', kind: 'status', layer: 'cover', renderOrder: 2},
     ];
 
     const parent = new Container();
@@ -186,7 +186,7 @@ describe('TileEffectStatusRenderer', () => {
     expect(sprite.anchor.x).toBe(0.5);
     expect(sprite.anchor.y).toBe(1);
     expect(sprite.x).toBe(3 * TILE_SIZE + TILE_SIZE / 2);
-    expect(sprite.y).toBe(4 * TILE_SIZE + TILE_SIZE * TILE_EFFECT_STATUS_OFFSET_Y_FACTOR);
+    expect(sprite.y).toBe(4 * TILE_HEIGHT + TILE_HEIGHT * TILE_EFFECT_STATUS_OFFSET_Y_FACTOR);
     expect(sprite.width).toBe(TILE_SIZE * TILE_EFFECT_STATUS_SPRITE_SCALE);
     expect(sprite.height).toBe(TILE_SIZE * TILE_EFFECT_STATUS_SPRITE_SCALE);
     expect(sprite.zIndex).toBe(sprite.y);
@@ -196,7 +196,7 @@ describe('TileEffectStatusRenderer', () => {
     const displayState = makeDisplayState();
     // tiles[y][x]
     displayState.map.tiles[4]![3]!.tileEffects = [
-      {type: 'burning', kind: 'status', renderOrder: 1},
+      {type: 'burning', kind: 'status', layer: 'cover', renderOrder: 1},
     ];
 
     const parent = new Container();
@@ -204,15 +204,15 @@ describe('TileEffectStatusRenderer', () => {
     renderer.update(makeRenderInput(displayState), 0, 0, 320, 320);
 
     const baseX = 3 * TILE_SIZE;
-    const baseY = 4 * TILE_SIZE;
+    const baseY = 4 * TILE_HEIGHT;
     for (const child of parent.children) {
       const sprite = child as any;
       expect(sprite.anchor.x).toBe(0.5);
       expect(sprite.anchor.y).toBe(1);
       expect(sprite.x).toBeGreaterThanOrEqual(baseX + BURNING_CLUSTER_PADDING_X);
       expect(sprite.x).toBeLessThanOrEqual(baseX + TILE_SIZE - BURNING_CLUSTER_PADDING_X);
-      expect(sprite.y).toBeGreaterThanOrEqual(baseY + TILE_SIZE * BURNING_CLUSTER_VERTICAL_MIN);
-      expect(sprite.y).toBeLessThanOrEqual(baseY + TILE_SIZE * BURNING_CLUSTER_VERTICAL_MAX);
+      expect(sprite.y).toBeGreaterThanOrEqual(baseY + TILE_HEIGHT * BURNING_CLUSTER_VERTICAL_MIN);
+      expect(sprite.y).toBeLessThanOrEqual(baseY + TILE_HEIGHT * BURNING_CLUSTER_VERTICAL_MAX);
       expect(sprite.width).toBeGreaterThanOrEqual(TILE_SIZE * BURNING_CLUSTER_SCALE_MIN);
       expect(sprite.width).toBeLessThanOrEqual(TILE_SIZE * BURNING_CLUSTER_SCALE_MAX);
       expect(sprite.height).toBe(sprite.width);
@@ -223,7 +223,7 @@ describe('TileEffectStatusRenderer', () => {
   it('sways burning cluster sprites left and right over time', () => {
     const displayState = makeDisplayState();
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'burning', kind: 'status', renderOrder: 1},
+      {type: 'burning', kind: 'status', layer: 'cover', renderOrder: 1},
     ];
 
     const parent = new Container();
@@ -245,7 +245,7 @@ describe('TileEffectStatusRenderer', () => {
     const displayState = makeDisplayState();
     displayState.map.visible = Array.from({length: 10}, () => Array(10).fill(false));
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'frozen', kind: 'status', renderOrder: 1},
+      {type: 'frozen', kind: 'status', layer: 'cover', renderOrder: 1},
     ];
 
     const parent = new Container();
@@ -259,7 +259,7 @@ describe('TileEffectStatusRenderer', () => {
     const displayState = makeDisplayState();
     displayState.map.visible = Array.from({length: 10}, () => Array(10).fill(false));
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'burning', kind: 'status', renderOrder: 1},
+      {type: 'burning', kind: 'status', layer: 'cover', renderOrder: 1},
     ];
 
     const input = makeRenderInput(displayState);
@@ -275,7 +275,7 @@ describe('TileEffectStatusRenderer', () => {
   it('destroys sprites when status overlay is removed', () => {
     const displayState = makeDisplayState();
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'burning', kind: 'status', renderOrder: 1},
+      {type: 'burning', kind: 'status', layer: 'cover', renderOrder: 1},
     ];
 
     const parent = new Container();
@@ -285,7 +285,7 @@ describe('TileEffectStatusRenderer', () => {
     expect(before).toBeGreaterThan(0);
 
     displayState.map.tiles[2]![2]!.tileEffects = [
-      {type: 'oil', kind: 'effect', renderOrder: 1},
+      {type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1},
     ];
     renderer.update(makeRenderInput(displayState), 0, 0, 320, 320);
 

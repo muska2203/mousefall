@@ -5,7 +5,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {registerAnimationExecutor} from './registry';
 import {runTweenedGraphics} from './primitives/tweenedGraphics';
 
@@ -21,9 +21,9 @@ export class ProjectileAnimationExecutor implements AnimationExecutor {
     const fromX = step.from.x * TILE_SIZE + TILE_SIZE / 2;
     const fromY = step.fromSky
       ? (ctx.worldRenderer.cameraWorldPos?.y ?? 0) - TILE_SIZE
-      : step.from.y * TILE_SIZE + TILE_SIZE / 2;
+      : step.from.y * TILE_HEIGHT + TILE_HEIGHT / 2;
     const toX = step.to.x * TILE_SIZE + TILE_SIZE / 2;
-    const toY = step.to.y * TILE_SIZE + TILE_SIZE / 2;
+    const toY = step.to.y * TILE_HEIGHT + TILE_HEIGHT / 2;
     const radius = TILE_SIZE / 4;
 
     return new Promise((resolve) => {

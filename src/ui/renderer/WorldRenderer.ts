@@ -8,7 +8,7 @@
 
 import {Container, Ticker} from 'pixi.js';
 import type {Position, RenderInput} from '@presentation/types';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {TileRenderer} from './TileRenderer';
 import {TileEffectRenderer} from './TileEffectRenderer';
 import {TileEffectStatusRenderer} from './TileEffectStatusRenderer';
@@ -123,10 +123,10 @@ export class WorldRenderer {
     } else {
       const player = input.displayState.player;
       const playerScreenX = player.x * TILE_SIZE;
-      const playerScreenY = player.y * TILE_SIZE;
+      const playerScreenY = player.y * TILE_HEIGHT;
 
       cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
-      cameraY = playerScreenY + TILE_SIZE / 2 - viewH / 2;
+      cameraY = playerScreenY + TILE_HEIGHT / 2 - viewH / 2;
 
       this.root.x = -cameraX * scale;
       this.root.y = -cameraY * scale;
@@ -217,7 +217,7 @@ export class WorldRenderer {
     const cameraWorldPos = this._cameraWorldPos ?? this.computeCameraWorldPos(input);
     return {
       x: Math.floor((screenX / scale + cameraWorldPos.x) / TILE_SIZE),
-      y: Math.floor((screenY / scale + cameraWorldPos.y) / TILE_SIZE),
+      y: Math.floor((screenY / scale + cameraWorldPos.y) / TILE_HEIGHT),
     };
   }
 
@@ -229,7 +229,7 @@ export class WorldRenderer {
     const player = input.displayState.player;
     return {
       x: player.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
-      y: player.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2,
+      y: player.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2,
     };
   }
 
@@ -270,9 +270,9 @@ export class WorldRenderer {
           const viewH = this.viewportHeight / scale;
 
           const fromX = fromTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
-          const fromY = fromTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2;
+          const fromY = fromTile.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2;
           const toX = toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
-          const toY = toTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2;
+          const toY = toTile.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2;
 
           const x = lerp(fromX, toX, p);
           const y = lerp(fromY, toY, p);
@@ -288,7 +288,7 @@ export class WorldRenderer {
           const viewH = this.viewportHeight / scale;
           this._cameraWorldPos = {
             x: toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
-            y: toTile.y * TILE_SIZE + TILE_SIZE / 2 - viewH / 2,
+            y: toTile.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2,
           };
           resolve();
         },
@@ -332,13 +332,13 @@ export class WorldRenderer {
   /** Преобразовать мировые координаты тайла в экранные координаты относительно viewport. */
   worldToScreen(worldPos: Position): { x: number; y: number } {
     if (!this.lastInput) {
-      return { x: worldPos.x * TILE_SIZE, y: worldPos.y * TILE_SIZE };
+      return { x: worldPos.x * TILE_SIZE, y: worldPos.y * TILE_HEIGHT };
     }
     const scale = this.lastInput.zoom;
     const cameraWorldPos = this._cameraWorldPos ?? this.computeCameraWorldPos(this.lastInput);
     return {
       x: (worldPos.x * TILE_SIZE - cameraWorldPos.x) * scale,
-      y: (worldPos.y * TILE_SIZE - cameraWorldPos.y) * scale,
+      y: (worldPos.y * TILE_HEIGHT - cameraWorldPos.y) * scale,
     };
   }
 

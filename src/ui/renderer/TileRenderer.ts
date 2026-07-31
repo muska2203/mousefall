@@ -7,7 +7,7 @@
 
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {Position, RenderInput} from '@presentation/types';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {getTileSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 import {runTickerTween, type TickerLike} from '@utils/tween';
@@ -20,9 +20,9 @@ export class TileRenderer {
     const map = input.displayState.map;
     const overrender = 1;
     const startCol = Math.floor(cameraX / TILE_SIZE) - overrender;
-    const startRow = Math.floor(cameraY / TILE_SIZE) - overrender;
+    const startRow = Math.floor(cameraY / TILE_HEIGHT) - overrender;
     const endCol = Math.ceil((cameraX + viewportWidth) / TILE_SIZE) + overrender;
-    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_SIZE) + overrender;
+    const endRow = Math.ceil((cameraY + viewportHeight) / TILE_HEIGHT) + overrender;
 
     const visibleKeys = new Set<string>();
     const texturePaths = new Map<string, string>();
@@ -59,9 +59,17 @@ export class TileRenderer {
       }
 
       sprite.x = x * TILE_SIZE;
-      sprite.y = y * TILE_SIZE;
-      sprite.width = TILE_SIZE;
-      sprite.height = TILE_SIZE;
+      if (tile.standing) {
+        // «Стоячий» террейн (стена): полный размер, низ спрайта — к низу сжатой клетки.
+        sprite.y = (y + 1) * TILE_HEIGHT - TILE_SIZE;
+        sprite.width = TILE_SIZE;
+        sprite.height = TILE_SIZE;
+      } else {
+        // Плоскость пола: клетка сжата по вертикали.
+        sprite.y = y * TILE_HEIGHT;
+        sprite.width = TILE_SIZE;
+        sprite.height = TILE_HEIGHT;
+      }
       sprite.visible = true;
 
       // Фоновая подгрузка текстуры, если её ещё нет в кеше

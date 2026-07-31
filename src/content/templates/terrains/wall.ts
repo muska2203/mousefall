@@ -5,6 +5,7 @@ export const wall = {
   "walkable": false,
   "moveCost": 1,
   "blocksLOS": true,
+  "standing": true,
   "tags": [],
   "ruleIds": []
 } satisfies TerrainTemplateInput;

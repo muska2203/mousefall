@@ -11,7 +11,7 @@ import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import type {AnimationConfigKey} from '@utils/animationConfig';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {t} from '@i18n/t';
 import type {DamageFamily} from '@presentation/damageFamily';
 import {getDamageFamily} from '@presentation/damageFamily';
@@ -49,7 +49,7 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
 
     // Мировые пиксели: центр по X, верх тайла по Y
     const worldX = pos.x * TILE_SIZE + TILE_SIZE / 2;
-    const worldY = pos.y * TILE_SIZE;
+    const worldY = pos.y * TILE_HEIGHT;
     const key = `${pos.x},${pos.y}`;
 
     const now = performance.now();

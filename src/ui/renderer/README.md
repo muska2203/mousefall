@@ -84,10 +84,20 @@ Animations run independently of game state — they are purely visual.
 
 ```
 Grid coordinates:  (x, y) where x = column, y = row
-Screen coordinates: (x * TILE_SIZE, y * TILE_SIZE) + camera offset
+Screen coordinates: (x * TILE_SIZE, y * TILE_HEIGHT) + camera offset
 
 TILE_SIZE = 32px (configurable in constants.ts)
+FLOOR_Y_RATIO = 0.5, TILE_HEIGHT = TILE_SIZE * FLOOR_Y_RATIO = 16px
 ```
+
+Pseudo-3D experiment: the floor plane is vertically compressed by `FLOOR_Y_RATIO`.
+- Compressed (drawn in the floor plane): floor terrain tiles, `cover` tile-effect
+  overlays, traps, fog of war, targeting/autopath overlays, debug map overlay.
+- Standing (full 32×32, bottom of the sprite anchored at `STANDING_Y_FACTOR`
+  of the compressed cell height — 1 = cell bottom, lower = higher above the
+  floor): actors, doors, props, poi, stairs, floor items, `aboveGround`
+  tile-effect overlays and tile-effect status sprites. `standing` terrain
+  (walls) stays anchored to the cell bottom.
 
 ---
 

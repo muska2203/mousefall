@@ -5,7 +5,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {registerAnimationExecutor} from './registry';
 import {runBeam} from './primitives/beam';
 
@@ -19,9 +19,9 @@ export class BeamAnimationExecutor implements AnimationExecutor {
 
     const config = ANIMATION_CONFIG.BEAM;
     const fromX = step.from.x * TILE_SIZE + TILE_SIZE / 2;
-    const fromY = step.from.y * TILE_SIZE + TILE_SIZE / 2;
+    const fromY = step.from.y * TILE_HEIGHT + TILE_HEIGHT / 2;
     const toX = step.to.x * TILE_SIZE + TILE_SIZE / 2;
-    const toY = step.to.y * TILE_SIZE + TILE_SIZE / 2;
+    const toY = step.to.y * TILE_HEIGHT + TILE_HEIGHT / 2;
 
     return runBeam({
       parent: ctx.worldRenderer.root,

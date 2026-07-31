@@ -50,5 +50,5 @@ export const catBig = {
     }
   ],
   "xpReward": 40,
-  "renderScale": 1.3
+  "renderScale": 0.9
 } satisfies EntityTemplateInput;

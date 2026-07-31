@@ -115,8 +115,8 @@ describe('buildDisplayState', () => {
 
     const display = buildDisplayState(state);
     expect(display.map.tiles[5]![5]!.tileEffects).toEqual([
-      { type: 'oil', kind: 'effect', renderOrder: 1 },
-      { type: 'burning', kind: 'status', renderOrder: 2 },
+      { type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1 },
+      { type: 'burning', kind: 'status', layer: 'cover', renderOrder: 2 },
     ]);
   });
 });
@@ -332,8 +332,8 @@ describe('createPatch', () => {
       effectType: 'oil',
       position: { x: 3, y: 3 },
       overlays: [
-        { type: 'oil', kind: 'effect', renderOrder: 1 },
-        { type: 'burning', kind: 'status', renderOrder: 2 },
+        { type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1 },
+        { type: 'burning', kind: 'status', layer: 'cover', renderOrder: 2 },
       ],
     });
   });
@@ -364,7 +364,7 @@ describe('createPatch', () => {
       type: 'TILE_EFFECT_REMOVED',
       effectType: 'oil',
       position: { x: 3, y: 3 },
-      overlays: [{ type: 'water', kind: 'effect', renderOrder: 1 }],
+      overlays: [{ type: 'water', kind: 'effect', layer: 'cover', renderOrder: 1 }],
     });
   });
 
@@ -401,8 +401,8 @@ describe('createPatch', () => {
       effectType: 'oil',
       position: { x: 3, y: 3 },
       overlays: [
-        { type: 'oil', kind: 'effect', renderOrder: 1 },
-        { type: 'burning', kind: 'status', renderOrder: 2 },
+        { type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1 },
+        { type: 'burning', kind: 'status', layer: 'cover', renderOrder: 2 },
       ],
     });
   });
@@ -637,15 +637,15 @@ describe('applyPatch', () => {
       effectType: 'oil',
       position: { x: 3, y: 3 },
       overlays: [
-        { type: 'oil', kind: 'effect', renderOrder: 1 },
-        { type: 'burning', kind: 'status', renderOrder: 2 },
+        { type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1 },
+        { type: 'burning', kind: 'status', layer: 'cover', renderOrder: 2 },
       ],
     };
     const next = applyPatch(state, patch);
 
     expect(next.map.tiles[3]![3]!.tileEffects).toEqual([
-      { type: 'oil', kind: 'effect', renderOrder: 1 },
-      { type: 'burning', kind: 'status', renderOrder: 2 },
+      { type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1 },
+      { type: 'burning', kind: 'status', layer: 'cover', renderOrder: 2 },
     ]);
     expect(state.map.tiles[3]![3]!.tileEffects).toBeUndefined();
   });
@@ -657,8 +657,8 @@ describe('applyPatch', () => {
       effectType: 'oil',
       position: { x: 3, y: 3 },
       overlays: [
-        { type: 'oil', kind: 'effect', renderOrder: 1 },
-        { type: 'burning', kind: 'status', renderOrder: 2 },
+        { type: 'oil', kind: 'effect', layer: 'cover', renderOrder: 1 },
+        { type: 'burning', kind: 'status', layer: 'cover', renderOrder: 2 },
       ],
     };
     const withEffects = applyPatch(state, changed);

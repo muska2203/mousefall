@@ -5,7 +5,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {lerp} from '@utils/tween';
 import {registerAnimationExecutor} from './registry';
 import {runTweenedGraphics} from './primitives/tweenedGraphics';
@@ -20,7 +20,7 @@ export class ExplosionAnimationExecutor implements AnimationExecutor {
 
     const config = ANIMATION_CONFIG.EXPLOSION;
     const centerX = step.center.x * TILE_SIZE + TILE_SIZE / 2;
-    const centerY = step.center.y * TILE_SIZE + TILE_SIZE / 2;
+    const centerY = step.center.y * TILE_HEIGHT + TILE_HEIGHT / 2;
     const baseRadius = TILE_SIZE / 2;
 
     return new Promise((resolve) => {

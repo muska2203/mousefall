@@ -45,5 +45,5 @@ export const catMid = {
     }
   ],
   "xpReward": 18,
-  "renderScale": 1.5
+  "renderScale": 1
 } satisfies EntityTemplateInput;

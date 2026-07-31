@@ -8,14 +8,14 @@
 import {tryGetDoor, tryGetEntity, tryGetPlayerTemplate, tryGetPoi, tryGetProp, tryGetStairs, tryGetTrap} from '@content/registry';
 
 /** Масштаб по умолчанию для не-акторов. */
-const DEFAULT_RENDER_SCALE = 1.0;
+const DEFAULT_RENDER_SCALE = 1;
 
 /** Масштаб по умолчанию для акторов (игрок, враги). */
 const ACTOR_DEFAULT_RENDER_SCALE = 1.5;
 
 /**
  * Вернуть масштаб отрисовки для сущности по её templateId.
- * @param templateId — templateId сущности.
+ * @param templateId — templateId сущности.a
  * @param isActor — является ли сущность актором (игрок/враг).
  */
 export function getRenderScale(templateId: string, isActor: boolean): number {

@@ -8,7 +8,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {Easing, lerp} from '@utils/tween';
 import {registerAnimationExecutor} from './registry';
 import {runTweenedGraphics} from './primitives/tweenedGraphics';
@@ -29,7 +29,7 @@ export class MeteorFallAnimationExecutor implements AnimationExecutor {
 
     const config = ANIMATION_CONFIG.METEOR_FALL;
     const toX = step.to.x * TILE_SIZE + TILE_SIZE / 2;
-    const toY = step.to.y * TILE_SIZE + TILE_SIZE / 2;
+    const toY = step.to.y * TILE_HEIGHT + TILE_HEIGHT / 2;
     const cameraWorldPos = ctx.worldRenderer.cameraWorldPos;
     // Стартуем за верхней границей viewport. Если камера ещё не инициализирована —
     // используем точку далеко над целью.

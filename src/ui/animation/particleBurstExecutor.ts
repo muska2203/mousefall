@@ -5,7 +5,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {registerAnimationExecutor} from './registry';
 import {runParticleBurst} from './primitives/particleBurst';
 
@@ -24,7 +24,7 @@ export class ParticleBurstAnimationExecutor implements AnimationExecutor {
       duration: config.duration,
       easing: config.easing,
       centerX: step.x * TILE_SIZE + TILE_SIZE / 2,
-      centerY: step.y * TILE_SIZE + TILE_SIZE / 2,
+      centerY: step.y * TILE_HEIGHT + TILE_HEIGHT / 2,
       color: step.color,
       count: step.count,
     });

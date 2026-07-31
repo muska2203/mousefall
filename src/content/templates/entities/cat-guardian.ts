@@ -48,5 +48,5 @@ export const catGuardian = {
     }
   ],
   "xpReward": 150,
-  "renderScale": 1.8
+  "renderScale": 1.2
 } satisfies EntityTemplateInput;

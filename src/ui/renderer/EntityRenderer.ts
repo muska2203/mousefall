@@ -8,7 +8,7 @@
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {AnimationNode, Position, RenderInput} from '@presentation/types';
 import type {DisplayState} from '@presentation/displayState/types';
-import {FOG_EXPLORED_SPRITE_ALPHA, TILE_SIZE} from '@utils/constants';
+import {FOG_EXPLORED_SPRITE_ALPHA, FLOOR_Y_RATIO, STANDING_Y_FACTOR, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {getRenderScale} from '@presentation/renderScaleResolver';
 import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getPoiSprite, getPropSprite, getStairsSprite, getTrapSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
@@ -21,7 +21,6 @@ import type {AnimationConfigEntry} from '@utils/animationConfig';
 
 const ACTOR_ANCHOR_X = 0.5;
 const ACTOR_ANCHOR_Y = 1;
-export const ACTOR_OFFSET_Y_FACTOR = 0.85; // низ спрайта на 15% выше низа тайла
 
 type ActiveAnimation = {
   tween: Animatable;
@@ -182,7 +181,7 @@ export class EntityRenderer {
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
         const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale, true);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -252,14 +251,14 @@ export class EntityRenderer {
 
       const isActor = sprite.anchor.x === ACTOR_ANCHOR_X && sprite.anchor.y === ACTOR_ANCHOR_Y;
       const offsetX = isActor ? TILE_SIZE / 2 : 0;
-      const offsetY = isActor ? TILE_SIZE * ACTOR_OFFSET_Y_FACTOR : 0;
+      const offsetY = isActor ? TILE_HEIGHT * STANDING_Y_FACTOR : TILE_HEIGHT * STANDING_Y_FACTOR - sprite.height;
 
       sprite.visible = true;
 
       const fromX = from.x * TILE_SIZE + offsetX;
-      const fromY = from.y * TILE_SIZE + offsetY;
+      const fromY = from.y * TILE_HEIGHT + offsetY;
       const toX = to.x * TILE_SIZE + offsetX;
-      const toY = to.y * TILE_SIZE + offsetY;
+      const toY = to.y * TILE_HEIGHT + offsetY;
 
       const baseScaleX = sprite.scale.x;
       const baseScaleY = sprite.scale.y;
@@ -354,19 +353,19 @@ export class EntityRenderer {
 
       const isActor = sprite.anchor.x === ACTOR_ANCHOR_X && sprite.anchor.y === ACTOR_ANCHOR_Y;
       const offsetX = isActor ? TILE_SIZE / 2 : 0;
-      const offsetY = isActor ? TILE_SIZE * ACTOR_OFFSET_Y_FACTOR : 0;
+      const offsetY = isActor ? TILE_HEIGHT * STANDING_Y_FACTOR : TILE_HEIGHT * STANDING_Y_FACTOR - sprite.height;
 
       sprite.visible = true;
       sprite.x = from.x * TILE_SIZE + offsetX;
-      sprite.y = from.y * TILE_SIZE + offsetY;
+      sprite.y = from.y * TILE_HEIGHT + offsetY;
 
       const swayCycles = 1;
       const swayAmplitude = 0.08;
       const shouldSway = sway && isActor;
 
       const tween = new Vec2Tween({
-        from: { x: from.x * TILE_SIZE + offsetX, y: from.y * TILE_SIZE + offsetY },
-        to: { x: to.x * TILE_SIZE + offsetX, y: to.y * TILE_SIZE + offsetY },
+        from: { x: from.x * TILE_SIZE + offsetX, y: from.y * TILE_HEIGHT + offsetY },
+        to: { x: to.x * TILE_SIZE + offsetX, y: to.y * TILE_HEIGHT + offsetY },
         duration: config.duration,
         easing: config.easing,
         onUpdate: (x, y, progress) => {
@@ -404,7 +403,7 @@ export class EntityRenderer {
       const startX = sprite.x;
       const startY = sprite.y;
       const offsetX = dx * TILE_SIZE * 0.4;
-      const offsetY = dy * TILE_SIZE * 0.4;
+      const offsetY = dy * TILE_HEIGHT * 0.4;
 
       this.cancelAnimationFor(entityId);
 
@@ -488,11 +487,13 @@ export class EntityRenderer {
       const endAlpha = 1;
       const startScale = sprite.scale.x * 0.5;
       const endScale = sprite.scale.x;
+      // Предмет — «стоячий» объект: низ спрайта привязан к STANDING_Y_FACTOR сжатой клетки.
+      const fullHeight = sprite.height;
 
       const fromX = from.x * TILE_SIZE;
-      const fromY = from.y * TILE_SIZE;
+      const fromY = from.y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - fullHeight;
       const toX = to.x * TILE_SIZE;
-      const toY = to.y * TILE_SIZE;
+      const toY = to.y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - fullHeight;
 
       sprite.x = fromX;
       sprite.y = fromY;
@@ -541,7 +542,7 @@ export class EntityRenderer {
       const startX = sprite.x;
       const startY = sprite.y;
       const offsetX = dx * TILE_SIZE * 0.25;
-      const offsetY = dy * TILE_SIZE * 0.25;
+      const offsetY = dy * TILE_HEIGHT * 0.25;
 
       const tween = new Tween({
         duration: config.duration,
@@ -666,7 +667,12 @@ export class EntityRenderer {
     path: string,
     isActor: boolean = false,
     renderScale: number = 1.0,
+    flattenY: boolean = false,
   ): void {
+    const size = TILE_SIZE * renderScale;
+    // Ловушки лежат в плоскости пола и сплющиваются по вертикали.
+    const height = flattenY ? size * FLOOR_Y_RATIO : size;
+
     let sprite = this.sprites.get(id);
     if (!sprite) {
       sprite = new Sprite(texture ?? Texture.EMPTY);
@@ -675,16 +681,14 @@ export class EntityRenderer {
       if (isActor) {
         sprite.anchor.set(ACTOR_ANCHOR_X, ACTOR_ANCHOR_Y);
       }
-      const size = TILE_SIZE * renderScale;
       if (texture && texture !== Texture.EMPTY) {
         sprite.width = size;
-        sprite.height = size;
+        sprite.height = height;
       }
     } else if (texture && sprite.texture !== texture) {
       sprite.texture = texture;
-      const size = TILE_SIZE * renderScale;
       sprite.width = size;
-      sprite.height = size;
+      sprite.height = height;
     }
 
     if (!texture) {
@@ -694,9 +698,8 @@ export class EntityRenderer {
           const s = this.sprites.get(id);
           if (s) {
             s.texture = loaded;
-            const size = TILE_SIZE * renderScale;
             s.width = size;
-            s.height = size;
+            s.height = height;
           }
         })
         .catch(() => {});
@@ -707,10 +710,15 @@ export class EntityRenderer {
     if (!this.activeAnimations.has(id)) {
       if (isActor) {
         sprite.x = x * TILE_SIZE + TILE_SIZE / 2;
-        sprite.y = y * TILE_SIZE + TILE_SIZE * ACTOR_OFFSET_Y_FACTOR;
-      } else {
+        sprite.y = y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR;
+      } else if (flattenY) {
+        // Ловушка: сплющена вместе с плоскостью пола.
         sprite.x = x * TILE_SIZE;
-        sprite.y = y * TILE_SIZE;
+        sprite.y = y * TILE_HEIGHT;
+      } else {
+        // «Стоячий» объект: полный размер, низ спрайта — на STANDING_Y_FACTOR сжатой клетки.
+        sprite.x = x * TILE_SIZE;
+        sprite.y = y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - height;
       }
       sprite.zIndex = sprite.y;
     }
