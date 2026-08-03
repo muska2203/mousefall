@@ -77,9 +77,8 @@ src/simulation/content-rules/
    - Проверьте edge cases: self-эффекты, пустые селекторы, mid-chain статусы, конфликты статусов.
 
 7. **Обновить документацию.**
-   - Новое правило в стартовом наборе → `docs/design/starting-rules-catalog.md`.
    - Новый edge case → `docs/agents/CONTENT_RULES_EDGE_CASES.md`.
-   - Изменения в жизненном цикле/порядке → этот файл и [`docs/plans/Концепт боевой системы.md`](../../../docs/plans/Концепт%20боевой%20системы.md).
+   - Изменения в жизненном цикле/порядке → этот файл.
 
 8. **Запустить проверки.**
    - `npm run typecheck`
@@ -148,5 +147,3 @@ src/simulation/content-rules/
 
 - [`docs/agents/CONTENT_RULES_EDGE_CASES.md`](../../../docs/agents/CONTENT_RULES_EDGE_CASES.md) — крайние случаи и отладка.
 - [`docs/agents/CONTENT.md`](../../../docs/agents/CONTENT.md) — контент-пайплайн.
-- [`docs/design/starting-rules-catalog.md`](../../../docs/design/starting-rules-catalog.md) — каталог стартовых правил.
-- [`docs/plans/Концепт боевой системы.md`](../../../docs/plans/Концепт%20боевой%20системы.md) — концепт боевой системы.

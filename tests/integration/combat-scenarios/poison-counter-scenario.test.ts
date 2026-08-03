@@ -15,6 +15,7 @@ import { rebuildActiveRules } from '../../../src/simulation/systems/rules/active
 import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixtures/gameState';
 import type { PlayerEntity, EnemyEntity } from '../../../src/simulation/types';
 import { loadTestContent, setupCombatScenario } from './helpers';
+import { advanceToPlayerTurn } from '../../helpers/simulation';
 import { rngChance } from '../../../src/utils/rng';
 import { buildPresentationPlan } from '../../../src/presentation/displayState/planner';
 import { buildAnimationTree } from '../../../src/presentation/animation';
@@ -143,6 +144,37 @@ describe('Poison + counterattack scenario', () => {
     expect(rat.isAlive).toBe(false);
     expect(state.player.hp).toBeGreaterThan(0);
     expect(state.phase).toBe('playing');
+  });
+
+  it('weapon_poison_on_hit работает только для владельца оружия', () => {
+    const state = makeGameState({ map: makeTestMap() });
+    const player = createWitcherPlayer();
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    createStartingEquipment(state, player, ['common_venom_dagger']);
+
+    // Враг с колющим оружием БЕЗ правила отравления.
+    const rat = createRat({ x: 6, y: 5, equippedWeaponId: 'cat_claw_small' });
+    rebuildActiveRules(rat);
+    state.entities.set(rat.id, rat);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    sim.initializeTestTurnState('player', player.id);
+
+    // Владелец кинжала атакует — яд накладывается на цель удара.
+    sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
+    expect(rat.statusEffects.some((s) => s.type === 'poisoned')).toBe(true);
+
+    const playerHpStart = player.hp;
+
+    // Враг бьёт владельца кинжала — владелец НЕ должен отравить сам себя.
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
+
+    // Убеждаемся, что враг реально атаковал колющим оружием.
+    expect(player.hp).toBeLessThan(playerHpStart);
+    expect(player.statusEffects.some((s) => s.type === 'poisoned')).toBe(false);
   });
 
   it('produces poison and counterattack events, animations and matching DisplayState', () => {

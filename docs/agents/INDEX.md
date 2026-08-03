@@ -26,11 +26,9 @@
 | Как писать тесты, какие цели покрытия? | [`TESTING.md`](./TESTING.md) |
 | Как добавить контент (врага, предмет, карту)? | [`CONTENT.md`](./CONTENT.md) |
 | Как работают контентные правила? | [`CONTENT_RULES_EDGE_CASES.md`](./CONTENT_RULES_EDGE_CASES.md) |
-| Где описан концепт боевой системы? | [`../plans/Концепт боевой системы.md`](../plans/Концепт%20боевой%20системы.md) |
-| Где архитектурный обзор боевой системы? | [`../plans/Архитектура_боевой_системы_на_основе_реакций.md`](../plans/Архитектура_боевой%20системы%20на%20основе%20реакций.md) |
-| Каталог стартовых правил | [`../design/starting-rules-catalog.md`](../design/starting-rules-catalog.md) |
+| Какие механики есть и чего не хватает (для геймдизайна)? | [`../game-design/mechanics-overview.md`](../game-design/mechanics-overview.md) |
+| Как устроена прогрессия внутри забега (экипировка + реликвии)? | [`../game-design/progression-concept.md`](../game-design/progression-concept.md) |
 | Архитектура тайловых эффектов | [`../architecture/TILE_EFFECTS.md`](../architecture/TILE_EFFECTS.md) |
-| Концепт HP-обводки в стиле стикера | [`../concepts/sticker-hp-outline.md`](../concepts/sticker-hp-outline.md) |
 | Как добавить тайловый эффект? | [`TILE_EFFECTS.md`](./TILE_EFFECTS.md) |
 | Как работают сохранения и загрузки? | [`SAVES.md`](./SAVES.md) |
 | Как добавить/изменить перевод или текст? | [`I18N.md`](./I18N.md) |
@@ -81,7 +79,6 @@
 | Детали контент-пайплайна | [`../architecture/CONTENT_PIPELINE.md`](../architecture/CONTENT_PIPELINE.md) |
 | Детали системы сохранений | [`../architecture/SAVE_SYSTEM.md`](../architecture/SAVE_SYSTEM.md) |
 | Тайловые эффекты | [`../architecture/TILE_EFFECTS.md`](../architecture/TILE_EFFECTS.md) |
-| Боевая система на основе реакций | [`../plans/Архитектура_боевой_системы_на_основе_реакций.md`](../plans/Архитектура_боевой%20системы%20на%20основе%20реакций.md) |
 
 ---
 

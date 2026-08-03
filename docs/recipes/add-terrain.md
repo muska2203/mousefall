@@ -46,8 +46,7 @@
    - `tags` — игровые теги. Тег `ground` означает «на эту клетку можно ставить
      тайловые эффекты и спавнить объекты» (проверки `terrainHasTag`).
    - `ruleIds` — контентные правила террейна. Хранятся в шаблоне; мировой слой
-     `terrain` в `ContentRuleReaction` пока не реализован (см. план
-     `docs/plans/cell-layers-migration.md`).
+     `terrain` в `ContentRuleReaction` пока не реализован.
 
 2. **Добавь тексты** в `src/content/texts/ru/terrain.ts` и `en/terrain.ts`:
 

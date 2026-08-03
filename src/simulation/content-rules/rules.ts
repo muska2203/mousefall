@@ -233,7 +233,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
           {type: 'hasTag', tag: 'damage.physical.slashing'},
         ],
       },
-      { type: 'eventRole', role: 'target' },
+      { type: 'eventRole', role: 'source' },
       {type: 'chance', probability: 40},
     ],
     effect: {

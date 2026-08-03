@@ -178,7 +178,6 @@ entityKnockedBack: '{{name}} отброшен назад',
 
 - `docs/agents/ACTION_SYSTEM.md` — добавление нового Action/Event в Simulation.
 - `docs/agents/LAYERS.md` — правила архитектурных слоёв и запрещённые зависимости.
-- `docs/plans/05.5-adaptaciya-presentation.md` — исходный план фазы 05.5.
 - `src/presentation/displayState/` — типы, builder, синхронизация и планировщик.
 - `src/presentation/animation/builders/` — animation builders.
 - `src/presentation/animation/register.ts` — регистрация builders.

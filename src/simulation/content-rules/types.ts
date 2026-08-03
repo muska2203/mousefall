@@ -59,7 +59,7 @@ export type RuleTrigger = {
 export type ParametrizedValue =
   | { type: 'literal'; value: number }
   | {
-      // TODO(4.4): заменить eventMaxHp на общий stat-based resolver (targetStat/selfStat), см. Концепт боевой системы.md
+      // TODO(4.4): заменить eventMaxHp на общий stat-based resolver (targetStat/selfStat)
       type: 'context';
       field: 'eventDamage' | 'eventAmount' | 'eventDuration' | 'eventStacks' | 'eventMaxHp';
       multiply?: number;
