@@ -55,7 +55,6 @@ describe('buildDisplayState', () => {
     expect(display.player.hp).toBe(100);
     expect(display.player.maxHp).toBe(100);
     expect(display.player.isAlive).toBe(true);
-    expect(display.player.level).toBe(1);
     expect(display.player.statusEffects).toEqual([]);
     expect(display.player.factionId).toBe('player');
 
@@ -606,14 +605,6 @@ describe('applyPatch', () => {
     expect(next.player.isAlive).toBe(false);
     expect(next.meta.phase).toBe('dead');
     expect(state.player.isAlive).toBe(true);
-  });
-
-  it('updates player level on PLAYER_LEVELED_UP', () => {
-    const state = buildDisplayState(buildStateWithDoorAndItem());
-    const patch = createPatch({ type: 'PLAYER_LEVELED_UP', isFieldEvent: false, newLevel: 2 }, makeMinimalState());
-    const next = applyPatch(state, patch);
-
-    expect(next.player.level).toBe(2);
   });
 
   it('updates meta on TURN_BEGAN', () => {

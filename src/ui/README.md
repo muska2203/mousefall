@@ -35,8 +35,8 @@ ui/
 │   ├── ThreeColumnLayout.tsx  # Universal 3-column layout
 │   ├── Panel.tsx              # Wooden panel with bronze frame
 │   ├── HeroPanel.tsx          # Portrait + bars + stats
-│   ├── Portrait.tsx           # Circular portrait with level badge
-│   ├── ResourceBar.tsx        # HP / Mana / XP bar
+│   ├── Portrait.tsx           # Circular portrait
+│   ├── ResourceBar.tsx        # HP / AP bar
 │   ├── StatRow.tsx            # Stat allocation / readonly row
 │   ├── GameField.tsx          # Phase button + PixiJS world + Hotbar
 │   ├── PhaseButton.tsx        # Current turn phase / skip turn button

@@ -164,7 +164,7 @@ export function removeActiveRulesForStatus(actor: Actor, statusInstanceId: strin
 
 /**
  * Возвращает `ownerContext` для способности.
- * - innate / levelup: `entityId` = `abilityId`;
+ * - innate: `entityId` = `abilityId`;
  * - equipment: `entityId` = `abilityId:sourceItemInstanceId`.
  */
 function abilityOwnerContext(ability: RuntimeAbility): Extract<OwnerContext, { type: 'entity' }> {

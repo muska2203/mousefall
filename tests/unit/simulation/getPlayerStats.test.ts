@@ -117,8 +117,6 @@ describe('GameSimulation.getPlayerStats', () => {
 
     const stats = sim.getPlayerStats();
 
-    expect(stats.level).toBe(1);
-    expect(stats.xp).toBe(0);
     expect(stats.hp).toBeGreaterThan(0);
     expect(stats.maxHp).toBeGreaterThan(0);
     expect(stats.baseStats).toEqual({str: 2, dex: 3, int: 1, vit: 1});

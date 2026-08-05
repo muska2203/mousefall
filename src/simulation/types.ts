@@ -164,10 +164,6 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
   id: 'player';
   type: 'player';
   blocksMovement: true;
-  /** Опыт, накопленный за текущий забег. */
-  xp: number;
-  /** Текущий уровень. */
-  level: number;
   inventory: InventoryItem[];
   /** ID экипированного шаблона оружия или null. */
   equippedWeaponId: string | null;
@@ -467,8 +463,6 @@ export type RunStats = {
 // ─────────────────────────────────────────────
 
 export type PlayerStatsSnapshot = {
-  level: number;
-  xp: number;
   hp: number;
   maxHp: number;
   ap: number;

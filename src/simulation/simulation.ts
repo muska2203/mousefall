@@ -280,8 +280,6 @@ export class GameSimulation implements Simulation {
         recalculateActorStats(player);
         const effective = getEffectiveBaseStats(player);
         return {
-            level: player.level,
-            xp: player.xp,
             hp: player.hp,
             maxHp: player.maxHp,
             ap: player.ap,
@@ -934,8 +932,6 @@ export class GameSimulation implements Simulation {
         const p = this.state.player;
         const effective = getEffectiveBaseStats(p);
         return {
-            level: p.level,
-            xp: p.xp,
             hp: p.hp,
             maxHp: p.maxHp,
             ap: p.ap,

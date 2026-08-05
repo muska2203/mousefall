@@ -86,12 +86,10 @@ export function EndingScreen({result, onNewRun, onReturnToMenu, portraitSrc, pla
     <HeroPanel
       title={t('ending.heroCardTitle')}
       portraitSrc={portraitSrc}
-      level={ps?.level ?? 1}
       hp={ps?.hp ?? 0}
       maxHp={ps?.maxHp ?? 100}
       ap={ps?.ap}
       maxAp={ps?.maxAp}
-      xp={ps?.xp ?? 0}
       stats={heroStats}
     />
   );

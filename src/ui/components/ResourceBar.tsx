@@ -1,9 +1,9 @@
 /**
- * Полоса ресурса (HP, XP, AP).
+ * Полоса ресурса (HP, AP).
  */
 
 interface Props {
-  type: 'hp' | 'xp' | 'ap';
+  type: 'hp' | 'ap';
   icon: string;
   label: string;
   current: number;

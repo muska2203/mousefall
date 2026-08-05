@@ -83,8 +83,6 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     damage: 2,
     maxAp: 3,
     ap: 3,
-    xp: 0,
-    level: 1,
     inventory: [],
     equippedWeaponId: null,
     equippedArmorId: null,
@@ -157,8 +155,6 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     phase: 'idle' as const,
     zoom: 1,
     playerStats: {
-      level: player.level,
-      xp: player.xp,
       hp: player.hp,
       maxHp: player.maxHp,
       ap: player.ap,

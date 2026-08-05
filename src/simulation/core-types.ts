@@ -171,7 +171,7 @@ export type TileEffects = Partial<Record<TileEffectLayer, TileEffectInstance>>;
 export type RuntimeAbility = {
   templateId: string;
   /** Откуда скилл получен */
-  source: 'innate' | 'levelup' | 'equipment';
+  source: 'innate' | 'equipment';
   /** ID экземпляра предмета, который дал этот скилл. Заполняется при source === 'equipment'. */
   sourceItemInstanceId?: string;
   /** Уровень скилла (влияет на формулу) */
@@ -505,7 +505,6 @@ export type GameEvent =
   | EntitiesReplacedEvent
   | TurnEndedEvent
   | PlayerDiedEvent
-  | PlayerLeveledUpEvent
   | FogUpdatedEvent
   | StatusAppliedEvent
   | StatusRemovedEvent
@@ -615,8 +614,6 @@ export type EntitiesReplacedEvent = GameEventBase & { type: 'ENTITIES_REPLACED';
 export type TurnEndedEvent = GameEventBase & { type: 'TURN_ENDED'; turnNumber: number };
 
 export type PlayerDiedEvent = GameEventBase & { type: 'PLAYER_DIED' };
-
-export type PlayerLeveledUpEvent = GameEventBase & { type: 'PLAYER_LEVELED_UP'; newLevel: number };
 
 export type FogUpdatedEvent = GameEventBase & { type: 'FOG_UPDATED'; newlyVisible: Position[] };
 

@@ -90,8 +90,6 @@ function makeRenderInput(
       damage: 2,
       maxAp: 3,
       ap: 3,
-      xp: 0,
-      level: 1,
       inventory: [],
       equippedWeaponId: null,
       equippedArmorId: null,
@@ -135,8 +133,6 @@ function makeRenderInput(
     phase: 'idle' as const,
     zoom: 1,
     playerStats: {
-      level: 1,
-      xp: 0,
       hp: 10,
       maxHp: 10,
       ap: 3,

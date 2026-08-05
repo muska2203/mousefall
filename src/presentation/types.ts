@@ -262,8 +262,8 @@ export type PlayerSkillViewModel = {
   cooldown: number;
   maxCooldown: number;
   isAvailable: boolean;
-  /** Откуда скилл: innate / levelup / equipment */
-  source: 'innate' | 'levelup' | 'equipment';
+  /** Откуда скилл: innate / equipment */
+  source: 'innate' | 'equipment';
   /** Теги классификации способности. */
   tags: GameplayTag[];
 };

@@ -24,7 +24,6 @@ import {ruInteractionHint} from './components/interactionHint';
 import {ruDebugPanel} from './components/debugPanel';
 import {ruStarterEquipmentPanel} from './components/starterEquipmentPanel';
 import {ruStatRow} from './components/statRow';
-import {ruPortrait} from './components/portrait';
 import {ruPortraitGallery} from './components/portraitGallery';
 import {ruDetailPopover} from './components/detailPopover';
 import {ruToast} from './components/toast';
@@ -68,7 +67,6 @@ export const ruResources: Resources = {
     debugPanel: ruDebugPanel,
     starterEquipmentPanel: ruStarterEquipmentPanel,
     statRow: ruStatRow,
-    portrait: ruPortrait,
     portraitGallery: ruPortraitGallery,
     detailPopover: ruDetailPopover,
     toast: ruToast,

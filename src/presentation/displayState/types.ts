@@ -26,8 +26,6 @@ export type DisplayEntity = {
   isOpen?: boolean;
   /** Для ловушек: скрыта (не рисуется вне debug-режима, не попадает в popover). */
   hidden?: boolean;
-  /** Для игрока: текущий уровень. */
-  level?: number;
 };
 
 /** Оверлей тайлового эффекта для отрисовки поверх базового тайла. */
@@ -167,11 +165,6 @@ export type PlayerDiedPatch = {
   type: 'PLAYER_DIED';
 };
 
-export type PlayerLeveledUpPatch = {
-  type: 'PLAYER_LEVELED_UP';
-  level: number;
-};
-
 export type TurnBeganPatch = {
   type: 'TURN_BEGAN';
   turnSide: TurnSide;
@@ -227,7 +220,6 @@ export type DisplayPatch =
   | DeadEntitiesCleanedPatch
   | FloorChangedPatch
   | PlayerDiedPatch
-  | PlayerLeveledUpPatch
   | TurnBeganPatch
   | TileEffectChangedPatch
   | TileEffectRemovedPatch

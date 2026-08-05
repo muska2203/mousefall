@@ -352,12 +352,10 @@ export function GameScreen({session, onModeChange}: Props) {
     <>
       <HeroPanel
         portraitSrc={portraitImg}
-        level={ps.level}
         hp={ps.hp}
         maxHp={ps.maxHp}
         ap={ps.ap}
         maxAp={ps.maxAp}
-        xp={ps.xp}
         stats={renderInput.heroStats}
       />
       <EffectsPanel effects={renderInput.activeEffects} />

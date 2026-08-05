@@ -46,8 +46,6 @@ export function applyCharacterConfig(
   // Сброс к стартовому состоянию
   player.hp = player.maxHp;
   player.ap = player.maxAp;
-  player.xp = 0;
-  player.level = 1;
   player.statusEffects = [];
   player.inventory = [];
   player.equippedWeaponId = null;

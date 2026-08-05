@@ -251,7 +251,6 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     <HeroPanel
       portraitSrc={GameSession.getPlayerPortraitSrc(selectedTemplateId)}
       portraitAlt={selectedPortrait?.name ?? t('characterCreation.portraitAlt')}
-      level={previewStats?.level ?? 1}
       hp={previewStats?.hp ?? 100}
       maxHp={previewStats?.maxHp ?? 100}
       ap={previewStats?.ap}

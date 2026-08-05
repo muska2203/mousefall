@@ -31,9 +31,6 @@ function toDisplayEntity(entity: Entity): DisplayEntity {
   if ('isAlive' in entity) {
     display.isAlive = entity.isAlive;
   }
-  if ('level' in entity) {
-    display.level = entity.level;
-  }
   if ('statusEffects' in entity && Array.isArray(entity.statusEffects)) {
     display.statusEffects = entity.statusEffects.slice();
   }
@@ -294,9 +291,6 @@ export function createPatch(event: GameEvent, state: GameState): DisplayPatch {
     case 'PLAYER_DIED':
       return { type: 'PLAYER_DIED' };
 
-    case 'PLAYER_LEVELED_UP':
-      return { type: 'PLAYER_LEVELED_UP', level: event.newLevel };
-
     case 'TURN_BEGAN':
       return {
         type: 'TURN_BEGAN',
@@ -511,13 +505,6 @@ export function applyPatch(state: DisplayState, patch: DisplayPatch): DisplaySta
         isAlive: false,
       }));
       return { ...newState, meta: { ...newState.meta, phase: 'dead' } };
-    }
-
-    case 'PLAYER_LEVELED_UP': {
-      return updateEntity(state, state.player.id, (entity) => ({
-        ...entity,
-        level: patch.level,
-      }));
     }
 
     case 'TURN_BEGAN': {

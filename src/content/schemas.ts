@@ -93,7 +93,6 @@ export const EntityTemplateSchema = z.object({
   abilities: z.array(z.string().min(1)).default([]).describe('Innate-способности врага (ID шаблонов)'),
   lootTable:  z.array(LootEntrySchema).default([]).describe('Таблица выпадения предметов при смерти'),
   lootDropTable: z.array(LootDropTableEntrySchema).default([]).describe('Взвешенная таблица количества выпадаемых предметов'),
-  xpReward:   z.number().int().nonnegative().default(0).describe('Опыт, выдаваемый игроку за убийство'),
   renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
   maxAp: z.number().int().positive().default(1)
     .describe('Максимальное количество очков действий (AP)'),

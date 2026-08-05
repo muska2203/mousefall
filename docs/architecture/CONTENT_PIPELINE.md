@@ -89,7 +89,7 @@ export const catBig = {
 
 Схемы валидации определены в `src/content/schemas.ts`:
 
-- **Entity Template** — поля: id, symbol, health, combat, ai, lootTable, xpReward, interactionKind и др.
+- **Entity Template** — поля: id, symbol, health, combat, ai, lootTable, interactionKind и др.
 - **Item Template** — поля: id, type, stackable, weapon/armor/consumable/amulet stats.
 - **Ability Template** — поля: id, targetMode, apCost, cooldown, skillExecutor и др.
 - **Map Parameters** — поля: id, width, height, min/max rooms, enemy/item density, pools.

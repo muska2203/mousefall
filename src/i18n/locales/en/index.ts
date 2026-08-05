@@ -24,7 +24,6 @@ import {enInteractionHint} from './components/interactionHint';
 import {enDebugPanel} from './components/debugPanel';
 import {enStarterEquipmentPanel} from './components/starterEquipmentPanel';
 import {enStatRow} from './components/statRow';
-import {enPortrait} from './components/portrait';
 import {enPortraitGallery} from './components/portraitGallery';
 import {enDetailPopover} from './components/detailPopover';
 import {enToast} from './components/toast';
@@ -68,7 +67,6 @@ export const enResources: Resources = {
     debugPanel: enDebugPanel,
     starterEquipmentPanel: enStarterEquipmentPanel,
     statRow: enStatRow,
-    portrait: enPortrait,
     portraitGallery: enPortraitGallery,
     detailPopover: enDetailPopover,
     toast: enToast,

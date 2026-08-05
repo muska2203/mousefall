@@ -72,8 +72,6 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     maxHp: 100,
     damage: 10,
     armor: 0,
-    xp: 0,
-    level: 1,
     inventory: [],
     equippedWeaponId: null,
     equippedArmorId: null,

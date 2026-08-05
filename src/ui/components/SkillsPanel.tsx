@@ -21,8 +21,6 @@ function sourceLabel(source: PlayerSkillViewModel['source']): string | null {
   switch (source) {
     case 'equipment':
       return '⚙';
-    case 'levelup':
-      return '⬆';
     case 'innate':
     default:
       return null;
@@ -33,8 +31,6 @@ function sourceTooltip(source: PlayerSkillViewModel['source'], t: (key: string) 
   switch (source) {
     case 'equipment':
       return t('skillsPanel.equipmentSkillTooltip');
-    case 'levelup':
-      return t('skillsPanel.levelupSkillTooltip');
     case 'innate':
     default:
       return null;

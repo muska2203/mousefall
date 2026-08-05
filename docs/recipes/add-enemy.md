@@ -56,7 +56,6 @@
          weight: 1,
        },
      ],
-     xpReward: 8,
      renderScale: 1.0,
    } satisfies EntityTemplateInput;
    ```
@@ -73,7 +72,6 @@
    - `equipment.weapon` — ID оружия из `src/content/templates/items/weapons/`.
    - `lootTable` — предметы, которые может нести в инвентаре.
    - `lootDropTable` — сколько предметов из `lootTable` выпадет при смерти.
-   - `xpReward` — опыт за убийство.
    - `renderScale` — масштаб спрайта.
 
 2. **Добавь тексты** в `src/content/texts/ru/entities.ts` и `src/content/texts/en/entities.ts`:

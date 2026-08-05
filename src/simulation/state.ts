@@ -65,8 +65,6 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     damage: 8,
     armor: 0,
     statusEffects: [],
-    xp: 0,
-    level: 1,
     inventory: [],
     equippedWeaponId: null,
     equippedArmorId: null,

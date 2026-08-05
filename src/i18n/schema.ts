@@ -17,9 +17,7 @@ export interface CommonGameTranslations {
   intelligence: string;
   vitality: string;
   hp: string;
-  xp: string;
   ap: string;
-  level: string;
 }
 
 export interface CommonTranslations {
@@ -113,7 +111,6 @@ export interface ScreensTranslations {
 export interface ComponentsHeroPanelTranslations {
   title: string;
   portraitAlt: string;
-  xpLabel: string;
 }
 
 export interface ComponentsLogPanelTranslations {
@@ -141,7 +138,6 @@ export interface ComponentsSkillsPanelTranslations {
   title: string;
   noSkills: string;
   equipmentSkillTooltip: string;
-  levelupSkillTooltip: string;
 }
 
 export interface ComponentsEffectsPanelTranslations {
@@ -257,10 +253,6 @@ export interface ComponentsStatRowTranslations {
   increaseAria: string;
 }
 
-export interface ComponentsPortraitTranslations {
-  levelAriaLabel: string;
-}
-
 export interface ComponentsPortraitGalleryTranslations {
   previewAlt: string;
 }
@@ -334,7 +326,6 @@ export interface ComponentsTranslations {
   debugPanel: ComponentsDebugPanelTranslations;
   starterEquipmentPanel: ComponentsStarterEquipmentPanelTranslations;
   statRow: ComponentsStatRowTranslations;
-  portrait: ComponentsPortraitTranslations;
   portraitGallery: ComponentsPortraitGalleryTranslations;
   detailPopover: ComponentsDetailPopoverTranslations;
   toast: ComponentsToastTranslations;

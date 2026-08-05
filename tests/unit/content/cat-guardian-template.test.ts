@@ -37,7 +37,6 @@ describe('Шаблон босса cat_guardian', () => {
       armor: expect.any(String),
     });
     expect(Array.isArray(parsed.abilities)).toBe(true);
-    expect(typeof parsed.xpReward).toBe('number');
     expect(typeof parsed.renderScale).toBe('number');
   });
 

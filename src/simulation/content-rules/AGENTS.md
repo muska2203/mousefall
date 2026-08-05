@@ -85,6 +85,13 @@ src/simulation/content-rules/
    - `npm test`
    - `npm run validate:content`
 
+### Условие `chance` — только по явному указанию
+
+Основные механики игры детерминированы (решение 2026-08-04, `roadMap.md`, вопрос 1):
+статусы накладываются по типу урона / состоянию цели, а не по вероятности.
+`chance` — опциональная «рандомная» механика по выбору игрока (пример: `amulet_restore_ap_on_hit`).
+Не добавляй `chance` в новые правила без явного указания пользователя.
+
 ### Шаблон нового source-bound правила
 
 ```ts
@@ -94,7 +101,8 @@ src/simulation/content-rules/
     event: 'ENTITY_DAMAGED',
     tags: ['damage.physical.slashing'],
   },
-  conditions: [{ type: 'chance', probability: 30 }],
+  // Детерминированное условие: правило срабатывает только по цели в масле.
+  conditions: [{ type: 'hasStatus', statusType: 'oiled', subject: 'target' }],
   effect: {
     type: 'applyStatus',
     statusType: 'bleeding',
