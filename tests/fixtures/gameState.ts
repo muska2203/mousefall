@@ -297,6 +297,7 @@ export function mockAltarTemplate(): PoiTemplate {
     interactionKind: 'poi',
     ruleIds: ['altar_heals_player'],
     charges: 1,
+    chargeSpentOn: 'activation',
     renderScale: 1,
     tags: [],
   };

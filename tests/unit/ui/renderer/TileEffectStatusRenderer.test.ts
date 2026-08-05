@@ -123,6 +123,7 @@ function makeRenderInput(displayState: DisplayState): RenderInput {
     equipSlots: [],
     itemsOnFloor: [],
     inventory: [],
+    relics: [],
     hotbar: [],
     activeEffects: [],
     statusEffectsByEntity: new Map(),
@@ -134,6 +135,7 @@ function makeRenderInput(displayState: DisplayState): RenderInput {
     currentTurnSide: 'player',
     debugEnabled: false,
     mapgenDebugEnabled: false,
+    pendingWindow: null,
     animationBatchId: 0,
   };
 }

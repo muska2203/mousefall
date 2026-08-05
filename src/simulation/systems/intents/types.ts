@@ -54,6 +54,7 @@ export type {
   RemoveTileEffectStatusIntent,
   TileExplosionIntent,
   ActivatePoiIntent,
+  ResolvePoiChoiceIntent,
   TileEffectInstance,
 } from "@simulation/core-types.ts";
 

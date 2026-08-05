@@ -48,6 +48,7 @@ import {
 } from "@simulation/systems/intents/tile-effect-intent-executor.ts";
 import {executeTileExplosionIntent} from "@simulation/systems/intents/tile-explosion-intent-executor.ts";
 import {executeActivatePoiIntent} from "@simulation/systems/intents/activate-poi-intent-executor.ts";
+import {executeResolvePoiChoiceIntent} from "@simulation/systems/intents/resolve-poi-choice-intent-executor.ts";
 import {executeDestroyObjectIntent} from "@simulation/systems/intents/destroy-object-intent-executor.ts";
 import {executeRevealObjectIntent} from "@simulation/systems/intents/reveal-object-intent-executor.ts";
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
@@ -99,6 +100,7 @@ const intentExecutors = {
   REMOVE_TILE_EFFECT_STATUS: executeRemoveTileEffectStatusIntent,
   TILE_EXPLOSION: executeTileExplosionIntent,
   ACTIVATE_POI: executeActivatePoiIntent,
+  RESOLVE_POI_CHOICE: executeResolvePoiChoiceIntent,
   DESTROY_OBJECT: executeDestroyObjectIntent,
   REVEAL_OBJECT: executeRevealObjectIntent,
 };

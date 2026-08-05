@@ -41,4 +41,62 @@ export const rules: Record<string, ContentText> = {
     name: 'Поджог от пламени',
     description: 'При появлении горения на масле сущности на клетке загораются на 3 хода.',
   },
+  // ── Правила реликвий стартового пула (roadmap 0.6) ─────────────────────────
+  // Числа и условия сверены с определениями в simulation/content-rules/rules.ts.
+  relic_salamander_heart_fire_infusion: {
+    name: 'Огненное насыщение',
+    description: 'Удары [оружия](tag:delivery.weapon) становятся [огненными](tag:damage.magical.fire): поджигают [масло](tag:effect.oil) и раздувают пожары.',
+  },
+  relic_salamander_heart_fire_vulnerability: {
+    name: 'Уязвимость к огню',
+    description: 'Входящий [огненный](tag:damage.magical.fire) урон по тебе увеличен на 25%.',
+  },
+  relic_venom_gland_poison_on_hit: {
+    name: 'Отравляющий удар',
+    description: 'Удары [оружия](tag:delivery.weapon) отравляют цель на 3 хода.',
+  },
+  relic_venom_gland_ramp_up: {
+    name: 'Разгон',
+    description: 'По неотравленной цели урон [оружия](tag:delivery.weapon) на 1 меньше.',
+  },
+  relic_acid_blood_poison_attacker: {
+    name: 'Кислотная кровь',
+    description: 'Атакующий тебя в [ближнем бою](tag:attack.melee) получает отравление на 2 хода.',
+  },
+  relic_plague_bearer_spread: {
+    name: 'Разнос заразы',
+    description: 'Удар [оружия](tag:delivery.weapon) по отравленной цели отравляет врагов рядом с ней на 2 хода.',
+  },
+  relic_plague_bearer_self_poison: {
+    name: 'Обратный отсев',
+    description: 'При разносе заразы ты получаешь отравление на 1 ход.',
+  },
+  relic_thunderhead_daze: {
+    name: 'Громовой удар',
+    description: '[Дробящие](tag:damage.physical.blunt) удары [оружия](tag:delivery.weapon) ошеломляют цель на 1 ход.',
+  },
+  relic_thunderhead_clumsy: {
+    name: 'Неуклюжесть',
+    description: 'Урон [оружия](tag:delivery.weapon) без [дробящего](tag:damage.physical.blunt) типа на 1 меньше.',
+  },
+  relic_opportunist_bonus: {
+    name: 'Удар по слабому',
+    description: 'Урон [оружия](tag:delivery.weapon) по ошеломлённым, оглушённым и отравленным целям увеличен на 3.',
+  },
+  relic_opportunist_hesitant: {
+    name: 'Нерешительность',
+    description: 'По противнику без ошеломления, оглушения и отравления урон [оружия](tag:delivery.weapon) на 1 меньше.',
+  },
+  relic_blood_pact_power: {
+    name: 'Сила договора',
+    description: 'Весь твой урон увеличен на 4.',
+  },
+  relic_blood_pact_price: {
+    name: 'Цена договора',
+    description: 'Входящий по тебе урон увеличен на 25%.',
+  },
+  relic_scavenger_heal_on_pickup: {
+    name: 'Радость находки',
+    description: 'Поднятие предмета восстанавливает 5 HP.',
+  },
 };

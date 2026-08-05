@@ -10,6 +10,7 @@
 import {useCallback, useEffect, useState, useSyncExternalStore} from 'react';
 import {useTranslation} from '@i18n/hooks';
 import type {AnimationNode} from '@presentation/types';
+import type {PendingWindowViewModel} from '@presentation/types';
 import {GameSession, type SessionMode} from '@presentation/gameSession';
 
 import {getHotbarIndexByKey, INTERACTIVE_TAGS, KEY_MAP, matchesActionBinding,} from '@ui/input/keyboardConfig';
@@ -20,10 +21,20 @@ import {GameField} from '@ui/components/GameField';
 import {EffectsPanel} from '@ui/components/EffectsPanel';
 import {LogPanel} from '@ui/components/LogPanel';
 import {InventoryPanel} from '@ui/components/InventoryPanel';
+import {RelicsPanel} from '@ui/components/RelicsPanel';
 import {SkillsPanel} from '@ui/components/SkillsPanel';
 import {FieldObjectPopover} from '@ui/components/FieldObjectPopover';
 import {ToastContainer} from '@ui/components/ToastContainer';
 import {DebugPanel, type SpawnType} from '@ui/components/DebugPanel';
+import {RelicChoiceModal, type RelicChoiceModalProps} from '@ui/components/RelicChoiceModal';
+
+/** Реестр оконных компонентов по виду окна poi (RenderInput.pendingWindow.kind). */
+const WINDOW_COMPONENTS: Record<
+  PendingWindowViewModel['kind'],
+  (props: RelicChoiceModalProps) => React.JSX.Element
+> = {
+  relic_choice: RelicChoiceModal,
+};
 
 interface Props {
   session: GameSession;
@@ -45,7 +56,8 @@ export function GameScreen({session, onModeChange}: Props) {
   );
   const renderInput = vm.renderInput;
 
-  const isInputBlocked = renderInput?.phase === 'animating';
+  // Открытое окно poi (модальный выбор) блокирует ввод так же, как фаза анимаций.
+  const isInputBlocked = renderInput?.phase === 'animating' || session.isWindowOpen();
   const [fieldHoverPos, setFieldHoverPos] = useState<{x: number; y: number} | null>(null);
   const [tileHoverPos, setTileHoverPos] = useState<{x: number; y: number} | null>(null);
   const [pendingDebugSpawn, setPendingDebugSpawn] = useState<{spawnType: SpawnType; templateId: string} | null>(null);
@@ -261,11 +273,15 @@ export function GameScreen({session, onModeChange}: Props) {
         }
       }
 
-      // Отмена таргетинга или ожидания спавна
+      // Отмена таргетинга, ожидания спавна или открытого окна poi
       if (matchesActionBinding('cancelTargeting', e)) {
         e.preventDefault();
         if (pendingDebugSpawn) {
           setPendingDebugSpawn(null);
+          return;
+        }
+        if (session.isWindowOpen()) {
+          session.dismissWindow();
           return;
         }
         session.cancelTargeting();
@@ -398,6 +414,7 @@ export function GameScreen({session, onModeChange}: Props) {
         slots={renderInput.equipSlots}
         onUnequip={handleUnequip}
       />
+      <RelicsPanel relics={renderInput.relics} />
       <InventoryPanel
         items={renderInput.inventory}
         onItemClick={handleItemClick}
@@ -419,6 +436,16 @@ export function GameScreen({session, onModeChange}: Props) {
         right={rightColumn}
       />
       <ToastContainer toasts={vm.toasts} onDismiss={handleDismissToast} />
+      {renderInput.pendingWindow && (() => {
+        const WindowComponent = WINDOW_COMPONENTS[renderInput.pendingWindow.kind];
+        return (
+          <WindowComponent
+            window={renderInput.pendingWindow}
+            onChoose={(optionId) => session.resolveWindowChoice(optionId)}
+            onDecline={() => session.dismissWindow()}
+          />
+        );
+      })()}
       {import.meta.env.DEV && session.isDebug() && renderInput && (
         <DebugPanel
           session={session}

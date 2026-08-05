@@ -202,6 +202,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     equipSlots: [],
     itemsOnFloor: [],
     inventory: [],
+    relics: [],
     hotbar: [],
     activeEffects: [],
     statusEffectsByEntity: new Map(),
@@ -219,6 +220,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     currentTurnSide: 'player',
     debugEnabled,
     mapgenDebugEnabled: false,
+    pendingWindow: null,
   };
 }
 

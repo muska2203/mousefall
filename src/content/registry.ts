@@ -106,7 +106,7 @@ export type LocalizedTrapTemplate = TrapTemplate & {
 
 export type LocalizedRelicTemplate = RelicTemplate & {
   name: string;
-  description: string;
+  flavorText?: string;
 };
 
 // ─────────────────────────────────────────────
@@ -829,7 +829,7 @@ export function tryGetRelic(id: string): RelicTemplate | undefined {
 export function getLocalizedRelic(id: string, locale: Locale): LocalizedRelicTemplate {
   const template = getRelic(id);
   const text = getContentText('relics', id, locale);
-  return { ...template, name: text.name, description: text.description ?? '' };
+  return { ...template, name: text.name, flavorText: text.flavorText };
 }
 
 /**
@@ -839,7 +839,7 @@ export function tryGetLocalizedRelic(id: string, locale: Locale): LocalizedRelic
   const template = tryGetRelic(id);
   if (!template) return undefined;
   const text = getContentText('relics', id, locale);
-  return { ...template, name: text.name, description: text.description ?? '' };
+  return { ...template, name: text.name, flavorText: text.flavorText };
 }
 
 /**
@@ -855,6 +855,6 @@ export function getAllRelics(): RelicTemplate[] {
 export function getAllLocalizedRelics(locale: Locale): LocalizedRelicTemplate[] {
   return Array.from((getRegistry().relics ?? new Map()).values()).map((template) => {
     const text = getContentText('relics', template.id, locale);
-    return { ...template, name: text.name, description: text.description ?? '' };
+    return { ...template, name: text.name, flavorText: text.flavorText };
   });
 }

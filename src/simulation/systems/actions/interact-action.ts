@@ -15,6 +15,8 @@ import type {ActionHandler} from './types';
 import {findAllEntitiesAt, findDoorAt, findEntity, getPlacementSlot} from '@simulation/state';
 import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
 import {resolveInteraction} from '@simulation/systems/interactions/resolve-interaction.ts';
+import {POI_WINDOW_MECHANICS} from '@simulation/systems/poi-windows';
+import {tryGetPoi} from '@content/registry';
 import {MAX_FLOOR} from '@utils/constants';
 
 function isAdjacent(a: Position, b: Position): boolean {
@@ -138,6 +140,15 @@ function validateInteractionSpecifics(
       }
       if (target.charges <= 0) {
         return { ok: false, reasonCode: 'poi_depleted' };
+      }
+      // Оконный poi, который заведомо не откроет окно (пустой пул и пр.),
+      // недоступен — иначе активация впустую тратит AP.
+      const template = tryGetPoi(target.templateId);
+      if (template?.window) {
+        const mechanic = POI_WINDOW_MECHANICS[template.window.kind];
+        if (mechanic.canOpen && !mechanic.canOpen(state, target, template)) {
+          return { ok: false, reasonCode: 'poi_window_unavailable' };
+        }
       }
       return { ok: true };
     }

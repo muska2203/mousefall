@@ -8,9 +8,11 @@ import {ruEnding} from './screens/ending';
 import {ruHeroPanel} from './components/heroPanel';
 import {ruLogPanel} from './components/logPanel';
 import {ruInventoryPanel} from './components/inventoryPanel';
+import {ruRelicsPanel} from './components/relicsPanel';
 import {ruItemDetail} from './components/itemDetail';
 import {ruEquipmentPanel} from './components/equipmentPanel';
 import {ruSkillsPanel} from './components/skillsPanel';
+import {ruRelicChoice} from './components/relicChoice';
 import {ruEffectsPanel} from './components/effectsPanel';
 import {ruEndingMetrics} from './components/endingMetrics';
 import {ruEndingActions} from './components/endingActions';
@@ -29,6 +31,7 @@ import {ruDetailPopover} from './components/detailPopover';
 import {ruToast} from './components/toast';
 import {ruLogBuilder} from './system/logBuilder';
 import {ruItemMapper} from './system/itemMapper';
+import {ruStatNames} from './system/statNames';
 import {ruEnemyMapper} from './system/enemyMapper';
 import {ruAnimation} from './system/animation';
 import {ruGameSession} from './system/gameSession';
@@ -51,9 +54,11 @@ export const ruResources: Resources = {
     heroPanel: ruHeroPanel,
     logPanel: ruLogPanel,
     inventoryPanel: ruInventoryPanel,
+    relicsPanel: ruRelicsPanel,
     itemDetail: ruItemDetail,
     equipmentPanel: ruEquipmentPanel,
     skillsPanel: ruSkillsPanel,
+    relicChoice: ruRelicChoice,
     effectsPanel: ruEffectsPanel,
     endingMetrics: ruEndingMetrics,
     endingActions: ruEndingActions,
@@ -74,6 +79,7 @@ export const ruResources: Resources = {
   system: {
     logBuilder: ruLogBuilder,
     itemMapper: ruItemMapper,
+    statNames: ruStatNames,
     enemyMapper: ruEnemyMapper,
     animation: ruAnimation,
     gameSession: ruGameSession,

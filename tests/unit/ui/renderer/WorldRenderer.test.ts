@@ -207,6 +207,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     equipSlots: [],
     itemsOnFloor: [],
     inventory: [],
+    relics: [],
     hotbar: [],
     activeEffects: [],
     statusEffectsByEntity: new Map(),
@@ -224,6 +225,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     currentTurnSide: 'player',
     debugEnabled: false,
     mapgenDebugEnabled: false,
+    pendingWindow: null,
   };
 }
 

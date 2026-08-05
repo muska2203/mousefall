@@ -5,7 +5,7 @@
  * состояния игры. Центральное списание AP происходит в `GameSimulation.executeAction`.
  */
 
-import {tryGetAbility, tryGetItem, tryGetTerrain} from '@content/registry';
+import {tryGetAbility, tryGetItem, tryGetPoi, tryGetTerrain} from '@content/registry';
 import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
 import type {GameAction} from '@simulation/core-types.ts';
 import type {GameState} from '@simulation/types.ts';
@@ -24,7 +24,9 @@ export type ActionPointCostResolver = {
  * - USE_ABILITY — берётся из `apCost` шаблона способности, fallback = 1
  * - USE_ITEM — берётся из `apCost` шаблона предмета, fallback = 1
  * - EQUIP / UNEQUIP — 1 AP
- * - INTERACT — 1 AP
+ * - INTERACT — 1 AP; для poi с окном и `chargeSpentOn: 'resolution'` — 0 AP
+ *   (открытие окна бесплатно, AP списывается при выходе из окна — выбором опции)
+ * - RESOLVE_POI_CHOICE — 1 AP (выбор = завершение взаимодействия с окном poi)
  *
  * Известное ограничение итерации: автопуть и AI-pathfinding (`findPath`)
  * остаются равностоимостными — `moveCost` учитывается только при списании AP
@@ -42,8 +44,20 @@ export class DefaultActionPointCostResolver
         return (terrainId !== undefined ? tryGetTerrain(terrainId)?.moveCost : undefined) ?? 1;
       }
 
-      case 'INTERACT':
+      case 'INTERACT': {
+        // Оконный poi с зарядом на выбор: открытие окна бесплатно.
+        const target = state.entities.get(action.targetId);
+        if (target?.type === 'poi') {
+          const template = tryGetPoi(target.templateId);
+          if (template?.window && template.chargeSpentOn === 'resolution') {
+            return 0;
+          }
+        }
+        return 1;
+      }
+
       case 'ATTACK':
+      case 'RESOLVE_POI_CHOICE':
         return 1;
 
       case 'END_TURN':

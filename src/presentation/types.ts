@@ -299,6 +299,38 @@ export type InventoryItemViewModel = {
   damage?: number | null;
 };
 
+/** Один пункт эффекта реликвии: правило или модификатор характеристики. */
+export type RelicEffectViewModel = {
+  /** Устойчивый ключ пункта (ruleId или `stat_<stat>`). */
+  key: string;
+  /** Локализованное имя правила или характеристики. */
+  name: string;
+  /** Краткое описание работы (для правил может содержать тег-ссылки; для модификаторов — форматированное значение). */
+  description: string;
+};
+
+/** Одна реликвия (или стак одинаковых) в панели коллекции. */
+export type RelicViewModel = {
+  /** Шаблон реликвии — ключ группировки стаков. */
+  templateId: string;
+  /** Число экземпляров этого шаблона в коллекции (стак). */
+  count: number;
+  /** Локализованное имя. */
+  name: string;
+  /** Эффекты реликвии: сначала правила, затем модификаторы характеристик. */
+  effects: RelicEffectViewModel[];
+  /** Атмосферный текст (опционально). */
+  flavorText?: string;
+  /** Путь к иконке (может отсутствовать — тогда fallback). */
+  icon?: string;
+  /** Emoji-заглушка, если иконки нет или не загрузилась. */
+  fallback?: string;
+  /** Редкость (влияет на рамку ячейки). */
+  rarity: string;
+  /** Путь к рамке редкости. */
+  frameUrl: string;
+};
+
 export type HotbarItemKind = 'skill' | 'consumable' | 'empty';
 
 /** Тултип для скилла в хотбаре. */
@@ -543,6 +575,34 @@ export function toPresentationIntent(intent: Intent, state: GameState): Presenta
 /** Вид цели подсвеченного автопути для выбора цвета оверлея. */
 export type HighlightedPathTargetKind = 'none' | 'enemy' | 'interactable' | 'move';
 
+/** Опция выбора реликвии в оконном poi (модалка алтаря). */
+export type RelicChoiceOptionViewModel = {
+  /** ID шаблона реликвии — передаётся в onChoose. */
+  id: string;
+  /** Локализованное имя. */
+  name: string;
+  /** Путь к иконке (может отсутствовать — тогда fallback). */
+  icon?: string;
+  /** Emoji-заглушка, если иконки нет или не загрузилась. */
+  fallback?: string;
+  /** Редкость реликвии. */
+  rarity: string;
+  /** Атмосферный текст (опционально). */
+  flavorText?: string;
+  /** Эффекты реликвии: сначала правила, затем модификаторы характеристик. */
+  effects: RelicEffectViewModel[];
+};
+
+/** ViewModel открытого окна poi (модальный выбор, пока только «1 из N реликвий»). */
+export type PendingWindowViewModel = {
+  /** Вид окна (дискриминатор для реестра оконных компонентов в UI). */
+  kind: 'relic_choice';
+  /** Заголовок окна (локализованное имя poi). */
+  title: string;
+  /** Опции выбора — реликвии из предложения poi с готовыми ViewModel эффектов. */
+  options: RelicChoiceOptionViewModel[];
+};
+
 /** Полный вход renderer'а: состояние + анимации + метаданные. */
 export type RenderInput = {
   /** Readonly снимок игрового состояния от Simulation. */
@@ -590,6 +650,8 @@ export type RenderInput = {
   objectSprites: ObjectSpriteMap;
   /** Инвентарь игрока. */
   inventory: InventoryItemViewModel[];
+  /** Коллекция реликвий игрока (сгруппирована по шаблонам, порядок — порядок получения). */
+  relics: RelicViewModel[];
   /** Хотбар игрока (10 слотов: 1–9, 0). */
   hotbar: HotbarItemViewModel[];
   /** Активные статус-эффекты игрока. */
@@ -620,6 +682,8 @@ export type RenderInput = {
   debugEnabled: boolean;
   /** Включена ли debug-визуализация комнат и коридоров на карте. */
   mapgenDebugEnabled: boolean;
+  /** Открытое окно poi (модальный выбор опции), если есть. Пока окно открыто, ввод заблокирован. */
+  pendingWindow: PendingWindowViewModel | null;
 };
 
 /** Тип всплывающего уведомления. */

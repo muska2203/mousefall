@@ -84,6 +84,10 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
     const path = `maps.${id}`;
     checkRefs(errors, path, 'enemyPool', map.enemyPool, 'entities', content.entities);
     checkRefs(errors, path, 'itemPool', map.itemPool, 'items', content.items);
+    if (map.startPoiId) {
+      checkRef(errors, path, 'startPoiId', map.startPoiId, 'pois', content.pois);
+    }
+    checkRefs(errors, path, 'relicPool', map.relicPool ?? [], 'relics', content.relics);
   }
 
   for (const [id, status] of content.statuses) {

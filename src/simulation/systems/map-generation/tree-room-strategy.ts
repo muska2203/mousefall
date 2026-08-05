@@ -20,11 +20,11 @@
  */
 
 import type {MapParams} from '@content/schemas';
-import type {Corridor, CorridorSegment, DoorEntity, Entity, EntityId, GameMap, GameState, RNGState, Room} from '@simulation/types';
+import type {Corridor, CorridorSegment, DoorEntity, Entity, EntityId, GameMap, GameState, PointOfInterestEntity, RNGState, Room} from '@simulation/types';
 import {rngInt, rngShuffle} from '@utils/rng';
 import {buildEntityPositionIndex, canPlaceObjectAt, createTileGrid, EntityPositionIndex} from '@simulation/state';
 import type {GeneratedMap, MapGenerationStrategy} from './types';
-import {carveHCorridor, carveRoom, carveVCorridor, createDoor, DEFAULT_FLOOR_TERRAIN, roomCenter, spawnEnemiesAndItems,} from './shared';
+import {carveHCorridor, carveRoom, carveVCorridor, createDoor, createPoi, DEFAULT_FLOOR_TERRAIN, roomCenter, spawnEnemiesAndItems,} from './shared';
 
 /** Узел дерева комнат. Содержит топологию и ссылку на размещённую Room. */
 type TreeNode = {
@@ -89,6 +89,12 @@ export const treeRoomStrategy: MapGenerationStrategy = {
     for (const entity of [...enemies, ...items] as Entity[]) {
       spawnedEntities.set(entity.id, entity);
     }
+    // Гарантированный poi стартовой комнаты (например, алтарь выбора реликвии)
+    // — до дверей, чтобы они учли его в индексе занятых слотов.
+    const pois = spawnStartPoi(rng, params, state, playerStart, rootRoom, buildEntityPositionIndex(spawnedEntities));
+    for (const poi of pois) {
+      spawnedEntities.set(poi.id, poi);
+    }
     const doors = buildDoors(shiftedDoorPositions, state, buildEntityPositionIndex(spawnedEntities));
 
     return {
@@ -99,9 +105,52 @@ export const treeRoomStrategy: MapGenerationStrategy = {
       enemies,
       items,
       doors,
+      pois,
     };
   },
 };
+
+/**
+ * Размещает гарантированный poi стартовой комнаты (MapParams.startPoiId)
+ * на клетке, соседней со спавном игрока (8-соседство), внутри корневой комнаты.
+ *
+ * Лестницы создаются потребителями после generate(), поэтому клетка спавна
+ * (там stairsUp на этажах > 1) исключается из кандидатов по построению.
+ * Если свободной соседней клетки нет — этаж остаётся без poi (warn, без падения).
+ * Временная мера до типов комнат (этап 1 roadmap, решение 2026-08-04).
+ */
+function spawnStartPoi(
+  rng: RNGState,
+  params: MapParams,
+  state: GameState,
+  playerStart: { x: number; y: number },
+  rootRoom: Room,
+  index: EntityPositionIndex,
+): PointOfInterestEntity[] {
+  if (!params.startPoiId) return [];
+
+  const candidates: { x: number; y: number }[] = [];
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const x = playerStart.x + dx;
+      const y = playerStart.y + dy;
+      if (x < rootRoom.x || x >= rootRoom.x + rootRoom.width) continue;
+      if (y < rootRoom.y || y >= rootRoom.y + rootRoom.height) continue;
+      candidates.push({ x, y });
+    }
+  }
+  rngShuffle(rng, candidates);
+
+  for (const pos of candidates) {
+    if (canPlaceObjectAt(state, 'solid', pos, index)) {
+      return [createPoi(state, params.startPoiId, pos.x, pos.y)];
+    }
+  }
+
+  console.warn(`[mapgen] Не удалось разместить startPoiId "${params.startPoiId}": нет свободной клетки рядом со спавном.`);
+  return [];
+}
 
 // ─────────────────────────────────────────────
 // Построение дерева комнат

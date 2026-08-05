@@ -24,6 +24,7 @@
 | Добавить debug-действие | `systems/actions/debug-*.ts` → зарегистрировать в `simulation.ts`. Должно проверять флаг debug-режима. |
 | Добавить/изменить тайловый эффект | `docs/agents/TILE_EFFECTS.md` → `src/content/templates/tile-effects/`, `src/simulation/content-rules/rules.ts`, `src/simulation/skills/executors/` |
 | Добавить реакцию мира | `systems/world-reactions/` |
+| Добавить окно poi / изменить механику окна | `systems/poi-windows/` (интерфейс `PoiWindowMechanic`, реестр `POI_WINDOW_MECHANICS`) + рецепт `docs/recipes/add-poi.md` (раздел «Объект с окном») |
 | Изменить ход | `simulation.ts`, метод `dispatch` |
 | Изменить генерацию карт | `systems/mapgen.ts` (диспетчер) → `systems/map-generation/*-strategy.ts` |
 | Добавить тип события | `core-types.ts` (union `GameEvent`) |
@@ -75,7 +76,7 @@
 
 - Игровые теги — это иерархические строки вида `a.b.c`. Родительские теги выводятся автоматически: `damage.physical.slashing` удовлетворяет проверке `damage.physical` и `damage`.
 - Канонический способ классифицировать урон, доставку и эффекты — **теги**. Тип урона задаётся только через иерархические теги (`damage.physical.*`, `damage.magical.*`).
-- Основные хелперы: `hasTag`, `hasAllTags`, `hasAnyTag`, `mergeDamageIntentTags` (`systems/tags/tag-helpers.ts`); `expandTag`, `expandTags` (`systems/tags/tag-hierarchy.ts`). `mergeDamageIntentTags` объединяет теги, гарантируя ровно один damage.*-тег, — используется для формирования DAMAGE-интентов; приоритет у первого встреченного damage-тега.
+- Основные хелперы: `hasTag`, `hasAllTags`, `hasAnyTag`, `mergeDamageIntentTags` (`systems/tags/tag-helpers.ts`); `expandTag`, `expandTags` (`systems/tags/tag-hierarchy.ts`). `mergeDamageIntentTags` объединяет теги, гарантируя ровно один damage.*-тег, — используется для формирования DAMAGE-интентов; приоритет у первого встреченного damage-тега. Исключение — `addTags` правил-модификаторов в `content-rules/modifiers/apply-intent-modifiers.ts`: правило может добавить вторую «школу» урона (например, `relic_salamander_heart` делает урон оружия огненным), поэтому после модификаторов damage.*-тегов может быть несколько (roadmap 0.6).
 - Теги оружия возвращает `getWeaponTags` (`systems/tags/weapon-tags.ts`). Безоружная атака имеет теги `attack.melee`, `target.single`, `delivery.weapon`, `delivery.unarmed`; её единственный тип урона — `damage.physical.blunt` (через `UNARMED_DAMAGE_DISTRIBUTION`).
 
 ### Распределение урона по оружию

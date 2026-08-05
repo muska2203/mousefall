@@ -54,16 +54,53 @@
 2. **Если нужен эффект-правило — добавь его** в `CONTENT_RULES` (`src/simulation/content-rules/rules.ts`)
    по образцу существующих правил предметов и перечисли в `ruleIds` шаблона.
 
+### Пример: реликвия с минусом (плюс + цена)
+
+Утверждённый стартовый пул (roadmap 0.6) построен по схеме «плюс + минус». Минус выражается
+одним из двух способов:
+
+- **Отрицательный `statModifier`** — без правила вовсе:
+  `relic_acid_blood` (`statModifiers: [{ stat: 'armor', value: -1, op: 'add' }]`),
+  `relic_scavenger` (`maxHp add -5`).
+- **Второе правило с условиями-ограничителями** — второй id в `ruleIds`. Приёмы:
+  - `eventRole: 'target'` — минус срабатывает на входящий урон по владельцу
+    (`relic_blood_pact_price`: входящий урон ×1.25);
+  - `not(hasStatus ...)` / `not(hasTag ...)` — штраф в «холостом» случае
+    (`relic_venom_gland_ramp_up`: -1 по неотравленным; `relic_thunderhead_clumsy`: -1 недробящим);
+  - тот же триггер плюса с `target: { type: 'self' }` — откат на владельца
+    (`relic_plague_bearer_self_poison`).
+
+Тонкости DSL, всплывшие на пуле 0.6:
+- условие `eventRole` (`source` = исходящее событие владельца, `target` = входящее) — основной
+  способ разделить плюс и минус у одного триггера;
+- `addTags` у `modifyDamage` может добавить вторую «школу» урона (`damage.magical.fire`
+  к физическому удару у `relic_salamander_heart`) — инвариант «ровно один damage.*-тег»
+  действует только при формировании базового интента;
+- правило на событие `ITEM_PICKED_UP` работает (контекст: `sourceEntityId` = поднявший).
+
 3. **Добавь тексты** в `src/content/texts/ru/relics.ts` и `src/content/texts/en/relics.ts`:
 
    ```ts
    export const relics: Record<string, ContentText> = {
      relic_sharpened_instinct: {
        name: 'Заточенный инстинкт',
-       description: '+2 к урону.',
+       flavorText: 'Когти точатся сами — было бы о что.',
      },
    };
    ```
+
+   У реликвии в текстах — только `name` и `flavorText` (атмосферный текст, выводится курсивом
+   в конце карточки/тултипа). Монолитного `description` у реликвий нет: механика отображается
+   списком эффектов, который Presentation собирает автоматически (`buildRelicEffects`):
+
+   - **Правила** — для каждого id из `ruleIds` обязан быть текст в
+     `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts` (`name` + краткое
+     `description`; описания могут содержать тег-ссылки `[текст](tag:id)` — рендерятся через
+     `RichDescription`). Числа и условия в тексте обязаны совпадать с определением правила
+     в `CONTENT_RULES` — источник правды код, не наоборот.
+   - **Модификаторы характеристик** (`statModifiers`) отображаются автоматически:
+     имя — локализованное (`system.statNames.<stat>`), значение — «+N»/«−N» для `add`,
+     «×N» для `multiply`. Отдельных текстов для них не нужно.
 
 4. **Добавь иконку** (опционально) в `public/assets/` и перегенерируй манифест
    (`node scripts/generate-asset-manifest.js`).
@@ -99,7 +136,8 @@ source → `recalculateActorStats` → регистрация правил с `o
 - [ ] TS-шаблон создан в `src/content/templates/relics/`.
 - [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Правила эффекта (если нужны) добавлены в `CONTENT_RULES` и перечислены в `ruleIds` шаблона.
-- [ ] Тексты добавлены в `ru/relics.ts` и `en/relics.ts`.
+- [ ] Тексты добавлены в `ru/relics.ts` и `en/relics.ts` (только `name` + `flavorText`).
+- [ ] Для каждого `ruleIds` добавлены тексты правила в `ru/rules.ts` и `en/rules.ts` (сверены с `CONTENT_RULES`).
 - [ ] Шаблон зарегистрирован в `src/content/templates/relics/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.

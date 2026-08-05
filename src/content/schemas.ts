@@ -312,6 +312,10 @@ export const MapParamsSchema = z.object({
   itemDensity:  z.number().min(0).max(1).describe('Плотность спавна предметов (0.0–1.0)'),
   enemyPool:   z.array(z.string()).describe('ID шаблонов сущностей, допустимых к спавну'),
   itemPool:    z.array(z.string()).describe('ID шаблонов предметов, допустимых к спавну'),
+  startPoiId:  z.string().min(1).optional()
+    .describe('ID poi, гарантированно размещаемого в стартовой комнате рядом со спавном. Временная мера до типов комнат (этап 1 roadmap, решение 2026-08-04)'),
+  relicPool:   z.array(z.string()).optional()
+    .describe('ID шаблонов реликвий, доступных в окнах выбора реликвии (relic_choice) на этом этаже'),
 }).describe('Параметры процедурной генерации карты');
 
 export type MapParams = z.infer<typeof MapParamsSchema>;
@@ -375,11 +379,33 @@ export type PropTemplate = z.output<typeof PropTemplateSchema>;
 // Шаблон точки интереса (poi)
 // ─────────────────────────────────────────────
 
+/** Вид окна poi «выбор реликвии»: предлагает offerSize реликвий из relicPool карты. */
+export const PoiRelicChoiceWindowSchema = z.object({
+  kind:      z.literal('relic_choice'),
+  offerSize: z.number().int().positive().describe('Количество реликвий в предложении окна'),
+}).describe('Окно выбора реликвии (выбор 1 из N)');
+
+/**
+ * Дескриптор окна poi (discriminated union по `kind`).
+ * Новые виды окон (магазин и пр.) добавляются сюда новым вариантом.
+ */
+export const PoiWindowSchema = z.discriminatedUnion('kind', [
+  PoiRelicChoiceWindowSchema,
+]).describe('Окно poi: интерактивный выбор, открываемый активацией');
+
+export type PoiWindow = z.output<typeof PoiWindowSchema>;
+/** Вид окна poi (значение дискриминатора `kind`). */
+export type PoiWindowKind = PoiWindow['kind'];
+
 export const PoiTemplateSchema = z.object({
   id:              z.string().min(1).describe('Уникальный идентификатор точки интереса (совпадает с именем файла)'),
   interactionKind: z.literal('poi').describe('Вид интерактивного объекта'),
   ruleIds:         RuleIdsSchema,
   charges:         z.number().int().nonnegative().default(1).describe('Количество использований (зарядов). При 0 взаимодействие недоступно'),
+  chargeSpentOn:   z.enum(['activation', 'resolution']).default('activation')
+    .describe('Когда тратится заряд: activation — при активации (обычные poi), resolution — при выборе опции в окне (оконные poi)'),
+  window:          PoiWindowSchema.optional()
+    .describe('Окно, открываемое активацией poi (выбор реликвии и пр.). Без окна poi срабатывает сразу'),
   spriteVariants: SpriteVariantsSchema,
   renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
   tags:            TagsSchema,

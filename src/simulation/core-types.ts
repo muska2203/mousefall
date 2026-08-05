@@ -241,6 +241,7 @@ export type GameAction =
   | UnequipAction
   | UseItemAction
   | InteractAction
+  | ResolvePoiChoiceAction
   | DebugAddItemAction
   | DebugSpawnEntityAction
   | DebugSpawnTileEffectAction
@@ -299,6 +300,14 @@ export type InteractAction = {
   type: 'INTERACT';
   entityId: EntityId;
   targetId: EntityId;
+};
+
+/** Выбор опции в открытом окне poi (завершение взаимодействия, 1 AP). */
+export type ResolvePoiChoiceAction = {
+  type: 'RESOLVE_POI_CHOICE';
+  entityId: EntityId;
+  poiId: EntityId;
+  optionId: string;
 };
 
 export type DebugAddItemAction = {
@@ -396,6 +405,7 @@ export type Intent =
   | RemoveTileEffectStatusIntent
   | TileExplosionIntent
   | ActivatePoiIntent
+  | ResolvePoiChoiceIntent
   | DestroyObjectIntent
   | RevealObjectIntent;
 
@@ -476,6 +486,7 @@ export type TileExplosionIntent = {
   tags: GameplayTag[];
 };
 export type ActivatePoiIntent = { type: 'ACTIVATE_POI'; entityId: EntityId; targetPosition: Position };
+export type ResolvePoiChoiceIntent = { type: 'RESOLVE_POI_CHOICE'; entityId: EntityId; poiId: EntityId; optionId: string };
 export type DestroyObjectIntent = { type: 'DESTROY_OBJECT'; entityId: EntityId };
 export type RevealObjectIntent = { type: 'REVEAL_OBJECT'; entityId: EntityId };
 

@@ -23,7 +23,8 @@ import {
     getLocalizedEntity,
     getLocalizedItem,
     getLocalizedPlayerTemplate,
-    tryGetLocalizedAbility
+    tryGetLocalizedAbility,
+    tryGetLocalizedRelic
 } from '@content/registry';
 import type {Locale} from '@content/texts/lookup';
 
@@ -114,6 +115,12 @@ export function gameEventToLog(
     case 'ENTITY_HEALED': {
       const name = getEntityDisplayName(state, event.entityId, locale);
       return { text: t('system.logBuilder.healReceived', { name, amount: event.amount }), variant: 'good' };
+    }
+    case 'RELIC_GRANTED': {
+      const name = getEntityDisplayName(state, event.entityId, locale);
+      const relic = tryGetLocalizedRelic(event.relicId, locale);
+      const relicName = relic?.name ?? event.relicId;
+      return { text: t('system.logBuilder.relicGranted', { name, relic: relicName }), variant: 'good' };
     }
     case 'ITEM_USED': {
       const template = getLocalizedItem(event.templateId, locale);

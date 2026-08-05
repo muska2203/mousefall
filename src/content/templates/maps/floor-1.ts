@@ -18,5 +18,16 @@ export const floor1 = {
   ],
   "itemPool": [
     "health_potion"
+  ],
+  "startPoiId": "relic_altar",
+  "relicPool": [
+    "relic_salamander_heart",
+    "relic_venom_gland",
+    "relic_acid_blood",
+    "relic_plague_bearer",
+    "relic_thunderhead",
+    "relic_opportunist",
+    "relic_blood_pact",
+    "relic_scavenger"
   ]
 } satisfies MapParamsInput;

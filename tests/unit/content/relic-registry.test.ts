@@ -19,6 +19,7 @@ import {
   tryGetRelic,
 } from '../../../src/content/registry';
 import {createObjectContent} from '../../fixtures/gameState';
+import {buildContent} from '../../../src/content/templates';
 
 /** Минимальный шаблон реликвии с разумными дефолтами. */
 function mockRelicTemplate(
@@ -100,11 +101,11 @@ describe('Реестр контента — реликвии', () => {
     expect(ids).toEqual(['relic_test_charm', 'relic_test_stack']);
   });
 
-  it('getLocalizedRelic возвращает шаблон с именем и описанием (fallback при отсутствии текстов)', () => {
+  it('getLocalizedRelic возвращает шаблон с именем (fallback при отсутствии текстов)', () => {
     const localized = getLocalizedRelic('relic_test_stack', 'ru');
     expect(localized.id).toBe('relic_test_stack');
     expect(localized.name).toBe('[relic_test_stack]');
-    expect(localized.description).toBe('');
+    expect(localized.flavorText).toBeUndefined();
   });
 
   it('tryGetLocalizedRelic возвращает локализованный шаблон или undefined', () => {
@@ -122,5 +123,28 @@ describe('Реестр контента — реликвии', () => {
     initRegistry(createObjectContent({ relics: undefined }));
     expect(tryGetRelic('relic_test_charm')).toBeUndefined();
     expect(getAllRelics()).toEqual([]);
+  });
+});
+
+describe('Локализация реликвий — flavorText (реальный контент)', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry(buildContent());
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('getLocalizedRelic мержит flavorText из текстов (ru/en)', () => {
+    expect(getLocalizedRelic('relic_salamander_heart', 'ru').flavorText).toContain('уголёк');
+    expect(getLocalizedRelic('relic_salamander_heart', 'en').flavorText).toContain('ember');
+  });
+
+  it('tryGetLocalizedRelic и getAllLocalizedRelics тоже мержат flavorText', () => {
+    expect(tryGetLocalizedRelic('relic_blood_pact', 'ru')?.flavorText).toBeDefined();
+    const all = getAllLocalizedRelics('ru');
+    expect(all).toHaveLength(8);
+    expect(all.every(r => typeof r.flavorText === 'string' && r.flavorText.length > 0)).toBe(true);
   });
 });

@@ -14,7 +14,7 @@
 import type {GameState} from '@simulation/types.ts';
 import type {EntityId, Intent} from '@simulation/core-types.ts';
 import {findEntity, isActor} from '@simulation/state.ts';
-import {hasAllTags, mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers.ts';
+import {hasAllTags} from '@simulation/systems/tags/tag-helpers.ts';
 import {chebyshevDistance} from '@utils/math.ts';
 import {getWorldContentRules} from '../rules.ts';
 import type {RuleContext} from '../rule-context.ts';
@@ -88,7 +88,15 @@ export function applyIntentModifiers(
     }
 
     if (effect.addTags && effect.addTags.length > 0) {
-      tags = mergeDamageIntentTags(tags, effect.addTags);
+      // Правила могут добавить вторую «школу» урона (например, реликвия
+      // relic_salamander_heart делает урон оружия огненным), поэтому здесь —
+      // простое слияние с дедупликацией, без инварианта «ровно один damage.*-тег».
+      // Инвариант сохраняется на этапе формирования базового интента (mergeDamageIntentTags).
+      for (const tag of effect.addTags) {
+        if (!tags.includes(tag)) {
+          tags = [...tags, tag];
+        }
+      }
     }
   }
 

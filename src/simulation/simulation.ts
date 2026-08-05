@@ -51,6 +51,7 @@ import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
 import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
 import {interactAction} from "@simulation/systems/actions/interact-action.ts";
+import {resolvePoiChoiceAction} from "@simulation/systems/actions/resolve-poi-choice-action.ts";
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
 import {createDebugSpawnEntityActionHandler} from "@simulation/systems/actions/debug-spawn-entity-action.ts";
 import {createDebugSpawnTileEffectActionHandler} from "@simulation/systems/actions/debug-spawn-tile-effect-action.ts";
@@ -806,6 +807,7 @@ export class GameSimulation implements Simulation {
         generatedMap.enemies.forEach(e => this.state.entities.set(e.id, e));
         generatedMap.items.forEach(e => this.state.entities.set(e.id, e));
         generatedMap.doors.forEach(d => this.state.entities.set(d.id, d));
+        generatedMap.pois.forEach(p => this.state.entities.set(p.id, p));
 
         // Лестницы
         if (generatedMap.stairsDown && this.state.floor < MAX_FLOOR) {
@@ -1192,6 +1194,7 @@ export function defaultActionHandlerRegistry(debugContext: DebugContext = { enab
     registry.register('UNEQUIP', unequipEntity);
     registry.register('USE_ITEM', useItemAction);
     registry.register('INTERACT', interactAction);
+    registry.register('RESOLVE_POI_CHOICE', resolvePoiChoiceAction);
     registry.register('DEBUG_ADD_ITEM', createDebugAddItemActionHandler(debugContext));
     registry.register('DEBUG_SPAWN_ENTITY', createDebugSpawnEntityActionHandler(debugContext));
     registry.register('DEBUG_SPAWN_TILE_EFFECT', createDebugSpawnTileEffectActionHandler(debugContext));

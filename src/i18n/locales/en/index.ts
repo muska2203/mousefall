@@ -8,9 +8,11 @@ import {enEnding} from './screens/ending';
 import {enHeroPanel} from './components/heroPanel';
 import {enLogPanel} from './components/logPanel';
 import {enInventoryPanel} from './components/inventoryPanel';
+import {enRelicsPanel} from './components/relicsPanel';
 import {enItemDetail} from './components/itemDetail';
 import {enEquipmentPanel} from './components/equipmentPanel';
 import {enSkillsPanel} from './components/skillsPanel';
+import {enRelicChoice} from './components/relicChoice';
 import {enEffectsPanel} from './components/effectsPanel';
 import {enEndingMetrics} from './components/endingMetrics';
 import {enEndingActions} from './components/endingActions';
@@ -29,6 +31,7 @@ import {enDetailPopover} from './components/detailPopover';
 import {enToast} from './components/toast';
 import {enLogBuilder} from './system/logBuilder';
 import {enItemMapper} from './system/itemMapper';
+import {enStatNames} from './system/statNames';
 import {enEnemyMapper} from './system/enemyMapper';
 import {enAnimation} from './system/animation';
 import {enGameSession} from './system/gameSession';
@@ -51,9 +54,11 @@ export const enResources: Resources = {
     heroPanel: enHeroPanel,
     logPanel: enLogPanel,
     inventoryPanel: enInventoryPanel,
+    relicsPanel: enRelicsPanel,
     itemDetail: enItemDetail,
     equipmentPanel: enEquipmentPanel,
     skillsPanel: enSkillsPanel,
+    relicChoice: enRelicChoice,
     effectsPanel: enEffectsPanel,
     endingMetrics: enEndingMetrics,
     endingActions: enEndingActions,
@@ -74,6 +79,7 @@ export const enResources: Resources = {
   system: {
     logBuilder: enLogBuilder,
     itemMapper: enItemMapper,
+    statNames: enStatNames,
     enemyMapper: enEnemyMapper,
     animation: enAnimation,
     gameSession: enGameSession,

@@ -35,7 +35,11 @@ describe('damage tag invariant', () => {
     expect(warnSpy.mock.calls[0]![0]).toContain('no damage tag');
   });
 
-  it('DAMAGE-интент с несколькими damage-тегами вызывает console.warn', () => {
+  it('DAMAGE-интент с несколькими damage-тегами — легитимен (школы урона от правил), warn нет, урон проходит', () => {
+    // Правила-модификаторы могут добавить вторую «школу» урона к базовому тегу
+    // (например, relic_salamander_heart делает урон оружия огненным) — roadmap 0.6.
+    // Инвариант «ровно один damage.*-тег» действует только на этапе формирования
+    // базового интента (mergeDamageIntentTags), а не после модификаторов.
     const enemy = makeEnemy({ hp: 20, armor: 0 });
     const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
     const builder = makeBuilder();
@@ -48,7 +52,7 @@ describe('damage tag invariant', () => {
       tags: ['damage.physical.slashing', 'damage.magical.fire'],
     }, builder, builder.root);
 
-    expect(warnSpy).toHaveBeenCalledOnce();
-    expect(warnSpy.mock.calls[0]![0]).toContain('multiple damage tags');
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(enemy.hp).toBeLessThan(20);
   });
 });

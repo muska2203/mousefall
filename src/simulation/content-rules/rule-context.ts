@@ -168,6 +168,11 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
       break;
     }
 
+    case 'ITEM_PICKED_UP': {
+      base.sourceEntityId = event.entityId;
+      break;
+    }
+
     case 'TILE_EFFECT_CHANGED':
     case 'TILE_EFFECT_REMOVED':
     case 'TILE_EFFECT_TICKED':

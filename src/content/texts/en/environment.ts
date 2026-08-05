@@ -30,6 +30,10 @@ export const pois: Record<string, ContentText> = {
     name: 'Cheese Bush',
     flavorText: 'A rare underground shrub that bears pure cheddar. Pick a slice and life instantly improves. Doctors remain skeptical.',
   },
+  relic_altar: {
+    name: 'Relic Altar',
+    flavorText: 'An ancient stone altar radiating a faint glow. It offers a choice: one relic out of three.',
+  },
 };
 
 export const traps: Record<string, ContentText> = {

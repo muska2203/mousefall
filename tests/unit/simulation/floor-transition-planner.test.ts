@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer } from '../../fixtures/gameState.ts';
+import { makeGameState, makePlayer, defaultTestMapParams } from '../../fixtures/gameState.ts';
 import { computeFloorTransition } from '@simulation/systems/floor-transition-planner';
-import type { DoorTemplate } from '@content/schemas';
+import type { DoorTemplate, PoiTemplate } from '@content/schemas';
 import { initRegistry, resetRegistry } from '@content/registry';
-import type { Entity, EntityId, StairsEntity } from '@simulation/types';
+import type { Entity, EntityId, PointOfInterestEntity, StairsEntity } from '@simulation/types';
 
 describe('computeFloorTransition', () => {
   beforeEach(() => {
@@ -22,6 +22,17 @@ describe('computeFloorTransition', () => {
         } as DoorTemplate],
       ]),
       stairs: new Map(),
+      pois: new Map<string, PoiTemplate>([
+        ['test_poi', {
+          id: 'test_poi',
+          interactionKind: 'poi',
+          ruleIds: [],
+          charges: 1,
+          chargeSpentOn: 'activation',
+          renderScale: 1,
+          tags: [],
+        } as PoiTemplate],
+      ]),
     statuses: new Map(),
     tileEffects: new Map(),
     tileEffectStatuses: new Map(),
@@ -136,5 +147,51 @@ describe('computeFloorTransition', () => {
     state.floor = planDown.to;
     const planUp = computeFloorTransition(state, 'up');
     expect(planUp.tileEffects[3]![3]!['cover']).toBeDefined();
+  });
+
+  it('включает сгенерированный poi стартовой комнаты в сущности нового этажа', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const state = makeGameState({
+      player,
+      floor: 1,
+      mapParams: { ...defaultTestMapParams, startPoiId: 'test_poi' },
+    });
+
+    const plan = computeFloorTransition(state, 'down');
+
+    const entities = plan.entities as Map<EntityId, Entity>;
+    const pois = Array.from(entities.values()).filter(
+      (e): e is PointOfInterestEntity => e.type === 'poi',
+    );
+    expect(pois.length).toBe(1);
+    expect(pois[0]!.templateId).toBe('test_poi');
+  });
+
+  it('сохраняет poi в снапшот и восстанавливает при возвращении на этаж', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const state = makeGameState({ player, floor: 1 });
+    const poi: PointOfInterestEntity = {
+      id: 'poi_1',
+      type: 'poi',
+      x: 6,
+      y: 5,
+      displayName: 'test_poi',
+      templateId: 'test_poi',
+      blocksMovement: true,
+      interactionKind: 'poi',
+      charges: 1,
+    };
+    state.entities.set(poi.id, poi);
+
+    const planDown = computeFloorTransition(state, 'down');
+    // Снапшот первого этажа содержит poi.
+    expect(state.floorSnapshots[0]!.entities.some(e => e.id === 'poi_1')).toBe(true);
+
+    // Возврат на первый этаж восстанавливает poi.
+    state.floor = planDown.to;
+    const planUp = computeFloorTransition(state, 'up');
+    const restored = (planUp.entities as Map<EntityId, Entity>).get('poi_1') as PointOfInterestEntity;
+    expect(restored).toBeDefined();
+    expect(restored.charges).toBe(1);
   });
 });

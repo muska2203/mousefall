@@ -63,6 +63,7 @@ export function computeFloorTransition(
       ...generated.enemies,
       ...generated.items,
       ...generated.doors,
+      ...generated.pois,
     ];
 
     if (generated.stairsDown && to < MAX_FLOOR) {

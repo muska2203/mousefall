@@ -364,6 +364,271 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: {type: 'eventSource'},
     priority: 0,
   },
+  // ── Правила реликвий стартового пула (roadmap 0.6) ─────────────────────────
+  // Владелец правила — экземпляр реликвии в коллекции игрока (ownerContext
+  // {type: 'entity', entityId: instanceId}, регистрация в rebuildActiveRules).
+  // Условие eventRole отделяет исходящий урон (source) от входящего (target).
+  // `chance` не используется — механики детерминированы (решение 2026-08-04).
+  {
+    // Плюс «Уголька из-за плиты»: удары оружия становятся огненными.
+    id: 'relic_salamander_heart_fire_infusion',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [{type: 'eventRole', role: 'source'}],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: 0,
+      addTags: ['damage.magical.fire'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Минус: входящий огонь бьёт владельца больнее.
+    id: 'relic_salamander_heart_fire_vulnerability',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['damage.magical.fire'],
+    },
+    conditions: [{type: 'eventRole', role: 'target'}],
+    effect: {
+      type: 'modifyDamage',
+      op: 'multiply',
+      value: 1.25,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Плюс «Поганочной железы»: удары оружия отравляют цель.
+    id: 'relic_venom_gland_poison_on_hit',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [{type: 'eventRole', role: 'source'}],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'poisoned',
+      duration: 3,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Минус: по неотравленной цели урон оружия меньше.
+    id: 'relic_venom_gland_ramp_up',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {
+        type: 'not',
+        condition: {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+      },
+    ],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: -1,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Плюс «Ржавой крови»: атакующий в ближнем бою получает отравление.
+    id: 'relic_acid_blood_poison_attacker',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['attack.melee'],
+    },
+    conditions: [{type: 'eventRole', role: 'target'}],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'poisoned',
+      duration: 2,
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
+  {
+    // Плюс «Носителя серого мора»: удар по отравленному разносит заразу на врагов рядом.
+    id: 'relic_plague_bearer_spread',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'poisoned',
+      duration: 2,
+    },
+    target: {type: 'allInRadius', radius: 1, center: 'eventPosition', faction: 'enemy', excludeSelf: true},
+    priority: 0,
+  },
+  {
+    // Минус: при переносе заразы владелец получает отравление сам.
+    id: 'relic_plague_bearer_self_poison',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'poisoned',
+      duration: 1,
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
+  {
+    // Плюс «Ушата грома»: дробящие удары оружия ошеломляют (по образцу weapon_blunt_daze).
+    id: 'relic_thunderhead_daze',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['damage.physical.blunt', 'delivery.weapon'],
+    },
+    effect: {
+      type: 'applyStatus',
+      statusType: 'dazed',
+      duration: 1,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Минус: недробящим оружием урон меньше.
+    id: 'relic_thunderhead_clumsy',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {
+        type: 'not',
+        condition: {type: 'hasTag', tag: 'damage.physical.blunt'},
+      },
+    ],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: -1,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Плюс «Подлого куся»: больше урона по ослабленным целям.
+    id: 'relic_opportunist_bonus',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {
+        type: 'or',
+        conditions: [
+          {type: 'hasStatus', statusType: 'dazed', subject: 'target'},
+          {type: 'hasStatus', statusType: 'stunned', subject: 'target'},
+          {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+        ],
+      },
+    ],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: 3,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Минус: по полноценному противнику урон меньше.
+    id: 'relic_opportunist_hesitant',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {
+        type: 'not',
+        condition: {
+          type: 'or',
+          conditions: [
+            {type: 'hasStatus', statusType: 'dazed', subject: 'target'},
+            {type: 'hasStatus', statusType: 'stunned', subject: 'target'},
+            {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+          ],
+        },
+      },
+    ],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: -1,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Плюс «Договора с подвалом»: больше весь исходящий урон (без фильтра тегов).
+    id: 'relic_blood_pact_power',
+    trigger: {
+      event: 'DAMAGE',
+    },
+    conditions: [{type: 'eventRole', role: 'source'}],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: 4,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Минус: больше и входящий урон по владельцу.
+    id: 'relic_blood_pact_price',
+    trigger: {
+      event: 'DAMAGE',
+    },
+    conditions: [{type: 'eventRole', role: 'target'}],
+    effect: {
+      type: 'modifyDamage',
+      op: 'multiply',
+      value: 1.25,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Плюс «Азарта свалки»: поднятие предмета лечит владельца.
+    id: 'relic_scavenger_heal_on_pickup',
+    trigger: {
+      event: 'ITEM_PICKED_UP',
+    },
+    effect: {
+      type: 'heal',
+      amount: 5,
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
 ];
 
 /**

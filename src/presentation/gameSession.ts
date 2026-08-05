@@ -46,13 +46,16 @@ import type {
   InteractionHintViewModel,
   InteractionOption,
   InventoryItemViewModel,
+  PendingWindowViewModel,
   PlayerSkillViewModel,
   PresentationActionPreview,
   PresentationIntent,
+  RelicViewModel,
   RenderInput,
   ToastItem
 } from './types';
 import {toPresentationIntent} from './types';
+import {buildRelicEffects} from './relicDetailMapper';
 import type {DisplayPatch, DisplayState} from './displayState/types';
 import {applyPatch, applyPatches, buildDisplayState} from './displayState/builder';
 import {resyncDisplayState} from './displayState/sync';
@@ -72,7 +75,10 @@ import {
   tryGetItem,
   tryGetLocalizedAbility,
   tryGetLocalizedItem,
+  tryGetLocalizedPoi,
+  tryGetLocalizedRelic,
   tryGetLocalizedStatus,
+  tryGetPoi,
   tryGetPlayerTemplate,
 } from '@content/registry';
 import type {Locale} from '@content/texts/lookup';
@@ -89,7 +95,7 @@ import {mapDoorToPopover} from './doorDetailMapper';
 import {mapPropToPopover} from './propDetailMapper';
 import {mapPoiToPopover} from './poiDetailMapper';
 import {mapTrapToPopover} from './trapDetailMapper';
-import {resolveAbilityIcon, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
+import {resolveAbilityIcon, resolveItemFrame, resolveItemIcon, resolveStatusIcon} from '@utils/assetResolver';
 import {buildObjectSprites} from './objectSpriteResolver';
 
 import {CameraState} from './cameraState';
@@ -201,6 +207,8 @@ export class GameSession {
   private targeting = new TargetingController();
   /** Состояние таргетинга для расходников (параллельно ability-таргетингу). */
   private itemTargeting: { itemInstanceId: string; templateId: string } | null = null;
+  /** Открытое окно poi (модальный выбор опции). Живёт только в Presentation. */
+  private pendingWindow: { kind: 'relic_choice'; poiId: string } | null = null;
   private autoPath = new AutoPathController();
   private listeners = new Set<() => void>();
   private viewModelCache: GameViewModel | null = null;
@@ -475,6 +483,32 @@ export class GameSession {
       })
       .sort(compareInventoryItems);
 
+    // Коллекция реликвий: группировка по шаблону, порядок — порядок первого появления (получения).
+    const relics: RelicViewModel[] = [];
+    const relicIndexByTemplate = new Map<string, number>();
+    for (const relic of state.player.relics) {
+      const existingIndex = relicIndexByTemplate.get(relic.templateId);
+      if (existingIndex !== undefined) {
+        relics[existingIndex]!.count += 1;
+        continue;
+      }
+      const localized = tryGetLocalizedRelic(relic.templateId, locale);
+      // Неизвестный шаблон пропускаем — коллекция могла пережить переименование контента.
+      if (!localized) continue;
+      relicIndexByTemplate.set(relic.templateId, relics.length);
+      relics.push({
+        templateId: relic.templateId,
+        count: 1,
+        name: localized.name,
+        effects: buildRelicEffects(localized, locale),
+        flavorText: localized.flavorText,
+        icon: localized.icon,
+        fallback: localized.fallback,
+        rarity: localized.rarity,
+        frameUrl: resolveItemFrame(localized.rarity),
+      });
+    }
+
     const statusEffectsByEntity = new Map<string, readonly StatusEffect[]>();
     statusEffectsByEntity.set(displayState.player.id, sortStatusEffects(displayState.player.statusEffects ?? []));
     for (const entity of displayState.entities.values()) {
@@ -566,6 +600,7 @@ export class GameSession {
       itemsOnFloor,
       objectSprites,
       inventory,
+      relics,
       hotbar: this.buildHotbar(state),
       activeEffects,
       statusEffectsByEntity,
@@ -573,6 +608,7 @@ export class GameSession {
       runStats: state.runStats,
       fieldObjectPopover,
       interactionHint,
+      pendingWindow: this.buildPendingWindowViewModel(state),
       aiPreparedIntents,
       currentTurnSide: this.simulation!.isPlayerTurn() ? 'player' : state.turn.activeSide,
       debugEnabled: this.debugEnabled,
@@ -653,6 +689,34 @@ export class GameSession {
       targetPosition: option.targetPosition,
       label: t(option.labelKey),
       hasMultiple: options.length > 1,
+    };
+  }
+
+  /** Построить ViewModel открытого окна poi: заголовок и опции из предложения poi. */
+  private buildPendingWindowViewModel(state: Readonly<GameState>): PendingWindowViewModel | null {
+    if (!this.pendingWindow) return null;
+
+    const poi = state.entities.get(this.pendingWindow.poiId);
+    if (!poi || poi.type !== 'poi' || !poi.offer || poi.offer.length === 0) return null;
+
+    const localizedPoi = tryGetLocalizedPoi(poi.templateId, this.locale);
+    const options = poi.offer
+      .map((id) => tryGetLocalizedRelic(id, this.locale))
+      .filter((relic): relic is NonNullable<typeof relic> => relic !== undefined)
+      .map((relic) => ({
+        id: relic.id,
+        name: relic.name,
+        icon: relic.icon,
+        fallback: relic.fallback,
+        rarity: relic.rarity,
+        flavorText: relic.flavorText,
+        effects: buildRelicEffects(relic, this.locale),
+      }));
+
+    return {
+      kind: this.pendingWindow.kind,
+      title: localizedPoi?.name ?? '',
+      options,
     };
   }
 
@@ -1103,6 +1167,7 @@ export class GameSession {
     this.displayState = resyncDisplayState(this.simulation.getState());
     this.mode = 'playing';
     this.lastResult = null;
+    this.pendingWindow = null;
     this.animation.phase = 'idle';
     this.hotbarAssignments = Array.from({ length: HOTBAR_SIZE }, () => null);
     this.synchronizeHotbarAssignments(this.simulation.getState());
@@ -1124,6 +1189,7 @@ export class GameSession {
     this.displayState = resyncDisplayState(this.simulation.getState());
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
+    this.pendingWindow = null;
     this.animation.phase = this.mode === 'playing' ? 'idle' : 'gameOver';
     this.selectedInteractionIndex = 0;
     this.lastInteractionOptionsKey = '';
@@ -1271,6 +1337,59 @@ export class GameSession {
   /** Находимся ли сейчас в режиме таргетинга. */
   isTargeting(): boolean {
     return this.targeting.phase === 'targeting' || this.itemTargeting !== null;
+  }
+
+  /** Открыто ли окно poi (модальный выбор опции). Пока открыто — ввод заблокирован. */
+  isWindowOpen(): boolean {
+    return this.pendingWindow !== null;
+  }
+
+  /**
+   * Выбрать опцию в открытом окне poi.
+   * Действие RESOLVE_POI_CHOICE стоит 1 AP (выход из окна); поле сбрасывается
+   * сразу, при отказе refreshPendingWindow после dispatch восстановит окно.
+   */
+  resolveWindowChoice(optionId: string): void {
+    if (!this.pendingWindow || !this.simulation) return;
+    const poiId = this.pendingWindow.poiId;
+    this.pendingWindow = null;
+    this.dispatch({ type: 'RESOLVE_POI_CHOICE', entityId: 'player', poiId, optionId });
+  }
+
+  /** Отказаться от выбора: окно закрывается без dispatch, предложение poi сохраняется. */
+  dismissWindow(): void {
+    if (!this.pendingWindow) return;
+    this.pendingWindow = null;
+    this.notify();
+  }
+
+  /**
+   * Обновить состояние открытого окна poi по факту состояния Simulation:
+   * окно открыто, если есть poi с шаблонным `window`, заполненным `offer`
+   * и оставшимися зарядами. Вызывается после dispatch и по завершении
+   * анимаций (во время анимаций окно не открывается — ввод всё равно заблокирован).
+   */
+  private refreshPendingWindow(): void {
+    if (!this.simulation || this.mode !== 'playing') return;
+    if (this.animation.phase === 'animating') return;
+
+    const state = this.simulation.getState();
+    for (const entity of state.entities.values()) {
+      if (entity.type !== 'poi') continue;
+      if (!entity.offer || entity.offer.length === 0 || entity.charges <= 0) continue;
+      const template = tryGetPoi(entity.templateId);
+      if (!template?.window) continue;
+
+      // Окно открывается: гасим автопуть и hover-режимы по образцу beginItemTargetingIfNeeded.
+      this.pendingWindow = { kind: template.window.kind, poiId: entity.id };
+      this.autoPath.cancel();
+      this.targetingHover = null;
+      this.fieldHover = null;
+      return;
+    }
+
+    // Ни одного poi с активным предложением — окна нет (выбор уже применён).
+    this.pendingWindow = null;
   }
 
   /** Установить клетку под мышью в обычном режиме (для popover объекта на поля). */
@@ -1721,6 +1840,8 @@ export class GameSession {
     // После каждого хода проверяем, не закончилась ли игра
     this.checkGameOver();
 
+    // Открытие окна poi (выбор опции) — только вне фазы анимаций.
+    this.refreshPendingWindow();
 
     // Если фазы не породили анимаций, но ход не завершён — сразу идём дальше.
     if (this.mode === 'playing' && this.animation.phase === 'idle' && this.lastResult?.hasMoreSteps) {
@@ -1991,6 +2112,16 @@ export class GameSession {
       if (this.simulation) {
         this.displayState = resyncDisplayState(this.simulation.getState());
       }
+    }
+
+    // Открытие окна poi только после завершения анимаций.
+    // Если окно открылось, автопуть уже погашен внутри refreshPendingWindow.
+    this.refreshPendingWindow();
+    if (this.pendingWindow) {
+      if (!options.skipNotify) {
+        this.notify();
+      }
+      return false;
     }
 
     // Автопродолжение зафиксированного автопути.

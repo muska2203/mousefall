@@ -122,6 +122,14 @@ export interface ComponentsInventoryPanelTranslations {
   title: string;
 }
 
+export interface ComponentsRelicsPanelTranslations {
+  title: string;
+  /** aria-label строки ячеек коллекции. */
+  listAriaLabel: string;
+  /** Строка о размере стака в поповере (плейсхолдер {{count}}). */
+  stackCount: string;
+}
+
 export interface ComponentsItemDetailTranslations {
   itemSkillsTitle: string;
   abilityLevelPrefix: string;
@@ -138,6 +146,11 @@ export interface ComponentsSkillsPanelTranslations {
   title: string;
   noSkills: string;
   equipmentSkillTooltip: string;
+}
+
+export interface ComponentsRelicChoiceTranslations {
+  declineLabel: string;
+  optionsAriaLabel: string;
 }
 
 export interface ComponentsEffectsPanelTranslations {
@@ -310,9 +323,11 @@ export interface ComponentsTranslations {
   heroPanel: ComponentsHeroPanelTranslations;
   logPanel: ComponentsLogPanelTranslations;
   inventoryPanel: ComponentsInventoryPanelTranslations;
+  relicsPanel: ComponentsRelicsPanelTranslations;
   itemDetail: ComponentsItemDetailTranslations;
   equipmentPanel: ComponentsEquipmentPanelTranslations;
   skillsPanel: ComponentsSkillsPanelTranslations;
+  relicChoice: ComponentsRelicChoiceTranslations;
   effectsPanel: ComponentsEffectsPanelTranslations;
   endingMetrics: ComponentsEndingMetricsTranslations;
   endingActions: ComponentsEndingActionsTranslations;
@@ -352,6 +367,7 @@ export interface SystemLogBuilderTranslations {
   entityCollided: string;
   entityDisplaced: string;
   entityMissed: string;
+  relicGranted: string;
 }
 
 export interface SystemItemMapperTranslations {
@@ -378,6 +394,20 @@ export interface SystemItemMapperTranslations {
   effectTypeLabel: string;
   effectValueLabel: string;
   baseDamageLabel: string;
+}
+
+export interface SystemStatNamesTranslations {
+  damage: string;
+  armor: string;
+  maxHp: string;
+  dodgeChance: string;
+  accuracy: string;
+  critChance: string;
+  critMultiplier: string;
+  str: string;
+  dex: string;
+  int: string;
+  vit: string;
 }
 
 export interface SystemEnemyMapperTranslations {
@@ -449,6 +479,7 @@ export interface SystemMapObjectsTranslations {
 export interface SystemTranslations {
   logBuilder: SystemLogBuilderTranslations;
   itemMapper: SystemItemMapperTranslations;
+  statNames: SystemStatNamesTranslations;
   enemyMapper: SystemEnemyMapperTranslations;
   animation: SystemAnimationTranslations;
   gameSession: SystemGameSessionTranslations;

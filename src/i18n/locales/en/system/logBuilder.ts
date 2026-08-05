@@ -21,4 +21,5 @@ export const enLogBuilder = {
   entityCollided: '{{name}} collided',
   entityDisplaced: '{{name}} was pushed',
   entityMissed: '{{attacker}} missed {{target}}',
+  relicGranted: '{{name}} received the relic "{{relic}}"',
 } as const satisfies SystemLogBuilderTranslations;

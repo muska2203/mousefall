@@ -27,10 +27,10 @@ export function applyDamageToEntity(
   if (damageTagCount === 0) {
     // eslint-disable-next-line no-console
     console.warn('[applyDamageToEntity] damage has no damage tag.', { target: target.id, tags });
-  } else if (damageTagCount > 1) {
-    // eslint-disable-next-line no-console
-    console.warn('[applyDamageToEntity] damage has multiple damage tags, expected exactly one.', { target: target.id, tags });
   }
+  // Несколько damage.*-тегов — легитимное состояние (например, правило реликвии
+  // relic_salamander_heart добавляет огненную «школу» к физическому урону оружия);
+  // обработчик выбирается первым подходящим предикатом в getDamageHandler.
 
   const handler = getDamageHandler(tags);
   const ctx: DamageCalculationContext = {

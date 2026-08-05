@@ -21,4 +21,5 @@ export const ruLogBuilder = {
   entityCollided: '{{name}} врезался',
   entityDisplaced: '{{name}} оттолкнут',
   entityMissed: '{{attacker}} промахнулся по {{target}}',
+  relicGranted: '{{name}} получил реликвию «{{relic}}»',
 } as const satisfies SystemLogBuilderTranslations;

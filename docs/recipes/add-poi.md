@@ -43,6 +43,8 @@
    - `interactionKind` — всегда `"poi"`.
    - `ruleIds` — декларативные правила эффекта; срабатывают на событие `POI_USED` (слой `object`).
    - `charges` — количество использований; при 0 взаимодействие недоступно (`resolveInteraction` → null).
+   - `chargeSpentOn` — когда тратится заряд: `activation` (default) или `resolution` (оконные poi).
+   - `window` — опциональный дескриптор окна выбора (см. раздел «Объект с окном (window)»).
    - `renderScale` — масштаб спрайта относительно тайла.
    - `spriteVariants` — опциональные переопределения спрайтов по визуальным стейтам
      (например, `{depleted: 'altar_drained'}`); см. раздел «Варианты спрайтов по состоянию».
@@ -126,9 +128,61 @@ Simulation меняет исходные поля (например, `charges` �
 
 ---
 
+## Объект с окном (window)
+
+Poi может открывать **окно выбора** — модальный UI с опциями (пример: алтарь выбора
+реликвии `relic_altar`, выбор 1 из 3). Механика задаётся дескриптором `window` в шаблоне
+и кодом механики в `src/simulation/systems/poi-windows/`.
+
+### Поля шаблона
+
+- `window` — дескриптор окна (discriminated union `PoiWindowSchema` по `kind`, расширяемый
+  новыми видами окон). Вариант `relic_choice`: `{kind: 'relic_choice', offerSize: N}` —
+  предложение из N реликвий пула `relicPool` текущей карты (`MapParamsSchema.relicPool`,
+  валидируется в `validate-references.ts`).
+- `chargeSpentOn: 'activation' | 'resolution'` (default `'activation'`) — когда тратится заряд:
+  `activation` — при активации (обычные poi), `resolution` — при выборе опции в окне
+  (оконные poi: активация только открывает окно).
+
+### Как это работает
+
+1. `INTERACT` → `ACTIVATE_POI`: если у шаблона есть `window`, исполнитель делегирует
+   механике (`POI_WINDOW_MECHANICS[template.window.kind]`): `onActivate` готовит предложение
+   и записывает id опций в `poi.offer` (плоское поле сущности — переживает снапшот этажа;
+   генерация только через `state.rng`, детерминизм забега). При `chargeSpentOn: 'resolution'`
+   заряд на активации не тратится и сама активация бесплатна (`INTERACT` = 0 AP — AP
+   списывается при выборе, «на выходе из окна»); `POI_USED` эмитится в любом случае.
+   Если механика не смогла открыть окно (пустой пул и пр.), активация отклоняется ещё
+   в validate `INTERACT` (`canOpen` механики, reasonCode `poi_window_unavailable`) — AP не тратится.
+2. Presentation видит poi с заполненным `offer` и открывает модалку
+   (`GameSession.pendingWindow` → `RenderInput.pendingWindow`, ввод блокируется,
+   автопуть гасится; открытие — только после завершения анимаций).
+3. Выбор опции → action `RESOLVE_POI_CHOICE {entityId, poiId, optionId}` (стоимость 1 AP,
+   стандартная валидация AP: при 0 AP — отказ)
+   → одноимённый интент → `mechanic.resolve`: применяет эффект (для `relic_choice` —
+   интент `GRANT_RELIC`), тратит заряд и очищает `poi.offer`.
+   Отказ — чисто UI (`GameSession.dismissWindow()`), без dispatch; повторная активация
+   открывает то же предложение.
+
+### Как добавить новый вид окна
+
+1. Новый вариант в `PoiWindowSchema` (`src/content/schemas.ts`) — discriminated union по `kind`.
+2. Механика с интерфейсом `PoiWindowMechanic` (`onActivate` / `resolve`, опционально `canOpen`)
+   в `src/simulation/systems/poi-windows/` + регистрация в `POI_WINDOW_MECHANICS`.
+3. Расширить литерал `kind` в presentation: `GameSession.pendingWindow` и
+   `PendingWindowViewModel` (`src/presentation/types.ts`).
+4. Оконный UI-компонент + регистрация в `WINDOW_COMPONENTS` (`src/ui/screens/GameScreen.tsx`).
+5. i18n-ключи компонента (schema + ru + en синхронно).
+
+---
+
 ## Спавн в игре
 
-Размещение генератором этажа не реализовано. Проверка — через debug-режим:
+Гарантированный poi стартовой комнаты размещается генератором этажа через
+`MapParams.startPoiId` (8-соседняя со спавном клетка; временная мера до типов комнат —
+этап 1 roadmap). Случайного спавна poi из пула нет.
+
+Проверка — через debug-режим:
 панель debug → спавн сущности → тип `poi` (действие `DEBUG_SPAWN_ENTITY` с `spawnType: 'poi'`).
 Слот размещения poi — `solid`: объект нельзя поставить на клетку с любым другим объектом
 (`canPlaceObjectAt`, `src/simulation/state.ts`).
