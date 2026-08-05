@@ -27,6 +27,7 @@ import type {
   PlayerTemplate,
   PropTemplate,
   PoiTemplate,
+  RelicTemplate,
   StairsTemplate,
   StatusTemplate,
   TerrainTemplate,
@@ -101,6 +102,11 @@ export type LocalizedPoiTemplate = PoiTemplate & {
 export type LocalizedTrapTemplate = TrapTemplate & {
   name: string;
   flavorText?: string;
+};
+
+export type LocalizedRelicTemplate = RelicTemplate & {
+  name: string;
+  description: string;
 };
 
 // ─────────────────────────────────────────────
@@ -795,5 +801,60 @@ export function getAllLocalizedTraps(locale: Locale): LocalizedTrapTemplate[] {
   return Array.from((getRegistry().traps ?? new Map()).values()).map((template) => {
     const text = getContentText('traps', template.id, locale);
     return { ...template, name: text.name, flavorText: text.flavorText };
+  });
+}
+
+/**
+ * Получить шаблон реликвии по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getRelic(id: string): RelicTemplate {
+  const template = (getRegistry().relics ?? new Map()).get(id);
+  if (!template) throw new Error(`Relic template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон реликвии.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetRelic(id: string): RelicTemplate | undefined {
+  if (_registry === null) return undefined;
+  return (_registry.relics ?? new Map()).get(id);
+}
+
+/**
+ * Получить локализованный шаблон реликвии по ID.
+ */
+export function getLocalizedRelic(id: string, locale: Locale): LocalizedRelicTemplate {
+  const template = getRelic(id);
+  const text = getContentText('relics', id, locale);
+  return { ...template, name: text.name, description: text.description ?? '' };
+}
+
+/**
+ * Попытаться получить локализованный шаблон реликвии. Возвращает undefined, если не найден.
+ */
+export function tryGetLocalizedRelic(id: string, locale: Locale): LocalizedRelicTemplate | undefined {
+  const template = tryGetRelic(id);
+  if (!template) return undefined;
+  const text = getContentText('relics', id, locale);
+  return { ...template, name: text.name, description: text.description ?? '' };
+}
+
+/**
+ * Получить все шаблоны реликвий.
+ */
+export function getAllRelics(): RelicTemplate[] {
+  return Array.from((getRegistry().relics ?? new Map()).values());
+}
+
+/**
+ * Получить все локализованные шаблоны реликвий.
+ */
+export function getAllLocalizedRelics(locale: Locale): LocalizedRelicTemplate[] {
+  return Array.from((getRegistry().relics ?? new Map()).values()).map((template) => {
+    const text = getContentText('relics', template.id, locale);
+    return { ...template, name: text.name, description: text.description ?? '' };
   });
 }

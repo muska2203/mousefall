@@ -17,6 +17,7 @@ export interface ContentTexts {
   props: Record<string, ContentText>;
   pois: Record<string, ContentText>;
   traps: Record<string, ContentText>;
+  relics: Record<string, ContentText>;
   terrain: Record<string, ContentText>;
   tags: Record<string, ContentText>;
   rules: Record<string, ContentText>;

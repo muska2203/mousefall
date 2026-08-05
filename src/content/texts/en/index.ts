@@ -3,6 +3,7 @@ import {doors, pois, props, stairs, traps} from './environment';
 import {entities} from './entities';
 import {items} from './items';
 import {players} from './players';
+import {relics} from './relics';
 import {rules} from './rules';
 import {statuses} from './statuses';
 import {tags} from './tags';
@@ -19,6 +20,7 @@ export const enContentTexts: ContentTexts = {
   players,
   pois,
   props,
+  relics,
   rules,
   statuses,
   terrain,

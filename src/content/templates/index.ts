@@ -22,6 +22,7 @@ import {
   PlayerTemplateSchema,
   PoiTemplateSchema,
   PropTemplateSchema,
+  RelicTemplateSchema,
   StairsTemplateSchema,
   StatusTemplateSchema,
   TerrainTemplateSchema,
@@ -38,6 +39,7 @@ import {mapParams} from './maps';
 import {playerTemplates} from './players';
 import {poiTemplates} from './pois';
 import {propTemplates} from './props';
+import {relicTemplates} from './relics';
 import {stairsTemplates} from './stairs';
 import {statusTemplates} from './statuses';
 import {terrainTemplates} from './terrains';
@@ -95,5 +97,6 @@ export function buildContent(): LoadedContent {
     terrains: buildCategory('terrains', terrainTemplates, TerrainTemplateSchema),
     pois: buildCategory('pois', poiTemplates, PoiTemplateSchema),
     traps: buildCategory('traps', trapTemplates, TrapTemplateSchema),
+    relics: buildCategory('relics', relicTemplates, RelicTemplateSchema),
   };
 }

@@ -52,6 +52,9 @@ export const INTERACTION_RADIUS = 1;
 /** Максимальное количество предметов в инвентаре игрока. */
 export const MAX_INVENTORY_SIZE = 20;
 
+/** Максимальное количество реликвий в коллекции игрока (технический лимит). */
+export const MAX_RELICS = 100;
+
 /** Количество этажей подземелья. */
 export const MAX_FLOOR = 10;
 

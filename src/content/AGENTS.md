@@ -37,6 +37,7 @@ src/content/
     props/           # Пропсы
     pois/            # POI
     traps/           # Ловушки
+    relics/          # Реликвии (постоянные пассивные бонусы забега)
   texts/             # Локализованные тексты врагов, предметов, способностей
     types.ts         # Типы игровых текстов
     ru.ts            # Русские тексты
@@ -52,6 +53,7 @@ src/content/
 |--------|-----------|
 | Добавить новый шаблон сущности | `src/content/templates/entities/<id>.ts` + строка в `templates/entities/index.ts` |
 | Добавить новый террейн | `docs/recipes/add-terrain.md` → `src/content/templates/terrains/`, `texts/{ru,en}/terrain.ts` |
+| Добавить новую реликвию | `docs/recipes/add-relic.md` → `src/content/templates/relics/`, `texts/{ru,en}/relics.ts` |
 | Изменить схему валидации | `src/content/schemas.ts` |
 | Добавить поле в реестр | `src/content/registry.ts` + `templates/index.ts` |
 | Добавить/изменить текст врага/предмета/способности | `src/content/texts/{ru,en}.ts` |

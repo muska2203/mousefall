@@ -374,6 +374,7 @@ export type Intent =
   | UnequipItemIntent
   | GrantAbilityIntent
   | RevokeAbilityIntent
+  | GrantRelicIntent
   | HealIntent
   | RemoveItemIntent
   | OpenDoorIntent
@@ -424,6 +425,7 @@ export type EquipItemIntent = { type: 'EQUIP_ITEM'; entityId: EntityId; itemInst
 export type UnequipItemIntent = { type: 'UNEQUIP_ITEM'; entityId: EntityId; slot: 'weapon' | 'armor' | 'amulet' };
 export type GrantAbilityIntent = { type: 'GRANT_ABILITY'; entityId: EntityId; ability: RuntimeAbility };
 export type RevokeAbilityIntent = { type: 'REVOKE_ABILITY'; entityId: EntityId; sourceItemInstanceId: ItemInstanceId };
+export type GrantRelicIntent = { type: 'GRANT_RELIC'; entityId: EntityId; templateId: string };
 export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number; tags?: GameplayTag[] };
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
@@ -520,6 +522,7 @@ export type GameEvent =
   | ItemUnequippedEvent
   | AbilityGrantedEvent
   | AbilityRevokedEvent
+  | RelicGrantedEvent
   | EntityHealedEvent
   | EntityBumpedEvent
   | EntityCollidedEvent
@@ -652,6 +655,7 @@ export type ItemEquippedEvent = GameEventBase & { type: 'ITEM_EQUIPPED'; entityI
 export type ItemUnequippedEvent = GameEventBase & { type: 'ITEM_UNEQUIPPED'; entityId: EntityId; itemInstanceId: ItemInstanceId; slot: 'weapon' | 'armor' | 'amulet' };
 export type AbilityGrantedEvent = GameEventBase & { type: 'ABILITY_GRANTED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
 export type AbilityRevokedEvent = GameEventBase & { type: 'ABILITY_REVOKED'; entityId: EntityId; abilityId: string; sourceItemInstanceId: ItemInstanceId };
+export type RelicGrantedEvent = GameEventBase & { type: 'RELIC_GRANTED'; entityId: EntityId; relicId: string; instanceId: string };
 export type EntityBumpedEvent = GameEventBase & { type: 'ENTITY_BUMPED'; entityId: EntityId; position: Position; dx: number; dy: number };
 
 export type EntityCollidedEvent = GameEventBase & {

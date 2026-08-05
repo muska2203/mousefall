@@ -11,7 +11,7 @@
 | Фаза | Содержание | Статус |
 |---|---|---|
 | A | 0.1 Удаление XP-задела (отдельный коммит) | ✅ Выполнено 2026-08-05 |
-| B | 0.2 Контентный тип «реликвия» + коллекция игрока | ⬜ |
+| B | 0.2 Контентный тип «реликвия» + коллекция игрока | ✅ Выполнено 2026-08-05 |
 | C | 0.4 Спавн poi в генераторе этажей | ⬜ |
 | D | 0.5 Алтарь выбора реликвии (выбор 1 из 3) | ⬜ |
 | E | 0.3 UI панель коллекции реликвий | ⬜ |
@@ -188,3 +188,5 @@
 
 | Дата | Фаза | Что сделано | Проверка |
 |---|---|---|---|
+| 2026-08-05 | A (0.1) | XP-задел удалён полностью: поля `xp`/`level` игрока и snapshot, `xpReward` (схема + 4 кота), `XP_PER_LEVEL`, событие `PLAYER_LEVELED_UP` (+обработка в presentation), `source: 'levelup'`, xp-бар и бейдж уровня в UI, 4 i18n-ключа (namespace `portrait` удалён целиком как опустевший), `xp.svg` + манифест, тесты и документация (`mechanics-overview`, `add-enemy`, `CONTENT_PIPELINE`, `I18N.md`, `src/ui/README.md`). Запись в `SYNC_STATUS.md`. Коммит `f4dd603`. В коммит случайно вошли незакоммиченные правки пользователя (`roadMap.md`, `content-rules/{types,AGENTS,README}`) — оставлено как есть. | typecheck ✅, 165 файлов / 1385 тестов ✅, validate:i18n ✅, validate:content ✅, Grep по остаткам XP — чисто ✅ |
+| 2026-08-05 | B (0.2) | Контентный тип «реликвия» + коллекция игрока: `RelicTemplateSchema` (общая подсхема `StatModifierEntrySchema` вынесена из `equipModifiers`), категория `templates/relics/` (пустая до фазы F), `relics?` в `LoadedContent`, геттеры реестра + `LocalizedRelicTemplate`, тексты `texts/{ru,en}/relics.ts`, валидация ruleIds / `grantedAbilities → abilities` / категория в `validate-content.ts`. Simulation: `RelicInstance` + `PlayerEntity.relics` (инициализация в `state.ts`, сброс в `applyCharacterConfig`), `MAX_RELICS = 100`, интент `GRANT_RELIC` + исполнитель (отказы: лимит, нестакаемая повторно, неизвестный шаблон), source модификаторов `relic_{instanceId}` (двойной префикс — по конвенции `item_item_N` у предметов), блок реликвий в `rebuildActiveRules` + `addActiveRulesForRelic`/`removeActiveRulesForRelic`, `removeRelicFromPlayer` (заготовка «замены»). Уточнения к плану по итогам проектирования: добавлено событие `RELIC_GRANTED` (case `NO_OP` в `displayState/builder.ts`); `grantedAbilities` оставлено в схеме по решению пользователя. Тесты: `relic-registry.test.ts`, `grant-relic-intent.test.ts`; моки игрока (`makePlayer`, 4 ручных мока ui/renderer) дополнены полем `relics`. Доки: рецепт `docs/recipes/add-relic.md`, `src/content/AGENTS.md`, `docs/recipes/README.md`. | typecheck ✅, 167 файлов / 1405 тестов ✅, validate:content ✅, validate:i18n ✅ |

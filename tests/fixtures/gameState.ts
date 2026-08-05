@@ -93,6 +93,7 @@ export function makePlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity 
     factionId: 'player',
     abilities: [],
     activeRules: [],
+    relics: [],
     ...overrides,
   };
 }

@@ -35,6 +35,7 @@ export type {
   UnequipItemIntent,
   GrantAbilityIntent,
   RevokeAbilityIntent,
+  GrantRelicIntent,
   HealIntent,
   RemoveItemIntent,
   OpenDoorIntent,

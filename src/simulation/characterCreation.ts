@@ -53,6 +53,7 @@ export function applyCharacterConfig(
   player.equippedAmuletId = null;
   player.statModifiers = [];
   player.activeRules = [];
+  player.relics = [];
   player.templateId = config.templateId;
 
   // Применение распределённых очков характеристик

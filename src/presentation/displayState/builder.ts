@@ -343,6 +343,7 @@ export function createPatch(event: GameEvent, state: GameState): DisplayPatch {
     case 'ITEM_UNEQUIPPED':
     case 'ABILITY_GRANTED':
     case 'ABILITY_REVOKED':
+    case 'RELIC_GRANTED':
     case 'ITEM_USED':
       return { type: 'NO_OP' };
 

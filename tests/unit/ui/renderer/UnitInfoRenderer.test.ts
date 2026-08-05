@@ -117,6 +117,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     statusEffects: [],
     abilities: [],
     activeRules: [],
+    relics: [],
     factionId: 'player' as const,
   };
 

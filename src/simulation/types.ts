@@ -84,6 +84,13 @@ export type InventoryItem = {
   grantedAbilities: Array<{ templateId: string; level: number }>;
 };
 
+/** Экземпляр реликвии в коллекции игрока. Каждый стак — отдельная запись с уникальным instanceId. */
+export type RelicInstance = {
+  instanceId: string;
+  /** Ссылается на шаблон в реестре контента (категория relics). */
+  templateId: string;
+};
+
 export type Entity =
     | PlayerEntity
     | EnemyEntity
@@ -191,6 +198,8 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
   critMultiplier: number;
   /** Активные способности персонажа. */
   abilities: RuntimeAbility[];
+  /** Коллекция реликвий забега (постоянные пассивные бонусы). Живёт через этажи: игрок не входит в FloorSnapshot. */
+  relics: RelicInstance[];
 }
 
 /** Сущность врага на карте. */

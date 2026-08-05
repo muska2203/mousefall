@@ -88,6 +88,10 @@ export function validateContentRuleReferences(content: LoadedContent): void {
   for (const [id, template] of content.traps ?? new Map()) {
     validateTemplateRuleIds(template.ruleIds, id);
   }
+
+  for (const [id, template] of content.relics ?? new Map()) {
+    validateTemplateRuleIds(template.ruleIds, id);
+  }
 }
 
 /**

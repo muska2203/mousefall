@@ -121,6 +121,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     statusEffects: [],
     abilities: [],
     activeRules: [],
+    relics: [],
     factionId: 'player' as const,
     ...playerOverrides,
   };

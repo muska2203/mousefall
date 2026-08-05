@@ -24,6 +24,7 @@ import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-ex
 import {executeEquipItemIntent} from "@simulation/systems/intents/equip-item-intent-executor.ts";
 import {executeUnequipItemIntent} from "@simulation/systems/intents/unequip-item-intent-executor.ts";
 import {executeGrantAbilityIntent} from "@simulation/systems/intents/grant-ability-intent-executor.ts";
+import {executeGrantRelicIntent} from "@simulation/systems/intents/grant-relic-intent-executor.ts";
 import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-ability-intent-executor.ts";
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
@@ -75,6 +76,7 @@ const intentExecutors = {
   EQUIP_ITEM: executeEquipItemIntent,
   UNEQUIP_ITEM: executeUnequipItemIntent,
   GRANT_ABILITY: executeGrantAbilityIntent,
+  GRANT_RELIC: executeGrantRelicIntent,
   REVOKE_ABILITY: executeRevokeAbilityIntent,
   HEAL: executeHealIntent,
   REMOVE_ITEM: executeRemoveItemIntent,

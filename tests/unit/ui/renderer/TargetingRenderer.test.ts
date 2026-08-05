@@ -106,6 +106,7 @@ function makeRenderInput(
       statusEffects: [],
       abilities: [],
       activeRules: [],
+      relics: [],
       factionId: 'player' as const,
     },
     visible: [],

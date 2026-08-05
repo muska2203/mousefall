@@ -117,5 +117,9 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
     }
   }
 
+  for (const [id, relic] of content.relics ?? []) {
+    checkRefs(errors, `relics.${id}`, 'grantedAbilities', relic.grantedAbilities, 'abilities', content.abilities);
+  }
+
   return errors;
 }

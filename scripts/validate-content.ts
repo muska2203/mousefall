@@ -54,6 +54,7 @@ function validateTranslations(): { ru: string[]; en: string[] } {
     { key: 'pois', map: registry.pois ?? new Map() },
     { key: 'traps', map: registry.traps ?? new Map() },
     { key: 'terrain', map: registry.terrains ?? new Map() },
+    { key: 'relics', map: registry.relics ?? new Map() },
   ];
 
   const ruMissing: string[] = [];

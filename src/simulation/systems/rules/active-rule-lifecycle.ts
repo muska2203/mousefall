@@ -3,7 +3,7 @@
  *
  * Ответственность:
  * - добавление и удаление активных правил при изменении источников
- *   (экипировка, статусы, способности);
+ *   (экипировка, статусы, способности, реликвии);
  * - пересборка `activeRules` по текущему состоянию актора.
  *
  * Правила:
@@ -132,6 +132,28 @@ export function removeActiveRulesForItem(actor: Actor, itemInstanceId: string): 
 }
 
 /**
+ * Добавляет правила реликвии, используя ID её экземпляра как `ownerContext`.
+ * Уникальный `ownerContext` на стак — стаки одной реликвии регистрируются независимо.
+ */
+export function addActiveRulesForRelic(
+  actor: Actor,
+  relicInstanceId: string,
+  ruleIds: readonly string[],
+): void {
+  addActiveRules(actor, { type: 'entity', entityId: relicInstanceId }, ruleIds);
+}
+
+/**
+ * Удаляет все правила, принадлежащие экземпляру реликвии.
+ */
+export function removeActiveRulesForRelic(actor: Actor, relicInstanceId: string): void {
+  removeActiveRulesByOwnerContext(
+    actor,
+    (context) => context.type === 'entity' && context.entityId === relicInstanceId,
+  );
+}
+
+/**
  * Добавляет правила статуса по его шаблону.
  * `statusInstanceId` — стабильный ID экземпляра статуса.
  */
@@ -200,7 +222,7 @@ export function removeActiveRulesForAbility(actor: Actor, ability: RuntimeAbilit
 
 /**
  * Полностью пересобирает `activeRules` актора по текущему состоянию:
- * экипировка, статусы, способности.
+ * экипировка, статусы, способности, реликвии.
  */
 export function rebuildActiveRules(actor: Actor): void {
   actor.activeRules = [];
@@ -250,6 +272,17 @@ export function rebuildActiveRules(actor: Actor): void {
     for (const status of holder.statusEffects) {
       const instanceId = status.instanceId ?? status.type;
       addActiveRulesForStatus(actor, instanceId, status.type);
+    }
+  }
+
+  // ── Реликвии ──────────────────────────────────────────────────────────────
+  if ('relics' in actor && Array.isArray(actor.relics)) {
+    const registry = getContentRegistrySafe();
+    for (const relic of actor.relics as Array<{ instanceId: string; templateId: string }>) {
+      const template = registry?.relics?.get(relic.templateId);
+      if (template) {
+        addActiveRulesForRelic(actor, relic.instanceId, template.ruleIds ?? []);
+      }
     }
   }
 

@@ -84,6 +84,7 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     critMultiplier: 1.5,
     abilities: [],
     activeRules: [],
+    relics: [],
   };
 
   rebuildActiveRules(player);

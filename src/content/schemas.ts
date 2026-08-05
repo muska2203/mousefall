@@ -138,6 +138,13 @@ const ConsumableEffectSchema = z.object({
   range: z.number().int().positive().optional().describe('Дальность применения в клетках'),
 }).describe('Определение эффекта расходуемого предмета');
 
+/** Модификатор характеристики: применяется экипировкой и реликвиями. */
+const StatModifierEntrySchema = z.object({
+  stat: z.enum(['damage', 'armor', 'maxHp', 'dodgeChance', 'accuracy', 'critChance', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
+  value: z.number(),
+  op: z.enum(['add', 'multiply']),
+});
+
 export const ItemTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор предмета (совпадает с именем файла)'),
   spriteId:    z.string().optional().describe('Ключ спрайта PixiJS'),
@@ -151,11 +158,7 @@ export const ItemTemplateSchema = z.object({
   weapon:      WeaponStatsSchema.optional(),
   armor:       ArmorStatsSchema.optional(),
   consumable:  ConsumableEffectSchema.optional(),
-  equipModifiers: z.array(z.object({
-    stat: z.enum(['damage', 'armor', 'maxHp', 'dodgeChance', 'accuracy', 'critChance', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
-    value: z.number(),
-    op: z.enum(['add', 'multiply']),
-  })).default([]).describe('Модификаторы, применяемые при экипировке'),
+  equipModifiers: z.array(StatModifierEntrySchema).default([]).describe('Модификаторы, применяемые при экипировке'),
   abilityPool: z.array(
     z.object({
       abilityId: z.string().min(1).describe('ID способности из пула'),
@@ -403,6 +406,26 @@ export const TrapTemplateSchema = z.object({
 export type TrapTemplate = z.output<typeof TrapTemplateSchema>;
 
 // ─────────────────────────────────────────────
+// Шаблон реликвии
+// ─────────────────────────────────────────────
+
+export const RelicTemplateSchema = z.object({
+  id:              z.string().min(1).describe('Уникальный идентификатор реликвии (совпадает с именем файла)'),
+  ruleIds:         RuleIdsSchema,
+  statModifiers:   z.array(StatModifierEntrySchema).default([]).describe('Постоянные модификаторы характеристик, действующие, пока реликвия в коллекции'),
+  stackable:       z.boolean().default(false)
+    .describe('Можно ли брать несколько экземпляров одной реликвии (каждый стак — дополнительный экземпляр эффекта)'),
+  grantedAbilities: z.array(
+    z.string().min(1).describe('ID способности, которая выдаётся вместе с реликвией')
+  ).default([]).describe('Способности, выдаваемые реликвией (в MVP не используется)'),
+  icon:            z.string().optional().describe('Путь к иконке реликвии для UI'),
+  fallback:        z.string().optional().describe('Emoji-запасной вариант для отображения в UI'),
+  rarity:          z.enum(['common', 'rare', 'unique']).default('common').describe('Редкость реликвии (для UI)'),
+}).describe('Шаблон реликвии (постоянный пассивный бонус забега)');
+
+export type RelicTemplate = z.output<typeof RelicTemplateSchema>;
+
+// ─────────────────────────────────────────────
 // Шаблон игрока
 // ─────────────────────────────────────────────
 
@@ -446,6 +469,8 @@ export type LoadedContent = {
   pois?:     Map<string, PoiTemplate>;
   /** Ловушки (проходимые объекты, срабатывающие на вход на клетку). Опционально для обратной совместимости с тестовыми моками. */
   traps?:    Map<string, TrapTemplate>;
+  /** Реликвии (постоянные пассивные бонусы забега). Опционально для обратной совместимости с тестовыми моками. */
+  relics?:   Map<string, RelicTemplate>;
 };
 
 // ─────────────────────────────────────────────
@@ -485,3 +510,5 @@ export type PropTemplateInput = z.input<typeof PropTemplateSchema>;
 export type PoiTemplateInput = z.input<typeof PoiTemplateSchema>;
 /** Входная форма шаблона ловушки: поля с дефолтами опциональны. */
 export type TrapTemplateInput = z.input<typeof TrapTemplateSchema>;
+/** Входная форма шаблона реликвии: поля с дефолтами опциональны. */
+export type RelicTemplateInput = z.input<typeof RelicTemplateSchema>;
