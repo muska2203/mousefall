@@ -56,7 +56,7 @@
          weight: 1,
        },
      ],
-     renderScale: 1.0,
+     placement: {scale: 0.8}, // опционально: дефолт масштаба — 1.0
    } satisfies EntityTemplateInput;
    ```
 
@@ -72,7 +72,9 @@
    - `equipment.weapon` — ID оружия из `src/content/templates/items/weapons/`.
    - `lootTable` — предметы, которые может нести в инвентаре.
    - `lootDropTable` — сколько предметов из `lootTable` выпадет при смерти.
-   - `renderScale` — масштаб спрайта.
+   - `placement` — опциональное переопределение размещения спрайта в клетке
+     (`scale`/`anchorX`/`anchorY`/`flattenY`; дефолт масштаба — 1.0).
+     Дефолты — по категории, см. `src/presentation/spritePlacementResolver.ts`.
 
 2. **Добавь тексты** в `src/content/texts/ru/entities.ts` и `src/content/texts/en/entities.ts`:
 

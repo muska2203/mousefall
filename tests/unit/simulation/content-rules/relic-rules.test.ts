@@ -362,6 +362,24 @@ describe('правила реликвий — applyStatus / heal', () => {
     }))).toHaveLength(0);
   });
 
+  it('thunderhead (плюс): не ошеломляет владельца при дробящем ударе ПО нему', () => {
+    // Регрессия: без eventRole: 'source' правило собиралось из target-слоя
+    // и гарантированно дезило самого владельца при каждом дробящем ударе
+    // по нему (безоружные атаки котов несут damage.physical.blunt + delivery.weapon).
+    const player = makePlayer({ activeRules: [relicRule('relic_thunderhead_daze')] });
+    const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+    const state = makeStateWithPlayerAndEntity(player, enemy);
+
+    const intents = runReactions(state, makeDamagedEvent({
+      targetId: player.id,
+      sourceEntityId: 'enemy_test_1',
+      position: { x: player.x, y: player.y },
+      tags: ['damage.physical.blunt', 'delivery.weapon'],
+    }));
+
+    expect(intents).toHaveLength(0);
+  });
+
   it('scavenger (плюс): поднятие предмета лечит владельца на 5 HP', () => {
     const player = makePlayer({ activeRules: [relicRule('relic_scavenger_heal_on_pickup')] });
     const state = makeStateWithPlayer(player);

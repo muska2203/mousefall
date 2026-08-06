@@ -4,7 +4,6 @@ export const samurai = {
   "id": "samurai",
   "maxAp": 2,
   "portraitImg": "/assets/portraits/samurai-ready.png",
-  "renderScale": 1,
   "starterEquipment": [
     "common_splinter_blade",
     "common_school_wand",

@@ -73,6 +73,10 @@ FOV-фильтр применяется **только к полевым ани�
 
 События `TILE_EFFECT_CHANGED` и `TILE_EFFECT_REMOVED` уже включены в контракт: для них есть `DisplayPatch`, animation builders (`src/presentation/animation/builders/tileEffect.ts`) и FOV-фильтрация. При добавлении нового тайлового эффекта достаточно расширить существующие обработчики, если эффект не требует принципиально нового `AnimationStep`.
 
+### 2.7. Размещение спрайтов (SpritePlacement)
+
+Размещение спрайта в клетке (масштаб, опора, сплющивание) решает Presentation: `getSpritePlacement(templateId, category)` из `src/presentation/spritePlacementResolver.ts` возвращает `ResolvedSpritePlacement` — дефолт категории спрайта (`actor`, `object`, `trap`, `tileEffectCover`, `tileEffectAboveGround`, `tileEffectStatus`, `terrainStanding`), скорректированный опциональным полем `placement` шаблона. UI не обращается к реестру напрямую и не содержит формул позиционирования — только применяет результат через `src/ui/renderer/spritePlacement.ts` (`applyPlacement`, `cellRect`, `cellCenter`).
+
 ---
 
 ## 3. Чеклист добавления нового правила

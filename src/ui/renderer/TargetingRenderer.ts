@@ -13,6 +13,7 @@ import {Container, Graphics, Text, TextStyle} from 'pixi.js';
 import {FONT_PANEL_TITLE} from './fonts';
 import type {Position, RenderInput} from '@presentation/types';
 import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {cellCenter, cellRect} from './spritePlacement';
 
 const COLORS = {
   valid: 0xffffff,
@@ -170,7 +171,8 @@ export class TargetingRenderer {
 
   private drawOverlay(pos: Position, color: number, alpha: number): void {
     const g = new Graphics();
-    g.rect(pos.x * TILE_SIZE, pos.y * TILE_HEIGHT, TILE_SIZE, TILE_HEIGHT);
+    const {x, y, width, height} = cellRect(pos.x, pos.y);
+    g.rect(x, y, width, height);
     g.fill({ color, alpha });
     g.stroke({ width: 1, color, alpha: 0.2 });
     this.overlayContainer.addChild(g);
@@ -179,7 +181,8 @@ export class TargetingRenderer {
   /** Контур тайла без заливки — для целевой клетки автопути. */
   private drawTileOutline(pos: Position, color: number): void {
     const g = new Graphics();
-    g.rect(pos.x * TILE_SIZE, pos.y * TILE_HEIGHT, TILE_SIZE, TILE_HEIGHT);
+    const {x, y, width, height} = cellRect(pos.x, pos.y);
+    g.rect(x, y, width, height);
     g.stroke({ width: 2, color, alpha: 0.8 });
     this.overlayContainer.addChild(g);
   }
@@ -206,10 +209,8 @@ export class TargetingRenderer {
 
   private drawArrow(from: Position, to: Position, color: number): void {
     const g = new Graphics();
-    const fromX = from.x * TILE_SIZE + TILE_SIZE / 2;
-    const fromY = from.y * TILE_HEIGHT + TILE_HEIGHT / 2;
-    const toX = to.x * TILE_SIZE + TILE_SIZE / 2;
-    const toY = to.y * TILE_HEIGHT + TILE_HEIGHT / 2;
+    const {x: fromX, y: fromY} = cellCenter(from.x, from.y);
+    const {x: toX, y: toY} = cellCenter(to.x, to.y);
 
     g.moveTo(fromX, fromY);
     g.lineTo(toX, toY);
@@ -238,13 +239,11 @@ export class TargetingRenderer {
     if (path.length === 0) return;
 
     const g = new Graphics();
-    let x = from.x * TILE_SIZE + TILE_SIZE / 2;
-    let y = from.y * TILE_HEIGHT + TILE_HEIGHT / 2;
+    let {x, y} = cellCenter(from.x, from.y);
 
     g.moveTo(x, y);
     for (const pos of path) {
-      x = pos.x * TILE_SIZE + TILE_SIZE / 2;
-      y = pos.y * TILE_HEIGHT + TILE_HEIGHT / 2;
+      ({x, y} = cellCenter(pos.x, pos.y));
       g.lineTo(x, y);
     }
     g.stroke({ width: 2, color, alpha: 0.6 });
@@ -259,8 +258,7 @@ export class TargetingRenderer {
     next: Position | null,
     color: number,
   ): void {
-    const cx = pos.x * TILE_SIZE + TILE_SIZE / 2;
-    const cy = pos.y * TILE_HEIGHT + TILE_HEIGHT / 2;
+    const {x: cx, y: cy} = cellCenter(pos.x, pos.y);
 
     let dirX = 0;
     let dirY = 0;
@@ -311,8 +309,9 @@ export class TargetingRenderer {
     });
     text.roundPixels = true;
     text.anchor.set(0.5, 0.5);
-    text.x = pos.x * TILE_SIZE + TILE_SIZE / 2;
-    text.y = pos.y * TILE_HEIGHT + TILE_HEIGHT / 2;
+    const center = cellCenter(pos.x, pos.y);
+    text.x = center.x;
+    text.y = center.y;
     this.textWorldCoords.set(text, { worldX: text.x, worldY: text.y });
     this.previewTextContainer.addChild(text);
   }

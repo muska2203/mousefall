@@ -5,7 +5,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {cellCenter} from '../renderer/spritePlacement';
 import {registerAnimationExecutor} from './registry';
 import {runParticleBurst} from './primitives/particleBurst';
 
@@ -29,14 +29,15 @@ export class StatusBurstAnimationExecutor implements AnimationExecutor {
 
     const config = ANIMATION_CONFIG.STATUS_BURST;
     const color = STATUS_COLORS[step.statusType] ?? 0xffffff;
+    const {x: centerX, y: centerY} = cellCenter(step.position.x, step.position.y);
 
     return runParticleBurst({
       parent: ctx.worldRenderer.root,
       ticker: ctx.ticker,
       duration: config.duration,
       easing: config.easing,
-      centerX: step.position.x * TILE_SIZE + TILE_SIZE / 2,
-      centerY: step.position.y * TILE_HEIGHT + TILE_HEIGHT / 2,
+      centerX,
+      centerY,
       color,
       count: 6,
     });

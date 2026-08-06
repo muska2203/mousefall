@@ -7,7 +7,6 @@ export const relicAltar = {
   "charges": 1,
   "chargeSpentOn": "resolution",
   "window": { "kind": "relic_choice", "offerSize": 3 },
-  "renderScale": 1,
   "tags": [
     "relic_altar"
   ]

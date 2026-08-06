@@ -209,6 +209,13 @@ export class GameSession {
   private itemTargeting: { itemInstanceId: string; templateId: string } | null = null;
   /** Открытое окно poi (модальный выбор опции). Живёт только в Presentation. */
   private pendingWindow: { kind: 'relic_choice'; poiId: string } | null = null;
+  /**
+   * poi, чьё окно разрешено открыть при ближайшем refreshPendingWindow.
+   * Выставляется только действиями INTERACT (активация) и RESOLVE_POI_CHOICE
+   * (восстановление окна при отклонённом выборе) — иначе окно переоткрывалось
+   * бы после любого dispatch, и отказ от выбора фактически не работал.
+   */
+  private windowCandidatePoiId: string | null = null;
   private autoPath = new AutoPathController();
   private listeners = new Set<() => void>();
   private viewModelCache: GameViewModel | null = null;
@@ -709,6 +716,7 @@ export class GameSession {
         icon: relic.icon,
         fallback: relic.fallback,
         rarity: relic.rarity,
+        frameUrl: resolveItemFrame(relic.rarity),
         flavorText: relic.flavorText,
         effects: buildRelicEffects(relic, this.locale),
       }));
@@ -1168,6 +1176,7 @@ export class GameSession {
     this.mode = 'playing';
     this.lastResult = null;
     this.pendingWindow = null;
+    this.windowCandidatePoiId = null;
     this.animation.phase = 'idle';
     this.hotbarAssignments = Array.from({ length: HOTBAR_SIZE }, () => null);
     this.synchronizeHotbarAssignments(this.simulation.getState());
@@ -1190,6 +1199,7 @@ export class GameSession {
     this.mode = this.resolveModeFromPhase(state.phase);
     this.lastResult = null;
     this.pendingWindow = null;
+    this.windowCandidatePoiId = null;
     this.animation.phase = this.mode === 'playing' ? 'idle' : 'gameOver';
     this.selectedInteractionIndex = 0;
     this.lastInteractionOptionsKey = '';
@@ -1364,32 +1374,47 @@ export class GameSession {
   }
 
   /**
-   * Обновить состояние открытого окна poi по факту состояния Simulation:
-   * окно открыто, если есть poi с шаблонным `window`, заполненным `offer`
-   * и оставшимися зарядами. Вызывается после dispatch и по завершении
-   * анимаций (во время анимаций окно не открывается — ввод всё равно заблокирован).
+   * Обновить состояние окна poi по факту состояния Simulation.
+   * Вызывается после dispatch и по завершении анимаций (во время анимаций
+   * окно не открывается — ввод всё равно заблокирован).
+   *
+   * Открытие возможно только для poi-кандидата (`windowCandidatePoiId`),
+   * выставленного действиями INTERACT / RESOLVE_POI_CHOICE: окно — следствие
+   * активации poi, а не любого действия. Иначе после отказа (dismissWindow)
+   * любой dispatch переоткрывал бы окно, принуждая игрока к выбору.
+   * Уже открытое окно закрывается, когда предложение исчерпано
+   * (выбор применён, poi исчез со сменой этажа и т.п.).
    */
   private refreshPendingWindow(): void {
     if (!this.simulation || this.mode !== 'playing') return;
     if (this.animation.phase === 'animating') return;
 
     const state = this.simulation.getState();
-    for (const entity of state.entities.values()) {
-      if (entity.type !== 'poi') continue;
-      if (!entity.offer || entity.offer.length === 0 || entity.charges <= 0) continue;
-      const template = tryGetPoi(entity.templateId);
-      if (!template?.window) continue;
 
-      // Окно открывается: гасим автопуть и hover-режимы по образцу beginItemTargetingIfNeeded.
-      this.pendingWindow = { kind: template.window.kind, poiId: entity.id };
-      this.autoPath.cancel();
-      this.targetingHover = null;
-      this.fieldHover = null;
-      return;
+    // Открытое окно: оставляем, пока предложение актуально.
+    if (this.pendingWindow) {
+      const poi = state.entities.get(this.pendingWindow.poiId);
+      if (poi && poi.type === 'poi' && poi.offer && poi.offer.length > 0 && poi.charges > 0) {
+        return;
+      }
+      this.pendingWindow = null;
     }
 
-    // Ни одного poi с активным предложением — окна нет (выбор уже применён).
-    this.pendingWindow = null;
+    const candidateId = this.windowCandidatePoiId;
+    this.windowCandidatePoiId = null;
+    if (!candidateId) return;
+
+    const poi = state.entities.get(candidateId);
+    if (!poi || poi.type !== 'poi') return;
+    if (!poi.offer || poi.offer.length === 0 || poi.charges <= 0) return;
+    const template = tryGetPoi(poi.templateId);
+    if (!template?.window) return;
+
+    // Окно открывается: гасим автопуть и hover-режимы по образцу beginItemTargetingIfNeeded.
+    this.pendingWindow = { kind: template.window.kind, poiId: poi.id };
+    this.autoPath.cancel();
+    this.targetingHover = null;
+    this.fieldHover = null;
   }
 
   /** Установить клетку под мышью в обычном режиме (для popover объекта на поля). */
@@ -1840,7 +1865,13 @@ export class GameSession {
     // После каждого хода проверяем, не закончилась ли игра
     this.checkGameOver();
 
-    // Открытие окна poi (выбор опции) — только вне фазы анимаций.
+    // Открытие окна poi (выбор опции) — только вне фазы анимаций и только
+    // как следствие активации poi или восстановления после отклонённого выбора.
+    if (action.type === 'INTERACT') {
+      this.windowCandidatePoiId = action.targetId;
+    } else if (action.type === 'RESOLVE_POI_CHOICE') {
+      this.windowCandidatePoiId = action.poiId;
+    }
     this.refreshPendingWindow();
 
     // Если фазы не породили анимаций, но ход не завершён — сразу идём дальше.
@@ -2485,6 +2516,10 @@ export class GameSession {
     if (!this.simulation || this.mode !== 'playing') {
       return;
     }
+    // Сбрасываем окно poi: сущности заменяются, иначе pendingWindow
+    // указывал бы на несуществующий poi и блокировал ввод.
+    this.pendingWindow = null;
+    this.windowCandidatePoiId = null;
     this.simulation.regenerateMap();
     this.viewModelCache = null;
     this.notify();

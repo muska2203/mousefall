@@ -8,7 +8,8 @@ import {Sprite, Texture} from 'pixi.js';
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep, Position} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {TILE_SIZE} from '@utils/constants';
+import {cellCenter} from '../renderer/spritePlacement';
 import {registerAnimationExecutor} from './registry';
 import {getTexture} from '@ui/renderer/TextureCache';
 import {resolveItemIcon} from '@utils/assetResolver';
@@ -72,10 +73,7 @@ export class ItemThrowAnimationExecutor implements AnimationExecutor {
   }
 
   private toScreen(pos: Position): { x: number; y: number } {
-    return {
-      x: pos.x * TILE_SIZE + TILE_SIZE / 2,
-      y: pos.y * TILE_HEIGHT + TILE_HEIGHT / 2,
-    };
+    return cellCenter(pos.x, pos.y);
   }
 
   private computeControlPoint(

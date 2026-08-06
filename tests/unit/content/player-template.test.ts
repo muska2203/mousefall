@@ -9,7 +9,7 @@ describe('Шаблоны игрока', () => {
     for (const template of playerTemplates) {
       const parsed = PlayerTemplateSchema.parse(template);
       expect(typeof parsed.portraitImg).toBe('string');
-      expect(typeof parsed.renderScale).toBe('number');
+      expect(parsed.placement).toBeUndefined();
       expect(typeof parsed.maxAp).toBe('number');
       expect(parsed.maxAp).toBeGreaterThan(0);
       expect(parsed.baseStats).toMatchObject({

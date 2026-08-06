@@ -9,6 +9,7 @@
 import {Container, Graphics} from 'pixi.js';
 import type {RenderInput} from '@presentation/types';
 import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {cellCenter} from './spritePlacement';
 
 const ROOM_FILL_ALPHA = 0.15;
 const ROOM_STROKE_ALPHA = 0.6;
@@ -79,10 +80,8 @@ export class DebugMapRenderer {
         const corridor = map.corridors[i]!;
         const color = colorForCorridor(i);
         for (const segment of corridor.segments) {
-          const x1 = segment.x1 * TILE_SIZE + TILE_SIZE / 2;
-          const y1 = segment.y1 * TILE_HEIGHT + TILE_HEIGHT / 2;
-          const x2 = segment.x2 * TILE_SIZE + TILE_SIZE / 2;
-          const y2 = segment.y2 * TILE_HEIGHT + TILE_HEIGHT / 2;
+          const {x: x1, y: y1} = cellCenter(segment.x1, segment.y1);
+          const {x: x2, y: y2} = cellCenter(segment.x2, segment.y2);
 
           // Рисуем коридор как тонкий прямоугольник вдоль линии,
           // чтобы он был виден даже при совпадении с тайлами пола.

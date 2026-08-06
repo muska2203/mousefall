@@ -49,5 +49,5 @@ export const catBig = {
       "weight": 2
     }
   ],
-  "renderScale": 0.9
+  "placement": {"scale": 0.9}
 } satisfies EntityTemplateInput;

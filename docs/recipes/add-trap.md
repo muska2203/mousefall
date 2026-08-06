@@ -33,7 +33,6 @@
      ruleIds: ['spikes_deal_damage'],
      oneShot: true,
      initiallyHidden: true,
-     renderScale: 1.0,
      tags: [],
    } satisfies TrapTemplateInput;
    ```
@@ -46,7 +45,9 @@
    - `oneShot` — `true`: ловушка уничтожается при срабатывании; `false`: раскрывается и остаётся.
    - `initiallyHidden` — `true`: ловушка создаётся скрытой (не рисуется вне debug-режима,
      не попадает в popover), но срабатывает.
-   - `renderScale` — масштаб спрайта относительно тайла.
+   - `placement` — опциональное переопределение размещения спрайта в клетке
+     (`scale`/`anchorX`/`anchorY`/`flattenY`; дефолт масштаба — 1.0).
+     Дефолты — по категории (ловушки сплющены в плоскость пола), см. `src/presentation/spritePlacementResolver.ts`.
    - `tags` — игровые теги для классификации.
 
 2. **Добавь правило эффекта** в `CONTENT_RULES` (`src/simulation/content-rules/rules.ts`):

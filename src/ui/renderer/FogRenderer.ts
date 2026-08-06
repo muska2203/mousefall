@@ -12,6 +12,7 @@ import type {Position, RenderInput} from '@presentation/types';
 import type {DisplayTile} from '@presentation/displayState/types';
 import {FOG_EXPLORED_ALPHA, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {type EasingFn, lerp, runTickerTween, type TickerLike} from '@utils/tween';
+import {cellRect} from './spritePlacement';
 
 const COLOR_EXPLORED = 0x000000;
 const ALPHA_EXPLORED = FOG_EXPLORED_ALPHA;
@@ -23,7 +24,8 @@ function rectCell(g: Graphics, x: number, y: number, standing: boolean): void {
   if (standing) {
     g.rect(x * TILE_SIZE, (y + 1) * TILE_HEIGHT - TILE_SIZE, TILE_SIZE, TILE_SIZE);
   } else {
-    g.rect(x * TILE_SIZE, y * TILE_HEIGHT, TILE_SIZE, TILE_HEIGHT);
+    const rect = cellRect(x, y);
+    g.rect(rect.x, rect.y, rect.width, rect.height);
   }
 }
 

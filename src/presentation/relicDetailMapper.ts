@@ -1,10 +1,10 @@
 /**
  * Маппер: RelicTemplate (Content) → список эффектов для UI (Presentation).
  *
- * Каждый эффект реликвии — отдельный пункт «имя + краткое описание»:
- * - ruleIds → тексты правил из `texts/{ru,en}/rules.ts` (могут содержать тег-ссылки);
- * - statModifiers → локализованное имя характеристики (i18n `system.statNames`)
- *   и форматированное значение («+N» / «−N» для add, «×N» для multiply).
+ * Каждый эффект реликвии — одна строка:
+ * - ruleIds → краткое описание правила из `texts/{ru,en}/rules.ts` (может содержать тег-ссылки);
+ * - statModifiers → строка вида «Имя: +N» — локализованное имя характеристики
+ *   (i18n `system.statNames`) и форматированное значение («+N» / «−N» для add, «×N» для multiply).
  *
  * Порядок: сначала правила, затем модификаторы характеристик.
  */
@@ -31,16 +31,15 @@ export function buildRelicEffects(template: RelicTemplate, locale: Locale): Reli
     const text = getContentText('rules', ruleId, locale);
     effects.push({
       key: ruleId,
-      name: text.name,
-      description: text.description ?? '',
+      text: text.description ?? '',
     });
   }
 
   for (const modifier of template.statModifiers) {
+    const statName = t(`system.statNames.${modifier.stat}`);
     effects.push({
       key: `stat_${modifier.stat}`,
-      name: t(`system.statNames.${modifier.stat}`),
-      description: formatModifierValue(modifier.op, modifier.value),
+      text: `${statName}: ${formatModifierValue(modifier.op, modifier.value)}`,
     });
   }
 

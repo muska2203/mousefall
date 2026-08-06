@@ -149,7 +149,6 @@ const PERF_CONTENT_RULES: readonly ContentRule[] = [
 const playerTemplate: PlayerTemplate = {
   id: 'perf_hero',
   portraitImg: '',
-  renderScale: 1,
   maxAp: 2,
   baseStats: { str: 1, dex: 1, int: 10, vit: 1 },
   isDefault: false,

@@ -31,7 +31,6 @@ function mockPropTemplate(
     armor: 0,
     blocksMovement: true,
     blocksLOS: false,
-    renderScale: 1,
     propKind: 'barrel',
     tags: [],
     canHaveStatus: [],

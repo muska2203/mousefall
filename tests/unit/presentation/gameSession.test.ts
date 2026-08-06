@@ -46,7 +46,7 @@ describe('GameSession debug mode', () => {
         ['stairs_down', {id: 'stairs_down'} as any],
       ]),
       props: new Map([
-        ['oil_barel', {id: 'oil_barel', maxHp: 10, armor: 0, blocksMovement: true, blocksLOS: false, renderScale: 1, propKind: 'barrel', tags: ['prop.barrel', 'contains.oil']} as any],
+        ['oil_barel', {id: 'oil_barel', maxHp: 10, armor: 0, blocksMovement: true, blocksLOS: false, propKind: 'barrel', tags: ['prop.barrel', 'contains.oil']} as any],
       ]),
     statuses: new Map(),
     tileEffects: new Map([
@@ -797,7 +797,6 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
         ['orc', {
           id: 'orc',
           portraitImg: '',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
           isDefault: false,
@@ -805,7 +804,6 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
         ['witcher', {
           id: 'witcher',
           portraitImg: '',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 4, dex: 2, int: 0, vit: 4 },
           isDefault: true,
@@ -813,7 +811,6 @@ describe('GameSession.getAvailablePlayerTemplates', () => {
         ['elf', {
           id: 'elf',
           portraitImg: '',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
           isDefault: false,
@@ -854,7 +851,6 @@ describe('GameSession.getPlayerPortraitSrc', () => {
         ['witcher', {
           id: 'witcher',
           portraitImg: '/assets/portraits/witcher-ready.png',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
           isDefault: false,
@@ -911,7 +907,6 @@ describe('GameSession.getStarterEquipmentIds', () => {
         ['witcher', {
           id: 'witcher',
           portraitImg: '',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
           isDefault: false,
@@ -987,7 +982,6 @@ describe('GameSession.getDefaultPlayerTemplateId', () => {
         ['witcher', {
           id: 'witcher',
           portraitImg: '',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
           isDefault: false,
@@ -995,7 +989,6 @@ describe('GameSession.getDefaultPlayerTemplateId', () => {
         ['mage', {
           id: 'mage',
           portraitImg: '',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
           isDefault: true,
@@ -1023,7 +1016,6 @@ describe('GameSession.getDefaultPlayerTemplateId', () => {
         ['witcher', {
           id: 'witcher',
           portraitImg: '',
-          renderScale: 1,
           maxAp: 2,
           baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
           isDefault: false,

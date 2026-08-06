@@ -28,7 +28,6 @@ function mockPlayerTemplate(id: string): PlayerTemplate {
     return {
         id,
         portraitImg: '',
-        renderScale: 1,
         maxAp: 2,
         baseStats: {str: 1, dex: 1, int: 1, vit: 1},
         isDefault: false,

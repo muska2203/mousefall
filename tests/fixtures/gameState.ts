@@ -269,7 +269,6 @@ export function mockWoodenDoorTemplate(): DoorTemplate {
     interactionKind: 'door',
     maxHp: 30,
     armor: 2,
-    renderScale: 1,
     tags: ['flammable'],
     canHaveStatus: ['burning'],
   };
@@ -281,7 +280,6 @@ export function mockOilBarrelTemplate(): PropTemplate {
     id: 'oil_barel',
     maxHp: 10,
     armor: 0,
-    renderScale: 1,
     blocksMovement: true,
     blocksLOS: false,
     propKind: 'barrel',
@@ -298,7 +296,6 @@ export function mockAltarTemplate(): PoiTemplate {
     ruleIds: ['altar_heals_player'],
     charges: 1,
     chargeSpentOn: 'activation',
-    renderScale: 1,
     tags: [],
   };
 }
@@ -310,7 +307,6 @@ export function mockSpikesTemplate(): TrapTemplate {
     ruleIds: ['spikes_deal_damage'],
     oneShot: true,
     initiallyHidden: true,
-    renderScale: 1,
     tags: [],
   };
 }
@@ -322,7 +318,6 @@ export function mockPersistentSpikesTemplate(): TrapTemplate {
     ruleIds: ['spikes_deal_damage'],
     oneShot: false,
     initiallyHidden: true,
-    renderScale: 1,
     tags: [],
   };
 }

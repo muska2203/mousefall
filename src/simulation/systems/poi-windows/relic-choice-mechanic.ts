@@ -17,6 +17,7 @@ import type {PoiTemplate} from '@content/schemas';
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
 import {tryGetRelic} from '@content/registry';
 import {rngShuffle} from '@utils/rng';
+import {MAX_RELICS} from '@utils/constants.ts';
 import {executeIntent} from '@simulation/systems/intents/execute-intent';
 import type {PoiWindowMechanic} from './types';
 
@@ -58,6 +59,15 @@ export const relicChoiceMechanic: PoiWindowMechanic = {
     if (poi.offer && poi.offer.length > 0) return true;
     if (!template.window || template.window.kind !== 'relic_choice') return false;
     return computeRelicChoiceCandidates(state).length > 0;
+  },
+
+  canResolve(state: GameState, _poi: PointOfInterestEntity, optionId: string): boolean {
+    // Отказы зеркалят исполнитель GRANT_RELIC: предложение могло протухнуть
+    // с момента генерации (реликвия получена на другом этаже того же пула).
+    if (state.player.relics.length >= MAX_RELICS) return false;
+    const relic = tryGetRelic(optionId);
+    if (!relic) return false;
+    return relic.stackable || !state.player.relics.some(r => r.templateId === optionId);
   },
 
   resolve(

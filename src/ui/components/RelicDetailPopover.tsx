@@ -1,5 +1,5 @@
 /**
- * Тултип с детальной информацией о реликвии в панели коллекции.
+ * Тултип с детальной информацией о реликвии (панель коллекции, окно выбора алтаря).
  *
  * Показывает имя, иконку в рамке редкости, список эффектов (правил и
  * модификаторов, описания — через RichDescription с тег-ссылками),
@@ -70,10 +70,7 @@ export function RelicDetailPopover({ relic, visible, x, y }: Props) {
           <ul className="field-popover-effects">
             {relic.effects.map((effect) => (
               <li key={effect.key} className="field-popover-effect">
-                <span className="field-popover-effect__name">{effect.name}</span>
-                <span className="field-popover-effect__desc">
-                  <RichDescription text={effect.description} />
-                </span>
+                <RichDescription text={effect.text} />
               </li>
             ))}
           </ul>

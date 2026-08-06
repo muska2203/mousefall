@@ -5,7 +5,8 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import {ANIMATION_CONFIG} from '@utils/animationConfig';
-import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {TILE_SIZE} from '@utils/constants';
+import {cellCenter} from '../renderer/spritePlacement';
 import {registerAnimationExecutor} from './registry';
 import {runTweenedGraphics} from './primitives/tweenedGraphics';
 
@@ -18,12 +19,14 @@ export class ProjectileAnimationExecutor implements AnimationExecutor {
     if (step.type !== 'PROJECTILE') return;
 
     const config = ANIMATION_CONFIG.PROJECTILE;
-    const fromX = step.from.x * TILE_SIZE + TILE_SIZE / 2;
+    const fromCenter = cellCenter(step.from.x, step.from.y);
+    const toCenter = cellCenter(step.to.x, step.to.y);
+    const fromX = fromCenter.x;
     const fromY = step.fromSky
       ? (ctx.worldRenderer.cameraWorldPos?.y ?? 0) - TILE_SIZE
-      : step.from.y * TILE_HEIGHT + TILE_HEIGHT / 2;
-    const toX = step.to.x * TILE_SIZE + TILE_SIZE / 2;
-    const toY = step.to.y * TILE_HEIGHT + TILE_HEIGHT / 2;
+      : fromCenter.y;
+    const toX = toCenter.x;
+    const toY = toCenter.y;
     const radius = TILE_SIZE / 4;
 
     return new Promise((resolve) => {

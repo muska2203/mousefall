@@ -6,7 +6,6 @@ export const oilBarel = {
   "armor": 0,
   "blocksMovement": true,
   "blocksLOS": false,
-  "renderScale": 1,
   "propKind": "barrel",
   "tags": [
     "prop.barrel",

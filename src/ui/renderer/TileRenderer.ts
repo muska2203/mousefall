@@ -8,6 +8,8 @@
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {Position, RenderInput} from '@presentation/types';
 import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {getSpritePlacement} from '@presentation/spritePlacementResolver';
+import {applyPlacement} from './spritePlacement';
 import {getTileSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 import {runTickerTween, type TickerLike} from '@utils/tween';
@@ -58,14 +60,13 @@ export class TileRenderer {
         sprite.texture = texture;
       }
 
-      sprite.x = x * TILE_SIZE;
       if (tile.standing) {
         // «Стоячий» террейн (стена): полный размер, низ спрайта — к низу сжатой клетки.
-        sprite.y = (y + 1) * TILE_HEIGHT - TILE_SIZE;
-        sprite.width = TILE_SIZE;
-        sprite.height = TILE_SIZE;
+        applyPlacement(sprite, x, y, getSpritePlacement(undefined, 'terrainStanding'));
       } else {
         // Плоскость пола: клетка сжата по вертикали.
+        sprite.anchor.set(0, 0);
+        sprite.x = x * TILE_SIZE;
         sprite.y = y * TILE_HEIGHT;
         sprite.width = TILE_SIZE;
         sprite.height = TILE_HEIGHT;

@@ -9,6 +9,7 @@
 import {Container, Ticker} from 'pixi.js';
 import type {Position, RenderInput} from '@presentation/types';
 import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {cellCenter} from './spritePlacement';
 import {TileRenderer} from './TileRenderer';
 import {TileEffectRenderer} from './TileEffectRenderer';
 import {TileEffectStatusRenderer} from './TileEffectStatusRenderer';
@@ -122,11 +123,10 @@ export class WorldRenderer {
       this.root.y = -cameraY * scale;
     } else {
       const player = input.displayState.player;
-      const playerScreenX = player.x * TILE_SIZE;
-      const playerScreenY = player.y * TILE_HEIGHT;
+      const playerCenter = cellCenter(player.x, player.y);
 
-      cameraX = playerScreenX + TILE_SIZE / 2 - viewW / 2;
-      cameraY = playerScreenY + TILE_HEIGHT / 2 - viewH / 2;
+      cameraX = playerCenter.x - viewW / 2;
+      cameraY = playerCenter.y - viewH / 2;
 
       this.root.x = -cameraX * scale;
       this.root.y = -cameraY * scale;
@@ -227,9 +227,10 @@ export class WorldRenderer {
     const viewW = this.viewportWidth / scale;
     const viewH = this.viewportHeight / scale;
     const player = input.displayState.player;
+    const playerCenter = cellCenter(player.x, player.y);
     return {
-      x: player.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
-      y: player.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2,
+      x: playerCenter.x - viewW / 2,
+      y: playerCenter.y - viewH / 2,
     };
   }
 
@@ -269,10 +270,12 @@ export class WorldRenderer {
           const viewW = this.viewportWidth / scale;
           const viewH = this.viewportHeight / scale;
 
-          const fromX = fromTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
-          const fromY = fromTile.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2;
-          const toX = toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2;
-          const toY = toTile.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2;
+          const fromCenter = cellCenter(fromTile.x, fromTile.y);
+          const toCenter = cellCenter(toTile.x, toTile.y);
+          const fromX = fromCenter.x - viewW / 2;
+          const fromY = fromCenter.y - viewH / 2;
+          const toX = toCenter.x - viewW / 2;
+          const toY = toCenter.y - viewH / 2;
 
           const x = lerp(fromX, toX, p);
           const y = lerp(fromY, toY, p);
@@ -286,9 +289,10 @@ export class WorldRenderer {
           const scale = this.root.scale.x || 1;
           const viewW = this.viewportWidth / scale;
           const viewH = this.viewportHeight / scale;
+          const toCenter = cellCenter(toTile.x, toTile.y);
           this._cameraWorldPos = {
-            x: toTile.x * TILE_SIZE + TILE_SIZE / 2 - viewW / 2,
-            y: toTile.y * TILE_HEIGHT + TILE_HEIGHT / 2 - viewH / 2,
+            x: toCenter.x - viewW / 2,
+            y: toCenter.y - viewH / 2,
           };
           resolve();
         },

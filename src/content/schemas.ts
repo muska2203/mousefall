@@ -78,6 +78,29 @@ const SpriteVariantsSchema = z.record(z.string().min(1), z.string().min(1))
   .optional()
   .describe('Варианты спрайтов по визуальным стейтам объекта (например, open, depleted)');
 
+/**
+ * Размещение спрайта в клетке. Все поля опциональны: неуказанные значения
+ * берутся из дефолта категории (см. spritePlacementResolver в presentation).
+ * Единый механизм позиционирования спрайтов вместо разрозненных констант.
+ */
+const SpritePlacementFieldsSchema = z.object({
+  scale:    z.number().min(0).optional()
+    .describe('Масштаб спрайта относительно размера тайла'),
+  anchorX:  z.number().optional()
+    .describe('Опора спрайта по X внутри клетки: 0 — левый край, 0.5 — центр'),
+  anchorY:  z.number().optional()
+    .describe('Доля высоты сжатой клетки, к которой привязан низ спрайта: 1 — низ клетки, меньше — выше над полом'),
+  flattenY: z.boolean().optional()
+    .describe('Сплющить спрайт по вертикали — он ложится в плоскость пола (сжатая сетка)'),
+});
+
+export const SpritePlacementSchema = SpritePlacementFieldsSchema
+  .optional()
+  .describe('Переопределение размещения спрайта в клетке; дефолты — по категории сущности');
+
+/** Переопределение размещения спрайта из шаблона (все поля опциональны). */
+export type SpritePlacement = z.output<typeof SpritePlacementFieldsSchema>;
+
 // ─────────────────────────────────────────────
 // Шаблон сущности
 // ─────────────────────────────────────────────
@@ -93,7 +116,7 @@ export const EntityTemplateSchema = z.object({
   abilities: z.array(z.string().min(1)).default([]).describe('Innate-способности врага (ID шаблонов)'),
   lootTable:  z.array(LootEntrySchema).default([]).describe('Таблица выпадения предметов при смерти'),
   lootDropTable: z.array(LootDropTableEntrySchema).default([]).describe('Взвешенная таблица количества выпадаемых предметов'),
-  renderScale: z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  placement: SpritePlacementSchema,
   maxAp: z.number().int().positive().default(1)
     .describe('Максимальное количество очков действий (AP)'),
 }).describe('Шаблон врага или NPC');
@@ -251,6 +274,7 @@ export const TileEffectTemplateSchema = z.object({
     .describe('Базовая длительность эффекта в ходах'),
   renderOrder: z.number().int().default(1)
     .describe('Порядок отрисовки относительно других тайловых эффектов'),
+  placement: SpritePlacementSchema,
   blocksLOS: z.boolean()
     .default(false)
     .describe('Блокирует ли эффект линию видимости (дым и т.п.). Движение не блокируется никогда'),
@@ -288,6 +312,7 @@ export const TileEffectStatusTemplateSchema = z.object({
     .describe('Статусы тайловых эффектов, блокирующие наложение этого статуса'),
   renderOrder: z.number().int().default(1)
     .describe('Порядок отрисовки статуса относительно других статусов тайлового эффекта'),
+  placement: SpritePlacementSchema,
   neverExpires: z.boolean()
     .default(false)
     .describe('Если true, длительность статуса не уменьшается и он не удаляется при тике. Снимается только вместе с родительским тайловым эффектом.'),
@@ -328,7 +353,7 @@ export const StairsTemplateSchema = z.object({
   id:             z.string().min(1).describe('Уникальный идентификатор лестницы'),
   interactionKind: z.enum(['stairs']).describe('Вид интерактивного объекта'),
   direction:      z.enum(['up', 'down']).describe('Направление лестницы (up — вверх/на поверхность, down — вниз в подземелье)'),
-  renderScale:    z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  placement:      SpritePlacementSchema,
   spriteVariants: SpriteVariantsSchema,
 }).describe('Шаблон лестницы');
 
@@ -343,7 +368,7 @@ export const DoorTemplateSchema = z.object({
   interactionKind: z.enum(['door']).describe('Вид интерактивного объекта'),
   maxHp:           z.number().int().positive().describe('Максимальное здоровье двери'),
   armor:           z.number().int().nonnegative().default(0).describe('Броня двери'),
-  renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  placement:       SpritePlacementSchema,
   openSpriteId:    z.string().min(1).optional().describe('ID спрайта открытой двери. Если не указан — используется <id>_open'),
   spriteVariants: SpriteVariantsSchema,
   tags:            TagsSchema.describe('Иерархические игровые теги двери (например, flammable).'),
@@ -364,7 +389,7 @@ export const PropTemplateSchema = z.object({
   armor:           z.number().int().nonnegative().default(0).describe('Броня пропа'),
   blocksMovement:  z.boolean().default(true).describe('Блокирует ли проход через клетку'),
   blocksLOS:       z.boolean().default(false).describe('Блокирует ли линию видимости'),
-  renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  placement:       SpritePlacementSchema,
   propKind:        z.string().min(1).describe('Вид пропа: barrel, crate и т.д.'),
   spriteVariants: SpriteVariantsSchema,
   tags:            TagsSchema,
@@ -407,7 +432,7 @@ export const PoiTemplateSchema = z.object({
   window:          PoiWindowSchema.optional()
     .describe('Окно, открываемое активацией poi (выбор реликвии и пр.). Без окна poi срабатывает сразу'),
   spriteVariants: SpriteVariantsSchema,
-  renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  placement:       SpritePlacementSchema,
   tags:            TagsSchema,
 }).describe('Шаблон точки интереса (непроходимый неразрушаемый интерактивный объект)');
 
@@ -425,7 +450,7 @@ export const TrapTemplateSchema = z.object({
   initiallyHidden: z.boolean().default(true)
     .describe('Ловушка создаётся скрытой: не рисуется и не попадает в popover до срабатывания'),
   spriteVariants: SpriteVariantsSchema,
-  renderScale:     z.number().min(0).optional().default(1.0).describe('Масштаб спрайта относительно размера тайла'),
+  placement:       SpritePlacementSchema,
   tags:            TagsSchema,
 }).describe('Шаблон ловушки (проходимый объект, срабатывающий на вход на клетку)');
 
@@ -458,7 +483,7 @@ export type RelicTemplate = z.output<typeof RelicTemplateSchema>;
 export const PlayerTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор шаблона игрока (совпадает с именем файла)'),
   portraitImg: z.string().describe('Путь к изображению портрета'),
-  renderScale: z.number().min(0).optional().default(1.5).describe('Масштаб спрайта относительно размера тайла'),
+  placement:   SpritePlacementSchema,
   maxAp: z.number().int().positive().default(2)
     .describe('Стартовое максимальное количество очков действий (AP)'),
   baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 })

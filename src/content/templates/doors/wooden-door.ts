@@ -5,8 +5,11 @@ export const woodenDoor = {
   "interactionKind": "door",
   "maxHp": 3,
   "armor": 2,
-  "renderScale": 1,
   "openSpriteId": "wooden_door_open",
+  "placement": {
+    "anchorY": 2.0,
+    "anchorX": 0.1
+  },
   "tags": [
     "flammable"
   ],

@@ -27,7 +27,6 @@ function mockDoorTemplate(id: string) {
     interactionKind: 'door',
     maxHp: 30,
     armor: 2,
-    renderScale: 1,
   } as any;
 }
 
@@ -35,7 +34,6 @@ function mockStairsTemplate(id: string) {
   return {
     id,
     interactionKind: 'stairs',
-    renderScale: 1,
   } as any;
 }
 

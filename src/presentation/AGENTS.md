@@ -33,6 +33,7 @@
 | Добавить строку в combat log | `logBuilder.ts` (или аналог) |
 | Добавить сессионное состояние | `gameSession.ts` / `types.ts` |
 | Изменить ViewModel | `types.ts` (тип `ViewModel`) + формирующий код |
+| Настроить размещение спрайта в клетке | `spritePlacementResolver.ts` (дефолты категорий) или поле `placement` в шаблоне контента |
 | Добавить обработку UI-события | `gameSession.ts` |
 | Добавить локализацию типа урона | `src/presentation/localizationHelpers.ts` + `src/content/texts/{ru,en}.ts` |
 | Добавить отображение тегов предмета/врага | `src/presentation/itemDetailMapper.ts` / `src/presentation/enemyDetailMapper.ts` + `src/content/texts/{ru,en}.ts` |

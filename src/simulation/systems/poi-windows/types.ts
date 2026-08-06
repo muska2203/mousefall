@@ -45,4 +45,14 @@ export interface PoiWindowMechanic {
    * Если не реализована — окно считается доступным.
    */
   canOpen?(state: GameState, poi: PointOfInterestEntity, template: PoiTemplate): boolean;
+
+  /**
+   * Немутирующая проверка «опция может быть применена прямо сейчас»
+   * для validate RESOLVE_POI_CHOICE. Предложение (`poi.offer`) генерируется
+   * один раз и может протухнуть (например, нестакаемая реликвия из offer
+   * получена на другом этаже) — без этой проверки выбор протухшей опции
+   * проходил бы validate и молча тратил 1 AP без эффекта.
+   * Если не реализована — опция считается применимой.
+   */
+  canResolve?(state: GameState, poi: PointOfInterestEntity, optionId: string): boolean;
 }

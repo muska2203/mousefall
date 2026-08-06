@@ -7,6 +7,5 @@ export const altar = {
     "altar_heals_player"
   ],
   "charges": 1,
-  "renderScale": 1,
   "tags": []
 } satisfies PoiTemplateInput;

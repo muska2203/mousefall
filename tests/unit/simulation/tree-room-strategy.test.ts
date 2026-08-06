@@ -43,7 +43,6 @@ describe('treeRoomStrategy: спавн poi стартовой комнаты', (
           ruleIds: [],
           charges: 1,
           chargeSpentOn: 'activation',
-          renderScale: 1,
           tags: [],
         } as PoiTemplate],
       ]),

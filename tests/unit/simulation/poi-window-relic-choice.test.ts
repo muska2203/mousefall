@@ -8,6 +8,8 @@
  * - активация окна бесплатна (0 AP), выбор опции стоит 1 AP и выдаёт реликвию (RELIC_GRANTED);
  * - выбор последним AP проходит (нет отказа wrong_actor), при 0 AP — отклоняется;
  * - невалидный optionId — отказ без изменения состояния;
+ * - протухшая опция (нестакаемая реликвия получена после генерации offer) —
+ *   отказ без траты AP и заряда, валидная опция по-прежнему выбирается;
  * - пустой relicPool — активация отклоняется, окно не открывается;
  * - детерминизм предложения по seed;
  * - предложение переживает снапшот этажа;
@@ -50,7 +52,6 @@ const windowAltarTemplate: PoiTemplate = {
   charges: 1,
   chargeSpentOn: 'resolution',
   window: { kind: 'relic_choice', offerSize: 3 },
-  renderScale: 1,
   tags: ['relic_altar'],
 };
 
@@ -314,6 +315,45 @@ describe('окно relic_choice — выбор опции (RESOLVE_POI_CHOICE)',
     const again = sim.dispatch({ type: 'INTERACT', entityId: 'player', targetId: poi.id });
     expect(again.success).toBe(false);
     expect(player.relics).toHaveLength(1);
+  });
+
+  it('протухшая опция (нестакаемая уже получена) отклоняется без траты AP и заряда', () => {
+    // Предложение генерируется один раз: нестакаемая реликвия из offer могла
+    // быть получена на другом этаже того же пула. Раньше такой выбор проходил
+    // validate и молча тратил 1 AP без эффекта.
+    const { state, player, poi } = makeAltarState();
+    const sim = GameSimulation.loadSavedGame(state);
+    sim.dispatch({ type: 'INTERACT', entityId: 'player', targetId: poi.id });
+    const offer = [...poi.offer!];
+
+    // «Получили» нестакаемую реликвию из предложения в другом месте.
+    const staleOption = offer.find(id => id !== 'relic_b' && id !== 'relic_d')!;
+    player.relics.push({ instanceId: 'relic_99', templateId: staleOption });
+
+    const result = sim.dispatch({
+      type: 'RESOLVE_POI_CHOICE',
+      entityId: 'player',
+      poiId: poi.id,
+      optionId: staleOption,
+    });
+
+    expect(result.success).toBe(false);
+    expect(player.ap).toBe(2);
+    expect(poi.charges).toBe(1);
+    expect(poi.offer).toEqual(offer);
+    expect(player.relics).toEqual([{ instanceId: 'relic_99', templateId: staleOption }]);
+
+    // Валидная опция из того же предложения по-прежнему выбирается.
+    const validOption = offer.find(id => id !== staleOption)!;
+    const ok = sim.dispatch({
+      type: 'RESOLVE_POI_CHOICE',
+      entityId: 'player',
+      poiId: poi.id,
+      optionId: validOption,
+    });
+    expect(ok.success).toBe(true);
+    expect(player.ap).toBe(1);
+    expect(player.relics).toHaveLength(2);
   });
 });
 

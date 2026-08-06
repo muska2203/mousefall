@@ -29,7 +29,6 @@
      armor: 0,
      blocksMovement: true,
      blocksLOS: false,
-     renderScale: 1.0,
      propKind: 'barrel',
      tags: ['prop.barrel', 'contains.oil'],
    } satisfies PropTemplateInput;
@@ -43,7 +42,9 @@
    - `armor` — плоское снижение физического урона.
    - `blocksMovement` — блокирует ли проход по клетке.
    - `blocksLOS` — блокирует ли линию видимости.
-   - `renderScale` — масштаб спрайта относительно тайла.
+   - `placement` — опциональное переопределение размещения спрайта в клетке
+     (`scale`/`anchorX`/`anchorY`/`flattenY`; дефолт масштаба — 1.0).
+     Дефолты — по категории, см. `src/presentation/spritePlacementResolver.ts`.
    - `propKind` — вид пропа (`barrel`, `crate` и т.д.).
    - `tags` — игровые теги для классификации и будущих правил.
 

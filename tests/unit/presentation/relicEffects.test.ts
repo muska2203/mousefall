@@ -2,9 +2,9 @@
  * Тесты билдера эффектов реликвии (buildRelicEffects, presentation/relicDetailMapper).
  *
  * Проверяет:
- * - пункты правил с именами/описаниями из texts/{ru,en}/rules.ts (на реальном контенте);
+ * - пункты правил с однострочными описаниями из texts/{ru,en}/rules.ts (на реальном контенте);
  * - пункты модификаторов характеристик: локализация имён статов (ru/en)
- *   и формат значений («+N», «−N», «×N»);
+ *   и однострочный формат «Имя: +N» / «Имя: −N» / «Имя: ×N»;
  * - порядок: сначала правила, затем модификаторы.
  */
 
@@ -40,7 +40,7 @@ describe('buildRelicEffects', () => {
     await i18next.changeLanguage('ru');
   });
 
-  it('собирает пункты правил с именами и описаниями из текстов', () => {
+  it('собирает пункты правил с однострочными описаниями из текстов', () => {
     const relic = makeRelic({
       ruleIds: ['relic_venom_gland_poison_on_hit', 'relic_venom_gland_ramp_up'],
     });
@@ -48,13 +48,11 @@ describe('buildRelicEffects', () => {
     expect(effects).toEqual([
       {
         key: 'relic_venom_gland_poison_on_hit',
-        name: 'Отравляющий удар',
-        description: 'Удары [оружия](tag:delivery.weapon) отравляют цель на 3 хода.',
+        text: 'Удары [оружия](tag:delivery.weapon) отравляют цель на 3 хода.',
       },
       {
         key: 'relic_venom_gland_ramp_up',
-        name: 'Разгон',
-        description: 'По неотравленной цели урон [оружия](tag:delivery.weapon) на 1 меньше.',
+        text: 'По неотравленной цели урон [оружия](tag:delivery.weapon) на 1 меньше.',
       },
     ]);
   });
@@ -62,11 +60,10 @@ describe('buildRelicEffects', () => {
   it('зеркалит тексты правил в en-локали', () => {
     const relic = makeRelic({ruleIds: ['relic_venom_gland_poison_on_hit']});
     const effects = buildRelicEffects(relic, 'en');
-    expect(effects[0]?.name).toBe('Poisoning Strike');
-    expect(effects[0]?.description).toContain('poison the target for 3 turns');
+    expect(effects[0]?.text).toContain('poison the target for 3 turns');
   });
 
-  it('форматирует add-модификаторы: «+N» и «−N»', () => {
+  it('форматирует add-модификаторы: «Имя: +N» и «Имя: −N»', () => {
     const relic = makeRelic({
       statModifiers: [
         {stat: 'damage', value: 3, op: 'add'},
@@ -75,18 +72,18 @@ describe('buildRelicEffects', () => {
     });
     const effects = buildRelicEffects(relic, 'ru');
     expect(effects).toEqual([
-      {key: 'stat_damage', name: 'Урон', description: '+3'},
-      {key: 'stat_armor', name: 'Броня', description: '−1'},
+      {key: 'stat_damage', text: 'Урон: +3'},
+      {key: 'stat_armor', text: 'Броня: −1'},
     ]);
   });
 
-  it('форматирует multiply-модификаторы: «×N»', () => {
+  it('форматирует multiply-модификаторы: «Имя: ×N»', () => {
     const relic = makeRelic({
       statModifiers: [{stat: 'critMultiplier', value: 1.5, op: 'multiply'}],
     });
     const effects = buildRelicEffects(relic, 'ru');
     expect(effects).toEqual([
-      {key: 'stat_critMultiplier', name: 'Множитель крита', description: '×1.5'},
+      {key: 'stat_critMultiplier', text: 'Множитель крита: ×1.5'},
     ]);
   });
 
@@ -97,7 +94,7 @@ describe('buildRelicEffects', () => {
     });
     const effects = buildRelicEffects(relic, 'en');
     expect(effects).toEqual([
-      {key: 'stat_maxHp', name: 'Max HP', description: '−5'},
+      {key: 'stat_maxHp', text: 'Max HP: −5'},
     ]);
   });
 

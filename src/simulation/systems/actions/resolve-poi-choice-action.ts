@@ -14,6 +14,7 @@
 import type {GameState, ValidationResult} from '@simulation/types';
 import type {Intent} from '@simulation/core-types';
 import {tryGetPoi} from '@content/registry';
+import {POI_WINDOW_MECHANICS} from '@simulation/systems/poi-windows';
 import type {ActionHandler} from './types';
 import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
 
@@ -36,6 +37,13 @@ export const resolvePoiChoiceAction: ActionHandler = {
       return { ok: false, reasonCode: 'poi_has_no_window' };
     }
     if (!poi.offer || !poi.offer.includes(action.optionId)) {
+      return { ok: false, reasonCode: 'invalid_window_option' };
+    }
+
+    // Предложение могло протухнуть с момента генерации — без проверки
+    // применимости выбор молча тратил бы 1 AP без эффекта.
+    const mechanic = POI_WINDOW_MECHANICS[template.window.kind];
+    if (mechanic.canResolve && !mechanic.canResolve(state, poi, action.optionId)) {
       return { ok: false, reasonCode: 'invalid_window_option' };
     }
 

@@ -7,6 +7,9 @@
  * - resolveWindowChoice: dispatch RESOLVE_POI_CHOICE + сброс поля;
  * - dismissWindow: сброс поля без dispatch (реликвия не выдаётся,
  *   предложение poi сохраняется и окно открывается повторной активацией);
+ * - регрессия: после dismissWindow обычное действие НЕ переоткрывает окно;
+ * - выбор протухшей опции (нестакаемая уже в коллекции) отклоняется
+ *   без траты AP, окно остаётся открытым;
  * - регрессия: активация последним AP не блокирует выбор (AP списывается на выборе).
  */
 
@@ -42,7 +45,6 @@ const windowAltarTemplate: PoiTemplate = {
   charges: 1,
   chargeSpentOn: 'resolution',
   window: { kind: 'relic_choice', offerSize: 3 },
-  renderScale: 1,
   tags: ['relic_altar'],
 };
 
@@ -145,6 +147,44 @@ describe('GameSession — pendingWindow', () => {
     expect(session.isWindowOpen()).toBe(true);
     expect(session.getViewModel().renderInput?.pendingWindow?.options.map(o => o.id))
       .toEqual(offer);
+  });
+
+  it('после dismissWindow обычное действие не переоткрывает окно', () => {
+    // Регрессия: раньше refreshPendingWindow сканировал все сущности после
+    // любого dispatch, и отказ от выбора фактически не работал — окно
+    // переоткрывалось после каждого действия, принуждая игрока к выбору.
+    const { session, poi } = makeSession();
+    activateAltar(session, poi.id);
+    expect(session.isWindowOpen()).toBe(true);
+
+    session.dismissWindow();
+    expect(session.isWindowOpen()).toBe(false);
+
+    session.dispatch({ type: 'END_TURN', entityId: 'player' });
+    session.onAnimationsComplete();
+
+    expect(session.isWindowOpen()).toBe(false);
+    expect(session.getViewModel().renderInput?.pendingWindow).toBeNull();
+    // Предложение сохранилось — окно откроется повторной активацией poi.
+    expect(poi.charges).toBe(1);
+    expect(poi.offer).toHaveLength(3);
+  });
+
+  it('выбор протухшей опции отклоняется: AP не тратится, окно остаётся открытым', () => {
+    // Предложение генерируется один раз; нестакаемая реликвия из offer могла
+    // быть получена на другом этаже. Раньше такой выбор молча тратил 1 AP.
+    const { session, player, poi } = makeSession();
+    activateAltar(session, poi.id);
+    const staleOption = poi.offer![0]!;
+    player.relics.push({ instanceId: 'relic_99', templateId: staleOption });
+
+    session.resolveWindowChoice(staleOption);
+
+    expect(player.ap).toBe(2);
+    expect(poi.charges).toBe(1);
+    expect(player.relics).toEqual([{ instanceId: 'relic_99', templateId: staleOption }]);
+    // Окно восстановлено — можно выбрать другую опцию или отказаться.
+    expect(session.isWindowOpen()).toBe(true);
   });
 
   it('регрессия: активация последним AP — окно открывается, выбор проходит', () => {

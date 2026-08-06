@@ -4,7 +4,6 @@ export const halflingMage = {
   "id": "halfling-mage",
   "maxAp": 2,
   "portraitImg": "/assets/portraits/halfling-mage-ready.png",
-  "renderScale": 1,
   "starterEquipment": [
     "common_splinter_blade",
     "common_school_wand",

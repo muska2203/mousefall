@@ -4,7 +4,6 @@ export const paladin = {
   "id": "paladin",
   "maxAp": 2,
   "portraitImg": "/assets/portraits/paladin-ready.png",
-  "renderScale": 1,
   "starterEquipment": [
     "common_splinter_blade",
     "common_school_wand",

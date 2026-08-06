@@ -56,7 +56,6 @@ function mockPropTemplate(overrides: Partial<PropTemplate> & { id: string }): Pr
     armor: 0,
     blocksMovement: true,
     blocksLOS: false,
-    renderScale: 1,
     propKind: 'barrel',
     tags: [],
     canHaveStatus: [],

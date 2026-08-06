@@ -4,7 +4,6 @@ export const necromancer = {
   "id": "necromancer",
   "maxAp": 2,
   "portraitImg": "/assets/portraits/necromancer-ready.png",
-  "renderScale": 1,
   "starterEquipment": [
     "common_splinter_blade",
     "common_school_wand",

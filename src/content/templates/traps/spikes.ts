@@ -7,6 +7,5 @@ export const spikes = {
   ],
   "oneShot": true,
   "initiallyHidden": true,
-  "renderScale": 1,
   "tags": []
 } satisfies TrapTemplateInput;

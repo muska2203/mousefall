@@ -4,7 +4,6 @@ export const orcBarbarian = {
   "id": "orc-barbarian",
   "maxAp": 2,
   "portraitImg": "/assets/portraits/orc-barbarian-ready.png",
-  "renderScale": 1,
   "starterEquipment": [
     "common_splinter_blade",
     "common_school_wand",

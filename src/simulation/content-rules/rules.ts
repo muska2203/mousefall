@@ -501,6 +501,9 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'ENTITY_DAMAGED',
       tags: ['damage.physical.blunt', 'delivery.weapon'],
     },
+    // Без eventRole правило срабатывало бы и из target-слоя — дезило бы
+    // самого владельца при дробящем ударе по нему.
+    conditions: [{type: 'eventRole', role: 'source'}],
     effect: {
       type: 'applyStatus',
       statusType: 'dazed',
@@ -622,6 +625,9 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     trigger: {
       event: 'ITEM_PICKED_UP',
     },
+    // Лечим владельца только когда он сам поднял предмет (иначе правило
+    // сработает из radius-слоя при поднятии предмета любым актором рядом).
+    conditions: [{type: 'eventRole', role: 'source'}],
     effect: {
       type: 'heal',
       amount: 5,

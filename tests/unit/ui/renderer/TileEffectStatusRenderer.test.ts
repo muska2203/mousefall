@@ -6,7 +6,7 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {Container} from 'pixi.js';
 import type {RenderInput} from '@presentation/types.ts';
 import type {DisplayState} from '@presentation/displayState/types.ts';
-import {TILE_EFFECT_STATUS_OFFSET_Y_FACTOR, TILE_EFFECT_STATUS_SPRITE_SCALE, TILE_HEIGHT, TILE_SIZE,} from '@utils/constants.ts';
+import {TILE_HEIGHT, TILE_SIZE,} from '@utils/constants.ts';
 import {
   BURNING_CLUSTER_PADDING_X,
   BURNING_CLUSTER_SCALE_MAX,
@@ -188,9 +188,10 @@ describe('TileEffectStatusRenderer', () => {
     expect(sprite.anchor.x).toBe(0.5);
     expect(sprite.anchor.y).toBe(1);
     expect(sprite.x).toBe(3 * TILE_SIZE + TILE_SIZE / 2);
-    expect(sprite.y).toBe(4 * TILE_HEIGHT + TILE_HEIGHT * TILE_EFFECT_STATUS_OFFSET_Y_FACTOR);
-    expect(sprite.width).toBe(TILE_SIZE * TILE_EFFECT_STATUS_SPRITE_SCALE);
-    expect(sprite.height).toBe(TILE_SIZE * TILE_EFFECT_STATUS_SPRITE_SCALE);
+    // Дефолт категории tileEffectStatus: масштаб 0.7, низ значка на 0.5 высоты сжатой клетки.
+    expect(sprite.y).toBe(4 * TILE_HEIGHT + TILE_HEIGHT * 0.5);
+    expect(sprite.width).toBe(TILE_SIZE * 0.7);
+    expect(sprite.height).toBe(TILE_SIZE * 0.7);
     expect(sprite.zIndex).toBe(sprite.y);
   });
 

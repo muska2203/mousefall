@@ -4,7 +4,6 @@ export const elvenRanger = {
   "id": "elven-ranger",
   "maxAp": 2,
   "portraitImg": "/assets/portraits/elven-ranger-ready.png",
-  "renderScale": 1,
   "starterEquipment": [
     "common_splinter_blade",
     "common_school_wand",

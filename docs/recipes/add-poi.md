@@ -31,7 +31,6 @@
      interactionKind: 'poi',
      ruleIds: ['altar_heals_player'],
      charges: 1,
-     renderScale: 1.0,
      tags: [],
    } satisfies PoiTemplateInput;
    ```
@@ -45,7 +44,9 @@
    - `charges` — количество использований; при 0 взаимодействие недоступно (`resolveInteraction` → null).
    - `chargeSpentOn` — когда тратится заряд: `activation` (default) или `resolution` (оконные poi).
    - `window` — опциональный дескриптор окна выбора (см. раздел «Объект с окном (window)»).
-   - `renderScale` — масштаб спрайта относительно тайла.
+   - `placement` — опциональное переопределение размещения спрайта в клетке
+     (`scale`/`anchorX`/`anchorY`/`flattenY`; дефолт масштаба — 1.0).
+     Дефолты — по категории, см. `src/presentation/spritePlacementResolver.ts`.
    - `spriteVariants` — опциональные переопределения спрайтов по визуальным стейтам
      (например, `{depleted: 'altar_drained'}`); см. раздел «Варианты спрайтов по состоянию».
    - `tags` — игровые теги для классификации.
@@ -154,20 +155,26 @@ Poi может открывать **окно выбора** — модальны
    списывается при выборе, «на выходе из окна»); `POI_USED` эмитится в любом случае.
    Если механика не смогла открыть окно (пустой пул и пр.), активация отклоняется ещё
    в validate `INTERACT` (`canOpen` механики, reasonCode `poi_window_unavailable`) — AP не тратится.
-2. Presentation видит poi с заполненным `offer` и открывает модалку
-   (`GameSession.pendingWindow` → `RenderInput.pendingWindow`, ввод блокируется,
-   автопуть гасится; открытие — только после завершения анимаций).
+2. Presentation открывает модалку только по факту активации этого poi
+   (`GameSession.windowCandidatePoiId` выставляется действием `INTERACT`; без него
+   окно после других действий не переоткрывается — отказ работает)
+   → `GameSession.pendingWindow` → `RenderInput.pendingWindow`, ввод блокируется,
+   автопуть гасится; открытие — только после завершения анимаций.
 3. Выбор опции → action `RESOLVE_POI_CHOICE {entityId, poiId, optionId}` (стоимость 1 AP,
    стандартная валидация AP: при 0 AP — отказ)
    → одноимённый интент → `mechanic.resolve`: применяет эффект (для `relic_choice` —
    интент `GRANT_RELIC`), тратит заряд и очищает `poi.offer`.
+   Предложение генерируется один раз и может протухнуть (для `relic_choice` — нестакаемая
+   реликвия получена на другом этаже): validate действия проверяет применимость опции
+   через `canResolve` механики, протухшая опция отклоняется без траты AP.
    Отказ — чисто UI (`GameSession.dismissWindow()`), без dispatch; повторная активация
    открывает то же предложение.
 
 ### Как добавить новый вид окна
 
 1. Новый вариант в `PoiWindowSchema` (`src/content/schemas.ts`) — discriminated union по `kind`.
-2. Механика с интерфейсом `PoiWindowMechanic` (`onActivate` / `resolve`, опционально `canOpen`)
+2. Механика с интерфейсом `PoiWindowMechanic` (`onActivate` / `resolve`, опционально `canOpen`
+   и `canResolve` — немутирующие проверки для validate `INTERACT` и `RESOLVE_POI_CHOICE`)
    в `src/simulation/systems/poi-windows/` + регистрация в `POI_WINDOW_MECHANICS`.
 3. Расширить литерал `kind` в presentation: `GameSession.pendingWindow` и
    `PendingWindowViewModel` (`src/presentation/types.ts`).

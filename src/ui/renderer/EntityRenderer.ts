@@ -8,8 +8,10 @@
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {AnimationNode, Position, RenderInput} from '@presentation/types';
 import type {DisplayState} from '@presentation/displayState/types';
-import {FOG_EXPLORED_SPRITE_ALPHA, FLOOR_Y_RATIO, STANDING_Y_FACTOR, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
-import {getRenderScale} from '@presentation/renderScaleResolver';
+import {FOG_EXPLORED_SPRITE_ALPHA, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import type {ResolvedSpritePlacement} from '@presentation/spritePlacementResolver';
+import {getSpritePlacement} from '@presentation/spritePlacementResolver';
+import {applyPlacement, placementAnchorPoint, placementSize} from './spritePlacement';
 import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getPoiSprite, getPropSprite, getStairsSprite, getTrapSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 import {resolveEntityFrameSprite} from '@utils/assetResolver';
@@ -18,9 +20,6 @@ import type {FactionId} from '@presentation/types';
 import type {Animatable} from '@utils/tween';
 import {lerp, Tween, Vec2Tween} from '@utils/tween';
 import type {AnimationConfigEntry} from '@utils/animationConfig';
-
-const ACTOR_ANCHOR_X = 0.5;
-const ACTOR_ANCHOR_Y = 1;
 
 type ActiveAnimation = {
   tween: Animatable;
@@ -34,6 +33,8 @@ export class EntityRenderer {
   private stickerTextures = new Map<string, Texture>();
   private stickerKeys = new Map<string, string>();
   private stickerPending = new Map<string, Promise<void>>();
+  /** Размещение спрайтов по entityId (актуализируется при каждом update, нужно анимациям). */
+  private placements = new Map<string, { placement: ResolvedSpritePlacement; isActor: boolean }>();
 
   constructor() {
     this.container.sortableChildren = true;
@@ -68,10 +69,10 @@ export class EntityRenderer {
 
     // Игрок всегда виден себе
     const playerTexture = getTextureSync(playerPath);
-    const playerScale = getRenderScale(displayState.player.templateId, true);
+    const playerPlacement = getSpritePlacement(displayState.player.templateId, 'actor');
     const playerStickerTexture = this.stickerTextures.get(displayState.player.id);
-    this.renderEntitySync(displayState.player.id, displayState.player.x, displayState.player.y, playerStickerTexture ?? playerTexture, playerPath, true, playerScale);
-    this.updateSticker(displayState.player.id, playerPath, displayState.player.factionId ?? 'player', displayState.player.hp, displayState.player.maxHp, playerScale);
+    this.renderEntitySync(displayState.player.id, displayState.player.x, displayState.player.y, playerStickerTexture ?? playerTexture, playerPath, playerPlacement, true);
+    this.updateSticker(displayState.player.id, playerPath, displayState.player.factionId ?? 'player', displayState.player.hp, displayState.player.maxHp, playerPlacement.scale);
     const playerSprite = this.sprites.get(displayState.player.id);
     if (playerSprite) playerSprite.visible = true;
     existingIds.add(displayState.player.id);
@@ -83,10 +84,10 @@ export class EntityRenderer {
         const path = getEnemySprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(entity.templateId, true);
+        const placement = getSpritePlacement(entity.templateId, 'actor');
         const stickerTexture = this.stickerTextures.get(entity.id);
-        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, true, scale);
-        this.updateSticker(entity.id, path, entity.factionId ?? 'enemies', entity.hp, entity.maxHp, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, placement, true);
+        this.updateSticker(entity.id, path, entity.factionId ?? 'enemies', entity.hp, entity.maxHp, placement.scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellVisible(displayState, entity.x, entity.y);
@@ -97,8 +98,8 @@ export class EntityRenderer {
         const path = input.objectSprites.get(entity.id) ?? getStairsSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
+        const placement = getSpritePlacement(entity.templateId, 'object');
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, placement);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -111,8 +112,8 @@ export class EntityRenderer {
         const path = getItemSprite(templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
+        const placement = getSpritePlacement(templateId, 'object');
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, placement);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           // Если для предмета запланирована анимация появления — скрываем спрайт
@@ -132,10 +133,10 @@ export class EntityRenderer {
         const path = input.objectSprites.get(entity.id) ?? getDoorSprite(entity.templateId, entity.isOpen ?? false);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(entity.templateId, false);
+        const placement = getSpritePlacement(entity.templateId, 'object');
         const stickerTexture = this.stickerTextures.get(entity.id);
-        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, false, scale);
-        this.updateSticker(entity.id, path, 'neutrals', entity.hp, entity.maxHp, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, placement);
+        this.updateSticker(entity.id, path, 'neutrals', entity.hp, entity.maxHp, placement.scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -149,10 +150,10 @@ export class EntityRenderer {
         const path = input.objectSprites.get(entity.id) ?? getPropSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(entity.templateId, false);
+        const placement = getSpritePlacement(entity.templateId, 'object');
         const stickerTexture = this.stickerTextures.get(entity.id);
-        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, false, scale);
-        this.updateSticker(entity.id, path, 'neutrals', entity.hp, entity.maxHp, scale);
+        this.renderEntitySync(entity.id, entity.x, entity.y, stickerTexture ?? texture, path, placement);
+        this.updateSticker(entity.id, path, 'neutrals', entity.hp, entity.maxHp, placement.scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -165,8 +166,8 @@ export class EntityRenderer {
         const path = input.objectSprites.get(entity.id) ?? getPoiSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale);
+        const placement = getSpritePlacement(entity.templateId, 'object');
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, placement);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -180,8 +181,8 @@ export class EntityRenderer {
         const path = input.objectSprites.get(entity.id) ?? getTrapSprite(entity.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(entity.templateId, false);
-        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, false, scale, true);
+        const placement = getSpritePlacement(entity.templateId, 'trap');
+        this.renderEntitySync(entity.id, entity.x, entity.y, texture, path, placement);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
           sprite.visible = input.debugEnabled || isCellExploredOrVisible(displayState, entity.x, entity.y);
@@ -198,8 +199,8 @@ export class EntityRenderer {
         const path = getItemSprite(drop.templateId);
         texturePaths.set(path, path);
         const texture = getTextureSync(path);
-        const scale = getRenderScale(drop.templateId, false);
-        this.renderEntitySync(drop.itemId, drop.position.x, drop.position.y, texture, path, false, scale);
+        const placement = getSpritePlacement(drop.templateId, 'object');
+        this.renderEntitySync(drop.itemId, drop.position.x, drop.position.y, texture, path, placement);
         const sprite = this.sprites.get(drop.itemId);
         if (sprite && !this.activeAnimations.has(drop.itemId)) {
           sprite.visible = false;
@@ -215,6 +216,7 @@ export class EntityRenderer {
         sprite.destroy();
         this.sprites.delete(id);
         this.activeAnimations.delete(id);
+        this.placements.delete(id);
       }
     }
 
@@ -249,16 +251,13 @@ export class EntityRenderer {
 
       this.cancelAnimationFor(entityId);
 
-      const isActor = sprite.anchor.x === ACTOR_ANCHOR_X && sprite.anchor.y === ACTOR_ANCHOR_Y;
-      const offsetX = isActor ? TILE_SIZE / 2 : 0;
-      const offsetY = isActor ? TILE_HEIGHT * STANDING_Y_FACTOR : TILE_HEIGHT * STANDING_Y_FACTOR - sprite.height;
+      const placement = this.placements.get(entityId)?.placement
+        ?? getSpritePlacement(undefined, 'actor');
 
       sprite.visible = true;
 
-      const fromX = from.x * TILE_SIZE + offsetX;
-      const fromY = from.y * TILE_HEIGHT + offsetY;
-      const toX = to.x * TILE_SIZE + offsetX;
-      const toY = to.y * TILE_HEIGHT + offsetY;
+      const {x: fromX, y: fromY} = placementAnchorPoint(from.x, from.y, placement);
+      const {x: toX, y: toY} = placementAnchorPoint(to.x, to.y, placement);
 
       const baseScaleX = sprite.scale.x;
       const baseScaleY = sprite.scale.y;
@@ -351,21 +350,24 @@ export class EntityRenderer {
 
       this.cancelAnimationFor(entityId);
 
-      const isActor = sprite.anchor.x === ACTOR_ANCHOR_X && sprite.anchor.y === ACTOR_ANCHOR_Y;
-      const offsetX = isActor ? TILE_SIZE / 2 : 0;
-      const offsetY = isActor ? TILE_HEIGHT * STANDING_Y_FACTOR : TILE_HEIGHT * STANDING_Y_FACTOR - sprite.height;
+      const entry = this.placements.get(entityId);
+      const placement = entry?.placement ?? getSpritePlacement(undefined, 'actor');
+      // Покачивание — только у акторов (по категории, зафиксированной при рендере).
+      const isActor = entry?.isActor ?? true;
 
       sprite.visible = true;
-      sprite.x = from.x * TILE_SIZE + offsetX;
-      sprite.y = from.y * TILE_HEIGHT + offsetY;
+      const fromPoint = placementAnchorPoint(from.x, from.y, placement);
+      const toPoint = placementAnchorPoint(to.x, to.y, placement);
+      sprite.x = fromPoint.x;
+      sprite.y = fromPoint.y;
 
       const swayCycles = 1;
       const swayAmplitude = 0.08;
       const shouldSway = sway && isActor;
 
       const tween = new Vec2Tween({
-        from: { x: from.x * TILE_SIZE + offsetX, y: from.y * TILE_HEIGHT + offsetY },
-        to: { x: to.x * TILE_SIZE + offsetX, y: to.y * TILE_HEIGHT + offsetY },
+        from: fromPoint,
+        to: toPoint,
         duration: config.duration,
         easing: config.easing,
         onUpdate: (x, y, progress) => {
@@ -487,13 +489,12 @@ export class EntityRenderer {
       const endAlpha = 1;
       const startScale = sprite.scale.x * 0.5;
       const endScale = sprite.scale.x;
-      // Предмет — «стоячий» объект: низ спрайта привязан к STANDING_Y_FACTOR сжатой клетки.
-      const fullHeight = sprite.height;
 
-      const fromX = from.x * TILE_SIZE;
-      const fromY = from.y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - fullHeight;
-      const toX = to.x * TILE_SIZE;
-      const toY = to.y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - fullHeight;
+      // Предмет — «стоячий» объект: летит между опорными точками клеток.
+      const placement = this.placements.get(entityId)?.placement
+        ?? getSpritePlacement(undefined, 'object');
+      const {x: fromX, y: fromY} = placementAnchorPoint(from.x, from.y, placement);
+      const {x: toX, y: toY} = placementAnchorPoint(to.x, to.y, placement);
 
       sprite.x = fromX;
       sprite.y = fromY;
@@ -595,6 +596,7 @@ export class EntityRenderer {
           sprite.destroy();
           this.sprites.delete(entityId);
           this.activeAnimations.delete(entityId);
+          this.placements.delete(entityId);
           resolve();
         },
       });
@@ -643,6 +645,7 @@ export class EntityRenderer {
       sprite.destroy();
     }
     this.sprites.clear();
+    this.placements.clear();
     this.stickerTextures.clear();
     this.stickerKeys.clear();
     this.stickerPending.clear();
@@ -665,29 +668,23 @@ export class EntityRenderer {
     y: number,
     texture: Texture | undefined,
     path: string,
+    placement: ResolvedSpritePlacement,
     isActor: boolean = false,
-    renderScale: number = 1.0,
-    flattenY: boolean = false,
   ): void {
-    const size = TILE_SIZE * renderScale;
-    // Ловушки лежат в плоскости пола и сплющиваются по вертикали.
-    const height = flattenY ? size * FLOOR_Y_RATIO : size;
+    const {width, height} = placementSize(placement);
 
     let sprite = this.sprites.get(id);
     if (!sprite) {
       sprite = new Sprite(texture ?? Texture.EMPTY);
       this.sprites.set(id, sprite);
       this.container.addChild(sprite);
-      if (isActor) {
-        sprite.anchor.set(ACTOR_ANCHOR_X, ACTOR_ANCHOR_Y);
-      }
       if (texture && texture !== Texture.EMPTY) {
-        sprite.width = size;
+        sprite.width = width;
         sprite.height = height;
       }
     } else if (texture && sprite.texture !== texture) {
       sprite.texture = texture;
-      sprite.width = size;
+      sprite.width = width;
       sprite.height = height;
     }
 
@@ -698,29 +695,20 @@ export class EntityRenderer {
           const s = this.sprites.get(id);
           if (s) {
             s.texture = loaded;
-            s.width = size;
+            s.width = width;
             s.height = height;
           }
         })
         .catch(() => {});
     }
 
+    this.placements.set(id, {placement, isActor});
+
     // Не трогаем позицию, если идёт активная анимация.
     // DisplayState уже отражает текущее состояние, а tween управляет спрайтом напрямую.
     if (!this.activeAnimations.has(id)) {
-      if (isActor) {
-        sprite.x = x * TILE_SIZE + TILE_SIZE / 2;
-        sprite.y = y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR;
-      } else if (flattenY) {
-        // Ловушка: сплющена вместе с плоскостью пола.
-        sprite.x = x * TILE_SIZE;
-        sprite.y = y * TILE_HEIGHT;
-      } else {
-        // «Стоячий» объект: полный размер, низ спрайта — на STANDING_Y_FACTOR сжатой клетки.
-        sprite.x = x * TILE_SIZE;
-        sprite.y = y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - height;
-      }
-      sprite.zIndex = sprite.y;
+      const anchor = applyPlacement(sprite, x, y, placement);
+      sprite.zIndex = anchor.y;
     }
   }
 
@@ -730,7 +718,7 @@ export class EntityRenderer {
     factionId: FactionId,
     hp: number | undefined,
     maxHp: number | undefined,
-    renderScale: number,
+    scale: number,
   ): void {
     if (hp === undefined || maxHp === undefined || maxHp <= 0) return;
 
@@ -750,7 +738,7 @@ export class EntityRenderer {
         const sprite = this.sprites.get(id);
         if (sprite && !sprite.destroyed) {
           sprite.texture = texture;
-          const size = TILE_SIZE * renderScale;
+          const size = TILE_SIZE * scale;
           sprite.width = size;
           sprite.height = size;
         }

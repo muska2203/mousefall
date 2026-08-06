@@ -16,22 +16,11 @@ export const FLOOR_Y_RATIO = 0.9;
 /** Высота клетки пола на экране с учётом вертикального сжатия. */
 export const TILE_HEIGHT = TILE_SIZE * FLOOR_Y_RATIO;
 
-/** Доля высоты сжатой клетки, на которой располагается низ «стоячих» объектов
- *  (акторы, двери, пропы, предметы, aboveGround-эффекты).
- *  1 — низ клетки; меньше — выше над полом. */
-export const STANDING_Y_FACTOR = 0.6;
-
 /** Альфа затемнения explored клеток тумана войны. */
 export const FOG_EXPLORED_ALPHA = 0.55;
 
 /** Альфа спрайтов на explored клетках, чтобы визуально совпадало с затемнением тумана. */
 export const FOG_EXPLORED_SPRITE_ALPHA = 1 - FOG_EXPLORED_ALPHA;
-
-/** Масштаб спрайта статуса тайлового эффекта относительно размера клетки. */
-export const TILE_EFFECT_STATUS_SPRITE_SCALE = 0.7;
-
-/** Смещение "низа" спрайта статуса тайлового эффекта от верха клетки (0 — верх, 1 — низ). */
-export const TILE_EFFECT_STATUS_OFFSET_Y_FACTOR = 0.5;
 
 /** Клеток, видимых по горизонтали во вьюпорте. */
 export const VIEWPORT_TILES_X = 25;

@@ -6,10 +6,13 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import {EntityRenderer} from '../../../../src/ui/renderer/EntityRenderer';
 import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
-import {STANDING_Y_FACTOR, TILE_HEIGHT} from '@utils/constants.ts';
+import {TILE_HEIGHT} from '@utils/constants.ts';
 import type {RenderInput} from '../../../../src/presentation/types';
 import {buildDisplayState} from '../../../../src/presentation/displayState/builder';
 import type {GameState} from '../../../../src/simulation/types';
+
+/** Дефолт anchorY категорий actor/object (низ «стоячего» спрайта на 0.8 высоты сжатой клетки). */
+const STANDING_ANCHOR_Y = 0.8;
 
 vi.mock('pixi.js', () => {
   class MockTexture {
@@ -280,7 +283,7 @@ describe('EntityRenderer', () => {
 
     const sprite = (renderer as any).sprites.get('player');
     expect(sprite.x).toBe(2 * 32 + 32 / 2); // TILE_SIZE = 32, акторы центрируются по X
-    expect(sprite.y).toBe(TILE_HEIGHT * STANDING_Y_FACTOR); // акторы приподняты на STANDING_Y_FACTOR от низа сжатой клетки
+    expect(sprite.y).toBe(TILE_HEIGHT * STANDING_ANCHOR_Y); // акторы приподняты на 0.8 от верха сжатой клетки
   });
 
   it('keeps sprite alive during update if DEATH animation is scheduled', () => {
@@ -387,7 +390,7 @@ describe('EntityRenderer', () => {
     renderer.update(input);
     const sprite = (renderer as any).sprites.get('enemy1');
     expect(sprite.x).toBe(1 * 32 + 32 / 2);
-    expect(sprite.y).toBe(1 * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR);
+    expect(sprite.y).toBe(1 * TILE_HEIGHT + TILE_HEIGHT * STANDING_ANCHOR_Y);
 
     // Симуляция переместила врага, но DisplayState ещё не обновлён (патч применится
     // по завершении анимации). Спрайт не должен "прыгнуть" на новую позицию.
@@ -411,7 +414,7 @@ describe('EntityRenderer', () => {
     renderer.update(input);
     // Спрайт должен остаться на старой позиции, а не "прыгнуть" на новую
     expect(sprite.x).toBe(1 * 32 + 32 / 2);
-    expect(sprite.y).toBe(1 * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR);
+    expect(sprite.y).toBe(1 * TILE_HEIGHT + TILE_HEIGHT * STANDING_ANCHOR_Y);
   });
 
   it('hides item sprite during update when ITEM_DROP animation is scheduled', () => {
@@ -508,7 +511,8 @@ describe('EntityRenderer', () => {
     expect(p).toBeInstanceOf(Promise);
     // Сразу после старта спрайт должен быть на from и невидим
     expect(sprite.x).toBe(2 * 32);
-    expect(sprite.y).toBe(2 * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - sprite.height); // низ спрайта — на STANDING_Y_FACTOR сжатой клетки
+    // Якорь (0,1): sprite.y — это опорная точка, низ спрайта — на 0.8 высоты сжатой клетки
+    expect(sprite.y).toBe(2 * TILE_HEIGHT + TILE_HEIGHT * STANDING_ANCHOR_Y);
     expect(sprite.visible).toBe(true);
     expect(sprite.alpha).toBe(0);
 
@@ -518,7 +522,7 @@ describe('EntityRenderer', () => {
 
     // По завершении спрайт должен быть на to
     expect(sprite.x).toBe(3 * 32);
-    expect(sprite.y).toBe(3 * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - sprite.height);
+    expect(sprite.y).toBe(3 * TILE_HEIGHT + TILE_HEIGHT * STANDING_ANCHOR_Y);
     expect(sprite.alpha).toBe(1);
   });
 

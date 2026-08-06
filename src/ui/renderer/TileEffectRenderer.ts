@@ -7,7 +7,9 @@
 
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {RenderInput} from '@presentation/types';
-import {STANDING_Y_FACTOR, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
+import {getSpritePlacement} from '@presentation/spritePlacementResolver';
+import {applyPlacement} from './spritePlacement';
 import {getTileEffectSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 
@@ -54,18 +56,13 @@ export class TileEffectRenderer {
           }
 
           sprite.zIndex = overlay.renderOrder;
-          sprite.x = x * TILE_SIZE;
-          if (overlay.layer === 'aboveGround') {
-            // Слой aboveGround (дым и т.п.): полный размер, низ — на STANDING_Y_FACTOR сжатой клетки.
-            sprite.y = y * TILE_HEIGHT + TILE_HEIGHT * STANDING_Y_FACTOR - TILE_SIZE;
-            sprite.width = TILE_SIZE;
-            sprite.height = TILE_SIZE;
-          } else {
-            // Слой cover (вода, масло): рисуется в плоскости пола, сжат по вертикали.
-            sprite.y = y * TILE_HEIGHT;
-            sprite.width = TILE_SIZE;
-            sprite.height = TILE_HEIGHT;
-          }
+          // Размещение оверлея: дефолт по слою (cover — в плоскости пола,
+          // aboveGround — «стоя»), возможен override в шаблоне эффекта.
+          const placement = getSpritePlacement(
+            overlay.type,
+            overlay.layer === 'aboveGround' ? 'tileEffectAboveGround' : 'tileEffectCover',
+          );
+          applyPlacement(sprite, x, y, placement);
           sprite.visible = true;
 
           if (!getTextureSync(path)) {

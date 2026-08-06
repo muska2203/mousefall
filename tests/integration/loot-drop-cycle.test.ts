@@ -17,7 +17,6 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
     abilities: [],
     lootTable: [],
     lootDropTable: [{ count: 1, weight: 1 }],
-    renderScale: 1,
     aiSightRadius: 6,
     aiStrategyId: 'hunter',
     maxAp: 1,

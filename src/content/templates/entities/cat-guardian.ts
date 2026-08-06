@@ -47,5 +47,5 @@ export const catGuardian = {
       "weight": 2
     }
   ],
-  "renderScale": 1.2
+  "placement": {"scale": 1.2}
 } satisfies EntityTemplateInput;

@@ -37,7 +37,7 @@ describe('Шаблон босса cat_guardian', () => {
       armor: expect.any(String),
     });
     expect(Array.isArray(parsed.abilities)).toBe(true);
-    expect(typeof parsed.renderScale).toBe('number');
+    expect(parsed.placement?.scale).toBe(1.2);
   });
 
   it('имеет валидное оружие и броню с корректной структурой', () => {

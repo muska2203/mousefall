@@ -62,8 +62,7 @@ describe('GameSession — ViewModel коллекции реликвий', () => 
       'relic_salamander_heart_fire_infusion',
       'relic_salamander_heart_fire_vulnerability',
     ]);
-    expect(relic?.effects[0]?.name).toBe('Огненное насыщение');
-    expect(relic?.effects[0]?.description).toContain('огненными');
+    expect(relic?.effects[0]?.text).toContain('огненными');
     expect(relic?.flavorText).toContain('уголёк');
     expect(relic?.icon).toBe('/assets/relics/relic_salamander_heart.png');
     expect(relic?.fallback).toBe('🔥');
@@ -81,8 +80,7 @@ describe('GameSession — ViewModel коллекции реликвий', () => 
       'stat_maxHp',
     ]);
     const modifier = relic?.effects[1];
-    expect(modifier?.name).toBe('Макс. здоровье');
-    expect(modifier?.description).toBe('−5');
+    expect(modifier?.text).toBe('Макс. здоровье: −5');
   });
 
   it('пропускает реликвии с неизвестным шаблоном', () => {

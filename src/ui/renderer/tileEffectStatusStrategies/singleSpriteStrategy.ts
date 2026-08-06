@@ -6,7 +6,8 @@
 
 import {Sprite, Texture} from 'pixi.js';
 import type {TileEffectOverlay} from '@presentation/displayState/types';
-import {TILE_EFFECT_STATUS_OFFSET_Y_FACTOR, TILE_EFFECT_STATUS_SPRITE_SCALE, TILE_HEIGHT, TILE_SIZE,} from '@utils/constants';
+import {getSpritePlacement} from '@presentation/spritePlacementResolver';
+import {applyPlacement} from '../spritePlacement';
 import {getTileEffectSprite} from '../spriteRegistry';
 import {getTexture, getTextureSync} from '../TextureCache';
 import type {TileEffectStatusStrategy} from './types';
@@ -28,20 +29,16 @@ export class SingleSpriteStrategy implements TileEffectStatusStrategy {
     let sprite = this.sprites.get(key);
     if (!sprite) {
       sprite = new Sprite(texture);
-      sprite.anchor.set(0.5, 1);
       this.sprites.set(key, sprite);
       this.container.addChild(sprite);
     } else if (texture !== Texture.EMPTY && sprite.texture !== texture) {
       sprite.texture = texture;
     }
 
-    const size = TILE_SIZE * TILE_EFFECT_STATUS_SPRITE_SCALE;
-    const py = y * TILE_HEIGHT + TILE_HEIGHT * TILE_EFFECT_STATUS_OFFSET_Y_FACTOR;
-    sprite.zIndex = py;
-    sprite.x = x * TILE_SIZE + TILE_SIZE / 2;
-    sprite.y = py;
-    sprite.width = size;
-    sprite.height = size;
+    // Размещение значка статуса: дефолт категории, возможен override в шаблоне статуса.
+    const placement = getSpritePlacement(overlay.type, 'tileEffectStatus');
+    const anchor = applyPlacement(sprite, x, y, placement);
+    sprite.zIndex = anchor.y;
     sprite.visible = true;
 
     if (!getTextureSync(path)) {
