@@ -122,9 +122,6 @@ describe('GameSimulation.getPlayerStats', () => {
     expect(stats.effectiveStats.dex).toBe(3);
     expect(stats.damage).toBeGreaterThan(0);
     expect(stats.armor).toBe(4);
-    expect(stats.dodgeChance).toBeCloseTo(0.06); // dex 3 * 0.02
-    expect(stats.accuracy).toBeCloseTo(0.045); // dex 3 * 0.015
-    expect(stats.critChance).toBeCloseTo(0.03); // dex 3 * 0.01
     expect(stats.critMultiplier).toBe(1.5);
     expect(stats.maxAp).toBe(sim.getState().player.maxAp);
   });

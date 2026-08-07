@@ -7,11 +7,11 @@ export const rules: Record<string, ContentText> = {
   },
   weapon_poison_on_hit: {
     name: 'Ядовитое лезвие',
-    description: 'Атаки колющим или рубящим уроном имеют 40% шанс наложить яд на 3 хода.',
+    description: 'Атаки колющим или рубящим уроном накладывают яд на 3 хода.',
   },
   weapon_blunt_daze: {
     name: 'Оглушающий удар',
-    description: 'Атаки тупым уроном имеют 25% шанс оглушить цель на 1 ход.',
+    description: 'Атаки тупым уроном оглушают цель на 1 ход.',
   },
   armor_spiked_thorns: {
     name: 'Шипы',

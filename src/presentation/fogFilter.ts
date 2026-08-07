@@ -36,14 +36,6 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     case 'ENTITY_DIED': {
       return isPosVisible(event.position, state);
     }
-    case 'ENTITY_MISSED': {
-      const attacker = state.entities.get(event.attackerId);
-      const target = state.entities.get(event.targetId);
-      return (
-        (attacker !== undefined && isPosVisible(attacker, state)) ||
-        (target !== undefined && isPosVisible(target, state))
-      );
-    }
     case 'ABILITY_USED': {
       return (
         isPosVisible(event.from, state) ||

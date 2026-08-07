@@ -156,9 +156,6 @@ export interface StatActor {
   equippedAmuletId: string | null;
   /** Базовое значение maxHp (для врагов — из шаблона; для игрока не используется). */
   baseMaxHp?: number;
-  dodgeChance: number;
-  accuracy: number;
-  critChance: number;
   critMultiplier: number;
 }
 
@@ -188,12 +185,6 @@ export interface PlayerEntity extends Actor, StatusEffectHolder, TemplateIdHolde
   baseStats: BaseStats;
   /** Активные модификаторы (баффы, дебаффы, эффекты экипировки). */
   statModifiers: StatModifier[];
-  /** Шанс уклонения (derived-кэш). */
-  dodgeChance: number;
-  /** Точность (derived-кэш). */
-  accuracy: number;
-  /** Шанс критического удара (derived-кэш). */
-  critChance: number;
   /** Множитель критического урона (derived-кэш). */
   critMultiplier: number;
   /** Активные способности персонажа. */
@@ -219,12 +210,6 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   equippedArmorId: string | null;
   /** ID экипированного амулета или null. */
   equippedAmuletId: string | null;
-  /** Шанс уклонения (derived-кэш). */
-  dodgeChance: number;
-  /** Точность (derived-кэш). */
-  accuracy: number;
-  /** Шанс критического удара (derived-кэш). */
-  critChance: number;
   /** Множитель критического урона (derived-кэш). */
   critMultiplier: number;
   /** Активные способности врага (innate + от экипировки). */
@@ -486,9 +471,6 @@ export type PlayerStatsSnapshot = {
   effectiveStats: { str: number; dex: number; int: number; vit: number };
   damage: number;
   armor: number;
-  dodgeChance: number;
-  accuracy: number;
-  critChance: number;
   critMultiplier: number;
 };
 

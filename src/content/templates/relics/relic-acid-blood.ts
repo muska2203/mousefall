@@ -16,5 +16,5 @@ export const relicAcidBlood = {
   "grantedAbilities": [],
   "icon": "/assets/relics/relic_acid_blood.png",
   "fallback": "🩸",
-  "rarity": "rare"
+  "rarity": "common"
 } satisfies RelicTemplateInput;

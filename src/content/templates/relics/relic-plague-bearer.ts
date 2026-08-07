@@ -11,5 +11,5 @@ export const relicPlagueBearer = {
   "grantedAbilities": [],
   "icon": "/assets/relics/relic_plague_bearer.png",
   "fallback": "☠️",
-  "rarity": "rare"
+  "rarity": "common"
 } satisfies RelicTemplateInput;

@@ -163,7 +163,7 @@ const ConsumableEffectSchema = z.object({
 
 /** Модификатор характеристики: применяется экипировкой и реликвиями. */
 const StatModifierEntrySchema = z.object({
-  stat: z.enum(['damage', 'armor', 'maxHp', 'dodgeChance', 'accuracy', 'critChance', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
+  stat: z.enum(['damage', 'armor', 'maxHp', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
   value: z.number(),
   op: z.enum(['add', 'multiply']),
 });

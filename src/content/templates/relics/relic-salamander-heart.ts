@@ -11,5 +11,5 @@ export const relicSalamanderHeart = {
   "grantedAbilities": [],
   "icon": "/assets/relics/relic_salamander_heart.png",
   "fallback": "🔥",
-  "rarity": "rare"
+  "rarity": "common"
 } satisfies RelicTemplateInput;

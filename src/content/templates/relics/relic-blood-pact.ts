@@ -11,5 +11,5 @@ export const relicBloodPact = {
   "grantedAbilities": [],
   "icon": "/assets/relics/relic_blood_pact.png",
   "fallback": "📜",
-  "rarity": "rare"
+  "rarity": "common"
 } satisfies RelicTemplateInput;

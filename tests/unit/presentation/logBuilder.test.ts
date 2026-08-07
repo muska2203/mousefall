@@ -112,6 +112,21 @@ describe('logBuilder новые события content rules', () => {
     expect(entry!.variant).toBe('info');
   });
 
+  it('ENTITY_DAMAGED с тегом crit формирует строку крита на русском', () => {
+    const event: GameEvent = {
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
+      targetId: 'player',
+      sourceEntityId: 'enemy',
+      damage: 9,
+      position: { x: 5, y: 5 },
+      tags: ['damage.physical.slashing', 'crit'],
+    };
+    const entry = gameEventToLog(makeBaseState(), event, 'ru');
+    expect(entry).not.toBeNull();
+    expect(entry!.text).toBe('Герой получил 9 урона (крит!)');
+    expect(entry!.variant).toBe('bad');
+  });
+
   it('ENTITY_COLLIDED формирует корректную строку на русском', () => {
     const event: GameEvent = {
       type: 'ENTITY_COLLIDED', isFieldEvent: true,
@@ -143,18 +158,6 @@ describe('logBuilder новые события content rules', () => {
     const entry = gameEventToLog(makeBaseState(), event, 'ru');
     expect(entry).not.toBeNull();
     expect(entry!.text).toBe('Герой оттолкнут');
-    expect(entry!.variant).toBe('info');
-  });
-
-  it('ENTITY_MISSED формирует корректную строку на русском', () => {
-    const event: GameEvent = {
-      type: 'ENTITY_MISSED', isFieldEvent: true,
-      attackerId: 'player',
-      targetId: 'player',
-    };
-    const entry = gameEventToLog(makeBaseState(), event, 'ru');
-    expect(entry).not.toBeNull();
-    expect(entry!.text).toBe('Герой промахнулся по Герой');
     expect(entry!.variant).toBe('info');
   });
 
@@ -202,11 +205,14 @@ describe('logBuilder новые события content rules', () => {
     } as GameEvent, 'en');
     expect(displaced!.text).toBe('Hero was pushed');
 
-    const missed = gameEventToLog(state, {
-      type: 'ENTITY_MISSED', isFieldEvent: true,
-      attackerId: 'player',
+    const crit = gameEventToLog(state, {
+      type: 'ENTITY_DAMAGED', isFieldEvent: true,
       targetId: 'player',
+      sourceEntityId: 'enemy',
+      damage: 9,
+      position: { x: 5, y: 5 },
+      tags: ['damage.physical.slashing', 'crit'],
     } as GameEvent, 'en');
-    expect(missed!.text).toBe('Hero missed Hero');
+    expect(crit!.text).toBe('Hero took 9 damage (crit!)');
   });
 });

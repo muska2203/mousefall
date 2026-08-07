@@ -36,6 +36,8 @@ export type RuleContext = {
   eventDuration: number | null;
   eventStacks: number | null;
   eventMaxHp: number | null;
+  /** Множитель крита источника урона (только для DAMAGE-интентов; из derived-кэша актора). */
+  sourceCritMultiplier: number | null;
 };
 
 /**
@@ -60,6 +62,19 @@ function getEventTags(event: GameEvent | Intent): GameplayTag[] {
 }
 
 /**
+ * Множитель крита источника урона из derived-кэша актора.
+ * Читается напрямую из сущности (а не через effective-stats), чтобы не тянуть
+ * контент-реестр и не создавать циклический импорт; кэш актуализируется
+ * в recalculateActorStats().
+ */
+function getSourceCritMultiplier(state: GameState, sourceEntityId: EntityId | null): number | null {
+  if (sourceEntityId === null) return null;
+  const entity = findEntity(state, sourceEntityId);
+  if (entity === undefined || !('critMultiplier' in entity)) return null;
+  return entity.critMultiplier;
+}
+
+/**
  * Строит RuleContext по состоянию и событию/интенту.
  */
 export function buildRuleContext(state: GameState, event: GameEvent | Intent): RuleContext {
@@ -79,6 +94,7 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     eventDuration: null,
     eventStacks: null,
     eventMaxHp: null,
+    sourceCritMultiplier: null,
   };
 
   switch (event.type) {
@@ -229,6 +245,7 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
       base.sourceEntityId = event.sourceEntityId;
       base.targetEntityId = event.entityId;
       base.eventDamage = event.damage;
+      base.sourceCritMultiplier = getSourceCritMultiplier(state, event.sourceEntityId);
       break;
     }
 

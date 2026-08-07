@@ -4,6 +4,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {buildRuleContext, type RuleContext} from '../../../../src/simulation/content-rules/rule-context';
+import {resolveParametrizedValue} from '../../../../src/simulation/content-rules/value-resolver';
 import {makeEnemy, makePlayer, makeStateWithPlayerAndEntity,} from '../../../fixtures/gameState';
 import type {GameEvent, Intent, StatusEffect, TileEffects} from '../../../../src/simulation/core-types';
 
@@ -429,6 +430,36 @@ describe('buildRuleContext', () => {
         eventDamage: 15,
         eventTags: ['damage.physical.piercing'],
       });
+    });
+
+    it('DAMAGE: заполняет sourceCritMultiplier из derived-кэша источника', () => {
+      const intent: Intent = {
+        type: 'DAMAGE',
+        entityId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 15,
+        tags: ['damage.physical.piercing'],
+      };
+
+      const ctx = buildRuleContext(state, intent);
+      expect(ctx.sourceCritMultiplier).toBe(player.critMultiplier);
+
+      // context-форма резолвера читает поле напрямую — изменений в value-resolver не требуется.
+      expect(
+        resolveParametrizedValue({ type: 'context', field: 'sourceCritMultiplier' }, ctx),
+      ).toBe(player.critMultiplier);
+    });
+
+    it('DAMAGE без источника: sourceCritMultiplier равен null', () => {
+      const intent: Intent = {
+        type: 'DAMAGE',
+        entityId: enemy.id,
+        sourceEntityId: null,
+        damage: 15,
+        tags: ['damage.physical.piercing'],
+      };
+
+      expect(buildRuleContext(state, intent).sourceCritMultiplier).toBeNull();
     });
 
     it('PUSH: заполняет source, target и позицию цели', () => {

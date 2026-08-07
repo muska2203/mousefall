@@ -65,21 +65,6 @@ export function getBaseArmor(actor: StatActor): number {
 // Вторичные характеристики (рассчитываются для StatActor)
 // ─────────────────────────────────────────────
 
-export function getBaseDodgeChance(actor: StatActor): number {
-  const s = getEffectiveBaseStats(actor);
-  return s.dex * 0.02;
-}
-
-export function getBaseAccuracy(actor: StatActor): number {
-  const s = getEffectiveBaseStats(actor);
-  return s.dex * 0.015;
-}
-
-export function getBaseCritChance(actor: StatActor): number {
-  const s = getEffectiveBaseStats(actor);
-  return s.dex * 0.01;
-}
-
 export function getBaseCritMultiplier(_actor: StatActor): number {
   return BASE_CRIT_MULTIPLIER;
 }

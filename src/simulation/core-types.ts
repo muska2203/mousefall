@@ -84,7 +84,7 @@ export interface BaseStats {
 export type StatModifierOp = 'add' | 'multiply';
 
 export type StatModifier = {
-  stat: 'damage' | 'armor' | 'maxHp' | 'dodgeChance' | 'accuracy' | 'critChance' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
+  stat: 'damage' | 'armor' | 'maxHp' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
   value: number;
   op: StatModifierOp;
   source: string;
@@ -507,7 +507,6 @@ export type GameEvent =
   | EntityDamagedEvent
   | TileDamagedEvent
   | EntityDiedEvent
-  | EntityMissedEvent
   | ItemPickedUpEvent
   | ItemDroppedEvent
   | ItemUsedEvent
@@ -567,8 +566,6 @@ export type EntityDamagedEvent = GameEventBase & { type: 'ENTITY_DAMAGED'; targe
 export type TileDamagedEvent = GameEventBase & { type: 'TILE_DAMAGED'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 
 export type EntityDiedEvent = GameEventBase & { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
-
-export type EntityMissedEvent = GameEventBase & { type: 'ENTITY_MISSED'; attackerId: EntityId; targetId: EntityId };
 
 export type ItemPickedUpEvent = GameEventBase & { type: 'ITEM_PICKED_UP'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 

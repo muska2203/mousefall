@@ -11,5 +11,5 @@ export const relicOpportunist = {
   "grantedAbilities": [],
   "icon": "/assets/relics/relic_opportunist.png",
   "fallback": "🗡",
-  "rarity": "rare"
+  "rarity": "common"
 } satisfies RelicTemplateInput;

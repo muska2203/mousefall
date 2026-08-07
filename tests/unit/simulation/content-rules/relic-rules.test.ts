@@ -1,39 +1,263 @@
 /**
- * Тесты правил реликвий стартового пула (roadmap 0.6).
+ * Тесты механик правил реликвий (roadmap 0.6).
  *
- * Каждая реликвия — «плюс» и «минус»; проверяются оба:
+ * Движок проверяется на тестовых правилах, определённых в этом файле:
  * - правила `applyStatus`/`heal` — через `runContentRuleReactions`;
  * - правила `modifyDamage` — через `applyIntentModifiers` (слой исполнения DAMAGE-интента);
- * - минусы через `statModifiers` (acid_blood, scavenger) — через реальный контент и GRANT_RELIC;
- * - стакаемость выключена: повторная выдача той же реликвии отклоняется.
+ * - выдача реликвии (GRANT_RELIC): нестакаемость и `statModifiers` — на синтетических
+ *   шаблонах в собственном реестре.
+ *
+ * Числа в assert'ах происходят из фикстур теста, а не из `rules.ts`/шаблонов,
+ * поэтому балансные правки реального контента тест не ломают.
+ * Тестовые правила повторяют форму реальных правил реликвий (eventRole,
+ * условия по тегам/статусам), но с собственными id и значениями.
  */
 
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
-import {CONTENT_RULES} from '../../../../src/simulation/content-rules/rules';
 import {runContentRuleReactions} from '../../../../src/simulation/content-rules/reaction/content-rule-reaction';
 import {applyIntentModifiers} from '../../../../src/simulation/content-rules/modifiers/apply-intent-modifiers';
 import {buildRuleContext} from '../../../../src/simulation/content-rules/rule-context';
+import {setWorldContentRulesOverride} from '../../../../src/simulation/content-rules/rules';
 import {executeGrantRelicIntent} from '../../../../src/simulation/systems/intents/grant-relic-intent-executor';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import type {GameEvent, Intent} from '../../../../src/simulation/core-types';
-import type {ActiveRule} from '../../../../src/simulation/content-rules/types';
+import type {
+  ActiveRule,
+  ContentRule,
+  WorldContentRule,
+} from '../../../../src/simulation/content-rules/types';
 import type {GameState} from '../../../../src/simulation/types';
+import type {RelicTemplate} from '../../../../src/content/schemas';
 import {
+  createObjectContent,
   makeEnemy,
   makeGameState,
   makePlayer,
   makeStateWithPlayer,
   makeStateWithPlayerAndEntity,
 } from '../../../fixtures/gameState';
-import {buildContent} from '../../../../src/content/templates';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 
-/** Достаёт правило из CONTENT_RULES и оборачивает в ActiveRule владельца-реликвии. */
-function relicRule(id: string): ActiveRule {
-  const rule = CONTENT_RULES.find((r) => r.id === id);
-  if (!rule) {
-    throw new Error(`Правило не найдено в CONTENT_RULES: ${id}`);
-  }
+// ─────────────────────────────────────────────
+// Тестовые числа (намеренно не совпадают с балансом реальных правил)
+// ─────────────────────────────────────────────
+
+const TEST_VULNERABILITY_MULTIPLIER = 1.5;
+const TEST_PRICE_MULTIPLIER = 1.5;
+const TEST_RAMP_UP_PENALTY = -2;
+const TEST_CLUMSY_PENALTY = -2;
+const TEST_DEBUFF_BONUS = 4;
+const TEST_HESITANT_PENALTY = -2;
+const TEST_UNTAGGED_BONUS = 5;
+const TEST_POISON_ON_HIT_DURATION = 4;
+const TEST_POISON_ATTACKER_DURATION = 5;
+const TEST_SPREAD_DURATION = 4;
+const TEST_SELF_POISON_DURATION = 2;
+const TEST_DAZE_DURATION = 2;
+const TEST_HEAL_AMOUNT = 7;
+const TEST_CRIT_MULTIPLIER = 2;
+
+const BASE_DAMAGE = 10;
+
+// ─────────────────────────────────────────────
+// Тестовые правила: повторяют механики реальных правил реликвий
+// ─────────────────────────────────────────────
+
+/** Плюс: урон оружия владельца получает дополнительный тег (огненная инфузия). */
+const testInfusionRule: ContentRule = {
+  id: 'test_relic_fire_infusion',
+  trigger: {event: 'DAMAGE', tags: ['delivery.weapon']},
+  conditions: [{type: 'eventRole', role: 'source'}],
+  effect: {type: 'modifyDamage', op: 'add', value: 0, addTags: ['damage.magical.fire']},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Минус: входящий урон по тегу по владельцу умножается. */
+const testVulnerabilityRule: ContentRule = {
+  id: 'test_relic_fire_vulnerability',
+  trigger: {event: 'DAMAGE', tags: ['damage.magical.fire']},
+  conditions: [{type: 'eventRole', role: 'target'}],
+  effect: {type: 'modifyDamage', op: 'multiply', value: TEST_VULNERABILITY_MULTIPLIER},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Плюс: удар оружия накладывает статус на цель. */
+const testPoisonOnHitRule: ContentRule = {
+  id: 'test_relic_poison_on_hit',
+  trigger: {event: 'ENTITY_DAMAGED', tags: ['delivery.weapon']},
+  conditions: [{type: 'eventRole', role: 'source'}],
+  effect: {type: 'applyStatus', statusType: 'poisoned', duration: TEST_POISON_ON_HIT_DURATION},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Минус: штраф к урону по цели без статуса. */
+const testRampUpRule: ContentRule = {
+  id: 'test_relic_ramp_up',
+  trigger: {event: 'DAMAGE', tags: ['delivery.weapon']},
+  conditions: [
+    {type: 'eventRole', role: 'source'},
+    {type: 'not', condition: {type: 'hasStatus', statusType: 'poisoned', subject: 'target'}},
+  ],
+  effect: {type: 'modifyDamage', op: 'add', value: TEST_RAMP_UP_PENALTY},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Плюс: атакующий владельца в ближнем бою получает статус. */
+const testPoisonAttackerRule: ContentRule = {
+  id: 'test_relic_poison_attacker',
+  trigger: {event: 'ENTITY_DAMAGED', tags: ['attack.melee']},
+  conditions: [{type: 'eventRole', role: 'target'}],
+  effect: {type: 'applyStatus', statusType: 'poisoned', duration: TEST_POISON_ATTACKER_DURATION},
+  target: {type: 'eventSource'},
+  priority: 0,
+};
+
+/** Плюс: удар по цели со статусом разносит статус на врагов в радиусе. */
+const testSpreadRule: ContentRule = {
+  id: 'test_relic_plague_spread',
+  trigger: {event: 'ENTITY_DAMAGED', tags: ['delivery.weapon']},
+  conditions: [
+    {type: 'eventRole', role: 'source'},
+    {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+  ],
+  effect: {type: 'applyStatus', statusType: 'poisoned', duration: TEST_SPREAD_DURATION},
+  target: {type: 'allInRadius', radius: 1, center: 'eventPosition', faction: 'enemy', excludeSelf: true},
+  priority: 0,
+};
+
+/** Минус: при переносе заразы владелец получает статус сам. */
+const testSelfPoisonRule: ContentRule = {
+  id: 'test_relic_self_poison',
+  trigger: {event: 'ENTITY_DAMAGED', tags: ['delivery.weapon']},
+  conditions: [
+    {type: 'eventRole', role: 'source'},
+    {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+  ],
+  effect: {type: 'applyStatus', statusType: 'poisoned', duration: TEST_SELF_POISON_DURATION},
+  target: {type: 'self'},
+  priority: 0,
+};
+
+/** Плюс: дробящий удар оружия ошеломляет цель. */
+const testDazeRule: ContentRule = {
+  id: 'test_relic_blunt_daze',
+  trigger: {event: 'ENTITY_DAMAGED', tags: ['damage.physical.blunt', 'delivery.weapon']},
+  conditions: [{type: 'eventRole', role: 'source'}],
+  effect: {type: 'applyStatus', statusType: 'dazed', duration: TEST_DAZE_DURATION},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Минус: штраф к урону без нужного тега. */
+const testClumsyRule: ContentRule = {
+  id: 'test_relic_clumsy',
+  trigger: {event: 'DAMAGE', tags: ['delivery.weapon']},
+  conditions: [
+    {type: 'eventRole', role: 'source'},
+    {type: 'not', condition: {type: 'hasTag', tag: 'damage.physical.blunt'}},
+  ],
+  effect: {type: 'modifyDamage', op: 'add', value: TEST_CLUMSY_PENALTY},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Набор статусов-ослаблений для тестовых правил бонуса/штрафа. */
+const debuffConditions = [
+  {type: 'hasStatus', statusType: 'dazed', subject: 'target'},
+  {type: 'hasStatus', statusType: 'stunned', subject: 'target'},
+  {type: 'hasStatus', statusType: 'poisoned', subject: 'target'},
+] as const;
+
+/** Плюс: бонус к урону по ослабленной цели. */
+const testDebuffBonusRule: ContentRule = {
+  id: 'test_relic_debuff_bonus',
+  trigger: {event: 'DAMAGE', tags: ['delivery.weapon']},
+  conditions: [
+    {type: 'eventRole', role: 'source'},
+    {type: 'or', conditions: [...debuffConditions]},
+  ],
+  effect: {type: 'modifyDamage', op: 'add', value: TEST_DEBUFF_BONUS},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Минус: штраф к урону по цели без ослаблений. */
+const testHesitantRule: ContentRule = {
+  id: 'test_relic_hesitant',
+  trigger: {event: 'DAMAGE', tags: ['delivery.weapon']},
+  conditions: [
+    {type: 'eventRole', role: 'source'},
+    {type: 'not', condition: {type: 'or', conditions: [...debuffConditions]}},
+  ],
+  effect: {type: 'modifyDamage', op: 'add', value: TEST_HESITANT_PENALTY},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Плюс: бонус ко всему исходящему урону без фильтра тегов. */
+const testUntaggedBonusRule: ContentRule = {
+  id: 'test_relic_untagged_power',
+  trigger: {event: 'DAMAGE'},
+  conditions: [{type: 'eventRole', role: 'source'}],
+  effect: {type: 'modifyDamage', op: 'add', value: TEST_UNTAGGED_BONUS},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Минус: любой входящий урон по владельцу умножается. */
+const testPriceRule: ContentRule = {
+  id: 'test_relic_incoming_price',
+  trigger: {event: 'DAMAGE'},
+  conditions: [{type: 'eventRole', role: 'target'}],
+  effect: {type: 'modifyDamage', op: 'multiply', value: TEST_PRICE_MULTIPLIER},
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/** Плюс: поднятие предмета лечит владельца. */
+const testHealOnPickupRule: ContentRule = {
+  id: 'test_relic_heal_on_pickup',
+  trigger: {event: 'ITEM_PICKED_UP'},
+  conditions: [{type: 'eventRole', role: 'source'}],
+  effect: {type: 'heal', amount: TEST_HEAL_AMOUNT},
+  target: {type: 'self'},
+  priority: 0,
+};
+
+/**
+ * Тестовое мировое правило крита по ослабленной цели.
+ * Замещает реальные мировые правила в тесте бонуса по ослаблённым,
+ * чтобы ожидаемые числа не зависели от баланса мировых правил.
+ */
+const testWorldCritRule: WorldContentRule = {
+  id: 'test_world_crit_on_dazed_stunned',
+  trigger: {event: 'DAMAGE'},
+  conditions: [
+    {
+      type: 'or',
+      conditions: [
+        {type: 'hasStatus', statusType: 'dazed', subject: 'target'},
+        {type: 'hasStatus', statusType: 'stunned', subject: 'target'},
+      ],
+    },
+  ],
+  effect: {type: 'modifyDamage', op: 'multiply', value: TEST_CRIT_MULTIPLIER, addTags: ['crit']},
+  target: {type: 'eventTarget'},
+  priority: 0,
+  ownerContext: {type: 'world'},
+  worldLayer: 'global',
+};
+
+// ─────────────────────────────────────────────
+// Хелперы
+// ─────────────────────────────────────────────
+
+/** Оборачивает тестовое правило в ActiveRule владельца-реликвии. */
+function relicRule(rule: ContentRule): ActiveRule {
   return { ...rule, ownerContext: { type: 'entity', entityId: 'relic_1' } };
 }
 
@@ -49,7 +273,7 @@ function makeDamageIntent(
     type: 'DAMAGE',
     entityId: 'enemy_test_1',
     sourceEntityId: 'player',
-    damage: 10,
+    damage: BASE_DAMAGE,
     tags: ['delivery.weapon'],
     ...overrides,
   };
@@ -78,8 +302,8 @@ function makeDamagedEvent(
 }
 
 describe('правила реликвий — modifyDamage', () => {
-  it('salamander_heart (плюс): урон оружия владельца получает тег damage.magical.fire', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_salamander_heart_fire_infusion')] });
+  it('инфузия (плюс): урон оружия владельца получает тег damage.magical.fire', () => {
+    const player = makePlayer({ activeRules: [relicRule(testInfusionRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -87,13 +311,13 @@ describe('правила реликвий — modifyDamage', () => {
       tags: ['delivery.weapon', 'damage.physical.slashing'],
     }));
 
-    expect(result.damage).toBe(10);
+    expect(result.damage).toBe(BASE_DAMAGE);
     expect(result.tags).toContain('damage.magical.fire');
     expect(result.tags).toContain('damage.physical.slashing');
   });
 
-  it('salamander_heart (плюс): не срабатывает на входящий урон (владелец — target)', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_salamander_heart_fire_infusion')] });
+  it('инфузия (плюс): не срабатывает на входящий урон (владелец — target)', () => {
+    const player = makePlayer({ activeRules: [relicRule(testInfusionRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -105,8 +329,8 @@ describe('правила реликвий — modifyDamage', () => {
     expect(result.tags).not.toContain('damage.magical.fire');
   });
 
-  it('salamander_heart (минус): входящий огонь по владельцу ×1.25', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_salamander_heart_fire_vulnerability')] });
+  it('уязвимость (минус): входящий огонь по владельцу умножается', () => {
+    const player = makePlayer({ activeRules: [relicRule(testVulnerabilityRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -115,76 +339,88 @@ describe('правила реликвий — modifyDamage', () => {
       sourceEntityId: enemy.id,
       tags: ['damage.magical.fire'],
     }));
-    expect(incoming.damage).toBeCloseTo(12.5, 10);
+    expect(incoming.damage).toBeCloseTo(BASE_DAMAGE * TEST_VULNERABILITY_MULTIPLIER, 10);
 
     // Исходящий огонь владельца не усиливается.
     const outgoing = runDamageModifiers(state, makeDamageIntent({
       tags: ['delivery.weapon', 'damage.magical.fire'],
     }));
-    expect(outgoing.damage).toBe(10);
+    expect(outgoing.damage).toBe(BASE_DAMAGE);
   });
 
-  it('venom_gland (минус): -1 к урону по неотравленной цели, по отравленной — без штрафа', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_venom_gland_ramp_up')] });
+  it('разгон (минус): штраф к урону по цели без статуса, по цели со статусом — без штрафа', () => {
+    const player = makePlayer({ activeRules: [relicRule(testRampUpRule)] });
     const cleanEnemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, cleanEnemy);
 
-    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(9);
+    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(BASE_DAMAGE + TEST_RAMP_UP_PENALTY);
 
     cleanEnemy.statusEffects.push({ type: 'poisoned', duration: 2, value: 0, statModifiers: null });
-    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(10);
+    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(BASE_DAMAGE);
   });
 
-  it('thunderhead (минус): -1 к урону недробящим оружием, дробящее — без штрафа', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_thunderhead_clumsy')] });
+  it('неуклюжесть (минус): штраф к урону без дробящего тега, дробящее — без штрафа', () => {
+    const player = makePlayer({ activeRules: [relicRule(testClumsyRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
     expect(runDamageModifiers(state, makeDamageIntent({
       tags: ['delivery.weapon', 'damage.physical.slashing'],
-    })).damage).toBe(9);
+    })).damage).toBe(BASE_DAMAGE + TEST_CLUMSY_PENALTY);
     expect(runDamageModifiers(state, makeDamageIntent({
       tags: ['delivery.weapon', 'damage.physical.blunt'],
-    })).damage).toBe(10);
+    })).damage).toBe(BASE_DAMAGE);
   });
 
-  it('opportunist (плюс): +3 к урону по ослабленной цели (dazed/stunned/poisoned)', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_opportunist_bonus')] });
-    const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
-    const state = makeStateWithPlayerAndEntity(player, enemy);
+  it('бонус по ослабленным (плюс): срабатывает на dazed/stunned/poisoned', () => {
+    // Реальные мировые правила замещены тестовым критом, чтобы ожидаемые
+    // числа складывались только из фикстур этого файла.
+    setWorldContentRulesOverride([testWorldCritRule]);
+    try {
+      const player = makePlayer({ activeRules: [relicRule(testDebuffBonusRule)] });
+      const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
 
-    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(10);
+      expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(BASE_DAMAGE);
 
-    for (const statusType of ['dazed', 'stunned', 'poisoned'] as const) {
-      enemy.statusEffects = [{ type: statusType, duration: 1, value: 0, statModifiers: null }];
-      expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(13);
+      for (const statusType of ['dazed', 'stunned', 'poisoned'] as const) {
+        enemy.statusEffects = [{ type: statusType, duration: 1, value: 0, statModifiers: null }];
+        // По dazed/stunned дополнительно срабатывает тестовое мировое правило
+        // крита: (BASE + бонус) × TEST_CRIT_MULTIPLIER; по poisoned — только бонус.
+        const expected = statusType === 'poisoned'
+          ? BASE_DAMAGE + TEST_DEBUFF_BONUS
+          : (BASE_DAMAGE + TEST_DEBUFF_BONUS) * TEST_CRIT_MULTIPLIER;
+        expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(expected);
+      }
+    } finally {
+      setWorldContentRulesOverride(null);
     }
   });
 
-  it('opportunist (минус): -1 к урону по полноценному противнику, по ослабленному — без штрафа', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_opportunist_hesitant')] });
+  it('нерешительность (минус): штраф по цели без ослаблений, по ослаблённой — без штрафа', () => {
+    const player = makePlayer({ activeRules: [relicRule(testHesitantRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
-    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(9);
+    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(BASE_DAMAGE + TEST_HESITANT_PENALTY);
 
     enemy.statusEffects.push({ type: 'poisoned', duration: 1, value: 0, statModifiers: null });
-    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(10);
+    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(BASE_DAMAGE);
   });
 
-  it('blood_pact (плюс): +4 ко всему исходящему урону без фильтра тегов', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_blood_pact_power')] });
+  it('сила без фильтра тегов (плюс): бонус ко всему исходящему урону', () => {
+    const player = makePlayer({ activeRules: [relicRule(testUntaggedBonusRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
-    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(14);
+    expect(runDamageModifiers(state, makeDamageIntent()).damage).toBe(BASE_DAMAGE + TEST_UNTAGGED_BONUS);
     expect(runDamageModifiers(state, makeDamageIntent({
       tags: ['delivery.ability', 'damage.magical.fire'],
-    })).damage).toBe(14);
+    })).damage).toBe(BASE_DAMAGE + TEST_UNTAGGED_BONUS);
   });
 
-  it('blood_pact (минус): входящий урон по владельцу ×1.25', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_blood_pact_price')] });
+  it('цена (минус): входящий урон по владельцу умножается', () => {
+    const player = makePlayer({ activeRules: [relicRule(testPriceRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -193,16 +429,16 @@ describe('правила реликвий — modifyDamage', () => {
       sourceEntityId: enemy.id,
       tags: [],
     }));
-    expect(incoming.damage).toBeCloseTo(12.5, 10);
+    expect(incoming.damage).toBeCloseTo(BASE_DAMAGE * TEST_PRICE_MULTIPLIER, 10);
 
     // Исходящий урон владельца не усиливается минусом.
-    expect(runDamageModifiers(state, makeDamageIntent({ tags: [] })).damage).toBe(10);
+    expect(runDamageModifiers(state, makeDamageIntent({ tags: [] })).damage).toBe(BASE_DAMAGE);
   });
 });
 
 describe('правила реликвий — applyStatus / heal', () => {
-  it('venom_gland (плюс): удар оружия отравляет цель на 3 хода', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_venom_gland_poison_on_hit')] });
+  it('яд при ударе (плюс): удар оружия отравляет цель на длительность из фикстуры', () => {
+    const player = makePlayer({ activeRules: [relicRule(testPoisonOnHitRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -212,12 +448,12 @@ describe('правила реликвий — applyStatus / heal', () => {
     expect(intents[0]).toMatchObject({
       type: 'APPLY_STATUS',
       entityId: enemy.id,
-      status: { type: 'poisoned', duration: 3 },
+      status: { type: 'poisoned', duration: TEST_POISON_ON_HIT_DURATION },
     });
   });
 
-  it('venom_gland (плюс): не срабатывает на входящий урон (владелец — target)', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_venom_gland_poison_on_hit')] });
+  it('яд при ударе (плюс): не срабатывает на входящий урон (владелец — target)', () => {
+    const player = makePlayer({ activeRules: [relicRule(testPoisonOnHitRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -230,8 +466,8 @@ describe('правила реликвий — applyStatus / heal', () => {
     expect(intents).toHaveLength(0);
   });
 
-  it('acid_blood (плюс): атакующий владельца в ближнем бою получает отравление на 2 хода', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_acid_blood_poison_attacker')] });
+  it('яд атакующему (плюс): атакующий владельца в ближнем бою получает отравление', () => {
+    const player = makePlayer({ activeRules: [relicRule(testPoisonAttackerRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -246,12 +482,12 @@ describe('правила реликвий — applyStatus / heal', () => {
     expect(intents[0]).toMatchObject({
       type: 'APPLY_STATUS',
       entityId: enemy.id,
-      status: { type: 'poisoned', duration: 2 },
+      status: { type: 'poisoned', duration: TEST_POISON_ATTACKER_DURATION },
     });
   });
 
-  it('acid_blood (плюс): не срабатывает на дальнюю атаку и на исходящий урон', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_acid_blood_poison_attacker')] });
+  it('яд атакующему (плюс): не срабатывает на дальнюю атаку и на исходящий урон', () => {
+    const player = makePlayer({ activeRules: [relicRule(testPoisonAttackerRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -269,11 +505,11 @@ describe('правила реликвий — applyStatus / heal', () => {
     }))).toHaveLength(0);
   });
 
-  it('plague_bearer (плюс): удар по отравленному разносит заразу на врагов в радиусе 1', () => {
+  it('перенос заразы (плюс): удар по отравленному разносит заразу на врагов в радиусе', () => {
     const player = makePlayer({
       x: 5, y: 5,
       factionId: 'player',
-      activeRules: [relicRule('relic_plague_bearer_spread')],
+      activeRules: [relicRule(testSpreadRule)],
     });
     const poisonedEnemy = makeEnemy({
       id: 'enemy_poisoned',
@@ -293,17 +529,17 @@ describe('правила реликвий — applyStatus / heal', () => {
     // Заражает врагов рядом (включая саму цель — переналожение), но не владельца и не дальнего врага.
     expect(targetIds.sort()).toEqual([bystander.id, poisonedEnemy.id].sort());
     for (const intent of poisonIntents) {
-      expect((intent as Extract<Intent, { type: 'APPLY_STATUS' }>).status.duration).toBe(2);
+      expect((intent as Extract<Intent, { type: 'APPLY_STATUS' }>).status.duration).toBe(TEST_SPREAD_DURATION);
     }
   });
 
-  it('plague_bearer (плюс и минус): не срабатывают по неотравленной цели', () => {
+  it('перенос заразы (плюс и минус): не срабатывают по неотравленной цели', () => {
     const player = makePlayer({
       x: 5, y: 5,
       factionId: 'player',
       activeRules: [
-        relicRule('relic_plague_bearer_spread'),
-        relicRule('relic_plague_bearer_self_poison'),
+        relicRule(testSpreadRule),
+        relicRule(testSelfPoisonRule),
       ],
     });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
@@ -312,11 +548,11 @@ describe('правила реликвий — applyStatus / heal', () => {
     expect(runReactions(state, makeDamagedEvent())).toHaveLength(0);
   });
 
-  it('plague_bearer (минус): при переносе заразы владелец получает отравление на 1 ход', () => {
+  it('самозаражение (минус): при переносе заразы владелец получает отравление', () => {
     const player = makePlayer({
       x: 5, y: 5,
       factionId: 'player',
-      activeRules: [relicRule('relic_plague_bearer_self_poison')],
+      activeRules: [relicRule(testSelfPoisonRule)],
     });
     const poisonedEnemy = makeEnemy({
       id: 'enemy_poisoned',
@@ -331,12 +567,12 @@ describe('правила реликвий — applyStatus / heal', () => {
     expect(intents[0]).toMatchObject({
       type: 'APPLY_STATUS',
       entityId: player.id,
-      status: { type: 'poisoned', duration: 1 },
+      status: { type: 'poisoned', duration: TEST_SELF_POISON_DURATION },
     });
   });
 
-  it('thunderhead (плюс): дробящий удар оружия ошеломляет цель на 1 ход', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_thunderhead_daze')] });
+  it('ошеломление (плюс): дробящий удар оружия ошеломляет цель', () => {
+    const player = makePlayer({ activeRules: [relicRule(testDazeRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -348,12 +584,12 @@ describe('правила реликвий — applyStatus / heal', () => {
     expect(intents[0]).toMatchObject({
       type: 'APPLY_STATUS',
       entityId: enemy.id,
-      status: { type: 'dazed', duration: 1 },
+      status: { type: 'dazed', duration: TEST_DAZE_DURATION },
     });
   });
 
-  it('thunderhead (плюс): не срабатывает без дробящего тега', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_thunderhead_daze')] });
+  it('ошеломление (плюс): не срабатывает без дробящего тега', () => {
+    const player = makePlayer({ activeRules: [relicRule(testDazeRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -362,11 +598,11 @@ describe('правила реликвий — applyStatus / heal', () => {
     }))).toHaveLength(0);
   });
 
-  it('thunderhead (плюс): не ошеломляет владельца при дробящем ударе ПО нему', () => {
+  it('ошеломление (плюс): не ошеломляет владельца при дробящем ударе ПО нему', () => {
     // Регрессия: без eventRole: 'source' правило собиралось из target-слоя
     // и гарантированно дезило самого владельца при каждом дробящем ударе
     // по нему (безоружные атаки котов несут damage.physical.blunt + delivery.weapon).
-    const player = makePlayer({ activeRules: [relicRule('relic_thunderhead_daze')] });
+    const player = makePlayer({ activeRules: [relicRule(testDazeRule)] });
     const enemy = makeEnemy({ id: 'enemy_test_1', x: 6, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, enemy);
 
@@ -380,8 +616,8 @@ describe('правила реликвий — applyStatus / heal', () => {
     expect(intents).toHaveLength(0);
   });
 
-  it('scavenger (плюс): поднятие предмета лечит владельца на 5 HP', () => {
-    const player = makePlayer({ activeRules: [relicRule('relic_scavenger_heal_on_pickup')] });
+  it('лечение при поднятии (плюс): поднятие предмета лечит владельца', () => {
+    const player = makePlayer({ activeRules: [relicRule(testHealOnPickupRule)] });
     const state = makeStateWithPlayer(player);
 
     const event: GameEvent = {
@@ -394,14 +630,43 @@ describe('правила реликвий — applyStatus / heal', () => {
     const intents = runReactions(state, event);
 
     expect(intents).toHaveLength(1);
-    expect(intents[0]).toEqual({ type: 'HEAL', entityId: player.id, amount: 5 });
+    expect(intents[0]).toEqual({ type: 'HEAL', entityId: player.id, amount: TEST_HEAL_AMOUNT });
   });
 });
 
-describe('шаблоны реликвий на реальном контенте', () => {
+describe('выдача реликвии (GRANT_RELIC) на синтетических шаблонах', () => {
+  /** Тестовые модификаторы нестакаемых реликвий (значения фикстуры). */
+  const CHARM_ARMOR_MODIFIER = -2;
+  const PACT_MAX_HP_MODIFIER = -7;
+
+  function mockRelicTemplate(
+    overrides: Partial<RelicTemplate> & { id: string },
+  ): RelicTemplate {
+    return {
+      ruleIds: [],
+      statModifiers: [],
+      stackable: false,
+      grantedAbilities: [],
+      rarity: 'common',
+      ...overrides,
+    };
+  }
+
   beforeEach(() => {
     resetRegistry();
-    initRegistry(buildContent());
+    initRegistry(createObjectContent({
+      relics: new Map([
+        ['relic_test_charm', mockRelicTemplate({
+          id: 'relic_test_charm',
+          statModifiers: [{ stat: 'armor', value: CHARM_ARMOR_MODIFIER, op: 'add' }],
+        })],
+        ['relic_test_pact', mockRelicTemplate({
+          id: 'relic_test_pact',
+          statModifiers: [{ stat: 'maxHp', value: PACT_MAX_HP_MODIFIER, op: 'add' }],
+        })],
+        ['relic_test_stack', mockRelicTemplate({ id: 'relic_test_stack', stackable: true })],
+      ]),
+    }));
   });
 
   afterEach(() => {
@@ -422,7 +687,7 @@ describe('шаблоны реликвий на реальном контенте
     );
   }
 
-  function makeRealState() {
+  function makeTestState() {
     const player = makePlayer();
     return {
       player,
@@ -430,37 +695,44 @@ describe('шаблоны реликвий на реальном контенте
     };
   }
 
-  it('все 8 реликвий нестакаемы: повторная выдача отклоняется', () => {
-    const relicIds = [
-      'relic_salamander_heart',
-      'relic_venom_gland',
-      'relic_acid_blood',
-      'relic_plague_bearer',
-      'relic_thunderhead',
-      'relic_opportunist',
-      'relic_blood_pact',
-      'relic_scavenger',
-    ];
+  it('нестакаемая реликвия: повторная выдача отклоняется', () => {
+    const { player, state } = makeTestState();
 
-    for (const relicId of relicIds) {
-      const { player, state } = makeRealState();
-      expect(grant(state, relicId), relicId).not.toBeNull();
-      expect(grant(state, relicId), relicId).toBeNull();
-      expect(player.relics).toHaveLength(1);
-    }
+    expect(grant(state, 'relic_test_charm')).not.toBeNull();
+    expect(grant(state, 'relic_test_charm')).toBeNull();
+    expect(player.relics).toHaveLength(1);
   });
 
-  it('минусы через statModifiers применяются при выдаче (acid_blood: -1 броня, scavenger: -5 maxHp)', () => {
-    const { player, state } = makeRealState();
+  it('стакаемая реликвия: повторная выдача разрешена', () => {
+    const { player, state } = makeTestState();
 
-    grant(state, 'relic_acid_blood');
-    grant(state, 'relic_scavenger');
+    expect(grant(state, 'relic_test_stack')).not.toBeNull();
+    expect(grant(state, 'relic_test_stack')).not.toBeNull();
+    expect(player.relics).toHaveLength(2);
+  });
 
+  it('statModifiers шаблона применяются при выдаче с источником экземпляра', () => {
+    const { player, state } = makeTestState();
+
+    grant(state, 'relic_test_charm');
+    grant(state, 'relic_test_pact');
+
+    const [charmInstance, pactInstance] = player.relics;
     expect(player.statModifiers).toContainEqual(
-      expect.objectContaining({ stat: 'armor', value: -1, op: 'add', source: 'relic_relic_1' }),
+      expect.objectContaining({
+        stat: 'armor',
+        value: CHARM_ARMOR_MODIFIER,
+        op: 'add',
+        source: `relic_${charmInstance?.instanceId}`,
+      }),
     );
     expect(player.statModifiers).toContainEqual(
-      expect.objectContaining({ stat: 'maxHp', value: -5, op: 'add', source: 'relic_relic_2' }),
+      expect.objectContaining({
+        stat: 'maxHp',
+        value: PACT_MAX_HP_MODIFIER,
+        op: 'add',
+        source: `relic_${pactInstance?.instanceId}`,
+      }),
     );
   });
 });

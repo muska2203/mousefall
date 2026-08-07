@@ -19,7 +19,6 @@ import {statusBlockedBuilder} from '../../../../src/presentation/animation/build
 import {statusRemovedBuilder} from '../../../../src/presentation/animation/builders/statusRemoved';
 import {entityCollidedBuilder} from '../../../../src/presentation/animation/builders/entityCollided';
 import {entityDisplacedBuilder} from '../../../../src/presentation/animation/builders/entityDisplaced';
-import {entityMissedBuilder} from '../../../../src/presentation/animation/builders/entityMissed';
 
 import {statusAppliedBuilder} from '../../../../src/presentation/animation/builders/statusApplied';
 import {statusTickedBuilder} from '../../../../src/presentation/animation/builders/statusTicked';
@@ -236,6 +235,17 @@ describe('entityDamagedBuilder', () => {
     expect(nodes![0]!.step.type).toBe('DAMAGE');
     expect(nodes![0]!.children).toContain(child);
   });
+
+  it('adds UI_FLOATING_TEXT crit node when event has crit tag', () => {
+    const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: 'player', tags: ['damage.physical.slashing', 'crit'], damage: 9, position: { x: 3, y: 3 } };
+    const nodes = entityDamagedBuilder(event, [], makeMockState());
+
+    expect(nodes).toHaveLength(2);
+    expect(nodes![0]!.step.type).toBe('DAMAGE');
+    const critStep = nodes![1]!.step;
+    expect(critStep.type).toBe('UI_FLOATING_TEXT');
+    expect((critStep as { textKey?: string }).textKey).toBe('system.animation.crit');
+  });
 });
 
 describe('entityDiedBuilder', () => {
@@ -412,16 +422,6 @@ describe('entityDisplacedBuilder', () => {
 
     expect(nodes).toHaveLength(1);
     expect(nodes![0]).toBe(childMove);
-  });
-});
-
-describe('entityMissedBuilder', () => {
-  it('creates UI_FLOATING_TEXT for ENTITY_MISSED', () => {
-    const event: GameEvent = { type: 'ENTITY_MISSED', isFieldEvent: true, attackerId: 'player', targetId: 'enemy1' };
-    const nodes = entityMissedBuilder(event, [], makeMockState());
-
-    expect(nodes).toHaveLength(1);
-    expect(nodes![0]!.step.type).toBe('UI_FLOATING_TEXT');
   });
 });
 

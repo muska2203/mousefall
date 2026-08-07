@@ -350,6 +350,7 @@ export interface SystemLogBuilderTranslations {
   heroMoved: string;
   heroAttacked: string;
   damageTaken: string;
+  damageTakenCrit: string;
   heroDied: string;
   playerDied: string;
   healReceived: string;
@@ -366,7 +367,6 @@ export interface SystemLogBuilderTranslations {
   statusRemoved: string;
   entityCollided: string;
   entityDisplaced: string;
-  entityMissed: string;
   relicGranted: string;
 }
 
@@ -400,9 +400,6 @@ export interface SystemStatNamesTranslations {
   damage: string;
   armor: string;
   maxHp: string;
-  dodgeChance: string;
-  accuracy: string;
-  critChance: string;
   critMultiplier: string;
   str: string;
   dex: string;
@@ -426,6 +423,7 @@ export interface SystemAnimationTranslations {
   doorClosed: string;
   abilityPrepared: string;
   abilityPreparedCancelled: string;
+  crit: string;
 }
 
 export interface SystemGameSessionTranslations {

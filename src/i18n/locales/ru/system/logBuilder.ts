@@ -4,6 +4,7 @@ export const ruLogBuilder = {
   heroMoved: '{{name}} переместился',
   heroAttacked: '{{name}} атаковал',
   damageTaken: '{{name}} получил {{damage}} урона',
+  damageTakenCrit: '{{name}} получил {{damage}} урона (крит!)',
   heroDied: '{{name}} погиб',
   playerDied: 'Герой погиб',
   healReceived: '{{name}} восстановил {{amount}} HP',
@@ -20,6 +21,5 @@ export const ruLogBuilder = {
   statusRemoved: '{{name}} потерял {{status}}',
   entityCollided: '{{name}} врезался',
   entityDisplaced: '{{name}} оттолкнут',
-  entityMissed: '{{attacker}} промахнулся по {{target}}',
   relicGranted: '{{name}} получил реликвию «{{relic}}»',
 } as const satisfies SystemLogBuilderTranslations;

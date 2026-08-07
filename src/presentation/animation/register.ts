@@ -29,7 +29,6 @@ import {statusBlockedBuilder} from './builders/statusBlocked';
 import {statusRemovedBuilder} from './builders/statusRemoved';
 import {entityCollidedBuilder} from './builders/entityCollided';
 import {entityDisplacedBuilder} from './builders/entityDisplaced';
-import {entityMissedBuilder} from './builders/entityMissed';
 import {
     tileEffectChangedBuilder,
     tileEffectRemovedBuilder,
@@ -66,7 +65,6 @@ registerAnimationBuilder('STATUS_BLOCKED', statusBlockedBuilder);
 registerAnimationBuilder('STATUS_REMOVED', statusRemovedBuilder);
 registerAnimationBuilder('ENTITY_COLLIDED', entityCollidedBuilder);
 registerAnimationBuilder('ENTITY_DISPLACED', entityDisplacedBuilder);
-registerAnimationBuilder('ENTITY_MISSED', entityMissedBuilder);
 registerAnimationBuilder('TILE_EFFECT_CHANGED', tileEffectChangedBuilder);
 registerAnimationBuilder('TILE_EFFECT_REMOVED', tileEffectRemovedBuilder);
 registerAnimationBuilder('TILE_EFFECT_STATUS_APPLIED', tileEffectStatusAppliedBuilder);

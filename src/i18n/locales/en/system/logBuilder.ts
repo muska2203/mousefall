@@ -4,6 +4,7 @@ export const enLogBuilder = {
   heroMoved: '{{name}} moved',
   heroAttacked: '{{name}} attacked',
   damageTaken: '{{name}} took {{damage}} damage',
+  damageTakenCrit: '{{name}} took {{damage}} damage (crit!)',
   heroDied: '{{name}} died',
   playerDied: 'Hero died',
   healReceived: '{{name}} restored {{amount}} HP',
@@ -20,6 +21,5 @@ export const enLogBuilder = {
   statusRemoved: '{{name}} lost {{status}}',
   entityCollided: '{{name}} collided',
   entityDisplaced: '{{name}} was pushed',
-  entityMissed: '{{attacker}} missed {{target}}',
   relicGranted: '{{name}} received the relic "{{relic}}"',
 } as const satisfies SystemLogBuilderTranslations;

@@ -101,8 +101,12 @@ export function gameEventToLog(
     }
     case 'ENTITY_DAMAGED': {
       const name = getEntityDisplayName(state, event.targetId, locale);
+      // Крит помечается тегом 'crit' (правило core_crit_on_dazed_stunned).
+      const key = event.tags.includes('crit')
+        ? 'system.logBuilder.damageTakenCrit'
+        : 'system.logBuilder.damageTaken';
       return {
-        text: t('system.logBuilder.damageTaken', { name, damage: event.damage }),
+        text: t(key, { name, damage: event.damage }),
         variant: event.targetId === 'player' ? 'bad' : 'good',
       };
     }
@@ -175,14 +179,6 @@ export function gameEventToLog(
       const name = getEntityDisplayName(state, event.entityId, locale);
       return {
         text: t('system.logBuilder.entityDisplaced', { name }),
-        variant: 'info',
-      };
-    }
-    case 'ENTITY_MISSED': {
-      const attacker = getEntityDisplayName(state, event.attackerId, locale);
-      const target = getEntityDisplayName(state, event.targetId, locale);
-      return {
-        text: t('system.logBuilder.entityMissed', { attacker, target }),
         variant: 'info',
       };
     }

@@ -13,12 +13,7 @@
 
 import type {Actor, StatActor} from '@simulation/types.ts';
 import {getBaseArmor, getBaseDamage, getBaseMaxHp,} from './base-resolver.ts';
-import {
-    getEffectiveAccuracy,
-    getEffectiveCritChance,
-    getEffectiveCritMultiplier,
-    getEffectiveDodgeChance,
-} from './effective-stats.ts';
+import {getEffectiveCritMultiplier} from './effective-stats.ts';
 
 export function recalculateActorStats(actor: StatActor & Actor): void {
   // Обновляем derived-кэш: эти поля НЕЛЬЗЯ менять напрямую вне этого вызова.
@@ -26,9 +21,6 @@ export function recalculateActorStats(actor: StatActor & Actor): void {
   actor.damage = Math.round(getBaseDamage(actor));
   actor.armor = Math.round(getBaseArmor(actor));
 
-  actor.dodgeChance = getEffectiveDodgeChance(actor);
-  actor.accuracy = getEffectiveAccuracy(actor);
-  actor.critChance = getEffectiveCritChance(actor);
   actor.critMultiplier = getEffectiveCritMultiplier(actor);
 
   actor.hp = Math.min(actor.hp, actor.maxHp);

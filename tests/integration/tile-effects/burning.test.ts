@@ -6,6 +6,9 @@
  * 2. Распространение горения на соседние клетки с маслом при тике.
  * 3. Отсутствие распространения на воду и пустые тайлы.
  * 4. Тушение горящего масла водой (замена эффекта и удаление статуса).
+ *
+ * Контент синтетический (tests/fixtures/tile-effects.ts): урон и длительности
+ * берутся из фикстур, реальные шаблоны и правила не участвуют.
  */
 
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
@@ -13,7 +16,13 @@ import {GameSimulation} from '../../../src/simulation/simulation';
 import {ExecutionBuilder} from '../../../src/simulation/core-types';
 import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
 import {makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
-import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {
+  initTileEffectTestContent,
+  resetTileEffectTestContent,
+  TEST_BURNING_ENTRY_DAMAGE,
+  TEST_IGNITE_DURATION,
+} from '../../fixtures/tile-effects';
+import {setupCombatScenario} from '../combat-scenarios/helpers';
 import {advanceToPlayerTurn} from '../../helpers/simulation';
 import type {GameState} from '../../../src/simulation/types';
 
@@ -69,7 +78,7 @@ function applyBurningToOil(state: GameState, x: number, y: number) {
       effectType: 'oil',
       statusType: 'burning',
       position: { x, y },
-      duration: 3,
+      duration: TEST_IGNITE_DURATION,
     },
     builder,
     builder.root,
@@ -77,13 +86,13 @@ function applyBurningToOil(state: GameState, x: number, y: number) {
 }
 
 describe('Горящий тайловый эффект', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     setupCombatScenario();
-    await loadTestContent();
+    initTileEffectTestContent();
   });
 
   afterEach(() => {
-    // Реестр контента сбрасывается внутри loadTestContent через resetRegistry().
+    resetTileEffectTestContent();
   });
 
   it('при входе на горящее масло актор получает урон и статус burning', () => {
@@ -112,7 +121,7 @@ describe('Горящий тайловый эффект', () => {
     expect(player.x).toBe(2);
     expect(player.y).toBe(2);
 
-    expect(player.hp).toBe(hpBefore - 3);
+    expect(player.hp).toBe(hpBefore - TEST_BURNING_ENTRY_DAMAGE);
     expect(player.statusEffects.some((effect) => effect.type === 'burning')).toBe(true);
   });
 

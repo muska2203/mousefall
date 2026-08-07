@@ -9,12 +9,9 @@
 
 import type {Entity, StatActor} from '@simulation/types.ts';
 import {
-    getBaseAccuracy,
     getBaseArmor,
-    getBaseCritChance,
     getBaseCritMultiplier,
     getBaseDamage,
-    getBaseDodgeChance,
     getBaseMaxHp,
 } from './base-resolver.ts';
 import {applyModifiers} from './modifier-engine.ts';
@@ -64,21 +61,6 @@ export function getEffectiveMaxHp(actor: StatActor): number {
 // ─────────────────────────────────────────────
 // Вторичные характеристики (рассчитываются для StatActor)
 // ─────────────────────────────────────────────
-
-export function getEffectiveDodgeChance(actor: StatActor): number {
-  const base = getBaseDodgeChance(actor);
-  return applyModifiers(actor, 'dodgeChance', base).total;
-}
-
-export function getEffectiveAccuracy(actor: StatActor): number {
-  const base = getBaseAccuracy(actor);
-  return applyModifiers(actor, 'accuracy', base).total;
-}
-
-export function getEffectiveCritChance(actor: StatActor): number {
-  const base = getBaseCritChance(actor);
-  return applyModifiers(actor, 'critChance', base).total;
-}
 
 export function getEffectiveCritMultiplier(actor: StatActor): number {
   const base = getBaseCritMultiplier(actor);

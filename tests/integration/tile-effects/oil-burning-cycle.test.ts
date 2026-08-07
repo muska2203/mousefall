@@ -7,6 +7,9 @@
  * 3. Нанесение огненного урона по сущности на масле → поджог (`burning` на tile effect).
  * 4. Тик `burning` в фазе `environment-turn` уменьшает длительность масла.
  * 5. Статус `burning` не гаснет по своей длительности — он удаляется только вместе с маслом, когда масло полностью сгорает.
+ *
+ * Контент синтетический (tests/fixtures/tile-effects.ts): длительности масла
+ * и горения берутся из фикстур, реальные шаблоны и правила не участвуют.
  */
 
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
@@ -14,7 +17,13 @@ import {GameSimulation} from '../../../src/simulation/simulation';
 import {ExecutionBuilder} from '../../../src/simulation/core-types';
 import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
 import {makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
-import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {
+  initTileEffectTestContent,
+  resetTileEffectTestContent,
+  TEST_IGNITE_DURATION,
+  TEST_OIL_DURATION,
+} from '../../fixtures/tile-effects';
+import {setupCombatScenario} from '../combat-scenarios/helpers';
 import {advanceToPlayerTurn} from '../../helpers/simulation';
 import type {GameState} from '../../../src/simulation/types';
 
@@ -35,13 +44,13 @@ function getOilAt(state: GameState, x: number, y: number) {
 }
 
 describe('Цикл масла и поджога', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     setupCombatScenario();
-    await loadTestContent();
+    initTileEffectTestContent();
   });
 
   afterEach(() => {
-    // Реестр контента сбрасывается внутри loadTestContent через resetRegistry().
+    resetTileEffectTestContent();
   });
 
   it('масло не тикает и не исчезает, пока не горит', () => {
@@ -65,14 +74,14 @@ describe('Цикл масла и поджога', () => {
 
     const oilBefore = getOilAt(state, 2, 2);
     expect(oilBefore).toBeDefined();
-    expect(oilBefore!.duration).toBe(5);
+    expect(oilBefore!.duration).toBe(TEST_OIL_DURATION);
 
     simulation.dispatch({ type: 'END_TURN', entityId: player.id });
     advanceToPlayerTurn(simulation);
 
     const oilAfterTick = getOilAt(state, 2, 2);
     expect(oilAfterTick).toBeDefined();
-    expect(oilAfterTick!.duration).toBe(5);
+    expect(oilAfterTick!.duration).toBe(TEST_OIL_DURATION);
     expect(oilAfterTick!.statusEffects).toHaveLength(0);
   });
 
@@ -111,7 +120,7 @@ describe('Цикл масла и поджога', () => {
     expect(player.x).toBe(2);
     expect(player.y).toBe(2);
 
-    // Правило `oil_applies_oiled` должно наложить статус.
+    // Правило масла должно наложить статус.
     expect(player.statusEffects.some((effect) => effect.type === 'oiled')).toBe(true);
 
     // 3. Наносим огненный урон по игроку, стоящему на масле.
@@ -138,21 +147,21 @@ describe('Цикл масла и поджога', () => {
     expect(oilAfterIgnite).toBeDefined();
     const burningAfterIgnite = oilAfterIgnite!.statusEffects.find((s) => s.type === 'burning');
     expect(burningAfterIgnite).toBeDefined();
-    expect(burningAfterIgnite!.duration).toBe(3);
+    expect(burningAfterIgnite!.duration).toBe(TEST_IGNITE_DURATION);
 
-    // 5-9. Пять раундов горения: масло уменьшается на 1 за раунд, горение не гаснет.
-    // После пятого раунда масло исчерпано — оно удаляется вместе с горением.
-    for (let round = 1; round <= 5; round++) {
+    // 5. Раунды горения: масло уменьшается на 1 за раунд, горение не гаснет.
+    // На исходе длительности масло исчерпано — удаляется вместе с горением.
+    for (let round = 1; round <= TEST_OIL_DURATION; round++) {
       simulation.dispatch({ type: 'END_TURN', entityId: player.id });
       advanceToPlayerTurn(simulation);
 
-      if (round < 5) {
+      if (round < TEST_OIL_DURATION) {
         const oil = getOilAt(state, 2, 2);
         expect(oil).toBeDefined();
-        expect(oil!.duration).toBe(5 - round);
+        expect(oil!.duration).toBe(TEST_OIL_DURATION - round);
         const burning = oil!.statusEffects.find((s) => s.type === 'burning');
         expect(burning).toBeDefined();
-        expect(burning!.duration).toBe(3);
+        expect(burning!.duration).toBe(TEST_IGNITE_DURATION);
       } else {
         expect(getOilAt(state, 2, 2)).toBeUndefined();
       }
@@ -199,6 +208,6 @@ describe('Цикл масла и поджога', () => {
     expect(oilAfterIgnite).toBeDefined();
     const burningAfterIgnite = oilAfterIgnite!.statusEffects.find((s) => s.type === 'burning');
     expect(burningAfterIgnite).toBeDefined();
-    expect(burningAfterIgnite!.duration).toBe(3);
+    expect(burningAfterIgnite!.duration).toBe(TEST_IGNITE_DURATION);
   });
 });

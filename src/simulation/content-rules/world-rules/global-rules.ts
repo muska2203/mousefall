@@ -50,6 +50,35 @@ export const GLOBAL_WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
     worldLayer: 'global',
   },
   {
+    // Детерминированный крит: любой урон по цели со статусом dazed/stunned
+    // умножается на critMultiplier атакующего. Тег 'crit' без префикса damage. —
+    // чтобы не влиять на обработчики урона; presentation ветвится по нему
+    // (строка лога + floating text «Крит!»).
+    id: 'core_crit_on_dazed_stunned',
+    trigger: {
+      event: 'DAMAGE',
+    },
+    conditions: [
+      {
+        type: 'or',
+        conditions: [
+          {type: 'hasStatus', statusType: 'dazed', subject: 'target'},
+          {type: 'hasStatus', statusType: 'stunned', subject: 'target'},
+        ],
+      },
+    ],
+    effect: {
+      type: 'modifyDamage',
+      op: 'multiply',
+      value: {type: 'context', field: 'sourceCritMultiplier'},
+      addTags: ['crit'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
     id: 'burning_tick_damage',
     trigger: {
       event: 'STATUS_TICKED',

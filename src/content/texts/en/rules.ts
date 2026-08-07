@@ -7,11 +7,11 @@ export const rules: Record<string, ContentText> = {
   },
   weapon_poison_on_hit: {
     name: 'Venomous Blade',
-    description: 'Piercing or slashing attacks have a 40% chance to apply poison for 3 turns.',
+    description: 'Piercing or slashing attacks apply poison for 3 turns.',
   },
   weapon_blunt_daze: {
     name: 'Dazing Blow',
-    description: 'Blunt attacks have a 25% chance to daze the target for 1 turn.',
+    description: 'Blunt attacks daze the target for 1 turn.',
   },
   armor_spiked_thorns: {
     name: 'Thorns',

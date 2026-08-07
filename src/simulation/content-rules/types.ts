@@ -60,8 +60,10 @@ export type ParametrizedValue =
   | { type: 'literal'; value: number }
   | {
       // TODO(4.4): заменить eventMaxHp на общий stat-based resolver (targetStat/selfStat)
+      // sourceCritMultiplier — шаг в ту же сторону: stat-значение источника события
+      // читается из контекста, пока без общего stat-based resolver.
       type: 'context';
-      field: 'eventDamage' | 'eventAmount' | 'eventDuration' | 'eventStacks' | 'eventMaxHp';
+      field: 'eventDamage' | 'eventAmount' | 'eventDuration' | 'eventStacks' | 'eventMaxHp' | 'sourceCritMultiplier';
       multiply?: number;
       min?: number;
       round?: boolean;

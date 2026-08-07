@@ -234,7 +234,6 @@ export const CONTENT_RULES: readonly ContentRule[] = [
         ],
       },
       { type: 'eventRole', role: 'source' },
-      {type: 'chance', probability: 40},
     ],
     effect: {
       type: 'applyStatus',
@@ -250,7 +249,9 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'ENTITY_DAMAGED',
       tags: ['damage.physical.blunt', 'delivery.weapon'],
     },
-    conditions: [{type: 'chance', probability: 25}],
+    // eventRole: 'source' обязателен при «всегда»: иначе владелец дробящего
+    // оружия оглушал бы сам себя при ударе по нему.
+    conditions: [{type: 'eventRole', role: 'source'}],
     effect: {
       type: 'applyStatus',
       statusType: 'dazed',

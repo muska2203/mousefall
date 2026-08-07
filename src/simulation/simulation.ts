@@ -289,9 +289,6 @@ export class GameSimulation implements Simulation {
             effectiveStats: effective,
             damage: player.damage,
             armor: player.armor,
-            dodgeChance: player.dodgeChance,
-            accuracy: player.accuracy,
-            critChance: player.critChance,
             critMultiplier: player.critMultiplier,
         };
     }
@@ -942,9 +939,6 @@ export class GameSimulation implements Simulation {
             effectiveStats: effective,
             damage: p.damage,
             armor: p.armor,
-            dodgeChance: p.dodgeChance,
-            accuracy: p.accuracy,
-            critChance: p.critChance,
             critMultiplier: p.critMultiplier,
         };
     }

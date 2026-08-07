@@ -6,9 +6,6 @@ import {
   getBaseMaxHp,
   getBaseDamage,
   getBaseArmor,
-  getBaseDodgeChance,
-  getBaseAccuracy,
-  getBaseCritChance,
   getBaseCritMultiplier,
 } from '@simulation/systems/stats/base-resolver.ts';
 import {
@@ -97,21 +94,6 @@ describe('stats system', () => {
     it('calculates armor as 0 when no armor', () => {
       const player = makePlayer({ equippedArmorId: null });
       expect(getBaseArmor(player)).toBe(0);
-    });
-
-    it('calculates dodgeChance from dex', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
-      expect(getBaseDodgeChance(player)).toBe(0.2);
-    });
-
-    it('calculates accuracy from dex', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
-      expect(getBaseAccuracy(player)).toBe(0.15);
-    });
-
-    it('calculates critChance from dex', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
-      expect(getBaseCritChance(player)).toBe(0.1);
     });
 
     it('returns base critMultiplier', () => {
@@ -283,54 +265,51 @@ describe('stats system', () => {
       expect(player.damage).toBe(9);
     });
 
-    it('updates secondary derived stats (dodge, accuracy, crit)', () => {
+    it('updates secondary derived stats', () => {
       const player = makePlayer({
         baseStats: { str: 0, dex: 10, int: 0, vit: 0 },
       });
       recalculateActorStats(player);
-      expect(player.dodgeChance).toBeCloseTo(0.2);
-      expect(player.accuracy).toBeCloseTo(0.15);
-      expect(player.critChance).toBeCloseTo(0.1);
       expect(player.critMultiplier).toBe(1.5);
     });
 
     it('includes modifiers in secondary stats after recalculate', () => {
       const player = makePlayer({
         baseStats: { str: 0, dex: 10, int: 0, vit: 0 },
-        statModifiers: [{ stat: 'critChance', value: 0.05, op: 'add', source: 'buff' }],
+        statModifiers: [{ stat: 'critMultiplier', value: 0.5, op: 'add', source: 'buff' }],
       });
       recalculateActorStats(player);
-      expect(player.critChance).toBeCloseTo(0.15); // 0.1 + 0.05
+      expect(player.critMultiplier).toBeCloseTo(2.0); // 1.5 + 0.5
     });
   });
 
   describe('auto-recalculate on modifier changes', () => {
     it('addModifier requires explicit recalculate', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
-      addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
+      const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 0, vit: 0 } });
+      addModifier(player, { stat: 'vit', value: 10, op: 'add', source: 'buff' });
       recalculateActorStats(player);
-      // effective dex = 20 -> dodgeChance = 0.4
-      expect(player.dodgeChance).toBeCloseTo(0.4);
+      // effective vit = 10 -> maxHp = 50 + 10*10
+      expect(player.maxHp).toBe(150);
     });
 
     it('removeModifiersBySource requires explicit recalculate', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
-      addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'buff' });
+      const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 0, vit: 0 } });
+      addModifier(player, { stat: 'vit', value: 10, op: 'add', source: 'buff' });
       recalculateActorStats(player);
-      expect(player.dodgeChance).toBeCloseTo(0.4);
+      expect(player.maxHp).toBe(150);
       removeModifiersBySource(player, 'buff');
       recalculateActorStats(player);
-      expect(player.dodgeChance).toBeCloseTo(0.2);
+      expect(player.maxHp).toBe(50);
     });
 
     it('consumeCharge removes modifier and requires explicit recalculate', () => {
-      const player = makePlayer({ baseStats: { str: 0, dex: 10, int: 0, vit: 0 } });
-      addModifier(player, { stat: 'dex', value: 10, op: 'add', source: 'temp', charges: 1 });
+      const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 0, vit: 0 } });
+      addModifier(player, { stat: 'vit', value: 10, op: 'add', source: 'temp', charges: 1 });
       recalculateActorStats(player);
-      expect(player.dodgeChance).toBeCloseTo(0.4);
-      consumeCharge(player, 'dex');
+      expect(player.maxHp).toBe(150);
+      consumeCharge(player, 'vit');
       recalculateActorStats(player);
-      expect(player.dodgeChance).toBeCloseTo(0.2);
+      expect(player.maxHp).toBe(50);
     });
   });
 });

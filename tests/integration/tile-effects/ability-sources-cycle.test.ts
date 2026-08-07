@@ -7,16 +7,29 @@
  * 3. Огненный урон по сущности на масле → поджог (burning на tile effect).
  * 4. Завершение хода → burning тикает, уменьшая длительность масла; сам burning не гаснет.
  * 5. Игрок использует water_ball на горящее масло → масло заменяется водой, burning удаляется.
+ *
+ * Контент синтетический (tests/fixtures/tile-effects.ts): длительности воды,
+ * масла и горения берутся из фикстур, реальные шаблоны и правила не участвуют.
  */
 
-import {beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {GameSimulation} from '../../../src/simulation/simulation';
 import {ExecutionBuilder} from '../../../src/simulation/core-types';
 import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
 import {makeEnemy, makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
-import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {
+  initTileEffectTestContent,
+  resetTileEffectTestContent,
+  TEST_IGNITE_DURATION,
+  TEST_OIL_DURATION,
+  TEST_WATER_DURATION,
+} from '../../fixtures/tile-effects';
+import {setupCombatScenario} from '../combat-scenarios/helpers';
 import {advanceToPlayerTurn} from '../../helpers/simulation';
 import type {GameState} from '../../../src/simulation/types';
+
+/** Размер стопки расходников в инвентаре тестового игрока. */
+const TEST_STACK_SIZE = 5;
 
 function createTestPlayer() {
   return makePlayer({
@@ -28,8 +41,8 @@ function createTestPlayer() {
     maxAp: 3,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     inventory: [
-      { instanceId: 'water_ball_1', templateId: 'water_ball', quantity: 5, grantedAbilities: [] },
-      { instanceId: 'oil_bottle_1', templateId: 'oil_bottle', quantity: 5, grantedAbilities: [] },
+      { instanceId: 'water_ball_1', templateId: 'water_ball', quantity: TEST_STACK_SIZE, grantedAbilities: [] },
+      { instanceId: 'oil_bottle_1', templateId: 'oil_bottle', quantity: TEST_STACK_SIZE, grantedAbilities: [] },
     ],
   });
 }
@@ -39,9 +52,13 @@ function getTileEffectAt(state: GameState, x: number, y: number, effectType: str
 }
 
 describe('Цикл расходников water_ball и oil_bottle', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     setupCombatScenario();
-    await loadTestContent();
+    initTileEffectTestContent({withConsumables: true});
+  });
+
+  afterEach(() => {
+    resetTileEffectTestContent();
   });
 
   it('water_ball → oil_bottle → fire → burning tick → water_ball тушит горящее масло', () => {
@@ -64,11 +81,11 @@ describe('Цикл расходников water_ball и oil_bottle', () => {
       targetPosition: { x: 6, y: 5 },
     });
     expect(waterBallResult.success).toBe(true);
-    expect(player.inventory.find(i => i.instanceId === 'water_ball_1')!.quantity).toBe(4);
+    expect(player.inventory.find(i => i.instanceId === 'water_ball_1')!.quantity).toBe(TEST_STACK_SIZE - 1);
 
     const waterAfterBall = getTileEffectAt(state, 6, 5, 'water');
     expect(waterAfterBall).toBeDefined();
-    expect(waterAfterBall!.duration).toBe(4);
+    expect(waterAfterBall!.duration).toBe(TEST_WATER_DURATION);
 
     // 2. Игрок использует oil_bottle на (7,5) → появляется oil.
     const oilResult = simulation.dispatch({
@@ -78,11 +95,11 @@ describe('Цикл расходников water_ball и oil_bottle', () => {
       targetPosition: { x: 7, y: 5 },
     });
     expect(oilResult.success).toBe(true);
-    expect(player.inventory.find(i => i.instanceId === 'oil_bottle_1')!.quantity).toBe(4);
+    expect(player.inventory.find(i => i.instanceId === 'oil_bottle_1')!.quantity).toBe(TEST_STACK_SIZE - 1);
 
     const oilAfterBottle = getTileEffectAt(state, 7, 5, 'oil');
     expect(oilAfterBottle).toBeDefined();
-    expect(oilAfterBottle!.duration).toBe(5);
+    expect(oilAfterBottle!.duration).toBe(TEST_OIL_DURATION);
     expect(oilAfterBottle!.statusEffects).toHaveLength(0);
 
     // 3. Создаём врага на клетке с маслом и наносим огненный урон.
@@ -110,7 +127,7 @@ describe('Цикл расходников water_ball и oil_bottle', () => {
     expect(oilAfterIgnite).toBeDefined();
     const burningAfterIgnite = oilAfterIgnite!.statusEffects.find((s) => s.type === 'burning');
     expect(burningAfterIgnite).toBeDefined();
-    expect(burningAfterIgnite!.duration).toBe(3);
+    expect(burningAfterIgnite!.duration).toBe(TEST_IGNITE_DURATION);
 
     // 4. Завершаем ход, дожидаемся environment-turn → burning тикает.
     simulation.dispatch({ type: 'END_TURN', entityId: player.id });
@@ -118,11 +135,11 @@ describe('Цикл расходников water_ball и oil_bottle', () => {
 
     const oilAfterTick = getTileEffectAt(state, 7, 5, 'oil');
     expect(oilAfterTick).toBeDefined();
-    expect(oilAfterTick!.duration).toBe(4);
+    expect(oilAfterTick!.duration).toBe(TEST_OIL_DURATION - 1);
     const burningAfterTick = oilAfterTick!.statusEffects.find((s) => s.type === 'burning');
     expect(burningAfterTick).toBeDefined();
     // Бесконечный статус горения не тратит свою длительность.
-    expect(burningAfterTick!.duration).toBe(3);
+    expect(burningAfterTick!.duration).toBe(TEST_IGNITE_DURATION);
 
     // 5. Игрок использует water_ball на горящее масло → масло заменяется водой, burning удаляется.
     const extinguishResult = simulation.dispatch({

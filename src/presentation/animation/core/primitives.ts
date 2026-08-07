@@ -16,7 +16,6 @@ type EntityDiedEvent = Extract<GameEvent, { type: 'ENTITY_DIED' }>;
 type EntityBumpedEvent = Extract<GameEvent, { type: 'ENTITY_BUMPED' }>;
 type EntityCollidedEvent = Extract<GameEvent, { type: 'ENTITY_COLLIDED' }>;
 type EntityDisplacedEvent = Extract<GameEvent, { type: 'ENTITY_DISPLACED' }>;
-type EntityMissedEvent = Extract<GameEvent, { type: 'ENTITY_MISSED' }>;
 type ItemDroppedEvent = Extract<GameEvent, { type: 'ITEM_DROPPED' }>;
 type FogUpdatedEvent = Extract<GameEvent, { type: 'FOG_UPDATED' }>;
 type EntityHealedEvent = Extract<GameEvent, { type: 'ENTITY_HEALED' }>;
