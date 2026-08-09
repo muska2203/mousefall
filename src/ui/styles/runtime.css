@@ -844,14 +844,27 @@ button.cm-choice-card:hover {
 }
 
 .field-popover-effect {
-  padding: 4px 0;
+  padding: 4px 6px;
+  border-radius: 4px;
   font-size: 11px;
   color: var(--text-muted);
   line-height: 1.3;
 }
 
 .field-popover-effect + .field-popover-effect {
-  border-top: 1px solid rgba(196, 163, 90, 0.12);
+  margin-top: 2px;
+}
+
+/* Позитивный эффект реликвии (по палитре положительных свойств экипировки). */
+.field-popover-effect--positive {
+  color: #9ee6a0;
+  background: rgba(120, 200, 120, 0.08);
+}
+
+/* Негативный эффект реликвии (по палитре отрицательных свойств экипировки). */
+.field-popover-effect--negative {
+  color: #ff9e9e;
+  background: rgba(220, 90, 90, 0.10);
 }
 
 .field-popover-stats {

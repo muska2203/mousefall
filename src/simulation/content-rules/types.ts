@@ -176,6 +176,12 @@ export type ContentRule = {
   effect: RuleEffect;
   target: TargetSelector;
   priority: number;
+  /**
+   * Полярность эффекта правила для UI (позитивный/негативный для владельца).
+   * Используется для цветового выделения (например, эффектов реликвий).
+   * Если не указана — считается 'positive'.
+   */
+  polarity?: 'positive' | 'negative';
 };
 
 /**

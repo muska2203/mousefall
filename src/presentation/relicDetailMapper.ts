@@ -1,10 +1,12 @@
 /**
  * Маппер: RelicTemplate (Content) → список эффектов для UI (Presentation).
  *
- * Каждый эффект реликвии — одна строка:
- * - ruleIds → краткое описание правила из `texts/{ru,en}/rules.ts` (может содержать тег-ссылки);
+ * Каждый эффект реликвии — одна строка с полярностью (positive/negative):
+ * - ruleIds → краткое описание правила из `texts/{ru,en}/rules.ts` (может содержать тег-ссылки),
+ *   полярность — из опционального поля `polarity` правила (по умолчанию positive);
  * - statModifiers → строка вида «Имя: +N» — локализованное имя характеристики
- *   (i18n `system.statNames`) и форматированное значение («+N» / «−N» для add, «×N» для multiply).
+ *   (i18n `system.statNames`) и форматированное значение («+N» / «−N» для add, «×N» для multiply),
+ *   полярность выводится из значения (add < 0 или multiply < 1 → negative).
  *
  * Порядок: сначала правила, затем модификаторы характеристик.
  */
@@ -12,6 +14,7 @@
 import type {RelicTemplate} from '@content/schemas';
 import type {Locale} from '@content/texts/lookup';
 import {getContentText} from '@content/texts/lookup';
+import {tryGetContentRule} from '@simulation/content-rules/registry';
 import type {RelicEffectViewModel} from './types';
 import {t} from '@i18n/t';
 
@@ -23,6 +26,11 @@ export function formatModifierValue(op: 'add' | 'multiply', value: number): stri
   return value < 0 ? `−${Math.abs(value)}` : `+${value}`;
 }
 
+/** Выводит полярность модификатора характеристики из значения: уменьшение стата → negative. */
+function statModifierPolarity(op: 'add' | 'multiply', value: number): 'positive' | 'negative' {
+  return (op === 'multiply' ? value < 1 : value < 0) ? 'negative' : 'positive';
+}
+
 /** Собирает список эффектов реликвии (правила + модификаторы характеристик) для ViewModel. */
 export function buildRelicEffects(template: RelicTemplate, locale: Locale): RelicEffectViewModel[] {
   const effects: RelicEffectViewModel[] = [];
@@ -32,6 +40,7 @@ export function buildRelicEffects(template: RelicTemplate, locale: Locale): Reli
     effects.push({
       key: ruleId,
       text: text.description ?? '',
+      polarity: tryGetContentRule(ruleId)?.polarity ?? 'positive',
     });
   }
 
@@ -40,6 +49,7 @@ export function buildRelicEffects(template: RelicTemplate, locale: Locale): Reli
     effects.push({
       key: `stat_${modifier.stat}`,
       text: `${statName}: ${formatModifierValue(modifier.op, modifier.value)}`,
+      polarity: statModifierPolarity(modifier.op, modifier.value),
     });
   }
 

@@ -390,6 +390,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   {
     // Минус: входящий огонь бьёт владельца больнее.
     id: 'relic_salamander_heart_fire_vulnerability',
+    polarity: 'negative',
     trigger: {
       event: 'DAMAGE',
       tags: ['damage.magical.fire'],
@@ -422,6 +423,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   {
     // Минус: по неотравленной цели урон оружия меньше.
     id: 'relic_venom_gland_ramp_up',
+    polarity: 'negative',
     trigger: {
       event: 'DAMAGE',
       tags: ['delivery.weapon'],
@@ -479,6 +481,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   {
     // Минус: при переносе заразы владелец получает отравление сам.
     id: 'relic_plague_bearer_self_poison',
+    polarity: 'negative',
     trigger: {
       event: 'ENTITY_DAMAGED',
       tags: ['delivery.weapon'],
@@ -516,6 +519,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   {
     // Минус: недробящим оружием урон меньше.
     id: 'relic_thunderhead_clumsy',
+    polarity: 'negative',
     trigger: {
       event: 'DAMAGE',
       tags: ['delivery.weapon'],
@@ -564,6 +568,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   {
     // Минус: по полноценному противнику урон меньше.
     id: 'relic_opportunist_hesitant',
+    polarity: 'negative',
     trigger: {
       event: 'DAMAGE',
       tags: ['delivery.weapon'],
@@ -608,6 +613,7 @@ export const CONTENT_RULES: readonly ContentRule[] = [
   {
     // Минус: больше и входящий урон по владельцу.
     id: 'relic_blood_pact_price',
+    polarity: 'negative',
     trigger: {
       event: 'DAMAGE',
     },

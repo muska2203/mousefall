@@ -6,6 +6,8 @@
  *   тест не зависит от строк texts/{ru,en}/rules.ts и реальных ruleIds);
  * - пункты модификаторов характеристик: локализация имён статов (ru/en, i18n UI)
  *   и однострочный формат «Имя: +N» / «Имя: −N» / «Имя: ×N»;
+ * - полярность эффектов: из `polarity` правила (дефолт positive) и из знака
+ *   модификатора характеристики (add < 0 или multiply < 1 → negative);
  * - порядок: сначала правила, затем модификаторы.
  *
  * Все значения в assert'ах происходят из фикстур этого файла.
@@ -16,6 +18,8 @@ import i18next from 'i18next';
 import '@i18n/config';
 import type {RelicTemplate} from '../../../src/content/schemas';
 import type {ContentText} from '../../../src/content/texts/types';
+import type {ContentRule} from '../../../src/simulation/content-rules/types';
+import {setContentRulesOverride} from '../../../src/simulation/content-rules/registry';
 
 // ─────────────────────────────────────────────
 // Тестовые тексты правил: подменяют texts/{ru,en}/rules.ts на уровне lookup
@@ -76,6 +80,7 @@ describe('buildRelicEffects', () => {
 
   afterEach(async () => {
     await i18next.changeLanguage('ru');
+    setContentRulesOverride(null);
   });
 
   it('собирает пункты правил с однострочными описаниями из текстов', () => {
@@ -87,10 +92,12 @@ describe('buildRelicEffects', () => {
       {
         key: 'test_rule_poison_on_hit',
         text: testTexts.rules.test_rule_poison_on_hit.ru.description,
+        polarity: 'positive',
       },
       {
         key: 'test_rule_ramp_up',
         text: testTexts.rules.test_rule_ramp_up.ru.description,
+        polarity: 'positive',
       },
     ]);
   });
@@ -104,7 +111,7 @@ describe('buildRelicEffects', () => {
   it('подставляет пустую строку для правила без описания', () => {
     const relic = makeRelic({ruleIds: ['test_rule_without_text']});
     const effects = buildRelicEffects(relic, 'ru');
-    expect(effects).toEqual([{key: 'test_rule_without_text', text: ''}]);
+    expect(effects).toEqual([{key: 'test_rule_without_text', text: '', polarity: 'positive'}]);
   });
 
   it('форматирует add-модификаторы: «Имя: +N» и «Имя: −N»', () => {
@@ -116,18 +123,22 @@ describe('buildRelicEffects', () => {
     });
     const effects = buildRelicEffects(relic, 'ru');
     expect(effects).toEqual([
-      {key: 'stat_damage', text: 'Урон: +3'},
-      {key: 'stat_armor', text: 'Броня: −1'},
+      {key: 'stat_damage', text: 'Урон: +3', polarity: 'positive'},
+      {key: 'stat_armor', text: 'Броня: −1', polarity: 'negative'},
     ]);
   });
 
   it('форматирует multiply-модификаторы: «Имя: ×N»', () => {
     const relic = makeRelic({
-      statModifiers: [{stat: 'critMultiplier', value: 1.5, op: 'multiply'}],
+      statModifiers: [
+        {stat: 'critMultiplier', value: 1.5, op: 'multiply'},
+        {stat: 'damage', value: 0.75, op: 'multiply'},
+      ],
     });
     const effects = buildRelicEffects(relic, 'ru');
     expect(effects).toEqual([
-      {key: 'stat_critMultiplier', text: 'Множитель крита: ×1.5'},
+      {key: 'stat_critMultiplier', text: 'Множитель крита: ×1.5', polarity: 'positive'},
+      {key: 'stat_damage', text: 'Урон: ×0.75', polarity: 'negative'},
     ]);
   });
 
@@ -138,7 +149,7 @@ describe('buildRelicEffects', () => {
     });
     const effects = buildRelicEffects(relic, 'en');
     expect(effects).toEqual([
-      {key: 'stat_maxHp', text: 'Max HP: −5'},
+      {key: 'stat_maxHp', text: 'Max HP: −5', polarity: 'negative'},
     ]);
   });
 
@@ -152,6 +163,24 @@ describe('buildRelicEffects', () => {
       'test_rule_heal_on_pickup',
       'stat_maxHp',
     ]);
+  });
+
+  it('берёт полярность правила из реестра контентных правил', () => {
+    const negativeRule: ContentRule = {
+      id: 'test_rule_ramp_up',
+      polarity: 'negative',
+      trigger: {event: 'DAMAGE'},
+      effect: {type: 'modifyDamage', op: 'add', value: -1},
+      target: {type: 'eventTarget'},
+      priority: 0,
+    };
+    setContentRulesOverride([negativeRule]);
+
+    const relic = makeRelic({
+      ruleIds: ['test_rule_poison_on_hit', 'test_rule_ramp_up'],
+    });
+    const effects = buildRelicEffects(relic, 'ru');
+    expect(effects.map(e => e.polarity)).toEqual(['positive', 'negative']);
   });
 
   it('пустая реликвия даёт пустой список эффектов', () => {

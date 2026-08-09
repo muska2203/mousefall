@@ -69,7 +69,10 @@ export function RelicDetailPopover({ relic, visible, x, y }: Props) {
         {relic.effects.length > 0 && (
           <ul className="field-popover-effects">
             {relic.effects.map((effect) => (
-              <li key={effect.key} className="field-popover-effect">
+              <li
+                key={effect.key}
+                className={`field-popover-effect field-popover-effect--${effect.polarity}`}
+              >
                 <RichDescription text={effect.text} />
               </li>
             ))}
