@@ -28,6 +28,7 @@
 | Как работают контентные правила? | [`CONTENT_RULES_EDGE_CASES.md`](./CONTENT_RULES_EDGE_CASES.md) |
 | Какие механики есть и чего не хватает (для геймдизайна)? | [`../game-design/mechanics-overview.md`](../game-design/mechanics-overview.md) |
 | Как устроена прогрессия внутри забега (экипировка + реликвии)? | [`../game-design/progression-concept.md`](../game-design/progression-concept.md) |
+| Как устроены подтипы, уровни и аффиксы экипировки, рейнж урона? | [`../game-design/equipment-modifiers-concept.md`](../game-design/equipment-modifiers-concept.md) |
 | Архитектура тайловых эффектов | [`../architecture/TILE_EFFECTS.md`](../architecture/TILE_EFFECTS.md) |
 | Как добавить тайловый эффект? | [`TILE_EFFECTS.md`](./TILE_EFFECTS.md) |
 | Как работают сохранения и загрузки? | [`SAVES.md`](./SAVES.md) |

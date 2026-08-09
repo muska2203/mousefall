@@ -6,6 +6,8 @@ export const commonSchoolWand = {
   "icon": "/assets/items/common_school_wand.png",
   "fallback": "🪄",
   "type": "weapon",
+  "level": 1,
+  "subtype": "staff",
   "stackable": false,
   "maxStack": 1,
   "value": 10,
@@ -21,8 +23,7 @@ export const commonSchoolWand = {
   ],
   "grantedAbilities": [],
   "weapon": {
-    "baseDamage": 2,
-    "damageFormulaId": "staff",
+    "damage": { "min": 2, "max": 3 },
     "range": 1,
     "damageDistribution": [
       {
@@ -35,6 +36,5 @@ export const commonSchoolWand = {
       "target.single",
       "delivery.weapon"
     ]
-  },
-  "equipModifiers": []
+  }
 } satisfies ItemTemplateInput;

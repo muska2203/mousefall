@@ -25,6 +25,8 @@ import type { AnimationNode, AnimationPhase } from '../../../src/presentation/ty
 vi.mock('@utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
+  rngFloat: vi.fn(() => 0.5),
+  rngInt: vi.fn((_rng: unknown, min: number) => min),
 }));
 
 function createWitcherPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
@@ -106,9 +108,9 @@ describe('Fire scenario', () => {
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 0, dy: 1 });
     sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
 
-    // Без модификатора огненного меча урон был бы 9; с ×1.5 округляется до 14.
-    expect(door.hp).toBeLessThanOrEqual(5);
-    expect(rat.hp).toBeLessThanOrEqual(5);
+    // Рейнж меча {4,6}: ролл с dex 2 и u=0.5 даёт 5; с огненным ×1.5 → 8.
+    expect(door.hp).toBe(30 - 8 * 2);
+    expect(rat.hp).toBe(15 - 8);
 
     // Дверь должна гореть, крыса — нет (прямой огненный урон по акторам не поджигает).
     expect(door.statusEffects.some((s) => s.type === 'burning')).toBe(true);

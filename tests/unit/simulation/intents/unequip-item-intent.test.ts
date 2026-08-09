@@ -5,7 +5,7 @@ import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {ItemTemplate} from '../../../../src/content/schemas';
 import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
 
-function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTemplate['equipModifiers'] = []): ItemTemplate {
+function mockItem(id: string, type: ItemTemplate['type']): ItemTemplate {
   return {
     id,
     type,
@@ -14,9 +14,8 @@ function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTe
     value: 0,
     rarity: 'common',
     abilityPool: [],
-    equipModifiers,
+    fixedModifiers: [],
     grantedAbilities: [],
-    ruleIds: [],
     apCost: 1,
   };
 }
@@ -31,7 +30,7 @@ beforeEach(() => {
     entities: new Map(),
     players: new Map(),
     items: new Map([
-      ['test_staff', mockItem('test_staff', 'weapon', [{ stat: 'str', value: 2, op: 'add' }])],
+      ['test_staff', mockItem('test_staff', 'weapon')],
       ['test_armor', mockItem('test_armor', 'armor')],
     ]),
     abilities: new Map(),
@@ -118,7 +117,7 @@ describe('executeUnequipItemIntent', () => {
     expect(node).toBeNull();
   });
 
-  it('удаляет equipModifiers и пересчитывает статы', () => {
+  it('удаляет stat-модификаторы предмета и пересчитывает статы', () => {
     const player = makePlayer({
       equippedWeaponId: 'test_staff',
       equippedWeaponInstanceId: 'staff_1',

@@ -15,10 +15,14 @@ import type {ParametrizedValue} from './types.ts';
  * - `multiply` — умножение извлечённого значения;
  * - `min` — нижняя граница после умножения;
  * - `round` — округление до ближайшего целого (`Math.round`).
+ *
+ * Для `ownerParam`-значений база — `ownerParamValue` (paramValue активного
+ * правила, ролленное значение rule-аффикса); fallback — 0, как у `context`.
  */
 export function resolveParametrizedValue(
   value: number | ParametrizedValue,
   ctx: RuleContext,
+  ownerParamValue?: number,
 ): number {
   if (typeof value === 'number') {
     return value;
@@ -30,6 +34,24 @@ export function resolveParametrizedValue(
 
     case 'context': {
       let v = ctx[value.field] ?? 0;
+
+      if (value.multiply !== undefined) {
+        v *= value.multiply;
+      }
+
+      if (value.min !== undefined) {
+        v = Math.max(v, value.min);
+      }
+
+      if (value.round === true) {
+        v = Math.round(v);
+      }
+
+      return v;
+    }
+
+    case 'ownerParam': {
+      let v = ownerParamValue ?? 0;
 
       if (value.multiply !== undefined) {
         v *= value.multiply;

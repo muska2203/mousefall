@@ -83,6 +83,31 @@ export interface BaseStats {
 
 export type StatModifierOp = 'add' | 'multiply';
 
+/**
+ * Рейнж урона оружия {min, max}.
+ * Derived-кэш актора и публичные API симуляции работают с рейнжем;
+ * конкретное значение роллится в момент удара (rollWeaponDamage).
+ */
+export type DamageRange = {
+  min: number;
+  max: number;
+};
+
+/**
+ * Аффикс (модификатор) экземпляра экипировки.
+ * Фирменные (origin 'fixed') задаются шаблоном через fixedModifiers и детерминированы;
+ * случайные (origin 'rolled') роллятся один раз при создании экземпляра и далее фиксируются.
+ * value = null для аффиксов без значения (scaling: 'none').
+ */
+export type ItemAffix = {
+  /** Ссылается на шаблон в реестре контента (категория modifiers). */
+  modifierId: string;
+  /** Ролленное значение из рейнжа уровня шаблона предмета. */
+  value: number | null;
+  /** Происхождение: фирменное свойство шаблона или результат случайного ролла. */
+  origin: 'fixed' | 'rolled';
+};
+
 export type StatModifier = {
   stat: 'damage' | 'armor' | 'maxHp' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
   value: number;

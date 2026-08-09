@@ -66,8 +66,7 @@ describe('requiredWeaponTags', () => {
       items: new Map([
         ['test_sword', mockWeapon('test_sword', {
           weapon: {
-            baseDamage: 5,
-            damageFormulaId: 'sword',
+            damage: { min: 5, max: 5 },
             range: 1,
             damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
             tags: ['attack.melee', 'target.single', 'delivery.weapon'],
@@ -75,8 +74,7 @@ describe('requiredWeaponTags', () => {
         })],
         ['test_bow', mockWeapon('test_bow', {
           weapon: {
-            baseDamage: 5,
-            damageFormulaId: 'dagger',
+            damage: { min: 5, max: 5 },
             range: 2,
             damageDistribution: [{ damageTag: 'damage.physical.piercing', weight: 1.0 }],
             tags: ['attack.ranged', 'target.single', 'delivery.weapon'],

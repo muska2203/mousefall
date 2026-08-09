@@ -10,26 +10,30 @@
  */
 
 import type {LocalizedItemTemplate} from '@content/registry';
-import {tryGetLocalizedAbility} from '@content/registry';
+import {tryGetLocalizedAbility, tryGetModifier} from '@content/registry';
 import type {ItemDetailSection, ItemDetailViewModel} from './types';
 import {resolveAbilityIcon, resolveItemFrame, resolveItemIcon} from '@utils/assetResolver';
 import type {Locale} from '@content/texts/lookup';
 import {getContentText, getTagText} from '@content/texts/lookup';
-import type {GameplayTag} from '@simulation/core-types';
+import type {DamageRange, GameplayTag, ItemAffix} from '@simulation/core-types';
+import {formatDamageRange} from '@utils/format';
 import {t} from '@i18n/t';
 
 export interface MapItemDetailOptions {
   stackCount?: number;
   rarity?: ItemDetailViewModel['rarity'];
   fallbackIcon?: string;
-  /** Effective урон по каждому типу урона (для оружия). Если не передан — показывается базовый урон. */
-  effectiveDamageByTag?: Record<GameplayTag, number>;
+  /** Effective рейнж урона по каждому типу урона (для оружия). Если не передан — показывается базовый рейнж. */
+  effectiveDamageByTag?: Record<GameplayTag, DamageRange>;
+  /** Аффиксы конкретного экземпляра предмета (фирменные + ролленные при создании). */
+  affixes?: readonly ItemAffix[];
   /** true, если карточка показывает шаблон предмета, а не конкретный инстанс. */
   isTemplate?: boolean;
 }
 
-function formatDamage(value: number): number {
-  return Math.round(value);
+/** Подставляет ролленное значение аффикса в описание (плейсхолдер {value}). */
+function interpolateAffixDescription(description: string, value: number | null): string {
+  return description.replaceAll('{value}', value === null ? '—' : String(value));
 }
 
 function typeLabel(type: string): string {
@@ -79,13 +83,13 @@ export function mapItemTemplateToDetail(
       if (effectiveByTag && entry.damageTag in effectiveByTag) {
         stats.push({
           label: tagText.name,
-          value: formatDamage(effectiveByTag[entry.damageTag]!),
+          value: formatDamageRange(effectiveByTag[entry.damageTag]!),
         });
       } else {
-        const baseDamage = template.weapon.baseDamage ?? 0;
+        const base = template.weapon.damage;
         stats.push({
           label: `${tagText.name} (${t('system.itemMapper.baseDamageLabel')})`,
-          value: formatDamage(baseDamage * entry.weight),
+          value: formatDamageRange({ min: base.min * entry.weight, max: base.max * entry.weight }),
         });
       }
     }
@@ -133,17 +137,40 @@ export function mapItemTemplateToDetail(
         })
       : null;
 
-  const properties =
-    template.ruleIds && template.ruleIds.length > 0
-      ? template.ruleIds.map((ruleId) => {
-          const text = getContentText('rules', ruleId, currentLocale);
-          return {
-            ruleId,
-            name: text.name,
-            description: text.description ?? '',
-          };
-        })
-      : null;
+  // Единая секция «Свойства»: фирменные (origin 'fixed') и случайные (origin 'rolled')
+  // модификаторы одним списком. Для экземпляра — из affixes (fixed уже включены и идут первыми),
+  // для карточки шаблона — только фирменные из fixedModifiers.
+  const modifierText = (modifierId: string) => getContentText('modifiers', modifierId, currentLocale);
+
+  const properties = (() => {
+    if (opts?.affixes && opts.affixes.length > 0) {
+      return opts.affixes.map((affix) => {
+        const text = modifierText(affix.modifierId);
+        return {
+          key: affix.modifierId,
+          name: text.name,
+          description: interpolateAffixDescription(text.description ?? '', affix.value),
+          origin: affix.origin,
+          polarity: tryGetModifier(affix.modifierId)?.polarity ?? ('positive' as const),
+        };
+      });
+    }
+    if (isTemplate && template.fixedModifiers.length > 0) {
+      return template.fixedModifiers.map((modifierId) => {
+        const text = modifierText(modifierId);
+        const modifier = tryGetModifier(modifierId);
+        const value = modifier?.scaling.kind === 'fixed' ? modifier.scaling.value : null;
+        return {
+          key: modifierId,
+          name: text.name,
+          description: interpolateAffixDescription(text.description ?? '', value),
+          origin: 'fixed' as const,
+          polarity: modifier?.polarity ?? ('positive' as const),
+        };
+      });
+    }
+    return null;
+  })();
 
   return {
     name: template.name,

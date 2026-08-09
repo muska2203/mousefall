@@ -98,7 +98,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     hp: 10,
     maxHp: 10,
     armor: 0,
-    damage: 2,
+    damage: { min: 2, max: 2 },
     maxAp: 3,
     ap: 3,
     inventory: [],

@@ -453,6 +453,7 @@ describe('interactAction.resolve', () => {
         templateId: 'health_potion',
         quantity: 1,
         grantedAbilities: [],
+        affixes: [],
       },
     });
     const state = makeStateWithPlayerAndEntity(player, container);
@@ -630,6 +631,7 @@ describe('INTERACT — полные flow', () => {
         templateId: 'health_potion',
         quantity: 1,
         grantedAbilities: [],
+        affixes: [],
       },
     });
     const state = makeStateWithPlayerAndEntity(player, container);

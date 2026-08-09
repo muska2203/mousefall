@@ -26,6 +26,8 @@ import type { AnimationNode, AnimationPhase } from '../../../src/presentation/ty
 vi.mock('@utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
+  rngFloat: vi.fn(() => 0.5),
+  rngInt: vi.fn((_rng: unknown, min: number) => min),
 }));
 
 function createWitcherPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
@@ -89,7 +91,8 @@ describe('Poison + counterattack scenario', () => {
 
     createStartingEquipment(state, player, ['common_venom_dagger']);
 
-    const rat = createRat({ x: 6, y: 5 });
+    // HP занижено: сценарий про комбо яд + контратака, а не про рейнж урона кинжала.
+    const rat = createRat({ x: 6, y: 5, hp: 8, maxHp: 8 });
     // Даём врагу статус контратаки — так проверяется комбо яд + контратака.
     rat.statusEffects.push({
       type: 'counterattack',

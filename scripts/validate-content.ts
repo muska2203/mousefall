@@ -6,6 +6,7 @@
  * - ссылки ruleIds в шаблонах (validateContentRuleReferences),
  * - семантику декларативных правил (validateContentRuleSemantics),
  * - перекрёстные ссылки между шаблонами (validateContentReferences),
+ * - плейсхолдеры {value} в текстах модификаторов (validateModifierTextPlaceholders),
  * - наличие переводов для каждого content ID в ru и en.
  *
  * Запуск:
@@ -14,7 +15,7 @@
 
 import { buildContent } from '../src/content/templates';
 import { getRegistry, initRegistry } from '../src/content/registry';
-import { validateContentReferences } from '../src/content/validate-references';
+import { validateContentReferences, validateModifierTextPlaceholders } from '../src/content/validate-references';
 import {
   validateContentRuleReferences,
   validateContentRuleSemantics,
@@ -55,6 +56,7 @@ function validateTranslations(): { ru: string[]; en: string[] } {
     { key: 'traps', map: registry.traps ?? new Map() },
     { key: 'terrain', map: registry.terrains ?? new Map() },
     { key: 'relics', map: registry.relics ?? new Map() },
+    { key: 'modifiers', map: registry.modifiers ?? new Map() },
   ];
 
   const ruMissing: string[] = [];
@@ -130,6 +132,20 @@ async function main(): Promise<number> {
     }
   } else {
     console.log('[validate-content] Ссылки между шаблонами в порядке.');
+  }
+
+  const placeholderErrors = validateModifierTextPlaceholders(getRegistry(), {
+    ru: ruContentTexts,
+    en: enContentTexts,
+  });
+  if (placeholderErrors.length > 0) {
+    hasErrors = true;
+    console.error('[validate-content] Ошибки плейсхолдеров {value} в текстах модификаторов:');
+    for (const error of placeholderErrors) {
+      console.error(`  [${error.path}] ${error.field}: ${error.problem}`);
+    }
+  } else {
+    console.log('[validate-content] Плейсхолдеры {value} в текстах модификаторов в порядке.');
   }
 
   const { ru: ruMissing, en: enMissing } = validateTranslations();

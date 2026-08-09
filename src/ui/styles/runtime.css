@@ -249,8 +249,7 @@ button.cm-choice-card:hover {
 }
 
 .item-detail-rarity,
-.item-detail-type,
-.item-detail-section-title {
+.item-detail-type {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -290,10 +289,6 @@ button.cm-choice-card:hover {
 
 .skill-detail-badges--item {
   margin-bottom: 8px;
-}
-
-.item-detail-section + .item-detail-section {
-  margin-top: 8px;
 }
 
 .item-detail-icon {
@@ -547,8 +542,7 @@ button.cm-choice-card:hover {
 }
 
 .item-detail-rarity,
-.item-detail-type,
-.item-detail-section-title {
+.item-detail-type {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -588,10 +582,6 @@ button.cm-choice-card:hover {
 
 .skill-detail-badges--item {
   margin-bottom: 8px;
-}
-
-.item-detail-section + .item-detail-section {
-  margin-top: 8px;
 }
 
 .item-detail-icon {
@@ -1112,24 +1102,74 @@ button.cm-choice-card:hover {
 /* Item properties                              */
 /* ───────────────────────────────────────────── */
 
+/* Разделитель категорий карточки — горизонтальная полоса в стиле рамки. */
+.item-detail-divider {
+  border: none;
+  border-top: 1px solid rgba(196, 163, 90, 0.25);
+  margin: 8px 0;
+}
+
 .item-detail-property {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 4px 0;
+  padding: 4px 6px;
+  border-radius: 4px;
 }
 
 .item-detail-property + .item-detail-property {
-  border-top: 1px solid rgba(196, 163, 90, 0.12);
+  margin-top: 2px;
 }
 
 .item-detail-property__name {
   color: var(--gold);
-  font-weight: 600;
 }
 
 .item-detail-property__desc {
   font-size: 11px;
   color: var(--text-muted);
   line-height: 1.3;
+}
+
+/* Уникальное (фирменное) свойство шаблона. */
+.item-detail-property--unique {
+  background: rgba(196, 69, 255, 0.10);
+}
+
+.item-detail-property--unique .item-detail-property__name {
+  color: #d4aaff;
+}
+
+/* Положительный случайный модификатор. */
+.item-detail-property--positive {
+  background: rgba(120, 200, 120, 0.08);
+}
+
+.item-detail-property--positive .item-detail-property__name {
+  color: #9ee6a0;
+}
+
+/* Отрицательный случайный модификатор. */
+.item-detail-property--negative {
+  background: rgba(220, 90, 90, 0.10);
+}
+
+.item-detail-property--negative .item-detail-property__name {
+  color: #ff9e9e;
+}
+
+/* Флейвор-описание предмета внизу карточки. */
+.item-detail-flavor {
+  margin: 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+/* Пометка возможного скилла (пул ролла) в карточке шаблона. */
+.item-detail-ability__pool-hint {
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
 }

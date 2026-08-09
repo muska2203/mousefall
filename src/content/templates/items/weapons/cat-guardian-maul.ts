@@ -6,12 +6,13 @@ export const catGuardianMaul = {
   "icon": "/assets/items/cat_guardian_maul.png",
   "fallback": "🔨",
   "type": "weapon",
+  "level": 3,
+  "subtype": "club",
   "stackable": false,
   "maxStack": 1,
   "value": 40,
   "weapon": {
-    "baseDamage": 8,
-    "damageFormulaId": "club",
+    "damage": { "min": 6, "max": 10 },
     "range": 1,
     "damageDistribution": [
       {
@@ -26,8 +27,5 @@ export const catGuardianMaul = {
     ]
   },
   "grantedAbilities": [],
-  "equipModifiers": [],
-  "ruleIds": [
-    "weapon_blunt_daze"
-  ]
+  "fixedModifiers": ["mod_blunt_daze"]
 } satisfies ItemTemplateInput;

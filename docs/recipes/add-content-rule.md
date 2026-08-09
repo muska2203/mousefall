@@ -10,7 +10,7 @@
 
 - Определение правила в `src/simulation/content-rules/rules.ts` или `src/simulation/content-rules/world-rules/global-rules.ts`.
 - Текст правила в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.
-- Ссылка `ruleIds` в шаблоне предмета, статуса, способности или тайлового эффекта.
+- Ссылка `ruleIds` в шаблоне статуса, способности или тайлового эффекта; у предметов экипировки — rule-модификатор (`effect: {kind: 'rule', ruleId}`) в `fixedModifiers` шаблона.
 - Тест в `tests/unit/simulation/content-rules/`.
 
 ---
@@ -63,11 +63,9 @@
    },
    ```
 
-4. **Привяжи правило к контенту**. Добавь `ruleIds: ['my_rule']` в шаблон:
-   - предмета (`src/content/templates/items/...`);
-   - статуса (`src/content/templates/statuses/...`);
-   - способности (`src/content/templates/abilities/...`);
-   - тайлового эффекта (`src/content/templates/tile-effects/...`).
+4. **Привяжи правило к контенту**:
+   - статуса, способности, тайлового эффекта, poi, ловушки, реликвии — добавь `ruleIds: ['my_rule']` в шаблон (`src/content/templates/...`);
+   - предмета экипировки — создай rule-модификатор (`effect: {kind: 'rule', ruleId: 'my_rule'}`, рецепт [`add-modifier.md`](./add-modifier.md)) и укажи его в `fixedModifiers` шаблона предмета (`src/content/templates/items/...`).
 
 5. **Напиши тест** в `tests/unit/simulation/content-rules/`. Проверь:
    - что правило срабатывает при нужном событии;
@@ -88,7 +86,7 @@
 - [ ] Правило добавлено в `CONTENT_RULES` или `GLOBAL_WORLD_CONTENT_RULES`.
 - [ ] `id` уникален в пределах всего реестра.
 - [ ] Текст правила добавлен в `ru/rules.ts` и `en/rules.ts`.
-- [ ] `ruleIds` указан в соответствующем шаблоне контента.
+- [ ] Правило привязано к контенту (`ruleIds` шаблона или rule-модификатор в `fixedModifiers` предмета).
 - [ ] Тест на правило добавлен.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.

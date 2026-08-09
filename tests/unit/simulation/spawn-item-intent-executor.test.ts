@@ -17,10 +17,9 @@ function makeTestItemTemplate(id: string): ItemTemplate {
         maxStack: 1,
         value: 0,
         rarity: 'common',
-        equipModifiers: [],
+        fixedModifiers: [],
         abilityPool: [],
         grantedAbilities: [],
-        ruleIds: [],
         apCost: 1,
     };
 }

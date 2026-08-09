@@ -2,10 +2,10 @@ import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {makeGameState, makePlayer} from '../../../fixtures/gameState';
 import {executeEquipItemIntent} from '../../../../src/simulation/systems/intents/equip-item-intent-executor';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
-import type {ItemTemplate} from '../../../../src/content/schemas';
+import type {ItemTemplate, ModifierTemplate} from '../../../../src/content/schemas';
 import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
 
-function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTemplate['equipModifiers'] = []): ItemTemplate {
+function mockItem(id: string, type: ItemTemplate['type']): ItemTemplate {
   return {
     id,
     type,
@@ -14,12 +14,22 @@ function mockItem(id: string, type: ItemTemplate['type'], equipModifiers: ItemTe
     value: 0,
     rarity: 'common',
     abilityPool: [],
-    equipModifiers,
+    fixedModifiers: [],
     grantedAbilities: [],
-    ruleIds: [],
     apCost: 1,
   };
 }
+
+/** Фирменный stat-модификатор: +2 к силе (детерминированное значение). */
+const testStrModifier: ModifierTemplate = {
+  id: 'test_str_bonus',
+  effect: { kind: 'stat', stat: 'str', op: 'add' },
+  scaling: { kind: 'fixed', value: 2 },
+  applicableSubtypes: ['sword'],
+  polarity: 'positive',
+  poolEligible: false,
+  weight: 1,
+};
 
 function makeBuilder() {
   return new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: 'any' } });
@@ -31,7 +41,7 @@ beforeEach(() => {
     entities: new Map(),
     players: new Map(),
     items: new Map([
-      ['test_staff', mockItem('test_staff', 'weapon', [{ stat: 'str', value: 2, op: 'add' }])],
+      ['test_staff', mockItem('test_staff', 'weapon')],
       ['test_armor', mockItem('test_armor', 'armor')],
       ['test_amulet', mockItem('test_amulet', 'amulet')],
     ]),
@@ -42,6 +52,7 @@ beforeEach(() => {
     statuses: new Map(),
     tileEffects: new Map(),
     tileEffectStatuses: new Map(),
+    modifiers: new Map([['test_str_bonus', testStrModifier]]),
 });
 });
 
@@ -52,7 +63,7 @@ afterEach(() => {
 describe('executeEquipItemIntent', () => {
   it('обновляет equippedWeaponId и equippedWeaponInstanceId для слота weapon', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []}],
+      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [], affixes: [] }],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();
@@ -77,7 +88,7 @@ describe('executeEquipItemIntent', () => {
 
   it('обновляет equippedArmorId и equippedArmorInstanceId для слота armor', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbilities: []}],
+      inventory: [{ instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbilities: [], affixes: [] }],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();
@@ -95,7 +106,7 @@ describe('executeEquipItemIntent', () => {
 
   it('обновляет equippedAmuletId и equippedAmuletInstanceId для слота amulet', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'amulet_1', templateId: 'test_amulet', quantity: 1, grantedAbilities: []}],
+      inventory: [{ instanceId: 'amulet_1', templateId: 'test_amulet', quantity: 1, grantedAbilities: [], affixes: [] }],
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
     const builder = makeBuilder();
@@ -127,9 +138,15 @@ describe('executeEquipItemIntent', () => {
     expect(player.equippedWeaponId).toBeNull();
   });
 
-  it('применяет equipModifiers и пересчитывает статы', () => {
+  it('применяет stat-аффикс экземпляра и пересчитывает статы', () => {
     const player = makePlayer({
-      inventory: [{ instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []}],
+      inventory: [{
+        instanceId: 'staff_1',
+        templateId: 'test_staff',
+        quantity: 1,
+        grantedAbilities: [],
+        affixes: [{ modifierId: 'test_str_bonus', value: 2, origin: 'fixed' }],
+      }],
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
     });
     const state = makeGameState({ player, entities: new Map([['player', player]]) });
@@ -143,7 +160,7 @@ describe('executeEquipItemIntent', () => {
     );
 
     expect(player.statModifiers.some(m => m.source === 'item_staff_1')).toBe(true);
-    expect(player.damage).toBeGreaterThan(0);
+    expect(player.damage.max).toBeGreaterThan(0);
   });
 
   it('возвращает null, если сущность не является игроком', () => {

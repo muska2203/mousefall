@@ -24,15 +24,14 @@ import type {AIMode} from '@simulation/ai/ai-state';
 import type {GameplayTag as CoreGameplayTag} from '@simulation/core-types';
 
 // Реэкспорт типов, необходимых renderer'у, чтобы UI не импортировал из simulation/
-export type { TileType, TurnSide, StatusEffect, InteractionId, FactionId } from '@simulation/types';
+export type { TileType, TurnSide, StatusEffect, InteractionId, FactionId, DamageRange } from '@simulation/types';
 export type { AIMode } from '@simulation/ai/ai-state';
 export type { AnimationConfigKey } from '@utils/animationConfig';
 export type GameplayTag = CoreGameplayTag;
 
 /** Одна секция детальной карточки предмета. */
 export type ItemDetailSection =
-  | { kind: 'stat-list'; title: string; stats: Array<{ label: string; value: string | number }> }
-  | { kind: 'description'; text: string };
+  | { kind: 'stat-list'; title: string; stats: Array<{ label: string; value: string | number }> };
 
 /** Полный ViewModel для отображения детальной информации о предмете. */
 export interface ItemDetailViewModel {
@@ -66,11 +65,16 @@ export interface ItemDetailViewModel {
     icon: string | null;
     weight: number;
   }> | null;
-  /** Пассивные свойства предмета, полученные из ruleIds шаблона. */
+  /** Свойства предмета (фирменные и случайные модификаторы): имя + описание со значением. */
   properties?: Array<{
-    ruleId: string;
+    /** Ключ строки: modifierId. */
+    key: string;
     name: string;
     description: string;
+    /** Происхождение: фирменное свойство шаблона или случайный аффикс экземпляра. */
+    origin: 'fixed' | 'rolled';
+    /** Полярность модификатора (из шаблона модификатора) — для цветового выделения. */
+    polarity: 'positive' | 'negative';
   }> | null;
   /** Теги классификации предмета (обычно оружия). */
   tags: GameplayTag[];
@@ -252,7 +256,8 @@ export type EquipmentSnapshot = {
   weaponInstanceId: string | null;
   armorInstanceId: string | null;
   amuletInstanceId: string | null;
-  weaponDamage: number | null;
+  /** Рейнж урона экипированного оружия (derived-кэш игрока). */
+  weaponDamage: import('@simulation/types').DamageRange | null;
 };
 
 export type PlayerSkillViewModel = {
@@ -279,7 +284,8 @@ export type EquipSlotViewModel = {
   label: string;
   icon?: string;
   fallback: string;
-  damage?: number | null;
+  /** Рейнж урона надетого оружия (только слот оружия). */
+  damage?: import('@simulation/types').DamageRange | null;
   rarity?: string;
   detail?: ItemDetailViewModel;
   /** Тип слота для отправки UNEQUIP action */
@@ -295,8 +301,8 @@ export type InventoryItemViewModel = {
   templateId: string;
   quantity: number;
   detail: ItemDetailViewModel;
-  /** Итоговый урон оружия с учётом формулы и текущих характеристик игрока (null для не-оружия) */
-  damage?: number | null;
+  /** Итоговый рейнж урона оружия с учётом текущих характеристик игрока (null для не-оружия) */
+  damage?: import('@simulation/types').DamageRange | null;
 };
 
 /** Один пункт эффекта реликвии: правило или модификатор характеристики. */
@@ -396,7 +402,8 @@ export type EnemyPopoverViewModel = {
   name: string;
   sprite: string;
   flavorText: string;
-  damage: number;
+  /** Рейнж урона врага (derived-кэш). */
+  damage: import('@simulation/types').DamageRange;
   hp: number;
   maxHp: number;
   skills: Array<{ name: string; icon: string | null; cooldown: number; maxCooldown: number }>;

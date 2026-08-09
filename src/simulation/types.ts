@@ -14,6 +14,7 @@ import {
   BaseStats,
   Corridor,
   CorridorSegment,
+  DamageRange,
   EntityId,
   ExecutionNode,
   FactionId,
@@ -22,6 +23,7 @@ import {
   GameMap,
   GameplayTag,
   Intent,
+  ItemAffix,
   ItemInstanceId,
   Position,
   Room,
@@ -50,6 +52,8 @@ export type {
   CorridorSegment,
   GameMap,
   BaseStats,
+  DamageRange,
+  ItemAffix,
   StatModifierOp,
   StatModifier,
   StatusEffectType,
@@ -82,6 +86,9 @@ export type InventoryItem = {
   /** Все способности предмета (фиксированные из шаблона + ролленная из abilityPool).
    *  Создаются один раз при генерации экземпляра. */
   grantedAbilities: Array<{ templateId: string; level: number }>;
+  /** Аффиксы экземпляра (до 2: 1 положительный + до 1 отрицательного).
+   *  Роллятся один раз при создании экземпляра и не переролливаются. */
+  affixes: ItemAffix[];
 };
 
 /** Экземпляр реликвии в коллекции игрока. Каждый стак — отдельная запись с уникальным instanceId. */
@@ -114,7 +121,8 @@ export interface BaseEntity {
 }
 
 export interface Attacker {
-  damage: number;
+  /** Derived-кэш рейнжа урона оружия (см. recalculateActorStats). */
+  damage: DamageRange;
 }
 
 export interface Attackable {
@@ -469,7 +477,7 @@ export type PlayerStatsSnapshot = {
   maxAp: number;
   baseStats: BaseStats;
   effectiveStats: { str: number; dex: number; int: number; vit: number };
-  damage: number;
+  damage: DamageRange;
   armor: number;
   critMultiplier: number;
 };
@@ -561,24 +569,24 @@ export type Simulation = {
     hoveredTarget: import("@simulation/core-types.ts").Position | null,
   ): import("@simulation/core-types.ts").Position[];
 
-  /** Возвращает итоговый урон оружия с учётом формулы и текущих характеристик игрока. */
-  getWeaponDamage(player: PlayerEntity): number;
+  /** Возвращает итоговый рейнж урона оружия с учётом текущих модификаторов игрока. */
+  getWeaponDamageRange(player: PlayerEntity): DamageRange;
 
   /** Возвращает распределение типов урона экипированного оружия с весами. */
   getWeaponDamageDistribution(player: PlayerEntity): Array<{ damageTag: GameplayTag; weight: number }>;
 
-  /** Возвращает итоговый урон оружия для конкретного тега урона. */
-  getWeaponDamageByTag(player: PlayerEntity, tag: GameplayTag): number;
+  /** Возвращает итоговый рейнж урона оружия для конкретного тега урона. */
+  getWeaponDamageRangeByTag(player: PlayerEntity, tag: GameplayTag): DamageRange;
 
   /**
-   * Считает effective урон для конкретного шаблона оружия и конкретного типа урона.
-   * Формула: базовый урон по формуле предмета × вес типа × модификаторы актора.
+   * Считает effective рейнж урона для конкретного шаблона оружия и конкретного типа урона.
+   * Формула: рейнж шаблона × вес типа × модификаторы актора (по каждому концу).
    */
-  getEffectiveWeaponDamageForTemplate(
+  getEffectiveWeaponDamageRangeForTemplate(
     actor: StatActor,
     template: ItemTemplate,
     tag: GameplayTag,
-  ): number;
+  ): DamageRange;
 
   /** Проверяет, может ли игрок переместиться на указанный тайл с учётом видимости.
    *  Невидимые объекты не блокируют путь.

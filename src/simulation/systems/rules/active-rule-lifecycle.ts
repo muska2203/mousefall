@@ -14,11 +14,12 @@
  */
 
 import type {Actor, StatusEffectHolder} from '@simulation/types.ts';
+import type {ItemAffix, RuntimeAbility} from '@simulation/core-types.ts';
 import type {OwnerContext} from '@simulation/content-rules/types.ts';
 import {tryGetContentRule} from '@simulation/content-rules/registry.ts';
 import {getRegistry} from '@content/registry.ts';
+import {collectFixedRuleIds} from '@simulation/systems/item-affix-roll.ts';
 import type {LoadedContent} from '@content/schemas';
-import type {RuntimeAbility} from '@simulation/core-types.ts';
 
 /**
  * Возвращает реестр контента, если он инициализирован.
@@ -80,11 +81,13 @@ function hasActiveRule(actor: Actor, ownerContext: OwnerContext, ruleId: string)
 
 /**
  * Резолвит контентные правила по `ruleIds` и добавляет их в `actor.activeRules`.
+ * `paramValues` — ролленные значения rule-аффиксов по ruleId (для ParametrizedValue ownerParam).
  */
 export function addActiveRules(
   actor: Actor,
   ownerContext: OwnerContext,
   ruleIds: readonly string[],
+  paramValues?: ReadonlyMap<string, number>,
 ): void {
   for (const ruleId of ruleIds) {
     if (hasActiveRule(actor, ownerContext, ruleId)) continue;
@@ -96,7 +99,8 @@ export function addActiveRules(
       continue;
     }
 
-    actor.activeRules.push({ ...rule, ownerContext });
+    const paramValue = paramValues?.get(ruleId);
+    actor.activeRules.push({ ...rule, ownerContext, ...(paramValue !== undefined ? { paramValue } : {}) });
   }
 }
 
@@ -117,8 +121,33 @@ export function addActiveRulesForItem(
   actor: Actor,
   itemInstanceId: string,
   ruleIds: readonly string[],
+  paramValues?: ReadonlyMap<string, number>,
 ): void {
-  addActiveRules(actor, { type: 'entity', entityId: itemInstanceId }, ruleIds);
+  addActiveRules(actor, { type: 'entity', entityId: itemInstanceId }, ruleIds, paramValues);
+}
+
+/**
+ * Извлекает rule-аффиксы экземпляра предмета: ruleIds и ролленные значения по ruleId.
+ * Аффиксы со scaling 'none' (value = null) добавляют правило без paramValue.
+ */
+export function collectAffixRules(
+  affixes: readonly ItemAffix[],
+): { ruleIds: string[]; paramValues: Map<string, number> } {
+  const registry = getContentRegistrySafe();
+  const ruleIds: string[] = [];
+  const paramValues = new Map<string, number>();
+
+  for (const affix of affixes) {
+    const modifier = registry?.modifiers?.get(affix.modifierId);
+    if (!modifier || modifier.effect.kind !== 'rule') continue;
+
+    ruleIds.push(modifier.effect.ruleId);
+    if (affix.value !== null) {
+      paramValues.set(modifier.effect.ruleId, affix.value);
+    }
+  }
+
+  return { ruleIds, paramValues };
 }
 
 /**
@@ -230,7 +259,7 @@ export function rebuildActiveRules(actor: Actor): void {
   // ── Экипировка ────────────────────────────────────────────────────────────
   if ('inventory' in actor && Array.isArray(actor.inventory)) {
     // Игрок: экипировка хранится как экземпляры в инвентаре.
-    const player = actor as Actor & { inventory: Array<{ instanceId: string; templateId: string }> };
+    const player = actor as Actor & { inventory: Array<{ instanceId: string; templateId: string; affixes?: ItemAffix[] }> };
 
     const equippedInstances = [
       (actor as Actor & { equippedWeaponInstanceId?: string | null }).equippedWeaponInstanceId,
@@ -242,14 +271,13 @@ export function rebuildActiveRules(actor: Actor): void {
       const item = player.inventory.find((i) => i.instanceId === instanceId);
       if (!item) continue;
 
-      const registry = getContentRegistrySafe();
-      const template = registry?.items.get(item.templateId);
-      if (template) {
-        addActiveRulesForItem(actor, instanceId, template.ruleIds ?? []);
-      }
+      // Правила rule-аффиксов экземпляра: фирменные и случайные уже входят в affixes.
+      const affixRules = collectAffixRules(item.affixes ?? []);
+      addActiveRulesForItem(actor, instanceId, affixRules.ruleIds, affixRules.paramValues);
     }
   } else {
     // Враг: экипировка задана только шаблоном, экземпляра предмета нет.
+    // Фирменные правила предмета собираются из fixedModifiers шаблона.
     const enemyEquipmentIds = {
       weapon: (actor as Actor & { equippedWeaponId?: string | null }).equippedWeaponId,
       armor: (actor as Actor & { equippedArmorId?: string | null }).equippedArmorId,
@@ -262,7 +290,7 @@ export function rebuildActiveRules(actor: Actor): void {
       const template = registry?.items.get(templateId);
       if (!template) continue;
 
-      addActiveRules(actor, { type: 'entity', entityId: `equipment:${slot}:${templateId}` }, template.ruleIds ?? []);
+      addActiveRules(actor, { type: 'entity', entityId: `equipment:${slot}:${templateId}` }, collectFixedRuleIds(template));
     }
   }
 

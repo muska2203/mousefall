@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {makeGameState, makePlayer} from '../../../fixtures/gameState';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
-import type {AbilityTemplate, ItemTemplate, StatusTemplate} from '../../../../src/content/schemas';
+import type {AbilityTemplate, ItemTemplate, ModifierTemplate, StatusTemplate} from '../../../../src/content/schemas';
 import type {RuntimeAbility} from '../../../../src/simulation/core-types';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import {executeApplyStatusIntent} from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
@@ -15,7 +15,7 @@ import {
   removeActiveRulesForStatus,
 } from '../../../../src/simulation/systems/rules/active-rule-lifecycle';
 
-function mockItem(id: string, ruleIds: string[] = []): ItemTemplate {
+function mockItem(id: string): ItemTemplate {
   return {
     id,
     type: 'weapon',
@@ -24,12 +24,22 @@ function mockItem(id: string, ruleIds: string[] = []): ItemTemplate {
     value: 0,
     rarity: 'common',
     abilityPool: [],
-    equipModifiers: [],
+    fixedModifiers: [],
     grantedAbilities: [],
-    ruleIds,
     apCost: 1,
   };
 }
+
+/** Фирменный rule-модификатор тестового предмета: добавляет правило fire_damage_ignites. */
+const testIgniteModifier: ModifierTemplate = {
+  id: 'test_mod_ignite',
+  effect: { kind: 'rule', ruleId: 'fire_damage_ignites' },
+  scaling: { kind: 'none' },
+  applicableSubtypes: ['sword'],
+  polarity: 'positive',
+  poolEligible: false,
+  weight: 1,
+};
 
 function mockAbility(id: string, ruleIds: string[] = []): AbilityTemplate {
   return {
@@ -67,7 +77,10 @@ beforeEach(() => {
     entities: new Map(),
     players: new Map(),
     items: new Map([
-      ['test_item', mockItem('test_item', ['fire_damage_ignites'])],
+      ['test_item', mockItem('test_item')],
+    ]),
+    modifiers: new Map([
+      ['test_mod_ignite', testIgniteModifier],
     ]),
     abilities: new Map([
       ['test_ability', mockAbility('test_ability', ['item_fire_damage_multiplier'])],
@@ -154,6 +167,7 @@ describe('active-rule-lifecycle', () => {
           templateId: 'test_item',
           quantity: 1,
           grantedAbilities: [],
+          affixes: [{ modifierId: 'test_mod_ignite', value: null, origin: 'fixed' }],
         },
       ],
       equippedWeaponInstanceId: 'item_1',
@@ -210,6 +224,7 @@ describe('active-rule-lifecycle', () => {
           templateId: 'test_item',
           quantity: 1,
           grantedAbilities: [],
+          affixes: [{ modifierId: 'test_mod_ignite', value: null, origin: 'fixed' }],
         },
       ],
       equippedWeaponInstanceId: 'item_1',

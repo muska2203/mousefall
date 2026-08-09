@@ -8,15 +8,40 @@
  * - проп может быть атакован и уничтожен.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { isBlocked, blocksLOS, findFirstAttackableEntityAt, findPropAt } from '../../../src/simulation/state';
 import { attackEntity } from '../../../src/simulation/systems/actions/attack-action';
 import { GameSimulation } from '../../../src/simulation/simulation';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
 import type { PropEntity } from '../../../src/simulation/types';
-import { makePlayer, makeProp, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
+import { resetRegistry } from '../../../src/content/registry';
+import type { ItemTemplate } from '../../../src/content/schemas';
+import { makePlayer, makeProp, makeStateWithPlayerAndEntity, initObjectContentRegistry } from '../../fixtures/gameState';
+
+/** Тестовый клинок с фиксированным рейнжем урона {10,10} — ролл детерминирован. */
+const testBlade = {
+  id: 'test_blade',
+  type: 'weapon',
+  stackable: false,
+  maxStack: 1,
+  value: 0,
+  weapon: {
+    damage: { min: 10, max: 10 },
+    range: 1,
+    damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+    tags: [],
+  },
+} as unknown as ItemTemplate;
 
 describe('Prop entity', () => {
+  beforeEach(() => {
+    initObjectContentRegistry({ items: new Map([['test_blade', testBlade]]) });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
   it('blocks movement when blocksMovement is true', () => {
     const prop = makeProp({ x: 4, y: 5 });
     const state = makeStateWithPlayerAndEntity(makePlayer(), prop);
@@ -55,7 +80,7 @@ describe('Prop entity', () => {
   });
 
   it('is attackable', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10 });
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 } });
     const prop = makeProp({ x: 4, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, prop);
 
@@ -65,7 +90,7 @@ describe('Prop entity', () => {
   });
 
   it('takes damage and can be destroyed by melee attack', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10, baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 }, equippedWeaponId: 'test_blade', baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
     const prop = makeProp({ x: 4, y: 5, hp: 8, maxHp: 8, armor: 0 });
     const state = makeStateWithPlayerAndEntity(player, prop);
 
@@ -77,7 +102,7 @@ describe('Prop entity', () => {
   });
 
   it('survives a weak melee attack', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10, baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 }, baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
     const prop = makeProp({ x: 4, y: 5, hp: 30, maxHp: 30, armor: 2 });
     const state = makeStateWithPlayerAndEntity(player, prop);
 

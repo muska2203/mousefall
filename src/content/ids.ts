@@ -4,9 +4,25 @@
  * типизируются от этих констант.
  */
 
-/** Формулы урона оружия (реализации — src/simulation/systems/stats/weapon-formulas.ts). */
-export const WEAPON_FORMULA_IDS = ['unarmed', 'club', 'dagger', 'staff', 'sword'] as const;
-export type WeaponFormulaId = typeof WEAPON_FORMULA_IDS[number];
+/** Подтипы оружия (замкнутый набор для ItemTemplate.subtype). */
+export const WEAPON_SUBTYPE_IDS = ['sword', 'dagger', 'club', 'staff', 'unarmed'] as const;
+export type WeaponSubtypeId = typeof WEAPON_SUBTYPE_IDS[number];
+
+/** Подтипы брони (замкнутый набор для ItemTemplate.subtype). */
+export const ARMOR_SUBTYPE_IDS = ['light', 'heavy', 'magic'] as const;
+export type ArmorSubtypeId = typeof ARMOR_SUBTYPE_IDS[number];
+
+/** Подтипы амулетов (замкнутый набор для ItemTemplate.subtype). */
+export const AMULET_SUBTYPE_IDS = ['bead', 'charm', 'talisman'] as const;
+export type AmuletSubtypeId = typeof AMULET_SUBTYPE_IDS[number];
+
+/** Все подтипы экипировки: объединение подтипов оружия, брони и амулетов. */
+export const EQUIPMENT_SUBTYPE_IDS = [
+  ...WEAPON_SUBTYPE_IDS,
+  ...ARMOR_SUBTYPE_IDS,
+  ...AMULET_SUBTYPE_IDS,
+] as const;
+export type EquipmentSubtypeId = typeof EQUIPMENT_SUBTYPE_IDS[number];
 
 /** Стратегии ИИ (реализации — src/simulation/ai/*-strategy.ts). */
 export const AI_STRATEGY_IDS = ['hunter', 'simple-boss'] as const;

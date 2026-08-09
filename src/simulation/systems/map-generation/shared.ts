@@ -32,6 +32,7 @@ import {createInventoryItem} from '@simulation/systems/inventory-factory';
 import {addModifier} from '@simulation/systems/stats/modifier-engine';
 import {recalculateActorStats} from '@simulation/systems/stats/recalculate';
 import {rebuildActiveRules} from '@simulation/systems/rules/active-rule-lifecycle';
+import {collectFixedStatModifiers} from '@simulation/systems/item-affix-roll';
 
 // ─────────────────────────────────────────────
 // Террейны по умолчанию
@@ -194,8 +195,10 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     displayName: template.id,
     hp: template.health.max,
     maxHp: template.health.max,
-    damage: template.combat?.damage ?? 0,
-    armor: template.combat?.armor ?? 0,
+    // Нейтральные значения: derived-кэш сразу пересчитывается
+    // recalculateActorStats ниже (урон — из шаблона оружия, броня — из шаблона брони).
+    damage: { min: 0, max: 0 },
+    armor: 0,
     templateId,
     statusEffects: [],
     blocksMovement: true,
@@ -232,7 +235,8 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     else if (slot === 'armor') enemy.equippedArmorId = id;
     else enemy.equippedAmuletId = id;
 
-    for (const mod of itemTemplate.equipModifiers ?? []) {
+    // Фирменные stat-модификаторы предмета (из fixedModifiers шаблона).
+    for (const mod of collectFixedStatModifiers(itemTemplate)) {
       addModifier(enemy, { ...mod, source: `equipment_${slot}` });
     }
 

@@ -3,7 +3,7 @@ import {GameState} from "@simulation/types.ts";
 import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
 import {ActionHandler, AttackAction, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
-import {getEffectiveWeaponDamage} from "@simulation/systems/stats/effective-stats.ts";
+import {rollWeaponDamage} from "@simulation/systems/stats/weapon-damage-roll.ts";
 import {getPrimaryDamageTag, getWeaponTags} from "@simulation/systems/tags/weapon-tags.ts";
 import {mergeDamageIntentTags} from "@simulation/systems/tags/tag-helpers.ts";
 
@@ -61,7 +61,7 @@ export const attackEntity: ActionHandler = {
       return [];
     }
 
-    const damage = getEffectiveWeaponDamage(ctx.attacker);
+    const damage = rollWeaponDamage(state, ctx.attacker);
     const primaryTag = getPrimaryDamageTag(ctx.attacker);
     const tags = mergeDamageIntentTags([primaryTag], getWeaponTags(ctx.attacker));
 

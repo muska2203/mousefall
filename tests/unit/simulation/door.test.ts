@@ -9,15 +9,40 @@
  * - дверь может быть атакована и разрушена.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { isBlocked, blocksLOS, findFirstAttackableEntityAt, findDoorAt } from '../../../src/simulation/state';
 import { attackEntity } from '../../../src/simulation/systems/actions/attack-action';
 import { GameSimulation } from '../../../src/simulation/simulation';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
 import type { DoorEntity, EntityId, Entity } from '../../../src/simulation/types';
-import { makeGameState, makePlayer, makeEnemy, makeDoor, makeStateWithPlayerAndEntity } from '../../fixtures/gameState';
+import { resetRegistry } from '../../../src/content/registry';
+import type { ItemTemplate } from '../../../src/content/schemas';
+import { makeGameState, makePlayer, makeEnemy, makeDoor, makeStateWithPlayerAndEntity, initObjectContentRegistry } from '../../fixtures/gameState';
+
+/** Тестовый клинок с фиксированным рейнжем урона {10,10} — ролл детерминирован. */
+const testBlade = {
+  id: 'test_blade',
+  type: 'weapon',
+  stackable: false,
+  maxStack: 1,
+  value: 0,
+  weapon: {
+    damage: { min: 10, max: 10 },
+    range: 1,
+    damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+    tags: [],
+  },
+} as unknown as ItemTemplate;
 
 describe('Door entity', () => {
+  beforeEach(() => {
+    initObjectContentRegistry({ items: new Map([['test_blade', testBlade]]) });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
   it('blocks movement when closed', () => {
     const door = makeDoor({ x: 4, y: 5 });
     const state = makeGameState({
@@ -67,7 +92,7 @@ describe('Door entity', () => {
   });
 
   it('is attackable', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10 });
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 } });
     const door = makeDoor({ x: 4, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, door);
 
@@ -77,7 +102,7 @@ describe('Door entity', () => {
   });
 
   it('takes damage and can be destroyed by attack', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10 });
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 } });
     const door = makeDoor({ x: 4, y: 5, hp: 5, maxHp: 5, armor: 0 });
     const state = makeStateWithPlayerAndEntity(player, door);
 
@@ -101,7 +126,7 @@ describe('Door entity', () => {
   });
 
   it('takes reduced damage from melee attack based on armor', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10, baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 2, ap: 2 });
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 }, equippedWeaponId: 'test_blade', baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 2, ap: 2 });
     const door = makeDoor({ x: 4, y: 5, hp: 30, maxHp: 30, armor: 2 });
     const state = makeStateWithPlayerAndEntity(player, door);
 
@@ -115,7 +140,7 @@ describe('Door entity', () => {
   });
 
   it('is destroyed when melee attack reduces hp to zero', () => {
-    const player = makePlayer({ x: 3, y: 5, damage: 10, baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 }, equippedWeaponId: 'test_blade', baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
     const door = makeDoor({ x: 4, y: 5, hp: 8, maxHp: 8, armor: 2 });
     const state = makeStateWithPlayerAndEntity(player, door);
 

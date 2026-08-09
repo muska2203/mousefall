@@ -3,8 +3,14 @@
  *
  * Используется внутри ItemDetailPopover и FieldObjectPopover.
  * Принимает готовый ItemDetailViewModel от Presentation.
+ *
+ * Порядок категорий: статы → уникальные свойства → случайные свойства →
+ * скиллы → флейвор-описание → теги. Заголовков нет, категории разделяются
+ * горизонтальной полосой.
  */
 
+import {Fragment} from 'react';
+import type {ReactNode} from 'react';
 import {useTranslation} from '@i18n/hooks';
 import type {ItemDetailViewModel} from '@presentation/types';
 import {TagList} from './TagList';
@@ -17,6 +23,124 @@ interface Props {
 export function ItemDetailCard({ item }: Props) {
   const { t } = useTranslation('components');
   const abilities = item.grantedAbilities;
+  const poolAbilities = item.isTemplate ? item.abilityPool : null;
+  const fixedProperties = item.properties?.filter((p) => p.origin === 'fixed') ?? [];
+  const rolledProperties = item.properties?.filter((p) => p.origin === 'rolled') ?? [];
+
+  // Категории в порядке отображения; пустые пропускаются.
+  const categories: ReactNode[] = [];
+
+  // 1. Основные параметры (урон/броня/эффект расходника) — значения жирным.
+  const stats = item.sections.flatMap((section) => section.stats);
+  if (stats.length > 0) {
+    categories.push(
+      <ul key="stats" className="item-detail-list item-detail-list-plain">
+        {stats.map((stat, index) => (
+          <li key={index}>
+            {stat.label}: <strong>{stat.value}</strong>
+          </li>
+        ))}
+      </ul>,
+    );
+  }
+
+  // 2. Уникальные (фирменные) свойства шаблона.
+  if (fixedProperties.length > 0) {
+    categories.push(
+      <ul key="fixed" className="item-detail-list item-detail-list-plain">
+        {fixedProperties.map((property) => (
+          <li key={property.key} className="item-detail-property item-detail-property--unique">
+            <span className="item-detail-property__name">{property.name}</span>
+            <span className="item-detail-property__desc">
+              <RichDescription text={property.description} />
+            </span>
+          </li>
+        ))}
+      </ul>,
+    );
+  }
+
+  // 3. Случайные свойства экземпляра — подсветка по полярности.
+  if (rolledProperties.length > 0) {
+    categories.push(
+      <ul key="rolled" className="item-detail-list item-detail-list-plain">
+        {rolledProperties.map((property) => (
+          <li
+            key={property.key}
+            className={`item-detail-property item-detail-property--${property.polarity}`}
+          >
+            <span className="item-detail-property__name">{property.name}</span>
+            <span className="item-detail-property__desc">
+              <RichDescription text={property.description} />
+            </span>
+          </li>
+        ))}
+      </ul>,
+    );
+  }
+
+  // 4. Скиллы: установленные на предмет, затем пул возможных (для карточки шаблона).
+  const hasAbilities = abilities !== null && abilities !== undefined && abilities.length > 0;
+  const hasPool = poolAbilities !== null && poolAbilities !== undefined && poolAbilities.length > 0;
+  if (hasAbilities || hasPool) {
+    categories.push(
+      <div key="skills">
+        {hasAbilities &&
+          abilities!.map((ability) => (
+            <div className="item-detail-ability" key={ability.templateId}>
+              {ability.icon && (
+                <img
+                  className="item-detail-ability__icon"
+                  src={ability.icon}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <span className="item-detail-ability__name">{ability.name}</span>
+              <span className="item-detail-ability__level">{t('itemDetail.abilityLevelPrefix')}{ability.level}</span>
+            </div>
+          ))}
+        {hasPool && (
+          <ul className="item-detail-list item-detail-list-plain">
+            {poolAbilities!.map((ability) => (
+              <li key={ability.abilityId} className="item-detail-ability item-detail-ability--pool">
+                {ability.icon && (
+                  <img
+                    className="item-detail-ability__icon"
+                    src={ability.icon}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+                <div className="item-detail-ability__info">
+                  <span className="item-detail-ability__name">
+                    {ability.name}
+                    <span className="item-detail-ability__pool-hint">{t('itemDetail.possibleSkillHint')}</span>
+                  </span>
+                  {ability.description && (
+                    <span className="item-detail-ability__desc">
+                      <RichDescription text={ability.description} />
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>,
+    );
+  }
+
+  // 5. Флейвор-описание предмета.
+  if (item.description) {
+    categories.push(
+      <p key="flavor" className="item-detail-flavor">
+        {item.description}
+      </p>,
+    );
+  }
 
   return (
     <div className={`item-detail-card item-detail-rarity-${item.rarity}`}>
@@ -56,101 +180,12 @@ export function ItemDetailCard({ item }: Props) {
         <span className="item-detail-name">{item.name}</span>
       </div>
 
-      {abilities && abilities.length > 0 && (
-        <div className="item-detail-section">
-          <h4 className="item-detail-section-title">{t('itemDetail.itemSkillsTitle')}</h4>
-          {abilities.map((ability) => (
-            <div className="item-detail-ability" key={ability.templateId}>
-              {ability.icon && (
-                <img
-                  className="item-detail-ability__icon"
-                  src={ability.icon}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                />
-              )}
-              <span className="item-detail-ability__name">{ability.name}</span>
-              <span className="item-detail-ability__level">{t('itemDetail.abilityLevelPrefix')}{ability.level}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {item.properties && item.properties.length > 0 && (
-        <div className="item-detail-section">
-          <h4 className="item-detail-section-title">{t('itemDetail.propertiesTitle')}</h4>
-          <ul className="item-detail-list item-detail-list-plain">
-            {item.properties.map((property) => (
-              <li key={property.ruleId} className="item-detail-property">
-                <span className="item-detail-property__name">{property.name}</span>
-                <span className="item-detail-property__desc">
-                  <RichDescription text={property.description} />
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {item.isTemplate && item.abilityPool && item.abilityPool.length > 0 && (
-        <div className="item-detail-section">
-          <h4 className="item-detail-section-title">{t('itemDetail.possibleSkillsTitle')}</h4>
-          <ul className="item-detail-list item-detail-list-plain">
-            {item.abilityPool.map((ability) => (
-              <li key={ability.abilityId} className="item-detail-ability item-detail-ability--pool">
-                {ability.icon && (
-                  <img
-                    className="item-detail-ability__icon"
-                    src={ability.icon}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                  />
-                )}
-                <div className="item-detail-ability__info">
-                  <span className="item-detail-ability__name">{ability.name}</span>
-                  {ability.description && (
-                    <span className="item-detail-ability__desc">
-                      <RichDescription text={ability.description} />
-                    </span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {item.sections.map((section, index) => {
-        if (section.kind === 'stat-list') {
-          return (
-            <div className="item-detail-section" key={index}>
-              <h4 className="item-detail-section-title">{section.title}</h4>
-              <ul className="item-detail-list item-detail-list-plain">
-                {section.stats.map((stat, sIndex) => (
-                  <li key={sIndex}>
-                    {stat.label}: <strong>{stat.value}</strong>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        }
-
-        if (section.kind === 'description') {
-          return (
-            <div className="item-detail-section" key={index}>
-              <h4 className="item-detail-section-title">{t('itemDetail.descriptionTitle')}</h4>
-              <p className="item-detail-desc">
-                <RichDescription text={section.text} />
-              </p>
-            </div>
-          );
-        }
-
-        return null;
-      })}
+      {categories.map((category, index) => (
+        <Fragment key={index}>
+          {index > 0 && <hr className="item-detail-divider" />}
+          {category}
+        </Fragment>
+      ))}
 
       {item.tags.length > 0 && (
         <div className="item-detail-tags">

@@ -6,6 +6,8 @@ export const commonSplinterBlade = {
   "icon": "/assets/items/common_splinter_blade.png",
   "fallback": "🗡",
   "type": "weapon",
+  "level": 1,
+  "subtype": "sword",
   "stackable": false,
   "maxStack": 1,
   "value": 10,
@@ -28,8 +30,7 @@ export const commonSplinterBlade = {
     }
   ],
   "weapon": {
-    "baseDamage": 4,
-    "damageFormulaId": "sword",
+    "damage": { "min": 2, "max": 4 },
     "range": 1,
     "damageDistribution": [
       {
@@ -46,8 +47,5 @@ export const commonSplinterBlade = {
   "grantedAbilities": [
     "sudden_strike"
   ],
-  "equipModifiers": [],
-  "ruleIds": [
-    "weapon_poison_on_hit"
-  ]
+  "fixedModifiers": ["mod_poison_on_hit"]
 } satisfies ItemTemplateInput;

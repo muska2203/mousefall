@@ -26,11 +26,10 @@ function mockItem(id: string): ItemTemplate {
     value: 0,
     rarity: 'common',
     abilityPool: [{ abilityId: 'fireball', weight: 1 }],
-    equipModifiers: [],
+    fixedModifiers: [],
     grantedAbilities: [],
-    ruleIds: [],
     apCost: 1,
-    weapon: { baseDamage: 5, damageFormulaId: 'staff', range: 2, damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }], tags: [] },
+    weapon: { damage: { min: 5, max: 5 }, range: 2, damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }], tags: [] },
   };
 }
 

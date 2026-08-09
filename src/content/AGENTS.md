@@ -17,7 +17,7 @@
 
 ```
 src/content/
-  ids.ts             # Замкнутые наборы ID (WEAPON_FORMULA_IDS, AI_STRATEGY_IDS, MAP_STRATEGY_IDS) — источник истины для z.enum и реестров simulation
+  ids.ts             # Замкнутые наборы ID (EQUIPMENT_SUBTYPE_IDS, AI_STRATEGY_IDS, MAP_STRATEGY_IDS) — источник истины для z.enum и реестров simulation
   schemas.ts         # Zod-схемы и типы шаблонов; в конце — Input-типы для авторства
   validate-references.ts  # Валидация перекрёстных ссылок между шаблонами (equipment, lootTable, пулы карт и т.д.)
   registry.ts        # In-memory реестр загруженного контента
@@ -38,10 +38,13 @@ src/content/
     pois/            # POI
     traps/           # Ловушки
     relics/          # Реликвии (постоянные пассивные бонусы забега)
+    modifiers/       # Модификаторы экипировки: stat/rule, аффиксы ролла и фирменные свойства (fixedModifiers)
   texts/             # Локализованные тексты врагов, предметов, способностей
     types.ts         # Типы игровых текстов
-    ru.ts            # Русские тексты
-    en.ts            # Английские тексты
+    ru/              # Русские тексты по категориям (items.ts, modifiers.ts, ...)
+    en/              # Английские тексты по категориям
+    ru.ts            # Реэкспорт русских текстов
+    en.ts            # Реэкспорт английских текстов
     lookup.ts        # getContentText(category, id, locale)
 ```
 
@@ -54,6 +57,7 @@ src/content/
 | Добавить новый шаблон сущности | `src/content/templates/entities/<id>.ts` + строка в `templates/entities/index.ts` |
 | Добавить новый террейн | `docs/recipes/add-terrain.md` → `src/content/templates/terrains/`, `texts/{ru,en}/terrain.ts` |
 | Добавить новую реликвию | `docs/recipes/add-relic.md` → `src/content/templates/relics/`, `texts/{ru,en}/relics.ts` |
+| Добавить новый модификатор (аффикс) | `docs/recipes/add-modifier.md` → `src/content/templates/modifiers/`, `texts/{ru,en}/modifiers.ts` |
 | Изменить схему валидации | `src/content/schemas.ts` |
 | Добавить поле в реестр | `src/content/registry.ts` + `templates/index.ts` |
 | Добавить/изменить текст врага/предмета/способности | `src/content/texts/{ru,en}.ts` |
@@ -91,15 +95,17 @@ src/content/
 Тег `ground` означает «на клетку можно ставить тайловые эффекты и спавнить объекты» — это не то же самое, что `walkable`.
 Тексты террейнов — в `src/content/texts/{ru,en}/terrain.ts`. Рецепт: `docs/recipes/add-terrain.md`.
 
-### Оружие: `damageDistribution`
+### Оружие: `damage`, `subtype`, `level` и `damageDistribution`
 
-В `WeaponStatsSchema` (`src/content/schemas.ts`) урон оружия задаётся полем `damageDistribution` — массивом записей:
+В `WeaponStatsSchema` (`src/content/schemas.ts`) урон оружия задаётся рейнжем `damage: {min, max}` (роллится при каждом ударе, смещение вверх от dex атакующего — `src/simulation/systems/stats/weapon-damage-roll.ts`), а распределение типов урона — массивом `damageDistribution`. У каждого шаблона экипировки обязательны `subtype` (подтип из `EQUIPMENT_SUBTYPE_IDS`, определяет пул аффиксов) и `level` (уровень ≥ 1, выбирает рейнж ролла аффиксов):
 
 ```typescript
 {
+  "type": "weapon",
+  "subtype": "sword",
+  "level": 1,
   "weapon": {
-    "baseDamage": 4,
-    "damageFormulaId": "sword",
+    "damage": { "min": 4, "max": 6 },
     "range": 1,
     "damageDistribution": [
       { "damageTag": "damage.physical.slashing", "weight": 1.0 }
@@ -113,6 +119,17 @@ src/content/
 - `weight` — неотрицательный множитель. Минимум одна запись должна иметь `weight > 0`.
 - Веса не нормализуются; максимальный вес определяет основной тип оружия.
 - Теги урона (`damage.*`) не должны дублироваться в `weapon.tags`; они описываются только через `damageDistribution`.
+- Формулы урона оружия (`damageFormulaId`, `weapon-formulas.ts`) удалены 2026-08-08 — урон берётся только из рейнжа шаблона.
+
+### Модификаторы экипировки: `fixedModifiers`, `poolEligible`, `scaling fixed`
+
+Категория `modifiers` — единый источник свойств экипировки. Фирменные свойства предмета задаются полем `fixedModifiers: string[]` шаблона экипировки (ID модификаторов; поля `equipModifiers` и `ruleIds` предметов удалены 2026-08-09). У модификатора:
+
+- `poolEligible` (default `true`) — участвует ли в случайном ролле аффиксов; `false` — только фирменное свойство конкретных предметов;
+- `scaling` — `perLevel` (ролл из рейнжей по уровню предмета), `fixed` (детерминированное `value`, для фирменных stat-модификаторов) или `none` (без значения);
+- `polarity` — default `positive`; для `poolEligible: false` не используется.
+
+Валидация (`npm run validate:content`): stat-модификатор обязан иметь `scaling: perLevel` или `fixed`; модификатор в `fixedModifiers` не может быть `perLevel` (фирменные детерминированы), обязан существовать и включать `subtype` предмета в `applicableSubtypes`; `{value}` в описании допустим при `perLevel` или `fixed`. Рецепт: `docs/recipes/add-modifier.md`.
 
 ### Способности: `damageTag` и `requiredWeaponTags`
 

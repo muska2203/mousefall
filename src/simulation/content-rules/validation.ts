@@ -9,9 +9,8 @@
  */
 
 import type {LoadedContent} from '@content/schemas';
-import {getAllContentRules, getRegistry} from './registry';
+import {getAllContentRules, getRegistry, tryGetContentRule} from './registry';
 import type {ContentRule, RuleCondition, RuleEffect} from './types';
-import {hasWeaponFormula} from '@simulation/systems/stats/weapon-formulas';
 
 /**
  * Описание найденной ошибки валидации.
@@ -57,10 +56,6 @@ export function validateContentRuleReferences(content: LoadedContent): void {
     }
   }
 
-  for (const [id, template] of content.items) {
-    validateTemplateRuleIds(template.ruleIds, id);
-  }
-
   for (const [id, template] of content.abilities) {
     validateTemplateRuleIds(template.ruleIds, id);
   }
@@ -92,6 +87,13 @@ export function validateContentRuleReferences(content: LoadedContent): void {
   for (const [id, template] of content.relics ?? new Map()) {
     validateTemplateRuleIds(template.ruleIds, id);
   }
+
+  // Rule-аффиксы ссылаются на контентные правила через effect.ruleId.
+  for (const [id, modifier] of content.modifiers ?? new Map()) {
+    if (modifier.effect.kind === 'rule') {
+      validateTemplateRuleIds([modifier.effect.ruleId], id);
+    }
+  }
 }
 
 /**
@@ -114,8 +116,60 @@ export function validateContentRuleSemantics(content: LoadedContent): ContentRul
   }
 
   validateTileEffectTemplates(content.tileEffects, knownTileEffectStatusIds, errors);
+  validateModifierTemplates(content, errors);
 
   return errors;
+}
+
+/**
+ * Рекурсивно ищет ParametrizedValue { type: 'ownerParam' } внутри эффекта правила.
+ */
+function effectContainsOwnerParam(value: unknown): boolean {
+  if (value === null || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some(effectContainsOwnerParam);
+  const record = value as Record<string, unknown>;
+  if (record['type'] === 'ownerParam') return true;
+  return Object.values(record).some(effectContainsOwnerParam);
+}
+
+/**
+ * Проверяет инварианты шаблонов модификаторов (аффиксов):
+ * - stat-аффикс обязан иметь scaling perLevel или fixed — иначе значения нет
+ *   и модификатор применится со значением 0;
+ * - rule-аффикс со scaling perLevel допустим, только если эффект правила
+ *   содержит ParametrizedValue { type: 'ownerParam' } — куда подставлять
+ *   ролленное значение экземпляра.
+ */
+function validateModifierTemplates(
+  content: LoadedContent,
+  errors: ContentRuleValidationError[],
+): void {
+  for (const [id, modifier] of content.modifiers ?? new Map()) {
+    if (modifier.effect.kind === 'stat') {
+      if (modifier.scaling.kind === 'none') {
+        errors.push({
+          path: `modifiers.${id}`,
+          field: 'scaling',
+          problem: 'Stat-аффикс требует scaling perLevel или fixed: без значения модификатор применится со значением 0',
+        });
+      }
+      continue;
+    }
+
+    if (modifier.scaling.kind !== 'perLevel') continue;
+
+    const rule = tryGetContentRule(modifier.effect.ruleId);
+    // Существование ruleId проверяется в validateContentRuleReferences.
+    if (!rule) continue;
+
+    if (!effectContainsOwnerParam(rule.effect)) {
+      errors.push({
+        path: `modifiers.${id}`,
+        field: 'scaling',
+        problem: `Rule-аффикс со scaling perLevel требует ParametrizedValue { type: 'ownerParam' } в эффекте правила "${modifier.effect.ruleId}"`,
+      });
+    }
+  }
 }
 
 /**
@@ -190,9 +244,6 @@ function validateRuleEffect(
       break;
     case 'applyTileEffectStatus':
       validateApplyTileEffectStatusEffect(rule, effect, knownTileEffectStatusIds, knownTileEffectIds, errors);
-      break;
-    case 'dealDamage':
-      validateDealDamageEffect(rule, effect, errors);
       break;
     case 'heal':
       validateHealEffect(rule, effect, errors);
@@ -298,29 +349,6 @@ function validateSpawnTileEffectEffect(
       ruleId: rule.id,
       field: 'effect.statusType',
       problem: `Статус тайлового эффекта "${statusType}" не найден в реестре`,
-    });
-  }
-}
-
-/**
- * Проверяет ссылку на формулу урона в эффекте dealDamage.
- */
-function validateDealDamageEffect(
-  rule: ContentRule,
-  effect: Extract<RuleEffect, { type: 'dealDamage' }>,
-  errors: ContentRuleValidationError[],
-): void {
-  const damageFormulaId = (effect as { damageFormulaId?: string }).damageFormulaId;
-  if (damageFormulaId === undefined) {
-    return;
-  }
-
-  if (!hasWeaponFormula(damageFormulaId)) {
-    errors.push({
-      path: `rule.${rule.id}.effect`,
-      ruleId: rule.id,
-      field: 'effect.damageFormulaId',
-      problem: `Формула урона "${damageFormulaId}" не зарегистрирована`,
     });
   }
 }

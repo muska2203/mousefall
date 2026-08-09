@@ -2,12 +2,15 @@ import type {GameState, InventoryItem} from '@simulation/types';
 import {getItem} from '@content/registry';
 import {nextEntityId} from '@simulation/state';
 import {rollItemAbility} from './item-ability-roll';
+import {createItemAffixes} from './item-affix-roll';
 
 /**
  * Фабрика создания экземпляра предмета в инвентаре.
  *
- * Генерирует уникальный instanceId через nextEntityId и роллит скилл из abilityPool.
- * Ролл скилла использует runtime random и не зависит от seed мира.
+ * Генерирует уникальный instanceId через nextEntityId, роллит скилл из abilityPool
+ * и собирает аффиксы: фирменные (fixedModifiers шаблона) + случайные из пула по подтипу.
+ * Ролл скилла использует runtime random и не зависит от seed мира,
+ * а ролл аффиксов идёт через seeded state.rng (детерминирован, воспроизводим).
  */
 export function createInventoryItem(
   state: GameState,
@@ -29,5 +32,6 @@ export function createInventoryItem(
     templateId,
     quantity: 1,
     grantedAbilities,
+    affixes: createItemAffixes(state.rng, template),
   };
 }

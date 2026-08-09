@@ -2,7 +2,7 @@ import {GameState} from '@simulation/types';
 import {CounterAttackIntent, IntentExecutor} from '@simulation/systems/intents/types';
 import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
 import {findEntity} from '@simulation/state';
-import {getEffectiveWeaponDamage} from '@simulation/systems/stats/effective-stats';
+import {rollWeaponDamage} from '@simulation/systems/stats/weapon-damage-roll';
 import {getPrimaryDamageTag, getWeaponTags} from '@simulation/systems/tags/weapon-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 
@@ -36,7 +36,7 @@ export const executeCounterAttackIntent: IntentExecutor<CounterAttackIntent> = (
 
   const dx = target.x - counterAttacker.x;
   const dy = target.y - counterAttacker.y;
-  const damage = getEffectiveWeaponDamage(counterAttacker);
+  const damage = rollWeaponDamage(state, counterAttacker);
   const primaryTag = getPrimaryDamageTag(counterAttacker);
   const tags = mergeDamageIntentTags([primaryTag], getWeaponTags(counterAttacker), ['reaction.counter']);
 

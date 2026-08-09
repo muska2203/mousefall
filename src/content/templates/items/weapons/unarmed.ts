@@ -3,12 +3,13 @@ import type {ItemTemplateInput} from '../../../schemas';
 export const unarmed = {
   "id": "unarmed",
   "type": "weapon",
+  "level": 1,
+  "subtype": "unarmed",
   "stackable": false,
   "maxStack": 1,
   "value": 0,
   "weapon": {
-    "baseDamage": 0,
-    "damageFormulaId": "unarmed",
+    "damage": { "min": 1, "max": 1 },
     "range": 1,
     "damageDistribution": [
       {
@@ -23,6 +24,5 @@ export const unarmed = {
       "delivery.unarmed"
     ]
   },
-  "grantedAbilities": [],
-  "equipModifiers": []
+  "grantedAbilities": []
 } satisfies ItemTemplateInput;

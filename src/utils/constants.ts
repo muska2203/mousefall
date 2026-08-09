@@ -53,6 +53,12 @@ export const PLAYER_BASE_MAX_HP = 50;
 /** Базовый множитель критического урона. */
 export const BASE_CRIT_MULTIPLIER = 1.5;
 
+/** Коэффициент смещения ролла урона от ловкости: u^(1/(1 + dex·k)). */
+export const DEX_DAMAGE_BIAS_K = 0.05;
+
+/** Шанс выпадения отрицательного аффикса при создании экземпляра экипировки. */
+export const NEGATIVE_AFFIX_CHANCE = 0.5;
+
 /** Максимальное количество AP, которое может потребовать способность со стоимостью "all". */
 export const MAX_ABILITY_ALL_AP_COST = 3;
 

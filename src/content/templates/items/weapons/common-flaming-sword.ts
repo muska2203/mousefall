@@ -6,12 +6,13 @@ export const commonFlamingSword = {
   "icon": "/assets/items/common_flaming_sword.png",
   "fallback": "🔥",
   "type": "weapon",
+  "level": 1,
+  "subtype": "sword",
   "stackable": false,
   "maxStack": 1,
   "value": 12,
   "weapon": {
-    "baseDamage": 5,
-    "damageFormulaId": "sword",
+    "damage": { "min": 4, "max": 6 },
     "range": 1,
     "damageDistribution": [
       {
@@ -26,8 +27,5 @@ export const commonFlamingSword = {
     ]
   },
   "grantedAbilities": [],
-  "equipModifiers": [],
-  "ruleIds": [
-    "item_fire_damage_multiplier"
-  ]
+  "fixedModifiers": ["mod_fire_damage_multiplier"]
 } satisfies ItemTemplateInput;

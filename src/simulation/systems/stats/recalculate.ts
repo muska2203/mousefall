@@ -12,14 +12,17 @@
  */
 
 import type {Actor, StatActor} from '@simulation/types.ts';
-import {getBaseArmor, getBaseDamage, getBaseMaxHp,} from './base-resolver.ts';
-import {getEffectiveCritMultiplier} from './effective-stats.ts';
+import {getBaseArmor, getBaseDamageRange, getBaseMaxHp,} from './base-resolver.ts';
+import {applyDamageModifiers, getEffectiveCritMultiplier, getEffectiveMaxHp,} from './effective-stats.ts';
+import {applyModifiers} from './modifier-engine.ts';
 
 export function recalculateActorStats(actor: StatActor & Actor): void {
   // Обновляем derived-кэш: эти поля НЕЛЬЗЯ менять напрямую вне этого вызова.
-  actor.maxHp = getBaseMaxHp(actor);
-  actor.damage = Math.round(getBaseDamage(actor));
-  actor.armor = Math.round(getBaseArmor(actor));
+  // Кэш хранит итоговые значения: база (baseStats, экипировка) + stat-модификаторы
+  // (аффиксы предметов, реликвии, статусы) — как в getEffective*-функциях.
+  actor.maxHp = Math.round(getEffectiveMaxHp(actor));
+  actor.damage = applyDamageModifiers(actor, getBaseDamageRange(actor));
+  actor.armor = Math.round(applyModifiers(actor, 'armor', getBaseArmor(actor)).total);
 
   actor.critMultiplier = getEffectiveCritMultiplier(actor);
 

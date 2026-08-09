@@ -1,9 +1,51 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import '@i18n/config';
 import { mapItemTemplateToDetail } from '../../../src/presentation/itemDetailMapper';
 import type { LocalizedItemTemplate } from '../../../src/content/registry';
+import { initRegistry, resetRegistry } from '../../../src/content/registry';
+import { createObjectContent } from '../../fixtures/gameState';
+import type { ModifierTemplate } from '../../../src/content/schemas';
+
+/**
+ * Синтетические модификаторы для проверки маппинга polarity (независимость от
+ * балансных данных контента). Id совпадают с реальными, чтобы тексты брались
+ * из статических контентных текстов.
+ */
+const testModifiers = new Map<string, ModifierTemplate>([
+  ['mod_guardian_vitality', {
+    id: 'mod_guardian_vitality',
+    polarity: 'positive',
+    effect: { kind: 'stat', stat: 'maxHp', op: 'add' },
+    scaling: { kind: 'fixed', value: 10 },
+    applicableSubtypes: ['heavy'],
+    poolEligible: false,
+    weight: 1,
+  }],
+  ['mod_sturdy_armor', {
+    id: 'mod_sturdy_armor',
+    polarity: 'positive',
+    effect: { kind: 'stat', stat: 'armor', op: 'add' },
+    scaling: { kind: 'perLevel', ranges: [{ min: 1, max: 2 }] },
+    applicableSubtypes: ['light', 'heavy'],
+    poolEligible: true,
+    weight: 1,
+  }],
+  ['mod_dull', {
+    id: 'mod_dull',
+    polarity: 'negative',
+    effect: { kind: 'stat', stat: 'damage', op: 'add' },
+    scaling: { kind: 'perLevel', ranges: [{ min: -2, max: -1 }] },
+    applicableSubtypes: ['sword'],
+    poolEligible: true,
+    weight: 1,
+  }],
+]);
 
 describe('mapItemTemplateToDetail', () => {
+  beforeAll(() => {
+    resetRegistry();
+    initRegistry(createObjectContent({ modifiers: testModifiers }));
+  });
   it('copies weapon tags into view model', () => {
     const template: LocalizedItemTemplate = {
       id: 'sword',
@@ -15,13 +57,12 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 1,
       value: 10,
       rarity: 'common',
-      equipModifiers: [],
+      fixedModifiers: [],
       abilityPool: [],
       grantedAbilities: [],
       apCost: 1,
       weapon: {
-        baseDamage: 5,
-        damageFormulaId: 'str',
+        damage: { min: 5, max: 5 },
         range: 1,
         damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
         tags: ['attack.melee', 'delivery.weapon'],
@@ -44,13 +85,12 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 1,
       value: 10,
       rarity: 'common',
-      equipModifiers: [],
+      fixedModifiers: [],
       abilityPool: [],
       grantedAbilities: [],
       apCost: 1,
       weapon: {
-        baseDamage: 5,
-        damageFormulaId: 'str',
+        damage: { min: 5, max: 5 },
         range: 1,
         damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
         tags: [],
@@ -62,7 +102,7 @@ describe('mapItemTemplateToDetail', () => {
 
     expect(combatSection).toBeDefined();
     expect(combatSection!.kind === 'stat-list' ? combatSection!.stats : []).toEqual([
-      { label: 'Рубящий (Базовый)', value: 5 },
+      { label: 'Рубящий (Базовый)', value: '5' },
     ]);
   });
 
@@ -77,13 +117,12 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 1,
       value: 30,
       rarity: 'rare',
-      equipModifiers: [],
+      fixedModifiers: [],
       abilityPool: [],
       grantedAbilities: [],
       apCost: 1,
       weapon: {
-        baseDamage: 20,
-        damageFormulaId: 'str',
+        damage: { min: 20, max: 20 },
         range: 1,
         damageDistribution: [
           { damageTag: 'damage.physical.slashing', weight: 0.7 },
@@ -99,9 +138,9 @@ describe('mapItemTemplateToDetail', () => {
 
     expect(combatSection).toBeDefined();
     expect(combatSection!.kind === 'stat-list' ? combatSection!.stats : []).toEqual([
-      { label: 'Рубящий (Базовый)', value: 14 },
-      { label: 'Колющий (Базовый)', value: 4 },
-      { label: 'Дробящий (Базовый)', value: 2 },
+      { label: 'Рубящий (Базовый)', value: '14' },
+      { label: 'Колющий (Базовый)', value: '4' },
+      { label: 'Дробящий (Базовый)', value: '2' },
     ]);
   });
 
@@ -116,13 +155,12 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 1,
       value: 10,
       rarity: 'common',
-      equipModifiers: [],
+      fixedModifiers: [],
       abilityPool: [],
       grantedAbilities: [],
       apCost: 1,
       weapon: {
-        baseDamage: 5,
-        damageFormulaId: 'str',
+        damage: { min: 5, max: 5 },
         range: 1,
         damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
         tags: [],
@@ -148,7 +186,7 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 10,
       value: 5,
       rarity: 'common',
-      equipModifiers: [],
+      fixedModifiers: [],
       abilityPool: [],
       grantedAbilities: [],
       apCost: 1,
@@ -160,7 +198,58 @@ describe('mapItemTemplateToDetail', () => {
     expect(vm.tags).toEqual([]);
   });
 
-  it('maps item ruleIds into localized properties', () => {
+  it('maps instance affixes into properties keeping fixed-before-rolled order', () => {
+    const template: LocalizedItemTemplate = {
+      id: 'cat_guardian_plate',
+      name: 'Латы стражника',
+      description: 'Тяжёлые латы.',
+      type: 'armor',
+      spriteId: 'cat_guardian_plate',
+      stackable: false,
+      maxStack: 1,
+      value: 30,
+      rarity: 'unique',
+      fixedModifiers: ['mod_guardian_vitality'],
+      abilityPool: [],
+      grantedAbilities: [],
+      apCost: 1,
+      armor: { baseArmor: 4 },
+    } as unknown as LocalizedItemTemplate;
+
+    const vm = mapItemTemplateToDetail(template, {
+      affixes: [
+        { modifierId: 'mod_guardian_vitality', value: 10, origin: 'fixed' },
+        { modifierId: 'mod_sturdy_armor', value: 3, origin: 'rolled' },
+        { modifierId: 'mod_dull', value: -2, origin: 'rolled' },
+      ],
+    }, 'ru');
+
+    expect(vm.properties).toEqual([
+      {
+        key: 'mod_guardian_vitality',
+        name: 'Стражникова',
+        description: 'Максимум здоровья: +10.',
+        origin: 'fixed',
+        polarity: 'positive',
+      },
+      {
+        key: 'mod_sturdy_armor',
+        name: 'Крепкая',
+        description: 'Броня увеличена на 3.',
+        origin: 'rolled',
+        polarity: 'positive',
+      },
+      {
+        key: 'mod_dull',
+        name: 'Тупое',
+        description: 'Урон: -2.',
+        origin: 'rolled',
+        polarity: 'negative',
+      },
+    ]);
+  });
+
+  it('maps fixedModifiers into localized properties for template view', () => {
     const template: LocalizedItemTemplate = {
       id: 'common_ember_amulet',
       name: 'Тусклый угольный амулет',
@@ -171,20 +260,21 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 1,
       value: 6,
       rarity: 'common',
-      equipModifiers: [],
+      fixedModifiers: ['mod_amulet_fire_damage_multiplier'],
       abilityPool: [],
       grantedAbilities: [],
       apCost: 1,
-      ruleIds: ['amulet_fire_damage_multiplier'],
     } as unknown as LocalizedItemTemplate;
 
-    const vm = mapItemTemplateToDetail(template, {}, 'ru');
+    const vm = mapItemTemplateToDetail(template, { isTemplate: true }, 'ru');
 
     expect(vm.properties).toEqual([
       {
-        ruleId: 'amulet_fire_damage_multiplier',
-        name: 'Угольная искра',
+        key: 'mod_amulet_fire_damage_multiplier',
+        name: 'Угольная',
         description: 'Огненные атаки оружием или способностью наносят на 2 урона больше.',
+        origin: 'fixed',
+        polarity: 'positive',
       },
     ]);
   });
@@ -200,7 +290,7 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 1,
       value: 10,
       rarity: 'common',
-      equipModifiers: [],
+      fixedModifiers: [],
       abilityPool: [
         { abilityId: 'fireball', weight: 1 },
         { abilityId: 'magic_slap', weight: 1 },
@@ -208,8 +298,7 @@ describe('mapItemTemplateToDetail', () => {
       grantedAbilities: [],
       apCost: 1,
       weapon: {
-        baseDamage: 2,
-        damageFormulaId: 'staff',
+        damage: { min: 2, max: 2 },
         range: 1,
         damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }],
         tags: [],
@@ -233,7 +322,7 @@ describe('mapItemTemplateToDetail', () => {
       maxStack: 1,
       value: 10,
       rarity: 'common',
-      equipModifiers: [],
+      fixedModifiers: [],
       abilityPool: [
         { abilityId: 'fireball', weight: 1 },
         { abilityId: 'magic_slap', weight: 1 },
@@ -241,8 +330,7 @@ describe('mapItemTemplateToDetail', () => {
       grantedAbilities: [],
       apCost: 1,
       weapon: {
-        baseDamage: 2,
-        damageFormulaId: 'staff',
+        damage: { min: 2, max: 2 },
         range: 1,
         damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }],
         tags: [],

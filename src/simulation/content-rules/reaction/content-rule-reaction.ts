@@ -103,7 +103,7 @@ export function runContentRuleReactions(
       return evaluateConditions(rule.targetConditions, ctx, selfId, candidateId);
     });
 
-    const ruleIntents = buildIntents(rule.effect, targetIds, ctx, selfId, rule.target);
+    const ruleIntents = buildIntents(rule.effect, targetIds, ctx, selfId, rule.target, rule.paramValue);
     if (ruleIntents.length === 0) continue;
 
     intents.push(...ruleIntents);
@@ -579,6 +579,7 @@ function buildIntents(
   ctx: RuleContext,
   selfId: EntityId | null,
   target: TargetSelector,
+  ownerParamValue?: number,
 ): Intent[] {
   // Пока tilesInRadius поддерживается только для applyTileEffectStatus,
   // а positionsInRadius — только для spawnTileEffect.
@@ -591,7 +592,7 @@ function buildIntents(
 
   switch (effect.type) {
     case 'applyStatus': {
-      const duration = resolveParametrizedValue(effect.duration, ctx);
+      const duration = resolveParametrizedValue(effect.duration, ctx, ownerParamValue);
       return targetIds.map((entityId) => ({
         type: 'APPLY_STATUS',
         entityId,
@@ -605,7 +606,7 @@ function buildIntents(
       }));
     }
     case 'dealDamage': {
-      const amount = resolveParametrizedValue(effect.amount, ctx);
+      const amount = resolveParametrizedValue(effect.amount, ctx, ownerParamValue);
       // Если теги не заданы явно, наследуем их из события (например, COUNTER_ATTACK_APPLIED
       // уже несёт рассчитанные теги урона).
       const tags = effect.tags ?? ctx.eventTags;
@@ -619,7 +620,7 @@ function buildIntents(
       }));
     }
     case 'heal': {
-      const amount = resolveParametrizedValue(effect.amount, ctx);
+      const amount = resolveParametrizedValue(effect.amount, ctx, ownerParamValue);
       return targetIds.map((entityId) => ({
         type: 'HEAL',
         entityId,
@@ -633,7 +634,7 @@ function buildIntents(
       }));
     }
     case 'consumeAp': {
-      const amount = resolveParametrizedValue(effect.amount, ctx);
+      const amount = resolveParametrizedValue(effect.amount, ctx, ownerParamValue);
       return targetIds.map((entityId) => ({
         type: 'CONSUME_AP',
         entityId,
@@ -671,7 +672,7 @@ function buildIntents(
       }];
     }
     case 'applyTileEffectStatus': {
-      const duration = resolveParametrizedValue(effect.duration, ctx);
+      const duration = resolveParametrizedValue(effect.duration, ctx, ownerParamValue);
 
       if (target.type === 'eventTileEffect') {
         if (ctx.eventPosition === null) return [];
@@ -708,10 +709,10 @@ function buildIntents(
       if (target.type !== 'positionsInRadius') return [];
 
       const duration = effect.duration !== undefined
-        ? resolveParametrizedValue(effect.duration, ctx)
+        ? resolveParametrizedValue(effect.duration, ctx, ownerParamValue)
         : undefined;
       const statusDuration = effect.statusDuration !== undefined
-        ? resolveParametrizedValue(effect.statusDuration, ctx)
+        ? resolveParametrizedValue(effect.statusDuration, ctx, ownerParamValue)
         : undefined;
 
       return targetIds

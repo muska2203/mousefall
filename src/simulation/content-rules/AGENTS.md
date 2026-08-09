@@ -51,7 +51,7 @@ src/simulation/content-rules/
    - `id` должен быть уникален среди всех правил. Дубликат на этапе импорта выбросит ошибку.
 
 3. **Привязать правило к контенту.**
-   - Предмет: `src/content/templates/items/...ts`, поле `ruleIds`.
+   - Предмет: rule-модификатор (`effect: {kind: 'rule', ruleId}`) в `src/content/templates/modifiers/`, подключённый через `fixedModifiers` шаблона в `src/content/templates/items/...ts` (поле `ruleIds` предметов удалено 2026-08-09).
    - Статус: `src/content/templates/statuses/...ts`, поле `ruleIds`.
    - Способность: `src/content/templates/abilities/...ts`, поле `ruleIds`.
    - Тайловый эффект: `src/content/templates/tile-effects/...ts`, поле `ruleIds` (слой `tileEffect`).

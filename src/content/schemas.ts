@@ -18,7 +18,13 @@
 
 import {z} from 'zod';
 
-import {AI_STRATEGY_IDS, MAP_STRATEGY_IDS, WEAPON_FORMULA_IDS} from './ids';
+import {AI_STRATEGY_IDS, MAP_STRATEGY_IDS} from './ids';
+import {
+  AMULET_SUBTYPE_IDS,
+  ARMOR_SUBTYPE_IDS,
+  EQUIPMENT_SUBTYPE_IDS,
+  WEAPON_SUBTYPE_IDS,
+} from './ids';
 
 // ─────────────────────────────────────────────
 // Общие подсхемы
@@ -27,11 +33,6 @@ import {AI_STRATEGY_IDS, MAP_STRATEGY_IDS, WEAPON_FORMULA_IDS} from './ids';
 const HealthSchema = z.object({
   max: z.number().int().positive().describe('Максимум HP'),
 }).describe('Конфигурация здоровья');
-
-const CombatSchema = z.object({
-  damage: z.number().int().nonnegative().describe('Базовый урон за атаку'),
-  armor:  z.number().int().nonnegative().default(0).describe('Плоское снижение урона'),
-}).describe('Боевые характеристики');
 
 const BaseStatsSchema = z.object({
   str: z.number().int().default(0).describe('Сила'),
@@ -110,7 +111,6 @@ export const EntityTemplateSchema = z.object({
   aiStrategyId: z.enum(AI_STRATEGY_IDS).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
   aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Манхэттен + LOS). По умолчанию 6.'),
   health:   HealthSchema,
-  combat:   CombatSchema.optional(),
   baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 }).describe('Базовые характеристики врага'),
   equipment: EquipmentSchema,
   abilities: z.array(z.string().min(1)).default([]).describe('Innate-способности врага (ID шаблонов)'),
@@ -127,9 +127,16 @@ export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
 // Шаблон предмета
 // ─────────────────────────────────────────────
 
+/** Рейнж урона оружия: целые границы, max ≥ min. */
+const DamageRangeSchema = z.object({
+  min: z.number().int().nonnegative().describe('Нижняя граница урона'),
+  max: z.number().int().nonnegative().describe('Верхняя граница урона'),
+}).refine(range => range.max >= range.min, {
+  message: 'damage.max не может быть меньше damage.min',
+}).describe('Рейнж урона {min, max}');
+
 const WeaponStatsSchema = z.object({
-  baseDamage: z.number().int().nonnegative().describe('Базовый урон оружия'),
-  damageFormulaId: z.enum(WEAPON_FORMULA_IDS).describe('ID формулы урона в коде (каталог — src/content/ids.ts)'),
+  damage: DamageRangeSchema.describe('Рейнж урона оружия (роллится при каждом ударе)'),
   range: z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
   damageDistribution: z.array(
     z.object({
@@ -161,12 +168,22 @@ const ConsumableEffectSchema = z.object({
   range: z.number().int().positive().optional().describe('Дальность применения в клетках'),
 }).describe('Определение эффекта расходуемого предмета');
 
+/** Имена характеристик, доступных модификаторам (экипировка, реликвии, аффиксы). */
+const StatNameSchema = z.enum(['damage', 'armor', 'maxHp', 'critMultiplier', 'str', 'dex', 'int', 'vit']);
+
 /** Модификатор характеристики: применяется экипировкой и реликвиями. */
 const StatModifierEntrySchema = z.object({
-  stat: z.enum(['damage', 'armor', 'maxHp', 'critMultiplier', 'str', 'dex', 'int', 'vit']),
+  stat: StatNameSchema,
   value: z.number(),
   op: z.enum(['add', 'multiply']),
 });
+
+/** Наборы допустимых подтипов по типу экипировки. */
+const EQUIPMENT_SUBTYPES_BY_TYPE = {
+  weapon: WEAPON_SUBTYPE_IDS,
+  armor: ARMOR_SUBTYPE_IDS,
+  amulet: AMULET_SUBTYPE_IDS,
+} as const;
 
 export const ItemTemplateSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор предмета (совпадает с именем файла)'),
@@ -174,6 +191,10 @@ export const ItemTemplateSchema = z.object({
   icon:        z.string().optional().describe('Путь к иконке предмета для UI'),
   fallback:    z.string().optional().describe('Emoji-запасной вариант для отображения в UI'),
   type:        z.enum(['weapon', 'armor', 'amulet', 'consumable', 'key', 'gold']).describe('Категория предмета'),
+  level:       z.number().int().min(1).optional()
+    .describe('Уровень шаблона экипировки (≥1). Обязателен для weapon/armor/amulet; определяет рейнж аффиксов и (в будущем) этажи дропа'),
+  subtype:     z.enum(EQUIPMENT_SUBTYPE_IDS).optional()
+    .describe('Подтип экипировки из замкнутого набора своего типа. Обязателен для weapon/armor/amulet'),
   rarity:      z.enum(['common', 'rare', 'unique']).default('common').describe('Редкость предмета'),
   stackable:   z.boolean().default(false).describe('Можно ли складывать несколько в одну ячейку инвентаря'),
   maxStack:    z.number().int().positive().default(1).describe('Максимальный размер стопки'),
@@ -181,7 +202,6 @@ export const ItemTemplateSchema = z.object({
   weapon:      WeaponStatsSchema.optional(),
   armor:       ArmorStatsSchema.optional(),
   consumable:  ConsumableEffectSchema.optional(),
-  equipModifiers: z.array(StatModifierEntrySchema).default([]).describe('Модификаторы, применяемые при экипировке'),
   abilityPool: z.array(
     z.object({
       abilityId: z.string().min(1).describe('ID способности из пула'),
@@ -191,12 +211,99 @@ export const ItemTemplateSchema = z.object({
   grantedAbilities: z.array(
     z.string().min(1).describe('ID способности, которая гарантированно выдаётся при экипировке')
   ).default([]).describe('Обязательные способности предмета, выдаются всегда (в отличие от abilityPool)'),
-  ruleIds: RuleIdsSchema,
+  fixedModifiers: z.array(z.string().min(1))
+    .default([])
+    .refine(ids => new Set(ids).size === ids.length, {
+      message: 'fixedModifiers не должны содержать дубликатов',
+    })
+    .describe('Фирменные модификаторы предмета (ID из категории modifiers): добавляются каждому экземпляру как аффиксы с origin "fixed" и не участвуют в случайном ролле'),
   apCost: z.number().int().nonnegative().default(1)
     .describe('Стоимость использования предмета в очках действий (AP) через действие USE_ITEM'),
+}).superRefine((template, ctx) => {
+  const subtypes = EQUIPMENT_SUBTYPES_BY_TYPE[template.type as keyof typeof EQUIPMENT_SUBTYPES_BY_TYPE];
+  if (subtypes) {
+    // Экипировка (weapon/armor/amulet): level и subtype обязательны,
+    // subtype должен принадлежать набору своего типа.
+    if (template.level === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['level'], message: `level обязателен для предметов типа "${template.type}"` });
+    }
+    if (template.subtype === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['subtype'], message: `subtype обязателен для предметов типа "${template.type}"` });
+    } else if (!(subtypes as readonly string[]).includes(template.subtype)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['subtype'], message: `subtype "${template.subtype}" не принадлежит набору подтипов типа "${template.type}"` });
+    }
+  } else {
+    // Прочие типы (расходники, ключи, золото) не имеют level/subtype.
+    if (template.level !== undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['level'], message: `level недопустим для предметов типа "${template.type}"` });
+    }
+    if (template.subtype !== undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['subtype'], message: `subtype недопустим для предметов типа "${template.type}"` });
+    }
+  }
 }).describe('Шаблон предмета');
 
 export type ItemTemplate = z.output<typeof ItemTemplateSchema>;
+
+// ─────────────────────────────────────────────
+// Шаблон модификатора (аффикса) экипировки
+// ─────────────────────────────────────────────
+
+/** Эффект аффикса: либо модификатор характеристики, либо ссылка на контентное правило. */
+const ModifierEffectSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('stat'),
+    stat: StatNameSchema.describe('Характеристика, к которой применяется аффикс'),
+    op: z.enum(['add', 'multiply']).describe('Операция модификатора'),
+  }).describe('Stat-аффикс: модификатор характеристики с ролленным значением'),
+  z.object({
+    kind: z.literal('rule'),
+    ruleId: z.string().min(1).describe('ID контентного правила (реестр CONTENT_RULES)'),
+  }).describe('Rule-аффикс: активное контентное правило предмета'),
+]).describe('Эффект модификатора');
+
+/** Масштабирование значения аффикса от уровня шаблона предмета. */
+const ModifierScalingSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('perLevel'),
+    ranges: z.array(
+      z.object({
+        min: z.number().describe('Нижняя граница ролла (для отрицательных аффиксов — отрицательная)'),
+        max: z.number().describe('Верхняя граница ролла'),
+      }).refine(range => range.max >= range.min, {
+        message: 'max рейнжа не может быть меньше min',
+      })
+    ).nonempty()
+      .describe('Рейнжи ролла по уровням: ranges[level-1]; уровень выше длины — clamp к последнему'),
+  }).describe('Значение роллится из рейнжа, зависящего от уровня предмета'),
+  z.object({
+    kind: z.literal('none'),
+  }).describe('Уровне-независимый аффикс (значение не роллится, value = null)'),
+  z.object({
+    kind: z.literal('fixed'),
+    value: z.number().describe('Фиксированное значение модификатора (для отрицательных — отрицательное)'),
+  }).describe('Детерминированное значение: не роллится, используется фирменными модификаторами (fixedModifiers)'),
+]).describe('Схема масштабирования значения аффикса');
+
+export const ModifierTemplateSchema = z.object({
+  id:       z.string().min(1).describe('Уникальный идентификатор модификатора (совпадает с именем файла)'),
+  polarity: z.enum(['positive', 'negative'])
+    .default('positive')
+    .describe('Полярность аффикса: на предмете 1 положительный + до 1 отрицательного. Для poolEligible: false не используется.'),
+  effect:   ModifierEffectSchema,
+  scaling:  ModifierScalingSchema,
+  applicableSubtypes: z.array(z.enum(EQUIPMENT_SUBTYPE_IDS))
+    .nonempty()
+    .refine(ids => new Set(ids).size === ids.length, {
+      message: 'applicableSubtypes не должны содержать дубликатов',
+    })
+    .describe('Подтипы экипировки, на которые выпадает аффикс (непустой список)'),
+  poolEligible: z.boolean().default(true)
+    .describe('Участвует ли модификатор в случайном ролле аффиксов. false — только фирменное свойство конкретных предметов (fixedModifiers).'),
+  weight:   z.number().positive().default(1).describe('Вес в пуле ролла (игнорируется при poolEligible: false)'),
+}).describe('Шаблон модификатора (аффикса) экипировки');
+
+export type ModifierTemplate = z.output<typeof ModifierTemplateSchema>;
 
 // ─────────────────────────────────────────────
 // Шаблон способности
@@ -522,6 +629,8 @@ export type LoadedContent = {
   traps?:    Map<string, TrapTemplate>;
   /** Реликвии (постоянные пассивные бонусы забега). Опционально для обратной совместимости с тестовыми моками. */
   relics?:   Map<string, RelicTemplate>;
+  /** Модификаторы (аффиксы) экипировки. Опционально для обратной совместимости с тестовыми моками. */
+  modifiers?: Map<string, ModifierTemplate>;
 };
 
 // ─────────────────────────────────────────────
@@ -563,3 +672,5 @@ export type PoiTemplateInput = z.input<typeof PoiTemplateSchema>;
 export type TrapTemplateInput = z.input<typeof TrapTemplateSchema>;
 /** Входная форма шаблона реликвии: поля с дефолтами опциональны. */
 export type RelicTemplateInput = z.input<typeof RelicTemplateSchema>;
+/** Входная форма шаблона модификатора (аффикса): поля с дефолтами опциональны. */
+export type ModifierTemplateInput = z.input<typeof ModifierTemplateSchema>;

@@ -11,6 +11,7 @@
  */
 
 import type {LoadedContent} from './schemas';
+import type {ContentTexts} from './texts/types';
 
 /** Ошибка ссылки между шаблонами контента. */
 export type ContentReferenceError = {
@@ -119,10 +120,59 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
     for (const entry of item.abilityPool) {
       checkRef(errors, path, 'abilityPool[].abilityId', entry.abilityId, 'abilities', content.abilities);
     }
+    // Фирменные модификаторы: ссылка существует и применима к подтипу предмета.
+    for (const modifierId of item.fixedModifiers) {
+      checkRef(errors, path, 'fixedModifiers', modifierId, 'modifiers', content.modifiers);
+      const modifier = content.modifiers?.get(modifierId);
+      if (modifier && item.subtype && !modifier.applicableSubtypes.includes(item.subtype)) {
+        errors.push({
+          path,
+          field: 'fixedModifiers',
+          problem: `Модификатор "${modifierId}" не применим к подтипу "${item.subtype}" (applicableSubtypes: ${modifier.applicableSubtypes.join(', ')})`,
+        });
+      }
+      if (modifier && modifier.scaling.kind === 'perLevel') {
+        errors.push({
+          path,
+          field: 'fixedModifiers',
+          problem: `Фирменный модификатор "${modifierId}" не может иметь scaling perLevel: фирменные свойства детерминированы (fixed/none)`,
+        });
+      }
+    }
   }
 
   for (const [id, relic] of content.relics ?? []) {
     checkRefs(errors, `relics.${id}`, 'grantedAbilities', relic.grantedAbilities, 'abilities', content.abilities);
+  }
+
+  return errors;
+}
+
+/**
+ * Проверяет плейсхолдер {value} в описаниях модификаторов (аффиксов).
+ * {value} подставляет значение экземпляра (ролленное или фиксированное), поэтому допустим
+ * только у аффиксов со scaling perLevel/fixed — иначе в UI отрисуется заглушка «—».
+ * Тексты передаются параметром, чтобы функция оставалась чистой и тестируемой.
+ */
+export function validateModifierTextPlaceholders(
+  content: LoadedContent,
+  textsByLocale: Record<string, ContentTexts>,
+): ContentReferenceError[] {
+  const errors: ContentReferenceError[] = [];
+
+  for (const [id, modifier] of content.modifiers ?? []) {
+    if (modifier.scaling.kind !== 'none') continue;
+
+    for (const [locale, texts] of Object.entries(textsByLocale)) {
+      const description = texts.modifiers[id]?.description;
+      if (description?.includes('{value}')) {
+        errors.push({
+          path: `modifiers.${id}`,
+          field: 'description',
+          problem: `Плейсхолдер {value} в описании (${locale}) требует scaling perLevel/fixed: без значения в UI отрисуется «—»`,
+        });
+      }
+    }
   }
 
   return errors;

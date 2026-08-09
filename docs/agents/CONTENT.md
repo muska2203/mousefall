@@ -18,6 +18,7 @@ src/content/templates/    # TypeScript-шаблоны: только механи
 │   ├── armor/
 │   ├── amulet/
 │   └── consumables/
+├── modifiers/            # Модификаторы (аффиксы) экипировки: stat/rule, пулы по подтипам
 ├── abilities/
 ├── statuses/             # Шаблоны статусов (длительность, категория, ruleIds)
 ├── tile-effects/         # Шаблоны тайловых эффектов (лужи, ловушки)
@@ -31,7 +32,7 @@ src/content/templates/    # TypeScript-шаблоны: только механи
 ├── traps/
 └── index.ts              # buildContent(): LoadedContent — сборка и валидация всех шаблонов
 
-src/content/ids.ts        # Замкнутые наборы ID: WEAPON_FORMULA_IDS, AI_STRATEGY_IDS, MAP_STRATEGY_IDS.
+src/content/ids.ts        # Замкнутые наборы ID: EQUIPMENT_SUBTYPE_IDS, AI_STRATEGY_IDS, MAP_STRATEGY_IDS.
                           # Схемы подключают их через z.enum, реестры simulation типизируются от них.
 
 src/content/texts/        # Пользовательские тексты: name, description, flavorText
@@ -95,6 +96,7 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 - `getItem(id)` / `getLocalizedItem(id, locale)` — получить шаблон предмета / локализованный шаблон предмета.
 - `getAbility(id)` / `getLocalizedAbility(id, locale)` — получить шаблон способности / локализованный шаблон способности.
 - `getTileEffect(id)` / `getLocalizedTileEffect(id, locale)` — получить шаблон тайлового эффекта / локализованный шаблон.
+- `tryGetModifier(id)` — шаблон модификатора (аффикса) экипировки (тексты — через `getContentText('modifiers', id, locale)`).
 
 Реализация: `src/content/templates/index.ts`, `src/content/registry.ts`.
 
@@ -102,15 +104,30 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 Часть строковых идентификаторов, на которые ссылаются шаблоны, типизирована через `z.enum` от констант в `src/content/ids.ts` — опечатка ловится typecheck'ом, а не в рантайме:
 
-- `WEAPON_FORMULA_IDS` → `weapon.damageFormulaId` (реализации — `src/simulation/systems/stats/weapon-formulas.ts`);
+- `EQUIPMENT_SUBTYPE_IDS` → `subtype` экипировки (оружие: `sword/dagger/club/staff/unarmed`, броня: `light/heavy/magic`, амулеты: `bead/charm/talisman`) и `applicableSubtypes` модификаторов;
 - `AI_STRATEGY_IDS` → `entities[].aiStrategyId` (реализации — `src/simulation/ai/*-strategy.ts`);
 - `MAP_STRATEGY_IDS` → `maps[].strategy` (реализации — `src/simulation/systems/map-generation/`).
 
-Добавление новой формулы/стратегии: расширить массив в `ids.ts`, реализовать код в simulation — компилятор подскажет места регистрации.
+Добавление нового подтипа/стратегии: расширить массив в `ids.ts`, реализовать код в simulation — компилятор подскажет места регистрации.
 
 ## Валидация перекрёстных ссылок (`src/content/validate-references.ts`)
 
-`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `equipment.*`, `abilities`, `lootTable[].templateId` у сущностей; `starterEquipment` у игроков; `enemyPool`/`itemPool` у карт; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId` у предметов. Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
+`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `equipment.*`, `abilities`, `lootTable[].templateId` у сущностей; `starterEquipment` у игроков; `enemyPool`/`itemPool` у карт; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId`, `fixedModifiers` у предметов (плюс `subtype` предмета ∈ `applicableSubtypes` модификатора и запрет `perLevel` у фирменного модификатора). Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
+
+`validateModifierTextPlaceholders(content, textsByLocale)` проверяет, что плейсхолдер `{value}` в описании модификатора встречается только у модификаторов со `scaling: perLevel` или `fixed` (иначе в UI отрисовалась бы заглушка «—»). Вызывается только в `scripts/validate-content.ts` (тексты передаются параметром).
+
+## Модификаторы экипировки (аффиксы и фирменные свойства)
+
+Контентная категория `modifiers` (`src/content/templates/modifiers/`, тексты — `src/content/texts/{ru,en}/modifiers.ts`) — единый источник свойств экипировки: и случайных аффиксов экземпляров, и фирменных свойств шаблонов. Шаблон (`ModifierTemplateSchema`):
+
+- `polarity` — `positive` (default)/`negative` (на экземпляре: 1 положительный + до 1 отрицательного с шансом `NEGATIVE_AFFIX_CHANCE`; для `poolEligible: false` не используется);
+- `effect` — `stat` (модификатор характеристики со значением) или `rule` (ID контентного правила из `CONTENT_RULES`);
+- `scaling` — `perLevel` (рейнжи ролла значения по уровням `ranges[level-1]`, уровень выше длины — clamp к последнему), `fixed` (детерминированное `value`, для фирменных stat-модификаторов) или `none` (значение не роллится, `value = null`);
+- `applicableSubtypes` — непустой список подтипов экипировки, к которым модификатор применим;
+- `poolEligible` — участвует ли в случайном ролле (default `true`; `false` — только фирменное свойство конкретных предметов);
+- `weight` — вес в пуле ролла (default 1, игнорируется при `poolEligible: false`).
+
+Фирменные свойства предмета задаются полем `fixedModifiers: string[]` шаблона экипировки (ID модификаторов; заменяет удалённые 2026-08-09 `equipModifiers` и `ruleIds` предметов). Экземпляр несёт единый список `InventoryItem.affixes` — фирменные аффиксы (`origin: 'fixed'`, детерминированы) + до 2 случайных (`origin: 'rolled'`, ролл один раз при создании через `state.rng` в `src/simulation/systems/item-affix-roll.ts`; пул фильтруется по `poolEligible`/`applicableSubtypes` и исключает фирменные модификаторы и конфликтующие с ними ruleId). Инварианты (проверяются в `validateContentRuleSemantics` и `scripts/validate-content.ts`): stat-модификатор обязан иметь `scaling: perLevel` или `fixed` (иначе модификатор применился бы со значением 0); rule-модификатор со `scaling: perLevel` — эффект правила обязан содержать `{type: 'ownerParam'}`; плейсхолдер `{value}` в описании — только при `scaling: perLevel` или `fixed`. Ссылки `fixedModifiers` (существование модификатора, `subtype` предмета ∈ `applicableSubtypes`, запрет `perLevel` у фирменного) проверяются в `validateContentReferences`, сами `ruleId` модификаторов — в `validateContentRuleReferences`. Рецепт: `docs/recipes/add-modifier.md`; дизайн — `docs/game-design/equipment-modifiers-concept.md`.
 
 ## Реестр статусов
 
@@ -133,13 +150,13 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 ### Как шаблоны ссылаются на правила
 
-Шаблоны предметов, способностей, статусов, тайловых эффектов и статусов тайловых эффектов содержат поле `ruleIds` — массив строк с идентификаторами правил. При загрузке контента `src/simulation/content-rules/validation.ts` проверяет, что каждый `ruleId` существует в реестре, а внутри одного шаблона нет повторов.
+Шаблоны способностей, статусов, тайловых эффектов и статусов тайловых эффектов содержат поле `ruleIds` — массив строк с идентификаторами правил. Шаблоны предметов ссылаются на правила опосредованно — через rule-модификаторы в `fixedModifiers` (`effect: {kind: 'rule', ruleId}`; поле `ruleIds` предметов удалено 2026-08-09). При загрузке контента `src/simulation/content-rules/validation.ts` проверяет, что каждый `ruleId` существует в реестре, а внутри одного шаблона нет повторов.
 
 ### Жизненный цикл: `activeRules`
 
 У каждого актора есть кэш `activeRules` — **производный** набор правил, собранный из экипированных предметов, активных статусов и других источников. Когда предмет снимается или статус заканчивается, правило автоматически пропадает из кэша. Подробнее о жизненном цикле, mid-chain статусах и self-эффектах см. `docs/agents/CONTENT_RULES_EDGE_CASES.md`.
 
-### Пример шаблона с `ruleIds`
+### Пример шаблона предмета с фирменным правилом
 
 ```ts
 import type {ItemTemplateInput} from '../../schemas';
@@ -147,10 +164,11 @@ import type {ItemTemplateInput} from '../../schemas';
 export const commonFlamingSword = {
   id: 'common_flaming_sword',
   type: 'weapon',
-  ruleIds: ['item_fire_damage_multiplier'],
+  subtype: 'sword',
+  level: 1,
+  fixedModifiers: ['mod_fire_damage_multiplier'],
   weapon: {
-    baseDamage: 5,
-    damageFormulaId: 'sword',
+    damage: { min: 4, max: 6 },
     range: 1,
     damageDistribution: [
       { damageTag: 'damage.magical.fire', weight: 1.0 },
@@ -160,7 +178,7 @@ export const commonFlamingSword = {
 } satisfies ItemTemplateInput;
 ```
 
-Здесь оружие ссылается на правило `item_fire_damage_multiplier`, которое умножает огненный урон на 1.5. Такой же подход работает для статусов и способностей: шаблон указывает `ruleIds`, а реестр разрешает их в объекты правил.
+Здесь оружие ссылается на правило `item_fire_damage_multiplier` (умножает огненный урон на 1.5) через rule-модификатор `mod_fire_damage_multiplier` в `fixedModifiers`. Для статусов и способностей работает прямой подход: шаблон указывает `ruleIds`, а реестр разрешает их в объекты правил.
 
 ### Связанная документация
 

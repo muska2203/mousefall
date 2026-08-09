@@ -20,6 +20,8 @@ import {extractEvents} from '../../../src/presentation/logBuilder';
 vi.mock('@utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
+  rngFloat: vi.fn(() => 0.5),
+  rngInt: vi.fn((_rng: unknown, min: number) => min),
 }));
 
 import {rngChance} from '../../../src/utils/rng';

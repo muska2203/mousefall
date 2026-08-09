@@ -75,7 +75,7 @@ describe('GameSession hotbar', () => {
   it('auto-fills new consumable into first empty slot', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 2, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 2, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -93,8 +93,8 @@ describe('GameSession hotbar', () => {
   it('groups multiple stacks of the same consumable into a single hotbar slot', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 2, grantedAbilities: [] },
-        { instanceId: 'potion_2', templateId: 'health_potion', quantity: 3, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 2, grantedAbilities: [], affixes: [] },
+        { instanceId: 'potion_2', templateId: 'health_potion', quantity: 3, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -112,7 +112,7 @@ describe('GameSession hotbar', () => {
     const player = makePlayer({
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -131,7 +131,7 @@ describe('GameSession hotbar', () => {
     const player = makePlayer({
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 3, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 3, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -155,7 +155,7 @@ describe('GameSession hotbar', () => {
   it('shows depleted consumable with quantity 0 and allows refill', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -176,7 +176,7 @@ describe('GameSession hotbar', () => {
     expect(slot.icon).not.toBeNull();
 
     // Добавляем новый стак зелий — depleted-слот должен перезаполниться.
-    player.inventory.push({ instanceId: 'potion_2', templateId: 'health_potion', quantity: 2, grantedAbilities: [] });
+    player.inventory.push({ instanceId: 'potion_2', templateId: 'health_potion', quantity: 2, grantedAbilities: [], affixes: [] });
     // Прямая мутация состояния вне session не инвалидирует кеш ViewModel.
     (session as any).notify();
     const hotbarAfterRefill = session.getViewModel().renderInput!.hotbar;
@@ -233,7 +233,7 @@ describe('GameSession hotbar', () => {
       hp: 50,
       maxHp: 100,
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -267,7 +267,7 @@ describe('GameSession hotbar', () => {
     const player = makePlayer({
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 1, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
@@ -303,7 +303,7 @@ describe('GameSession hotbar', () => {
   it('includes consumable tooltip with item details', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 3, grantedAbilities: [] },
+        { instanceId: 'potion_1', templateId: 'health_potion', quantity: 3, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });

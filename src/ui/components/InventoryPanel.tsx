@@ -8,6 +8,7 @@
 import {useState} from 'react';
 import {useTranslation} from '@i18n/hooks';
 import type {InventoryItemViewModel} from '@presentation/types';
+import {formatDamageRange} from '@utils/format';
 import {ItemDetailPopover} from './ItemDetailPopover';
 
 import {Panel} from './Panel';
@@ -56,7 +57,7 @@ export function InventoryPanel({ items, onItemClick }: Props) {
                   {item.detail.fallbackIcon ?? '—'}
                 </span>
               </span>
-              {item.damage != null && <span className="cm-item-weapon-damage">{item.damage}</span>}
+              {item.damage != null && <span className="cm-item-weapon-damage">{formatDamageRange(item.damage)}</span>}
               {item.quantity > 1 && (
                 <span className="cm-inv-cell__qty">{item.quantity}</span>
               )}

@@ -79,7 +79,7 @@ export function applyIntentModifiers(
       continue;
     }
 
-    const value = resolveParametrizedValue(effect.value, ctx);
+    const value = resolveParametrizedValue(effect.value, ctx, rule.paramValue);
 
     if (effect.op === 'multiply') {
       damage *= value;

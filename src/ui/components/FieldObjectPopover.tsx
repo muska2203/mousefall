@@ -11,6 +11,7 @@
 import {createPortal} from 'react-dom';
 import {useTranslation} from '@i18n/hooks';
 import type {FieldObjectPopoverViewModel} from '@presentation/types';
+import {formatDamageRange} from '@utils/format';
 import {ItemDetailCard} from './ItemDetailCard';
 import {usePopoverPosition} from './hooks/usePopoverPosition';
 
@@ -50,7 +51,7 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
 
           <div className="field-popover-stats">
             <span className="field-popover-stat">
-              {t('fieldObjectPopover.damageLabel')}<strong>{popover.data.damage}</strong>
+              {t('fieldObjectPopover.damageLabel')}<strong>{formatDamageRange(popover.data.damage)}</strong>
             </span>
             <span className="field-popover-stat">
               {t('fieldObjectPopover.hpLabel')}<strong>{popover.data.hp}</strong> / {popover.data.maxHp}

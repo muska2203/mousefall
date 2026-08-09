@@ -16,7 +16,7 @@ import type {RelicEffectViewModel} from './types';
 import {t} from '@i18n/t';
 
 /** Форматирует значение модификатора характеристики: add → «+N»/«−N», multiply → «×N». */
-function formatModifierValue(op: 'add' | 'multiply', value: number): string {
+export function formatModifierValue(op: 'add' | 'multiply', value: number): string {
   if (op === 'multiply') {
     return `×${value}`;
   }

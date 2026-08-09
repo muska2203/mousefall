@@ -73,9 +73,8 @@ describe('actionAppliedBuilder', () => {
           value: 15,
           rarity: 'common',
           abilityPool: [],
-          equipModifiers: [],
+          fixedModifiers: [],
           grantedAbilities: [],
-          ruleIds: [],
           apCost: 1,
           consumable: { effect: 'spawn_tile_effect', tileEffectType: 'water', radius: 1, range: 5 },
         } as unknown as ItemTemplate],
@@ -111,7 +110,7 @@ describe('actionAppliedBuilder', () => {
 
   it('creates ITEM_THROW step for USE_ITEM with targetPosition', () => {
     const state = makeMockState();
-    state.player.inventory = [{ instanceId: 'wb1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }];
+    state.player.inventory = [{ instanceId: 'wb1', templateId: 'water_ball', quantity: 1, grantedAbilities: [], affixes: [] }];
     state.player.x = 1;
     state.player.y = 1;
 
@@ -171,7 +170,7 @@ describe('actionAppliedBuilder', () => {
 
   it('returns null for USE_ITEM without targetPosition', () => {
     const state = makeMockState();
-    state.player.inventory = [{ instanceId: 'wb1', templateId: 'water_ball', quantity: 1, grantedAbilities: [] }];
+    state.player.inventory = [{ instanceId: 'wb1', templateId: 'water_ball', quantity: 1, grantedAbilities: [], affixes: [] }];
 
     const event: GameEvent = {
       type: 'ACTION_APPLIED',

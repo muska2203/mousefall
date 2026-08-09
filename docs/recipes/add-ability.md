@@ -154,7 +154,7 @@
 
 ## Распространённые детали
 
-- **Weapon-based урон**: используй `getEffectiveWeaponDamage`, `getWeaponWeightForTag` и `mergeDamageIntentTags` из системы тегов.
+- **Weapon-based урон**: ролль урон оружия через `rollWeaponDamage(state, actor)` (`src/simulation/systems/stats/weapon-damage-roll.ts`) — конкретное значение из рейнжа `weapon.damage {min,max}` со смещением от ловкости; вес и теги — `getWeaponWeightForTag` и `mergeDamageIntentTags` из системы тегов (пример: `cleaveSkill`).
 - **Ability-based урон**: добавь формулу в `src/simulation/skills/damageFormula.ts` и вызывай по `damageFormulas['my_ability']`.
 - **Контентные правила**: если способность должна триггеровать реакции, добавь `ruleIds` и создай правила по рецепту [`add-content-rule.md`](./add-content-rule.md).
 - **AI**: если `aiPreparable: true`, убедись, что AI-стратегия умеет готовить этот скилл (см. `src/simulation/ai/`).

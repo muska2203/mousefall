@@ -93,9 +93,10 @@
 
 ### Хелперы урона
 
-Расположены в `systems/tags/weapon-tags.ts` и `systems/stats/effective-stats.ts`:
+Расположены в `systems/tags/weapon-tags.ts`, `systems/stats/effective-stats.ts` и `systems/stats/weapon-damage-roll.ts`:
 
-- `getEffectiveWeaponDamage(entity: Entity): number` — итоговый урон экипированного оружия после модификаторов.
+- `getEffectiveWeaponDamageRange(entity: Entity): DamageRange` — итоговый рейнж урона экипированного оружия после модификаторов (`applyDamageModifiers`: add/multiply применяются к обоим концам рейнжа).
+- `rollWeaponDamage(state: GameState, actor: Entity): number` — ролл конкретного урона в момент удара из эффективного рейнжа (через `state.runtimeRng`), смещён вверх эффективной ловкостью по формуле `min + round((max − min) × u^(1/(1 + dex·DEX_DAMAGE_BIAS_K)))`. Используется в attack-action, контратаке и weapon-based скиллах.
 - `getWeaponDamageDistribution(entity: Entity): Array<{ damageTag: GameplayTag; weight: number }>` — распределение типов урона экипированного оружия (для безоружной атаки возвращает `damage.physical.blunt` с весом 1.0).
 - `getPrimaryDamageTag(entity: Entity): GameplayTag` — основной тег урона оружия, запись с максимальным `weight`.
 - `getWeaponWeightForTag(entity: Entity, tag: GameplayTag): number` — вес указанного тега урона для экипированного оружия; если тег отсутствует — возвращает 0.
@@ -111,7 +112,11 @@
 
 - `damageTag` в шаблоне способности задаёт тип урона для ability-based скиллов (например, `damage.magical.fire` у `fireball`).
 - `requiredWeaponTags` проверяет теги экипированного оружия в `validate` `useAbilityAction` (`systems/actions/use-ability-action.ts`). Если оружие не удовлетворяет требованиям, скилл недоступен.
-- Weapon-based скиллы обычно используют `getEffectiveWeaponDamage` и/или `getPrimaryDamageTag`/`getWeaponWeightForTag` для расчёта урона от текущего оружия.
+- Weapon-based скиллы обычно используют `rollWeaponDamage` и/или `getPrimaryDamageTag`/`getWeaponWeightForTag` для расчёта урона от текущего оружия.
+
+### Аффиксы экипировки
+
+Экземпляр предмета экипировки несёт единый список `InventoryItem.affixes` (`ItemAffix {modifierId, value, origin}`): сначала фирменные аффиксы (`origin: 'fixed'`, из `fixedModifiers` шаблона, детерминированы), затем до 2 случайных (`origin: 'rolled'`): 1 положительный + до 1 отрицательного с шансом `NEGATIVE_AFFIX_CHANCE`. Сборка — один раз при создании экземпляра (`systems/item-affix-roll.ts`, `createItemAffixes(state.rng, template)`; фирменные — `buildFixedAffixes`, ролл — `rollItemAffixes`). Пул ролла фильтруется по `poolEligible` и `applicableSubtypes` и исключает модификаторы из `fixedModifiers` предмета и rule-модификаторы с ruleId, конфликтующим с фирменными; значение — из рейнжа уровня шаблона (`ranges[level-1]`, clamp к последнему; `scaling: fixed` → детерминированное `value`, `scaling: none` → `value = null`). При экипировке stat-аффиксы и правила применяются единым проходом только из `item.affixes`: stat превращаются в модификаторы с источником `item_{instanceId}` (снятие — общий `removeModifiersBySource`), rule добавляются в `activeRules` с `paramValue` экземпляра (доступно правилу через `ParametrizedValue {type: 'ownerParam'}`). У врагов экземпляров нет — их фирменные свойства читаются из шаблона: `collectFixedStatModifiers(template)` (спавн в `map-generation/shared.ts`, превью в `simulation.ts`) и `collectFixedRuleIds(template)` (в `rebuildActiveRules`).
 
 ---
 

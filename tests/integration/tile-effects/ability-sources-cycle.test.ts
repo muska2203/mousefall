@@ -41,8 +41,8 @@ function createTestPlayer() {
     maxAp: 3,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     inventory: [
-      { instanceId: 'water_ball_1', templateId: 'water_ball', quantity: TEST_STACK_SIZE, grantedAbilities: [] },
-      { instanceId: 'oil_bottle_1', templateId: 'oil_bottle', quantity: TEST_STACK_SIZE, grantedAbilities: [] },
+      { instanceId: 'water_ball_1', templateId: 'water_ball', quantity: TEST_STACK_SIZE, grantedAbilities: [], affixes: [] },
+      { instanceId: 'oil_bottle_1', templateId: 'oil_bottle', quantity: TEST_STACK_SIZE, grantedAbilities: [], affixes: [] },
     ],
   });
 }

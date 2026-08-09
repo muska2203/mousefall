@@ -6,6 +6,8 @@ export const commonTinPlate = {
   "icon": "/assets/items/common_tin_plate.png",
   "fallback": "🥋",
   "type": "armor",
+  "level": 1,
+  "subtype": "heavy",
   "stackable": false,
   "maxStack": 1,
   "value": 10,
@@ -13,8 +15,5 @@ export const commonTinPlate = {
     "baseArmor": 2
   },
   "grantedAbilities": [],
-  "equipModifiers": [],
-  "ruleIds": [
-    "armor_spiked_thorns"
-  ]
+  "fixedModifiers": ["mod_spiked_thorns"]
 } satisfies ItemTemplateInput;

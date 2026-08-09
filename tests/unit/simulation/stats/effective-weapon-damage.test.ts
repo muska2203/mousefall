@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { initRegistry, resetRegistry } from '@content/registry.ts';
 import type { ItemTemplate } from '@content/schemas';
 import {
-  getEffectiveWeaponDamage,
+  getEffectiveWeaponDamageRange,
 } from '@simulation/systems/stats/effective-stats.ts';
 import {
   getPrimaryDamageTag,
@@ -31,8 +31,7 @@ describe('effective weapon damage helpers', () => {
       items: new Map([
         ['test_sword', mockWeapon('test_sword', {
           weapon: {
-            baseDamage: 5,
-            damageFormulaId: 'sword',
+            damage: { min: 5, max: 5 },
             range: 1,
             damageDistribution: [
               { damageTag: 'damage.physical.slashing', weight: 2.0 },
@@ -43,8 +42,7 @@ describe('effective weapon damage helpers', () => {
         })],
         ['test_bow', mockWeapon('test_bow', {
           weapon: {
-            baseDamage: 5,
-            damageFormulaId: 'dagger',
+            damage: { min: 5, max: 5 },
             range: 2,
             damageDistribution: [
               { damageTag: 'damage.physical.piercing', weight: 1.0 },
@@ -54,8 +52,7 @@ describe('effective weapon damage helpers', () => {
         })],
         ['test_equal', mockWeapon('test_equal', {
           weapon: {
-            baseDamage: 5,
-            damageFormulaId: 'sword',
+            damage: { min: 5, max: 5 },
             range: 1,
             damageDistribution: [
               { damageTag: 'damage.physical.slashing', weight: 1.0 },
@@ -79,13 +76,13 @@ describe('effective weapon damage helpers', () => {
     resetRegistry();
   });
 
-  describe('getEffectiveWeaponDamage', () => {
-    it('без модификаторов возвращает базовый урон оружия', () => {
+  describe('getEffectiveWeaponDamageRange', () => {
+    it('без модификаторов возвращает базовый рейнж урона оружия', () => {
       const player = makePlayer({
         baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
         equippedWeaponId: 'test_sword',
       });
-      expect(getEffectiveWeaponDamage(player)).toBe(5);
+      expect(getEffectiveWeaponDamageRange(player)).toEqual({ min: 5, max: 5 });
     });
 
     it('с модификаторами damage учитывает multiply перед add', () => {
@@ -97,8 +94,21 @@ describe('effective weapon damage helpers', () => {
           { stat: 'damage', value: 3, op: 'add', source: 'focus' },
         ],
       });
-      // base 5 -> 5 * 1.5 + 3 = 10.5 -> округление до 11
-      expect(getEffectiveWeaponDamage(player)).toBe(11);
+      // base 5 -> 5 * 1.5 + 3 = 10.5 -> округление до 11 (для обоих концов)
+      expect(getEffectiveWeaponDamageRange(player)).toEqual({ min: 11, max: 11 });
+    });
+
+    it('add и multiply применяются к обоим концам рейнжа независимо', () => {
+      const player = makePlayer({
+        baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+        equippedWeaponId: 'test_sword',
+        statModifiers: [
+          { stat: 'damage', value: 0.5, op: 'multiply', source: 'buff' },
+          { stat: 'damage', value: 1, op: 'add', source: 'focus' },
+        ],
+      });
+      // {5,5} -> оба конца: 5 * 1.5 + 1 = 8.5 -> округление до 9
+      expect(getEffectiveWeaponDamageRange(player)).toEqual({ min: 9, max: 9 });
     });
   });
 
@@ -127,8 +137,8 @@ describe('effective weapon damage helpers', () => {
     });
   });
 
-  describe('getWeaponDamageByTag', () => {
-    it('считает effectiveDamage * weight для выбранного тега', () => {
+  describe('getWeaponDamageRangeByTag', () => {
+    it('считает рейнж * weight для выбранного тега', () => {
       const player = makePlayer({
         baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
         equippedWeaponId: 'test_sword',
@@ -138,10 +148,10 @@ describe('effective weapon damage helpers', () => {
       state.entities.set(player.id, player);
       const sim = createTestSimulation(state);
 
-      expect(sim.getWeaponDamageByTag(player, 'damage.physical.slashing')).toBe(10);
+      expect(sim.getWeaponDamageRangeByTag(player, 'damage.physical.slashing')).toEqual({ min: 10, max: 10 });
     });
 
-    it('возвращает 0, если тег отсутствует в распределении оружия', () => {
+    it('возвращает нулевой рейнж, если тег отсутствует в распределении оружия', () => {
       const player = makePlayer({
         baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
         equippedWeaponId: 'test_bow',
@@ -151,7 +161,7 @@ describe('effective weapon damage helpers', () => {
       state.entities.set(player.id, player);
       const sim = createTestSimulation(state);
 
-      expect(sim.getWeaponDamageByTag(player, 'damage.physical.slashing')).toBe(0);
+      expect(sim.getWeaponDamageRangeByTag(player, 'damage.physical.slashing')).toEqual({ min: 0, max: 0 });
     });
   });
 });

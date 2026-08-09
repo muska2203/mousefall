@@ -11,7 +11,6 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
   return {
     id: 'test_enemy',
     health: { max: 1 },
-    combat: { damage: 1, armor: 0 },
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     equipment: {},
     abilities: [],
@@ -32,10 +31,9 @@ function makeItemTemplate(partial: Partial<ItemTemplate> = {}): ItemTemplate {
     maxStack: 1,
     value: 0,
     rarity: 'common',
-    equipModifiers: [],
+    fixedModifiers: [],
     abilityPool: [],
     grantedAbilities: [],
-    ruleIds: [],
     apCost: 1,
     ...partial,
   };
@@ -337,6 +335,7 @@ describe('Интеграция: цикл выпадения лута', () => {
         templateId: 'test_potion',
         quantity: 1,
         grantedAbilities: [],
+        affixes: [],
       },
     };
     state.entities.set(container.id, container);

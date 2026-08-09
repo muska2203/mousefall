@@ -364,9 +364,9 @@ export class GameSession {
         ? Object.fromEntries(
             rawTemplate.weapon.damageDistribution.map(entry => [
               entry.damageTag,
-              this.simulation!.getEffectiveWeaponDamageForTemplate(state.player, rawTemplate, entry.damageTag),
+              this.simulation!.getEffectiveWeaponDamageRangeForTemplate(state.player, rawTemplate, entry.damageTag),
             ])
-          ) as Record<GameplayTag, number>
+          ) as Record<GameplayTag, import('@simulation/types').DamageRange>
         : undefined;
       const detail = template
         ? {
@@ -374,6 +374,7 @@ export class GameSession {
               stackCount: invItem.quantity,
               rarity: template.rarity,
               effectiveDamageByTag,
+              affixes: invItem.affixes,
             }, locale),
             name: template.name,
             description: template.description,
@@ -475,8 +476,11 @@ export class GameSession {
         const rawTemplate = tryGetItem(invItem.templateId);
         const damage = rawTemplate?.type === 'weapon' && rawTemplate.weapon
           ? rawTemplate.weapon.damageDistribution.reduce(
-              (sum, entry) => sum + this.simulation!.getEffectiveWeaponDamageForTemplate(state.player, rawTemplate, entry.damageTag),
-              0,
+              (sum, entry) => {
+                const range = this.simulation!.getEffectiveWeaponDamageRangeForTemplate(state.player, rawTemplate, entry.damageTag);
+                return { min: sum.min + range.min, max: sum.max + range.max };
+              },
+              { min: 0, max: 0 },
             )
           : null;
 
@@ -926,6 +930,7 @@ export class GameSession {
         const detail = mapItemTemplateToDetail(template, {
           stackCount: inventoryItem.quantity,
           rarity: template.rarity,
+          affixes: inventoryItem.affixes,
         }, currentLocale);
         return { kind: 'item', data: { ...detail, name: template.name, description: template.description } };
       }

@@ -29,7 +29,7 @@ function createTestPlayer() {
     maxAp: 3,
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     inventory: [
-      { instanceId: 'smoke_bomb_1', templateId: 'smoke_bomb', quantity: 5, grantedAbilities: [] },
+      { instanceId: 'smoke_bomb_1', templateId: 'smoke_bomb', quantity: 5, grantedAbilities: [], affixes: [] },
     ],
   });
 }

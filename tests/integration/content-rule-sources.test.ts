@@ -5,6 +5,7 @@ import type {
     AbilityTemplate,
     DoorTemplate,
     ItemTemplate,
+    ModifierTemplate,
     PlayerTemplate,
     StatusTemplate,
 } from '../../src/content/schemas';
@@ -46,13 +47,11 @@ function mockWeapon(
         value: 0,
         rarity: 'common',
         abilityPool: [],
-        equipModifiers: [],
+        fixedModifiers: [],
         grantedAbilities: [],
-        ruleIds: [],
         apCost: 1,
         weapon: {
-            baseDamage: 10,
-            damageFormulaId: 'sword',
+            damage: { min: 10, max: 10 },
             range: 1,
             damageDistribution: [{damageTag: 'damage.physical.slashing', weight: 1.0}],
             tags: [],
@@ -60,6 +59,17 @@ function mockWeapon(
         ...overrides,
     };
 }
+
+/** Фирменный rule-модификатор тестового меча: добавляет правило slashing_weapon_bleed. */
+const testSlashingBleedModifier: ModifierTemplate = {
+    id: 'test_mod_slashing_bleed',
+    effect: {kind: 'rule', ruleId: 'slashing_weapon_bleed'},
+    scaling: {kind: 'none'},
+    applicableSubtypes: ['sword'],
+    polarity: 'positive',
+    poolEligible: false,
+    weight: 1,
+};
 
 function mockFireStaff(id: string): ItemTemplate {
     return {
@@ -70,13 +80,11 @@ function mockFireStaff(id: string): ItemTemplate {
         value: 0,
         rarity: 'common',
         abilityPool: [],
-        equipModifiers: [],
+        fixedModifiers: [],
         grantedAbilities: [],
-        ruleIds: [],
         apCost: 1,
         weapon: {
-            baseDamage: 10,
-            damageFormulaId: 'staff',
+            damage: { min: 10, max: 10 },
             range: 1,
             damageDistribution: [{damageTag: 'damage.magical.fire', weight: 1.0}],
             tags: [],
@@ -134,10 +142,13 @@ beforeEach(() => {
             [
                 'test_slashing_sword',
                 mockWeapon('test_slashing_sword', {
-                    ruleIds: ['slashing_weapon_bleed'],
+                    fixedModifiers: ['test_mod_slashing_bleed'],
                 }),
             ],
             ['test_fire_staff', mockFireStaff('test_fire_staff')],
+        ]),
+        modifiers: new Map([
+            ['test_mod_slashing_bleed', testSlashingBleedModifier],
         ]),
         abilities: new Map([
             ['test_talent', mockAbility('test_talent', ['ability_fire_multiplier'])],
@@ -326,9 +337,9 @@ describe('Источники контентных правил', () => {
             });
             expect(result.success).toBe(true);
 
-            // Базовый урон посоха: round(10 + int*0.5) = round(10.5) = 11.
-            // С модификатором ×2 от таланта: 22. Броня врага 0.
-            expect(enemyHpBefore - enemy.hp).toBe(22);
+            // Базовый рейнж посоха: { min: 10, max: 10 }.
+            // С модификатором ×2 от таланта: 20. Броня врага 0.
+            expect(enemyHpBefore - enemy.hp).toBe(20);
         });
     });
 });

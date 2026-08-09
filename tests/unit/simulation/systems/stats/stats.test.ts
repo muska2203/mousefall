@@ -4,7 +4,7 @@ import type { ItemTemplate } from '@content/schemas';
 import { makePlayer, makeEnemy } from '../../../../fixtures/gameState.ts';
 import {
   getBaseMaxHp,
-  getBaseDamage,
+  getBaseDamageRange,
   getBaseArmor,
   getBaseCritMultiplier,
 } from '@simulation/systems/stats/base-resolver.ts';
@@ -15,7 +15,7 @@ import {
   consumeCharge,
 } from '@simulation/systems/stats/modifier-engine.ts';
 import {
-  getEffectiveWeaponDamage,
+  getEffectiveWeaponDamageRange,
   getEffectiveArmor,
   getEffectiveMaxHp,
 } from '@simulation/systems/stats/effective-stats.ts';
@@ -41,7 +41,7 @@ describe('stats system', () => {
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',
-          weapon: { baseDamage: 5, damageFormulaId: 'sword', range: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: [] },
+          weapon: { damage: { min: 5, max: 5 }, range: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: [] },
         })],
         ['test_armor', mockItem('test_armor', {
           type: 'armor',
@@ -72,18 +72,17 @@ describe('stats system', () => {
       expect(getBaseMaxHp(player)).toBe(50 + 5 * 10); // 100
     });
 
-    it('calculates unarmed damage from str', () => {
+    it('returns unarmed damage range without weapon', () => {
       const player = makePlayer({ baseStats: { str: 3, dex: 0, int: 0, vit: 0 } });
-      expect(getBaseDamage(player)).toBe(1 + 3 * 1.0); // 4
+      expect(getBaseDamageRange(player)).toEqual({ min: 1, max: 1 });
     });
 
-    it('calculates weapon damage with formula', () => {
+    it('returns weapon damage range from template', () => {
       const player = makePlayer({
         baseStats: { str: 4, dex: 2, int: 0, vit: 0 },
         equippedWeaponId: 'test_sword',
       });
-      // sword: baseDamage + str*0.8 + dex*0.5 = 5 + 3.2 + 1.0 = 9.2 -> округляется до 9
-      expect(getBaseDamage(player)).toBe(9);
+      expect(getBaseDamageRange(player)).toEqual({ min: 5, max: 5 });
     });
 
     it('calculates armor from equipped armor', () => {
@@ -196,17 +195,16 @@ describe('stats system', () => {
   // ─────────────────────────────────────────────
 
   describe('effective stats', () => {
-    it('returns base damage + modifiers for player', () => {
+    it('returns base damage range + modifiers for player', () => {
       const player = makePlayer({ baseStats: { str: 0, dex: 0, int: 0, vit: 0 } });
-      // unarmed: 1 + 0 = 1
+      // unarmed: { min: 1, max: 1 }
       player.statModifiers = [{ stat: 'damage', value: 4, op: 'add', source: 'buff' }];
-      expect(getEffectiveWeaponDamage(player)).toBe(5);
+      expect(getEffectiveWeaponDamageRange(player)).toEqual({ min: 5, max: 5 });
     });
 
-    it('returns derived damage for enemies with baseStats', () => {
-      // unarmed: 1 + str * 1.0 = 1 + 2 = 3
+    it('returns unarmed damage range for enemies with baseStats', () => {
       const enemy = makeEnemy({ baseStats: { str: 2, dex: 0, int: 0, vit: 0 }, equippedWeaponId: null });
-      expect(getEffectiveWeaponDamage(enemy)).toBe(3);
+      expect(getEffectiveWeaponDamageRange(enemy)).toEqual({ min: 1, max: 1 });
     });
 
     it('returns base armor + modifiers for player', () => {
@@ -242,7 +240,7 @@ describe('stats system', () => {
       });
       recalculateActorStats(player);
       expect(player.maxHp).toBe(50 + 3 * 10); // 80
-      expect(player.damage).toBe(1 + 2 * 1.0); // 3 (unarmed)
+      expect(player.damage).toEqual({ min: 1, max: 1 }); // unarmed
       expect(player.armor).toBe(0);
     });
 
@@ -261,8 +259,8 @@ describe('stats system', () => {
         statModifiers: [{ stat: 'str', value: 3, op: 'add', source: 'item_test' }],
       });
       recalculateActorStats(player);
-      // effective str = 8, so maxHp = 50 + vit*10 = 50, damage = 1 + 8*1.0 = 9
-      expect(player.damage).toBe(9);
+      // Рейнж урона не зависит от статы: без оружия — unarmed {1,1}
+      expect(player.damage).toEqual({ min: 1, max: 1 });
     });
 
     it('updates secondary derived stats', () => {
@@ -280,6 +278,61 @@ describe('stats system', () => {
       });
       recalculateActorStats(player);
       expect(player.critMultiplier).toBeCloseTo(2.0); // 1.5 + 0.5
+    });
+
+    it('includes maxHp modifiers in derived cache', () => {
+      const player = makePlayer({
+        hp: 80,
+        baseStats: { str: 0, dex: 0, int: 0, vit: 5 },
+        statModifiers: [{ stat: 'maxHp', value: -10, op: 'add', source: 'mod' }],
+      });
+      recalculateActorStats(player);
+      // База 100 (50 + 5*10), модификатор -10
+      expect(player.maxHp).toBe(90);
+      expect(player.hp).toBe(80);
+    });
+
+    it('clamps hp when a maxHp modifier lowers the maximum', () => {
+      const player = makePlayer({
+        hp: 100,
+        baseStats: { str: 0, dex: 0, int: 0, vit: 5 },
+        statModifiers: [{ stat: 'maxHp', value: -30, op: 'add', source: 'mod' }],
+      });
+      recalculateActorStats(player);
+      expect(player.maxHp).toBe(70);
+      expect(player.hp).toBe(70);
+    });
+
+    it('restores maxHp after the modifier source is removed', () => {
+      const player = makePlayer({
+        baseStats: { str: 0, dex: 0, int: 0, vit: 5 },
+        statModifiers: [{ stat: 'maxHp', value: 20, op: 'add', source: 'item_1' }],
+      });
+      recalculateActorStats(player);
+      expect(player.maxHp).toBe(120);
+      removeModifiersBySource(player, 'item_1');
+      recalculateActorStats(player);
+      expect(player.maxHp).toBe(100);
+    });
+
+    it('includes armor modifiers in derived cache', () => {
+      const player = makePlayer({
+        equippedArmorId: 'test_armor',
+        statModifiers: [{ stat: 'armor', value: 2, op: 'add', source: 'mod' }],
+      });
+      recalculateActorStats(player);
+      // База 4 (test_armor), модификатор +2
+      expect(player.armor).toBe(6);
+    });
+
+    it('includes damage modifiers in derived cache', () => {
+      const player = makePlayer({
+        equippedWeaponId: 'test_sword',
+        statModifiers: [{ stat: 'damage', value: -2, op: 'add', source: 'mod' }],
+      });
+      recalculateActorStats(player);
+      // База {5,5} (test_sword), модификатор -2
+      expect(player.damage).toEqual({ min: 3, max: 3 });
     });
   });
 

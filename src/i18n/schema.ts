@@ -131,11 +131,9 @@ export interface ComponentsRelicsPanelTranslations {
 }
 
 export interface ComponentsItemDetailTranslations {
-  itemSkillsTitle: string;
   abilityLevelPrefix: string;
-  possibleSkillsTitle: string;
-  descriptionTitle: string;
-  propertiesTitle: string;
+  /** Приглушённая пометка у скилла из пула ролла в карточке шаблона. */
+  possibleSkillHint: string;
 }
 
 export interface ComponentsEquipmentPanelTranslations {

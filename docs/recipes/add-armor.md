@@ -37,8 +37,7 @@
        baseArmor: 2,
      },
      grantedAbilities: [],
-     equipModifiers: [],
-     ruleIds: ['my_armor_rule'],
+     fixedModifiers: ['mod_my_armor'],
    } satisfies ItemTemplateInput;
    ```
 
@@ -53,8 +52,7 @@
    - `stackable`, `maxStack` — для брони обычно `false` / `1`.
    - `value` — цена продажи.
    - `armor.baseArmor` — плоское снижение получаемого урона.
-   - `equipModifiers` — модификаторы характеристик при экипировке (опционально).
-   - `ruleIds` — ID контентных правил (опционально).
+   - `fixedModifiers` — ID фирменных модификаторов из категории `modifiers` (опционально). Модификатор создаётся по рецепту [`add-modifier.md`](./add-modifier.md): rule-модификатор ссылается на контентное правило, stat-модификатор (scaling `fixed`) задаёт детерминированный бонус характеристики.
 
 2. **Добавь тексты** в `src/content/texts/ru/items.ts` и `src/content/texts/en/items.ts`:
 
@@ -65,9 +63,9 @@
    },
    ```
 
-3. **Если нужен пассивный эффект**, добавь контентное правило:
-   - Рецепт: [`add-content-rule.md`](./add-content-rule.md).
-   - Убедись, что ID правила указан в `ruleIds` шаблона брони.
+3. **Если нужен пассивный эффект**, добавь контентное правило и rule-модификатор:
+   - Рецепт правила: [`add-content-rule.md`](./add-content-rule.md); рецепт модификатора: [`add-modifier.md`](./add-modifier.md) (`effect: {kind: 'rule', ruleId}`, обычно `poolEligible: false`).
+   - Убедись, что ID модификатора указан в `fixedModifiers` шаблона брони.
 
 4. **Добавь спрайт и иконку** в `public/assets/items/my_armor.png`.
 
@@ -96,7 +94,7 @@
 - [ ] TS-шаблон создан в `src/content/templates/items/armor/`.
 - [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] Тексты добавлены в `ru/items.ts` и `en/items.ts`.
-- [ ] Если есть `ruleIds` — правила существуют и тексты правил добавлены.
+- [ ] Если есть `fixedModifiers` — модификаторы существуют, применимы к подтипу брони, их тексты добавлены; для rule-модификаторов правила существуют и тексты правил добавлены.
 - [ ] Спрайт/иконка добавлены в `public/assets/items/`.
 - [ ] Шаблон зарегистрирован в `src/content/templates/items/index.ts`.
 - [ ] `npm run validate:content` проходит.

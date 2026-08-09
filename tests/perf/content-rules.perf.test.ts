@@ -172,13 +172,11 @@ const perfWeapon: ItemTemplate = {
   value: 0,
   rarity: 'common',
   abilityPool: [],
-  equipModifiers: [],
+  fixedModifiers: [],
   grantedAbilities: [],
-  ruleIds: ['perf_burning_on_damage'],
   apCost: 1,
   weapon: {
-    baseDamage: 10,
-    damageFormulaId: 'sword',
+    damage: { min: 10, max: 10 },
     range: 1,
     damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
     tags: ['attack.melee', 'target.single', 'delivery.weapon'],
@@ -193,9 +191,8 @@ const perfArmor: ItemTemplate = {
   value: 0,
   rarity: 'common',
   abilityPool: [],
-  equipModifiers: [],
+  fixedModifiers: [],
   grantedAbilities: [],
-  ruleIds: ['perf_poison_on_damage', 'perf_thorns'],
   apCost: 1,
   armor: { baseArmor: 2 },
 };
@@ -208,9 +205,8 @@ const perfAmulet: ItemTemplate = {
   value: 0,
   rarity: 'common',
   abilityPool: [],
-  equipModifiers: [],
+  fixedModifiers: [],
   grantedAbilities: [],
-  ruleIds: ['perf_life_drain', 'perf_counterattack_trigger'],
   apCost: 1,
 };
 
@@ -585,9 +581,9 @@ describe('WP6.5 — Проверка производительности conten
 
     // Экипируем предметы с правилами.
     player.inventory = [
-      { instanceId: 'w1', templateId: 'perf_weapon', quantity: 1, grantedAbilities: [] },
-      { instanceId: 'a1', templateId: 'perf_armor', quantity: 1, grantedAbilities: [] },
-      { instanceId: 'm1', templateId: 'perf_amulet', quantity: 1, grantedAbilities: [] },
+      { instanceId: 'w1', templateId: 'perf_weapon', quantity: 1, grantedAbilities: [], affixes: [] },
+      { instanceId: 'a1', templateId: 'perf_armor', quantity: 1, grantedAbilities: [], affixes: [] },
+      { instanceId: 'm1', templateId: 'perf_amulet', quantity: 1, grantedAbilities: [], affixes: [] },
     ];
     player.equippedWeaponInstanceId = 'w1';
     player.equippedArmorInstanceId = 'a1';

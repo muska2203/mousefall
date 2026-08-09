@@ -10,7 +10,7 @@
 
 - TS-шаблон оружия в `src/content/templates/items/weapons/`.
 - Тексты в `src/content/texts/ru/items.ts` и `src/content/texts/en/items.ts`.
-- Если оружие даёт пассивный эффект — контентное правило в `src/simulation/content-rules/rules.ts`.
+- Если оружие даёт пассивный эффект — контентное правило в `src/simulation/content-rules/rules.ts` и rule-модификатор на него в `src/content/templates/modifiers/`.
 - Текст правила в `src/content/texts/ru/rules.ts` и `src/content/texts/en/rules.ts`.
 - Спрайт и иконка в `public/assets/items/`.
 - Регистрация в `src/content/templates/items/index.ts`.
@@ -30,12 +30,13 @@
      icon: '/assets/items/my_weapon.png',
      fallback: '⚔️',
      type: 'weapon',
+     subtype: 'sword',
+     level: 1,
      stackable: false,
      maxStack: 1,
      value: 12,
      weapon: {
-       baseDamage: 5,
-       damageFormulaId: 'sword',
+       damage: { min: 4, max: 6 },
        range: 1,
        damageDistribution: [
          {damageTag: 'damage.physical.slashing', weight: 1.0},
@@ -43,8 +44,7 @@
        tags: ['attack.melee', 'target.single', 'delivery.weapon'],
      },
      grantedAbilities: [],
-     equipModifiers: [],
-     ruleIds: ['my_weapon_rule'],
+     fixedModifiers: ['mod_my_weapon_effect'],
    } satisfies ItemTemplateInput;
    ```
 
@@ -56,14 +56,15 @@
    - `icon` — путь к иконке.
    - `fallback` — эмодзи, если иконка не загрузилась.
    - `type` — всегда `"weapon"`.
+   - `subtype` — подтип из `WEAPON_SUBTYPE_IDS` (`src/content/ids.ts`): `sword`, `dagger`, `club`, `staff`, `unarmed`. Определяет пул случайных аффиксов, выпадающих на экземпляры (см. [`add-modifier.md`](./add-modifier.md)). Enum — опечатка ловится typecheck'ом. Обязателен для экипировки.
+   - `level` — уровень шаблона (целое ≥ 1). Выбирает рейнж ролла значений аффиксов (`ranges[level-1]`); в дальнейшем — привязка дропа к этажам. Обязателен для экипировки.
    - `stackable`, `maxStack` — для оружия обычно `false` / `1`.
    - `value` — цена продажи.
-   - `weapon.baseDamage` — базовый урон.
-   - `weapon.damageFormulaId` — ID формулы урона из каталога `WEAPON_FORMULA_IDS` (`src/content/ids.ts`): `unarmed`, `club`, `dagger`, `staff`, `sword`. Enum — опечатка ловится typecheck'ом.
+   - `weapon.damage` — рейнж урона `{min, max}`; конкретное значение роллится при каждом ударе со смещением вверх от ловкости атакующего (`rollWeaponDamage`). Формулы урона (`damageFormulaId`) удалены 2026-08-08.
    - `weapon.range` — дальность атаки.
    - `weapon.damageDistribution` — распределение тегов урона.
    - `weapon.tags` — игровые теги для фильтрации правил.
-   - `ruleIds` — ID контентных правил (опционально).
+   - `fixedModifiers` — ID модификаторов из категории `modifiers` (опционально) — фирменные свойства предмета (stat или rule). Заменяет удалённые 2026-08-09 `equipModifiers`/`ruleIds` предметов. Пассивный эффект подключается как rule-модификатор (`effect: {kind: 'rule', ruleId}`), обычно с `poolEligible: false`.
 
 2. **Добавь тексты** в `src/content/texts/ru/items.ts` и `src/content/texts/en/items.ts`:
 
@@ -74,8 +75,9 @@
    },
    ```
 
-3. **Если нужен пассивный эффект**, добавь контентное правило:
-   - Рецепт: [`add-content-rule.md`](./add-content-rule.md).
+3. **Если нужен пассивный эффект**, добавь контентное правило и rule-модификатор на него, затем укажи модификатор в `fixedModifiers` оружия:
+   - Рецепт правила: [`add-content-rule.md`](./add-content-rule.md).
+   - Рецепт модификатора: [`add-modifier.md`](./add-modifier.md).
 
 4. **Добавь спрайт и иконку** в `public/assets/items/my_weapon.png`.
 
@@ -103,8 +105,9 @@
 
 - [ ] TS-шаблон создан в `src/content/templates/items/weapons/`.
 - [ ] `id` совпадает с именем файла в kebab-case.
+- [ ] Заданы `subtype` (из `WEAPON_SUBTYPE_IDS`) и `level` — обязательны для экипировки.
 - [ ] Тексты добавлены в `ru/items.ts` и `en/items.ts`.
-- [ ] Если есть `ruleIds` — правила существуют и тексты правил добавлены.
+- [ ] Если есть `fixedModifiers` — модификаторы существуют, их `applicableSubtypes` включает `subtype` оружия; для rule-модификаторов правила существуют и тексты правил добавлены.
 - [ ] Спрайт/иконка добавлены в `public/assets/items/`.
 - [ ] Шаблон зарегистрирован в `src/content/templates/items/index.ts`.
 - [ ] `npm run validate:content` проходит.

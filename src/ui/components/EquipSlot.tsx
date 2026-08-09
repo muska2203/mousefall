@@ -5,13 +5,15 @@
  */
 
 import {resolveItemFrame} from '@utils/assetResolver';
+import type {DamageRange} from '@presentation/types';
+import {formatDamageRange} from '@utils/format';
 
 interface Props {
   label: string;
   icon?: string;
   fallback?: string;
   rarity?: string;
-  damage?: number | null;
+  damage?: DamageRange | null;
   instanceId?: string | null;
   onClick?: () => void;
 }
@@ -50,7 +52,7 @@ export function EquipSlot({
             <span className="cm-sprite-fallback">{fallback}</span>
           </span>
         </span>
-        {damage != null && <span className="cm-item-weapon-damage">{damage}</span>}
+        {damage != null && <span className="cm-item-weapon-damage">{formatDamageRange(damage)}</span>}
       </div>
     </div>
   );

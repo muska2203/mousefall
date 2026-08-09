@@ -6,11 +6,10 @@ export const commonEnergizedBead = {
   "icon": "/assets/items/common_energized_bead.png",
   "fallback": "⚡",
   "type": "amulet",
+  "level": 1,
+  "subtype": "bead",
   "stackable": false,
   "maxStack": 1,
   "value": 5,
-  "equipModifiers": [],
-  "ruleIds": [
-    "amulet_restore_ap_on_hit"
-  ]
+  "fixedModifiers": ["mod_restore_ap_on_hit"]
 } satisfies ItemTemplateInput;

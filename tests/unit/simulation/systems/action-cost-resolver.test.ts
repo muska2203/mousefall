@@ -119,8 +119,8 @@ describe('DefaultActionPointCostResolver', () => {
   it('USE_ITEM берёт apCost из шаблона предмета в инвентаре', () => {
     const player = makePlayer({
       inventory: [
-        { instanceId: 'p1', templateId: 'health_potion', quantity: 1, grantedAbilities: [] },
-        { instanceId: 'p2', templateId: 'expensive_potion', quantity: 1, grantedAbilities: [] },
+        { instanceId: 'p1', templateId: 'health_potion', quantity: 1, grantedAbilities: [], affixes: [] },
+        { instanceId: 'p2', templateId: 'expensive_potion', quantity: 1, grantedAbilities: [], affixes: [] },
       ],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });

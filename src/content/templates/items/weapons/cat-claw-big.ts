@@ -4,12 +4,13 @@ export const catClawBig = {
   "id": "cat_claw_big",
   "fallback": "🐾",
   "type": "weapon",
+  "level": 2,
+  "subtype": "dagger",
   "stackable": false,
   "maxStack": 1,
   "value": 12,
   "weapon": {
-    "baseDamage": 4,
-    "damageFormulaId": "dagger",
+    "damage": { "min": 3, "max": 5 },
     "range": 1,
     "damageDistribution": [
       {
@@ -23,6 +24,5 @@ export const catClawBig = {
       "delivery.weapon"
     ]
   },
-  "grantedAbilities": [],
-  "equipModifiers": []
+  "grantedAbilities": []
 } satisfies ItemTemplateInput;

@@ -54,7 +54,8 @@ export type RuleTrigger = {
 
 /**
  * Параметризованное числовое значение.
- * В MVP поддерживаются только константа и ссылка на поле контекста.
+ * Поддерживаются константа, ссылка на поле контекста и ссылка на
+ * ролленное значение владельца-аффикса (ownerParam).
  */
 export type ParametrizedValue =
   | { type: 'literal'; value: number }
@@ -64,6 +65,13 @@ export type ParametrizedValue =
       // читается из контекста, пока без общего stat-based resolver.
       type: 'context';
       field: 'eventDamage' | 'eventAmount' | 'eventDuration' | 'eventStacks' | 'eventMaxHp' | 'sourceCritMultiplier';
+      multiply?: number;
+      min?: number;
+      round?: boolean;
+    }
+  | {
+      /** Значение из paramValue активного правила (ролленное значение rule-аффикса). Fallback — 0. */
+      type: 'ownerParam';
       multiply?: number;
       min?: number;
       round?: boolean;
@@ -176,6 +184,8 @@ export type ContentRule = {
  */
 export type ActiveRule = ContentRule & {
   ownerContext: OwnerContext;
+  /** Ролленное значение rule-аффикса экземпляра предмета (для ParametrizedValue ownerParam). */
+  paramValue?: number;
 };
 
 /**

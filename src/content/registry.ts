@@ -24,6 +24,7 @@ import type {
   ItemTemplate,
   LoadedContent,
   MapParams,
+  ModifierTemplate,
   PlayerTemplate,
   PropTemplate,
   PoiTemplate,
@@ -857,4 +858,13 @@ export function getAllLocalizedRelics(locale: Locale): LocalizedRelicTemplate[] 
     const text = getContentText('relics', template.id, locale);
     return { ...template, name: text.name, flavorText: text.flavorText };
   });
+}
+
+/**
+ * Попытаться получить шаблон модификатора (аффикса).
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetModifier(id: string): ModifierTemplate | undefined {
+  if (_registry === null) return undefined;
+  return (_registry.modifiers ?? new Map()).get(id);
 }

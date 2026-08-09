@@ -28,7 +28,7 @@ function mockItem(id: string, overrides: Partial<ItemTemplate> = {}): ItemTempla
     maxStack: 1,
     value: 10,
     apCost: 1,
-    equipModifiers: [],
+    fixedModifiers: [],
     ...overrides,
   } as ItemTemplate;
 }
@@ -182,7 +182,7 @@ describe('AP-система: мульти-AP сценарии', () => {
       y: 5,
       maxAp: 2,
       ap: 0,
-      inventory: [{ instanceId: 'w1', templateId: 'common_splinter_blade', quantity: 1, grantedAbilities: [] }],
+      inventory: [{ instanceId: 'w1', templateId: 'common_splinter_blade', quantity: 1, grantedAbilities: [], affixes: [] }],
     });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
     const sim = createTestSimulation(state);

@@ -6,7 +6,7 @@
 
 import {useState} from 'react';
 import {useTranslation} from '@i18n/hooks';
-import type {ItemDetailViewModel} from '@presentation/types';
+import type {DamageRange, ItemDetailViewModel} from '@presentation/types';
 import {Panel} from './Panel';
 import {ItemButton} from './ItemButton';
 import {ItemDetailPopover} from './ItemDetailPopover';
@@ -16,7 +16,7 @@ export type StarterItem = {
   name: string;
   icon: string;
   fallback: string;
-  damage?: number;
+  damage?: DamageRange;
   detail?: ItemDetailViewModel;
 };
 

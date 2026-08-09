@@ -3,7 +3,7 @@ import {
   validateContentRuleReferences,
   validateContentRuleSemantics,
 } from '@simulation/content-rules/validation';
-import type { LoadedContent, ItemTemplate, AbilityTemplate, StatusTemplate, TileEffectTemplate, TileEffectStatusTemplate } from '@content/schemas';
+import type { LoadedContent, AbilityTemplate, StatusTemplate, TileEffectTemplate, TileEffectStatusTemplate, ModifierTemplate } from '@content/schemas';
 import type { ContentRule } from '@simulation/content-rules/types';
 import type { StatusEffectType } from '@simulation/core-types';
 import { setContentRulesOverride } from '@simulation/content-rules/registry';
@@ -82,9 +82,17 @@ describe('validateContentRuleReferences', () => {
     expect(() => validateContentRuleReferences(createContent())).not.toThrow();
   });
 
-  it('падает при неизвестном ruleId в предмете', () => {
+  it('падает при неизвестном ruleId в rule-модификаторе', () => {
     const content = createContent({
-      items: new Map([['test_item', { id: 'test_item', ruleIds: ['unknown_rule'] } as ItemTemplate]]),
+      modifiers: new Map([['mod_test', {
+        id: 'mod_test',
+        effect: { kind: 'rule', ruleId: 'unknown_rule' },
+        scaling: { kind: 'none' },
+        applicableSubtypes: ['light'],
+        polarity: 'positive',
+        poolEligible: false,
+        weight: 1,
+      } as ModifierTemplate]]),
     });
     expect(() => validateContentRuleReferences(content)).toThrow('unknown_rule');
   });
@@ -119,16 +127,24 @@ describe('validateContentRuleReferences', () => {
 
   it('падает при дублировании ruleIds в шаблоне', () => {
     const content = createContent({
-      items: new Map([
-        ['test_item', { id: 'test_item', ruleIds: ['fire_damage_ignites', 'fire_damage_ignites'] } as ItemTemplate],
+      abilities: new Map([
+        ['test_ability', { id: 'test_ability', ruleIds: ['fire_damage_ignites', 'fire_damage_ignites'] } as AbilityTemplate],
       ]),
     });
     expect(() => validateContentRuleReferences(content)).toThrow('дублирующийся');
   });
 
-  it('проходит при корректных известных ruleIds', () => {
+  it('проходит при корректном ruleId в rule-модификаторе', () => {
     const content = createContent({
-      items: new Map([['test_item', { id: 'test_item', ruleIds: ['fire_damage_ignites'] } as ItemTemplate]]),
+      modifiers: new Map([['mod_test', {
+        id: 'mod_test',
+        effect: { kind: 'rule', ruleId: 'fire_damage_ignites' },
+        scaling: { kind: 'none' },
+        applicableSubtypes: ['light'],
+        polarity: 'positive',
+        poolEligible: false,
+        weight: 1,
+      } as ModifierTemplate]]),
     });
     expect(() => validateContentRuleReferences(content)).not.toThrow();
   });
@@ -342,38 +358,6 @@ describe('validateContentRuleSemantics', () => {
     });
   });
 
-  it('проходит, когда dealDamage.damageFormulaId ссылается на существующую формулу', () => {
-    const rule: ContentRule = {
-      id: 'test_damage_formula',
-      trigger: { event: 'ENTITY_DAMAGED' },
-      effect: { type: 'dealDamage', amount: 5, damageFormulaId: 'sword' } as unknown as ContentRule['effect'],
-      target: { type: 'eventTarget' },
-      priority: 0,
-    };
-    setContentRulesOverride([rule]);
-
-    expect(validateContentRuleSemantics(createContent())).toEqual([]);
-  });
-
-  it('возвращает ошибку, когда dealDamage.damageFormulaId ссылается на отсутствующую формулу', () => {
-    const rule: ContentRule = {
-      id: 'test_damage_unknown_formula',
-      trigger: { event: 'ENTITY_DAMAGED' },
-      effect: { type: 'dealDamage', amount: 5, damageFormulaId: 'unknown_formula' } as unknown as ContentRule['effect'],
-      target: { type: 'eventTarget' },
-      priority: 0,
-    };
-    setContentRulesOverride([rule]);
-
-    const errors = validateContentRuleSemantics(createContent());
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatchObject({
-      ruleId: 'test_damage_unknown_formula',
-      field: 'effect.damageFormulaId',
-      problem: expect.stringContaining('unknown_formula'),
-    });
-  });
-
   it('возвращает ошибку, когда durationDecreasesWhenHasStatus ссылается на отсутствующий статус тайлового эффекта', () => {
     const base = createContent();
     const tileEffects = new Map(base.tileEffects);
@@ -454,5 +438,125 @@ describe('validateContentRuleSemantics', () => {
       field: 'target.type',
       problem: expect.stringContaining('positionsInRadius'),
     });
+  });
+});
+
+describe('validateModifierTemplates (семантика аффиксов)', () => {
+  beforeEach(() => {
+    setContentRulesOverride([]);
+  });
+
+  afterEach(() => {
+    setContentRulesOverride(null);
+  });
+
+  function mockModifier(overrides: Partial<ModifierTemplate> = {}): ModifierTemplate {
+    return {
+      id: 'mod_test',
+      polarity: 'positive',
+      effect: { kind: 'stat', stat: 'armor', op: 'add' },
+      scaling: { kind: 'perLevel', ranges: [{ min: 1, max: 2 }] },
+      applicableSubtypes: ['light'],
+      poolEligible: true,
+      weight: 1,
+      ...overrides,
+    };
+  }
+
+  it('возвращает ошибку для stat-аффикса со scaling none (модификатор применился бы со значением 0)', () => {
+    const content = createContent({
+      modifiers: new Map([['mod_test', mockModifier({ scaling: { kind: 'none' } })]]),
+    });
+
+    const errors = validateContentRuleSemantics(content);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      path: 'modifiers.mod_test',
+      field: 'scaling',
+      problem: expect.stringContaining('perLevel'),
+    });
+  });
+
+  it('проходит для stat-аффикса со scaling perLevel', () => {
+    const content = createContent({
+      modifiers: new Map([['mod_test', mockModifier()]]),
+    });
+
+    expect(validateContentRuleSemantics(content)).toEqual([]);
+  });
+
+  it('проходит для stat-аффикса со scaling fixed (детерминированное значение)', () => {
+    const content = createContent({
+      modifiers: new Map([['mod_test', mockModifier({
+        scaling: { kind: 'fixed', value: 10 },
+        poolEligible: false,
+      })]]),
+    });
+
+    expect(validateContentRuleSemantics(content)).toEqual([]);
+  });
+
+  it('проходит для rule-аффикса со scaling none без ownerParam в правиле', () => {
+    const rule: ContentRule = {
+      id: 'test_rule_no_owner_param',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      effect: { type: 'dealDamage', amount: 2 },
+      target: { type: 'eventTarget' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const content = createContent({
+      modifiers: new Map([['mod_test', mockModifier({
+        effect: { kind: 'rule', ruleId: 'test_rule_no_owner_param' },
+        scaling: { kind: 'none' },
+      })]]),
+    });
+
+    expect(validateContentRuleSemantics(content)).toEqual([]);
+  });
+
+  it('возвращает ошибку для rule-аффикса со scaling perLevel, если в правиле нет ownerParam', () => {
+    const rule: ContentRule = {
+      id: 'test_rule_no_owner_param',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      effect: { type: 'dealDamage', amount: 2 },
+      target: { type: 'eventTarget' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const content = createContent({
+      modifiers: new Map([['mod_test', mockModifier({
+        effect: { kind: 'rule', ruleId: 'test_rule_no_owner_param' },
+      })]]),
+    });
+
+    const errors = validateContentRuleSemantics(content);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      path: 'modifiers.mod_test',
+      field: 'scaling',
+      problem: expect.stringContaining('ownerParam'),
+    });
+  });
+
+  it('проходит для rule-аффикса со scaling perLevel, если правило использует ownerParam', () => {
+    const rule: ContentRule = {
+      id: 'test_rule_with_owner_param',
+      trigger: { event: 'ENTITY_DAMAGED' },
+      effect: { type: 'dealDamage', amount: { type: 'ownerParam' } },
+      target: { type: 'eventTarget' },
+      priority: 0,
+    };
+    setContentRulesOverride([rule]);
+
+    const content = createContent({
+      modifiers: new Map([['mod_test', mockModifier({
+        effect: { kind: 'rule', ruleId: 'test_rule_with_owner_param' },
+      })]]),
+    });
+
+    expect(validateContentRuleSemantics(content)).toEqual([]);
   });
 });

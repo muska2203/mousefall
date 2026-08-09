@@ -357,6 +357,12 @@ export type ParametrizedValue =
       multiply?: number;
       min?: number;
       round?: boolean;
+    }
+  | {
+      type: 'ownerParam';
+      multiply?: number;
+      min?: number;
+      round?: boolean;
     };
 ```
 
@@ -375,6 +381,10 @@ amount: { type: 'literal', value: 5 }
 1. `multiply` — умножает извлечённое значение.
 2. `min` — нижняя граница после умножения (`Math.max(v, min)`).
 3. `round` — округление до ближайшего целого (`Math.round`), если `true`.
+
+### ownerParam
+
+База — `paramValue` активного правила (`ActiveRule.paramValue`) — ролленное значение rule-аффикса экземпляра предмета (см. `src/simulation/systems/item-affix-roll.ts`). Так масштабируемые по уровню rule-аффиксы (например, отравление с силой от уровня оружия) получают своё значение. Операции `multiply`/`min`/`round` работают так же, как у `context`; fallback без значения — 0. Используется только в правилах, на которые ссылаются модификаторы (`effect.kind: 'rule'`); инвариант «rule-аффикс со `scaling: perLevel` требует `{type: 'ownerParam'}` в эффекте правила» проверяется `validateContentRuleSemantics`.
 
 ### Примеры
 
@@ -409,7 +419,7 @@ amount: { type: 'literal', value: 5 }
 
 ### fallback
 
-Если `context`-значение не найдено (`ctx[field]` — `null` или `undefined`), используется 0.
+Если `context`-значение не найдено (`ctx[field]` — `null` или `undefined`), используется 0. Для `ownerParam` fallback — тоже 0 (когда у активного правила нет `paramValue`).
 
 ---
 

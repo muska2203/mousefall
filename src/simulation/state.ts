@@ -62,7 +62,7 @@ export function createInitialPlayer(templateId: string): PlayerEntity {
     y: 0,
     hp: 100,
     maxHp: 100,
-    damage: 8,
+    damage: { min: 1, max: 1 },
     armor: 0,
     statusEffects: [],
     inventory: [],

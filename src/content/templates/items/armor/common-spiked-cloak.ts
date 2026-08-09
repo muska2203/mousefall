@@ -6,6 +6,8 @@ export const commonSpikedCloak = {
   "icon": "/assets/items/common_spiked_cloak.png",
   "fallback": "🧥",
   "type": "armor",
+  "level": 1,
+  "subtype": "light",
   "stackable": false,
   "maxStack": 1,
   "value": 8,
@@ -13,8 +15,5 @@ export const commonSpikedCloak = {
     "baseArmor": 1
   },
   "grantedAbilities": [],
-  "equipModifiers": [],
-  "ruleIds": [
-    "armor_spiked_thorns"
-  ]
+  "fixedModifiers": ["mod_spiked_thorns"]
 } satisfies ItemTemplateInput;

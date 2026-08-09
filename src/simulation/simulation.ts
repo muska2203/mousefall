@@ -62,16 +62,16 @@ import {cancelPreparedAbility} from "@simulation/ai/ai-helpers.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import "@simulation/ai/simple-boss-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
-import type {GameplayTag, TargetMode} from "@simulation/core-types.ts";
+import type {DamageRange, GameplayTag, TargetMode} from "@simulation/core-types.ts";
 import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
 import {updateFOV} from "@simulation/systems/fov.ts";
-import {getEffectiveWeaponDamage,} from "@simulation/systems/stats/effective-stats.ts";
+import {applyDamageModifiers, getEffectiveWeaponDamageRange,} from "@simulation/systems/stats/effective-stats.ts";
 import {getEffectiveBaseStats} from "@simulation/systems/stats/base-resolver.ts";
-import {getWeaponDamage} from "@simulation/systems/stats/weapon-formulas.ts";
-import {addModifier, applyModifiers} from "@simulation/systems/stats/modifier-engine.ts";
+import {addModifier} from "@simulation/systems/stats/modifier-engine.ts";
 import {recalculateActorStats} from "@simulation/systems/stats/recalculate.ts";
+import {collectFixedStatModifiers} from "@simulation/systems/item-affix-roll.ts";
 import {getWeaponDamageDistribution, getWeaponWeightForTag} from "@simulation/systems/tags/weapon-tags.ts";
 import {getAbilityTags} from "@simulation/systems/tags/ability-tags.ts";
 import {meetsWeaponRequirements} from "@simulation/systems/abilities/ability-requirements.ts";
@@ -273,7 +273,8 @@ export class GameSimulation implements Simulation {
             } else if (template.type === 'amulet') {
                 player.equippedAmuletId = templateId;
             }
-            for (const mod of template.equipModifiers ?? []) {
+            // Фирменные stat-модификаторы предмета (из fixedModifiers шаблона).
+            for (const mod of collectFixedStatModifiers(template)) {
                 addModifier(player, { ...mod, source: `preview_${templateId}` });
             }
         }
@@ -1068,33 +1069,38 @@ export class GameSimulation implements Simulation {
         return template.consumable.tileEffectType ?? null;
     }
 
-    getWeaponDamage(player: PlayerEntity): number {
-        return getEffectiveWeaponDamage(player);
+    getWeaponDamageRange(player: PlayerEntity): DamageRange {
+        return getEffectiveWeaponDamageRange(player);
     }
 
     getWeaponDamageDistribution(player: PlayerEntity): Array<{ damageTag: GameplayTag; weight: number }> {
         return getWeaponDamageDistribution(player);
     }
 
-    getWeaponDamageByTag(player: PlayerEntity, tag: GameplayTag): number {
-        const total = getEffectiveWeaponDamage(player);
+    getWeaponDamageRangeByTag(player: PlayerEntity, tag: GameplayTag): DamageRange {
+        const range = getEffectiveWeaponDamageRange(player);
         const weight = getWeaponWeightForTag(player, tag);
-        return Math.round(total * weight);
+        return {
+            min: Math.round(range.min * weight),
+            max: Math.round(range.max * weight),
+        };
     }
 
     /**
-     * Считает effective урон для конкретного шаблона оружия и конкретного типа урона.
-     * Формула: базовый урон по формуле предмета × вес типа × модификаторы актора.
+     * Считает effective рейнж урона для конкретного шаблона оружия и конкретного типа урона.
+     * Формула: рейнж шаблона × вес типа × модификаторы актора (по каждому концу).
      */
-    getEffectiveWeaponDamageForTemplate(
+    getEffectiveWeaponDamageRangeForTemplate(
         actor: StatActor,
         template: ItemTemplate,
         tag: GameplayTag,
-    ): number {
-        const baseDamage = getWeaponDamage(actor, template);
+    ): DamageRange {
+        const base = template.weapon?.damage ?? { min: 1, max: 1 };
         const weight = template.weapon?.damageDistribution?.find(entry => entry.damageTag === tag)?.weight ?? 0;
-        const weighted = baseDamage * weight;
-        return Math.round(applyModifiers(actor, 'damage', weighted).total);
+        return applyDamageModifiers(actor, {
+            min: base.min * weight,
+            max: base.max * weight,
+        });
     }
 
     /** Проверяет, может ли игрок переместиться на указанный тайл с учётом видимости.

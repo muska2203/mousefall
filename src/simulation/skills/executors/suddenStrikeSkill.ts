@@ -4,7 +4,7 @@ import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {findAllEntitiesAt, isCombatEntity} from '@simulation/state';
 import {isEnemyEntity} from '@simulation/ai/ai-state';
-import {getEffectiveWeaponDamage} from '@simulation/systems/stats/effective-stats';
+import {rollWeaponDamage} from '@simulation/systems/stats/weapon-damage-roll';
 import {getAbilityTags} from '@simulation/systems/tags/ability-tags';
 import {getPrimaryDamageTag, getWeaponTags} from '@simulation/systems/tags/weapon-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
@@ -79,7 +79,7 @@ export const suddenStrikeSkill: SkillExecutor = {
       .find(e => isCombatEntity(e) && e.isAlive);
     if (!target) return [];
 
-    const damage = getEffectiveWeaponDamage(caster);
+    const damage = rollWeaponDamage(state, caster);
     const primaryTag = getPrimaryDamageTag(caster);
     const tags = mergeDamageIntentTags([primaryTag], getAbilityTags(this.id), getWeaponTags(caster));
 

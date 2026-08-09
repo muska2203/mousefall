@@ -19,6 +19,7 @@ import {
   EntityTemplateSchema,
   ItemTemplateSchema,
   MapParamsSchema,
+  ModifierTemplateSchema,
   PlayerTemplateSchema,
   PoiTemplateSchema,
   PropTemplateSchema,
@@ -36,6 +37,7 @@ import {doorTemplates} from './doors';
 import {entityTemplates} from './entities';
 import {itemTemplates} from './items';
 import {mapParams} from './maps';
+import {modifierTemplates} from './modifiers';
 import {playerTemplates} from './players';
 import {poiTemplates} from './pois';
 import {propTemplates} from './props';
@@ -98,5 +100,6 @@ export function buildContent(): LoadedContent {
     pois: buildCategory('pois', poiTemplates, PoiTemplateSchema),
     traps: buildCategory('traps', trapTemplates, TrapTemplateSchema),
     relics: buildCategory('relics', relicTemplates, RelicTemplateSchema),
+    modifiers: buildCategory('modifiers', modifierTemplates, ModifierTemplateSchema),
   };
 }

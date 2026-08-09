@@ -39,7 +39,7 @@ describe('GameSimulation.getPlayerStats', () => {
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',
-          weapon: {baseDamage: 5, damageFormulaId: 'sword', range: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: []},
+          weapon: {damage: { min: 5, max: 5 }, range: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: []},
         })],
         ['test_armor', mockItem('test_armor', {
           type: 'armor',
@@ -73,8 +73,8 @@ describe('GameSimulation.getPlayerStats', () => {
       startingEquipment: ['test_sword', 'test_armor'],
     });
 
-    // Урон меча: baseDamage 5 + str*0.8 + dex*0.5 = 5 + 1.6 + 1.5 = 8.1 → 8
-    expect(stats.damage).toBe(8);
+    // Урон меча берётся рейнжем из шаблона: { min: 5, max: 5 }
+    expect(stats.damage).toEqual({ min: 5, max: 5 });
     expect(stats.armor).toBe(4);
     expect(stats.baseStats).toEqual({str: 2, dex: 3, int: 1, vit: 1});
   });
@@ -86,8 +86,8 @@ describe('GameSimulation.getPlayerStats', () => {
       startingEquipment: [],
     });
 
-    // Без оружия: 1 + str*1.0 = 3
-    expect(stats.damage).toBe(3);
+    // Без оружия — рейнж безоружной атаки { min: 1, max: 1 }
+    expect(stats.damage).toEqual({ min: 1, max: 1 });
   });
 
   it('returns current player stats snapshot', () => {
@@ -120,7 +120,7 @@ describe('GameSimulation.getPlayerStats', () => {
     expect(stats.maxHp).toBeGreaterThan(0);
     expect(stats.baseStats).toEqual({str: 2, dex: 3, int: 1, vit: 1});
     expect(stats.effectiveStats.dex).toBe(3);
-    expect(stats.damage).toBeGreaterThan(0);
+    expect(stats.damage.max).toBeGreaterThan(0);
     expect(stats.armor).toBe(4);
     expect(stats.critMultiplier).toBe(1.5);
     expect(stats.maxAp).toBe(sim.getState().player.maxAp);

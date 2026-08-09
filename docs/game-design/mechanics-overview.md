@@ -23,26 +23,18 @@
 
 ### 1.3 Атака, урон, броня, HP
 
-Мили-атака по соседней клетке (bump-attack: движение во врага = атака). Броня вычитается **только из физического** урона (минимум 1); магический урон броню игнорирует. Бой детерминированный: промахов и роллов попадания нет (статы уклонения/точности/шанса крита и событие `ENTITY_MISSED` удалены 2026-08-07). Крит — глобальное контентное правило `core_crit_on_dazed_stunned`: урон по цели со статусом `dazed`/`stunned` умножается на `critMultiplier` атакующего и помечается тегом `crit` (строка в боевом логе + floating text «Крит!»). Яд и оглушение оружия (`weapon_poison_on_hit`, `weapon_blunt_daze`) — тоже детерминированные (срабатывают всегда). HP: игрок — 50 + vit×10; враги — `health.max` шаблона. Двери и пропы тоже разрушаемы (имеют HP/броню).
+Мили-атака по соседней клетке (bump-attack: движение во врага = атака). Броня вычитается **только из физического** урона (минимум 1); магический урон броню игнорирует. Промахов и роллов попадания нет (статы уклонения/точности/шанса крита и событие `ENTITY_MISSED` удалены 2026-08-07). Урон оружия — рейнж `{min, max}` из шаблона: конкретное значение роллится в момент удара со смещением вверх от ловкости атакующего (см. §1.4). Крит — глобальное контентное правило `core_crit_on_dazed_stunned`: урон по цели со статусом `dazed`/`stunned` умножается на `critMultiplier` атакующего и помечается тегом `crit` (строка в боевом логе + floating text «Крит!»). Яд и оглушение оружия (`weapon_poison_on_hit`, `weapon_blunt_daze`) — тоже детерминированные (срабатывают всегда). HP: игрок — 50 + vit×10; враги — `health.max` шаблона. Двери и пропы тоже разрушаемы (имеют HP/броню).
 
-- Ручки: `combat.damage/armor` сущности, `weapon.baseDamage/baseArmor`, `damageDistribution` оружия, правила `modifyDamage`.
+- Ручки: `weapon.damage {min,max}`/`baseArmor` экипировки врага (`equipment` шаблона сущности), `damageDistribution` оружия, правила `modifyDamage`.
 - Файлы: `src/simulation/systems/actions/attack-action.ts`, `src/simulation/systems/damage/apply-damage.ts`.
 
-### 1.4 Характеристики и формулы урона
+### 1.4 Характеристики и урон оружия
 
-Базовые: `str, dex, int, vit`. Производные: урон (формула оружия), броня, maxHp, critMultiplier (база 1.5). Модификаторы `StatModifier` (add/multiply, порядок multiply → add, уникальность по `source`).
+Базовые: `str, dex, int, vit`. Производные: рейнж урона оружия, броня, maxHp, critMultiplier (база 1.5). Модификаторы `StatModifier` (add/multiply, порядок multiply → add, уникальность по `source`; к рейнжу урона add/multiply применяются к обоим концам). Derived-кэш (`actor.maxHp`/`damage`/`armor`/`critMultiplier`, обновляется `recalculateActorStats`) хранит итоговые значения — базу с уже применёнными stat-модификаторами; боевой расчёт (`getEffectiveArmor`, `rollWeaponDamage` и др.) считает то же из базы через `getEffective*`-функции.
 
-Формулы урона оружия (выбираются `damageFormulaId`):
+Урон оружия — рейнж `{min, max}` из шаблона (`weapon.damage`); формулы урона оружия (`damageFormulaId`, скейлинг от статов) удалены 2026-08-08. Конкретное значение роллится в момент удара (`rollWeaponDamage`) по формуле `min + round((max − min) × u^(1/(1 + dex·k)))`, где `u` — равномерный ролл из `state.runtimeRng`, `k = DEX_DAMAGE_BIAS_K = 0.05`: чем выше эффективная ловкость атакующего, тем сильнее распределение смещено к `max`. Без оружия действует шаблон `unarmed` (рейнж {1,1}).
 
-| ID | Формула |
-|---|---|
-| `unarmed` | 1 + str |
-| `club` | base + str×1.5 |
-| `dagger` | base + dex×1.2 |
-| `staff` | base + int×0.5 |
-| `sword` | base + str×0.8 + dex×0.5 |
-
-- Файлы: `src/simulation/systems/stats/` (`weapon-formulas.ts`, `modifier-engine.ts`), `src/simulation/characterCreation.ts`.
+- Файлы: `src/simulation/systems/stats/` (`base-resolver.ts`, `effective-stats.ts`, `weapon-damage-roll.ts`, `modifier-engine.ts`), `src/simulation/characterCreation.ts`.
 
 ### 1.5 Иерархические теги
 
@@ -87,7 +79,7 @@
 - **Эффекты:** `applyStatus`, `dealDamage`, `heal`, `restoreAp`, `consumeAp`, `modifyDamage` (multiply/add + addTags; только интенты DAMAGE/DAMAGE_TILE), `counterAttack`, `applyTileEffectStatus`, `spawnTileEffect`.
 - **Условия:** `chance`, `hasStatus`, `hasTag`, `entityHasTag`, `inTileEffect`, `tileEffectHasStatus`, `eventFieldEquals`, `eventRole`, `and/or/not`.
 - **Селекторы:** `eventTarget`, `eventSource`, `self`, `collisionTarget`, `eventTileEffect`, `allInRadius`, `nearestEnemy`, `tilesInRadius`, `positionsInRadius`.
-- **Числа (`ParametrizedValue`):** константа или ссылка на контекст (`eventDamage/eventAmount/eventDuration/eventStacks/eventMaxHp` × multiply, min, round).
+- **Числа (`ParametrizedValue`):** константа, ссылка на контекст (`eventDamage/eventAmount/eventDuration/eventStacks/eventMaxHp` × multiply, min, round) или `ownerParam` (ролленное значение rule-аффикса предмета).
 
 Готовые правила-образцы для переиспользования: контратака (50%), вода→`wet`, масло→`oiled`, поджог масла огнём, урон и горение при входе в горящее масло, распространение горения, отравление от piercing/slashing (40%), ошеломление от blunt (25%), шипы брони, восстановление AP при ударе (15%), множители огненного урона (×1.5, +2, ×1.2 по горящим), урон и daze при столкновении после толчка, разлив масла из бочек с `contains.oil`, поджог `flammable`-объектов, лечение алтарём, урон колючек.
 
@@ -99,11 +91,12 @@
 
 ## 5. Предметы и экипировка
 
-- **Слоты экипировки (3):** weapon / armor / amulet. При экипировке применяются `equipModifiers` (add/multiply к любому стату включая базовые характеристики) и выдаются способности: `grantedAbilities` — гарантированные, `abilityPool` — одна роллится по весам при создании экземпляра (основа «проков» предметов).
+- **Слоты экипировки (3):** weapon / armor / amulet. У каждого шаблона экипировки есть `subtype` (подтип: мечи `sword`, кинжалы `dagger`, посохи `staff` и т.д.) и `level` (уровень ≥ 1; привязка дропа к этажам — отдельная задача). Фирменные свойства предмета задаются `fixedModifiers` — ID модификаторов из категории `modifiers` (stat — add/multiply к любому стату включая базовые характеристики, rule — контентное правило; заменили удалённые 2026-08-09 `equipModifiers`/`ruleIds` предметов). Также выдаются способности: `grantedAbilities` — гарантированные, `abilityPool` — одна роллится по весам при создании экземпляра (основа «проков» предметов).
+- **Аффиксы (свойства экземпляра):** экземпляр экипировки несёт единый список `InventoryItem.affixes` (`origin: 'fixed' | 'rolled'`): сначала фирменные аффиксы (из `fixedModifiers` шаблона, детерминированы), затем до 2 случайных, ролленных при создании экземпляра из контентной категории `modifiers` (пул: `poolEligible: true` ∩ `applicableSubtypes` ∋ `subtype` предмета, исключая фирменные модификаторы и конфликтующие с ними ruleId): 1 положительный (взвешенно по `weight`) + до 1 отрицательного (с шансом `NEGATIVE_AFFIX_CHANCE = 0.5`). Модификатор — либо stat (модификатор характеристики; значение роллится из рейнжа уровня шаблона `ranges[level-1]` или детерминировано при `scaling: fixed`), либо rule (контентное правило, значение доступно правилу через `ParametrizedValue {type: 'ownerParam'}`). Значения фиксируются в экземпляре и показываются в карточке предмета единой секцией «Свойства» (случайные помечены ✦). Дизайн: `docs/game-design/equipment-modifiers-concept.md`.
 - **Расходники (`USE_ITEM`):** реализованы эффекты `heal` (value HP), `buff` (пока жёстко `regenerating`), `spawn_tile_effect` (бросок материала в точку с LOS: вода/масло/дым; `radius`, `range` в шаблоне). `damage`/`teleport`/`identify` — заглушки в схеме.
 - **Лут:** при смерти врага `lootDropTable` (взвешенное количество дропов) + `lootTable` (взвешенный выбор предметов) → дроп на свободную клетку рядом с трупом. Runtime random (не детерминировано seed'ом).
 - **Инвентарь:** 20 ячеек, стаки (`stackable`/`maxStack`). У предметов есть `rarity` (common/rare/unique) и `value` — экономика не подключена (см. §10).
-- Файлы: `src/simulation/systems/actions/equip-action.ts`, `use-item-action.ts`, `src/simulation/systems/world-reactions/post-death-loot-reaction.ts`, `src/content/templates/items/`.
+- Файлы: `src/simulation/systems/actions/equip-action.ts`, `use-item-action.ts`, `src/simulation/systems/item-affix-roll.ts`, `src/simulation/systems/world-reactions/post-death-loot-reaction.ts`, `src/content/templates/items/`, `src/content/templates/modifiers/`.
 
 ---
 
@@ -231,14 +224,14 @@ FOV игрока — recursive shadowcasting, радиус 8. Две сетки:
 - Параметры взрыва горящего масла: урон 2, радиус 1 (`burning-oil-explosion-reaction.ts`).
 - Эффект `buff` расходников — всегда `regenerating`.
 - Список боссов (`cat_king, owl_lord, rat_king, moth_queen` — планируется флаг `isBoss`).
-- Формулы урона способностей (`damageFormula.ts`), формулы урона оружия, AI-стратегии — расширяются только кодом (+ запись в `src/content/ids.ts`).
+- Формулы урона способностей (`damageFormula.ts`) и AI-стратегии — расширяются только кодом (+ запись в `src/content/ids.ts`).
 
 ---
 
 ## 11. Выводы для контент-планирования
 
 - **Без изменения кода** можно создавать: врагов, предметов (оружие/броня/амулеты/расходники-бросалки), реликвии, ловушки, poi, террейны, тайловые эффекты и их статусы, способности на базе существующих исполнителей, этажи — и, главное, **новое поведение через контентные правила + теги** (экологические комбо типа «масло + огонь» — эталон связки).
-- **Требуют кода:** новые формулы урона (оружия и скиллов), AI-стратегии, новые эффекты скиллов и расходников, спавн объектов в генераторе, новые виды окон poi, экономика.
+- **Требуют кода:** новые формулы урона скиллов, AI-стратегии, новые эффекты скиллов и расходников, спавн объектов в генераторе, новые виды окон poi, экономика.
 - При добавлении контента следуй рецептам в `docs/recipes/` и проверяй `npm run validate:content`.
 
 ---
@@ -254,3 +247,6 @@ FOV игрока — recursive shadowcasting, радиус 8. Две сетки:
 | 2026-08-05 | Стартовый пул реликвий (roadmap, этап 0.6, выполнен до 0.3): 8 нестакаемых реликвий «плюс + минус», общий `relicPool` на всех этажах, §9 — перечень семейств. Уточнения движка: `buildRuleContext` научился в `ITEM_PICKED_UP`; `addTags` правил-модификаторов может добавить вторую «школу» урона (инвариант «ровно один damage.*-тег» действует только при формировании базового интента). |
 | 2026-08-05 | Панель коллекции реликвий (roadmap, этап 0.3): `RelicsPanel` + поповер с описанием и `flavorText` (§9 дополнен строкой про UI). Этап 0 выполнен целиком. |
 | 2026-08-07 | Зачистка боевых роллов (план `docs/plans/combat-rolls-cleanup.md`, roadmap вопрос №1): статы `dodgeChance`/`accuracy`/`critChance` и событие `ENTITY_MISSED` удалены; крит — глобальное правило `core_crit_on_dazed_stunned` (×`critMultiplier` по dazed/stunned, тег `crit` для лога и floating text); яд/дез оружия детерминированы. §1.3 и §1.4 актуализированы, строка про роллы убрана из §10.1 и §11. |
+| 2026-08-08 | Экипировка: подтипы, уровни, аффиксы + урон рейнжем (концепт `docs/game-design/equipment-modifiers-concept.md`). Формулы урона оружия (`damageFormulaId`, `weapon-formulas.ts`) удалены — урон оружия рейнж `{min,max}` с роллом в момент удара и смещением от dex (§1.3, §1.4). У шаблонов экипировки появились `subtype`/`level`, у экземпляров — до 2 аффиксов из новой категории `modifiers` (§5), `ParametrizedValue` пополнился `ownerParam` (§4). §10.5 и §11: формулы оружия убраны из «требуют кода». |
+| 2026-08-08 | Ревью-правки системы аффиксов: удалено мёртвое поле `combat` шаблона сущности (урон/броня врага всегда брались из шаблонов экипировки; §1.3 «ручки» исправлены); форматирование рейнжа урона сведено в `src/utils/format.ts`; из реестра убран неиспользуемый API модификаторов; добавлены семантические валидации аффиксов (stat ⇒ `perLevel`, `{value}` в описании ⇒ `perLevel`). |
+| 2026-08-09 | Унификация свойств экипировки через модификаторы: `equipModifiers`/`ruleIds` предметов заменены `fixedModifiers`; у модификаторов — `poolEligible` и `scaling fixed`; экземпляр несёт единый список аффиксов с `origin` (фирменные + случайные), ролл исключает фирменные и конфликтующие ruleId (дубль `mod_poison_on_hit` на стартовом мече устранён). §5 актуализирован. |

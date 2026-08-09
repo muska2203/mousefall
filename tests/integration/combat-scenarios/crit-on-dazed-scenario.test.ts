@@ -13,11 +13,28 @@ import { rebuildActiveRules } from '../../../src/simulation/systems/rules/active
 import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixtures/gameState';
 import type { PlayerEntity, EnemyEntity } from '../../../src/simulation/types';
 import type { EntityDamagedEvent, GameEvent } from '../../../src/simulation/core-types';
+import { getRegistry } from '../../../src/content/registry';
+import type { ItemTemplate } from '../../../src/content/schemas';
 import { loadTestContent, setupCombatScenario } from './helpers';
 import { extractEvents } from '../../../src/presentation/logBuilder';
 
+/** Тестовый клинок с фиксированным рейнжем {6,6}: ролл детерминирован, крит ×1.5 = 9. */
+const testBlade = {
+  id: 'test_blade',
+  type: 'weapon',
+  stackable: false,
+  maxStack: 1,
+  value: 0,
+  weapon: {
+    damage: { min: 6, max: 6 },
+    range: 1,
+    damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+    tags: [],
+  },
+} as unknown as ItemTemplate;
+
 function createPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
-  // str 5 -> урон без оружия = round(1 + 5) = 6; крит (x1.5) = 9.
+  // test_blade: рейнж {6,6} -> урон 6; крит (x1.5) = 9.
   return makePlayer({
     x: 5,
     y: 5,
@@ -26,6 +43,7 @@ function createPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
     ap: 3,
     maxAp: 3,
     baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+    equippedWeaponId: 'test_blade',
     ...overrides,
   });
 }
@@ -56,6 +74,7 @@ describe('Crit on dazed/stunned scenario', () => {
   beforeEach(() => {
     setupCombatScenario();
     loadTestContent();
+    getRegistry().items.set('test_blade', testBlade);
   });
 
   it('атака по цели со статусом dazed умножает урон на critMultiplier и добавляет тег crit', () => {

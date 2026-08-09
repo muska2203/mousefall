@@ -8,7 +8,6 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
   return {
     id: 'test_enemy',
     health: { max: 30 },
-    combat: { damage: 5, armor: 0 },
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     equipment: {},
     abilities: [],

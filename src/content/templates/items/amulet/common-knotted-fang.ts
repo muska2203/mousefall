@@ -6,11 +6,10 @@ export const commonKnottedFang = {
   "icon": "/assets/items/common_knotted_fang.png",
   "fallback": "🦷",
   "type": "amulet",
+  "level": 1,
+  "subtype": "talisman",
   "stackable": false,
   "maxStack": 1,
   "value": 5,
-  "equipModifiers": [],
-  "ruleIds": [
-    "amulet_restore_ap_on_hit"
-  ]
+  "fixedModifiers": ["mod_restore_ap_on_hit"]
 } satisfies ItemTemplateInput;

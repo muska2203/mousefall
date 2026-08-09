@@ -3,6 +3,8 @@
  */
 
 import {resolveItemFrame} from '@utils/assetResolver';
+import type {DamageRange} from '@presentation/types';
+import {formatDamageRange} from '@utils/format';
 
 interface Props {
   icon: string;
@@ -10,7 +12,7 @@ interface Props {
   label: string;
   selected: boolean;
   onClick: () => void;
-  damage?: number | null;
+  damage?: DamageRange | null;
   rarity?: string;
   onMouseEnter?: () => void;
   onMouseMove?: (e: React.MouseEvent<HTMLButtonElement>) => void;
@@ -34,7 +36,7 @@ export function ItemButton({icon, fallback, label, selected, onClick, damage, ra
         <img className="cm-sprite-stack__body" src={icon} alt="" decoding="async" />
         <span className="cm-sprite-fallback">{fallback}</span>
       </span>
-      {damage != null && <span className="cm-item-weapon-damage">{damage}</span>}
+      {damage != null && <span className="cm-item-weapon-damage">{formatDamageRange(damage)}</span>}
     </button>
   );
 }

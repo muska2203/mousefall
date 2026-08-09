@@ -36,7 +36,8 @@ describe('Шаблон босса cat_guardian', () => {
 
     expect(parsedWeapon.type).toBe('weapon');
     expect(parsedWeapon.weapon).toBeDefined();
-    expect(typeof parsedWeapon.weapon?.baseDamage).toBe('number');
+    expect(typeof parsedWeapon.weapon?.damage.min).toBe('number');
+    expect(typeof parsedWeapon.weapon?.damage.max).toBe('number');
     expect(parsedWeapon.weapon?.damageDistribution).toBeInstanceOf(Array);
     expect(parsedWeapon.weapon?.damageDistribution.length).toBeGreaterThan(0);
     expect(typeof parsedWeapon.weapon?.damageDistribution[0]?.damageTag).toBe('string');
@@ -44,10 +45,7 @@ describe('Шаблон босса cat_guardian', () => {
     expect(parsedArmor.type).toBe('armor');
     expect(parsedArmor.armor).toBeDefined();
     expect(typeof parsedArmor.armor?.baseArmor).toBe('number');
-    for (const modifier of parsedArmor.equipModifiers) {
-      expect(typeof modifier.stat).toBe('string');
-      expect(typeof modifier.value).toBe('number');
-      expect(['add', 'multiply']).toContain(modifier.op);
-    }
+    // Фирменное свойство лат стражника — модификатор mod_guardian_vitality.
+    expect(parsedArmor.fixedModifiers).toContain('mod_guardian_vitality');
   });
 });

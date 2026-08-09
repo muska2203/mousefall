@@ -8,10 +8,11 @@
  */
 
 import type {Entity, StatActor} from '@simulation/types.ts';
+import type {DamageRange} from '@simulation/core-types.ts';
 import {
     getBaseArmor,
     getBaseCritMultiplier,
-    getBaseDamage,
+    getBaseDamageRange,
     getBaseMaxHp,
 } from './base-resolver.ts';
 import {applyModifiers} from './modifier-engine.ts';
@@ -29,12 +30,26 @@ export function isStatActor(entity: Entity): entity is Entity & StatActor {
 // Урон и броня (полиморфные)
 // ─────────────────────────────────────────────
 
-export function getEffectiveWeaponDamage(entity: Entity): number {
+/**
+ * Применяет модификаторы 'damage' к рейнжу урона: add и multiply
+ * применяются к обоим концам, каждый конец итога ≥ 0.
+ */
+export function applyDamageModifiers(actor: StatActor, base: DamageRange): DamageRange {
+  return {
+    min: Math.round(applyModifiers(actor, 'damage', base.min).total),
+    max: Math.round(applyModifiers(actor, 'damage', base.max).total),
+  };
+}
+
+/**
+ * Итоговый рейнж урона оружия с учётом модификаторов.
+ * Конкретное значение роллится в момент удара (rollWeaponDamage).
+ */
+export function getEffectiveWeaponDamageRange(entity: Entity): DamageRange {
   if (isStatActor(entity)) {
-    const base = getBaseDamage(entity);
-    return Math.round(applyModifiers(entity, 'damage', base).total);
+    return applyDamageModifiers(entity, getBaseDamageRange(entity));
   }
-  return 0;
+  return { min: 0, max: 0 };
 }
 
 export function getEffectiveArmor(entity: Entity): number {

@@ -12,9 +12,9 @@
  */
 
 import type {StatActor} from '@simulation/types.ts';
-import {getItem} from '@content/registry';
+import type {DamageRange} from '@simulation/core-types.ts';
+import {getItem, tryGetItem} from '@content/registry';
 import {BASE_CRIT_MULTIPLIER, PLAYER_BASE_MAX_HP} from '@utils/constants.ts';
-import {getWeaponDamage} from './weapon-formulas.ts';
 import type {EffectiveBaseStats} from './effective-base-stats.ts';
 import {getEffectiveBaseStats} from './effective-base-stats.ts';
 
@@ -40,15 +40,27 @@ export function getBaseMaxHp(actor: StatActor): number {
 // Урон и броня (с учётом экипировки)
 // ─────────────────────────────────────────────
 
-export function getBaseDamage(actor: StatActor): number {
+/** Рейнж урона безоружной атаки, если шаблон unarmed недоступен в реестре. */
+const UNARMED_DAMAGE_RANGE: DamageRange = { min: 1, max: 1 };
+
+/**
+ * Возвращает базовый рейнж урона оружия актора.
+ * Берётся из шаблона экипированного оружия; без оружия — из шаблона unarmed
+ * (fallback {1,1}, если реестр недоступен).
+ */
+export function getBaseDamageRange(actor: StatActor): DamageRange {
   if (actor.equippedWeaponId) {
     const weaponTemplate = getItem(actor.equippedWeaponId);
-    if (weaponTemplate.type === 'weapon') {
-      return getWeaponDamage(actor, weaponTemplate);
+    if (weaponTemplate.type === 'weapon' && weaponTemplate.weapon) {
+      return { ...weaponTemplate.weapon.damage };
     }
   }
-  // Без оружия
-  return getWeaponDamage(actor, null);
+  // Без оружия — рейнж безоружной атаки.
+  const unarmed = tryGetItem('unarmed');
+  if (unarmed?.type === 'weapon' && unarmed.weapon) {
+    return { ...unarmed.weapon.damage };
+  }
+  return { ...UNARMED_DAMAGE_RANGE };
 }
 
 export function getBaseArmor(actor: StatActor): number {

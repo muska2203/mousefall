@@ -7,8 +7,7 @@ export const woodenDoor = {
   "armor": 2,
   "openSpriteId": "wooden_door_open",
   "placement": {
-    "anchorY": 2.0,
-    "anchorX": 0.1
+    "anchorY": 1.0
   },
   "tags": [
     "flammable"

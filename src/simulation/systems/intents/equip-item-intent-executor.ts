@@ -7,10 +7,10 @@
 import {GameState} from "@simulation/types.ts";
 import {EquipItemIntent, IntentExecutor} from "@simulation/systems/intents/types.ts";
 import {ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
-import {getItem} from "@content/registry";
+import {tryGetModifier} from "@content/registry";
 import {addModifier} from "@simulation/systems/stats/modifier-engine.ts";
 import {recalculateActorStats} from "@simulation/systems/stats/recalculate.ts";
-import {addActiveRulesForItem} from "@simulation/systems/rules/active-rule-lifecycle.ts";
+import {addActiveRulesForItem, collectAffixRules} from "@simulation/systems/rules/active-rule-lifecycle.ts";
 
 export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
   state: GameState,
@@ -35,14 +35,24 @@ export const executeEquipItemIntent: IntentExecutor<EquipItemIntent> = (
     player.equippedAmuletInstanceId = item.instanceId;
   }
 
-  const template = getItem(item.templateId);
-  for (const mod of template.equipModifiers ?? []) {
-    addModifier(player, { ...mod, source: `item_${item.instanceId}` });
+  // Stat-аффиксы экземпляра (фирменные + случайные) применяются движком модификаторов
+  // (снятие — общий removeModifiersBySource при UNEQUIP_ITEM).
+  for (const affix of item.affixes ?? []) {
+    const modifier = tryGetModifier(affix.modifierId);
+    if (!modifier || modifier.effect.kind !== 'stat') continue;
+    addModifier(player, {
+      stat: modifier.effect.stat,
+      value: affix.value ?? 0,
+      op: modifier.effect.op,
+      source: `item_${item.instanceId}`,
+    });
   }
 
   recalculateActorStats(player);
 
-  addActiveRulesForItem(player, item.instanceId, template.ruleIds ?? []);
+  // Правила rule-аффиксов экземпляра (фирменных — без значения, случайных — с ролленным).
+  const affixRules = collectAffixRules(item.affixes ?? []);
+  addActiveRulesForItem(player, item.instanceId, affixRules.ruleIds, affixRules.paramValues);
 
   return builder.addChild(parent, {
     type: 'ITEM_EQUIPPED', isFieldEvent: false,

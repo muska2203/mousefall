@@ -6,6 +6,8 @@ export const catGuardianPlate = {
   "icon": "/assets/items/cat_guardian_plate.png",
   "fallback": "🛡",
   "type": "armor",
+  "level": 3,
+  "subtype": "heavy",
   "stackable": false,
   "maxStack": 1,
   "value": 35,
@@ -13,11 +15,5 @@ export const catGuardianPlate = {
     "baseArmor": 6
   },
   "grantedAbilities": [],
-  "equipModifiers": [
-    {
-      "stat": "maxHp",
-      "value": 10,
-      "op": "add"
-    }
-  ]
+  "fixedModifiers": ["mod_guardian_vitality"]
 } satisfies ItemTemplateInput;

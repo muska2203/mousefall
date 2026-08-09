@@ -6,12 +6,13 @@ export const commonVenomDagger = {
   "icon": "/assets/items/common_venom_dagger.png",
   "fallback": "🗡",
   "type": "weapon",
+  "level": 1,
+  "subtype": "dagger",
   "stackable": false,
   "maxStack": 1,
   "value": 10,
   "weapon": {
-    "baseDamage": 3,
-    "damageFormulaId": "dagger",
+    "damage": { "min": 2, "max": 4 },
     "range": 1,
     "damageDistribution": [
       {
@@ -26,8 +27,5 @@ export const commonVenomDagger = {
     ]
   },
   "grantedAbilities": [],
-  "equipModifiers": [],
-  "ruleIds": [
-    "weapon_poison_on_hit"
-  ]
+  "fixedModifiers": ["mod_poison_on_hit"]
 } satisfies ItemTemplateInput;

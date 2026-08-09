@@ -151,10 +151,9 @@ export function createTestConsumableTemplates(): Map<string, ItemTemplate> {
     maxStack: 5,
     value: 0,
     consumable: {effect: 'spawn_tile_effect', tileEffectType, radius: 1, range: 5},
-    equipModifiers: [],
+    fixedModifiers: [],
     abilityPool: [],
     grantedAbilities: [],
-    ruleIds: [],
     apCost: 1,
   });
   return new Map([

@@ -6,6 +6,7 @@ export interface ContentText {
 
 export interface ContentTexts {
   items: Record<string, ContentText>;
+  modifiers: Record<string, ContentText>;
   entities: Record<string, ContentText>;
   abilities: Record<string, ContentText>;
   players: Record<string, ContentText>;

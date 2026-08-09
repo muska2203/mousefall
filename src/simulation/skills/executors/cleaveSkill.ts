@@ -3,7 +3,7 @@ import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 
-import {getEffectiveWeaponDamage} from '@simulation/systems/stats/effective-stats';
+import {rollWeaponDamage} from '@simulation/systems/stats/weapon-damage-roll';
 import {tryGetAbility} from '@content/registry';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {getWeaponTags, getWeaponWeightForTag} from '@simulation/systems/tags/weapon-tags';
@@ -95,7 +95,7 @@ export const cleaveSkill: SkillExecutor = {
       console.warn(`Способность "${this.id}" не имеет damageTag в JSON; использован fallback "${skillTag}"`);
     }
 
-    const baseDamage = getEffectiveWeaponDamage(caster);
+    const baseDamage = rollWeaponDamage(state, caster);
     const weight = getWeaponWeightForTag(caster, skillTag);
     const damage = Math.round(baseDamage * weight);
     const tags = mergeDamageIntentTags([skillTag], getAbilityTags(this.id), getWeaponTags(caster));

@@ -14,6 +14,7 @@ import { counterattackTriggerRule, counterattackDamageRule } from '../../../../s
 vi.mock('../../../../src/utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
+  rngFloat: vi.fn(() => 0.5),
 }));
 
 import { rngChance } from '../../../../src/utils/rng';

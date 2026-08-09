@@ -6,11 +6,10 @@ export const commonEmberAmulet = {
   "icon": "/assets/items/common_ember_amulet.png",
   "fallback": "🔥",
   "type": "amulet",
+  "level": 1,
+  "subtype": "charm",
   "stackable": false,
   "maxStack": 1,
   "value": 6,
-  "equipModifiers": [],
-  "ruleIds": [
-    "amulet_fire_damage_multiplier"
-  ]
+  "fixedModifiers": ["mod_amulet_fire_damage_multiplier"]
 } satisfies ItemTemplateInput;

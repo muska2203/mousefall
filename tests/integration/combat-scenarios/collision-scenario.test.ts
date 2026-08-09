@@ -23,6 +23,7 @@ import type { AnimationNode, AnimationPhase } from '../../../src/presentation/ty
 vi.mock('@utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
   rngChance: vi.fn(),
+  rngFloat: vi.fn(() => 0.5),
 }));
 
 function createWitcherPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {

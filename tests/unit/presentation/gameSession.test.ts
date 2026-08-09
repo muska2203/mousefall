@@ -19,7 +19,6 @@ describe('GameSession debug mode', () => {
         ['cat_small', {
           id: 'cat_small',
           health: {max: 20},
-          combat: {damage: 5, armor: 0},
           baseStats: {str: 1, dex: 1, int: 0, vit: 0},
           aiSightRadius: 6,
           aiStrategyId: 'hunter',
@@ -315,7 +314,6 @@ describe('GameSession moveOrAttack with doors', () => {
         ['cat_small', {
           id: 'cat_small',
           health: {max: 20},
-          combat: {damage: 5, armor: 0},
           baseStats: {str: 1, dex: 1, int: 0, vit: 0},
           aiSightRadius: 6,
           aiStrategyId: 'hunter',
@@ -1095,7 +1093,6 @@ describe('GameSession DisplayState', () => {
         ['cat_small', {
           id: 'cat_small',
           health: {max: 20},
-          combat: {damage: 5, armor: 0},
           baseStats: {str: 1, dex: 1, int: 0, vit: 0},
           aiSightRadius: 6,
           aiStrategyId: 'hunter',
@@ -1295,7 +1292,6 @@ describe('GameSession fieldObjectPopover', () => {
         ['cat_small', {
           id: 'cat_small',
           health: {max: 20},
-          combat: {damage: 5, armor: 0},
           baseStats: {str: 1, dex: 1, int: 0, vit: 0},
           aiSightRadius: 6,
           aiStrategyId: 'hunter',

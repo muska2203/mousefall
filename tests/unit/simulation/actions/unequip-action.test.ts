@@ -14,9 +14,8 @@ function mockItem(id: string, type: ItemTemplate['type']): ItemTemplate {
     value: 0,
     rarity: 'common',
     abilityPool: [],
-    equipModifiers: [],
+    fixedModifiers: [],
     grantedAbilities: [],
-    ruleIds: [],
     apCost: 1,
   };
 }
@@ -85,7 +84,7 @@ describe('unequipEntity.resolve', () => {
       equippedWeaponId: 'test_staff',
       equippedWeaponInstanceId: 'staff_1',
       inventory: [
-        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [{ templateId: 'fireball', level: 1 }]},
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [{ templateId: 'fireball', level: 1 }], affixes: [] },
       ],
     });
     state.player = player;
@@ -108,7 +107,7 @@ describe('unequipEntity.resolve', () => {
       equippedWeaponId: 'test_staff',
       equippedWeaponInstanceId: 'staff_1',
       inventory: [
-        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: []},
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [], affixes: [] },
       ],
     });
     state.player = player;
@@ -129,7 +128,7 @@ describe('unequipEntity.execute', () => {
       equippedWeaponId: 'test_staff',
       equippedWeaponInstanceId: 'staff_1',
       inventory: [
-        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [{ templateId: 'fireball', level: 1 }]},
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [{ templateId: 'fireball', level: 1 }], affixes: [] },
       ],
       abilities: [
         { templateId: 'fireball', source: 'equipment', sourceItemInstanceId: 'staff_1', level: 1, currentCooldown: 0 },

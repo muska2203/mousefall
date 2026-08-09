@@ -22,7 +22,6 @@ beforeEach(() => {
       ['cat_small', {
         id: 'cat_small',
         health: {max: 20},
-        combat: {damage: 5, armor: 0},
         baseStats: {str: 1, dex: 1, int: 0, vit: 0},
         aiSightRadius: 6,
         aiStrategyId: 'hunter',

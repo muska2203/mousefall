@@ -154,13 +154,13 @@ describe('ItemDetailCard', () => {
       sections: [],
       isTemplate: false,
       properties: [
-        { ruleId: 'amulet_fire_damage_multiplier', name: 'Угольная искра', description: 'Огненные атаки оружием или способностью наносят на 2 урона больше.' },
+        { key: 'mod_amulet_fire_damage_multiplier', name: 'Угольная искра', description: 'Огненные атаки оружием или способностью наносят на 2 урона больше.', origin: 'fixed', polarity: 'positive' },
       ],
       tags: [],
       tagLabels: [],
     };
     const html = renderToString(<ItemDetailCard item={item} />);
-    expect(html).toContain('Свойства');
+    expect(html).toContain('item-detail-property--unique');
     expect(html).toContain('Угольная искра');
     expect(html).toContain('Огненные атаки оружием или способностью наносят на 2 урона больше.');
   });
@@ -191,8 +191,8 @@ describe('ItemDetailCard', () => {
     const instanceHtml = renderToString(<ItemDetailCard item={poolItem} />);
     const templateHtml = renderToString(<ItemDetailCard item={templateItem} />);
 
-    expect(instanceHtml).not.toContain('Возможные скиллы');
-    expect(templateHtml).toContain('Возможные скиллы');
+    expect(instanceHtml).not.toContain('Огненный шар');
+    expect(templateHtml).toContain('возможный');
     expect(templateHtml).toContain('Огненный шар');
   });
 });

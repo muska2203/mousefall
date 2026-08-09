@@ -127,8 +127,8 @@ describe('suddenStrikeSkill', () => {
 
     expect(damageIntents).toHaveLength(1);
     expect(damageIntents[0]!.entityId).toBe(enemy.id);
-    // Без оружия формула unarmed: max(0, round(1 + str * 1.0)) = 6.
-    expect(damageIntents[0]!.damage).toBe(6);
+    // Без оружия — рейнж unarmed { min: 1, max: 1 }, ролл всегда даёт 1.
+    expect(damageIntents[0]!.damage).toBe(1);
     expect(damageIntents[0]!.tags).toContain('damage.physical.blunt');
   });
 
