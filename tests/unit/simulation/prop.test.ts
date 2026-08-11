@@ -112,6 +112,7 @@ describe('Prop entity', () => {
     const updatedProp = sim.getState().entities.get(prop.id) as PropEntity;
     expect(updatedProp).toBeDefined();
     expect(updatedProp.isAlive).toBe(true);
-    expect(updatedProp.hp).toBeLessThan(updatedProp.maxHp);
+    // Пол min-1 снят: безоружный удар (1) полностью поглощается бронёй (2).
+    expect(updatedProp.hp).toBe(updatedProp.maxHp);
   });
 });

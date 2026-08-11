@@ -131,26 +131,50 @@ src/content/
 
 Валидация (`npm run validate:content`): stat-модификатор обязан иметь `scaling: perLevel` или `fixed`; модификатор в `fixedModifiers` не может быть `perLevel` (фирменные детерминированы), обязан существовать и включать `subtype` предмета в `applicableSubtypes`; `{value}` в описании допустим при `perLevel` или `fixed`. Рецепт: `docs/recipes/add-modifier.md`.
 
-### Способности: `damageTag` и `requiredWeaponTags`
+### Способности: union `kind`, `damageTag` и `requiredWeaponTags`
 
-В `AbilityTemplateSchema` (`src/content/schemas.ts`) доступны два поля:
+`AbilityTemplateSchema` (`src/content/schemas.ts`) — discriminated union по полю `kind` (дискриминатор вида механики, camelCase — это не контентный id). Общая база всех членов: `id`, `spriteId`, `cooldown`, `apCost`, `aiPreparable`, `damageTag?`, `requiredWeaponTags`, `tags`, `ruleIds`.
+
+Члены union:
+
+- **Параметризованные виды** несут параметры механики в шаблоне; исполнитель собирается фабрикой из `KIND_FACTORIES` в `getSkillExecutor` (регистрировать executor для них не нужно):
+  - `kind: 'selfBuff'` — `statusType`, `duration`: наложение статуса на кастера (фабрика `createSelfBuffSkill`, примеры — `counterattack`, `bulwark`). `statusType` проверяется валидацией перекрёстных ссылок (существование статуса).
+  - `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0): прыжок + площадной удар (фабрика `createSwoopSkill`, примеры — `swoop` 2/1/8, `guardian_swoop` 3/1/10).
+- **Legacy-виды без параметров** — только `kind`: `'fireball'`, `'magicSlap'`, `'dash'`, `'cleave'`, `'suddenStrike'`; их исполнители по-прежнему регистрируются по id в `src/simulation/skills/index.ts`.
+
+Сквозные поля базы:
 
 - `damageTag?: string` — тег урона способности. Используется для ability-based скиллов, урон которых не зависит от экипированного оружия.
 - `requiredWeaponTags?: string[]` — требования к тегам экипированного оружия. Используется для weapon-based скиллов; скилл становится недоступен, если оружие не содержит все указанные теги.
 
+Новый экземпляр существующего параметризованного вида — чистый контент (шаблон + тексты). Новая механика — новый член union + фабрика в движке (см. `docs/recipes/add-ability.md`).
+
 Примеры:
 
 ```typescript
-// Ability-based: урон от формулы + тег fire
+// Ability-based: урон от формулы + тег fire (legacy-вид, executor по id)
 {
   "id": "fireball",
+  "kind": "fireball",
   "damageTag": "damage.magical.fire",
   "tags": ["attack.ranged", "target.aoe", "delivery.projectile", "delivery.spell", "effect.burn"]
 }
 
-// Weapon-based: требует ближнего оружия
+// Параметризованный вид swoop: параметры механики в шаблоне
+{
+  "id": "guardian_swoop",
+  "kind": "swoop",
+  "jumpRadius": 3,
+  "aoeRadius": 1,
+  "baseDamage": 10,
+  "damageTag": "damage.physical.blunt",
+  "tags": ["delivery.ability", "delivery.movement", "attack.melee", "target.aoe", "effect.knockback"]
+}
+
+// Weapon-based: требует ближнего оружия (legacy-вид)
 {
   "id": "cleave",
+  "kind": "cleave",
   "requiredWeaponTags": ["attack.melee"],
   "tags": ["attack.melee", "target.aoe", "delivery.weapon"]
 }

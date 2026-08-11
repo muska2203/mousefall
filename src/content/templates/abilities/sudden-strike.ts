@@ -2,6 +2,7 @@ import type {AbilityTemplateInput} from '../../schemas';
 
 export const suddenStrike = {
   "id": "sudden_strike",
+  "kind": "suddenStrike",
   "spriteId": "sudden_strike",
   "cooldown": 4,
   "apCost": 1,

@@ -2,6 +2,7 @@ import type {Attackable, Entity, EntityId, GameState} from '@simulation/types';
 import type {GameplayTag} from '@simulation/core-types';
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
 import {DamageCalculationContext, getDamageHandler} from '@simulation/systems/damage/damage-handlers';
+import {isBulwarked} from '@simulation/systems/bulwark-helper';
 
 /** Подсчитывает теги урона (начинающиеся с "damage."). */
 function countDamageTags(tags: readonly string[]): number {
@@ -40,7 +41,9 @@ export function applyDamageToEntity(
     tags,
   };
 
-  const finalDamage = handler.calculateDamage(ctx);
+  // «Глухая оборона» (bulwark) обнуляет любой урон по носителю. Событие ENTITY_DAMAGED
+  // с damage 0 всё равно эмитится: статусы (dazed, burning и т.п.) накладываются как обычно.
+  const finalDamage = isBulwarked(target) ? 0 : handler.calculateDamage(ctx);
   target.hp -= finalDamage;
 
   return builder.addChild(parent, {

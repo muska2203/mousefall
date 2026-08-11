@@ -1,8 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameState';
-import { counterattackSkill } from '../../../../src/simulation/skills/executors/counterattackSkill';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import type { AbilityTemplate } from '../../../../src/content/schemas';
+import type { AbilityTemplate, ItemTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import { GameSimulation } from '../../../../src/simulation/simulation';
@@ -26,12 +25,51 @@ beforeEach(() => {
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
+    kind: 'fireball',
     cooldown: 0,
     apCost: 1,
     tags: [],
     ...overrides,
   } as AbilityTemplate;
 }
+
+/**
+ * Мок способности counterattack: вид selfBuff — исполнитель собирается
+ * фабрикой createSelfBuffSkill из параметров шаблона (статус на 2 хода).
+ */
+function mockCounterattackAbility(): AbilityTemplate {
+  return mockAbility('counterattack', {
+    kind: 'selfBuff',
+    statusType: 'counterattack',
+    duration: 2,
+    cooldown: 4,
+    apCost: 2,
+    tags: ['target.self', 'buff.reactive'],
+  });
+}
+
+/**
+ * Мок рубящего меча: cleave считает урон как «урон оружия × вес slashing»,
+ * безоружный вес slashing равен 0 (пол min-1 снят — урон был бы 0).
+ */
+const mockSword: ItemTemplate = {
+  id: 'mock_sword',
+  type: 'weapon',
+  value: 10,
+  rarity: 'common',
+  stackable: false,
+  maxStack: 1,
+  fixedModifiers: [],
+  abilityPool: [],
+  grantedAbilities: [],
+  apCost: 1,
+  weapon: {
+    damage: { min: 4, max: 4 },
+    range: 1,
+    damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+    tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+  },
+};
 
 /**
  * Добавляет к актору активные правила контратаки, как если бы на него
@@ -45,7 +83,7 @@ function addCounterattackRules(actor: Actor): void {
   );
 }
 
-describe('counterattackSkill', () => {
+describe('counterattack ability (исполнитель из фабрики selfBuff)', () => {
   beforeEach(() => {
     resetRegistry();
     initRegistry({
@@ -53,7 +91,7 @@ describe('counterattackSkill', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2, tags: ['target.self', 'buff.reactive'] })],
+        ['counterattack', mockCounterattackAbility()],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -75,7 +113,7 @@ describe('counterattackSkill', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    const intents = counterattackSkill.resolve(state, player, [{ x: 5, y: 5 }]);
+    const intents = getSkillExecutor('counterattack')!.resolve(state, player, [{ x: 5, y: 5 }]);
 
     expect(intents).toHaveLength(1);
     const applyStatus = intents.find(i => i.type === 'APPLY_STATUS');
@@ -96,7 +134,7 @@ describe('counterattackSkill', () => {
     const enemy = makeEnemy({ id: 'enemy_counter', x: 6, y: 5, ap: 2, maxAp: 2 });
     state.entities.set(enemy.id, enemy);
 
-    const intents = counterattackSkill.resolve(state, enemy, [{ x: 6, y: 5 }]);
+    const intents = getSkillExecutor('counterattack')!.resolve(state, enemy, [{ x: 6, y: 5 }]);
 
     const applyStatus = intents.find(i => i.type === 'APPLY_STATUS');
     expect(applyStatus).toBeDefined();
@@ -115,11 +153,12 @@ describe('counterattackSkill', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    expect(counterattackSkill.getTargetMode(state, player)).toEqual({ type: 'self' });
-    expect(counterattackSkill.getValidTargets(state, player)).toEqual([{ x: 5, y: 5 }]);
+    const executor = getSkillExecutor('counterattack')!;
+    expect(executor.getTargetMode(state, player)).toEqual({ type: 'self' });
+    expect(executor.getValidTargets(state, player)).toEqual([{ x: 5, y: 5 }]);
   });
 
-  it('is registered in skill registry', () => {
+  it('is resolved by getSkillExecutor', () => {
     expect(getSkillExecutor('counterattack')).toBeDefined();
   });
 
@@ -141,12 +180,14 @@ describe('counterattack combat behavior', () => {
     initRegistry({
       entities: new Map(),
       players: new Map(),
-      items: new Map(),
+      items: new Map([
+        ['mock_sword', mockSword],
+      ]),
       abilities: new Map([
-        ['counterattack', mockAbility('counterattack', { cooldown: 4, apCost: 2, tags: ['target.self', 'buff.reactive'] })],
-        ['sudden_strike', mockAbility('sudden_strike', { cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.single', 'delivery.weapon'] })],
-        ['magic_slap', mockAbility('magic_slap', { cooldown: 2, apCost: 1, tags: ['attack.ranged', 'target.multi', 'delivery.spell'] })],
-        ['cleave', mockAbility('cleave', { cooldown: 2, apCost: 1, damageTag: 'damage.physical.slashing', tags: ['attack.melee', 'target.aoe', 'delivery.weapon'] })],
+        ['counterattack', mockCounterattackAbility()],
+        ['sudden_strike', mockAbility('sudden_strike', { kind: 'suddenStrike', cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.single', 'delivery.weapon'] })],
+        ['magic_slap', mockAbility('magic_slap', { kind: 'magicSlap', cooldown: 2, apCost: 1, tags: ['attack.ranged', 'target.multi', 'delivery.spell'] })],
+        ['cleave', mockAbility('cleave', { kind: 'cleave', cooldown: 2, apCost: 1, damageTag: 'damage.physical.slashing', tags: ['attack.melee', 'target.aoe', 'delivery.weapon'] })],
         ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2, tags: ['attack.ranged', 'target.aoe', 'delivery.projectile', 'delivery.spell', 'effect.burn'] })],
       ]),
       maps: new Map(),
@@ -360,6 +401,7 @@ describe('counterattack combat behavior', () => {
       ap: 3,
       maxAp: 3,
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      equippedWeaponId: 'mock_sword',
       abilities: [{ templateId: 'cleave', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const enemy = makeEnemy({

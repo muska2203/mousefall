@@ -2,6 +2,7 @@ import {GameState} from '@simulation/types';
 import {IntentExecutor, PushIntent} from '@simulation/systems/intents/types';
 import {ExecutionBuilder, ExecutionNode, GameplayTag} from '@simulation/core-types';
 import {findAllEntitiesAt, findEntity, isActor, isBlocked, isTerrainWalkable} from '@simulation/state';
+import {isBulwarked} from '@simulation/systems/bulwark-helper';
 
 /**
  * Формирует теги события столкновения без дублирования.
@@ -35,6 +36,10 @@ export const executePushIntent: IntentExecutor<PushIntent> = (
 ) => {
   const entity = findEntity(state, intent.entityId);
   if (!entity || !isActor(entity)) return null;
+
+  // Носитель «Глухой обороны» не сдвигается толчками: PUSH гасится без события
+  // (визуальный/лог-фидбэк «толчок поглощён» — пост-MVP).
+  if (isBulwarked(entity)) return null;
 
   const from = { x: entity.x, y: entity.y };
   const targetX = entity.x + intent.dx;

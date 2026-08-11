@@ -129,6 +129,7 @@ export type StatusEffectType =
   | 'silenced'
   | 'regenerating'
   | 'counterattack'
+  | 'bulwark'
   | 'wet'
   | 'oiled';
 

@@ -2,6 +2,7 @@ import type {AbilityTemplateInput} from '../../schemas';
 
 export const dash = {
   "id": "dash",
+  "kind": "dash",
   "spriteId": "dash",
   "cooldown": 4,
   "apCost": 1,

@@ -7,6 +7,7 @@ import type { AbilityTemplate } from '../../../../src/content/schemas';
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
+    kind: 'magicSlap',
     cooldown: 2,
     ...overrides,
   } as AbilityTemplate;

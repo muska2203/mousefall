@@ -156,6 +156,7 @@ const playerTemplate: PlayerTemplate = {
 
 const fireballAbility: AbilityTemplate = {
   id: 'fireball',
+  kind: 'fireball',
   cooldown: 0,
   apCost: 1,
   aiPreparable: false,
@@ -212,6 +213,7 @@ const perfAmulet: ItemTemplate = {
 
 const perfAbility: AbilityTemplate = {
   id: 'perf_ability',
+  kind: 'fireball',
   cooldown: 0,
   apCost: 1,
   aiPreparable: false,

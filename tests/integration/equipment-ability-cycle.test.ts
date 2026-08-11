@@ -8,6 +8,7 @@ import { defaultTestMapParams } from '../fixtures/gameState';
 function mockAbility(id: string): AbilityTemplate {
   return {
     id,
+    kind: 'fireball',
     cooldown: 3,
     apCost: 1,
     aiPreparable: false,

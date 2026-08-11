@@ -1,4 +1,5 @@
 import type {StatusTemplateInput} from '../../schemas';
+import {bulwark} from './bulwark';
 import {burning} from './burning';
 import {counterattack} from './counterattack';
 import {dazed} from './dazed';
@@ -12,6 +13,7 @@ import {wet} from './wet';
 
 /** Все шаблоны категории «statuses». Новый шаблон добавляется сюда импортом и строкой в массиве. */
 export const statusTemplates: StatusTemplateInput[] = [
+  bulwark,
   burning,
   counterattack,
   dazed,

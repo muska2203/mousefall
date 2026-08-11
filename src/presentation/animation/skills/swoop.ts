@@ -48,3 +48,5 @@ export const swoopComposer: SkillComposer = (event, children) => {
 };
 
 registerSkillComposer('swoop', swoopComposer);
+// Босс-вариант Налёта использует ту же анимацию (телеграф зоны — generic).
+registerSkillComposer('guardian_swoop', swoopComposer);

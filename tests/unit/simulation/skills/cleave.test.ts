@@ -22,6 +22,7 @@ beforeEach(() => {
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
+    kind: 'cleave',
     cooldown: 2,
     damageTag: 'damage.physical.slashing',
     tags: ['delivery.ability', 'attack.melee', 'target.aoe', 'delivery.weapon'],
@@ -178,6 +179,7 @@ describe('cleaveSkill', () => {
       x: 5,
       y: 5,
       baseStats: { str: 5, dex: 0, int: 0, vit: 0 },
+      equippedWeaponId: 'mock_sword',
       abilities: [{ templateId: 'cleave', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     const enemyCenter = makeEnemy({ id: 'enemy_center', x: 6, y: 5, hp: 50, maxHp: 50, armor: 0 });

@@ -1,6 +1,10 @@
 import type {ContentText} from '../types';
 
 export const abilities: Record<string, ContentText> = {
+  bulwark: {
+    name: 'Bulwark',
+    description: 'For 1 turn, become immune to all damage and [knockback](tag:effect.knockback), but unable to act. Status effects apply as usual. Costs 1 AP, cooldown 4.',
+  },
   cleave: {
     name: 'Cleave',
     description: 'A [weapon](tag:delivery.weapon) swing in an arc near the hero. Hits the target cell and two adjacent cells: [melee](tag:attack.melee), [area](tag:target.aoe).',
@@ -28,5 +32,9 @@ export const abilities: Record<string, ContentText> = {
   swoop: {
     name: 'Swoop',
     description: 'A [movement](tag:delivery.movement) leap to a free cell within radius 2. The ground slam wounds all enemies around the landing point, dealing blunt damage (scales with STR), and [knocks them back](tag:effect.knockback). Costs 2 AP, cooldown 2.',
+  },
+  guardian_swoop: {
+    name: 'Swoop',
+    description: 'A [movement](tag:delivery.movement) leap to a free cell within radius 3. The ground slam wounds all enemies around the landing point, dealing blunt damage, and [knocks them back](tag:effect.knockback). Costs 2 AP, cooldown 2.',
   },
 };

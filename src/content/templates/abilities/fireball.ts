@@ -2,6 +2,7 @@ import type {AbilityTemplateInput} from '../../schemas';
 
 export const fireball = {
   "id": "fireball",
+  "kind": "fireball",
   "spriteId": "fireball",
   "cooldown": 0,
   "apCost": 1,

@@ -116,17 +116,17 @@ describe('executeDamageIntent', () => {
         expect(enemy.hp).toBe(18); // 5 - 3 = 2 урона
     });
 
-    it('минимальный урон равен 1, даже если броня выше урона', () => {
+    it('урон обнуляется, если броня выше урона (пол min-1 снят)', () => {
         const enemy = makeEnemy({hp: 20, statModifiers: [{ stat: 'armor', value: 100, op: 'add', source: 'test' }]});
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
         const node = executeDamageIntent(state, {type: 'DAMAGE', entityId: enemy.id, sourceEntityId: null, damage: 5, tags: ['damage.physical.blunt']}, builder, builder.root);
 
-        expect(enemy.hp).toBe(19);
+        expect(enemy.hp).toBe(20);
         expect(node!.event.type).toBe('ENTITY_DAMAGED');
         if (node!.event.type === 'ENTITY_DAMAGED') {
-            expect(node!.event.damage).toBe(1);
+            expect(node!.event.damage).toBe(0);
         }
     });
 

@@ -309,7 +309,8 @@ export type ModifierTemplate = z.output<typeof ModifierTemplateSchema>;
 // Шаблон способности
 // ─────────────────────────────────────────────
 
-export const AbilityTemplateSchema = z.object({
+// Общая база шаблона способности: метаданные, сквозные для всех видов.
+const AbilityTemplateBaseSchema = z.object({
   id:          z.string().min(1).describe('Уникальный идентификатор способности'),
   spriteId:    z.string().optional(),
   cooldown:    z.number().int().nonnegative().default(0).describe('Ходов до повторного использования'),
@@ -322,7 +323,33 @@ export const AbilityTemplateSchema = z.object({
     .describe('Требования к тегам экипированного оружия'),
   tags: TagsSchema.describe('Теги классификации способности (attack.melee, target.aoe и т.д.)'),
   ruleIds: RuleIdsSchema,
-}).describe('Шаблон активной способности');
+});
+
+/**
+ * Шаблон способности — discriminated union по полю kind.
+ * kind — дискриминатор вида механики (camelCase, не контентный id):
+ * параметризованные виды (selfBuff, swoop) несут параметры механики в шаблоне,
+ * legacy-виды объявлены без параметров (их исполнители регистрируются по id).
+ */
+export const AbilityTemplateSchema = z.discriminatedUnion('kind', [
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('selfBuff'),
+    statusType: z.string().min(1).describe('Тип статуса, накладываемого на кастера'),
+    duration: z.number().int().positive().describe('Длительность статуса в ходах'),
+  }).describe('Self-buff способность: getSkillExecutor собирает generic-исполнитель наложения статуса на себя фабрикой createSelfBuffSkill'),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('swoop'),
+    jumpRadius: z.number().int().min(1).describe('Радиус выбора точки приземления относительно кастера'),
+    aoeRadius: z.number().int().nonnegative().describe('Радиус удара по земле вокруг точки приземления'),
+    baseDamage: z.number().nonnegative().describe('Базовый урон от удара по земле'),
+  }).describe('Способность вида «налёт»: прыжок в точку + площадной удар с отталкиванием; исполнитель собирается фабрикой createSwoopSkill'),
+  // Legacy-виды без параметров: исполнители регистрируются по id в initSkillRegistry.
+  AbilityTemplateBaseSchema.extend({ kind: z.literal('fireball') }),
+  AbilityTemplateBaseSchema.extend({ kind: z.literal('magicSlap') }),
+  AbilityTemplateBaseSchema.extend({ kind: z.literal('dash') }),
+  AbilityTemplateBaseSchema.extend({ kind: z.literal('cleave') }),
+  AbilityTemplateBaseSchema.extend({ kind: z.literal('suddenStrike') }),
+]).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;
 

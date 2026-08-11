@@ -19,6 +19,7 @@ beforeEach(() => {
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
+    kind: 'fireball',
     cooldown: 2,
     apCost: 2,
     ...overrides,
@@ -52,7 +53,15 @@ describe('AI: simple-boss', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['swoop', mockAbility('swoop', { cooldown: 2, apCost: 2, aiPreparable: true })],
+        ['swoop', mockAbility('swoop', {
+          kind: 'swoop',
+          jumpRadius: 2,
+          aoeRadius: 1,
+          baseDamage: 8,
+          cooldown: 2,
+          apCost: 2,
+          aiPreparable: true,
+        })],
         ['test-fireball', mockAbility('test-fireball', { cooldown: 3, apCost: 2, aiPreparable: true })],
       ]),
       maps: new Map(),

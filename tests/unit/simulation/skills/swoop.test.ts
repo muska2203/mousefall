@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import { makeDoor, makeEnemy, makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
-import {swoopSkill} from '../../../../src/simulation/skills/executors/swoopSkill';
+import {createSwoopSkill} from '../../../../src/simulation/skills/executors/swoopSkill';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate} from '../../../../src/content/schemas';
 import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
@@ -16,11 +16,18 @@ beforeEach(() => {
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
+    kind: 'swoop',
+    jumpRadius: 2,
+    aoeRadius: 1,
+    baseDamage: 8,
     cooldown: 2,
     tags: ['delivery.ability', 'delivery.movement', 'attack.melee', 'target.aoe', 'effect.knockback'],
     ...overrides,
   } as AbilityTemplate;
 }
+
+/** Исполнитель базового swoop (2/1/8), собранный фабрикой — как это делает getSkillExecutor из шаблона. */
+const swoopSkill = createSwoopSkill({ id: 'swoop', jumpRadius: 2, aoeRadius: 1, baseDamage: 8 });
 
 function makeBuilder(entityId: string) {
   return new ExecutionBuilder({
@@ -39,6 +46,7 @@ describe('swoopSkill', () => {
       items: new Map(),
       abilities: new Map([
         ['swoop', mockAbility('swoop', { cooldown: 2, apCost: 2 })],
+        ['guardian_swoop', mockAbility('guardian_swoop', { jumpRadius: 3, baseDamage: 10, cooldown: 2, apCost: 2, aiPreparable: true })],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -53,7 +61,7 @@ describe('swoopSkill', () => {
     resetRegistry();
   });
 
-  it('is registered in skill registry', () => {
+  it('getSkillExecutor собирает исполнитель из шаблона (kind swoop)', () => {
     expect(getSkillExecutor('swoop')).toBeDefined();
   });
 
@@ -227,5 +235,76 @@ describe('swoopSkill', () => {
     expect(enemy.y).toBe(6);
     expect(enemy.hp).toBeLessThan(50);
     expect(enemy.statusEffects.some(e => e.type === 'dazed')).toBe(true);
+  });
+});
+
+describe('guardian_swoop (босс-вариант, kind swoop с дальностью 3)', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      terrains: createTestTerrains(),
+      entities: new Map(),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map([
+        ['guardian_swoop', mockAbility('guardian_swoop', { jumpRadius: 3, baseDamage: 10, cooldown: 2, apCost: 2, aiPreparable: true })],
+      ]),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('getSkillExecutor собирает исполнитель с target mode range 3 из шаблона', () => {
+    const executor = getSkillExecutor('guardian_swoop');
+
+    expect(executor).toBeDefined();
+    expect(executor!.id).toBe('guardian_swoop');
+
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5 });
+    expect(executor!.getTargetMode(state, player)).toEqual({ type: 'single', range: 3 });
+  });
+
+  it('допускает приземление на дальности 3 (квадрат 7×7 минус центр = 48 целей)', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'guardian_swoop', source: 'innate', level: 1, currentCooldown: 0 }] });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const targets = getSkillExecutor('guardian_swoop')!.getValidTargets(state, player);
+
+    expect(targets).toHaveLength(48);
+    expect(targets.some(p => p.x === 8 && p.y === 8)).toBe(true);
+    expect(targets.some(p => p.x === 5 && p.y === 5)).toBe(false);
+  });
+
+  it('прыжок на дальность 3 резолвится в JUMP и урон baseDamage шаблона', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+      abilities: [{ templateId: 'guardian_swoop', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const intents = getSkillExecutor('guardian_swoop')!.resolve(state, player, [{ x: 8, y: 5 }]);
+    const jumpIntents = intents.filter(i => i.type === 'JUMP');
+    const damageTileIntents = intents.filter(i => i.type === 'DAMAGE_TILE');
+
+    expect(jumpIntents).toHaveLength(1);
+    expect(jumpIntents[0]).toMatchObject({ type: 'JUMP', entityId: player.id, dx: 3, dy: 0 });
+    expect(damageTileIntents).toHaveLength(9);
+    // Формула swoop_slam: round(baseDamage × (1 + str×0.12) × (1 + level×0.05)) = round(10 × 1.05) = 11.
+    expect(damageTileIntents.every(i => i.damage === 11)).toBe(true);
   });
 });

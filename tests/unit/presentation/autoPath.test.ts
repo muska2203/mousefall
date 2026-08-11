@@ -942,6 +942,7 @@ describe('GameSession auto-path integration', () => {
       items: new Map(),
       abilities: new Map([['fireball', {
         id: 'fireball',
+        kind: 'fireball',
         cooldown: 0,
         apCost: 1,
         aiPreparable: false,

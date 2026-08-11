@@ -17,7 +17,7 @@ import {testFireballSkill} from '../../helpers/test-skills';
 import {createTestSimulation, advanceToPlayerTurn} from '../../helpers/simulation';
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
-  return {id, cooldown: 0, apCost: 1, ...overrides} as AbilityTemplate;
+  return {id, kind: 'fireball', cooldown: 0, apCost: 1, ...overrides} as AbilityTemplate;
 }
 
 beforeEach(() => {

@@ -35,7 +35,7 @@ describe('getDamageHandler', () => {
     expect(damage).toBe(5);
   });
 
-  it('ограничивает физический урон минимумом 1, даже если броня выше урона', () => {
+  it('обнуляет физический урон, если броня выше урона (пол min-1 снят)', () => {
     const target = makeDoor({ armor: 10 });
     const handler = getDamageHandler(['damage.physical.blunt']);
 
@@ -46,6 +46,6 @@ describe('getDamageHandler', () => {
       tags: ['damage.physical.blunt'],
     });
 
-    expect(damage).toBe(1);
+    expect(damage).toBe(0);
   });
 });

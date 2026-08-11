@@ -130,6 +130,26 @@
 
 ---
 
+## Статус «Глухая оборона» (bulwark)
+
+Движковая семантика (не контентные правила), хелпер `isBulwarked` (`systems/bulwark-helper.ts`, по образцу `stun-helper.ts`):
+
+- Иммунитет к любому урону: `applyDamageToEntity` обнуляет `finalDamage`, но событие `ENTITY_DAMAGED` с damage 0 эмитится — статусы накладываются как обычно (контрплей срыва подготовки).
+- Иммунитет к толчкам: PUSH гасится в `push-intent-executer.ts` без события (фидбэк — пост-MVP).
+- Запрет действий носителя: `canActorAct` разрешает только END_TURN; в отличие от stunned — без SKIP_STUNNED_TURN и без сброса подготовленного скилла.
+- Длительность тикает через общий TICK_STATUS_EFFECTS (спадает в setup фракции носителя до decideAction).
+
+## Разрешение исполнителей способностей
+
+`getSkillExecutor` (`skills/skillExecutor.ts`) разрешает исполнитель в два пути:
+
+1. **Фабрика по `kind` шаблона** — для параметризованных видов (`AbilityTemplateSchema` — discriminated union по `kind`): карта `KIND_FACTORIES` (`selfBuff` → `createSelfBuffSkill`, `swoop` → `createSwoopSkill`). Исполнитель собирается из параметров шаблона и кэшируется в реестре. У kind с фабрикой зарегистрированного исполнителя быть не должно — неоднозначность устранена.
+2. **Legacy-реестр по id** — для видов без параметров (`fireball`, `magicSlap`, `dash`, `counterattack`, `cleave`, `suddenStrike`): исполнители регистрируются в `initSkillRegistry` (`skills/index.ts`).
+
+Новая механика = новый член union + фабрика в `KIND_FACTORIES`; новый экземпляр существующего параметризованного вида = чистый контент (шаблон + тексты).
+
+---
+
 ## Полная документация
 
 - [`docs/agents/ACTION_SYSTEM.md`](../../docs/agents/ACTION_SYSTEM.md) — Action / Intent / Event

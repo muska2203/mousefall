@@ -1,6 +1,10 @@
 import type {ContentText} from '../types';
 
 export const abilities: Record<string, ContentText> = {
+  bulwark: {
+    name: 'Глухая оборона',
+    description: 'На 1 ход становится неуязвимым к любому урону и толчкам, но не может действовать. Статусы накладываются как обычно.',
+  },
   cleave: {
     name: 'Рассечение',
     description: 'Удар оружием по дуге рядом с героем. Поражает выбранную клетку и две соседние.',
@@ -28,5 +32,9 @@ export const abilities: Record<string, ContentText> = {
   swoop: {
     name: 'Налёт',
     description: 'Прыжок в свободную клетку в радиусе 2. Удар по земле наносит всем вокруг дробящий урон, и отталкивает их.',
+  },
+  guardian_swoop: {
+    name: 'Налёт',
+    description: 'Прыжок в свободную клетку в радиусе 3. Удар по земле наносит всем вокруг дробящий урон и отталкивает их.',
   },
 };

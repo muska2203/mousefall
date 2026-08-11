@@ -44,6 +44,7 @@ const testIgniteModifier: ModifierTemplate = {
 function mockAbility(id: string, ruleIds: string[] = []): AbilityTemplate {
   return {
     id,
+    kind: 'fireball',
     cooldown: 0,
     apCost: 1,
     aiPreparable: false,

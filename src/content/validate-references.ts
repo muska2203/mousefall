@@ -97,6 +97,13 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
     checkRefs(errors, path, 'blockedBy', status.blockedBy, 'statuses', content.statuses);
   }
 
+  for (const [id, ability] of content.abilities) {
+    // Self-buff способность обязана ссылаться на существующий шаблон статуса (fail fast).
+    if (ability.kind === 'selfBuff') {
+      checkRef(errors, `abilities.${id}`, 'statusType', ability.statusType, 'statuses', content.statuses);
+    }
+  }
+
   for (const [id, effect] of content.tileEffects) {
     const path = `tileEffects.${id}`;
     checkRefs(errors, path, 'canHaveStatus', effect.canHaveStatus, 'tileEffectStatuses', content.tileEffectStatuses);

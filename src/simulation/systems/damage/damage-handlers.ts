@@ -15,11 +15,13 @@ export type DamageHandler = {
   calculateDamage: (ctx: DamageCalculationContext) => number;
 };
 
-/** Стандартная логика расчёта урона: броня вычитается из урона, минимум 1.
- *  Броня применяется только к физическому урону (тег damage.physical). */
+/** Стандартная логика расчёта урона: броня вычитается из урона, нижняя граница — 0.
+ *  Броня применяется только к физическому урону (тег damage.physical).
+ *  Пол «минимум 1» снят (2026-08-10): он сохраняется только для процентного урона,
+ *  где выражен явно — `min: 1` в ParametrizedValue правил (тики яда/горения). */
 const defaultCalculateDamage = ({ rawDamage, target, tags }: DamageCalculationContext): number => {
   const armor = hasTag(tags, 'damage.physical') ? getEffectiveArmor(target) : 0;
-  return Math.max(1, Math.round(rawDamage - armor));
+  return Math.max(0, Math.round(rawDamage - armor));
 };
 
 const defaultHandler: DamageHandler = { calculateDamage: defaultCalculateDamage };

@@ -9,185 +9,192 @@ import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/abilit
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
 
-/**
- * Радиус выбора точки приземления относительно кастера.
- */
-const SWOOP_JUMP_RADIUS = 2;
+/** Параметры исполнителя способности вида «налёт» (соответствуют полям шаблона kind 'swoop'). */
+export interface SwoopSkillParams {
+  /** Контентный id способности (шаблона). */
+  id: string;
+  /** Радиус выбора точки приземления относительно кастера. */
+  jumpRadius: number;
+  /** Радиус удара по земле вокруг точки приземления. */
+  aoeRadius: number;
+  /** Базовый урон от удара по земле. */
+  baseDamage: number;
+}
 
 /**
- * Радиус удара по земле вокруг точки приземления.
+ * Фабрика исполнителя способности вида «налёт»:
+ * прыжок в свободную клетку в радиусе jumpRadius, площадной урон
+ * по квадрату aoeRadius вокруг точки приземления и отталкивание целей.
+ *
+ * Параметры механики приходят из шаблона способности (kind 'swoop'),
+ * сборку и кэширование выполняет getSkillExecutor.
  */
-export const SWOOP_AOE_RADIUS = 1;
+export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
+  /**
+   * Возвращает клетки, в которые кастер может приземлиться:
+   * не стены, не занятые непроходимыми объектами, в пределах радиуса прыжка.
+   */
+  function getJumpTargets(state: GameState, caster: Entity): Position[] {
+    const positions: Position[] = [];
 
-/**
- * Базовый урон от удара по земле.
- */
-const SWOOP_BASE_DAMAGE = 8;
+    for (let dy = -params.jumpRadius; dy <= params.jumpRadius; dy++) {
+      for (let dx = -params.jumpRadius; dx <= params.jumpRadius; dx++) {
+        if (dx === 0 && dy === 0) continue;
 
-/**
- * Возвращает клетки, в которые кастер может приземлиться:
- * не стены, не занятые непроходимыми объектами, в пределах радиуса 2.
- */
-function getJumpTargets(state: GameState, caster: Entity): Position[] {
-  const positions: Position[] = [];
+        const x = caster.x + dx;
+        const y = caster.y + dy;
 
-  for (let dy = -SWOOP_JUMP_RADIUS; dy <= SWOOP_JUMP_RADIUS; dy++) {
-    for (let dx = -SWOOP_JUMP_RADIUS; dx <= SWOOP_JUMP_RADIUS; dx++) {
-      if (dx === 0 && dy === 0) continue;
+        if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) continue;
+        if (!isTerrainWalkable(state.map.tiles[y]?.[x])) continue;
+        if (isBlocked(state, x, y)) continue;
 
-      const x = caster.x + dx;
-      const y = caster.y + dy;
-
-      if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) continue;
-      if (!isTerrainWalkable(state.map.tiles[y]?.[x])) continue;
-      if (isBlocked(state, x, y)) continue;
-
-      positions.push({ x, y });
+        positions.push({ x, y });
+      }
     }
+
+    return positions;
   }
 
-  return positions;
-}
-
-/**
- * Возвращает уровень скилла у кастера.
- */
-function getSkillLevel(caster: Entity): number {
-  if (caster.type !== 'player') return 1;
-  return caster.abilities.find(a => a.templateId === 'swoop')?.level ?? 1;
-}
-
-/**
- * Проверяет, что выбранная точка является допустимой для приземления.
- */
-function isValidJumpTarget(state: GameState, caster: Entity, target: Position): boolean {
-  if (
-    target.x < 0 ||
-    target.x >= state.map.width ||
-    target.y < 0 ||
-    target.y >= state.map.height
-  ) {
-    return false;
+  /**
+   * Возвращает уровень скилла у кастера.
+   */
+  function getSkillLevel(caster: Entity): number {
+    if (caster.type !== 'player') return 1;
+    return caster.abilities.find(a => a.templateId === params.id)?.level ?? 1;
   }
 
-  if (!isTerrainWalkable(state.map.tiles[target.y]?.[target.x])) return false;
-  if (isBlocked(state, target.x, target.y)) return false;
+  /**
+   * Проверяет, что выбранная точка является допустимой для приземления.
+   */
+  function isValidJumpTarget(state: GameState, caster: Entity, target: Position): boolean {
+    if (
+      target.x < 0 ||
+      target.x >= state.map.width ||
+      target.y < 0 ||
+      target.y >= state.map.height
+    ) {
+      return false;
+    }
 
-  const dx = target.x - caster.x;
-  const dy = target.y - caster.y;
-  if (dx === 0 && dy === 0) return false;
-  return !(Math.abs(dx) > SWOOP_JUMP_RADIUS || Math.abs(dy) > SWOOP_JUMP_RADIUS);
+    if (!isTerrainWalkable(state.map.tiles[target.y]?.[target.x])) return false;
+    if (isBlocked(state, target.x, target.y)) return false;
+
+    const dx = target.x - caster.x;
+    const dy = target.y - caster.y;
+    if (dx === 0 && dy === 0) return false;
+    return !(Math.abs(dx) > params.jumpRadius || Math.abs(dy) > params.jumpRadius);
 
 
-}
+  }
 
-/**
- * Разрешает способность в набор интентов.
- */
-function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position[], skillId: string): Intent[] {
-  if (!isCombatEntity(caster)) return [];
+  /**
+   * Разрешает способность в набор интентов.
+   */
+  function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position[], skillId: string): Intent[] {
+    if (!isCombatEntity(caster)) return [];
 
-  const target = targets[0];
-  if (!target) return [];
-  if (!isValidJumpTarget(state, caster, target)) return [];
+    const target = targets[0];
+    if (!target) return [];
+    if (!isValidJumpTarget(state, caster, target)) return [];
 
-  const intents: Intent[] = [];
-  const skillLevel = getSkillLevel(caster);
-  const ability = tryGetAbility(skillId);
-  const damageTag = getSkillDamageTag(ability);
-  const abilityTags = getAbilityTags(skillId);
+    const intents: Intent[] = [];
+    const skillLevel = getSkillLevel(caster);
+    const ability = tryGetAbility(skillId);
+    const damageTag = getSkillDamageTag(ability);
+    const abilityTags = getAbilityTags(skillId);
 
-  // Прыжок в выбранную точку.
-  intents.push({
-    type: 'JUMP',
-    entityId: caster.id,
-    dx: target.x - caster.x,
-    dy: target.y - caster.y,
-  });
+    // Прыжок в выбранную точку.
+    intents.push({
+      type: 'JUMP',
+      entityId: caster.id,
+      dx: target.x - caster.x,
+      dy: target.y - caster.y,
+    });
 
-  // Удар по земле: площадной урон по клеткам вокруг точки приземления.
-  const formula = damageFormulas['swoop_slam'];
+    // Удар по земле: площадной урон по клеткам вокруг точки приземления.
+    const formula = damageFormulas['swoop_slam'];
 
-  for (let dy = -SWOOP_AOE_RADIUS; dy <= SWOOP_AOE_RADIUS; dy++) {
-    for (let dx = -SWOOP_AOE_RADIUS; dx <= SWOOP_AOE_RADIUS; dx++) {
-      const x = target.x + dx;
-      const y = target.y + dy;
+    for (let dy = -params.aoeRadius; dy <= params.aoeRadius; dy++) {
+      for (let dx = -params.aoeRadius; dx <= params.aoeRadius; dx++) {
+        const x = target.x + dx;
+        const y = target.y + dy;
 
-      if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) continue;
+        if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) continue;
 
-      if (formula) {
-        const damageEntries = formula({
-          caster,
-          skillLevel,
-          baseDamage: SWOOP_BASE_DAMAGE,
-        });
-
-        for (const entry of damageEntries) {
-          const tags = mergeDamageIntentTags(entry.tags, abilityTags);
-          intents.push({
-            type: 'DAMAGE_TILE',
-            position: { x, y },
-            sourceEntityId: caster.id,
-            damage: entry.damage,
-            tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
+        if (formula) {
+          const damageEntries = formula({
+            caster,
+            skillLevel,
+            baseDamage: params.baseDamage,
           });
+
+          for (const entry of damageEntries) {
+            const tags = mergeDamageIntentTags(entry.tags, abilityTags);
+            intents.push({
+              type: 'DAMAGE_TILE',
+              position: { x, y },
+              sourceEntityId: caster.id,
+              damage: entry.damage,
+              tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
+            });
+          }
         }
       }
     }
-  }
 
-  // Отталкивание всем живым объектам с hp в радиусе.
-  const affectedEntities = getEntitiesInRadius(state, target, SWOOP_AOE_RADIUS);
-  for (const entity of affectedEntities) {
-    if (entity.id === caster.id) continue;
-    if (!isDamageable(entity)) continue;
+    // Отталкивание всем живым объектам с hp в радиусе.
+    const affectedEntities = getEntitiesInRadius(state, target, params.aoeRadius);
+    for (const entity of affectedEntities) {
+      if (entity.id === caster.id) continue;
+      if (!isDamageable(entity)) continue;
 
-    const pushDx = Math.sign(entity.x - target.x);
-    const pushDy = Math.sign(entity.y - target.y);
+      const pushDx = Math.sign(entity.x - target.x);
+      const pushDy = Math.sign(entity.y - target.y);
 
-    if (pushDx !== 0 || pushDy !== 0) {
-      intents.push({
-        type: 'PUSH',
-        entityId: entity.id,
-        dx: pushDx,
-        dy: pushDy,
-        sourceEntityId: caster.id,
-      });
-    }
-  }
-
-  return intents;
-}
-
-export const swoopSkill: SkillExecutor = {
-  id: 'swoop',
-
-  getTargetMode(): TargetMode {
-    return { type: 'single', range: SWOOP_JUMP_RADIUS };
-  },
-
-  getValidTargets(state: GameState, caster: Entity): Position[] {
-    return getJumpTargets(state, caster);
-  },
-
-  preview(state: GameState, caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
-    if (!hoveredTarget) return [];
-    return resolveSwoopIntents(state, caster, [hoveredTarget], this.id);
-  },
-
-  getAffectedPositions(_state: GameState, _caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
-    if (!hoveredTarget) return [];
-
-    const positions: Position[] = [];
-    for (let dy = -SWOOP_AOE_RADIUS; dy <= SWOOP_AOE_RADIUS; dy++) {
-      for (let dx = -SWOOP_AOE_RADIUS; dx <= SWOOP_AOE_RADIUS; dx++) {
-        positions.push({ x: hoveredTarget.x + dx, y: hoveredTarget.y + dy });
+      if (pushDx !== 0 || pushDy !== 0) {
+        intents.push({
+          type: 'PUSH',
+          entityId: entity.id,
+          dx: pushDx,
+          dy: pushDy,
+          sourceEntityId: caster.id,
+        });
       }
     }
-    return positions;
-  },
 
-  resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {
-    return resolveSwoopIntents(state, caster, targets, this.id);
-  },
-};
+    return intents;
+  }
+
+  return {
+    id: params.id,
+
+    getTargetMode(): TargetMode {
+      return { type: 'single', range: params.jumpRadius };
+    },
+
+    getValidTargets(state: GameState, caster: Entity): Position[] {
+      return getJumpTargets(state, caster);
+    },
+
+    preview(state: GameState, caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
+      if (!hoveredTarget) return [];
+      return resolveSwoopIntents(state, caster, [hoveredTarget], this.id);
+    },
+
+    getAffectedPositions(_state: GameState, _caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
+      if (!hoveredTarget) return [];
+
+      const positions: Position[] = [];
+      for (let dy = -params.aoeRadius; dy <= params.aoeRadius; dy++) {
+        for (let dx = -params.aoeRadius; dx <= params.aoeRadius; dx++) {
+          positions.push({ x: hoveredTarget.x + dx, y: hoveredTarget.y + dy });
+        }
+      }
+      return positions;
+    },
+
+    resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {
+      return resolveSwoopIntents(state, caster, targets, this.id);
+    },
+  };
+}

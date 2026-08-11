@@ -1,6 +1,10 @@
 import type {ContentText} from '../types';
 
 export const statuses: Record<string, ContentText> = {
+  bulwark: {
+    name: 'Bulwark',
+    description: 'Immune to damage and pushes, but cannot act. Status effects apply as usual.',
+  },
   burning: {
     name: 'Burning',
     description: 'Deals fire damage every turn.',

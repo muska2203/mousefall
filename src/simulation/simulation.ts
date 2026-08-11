@@ -43,6 +43,7 @@ import {
     type EntityPositionIndex
 } from "@simulation/state.ts";
 import {isStunned} from "@simulation/systems/stun-helper.ts";
+import {isBulwarked} from "@simulation/systems/bulwark-helper.ts";
 import {moveEntity} from "@simulation/systems/actions/movement-action.ts";
 import {attackEntity} from "@simulation/systems/actions/attack-action.ts";
 import {endTurnEntity} from "@simulation/systems/actions/end-turn-action.ts";
@@ -922,6 +923,13 @@ export class GameSimulation implements Simulation {
 
         if (isStunned(actor)) {
             // Оглушённый актор может только явно завершить ход (END_TURN).
+            return action.type === 'END_TURN';
+        }
+
+        if (isBulwarked(actor)) {
+            // Носитель «Глухой обороны» может только явно завершить ход (END_TURN).
+            // В отличие от оглушения: ход не пропускается (без SKIP_STUNNED_TURN)
+            // и подготовленный скилл не сбрасывается.
             return action.type === 'END_TURN';
         }
 

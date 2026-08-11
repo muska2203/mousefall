@@ -10,7 +10,7 @@ import path from 'path';
 import { buildContent } from '../../src/content/templates';
 import { validateContentRuleReferences } from '../../src/simulation/content-rules/validation';
 import { validateContentReferences, validateModifierTextPlaceholders } from '../../src/content/validate-references';
-import type { LoadedContent, ItemTemplate, ModifierTemplate } from '../../src/content/schemas';
+import type { AbilityTemplate, LoadedContent, ItemTemplate, ModifierTemplate, StatusTemplate } from '../../src/content/schemas';
 import type { ContentTexts } from '../../src/content/texts/types';
 
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
@@ -223,6 +223,61 @@ describe('validateContentReferences: fixedModifiers', () => {
     const content = makeSyntheticContent({
       items: new Map([['test_sword', mockWeapon({ fixedModifiers: ['mod_test'] })]]),
       modifiers: new Map([['mod_test', mockModifier()]]),
+    });
+
+    expect(validateContentReferences(content)).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────
+// Self-buff способности: ссылка statusType на шаблон статуса
+// ─────────────────────────────────────────────
+
+function mockSelfBuffAbility(statusType: string): AbilityTemplate {
+  return {
+    id: 'test_buff',
+    kind: 'selfBuff',
+    statusType,
+    duration: 1,
+    cooldown: 0,
+    apCost: 1,
+    aiPreparable: false,
+    requiredWeaponTags: [],
+    tags: [],
+    ruleIds: [],
+  };
+}
+
+function mockStatusTemplate(id: string): StatusTemplate {
+  return {
+    id,
+    ruleIds: [],
+    statusCategory: 'physical',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+  };
+}
+
+describe('validateContentReferences: selfBuff.statusType', () => {
+  it('находит statusType self-buff способности, ссылающийся на несуществующий статус', () => {
+    const content = makeSyntheticContent({
+      abilities: new Map([['test_buff', mockSelfBuffAbility('nonexistent_status')]]),
+      statuses: new Map(),
+    });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'abilities.test_buff' &&
+      e.field === 'statusType' &&
+      e.problem.includes('nonexistent_status'),
+    )).toBe(true);
+  });
+
+  it('пропускает корректную ссылку statusType', () => {
+    const content = makeSyntheticContent({
+      abilities: new Map([['test_buff', mockSelfBuffAbility('test_status')]]),
+      statuses: new Map([['test_status', mockStatusTemplate('test_status')]]),
     });
 
     expect(validateContentReferences(content)).toEqual([]);

@@ -112,7 +112,7 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 ## Валидация перекрёстных ссылок (`src/content/validate-references.ts`)
 
-`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `equipment.*`, `abilities`, `lootTable[].templateId` у сущностей; `starterEquipment` у игроков; `enemyPool`/`itemPool` у карт; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId`, `fixedModifiers` у предметов (плюс `subtype` предмета ∈ `applicableSubtypes` модификатора и запрет `perLevel` у фирменного модификатора). Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
+`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `equipment.*`, `abilities`, `lootTable[].templateId` у сущностей; `starterEquipment` у игроков; `enemyPool`/`itemPool` у карт; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId`, `fixedModifiers` у предметов (плюс `subtype` предмета ∈ `applicableSubtypes` модификатора и запрет `perLevel` у фирменного модификатора); `statusType` у способностей вида `selfBuff` (существование статуса). Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
 
 `validateModifierTextPlaceholders(content, textsByLocale)` проверяет, что плейсхолдер `{value}` в описании модификатора встречается только у модификаторов со `scaling: perLevel` или `fixed` (иначе в UI отрисовалась бы заглушка «—»). Вызывается только в `scripts/validate-content.ts` (тексты передаются параметром).
 
@@ -128,6 +128,17 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 - `weight` — вес в пуле ролла (default 1, игнорируется при `poolEligible: false`).
 
 Фирменные свойства предмета задаются полем `fixedModifiers: string[]` шаблона экипировки (ID модификаторов; заменяет удалённые 2026-08-09 `equipModifiers` и `ruleIds` предметов). Экземпляр несёт единый список `InventoryItem.affixes` — фирменные аффиксы (`origin: 'fixed'`, детерминированы) + до 2 случайных (`origin: 'rolled'`, ролл один раз при создании через `state.rng` в `src/simulation/systems/item-affix-roll.ts`; пул фильтруется по `poolEligible`/`applicableSubtypes` и исключает фирменные модификаторы и конфликтующие с ними ruleId). Инварианты (проверяются в `validateContentRuleSemantics` и `scripts/validate-content.ts`): stat-модификатор обязан иметь `scaling: perLevel` или `fixed` (иначе модификатор применился бы со значением 0); rule-модификатор со `scaling: perLevel` — эффект правила обязан содержать `{type: 'ownerParam'}`; плейсхолдер `{value}` в описании — только при `scaling: perLevel` или `fixed`. Ссылки `fixedModifiers` (существование модификатора, `subtype` предмета ∈ `applicableSubtypes`, запрет `perLevel` у фирменного) проверяются в `validateContentReferences`, сами `ruleId` модификаторов — в `validateContentRuleReferences`. Рецепт: `docs/recipes/add-modifier.md`; дизайн — `docs/game-design/equipment-modifiers-concept.md`.
+
+## Шаблоны способностей (union `kind`)
+
+`AbilityTemplateSchema` — discriminated union по полю `kind` (дискриминатор вида механики, camelCase — не контентный id). Общая база всех членов: `id`, `spriteId`, `cooldown`, `apCost` (число или `"all"`), `aiPreparable`, `damageTag?` (тип урона ability-based скиллов), `requiredWeaponTags` (требования к оружию для weapon-based), `tags`, `ruleIds`.
+
+- **Параметризованные виды** несут параметры механики прямо в шаблоне (баланс настраивается контентом); исполнитель собирается фабрикой в `getSkillExecutor`, регистрация не нужна:
+  - `kind: 'selfBuff'` — `statusType` (валидируется: статус обязан существовать), `duration` — наложение статуса на кастера (`counterattack`, `bulwark`);
+  - `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0) — прыжок + площадной удар (`swoop` 2/1/8, `guardian_swoop` 3/1/10).
+- **Legacy-виды без параметров** — только `kind`: `'fireball'`, `'magicSlap'`, `'dash'`, `'cleave'`, `'suddenStrike'`; исполнители регистрируются по id в `src/simulation/skills/index.ts`, параметры механики по-прежнему в коде (параметризация — точечно, когда понадобится).
+
+Новый экземпляр параметризованного вида — чистый контент (шаблон + тексты); новая механика — новый член union + фабрика в simulation. Рецепт: `docs/recipes/add-ability.md`; разрешение исполнителей — `src/simulation/AGENTS.md`.
 
 ## Реестр статусов
 

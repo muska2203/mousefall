@@ -45,6 +45,7 @@ export const commonSplinterBlade = {
     ]
   },
   "grantedAbilities": [
+    "bulwark",
     "sudden_strike"
   ],
   "fixedModifiers": ["mod_poison_on_hit"]

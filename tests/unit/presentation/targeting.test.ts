@@ -7,6 +7,7 @@ import type { AbilityTemplate } from '../../../src/content/schemas';
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
+    kind: 'fireball',
     cooldown: 0,
     apCost: 1,
     ...overrides,
@@ -23,8 +24,8 @@ describe('GameSession targeting', () => {
       items: new Map(),
       abilities: new Map([
         ['fireball', mockAbility('fireball')],
-        ['magic_slap', mockAbility('magic_slap')],
-        ['swoop', mockAbility('swoop', { cooldown: 2, apCost: 2 })],
+        ['magic_slap', mockAbility('magic_slap', { kind: 'magicSlap' })],
+        ['swoop', mockAbility('swoop', { kind: 'swoop', jumpRadius: 2, aoeRadius: 1, baseDamage: 8, cooldown: 2, apCost: 2 })],
       ]),
       maps: new Map(),
       doors: new Map(),
