@@ -4,6 +4,7 @@
  * Правила:
  * - Не зависит от PixiJS напрямую; получает время извне (performance.now() или Ticker).
  * - Только easing + progress; конкретный lerp выполняет потребитель.
+ * - Глобальный скейлер скорости всех анимаций применяется здесь (ANIMATION_SPEED_SCALE).
  */
 
 export type EasingFn = (t: number) => number;
@@ -29,6 +30,14 @@ export function lerp(a: number, b: number, t: number): number {
 export function clamp01(t: number): number {
   return Math.min(1, Math.max(0, t));
 }
+
+/**
+ * Глобальный множитель скорости всех игровых анимаций.
+ * 1 — нормальная скорость, 2 — вдвое быстрее, 0.5 — вдвое медленнее.
+ * Должен быть > 0. Применяется в Tween.update: фактическая длительность = duration / ANIMATION_SPEED_SCALE.
+ * Задан константой; при появлении настройки скорости в UI заменить на чтение из стора.
+ */
+export const ANIMATION_SPEED_SCALE = 0.8;
 
 /** Базовый tween прогресса от 0 до 1 с easing.
  *  update(now) возвращает true, если анимация завершена. */
@@ -65,7 +74,7 @@ export class Tween implements Animatable {
     }
 
     const elapsed = now - this.startTime;
-    const t = clamp01(elapsed / this.opts.duration);
+    const t = clamp01((elapsed * ANIMATION_SPEED_SCALE) / this.opts.duration);
     const eased = (this.opts.easing ?? Easing.linear)(t);
 
     this.opts.onUpdate(eased);

@@ -4,10 +4,14 @@
  * Правила:
  * - Единственная точка правки длительностей, флагов blocking и easing.
  * - Presentation и UI читают отсюда, не хардкодят числа.
+ * - Глобальная скорость всех анимаций настраивается константой ANIMATION_SPEED_SCALE
+ *   (реэкспортирована ниже; определена в tween.ts, где и применяется).
  */
 
 import type {EasingFn} from './tween';
 import {Easing} from './tween';
+
+export {ANIMATION_SPEED_SCALE} from './tween';
 
 export type AnimationConfigEntry = {
   duration: number;

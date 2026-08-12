@@ -343,6 +343,11 @@ export const AbilityTemplateSchema = z.discriminatedUnion('kind', [
     aoeRadius: z.number().int().nonnegative().describe('Радиус удара по земле вокруг точки приземления'),
     baseDamage: z.number().nonnegative().describe('Базовый урон от удара по земле'),
   }).describe('Способность вида «налёт»: прыжок в точку + площадной удар с отталкиванием; исполнитель собирается фабрикой createSwoopSkill'),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('groundSlam'),
+    radius: z.number().int().min(1).describe('Радиус удара по земле вокруг кастера (квадрат по Чебышёву)'),
+    baseDamage: z.number().nonnegative().describe('Базовый урон от удара по земле'),
+  }).describe('Способность вида «удар по земле»: площадной урон по квадрату вокруг кастера по всем существам кроме кастера; исполнитель собирается фабрикой createGroundSlamSkill'),
   // Legacy-виды без параметров: исполнители регистрируются по id в initSkillRegistry.
   AbilityTemplateBaseSchema.extend({ kind: z.literal('fireball') }),
   AbilityTemplateBaseSchema.extend({ kind: z.literal('magicSlap') }),

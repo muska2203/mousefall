@@ -5,6 +5,7 @@ import {tryGetAbility} from '@content/registry';
 import type {AbilityTemplate} from '@content/schemas';
 import {createSelfBuffSkill} from '@simulation/skills/executors/selfBuffSkill';
 import {createSwoopSkill} from '@simulation/skills/executors/swoopSkill';
+import {createGroundSlamSkill} from '@simulation/skills/executors/groundSlamSkill';
 
 export interface SkillExecutor {
   id: string;
@@ -53,6 +54,14 @@ const KIND_FACTORIES: Partial<Record<AbilityTemplate['kind'], (template: Ability
       id: template.id,
       jumpRadius: template.jumpRadius,
       aoeRadius: template.aoeRadius,
+      baseDamage: template.baseDamage,
+    });
+  },
+  groundSlam: (template) => {
+    if (template.kind !== 'groundSlam') throw new Error(`Ожидался kind 'groundSlam', получен '${template.kind}'`);
+    return createGroundSlamSkill({
+      id: template.id,
+      radius: template.radius,
       baseDamage: template.baseDamage,
     });
   },

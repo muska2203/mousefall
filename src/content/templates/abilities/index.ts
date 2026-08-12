@@ -4,6 +4,7 @@ import {cleave} from './cleave';
 import {counterattack} from './counterattack';
 import {dash} from './dash';
 import {fireball} from './fireball';
+import {groundSlam} from './ground-slam';
 import {guardianSwoop} from './guardian-swoop';
 import {magicSlap} from './magic-slap';
 import {suddenStrike} from './sudden-strike';
@@ -16,6 +17,7 @@ export const abilityTemplates: AbilityTemplateInput[] = [
   counterattack,
   dash,
   fireball,
+  groundSlam,
   guardianSwoop,
   magicSlap,
   suddenStrike,

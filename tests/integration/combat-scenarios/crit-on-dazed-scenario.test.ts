@@ -4,7 +4,9 @@
  * Проверяет:
  * - мировое правило `core_crit_on_dazed_stunned` умножает урон на critMultiplier
  *   атакующего и добавляет тег 'crit' в событие ENTITY_DAMAGED (цель со статусом dazed);
- * - контроль: по цели без статусов урон не меняется и тега 'crit' нет.
+ * - контроль: по цели без статусов урон не меняется и тега 'crit' нет;
+ * - контроль: урон без тега 'delivery.weapon' (способность fireball) по dazed-цели
+ *   не критует.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -29,7 +31,7 @@ const testBlade = {
     damage: { min: 6, max: 6 },
     range: 1,
     damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
-    tags: [],
+    tags: ['attack.melee', 'target.single', 'delivery.weapon'],
   },
 } as unknown as ItemTemplate;
 
@@ -128,5 +130,44 @@ describe('Crit on dazed/stunned scenario', () => {
     expect(damaged!.damage).toBe(6);
     expect(damaged!.tags).not.toContain('crit');
     expect(rat.hp).toBe(20 - 6);
+  });
+
+  it('урон способности (без delivery.weapon) по цели со статусом dazed не критует', () => {
+    const state = makeGameState({ map: makeTestMap() });
+    // Таргетинг fireball требует видимости целевой клетки.
+    for (const row of state.visible) row.fill(true);
+    const player = createPlayer({
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const rat = createRat();
+    rat.statusEffects.push({
+      type: 'dazed',
+      duration: 2,
+      value: 0,
+      statModifiers: null,
+      instanceId: 'dazed_test',
+    });
+    rebuildActiveRules(rat);
+    state.entities.set(rat.id, rat);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    sim.initializeTestTurnState('player', player.id);
+
+    const result = sim.dispatch({
+      type: 'USE_ABILITY',
+      entityId: player.id,
+      abilityId: 'fireball',
+      targets: [{ x: 6, y: 5 }],
+    });
+    expect(result.success).toBe(true);
+
+    // Урон способности не умножается на critMultiplier и не помечается тегом crit.
+    const damaged = findDamagedEvent(extractEvents(result), rat.id);
+    expect(damaged).toBeDefined();
+    expect(damaged!.damage).toBeGreaterThan(0);
+    expect(damaged!.tags).not.toContain('crit');
   });
 });

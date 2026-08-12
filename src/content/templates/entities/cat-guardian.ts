@@ -3,10 +3,11 @@ import type {EntityTemplateInput} from '../../schemas';
 export const catGuardian = {
   "id": "cat_guardian",
   "maxAp": 3,
-  "aiStrategyId": "simple-boss",
+  "aiStrategyId": "guardian-boss",
   "aiSightRadius": 8,
   "health": {
-    "max": 80
+    // Черновое значение (было 80) — финальный баланс в проходе roadMap 1.4.
+    "max": 90
   },
   "baseStats": {
     "str": 6,
@@ -18,7 +19,11 @@ export const catGuardian = {
     "weapon": "common_splinter_blade",
     "armor": "cat_guardian_plate"
   },
-  "abilities": [],
+  "abilities": [
+    "guardian_swoop",
+    "ground_slam",
+    "bulwark"
+  ],
   "lootTable": [
     {
       "templateId": "health_potion",

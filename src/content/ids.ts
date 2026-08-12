@@ -25,7 +25,7 @@ export const EQUIPMENT_SUBTYPE_IDS = [
 export type EquipmentSubtypeId = typeof EQUIPMENT_SUBTYPE_IDS[number];
 
 /** Стратегии ИИ (реализации — src/simulation/ai/*-strategy.ts). */
-export const AI_STRATEGY_IDS = ['hunter', 'simple-boss'] as const;
+export const AI_STRATEGY_IDS = ['hunter', 'simple-boss', 'guardian-boss'] as const;
 export type AiStrategyId = typeof AI_STRATEGY_IDS[number];
 
 /** Стратегии генерации карты (реализации — src/simulation/systems/map-generation/*-strategy.ts). */

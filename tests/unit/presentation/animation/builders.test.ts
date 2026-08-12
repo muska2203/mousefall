@@ -235,15 +235,12 @@ describe('entityDamagedBuilder', () => {
     expect(nodes![0]!.children).toContain(child);
   });
 
-  it('adds UI_FLOATING_TEXT crit node when event has crit tag', () => {
+  it('does not add a separate crit node when event has crit tag (crit is shown as "N!" in the damage number)', () => {
     const event: GameEvent = { type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: 'player', tags: ['damage.physical.slashing', 'crit'], damage: 9, position: { x: 3, y: 3 } };
     const nodes = entityDamagedBuilder(event, [], makeMockState());
 
-    expect(nodes).toHaveLength(2);
+    expect(nodes).toHaveLength(1);
     expect(nodes![0]!.step.type).toBe('DAMAGE');
-    const critStep = nodes![1]!.step;
-    expect(critStep.type).toBe('UI_FLOATING_TEXT');
-    expect((critStep as { textKey?: string }).textKey).toBe('system.animation.crit');
   });
 });
 

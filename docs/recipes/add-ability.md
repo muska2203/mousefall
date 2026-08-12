@@ -10,7 +10,7 @@
 
 - TS-шаблон способности в `src/content/templates/abilities/`.
 - Тексты в `src/content/texts/ru/abilities.ts` и `src/content/texts/en/abilities.ts`.
-- Для **нового экземпляра параметризованного вида** (`selfBuff`, `swoop`) — только шаблон и тексты: исполнитель собирается фабрикой из параметров шаблона.
+- Для **нового экземпляра параметризованного вида** (`selfBuff`, `swoop`, `groundSlam`) — только шаблон и тексты: исполнитель собирается фабрикой из параметров шаблона.
 - Для **legacy-вида** (`fireball`, `magicSlap`, `dash`, `cleave`, `suddenStrike`) — `SkillExecutor` в `src/simulation/skills/executors/<id>Skill.ts` и его регистрация в `src/simulation/skills/index.ts`.
 - Для **новой механики** — новый член union `kind` в `AbilityTemplateSchema` + фабрика в `KIND_FACTORIES` (`src/simulation/skills/skillExecutor.ts`); это уже задача системного дизайна, а не чистого контента.
 - Анимация в `src/presentation/animation/skills/<id>.ts` и импорт в `src/presentation/animation/register.ts` (если нужна визуализация).
@@ -22,7 +22,7 @@
 ## Шаги
 
 1. **Выбери `kind`** — вид механики способности (дискриминатор union, camelCase):
-   - **Параметризованный вид** (`selfBuff`, `swoop`) — параметры механики задаются в шаблоне, исполнитель соберётся фабрикой автоматически (шаги 3–4 не нужны);
+   - **Параметризованный вид** (`selfBuff`, `swoop`, `groundSlam`) — параметры механики задаются в шаблоне, исполнитель соберётся фабрикой автоматически (шаги 3–4 не нужны);
    - **legacy-вид** (`fireball`, `magicSlap`, `dash`, `cleave`, `suddenStrike`) — механика зашита в зарегистрированном по id исполнителе;
    - нужной механики нет — это новая механика: новый член union + фабрика в движке (см. `src/simulation/AGENTS.md`), выход за рамки этого рецепта.
 
@@ -59,6 +59,7 @@
    Поля параметризованных видов:
    - `kind: 'selfBuff'` — `statusType` (тип накладываемого на кастера статуса; валидируется — статус обязан существовать) и `duration` (ходов). Пример — `bulwark` («Глухая оборона»).
    - `kind: 'swoop'` — `jumpRadius` (радиус выбора точки приземления, ≥ 1), `aoeRadius` (радиус удара вокруг точки, ≥ 0), `baseDamage` (базовый урон, ≥ 0). Примеры — `swoop` (2/1/8), `guardian_swoop` (3/1/10).
+   - `kind: 'groundSlam'` — `radius` (радиус удара вокруг кастера, ≥ 1), `baseDamage` (базовый урон, ≥ 0). DAMAGE-интенты несут тег идентичности `skill.<id>` — на него опираются контентные правила (например, `ground_slam_daze`). Пример — `ground_slam` (2/12).
 
    > **Weapon-based** vs **ability-based**: если урон/эффект зависит от экипированного оружия — используй `requiredWeaponTags`. Если урон от формулы/характеристики — используй `damageTag`.
 
@@ -73,7 +74,7 @@
 
 4. **Реализуй `SkillExecutor`** в `src/simulation/skills/executors/myAbilitySkill.ts` — только для legacy-вида с особой логикой.
 
-   > **Параметризованные виды** (`selfBuff`, `swoop`) отдельного executor'а не требуют: `getSkillExecutor` собирает и кэширует исполнитель фабрикой из `KIND_FACTORIES` по `kind` шаблона (шаги 4–5 пропускаются). У kind с фабрикой зарегистрированного исполнителя быть не должно — фабрика побеждает по построению.
+   > **Параметризованные виды** (`selfBuff`, `swoop`, `groundSlam`) отдельного executor'а не требуют: `getSkillExecutor` собирает и кэширует исполнитель фабрикой из `KIND_FACTORIES` по `kind` шаблона (шаги 4–5 пропускаются). У kind с фабрикой зарегистрированного исполнителя быть не должно — фабрика побеждает по построению.
 
    ```ts
    import {Entity, GameState, Position} from '@simulation/types';

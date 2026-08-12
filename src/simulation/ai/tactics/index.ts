@@ -15,3 +15,5 @@ export type { AttackTarget, CloseCombatResult, MoveTowardResult } from './types'
 export { findVisibleAttackTarget } from './targeting';
 
 export { attackTarget, moveToward, closeCombat } from './movement';
+
+export { findCollisionLanding } from './ability';

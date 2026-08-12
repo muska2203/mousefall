@@ -140,6 +140,7 @@ src/content/
 - **Параметризованные виды** несут параметры механики в шаблоне; исполнитель собирается фабрикой из `KIND_FACTORIES` в `getSkillExecutor` (регистрировать executor для них не нужно):
   - `kind: 'selfBuff'` — `statusType`, `duration`: наложение статуса на кастера (фабрика `createSelfBuffSkill`, примеры — `counterattack`, `bulwark`). `statusType` проверяется валидацией перекрёстных ссылок (существование статуса).
   - `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0): прыжок + площадной удар (фабрика `createSwoopSkill`, примеры — `swoop` 2/1/8, `guardian_swoop` 3/1/10).
+  - `kind: 'groundSlam'` — `radius` (≥ 1), `baseDamage` (≥ 0): площадной удар по квадрату вокруг кастера по всем существам кроме кастера; DAMAGE-интенты несут тег идентичности `skill.<id>` для контентных правил (фабрика `createGroundSlamSkill`, пример — `ground_slam` 2/12).
 - **Legacy-виды без параметров** — только `kind`: `'fireball'`, `'magicSlap'`, `'dash'`, `'cleave'`, `'suddenStrike'`; их исполнители по-прежнему регистрируются по id в `src/simulation/skills/index.ts`.
 
 Сквозные поля базы:

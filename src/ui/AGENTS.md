@@ -52,6 +52,7 @@ src/ui/
 | Добавить обработку ввода | `input/` |
 | Изменить стили | `styles/` |
 | Добавить/изменить настройки UI | `store/` |
+| Изменить скорость всех анимаций | `src/utils/animationConfig.ts` (константа `ANIMATION_SPEED_SCALE`) |
 | Добавить теговый компонент | `components/` (`TagBadge`, `TagLink`, `TagList`, `RichDescription`) |
 
 ---

@@ -62,15 +62,18 @@ AI в Mousefall построен по принципу **«стратегия р
 src/simulation/ai/
 ├── strategy-registry.ts      # Реестр стратегий
 ├── ai-state.ts               # JSON-сериализуемое состояние FSM
-├── ai-helpers.ts             # Общие helpers: зрение, prepareAbility, endTurn
+├── ai-helpers.ts             # Общие helpers: зрение, prepareAbility, endTurn,
+│                             # общий FSM «охотника» (updateHunterState /
+│                             # handleHunterWorldChange / engagePlayer / decideHunterAction)
 ├── cast-helpers.ts           # Helpers для выбора preparable-способностей
-├── *-strategy.ts             # Конкретные стратегии (hunter, simple-boss, ...)
+├── *-strategy.ts             # Конкретные стратегии (hunter, simple-boss, guardian-boss)
 └── tactics/                  # Реестр тактических утилит
     ├── index.ts              # Публичный API
     ├── types.ts              # Типы: AttackTarget, CloseCombatResult, ...
     ├── targeting.ts          # Выбор цели
     ├── movement.ts           # Передвижение и ближний бой
-    └── ...                   # Будущие модули: positioning, ability, etc.
+    ├── ability.ts            # Выбор целей способностей (findCollisionLanding)
+    └── ...                   # Будущие модули: positioning, etc.
 ```
 
 ---
@@ -238,6 +241,40 @@ registerStrategy('hunter', {
 ```
 
 Важно: `findVisibleAttackTarget` и `closeCombat` знают **как** найти цель и как к ней подойти. Стратегия решает **что** с ней делать.
+
+---
+
+## Существующие стратегии
+
+- **`hunter`** — FSM `idle → chase → return`, преследование и ближний бой.
+  FSM и боевое поведение вынесены в `ai-helpers.ts` (`updateHunterState`,
+  `handleHunterWorldChange`, `engagePlayer`, `decideHunterAction`) — это общая
+  база hunter-подобных стратегий, дублировать её в новых стратегиях нельзя.
+- **`simple-boss`** — статичный кастер: готовит первую доступную `aiPreparable`-способность.
+- **`guardian-boss`** — первый босс «Кот-Страж» (концепт `docs/game-design/first-boss-concept.md`).
+  Охотничий FSM + две стадии (опциональные поля `bossStage`/`bossTransitionPending`
+  в `AIState`, порог 50% HP, переход одноразовый). Приоритеты `decideAction`:
+  (1) под `bulwark` — только END_TURN; (2) исполнение подготовленной способности;
+  (3) переход — немедленное комбо «подготовка `ground_slam` + каст `bulwark`»;
+  (4) стадия 2, оба кулдауна 0 — то же комбо в конце хода (приоритет над Налётом);
+  (5) Налёт (`guardian_swoop`) — подготовка в конце хода, только если
+  `findCollisionLanding` находит точку со столкновением цели;
+  (6) охотничье поведение. Эвристика «конца хода»: `AP ≤ 1` или охотничье
+  действие — END_TURN. Подготовка бесплатна (side-effect), исполнение платит AP
+  на следующем ходу.
+
+---
+
+## Тактика `ability.ts`: цели способностей
+
+`findCollisionLanding(state, caster, abilityId, target)` — выбор точки применения
+способности (например, приземление Налёта), при которой толчок цели заканчивается
+столкновением с препятствием (стена / блокирующий объект / актор; семантика
+повторяет `executePushIntent`). Кандидаты — `getValidTargets` исполнителя в
+детерминированном порядке (расстояние до цели, x, y); цель должна попадать в
+зону действия (`getAffectedPositions`); клетка за целью по направлению толчка
+проверяется как препятствие. Возвращает `null`, если геометрии столкновения нет —
+стратегия в этом случае придерживает способность.
 
 ---
 

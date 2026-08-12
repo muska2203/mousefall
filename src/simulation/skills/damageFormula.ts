@@ -50,4 +50,8 @@ export const damageFormulas: Record<string, DamageFormula> = {
     const str = ctx.caster.type === 'player' ? ctx.caster.baseStats.str : 0;
     return single(Math.round(ctx.baseDamage * (1 + str * 0.12) * (1 + ctx.skillLevel * 0.05)), 'damage.physical.blunt');
   },
+  // Удар по земле — площадной урон вокруг кастера (flat, без скейлинга от характеристик)
+  ground_slam: (ctx) => {
+    return single(ctx.baseDamage, 'damage.physical.blunt');
+  },
 };

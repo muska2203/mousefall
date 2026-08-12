@@ -6,5 +6,4 @@ export const ruAnimation = {
   doorClosed: 'Дверь закрыта',
   abilityPrepared: 'Готовит',
   abilityPreparedCancelled: 'Подготовка прервана',
-  crit: 'Крит!',
 } as const satisfies SystemAnimationTranslations;

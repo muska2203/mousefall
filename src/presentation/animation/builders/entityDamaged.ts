@@ -4,20 +4,15 @@
  * Возвращает DAMAGE-узел с детьми (например, смерть).
  * HP отображается через sticker-рамку сущности, отдельная анимация
  * HP-бара больше не требуется.
- * При теге 'crit' (правило core_crit_on_dazed_stunned) добавляет
- * всплывающий текст «Крит!» рядом с уроном.
+ * При теге 'crit' (правило core_crit_on_dazed_stunned) отдельный текст не добавляется:
+ * крит отображается в самом числе урона («N!») в PixiFloatingTextExecutor.
  */
 
 import type {AnimationBuilder} from '../core/registry';
-import {damageNode, floatingTextNode} from '../core/primitives';
+import {damageNode} from '../core/primitives';
 
 export const entityDamagedBuilder: AnimationBuilder = (event, children) => {
   if (event.type !== 'ENTITY_DAMAGED') return null;
 
-  const nodes = [damageNode(event, children)];
-  if (event.tags.includes('crit')) {
-    // styleKey мёртв (текст белый, как у всех floating text) — отдельный цвет не задаём.
-    nodes.push(floatingTextNode(undefined, 'system.animation.crit', event.position, 'info'));
-  }
-  return nodes;
+  return [damageNode(event, children)];
 };

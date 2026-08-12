@@ -50,13 +50,15 @@ export const GLOBAL_WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
     worldLayer: 'global',
   },
   {
-    // Детерминированный крит: любой урон по цели со статусом dazed/stunned
-    // умножается на critMultiplier атакующего. Тег 'crit' без префикса damage. —
-    // чтобы не влиять на обработчики урона; presentation ветвится по нему
-    // (строка лога + floating text «Крит!»).
+    // Детерминированный крит: урон с тегом 'delivery.weapon' по цели со статусом
+    // dazed/stunned умножается на critMultiplier атакующего. Урон способностей,
+    // тиков и столкновений (без 'delivery.weapon') не критует.
+    // Тег 'crit' без префикса damage. — чтобы не влиять на обработчики урона;
+    // presentation ветвится по нему (строка лога + число урона отображается как «N!»).
     id: 'core_crit_on_dazed_stunned',
     trigger: {
       event: 'DAMAGE',
+      tags: ['delivery.weapon'],
     },
     conditions: [
       {

@@ -143,8 +143,8 @@
 
 `getSkillExecutor` (`skills/skillExecutor.ts`) разрешает исполнитель в два пути:
 
-1. **Фабрика по `kind` шаблона** — для параметризованных видов (`AbilityTemplateSchema` — discriminated union по `kind`): карта `KIND_FACTORIES` (`selfBuff` → `createSelfBuffSkill`, `swoop` → `createSwoopSkill`). Исполнитель собирается из параметров шаблона и кэшируется в реестре. У kind с фабрикой зарегистрированного исполнителя быть не должно — неоднозначность устранена.
-2. **Legacy-реестр по id** — для видов без параметров (`fireball`, `magicSlap`, `dash`, `counterattack`, `cleave`, `suddenStrike`): исполнители регистрируются в `initSkillRegistry` (`skills/index.ts`).
+1. **Фабрика по `kind` шаблона** — для параметризованных видов (`AbilityTemplateSchema` — discriminated union по `kind`): карта `KIND_FACTORIES` (`selfBuff` → `createSelfBuffSkill`, `swoop` → `createSwoopSkill`, `groundSlam` → `createGroundSlamSkill`). Исполнитель собирается из параметров шаблона и кэшируется в реестре. У kind с фабрикой зарегистрированного исполнителя быть не должно — неоднозначность устранена.
+2. **Legacy-реестр по id** — для видов без параметров (`fireball`, `magicSlap`, `dash`, `cleave`, `suddenStrike`): исполнители регистрируются в `initSkillRegistry` (`skills/index.ts`).
 
 Новая механика = новый член union + фабрика в `KIND_FACTORIES`; новый экземпляр существующего параметризованного вида = чистый контент (шаблон + тексты).
 

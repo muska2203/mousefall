@@ -135,7 +135,8 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 - **Параметризованные виды** несут параметры механики прямо в шаблоне (баланс настраивается контентом); исполнитель собирается фабрикой в `getSkillExecutor`, регистрация не нужна:
   - `kind: 'selfBuff'` — `statusType` (валидируется: статус обязан существовать), `duration` — наложение статуса на кастера (`counterattack`, `bulwark`);
-  - `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0) — прыжок + площадной удар (`swoop` 2/1/8, `guardian_swoop` 3/1/10).
+  - `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0) — прыжок + площадной удар (`swoop` 2/1/8, `guardian_swoop` 3/1/10);
+  - `kind: 'groundSlam'` — `radius` (≥ 1), `baseDamage` (≥ 0) — площадной удар по квадрату вокруг кастера по всем существам кроме кастера; DAMAGE-интенты несут тег `skill.<id>` для контентных правил (`ground_slam` 2/12).
 - **Legacy-виды без параметров** — только `kind`: `'fireball'`, `'magicSlap'`, `'dash'`, `'cleave'`, `'suddenStrike'`; исполнители регистрируются по id в `src/simulation/skills/index.ts`, параметры механики по-прежнему в коде (параметризация — точечно, когда понадобится).
 
 Новый экземпляр параметризованного вида — чистый контент (шаблон + тексты); новая механика — новый член union + фабрика в simulation. Рецепт: `docs/recipes/add-ability.md`; разрешение исполнителей — `src/simulation/AGENTS.md`.

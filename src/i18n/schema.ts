@@ -421,7 +421,6 @@ export interface SystemAnimationTranslations {
   doorClosed: string;
   abilityPrepared: string;
   abilityPreparedCancelled: string;
-  crit: string;
 }
 
 export interface SystemGameSessionTranslations {

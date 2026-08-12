@@ -48,6 +48,18 @@ export type AIState = {
     abilityId: string;
     targets: Position[];
   } | null;
+
+  /**
+   * Стадия босса (стратегия guardian-boss): отсутствует/1 — стадия 1,
+   * 2 — после пересечения порога 50% HP. Опционально для совместимости сейвов.
+   */
+  bossStage?: 1 | 2;
+
+  /**
+   * Отложенный переход на стадию 2 (guardian-boss): на ближайшем decideAction
+   * босс исполняет комбо «Удар по земле + Глухая оборона» и сбрасывает флаг.
+   */
+  bossTransitionPending?: boolean;
 };
 
 /**

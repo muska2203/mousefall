@@ -62,6 +62,7 @@ import {isEnemyEntity} from "@simulation/ai/ai-state.ts";
 import {cancelPreparedAbility} from "@simulation/ai/ai-helpers.ts";
 import "@simulation/ai/hunter-strategy.ts";
 import "@simulation/ai/simple-boss-strategy.ts";
+import "@simulation/ai/guardian-boss-strategy.ts";
 import type {ItemTemplate, MapParams} from "@content/schemas";
 import type {DamageRange, GameplayTag, TargetMode} from "@simulation/core-types.ts";
 import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";

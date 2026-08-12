@@ -10,7 +10,7 @@
 import type {AnimationContext, AnimationExecutor} from './types';
 import type {AnimationStep} from '@presentation/types';
 import type {AnimationConfigKey} from '@utils/animationConfig';
-import {ANIMATION_CONFIG} from '@utils/animationConfig';
+import {ANIMATION_CONFIG, ANIMATION_SPEED_SCALE} from '@utils/animationConfig';
 import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import {t} from '@i18n/t';
 import type {DamageFamily} from '@presentation/damageFamily';
@@ -44,7 +44,10 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
 
     const config = ANIMATION_CONFIG[step.type as AnimationConfigKey];
     const pos = step.type === 'DAMAGE' ? step.position : {x: step.x, y: step.y};
-    const text = step.type === 'DAMAGE' ? String(step.amount) : (step.textKey ? t(step.textKey) : step.text ?? '');
+    // Крит (тег 'crit' от правила core_crit_on_dazed_stunned) — число урона с восклицательным знаком.
+    const text = step.type === 'DAMAGE'
+      ? String(step.amount) + (step.tags.includes('crit') ? '!' : '')
+      : (step.textKey ? t(step.textKey) : step.text ?? '');
     const color = step.type === 'DAMAGE' ? DAMAGE_COLORS[getDamageFamily(step.tags)] : '#ffffff';
 
     // Мировые пиксели: центр по X, верх тайла по Y
@@ -62,8 +65,9 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
     }
 
     // Атомарно резервируем слот времени для данной клетки
+    // (стаггер скейлим вместе с остальными анимациями, чтобы сохранить пропорции)
     const last = this.lastStartTime.get(key) ?? 0;
-    const startTime = Math.max(now, last + STAGGER_MS);
+    const startTime = Math.max(now, last + STAGGER_MS / ANIMATION_SPEED_SCALE);
     this.lastStartTime.set(key, startTime);
 
     const delay = startTime - now;

@@ -37,4 +37,8 @@ export const abilities: Record<string, ContentText> = {
     name: 'Swoop',
     description: 'A [movement](tag:delivery.movement) leap to a free cell within radius 3. The ground slam wounds all enemies around the landing point, dealing blunt damage, and [knocks them back](tag:effect.knockback). Costs 2 AP, cooldown 2.',
   },
+  ground_slam: {
+    name: 'Ground Slam',
+    description: 'Slams the ground, dealing blunt damage to all creatures in a 5×5 square around the caster and dazing survivors for 2 turns. Costs 2 AP, cooldown 4.',
+  },
 };

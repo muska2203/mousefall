@@ -6,5 +6,4 @@ export const enAnimation = {
   doorClosed: 'Door closed',
   abilityPrepared: 'Preparing',
   abilityPreparedCancelled: 'Preparation interrupted',
-  crit: 'Crit!',
 } as const satisfies SystemAnimationTranslations;
