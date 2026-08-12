@@ -322,6 +322,10 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'STATUS_TICKED',
       tags: ['status.poisoned'],
     },
+    // eventRole: 'target' обязателен: без него копия правила соседнего
+    // отравленного актора подхватывается слоем radius и наносит урон
+    // тикающей сущности повторно.
+    conditions: [{type: 'eventRole', role: 'target'}],
     effect: {
       type: 'dealDamage',
       amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},

@@ -10,6 +10,7 @@ import {GameSimulation} from '../../../../src/simulation/simulation';
 import {advanceToPlayerTurn} from '../../../helpers/simulation';
 import type {Entity, EntityId} from '../../../../src/simulation/types';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
+import {rebuildActiveRules} from '../../../../src/simulation/systems/rules/active-rule-lifecycle';
 import type {StatusTemplate} from '../../../../src/content/schemas';
 
 function mockStatus(id: string, ruleIds: string[] = []): StatusTemplate {
@@ -138,6 +139,39 @@ describe('status effect tick phases', () => {
     const updatedEnemy = sim.getState().entities.get(enemy.id);
     expect(updatedEnemy).toBeDefined();
     expect('statusEffects' in updatedEnemy! && updatedEnemy.statusEffects.find(e => e.type === 'burning')?.duration).toBe(2);
+  });
+
+  it('poison tick damages entity exactly once when adjacent actor is also poisoned', () => {
+    // Регрессия: правило status_poison_tick_damage соседнего отравленного актора
+    // подхватывалось слоем radius и наносило урон тикающей сущности повторно.
+    const player = makePlayer({
+      x: 5, y: 5, hp: 100, maxHp: 100, maxAp: 1, ap: 1,
+      statusEffects: [makeEffect('poisoned', 3)],
+    });
+    const enemy = makeEnemy({
+      id: 'poisoned_enemy', x: 6, y: 5, hp: 100, maxHp: 100, maxAp: 0, ap: 0,
+      statusEffects: [makeEffect('poisoned', 3)],
+    });
+    rebuildActiveRules(player);
+    rebuildActiveRules(enemy);
+
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+
+    const sim = GameSimulation.loadSavedGame(state);
+
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
+
+    // Тик яда: round(maxHp * 0.08) = 8 при maxHp 100, ровно один раз на сущность.
+    expect(sim.getState().player.hp).toBe(92);
+    const updatedEnemy = sim.getState().entities.get(enemy.id);
+    expect(updatedEnemy && 'hp' in updatedEnemy ? updatedEnemy.hp : null).toBe(92);
   });
 
   it('poisoned ticks in FACTION_SETUP player of next round', () => {
