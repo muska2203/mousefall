@@ -16,7 +16,6 @@ import {beforeEach, describe, expect, it} from 'vitest';
 import '@simulation/ai/guardian-boss-strategy';
 import {getStrategy} from '@simulation/ai/strategy-registry';
 import {ExecutionBuilder} from '@simulation/systems/actions/types';
-import {initSkillRegistry} from '@simulation/skills';
 import {initRegistry, resetRegistry} from '@content/registry';
 import type {AbilityTemplate} from '@content/schemas';
 import {createObjectContent, makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
@@ -41,7 +40,6 @@ function mockSwoopTemplate(): AbilityTemplate {
 }
 
 beforeEach(() => {
-  initSkillRegistry();
   resetRegistry();
   initRegistry(createObjectContent({
     abilities: new Map([[SWOOP_ID, mockSwoopTemplate()]]),

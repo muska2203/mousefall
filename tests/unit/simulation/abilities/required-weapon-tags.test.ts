@@ -1,9 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { initRegistry, resetRegistry } from '@content/registry';
 import { useAbilityAction } from '../../../../src/simulation/systems/actions/use-ability-action';
-import { initSkillRegistry } from '../../../../src/simulation/skills';
-import { registerSkill } from '../../../../src/simulation/skills/skillExecutor';
-import type { SkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
 import { makeGameState, makePlayer } from '../../../fixtures/gameState';
 import type { ItemTemplate, AbilityTemplate } from '../../../../src/content/schemas';
 import { createTestSimulation } from '../../../helpers/simulation';
@@ -31,36 +28,12 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   } as AbilityTemplate;
 }
 
-const testAlwaysSkill: SkillExecutor = {
-  id: 'test_always',
-  getTargetMode: () => ({ type: 'single', range: 1 }),
-  getValidTargets: () => [{ x: 6, y: 5 }],
-  preview: () => [],
-  getAffectedPositions: () => [],
-  resolve: () => [],
-};
-
-const testMeleeSkill: SkillExecutor = {
-  id: 'test_melee',
-  getTargetMode: () => ({ type: 'single', range: 1 }),
-  getValidTargets: () => [{ x: 6, y: 5 }],
-  preview: () => [],
-  getAffectedPositions: () => [],
-  resolve: (state, caster) => [{
-    type: 'DAMAGE',
-    entityId: 'dummy_target',
-    sourceEntityId: caster.id,
-    damage: 1,
-    tags: [],
-  }],
-};
+/** Параметры self-buff вида для тестовых способностей (исполнитель собирается фабрикой). */
+const TEST_SELF_BUFF = { kind: 'selfBuff', statusType: 'test_buff', duration: 1 } as const;
 
 describe('requiredWeaponTags', () => {
   beforeEach(() => {
     resetRegistry();
-    initSkillRegistry();
-    registerSkill(testAlwaysSkill);
-    registerSkill(testMeleeSkill);
     initRegistry({
       entities: new Map(),
       players: new Map(),
@@ -88,10 +61,12 @@ describe('requiredWeaponTags', () => {
           tags: ['attack.melee', 'target.aoe', 'delivery.weapon'],
         })],
         ['test_always', mockAbility('test_always', {
+          ...TEST_SELF_BUFF,
           requiredWeaponTags: [],
           tags: ['attack.melee', 'target.single', 'delivery.weapon'],
         })],
         ['test_melee', mockAbility('test_melee', {
+          ...TEST_SELF_BUFF,
           requiredWeaponTags: ['attack.melee'],
           tags: ['attack.melee', 'target.single', 'delivery.weapon'],
         })],
@@ -122,11 +97,10 @@ describe('requiredWeaponTags', () => {
 
     const action = { type: 'USE_ABILITY' as const, entityId: player.id, abilityId: 'test_melee', targets: [{ x: 6, y: 5 }] };
     expect(useAbilityAction.resolve(state, action)).toEqual([{
-      type: 'DAMAGE',
-      entityId: 'dummy_target',
+      type: 'APPLY_STATUS',
+      entityId: player.id,
       sourceEntityId: player.id,
-      damage: 1,
-      tags: [],
+      status: { type: 'test_buff', duration: 1, value: 0, statModifiers: null },
     }]);
   });
 
@@ -160,7 +134,7 @@ describe('requiredWeaponTags', () => {
     const sim = createTestSimulation(state);
     const intents = sim.getAbilityIntents('test_melee', player.id, [{ x: 6, y: 5 }]);
     expect(intents).toHaveLength(1);
-    expect(intents[0]!.type).toBe('DAMAGE');
+    expect(intents[0]!.type).toBe('APPLY_STATUS');
   });
 
   it('скилл с requiredWeaponTags: ["attack.melee"] доступен с мечом', () => {
@@ -209,7 +183,7 @@ describe('requiredWeaponTags', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    const action = { type: 'USE_ABILITY' as const, entityId: player.id, abilityId: 'test_always', targets: [{ x: 6, y: 5 }] };
+    const action = { type: 'USE_ABILITY' as const, entityId: player.id, abilityId: 'test_always', targets: [{ x: 5, y: 5 }] };
     const result = useAbilityAction.validate(state, action);
     expect(result.ok).toBe(true);
   });

@@ -9,6 +9,7 @@ export const suddenStrike = {
   "requiredWeaponTags": [
     "attack.melee"
   ],
+  "silenceDuration": 2,
   "tags": [
     "delivery.ability",
     "attack.melee",

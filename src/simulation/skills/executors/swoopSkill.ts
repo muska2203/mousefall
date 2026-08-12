@@ -2,7 +2,6 @@ import {Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
-import {damageFormulas} from '@simulation/skills/damageFormula';
 import {getEntitiesInRadius} from '@simulation/skills/targeting';
 import {isBlocked, isCombatEntity, isDamageable, isTerrainWalkable} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
@@ -56,14 +55,6 @@ export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
   }
 
   /**
-   * Возвращает уровень скилла у кастера.
-   */
-  function getSkillLevel(caster: Entity): number {
-    if (caster.type !== 'player') return 1;
-    return caster.abilities.find(a => a.templateId === params.id)?.level ?? 1;
-  }
-
-  /**
    * Проверяет, что выбранная точка является допустимой для приземления.
    */
   function isValidJumpTarget(state: GameState, caster: Entity, target: Position): boolean {
@@ -98,7 +89,6 @@ export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
     if (!isValidJumpTarget(state, caster, target)) return [];
 
     const intents: Intent[] = [];
-    const skillLevel = getSkillLevel(caster);
     const ability = tryGetAbility(skillId);
     const damageTag = getSkillDamageTag(ability);
     const abilityTags = getAbilityTags(skillId);
@@ -111,9 +101,7 @@ export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
       dy: target.y - caster.y,
     });
 
-    // Удар по земле: площадной урон по клеткам вокруг точки приземления.
-    const formula = damageFormulas['swoop_slam'];
-
+    // Удар по земле: плоский урон по клеткам вокруг точки приземления.
     for (let dy = -params.aoeRadius; dy <= params.aoeRadius; dy++) {
       for (let dx = -params.aoeRadius; dx <= params.aoeRadius; dx++) {
         const x = target.x + dx;
@@ -121,24 +109,16 @@ export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
 
         if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) continue;
 
-        if (formula) {
-          const damageEntries = formula({
-            caster,
-            skillLevel,
-            baseDamage: params.baseDamage,
-          });
-
-          for (const entry of damageEntries) {
-            const tags = mergeDamageIntentTags(entry.tags, abilityTags);
-            intents.push({
-              type: 'DAMAGE_TILE',
-              position: { x, y },
-              sourceEntityId: caster.id,
-              damage: entry.damage,
-              tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
-            });
-          }
-        }
+        const tags = damageTag
+          ? mergeDamageIntentTags([damageTag], abilityTags)
+          : abilityTags;
+        intents.push({
+          type: 'DAMAGE_TILE',
+          position: { x, y },
+          sourceEntityId: caster.id,
+          damage: params.baseDamage,
+          tags,
+        });
       }
     }
 

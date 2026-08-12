@@ -4,11 +4,6 @@ import {createGroundSlamSkill} from '../../../../src/simulation/skills/executors
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate} from '../../../../src/content/schemas';
 import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
-import {initSkillRegistry} from '../../../../src/simulation/skills/index';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {

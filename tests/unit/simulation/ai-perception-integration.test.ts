@@ -4,11 +4,6 @@ import type {EnemyEntity, Entity, EntityId, GameMap, GameState} from '@simulatio
 import type {ExecutionNode, GameEvent} from '@simulation/core-types';
 import {advanceToPlayerTurn, createTestSimulation} from '../../helpers/simulation';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
-import {initSkillRegistry} from '../../../src/simulation/skills/index';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function findEvents(node: ExecutionNode, type: GameEvent['type']): ExecutionNode[] {
   const results: ExecutionNode[] = [];

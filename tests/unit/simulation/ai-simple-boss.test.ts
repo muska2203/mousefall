@@ -5,21 +5,17 @@ import type {ExecutionNode, GameEvent} from '../../../src/simulation/core-types'
 import {advanceToPlayerTurn, createTestSimulation} from '../../helpers/simulation';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
 import type {AbilityTemplate} from '../../../src/content/schemas';
-import {initSkillRegistry} from '../../../src/simulation/skills/index';
 import {chebyshevDistance} from '../../../src/utils/math';
 import {createDefaultAIState, getDerivedAIMode} from '../../../src/simulation/ai/ai-state';
-import {registerSkill} from '../../../src/simulation/skills/skillExecutor';
-import {testFireballSkill} from '../../helpers/test-skills';
-
-beforeEach(() => {
-  initSkillRegistry();
-  registerSkill(testFireballSkill);
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 2,
     apCost: 2,
     ...overrides,

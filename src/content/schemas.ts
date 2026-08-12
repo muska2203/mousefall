@@ -328,8 +328,8 @@ const AbilityTemplateBaseSchema = z.object({
 /**
  * Шаблон способности — discriminated union по полю kind.
  * kind — дискриминатор вида механики (camelCase, не контентный id):
- * параметризованные виды (selfBuff, swoop) несут параметры механики в шаблоне,
- * legacy-виды объявлены без параметров (их исполнители регистрируются по id).
+ * каждый вид несёт параметры механики в шаблоне (cleave — без параметров),
+ * исполнитель собирается фабрикой из KIND_FACTORIES в getSkillExecutor.
  */
 export const AbilityTemplateSchema = z.discriminatedUnion('kind', [
   AbilityTemplateBaseSchema.extend({
@@ -348,12 +348,32 @@ export const AbilityTemplateSchema = z.discriminatedUnion('kind', [
     radius: z.number().int().min(1).describe('Радиус удара по земле вокруг кастера (квадрат по Чебышёву)'),
     baseDamage: z.number().nonnegative().describe('Базовый урон от удара по земле'),
   }).describe('Способность вида «удар по земле»: площадной урон по квадрату вокруг кастера по всем существам кроме кастера; исполнитель собирается фабрикой createGroundSlamSkill'),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('fireball'),
+    range: z.number().int().min(1).describe('Дальность выбора целевой клетки относительно кастера'),
+    aoeRadius: z.number().int().nonnegative().describe('Радиус зоны поражения вокруг целевой клетки (квадрат по Чебышёву)'),
+    centerDamage: z.number().nonnegative().describe('Фиксированный урон по центральной клетке зоны'),
+    aoeDamage: z.number().nonnegative().describe('Фиксированный урон по клеткам периметра зоны'),
+  }).describe('Способность вида «огненный шар»: урон по квадрату вокруг выбранной клетки в пределах дальности, центр бьёт сильнее периметра; исполнитель собирается фабрикой createFireballSkill'),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('magicSlap'),
+    range: z.number().int().min(1).describe('Дальность выбора целей относительно кастера'),
+    targetCount: z.number().int().min(1).describe('Максимальное число целей за одно применение'),
+    baseDamage: z.number().nonnegative().describe('Фиксированный урон по каждой цели'),
+  }).describe('Способность вида «магическая пощёчина»: урон по нескольким выбранным целям в пределах дальности; исполнитель собирается фабрикой createMagicSlapSkill'),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('dash'),
+    distance: z.number().int().min(1).describe('Расстояние рывка в клетках'),
+    bumpDamage: z.number().nonnegative().describe('Фиксированный урон при столкновении рывка с актором'),
+  }).describe('Способность вида «рывок»: перемещение в выбранном направлении с уроном и отталкиванием акторов на пути, закрытые двери открываются; исполнитель собирается фабрикой createDashSkill'),
   // Legacy-виды без параметров: исполнители регистрируются по id в initSkillRegistry.
-  AbilityTemplateBaseSchema.extend({ kind: z.literal('fireball') }),
-  AbilityTemplateBaseSchema.extend({ kind: z.literal('magicSlap') }),
-  AbilityTemplateBaseSchema.extend({ kind: z.literal('dash') }),
-  AbilityTemplateBaseSchema.extend({ kind: z.literal('cleave') }),
-  AbilityTemplateBaseSchema.extend({ kind: z.literal('suddenStrike') }),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('suddenStrike'),
+    silenceDuration: z.number().int().positive()
+      .describe('Длительность немоты (в ходах), накладываемой на цель с подготовленной способностью'),
+  }).describe('Способность вида «внезапный удар»: удар оружием по соседней цели, немота цели с подготовленной способностью; исполнитель собирается фабрикой createSuddenStrikeSkill'),
+  AbilityTemplateBaseSchema.extend({ kind: z.literal('cleave') })
+    .describe('Способность вида «рассекающий удар»: удар оружием по дуге из трёх клеток перед кастером, числовых параметров нет (урон — ролл оружия); исполнитель собирается фабрикой createCleaveSkill'),
 ]).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;

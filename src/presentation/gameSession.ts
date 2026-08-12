@@ -1541,7 +1541,9 @@ export class GameSession {
 
     const target = this.autoPath.getTarget();
     const indices: number[] = [];
-    let remaining = ap;
+    // При нулевых AP текущего хода отметки показывают, до куда хватит
+    // очков действий следующего хода.
+    let remaining = ap === 0 ? maxAp : ap;
     let reachedIndex = -1;
 
     for (let i = 0; i < path.length; i++) {

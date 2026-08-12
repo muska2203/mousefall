@@ -2,11 +2,11 @@ import {Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {GameplayTag, TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
-import {damageFormulas} from '@simulation/skills/damageFormula';
 import {getEntitiesInRadius} from '@simulation/skills/targeting';
 import {isCombatEntity, isDamageable} from '@simulation/state';
-import {getAbilityTags} from '@simulation/systems/tags/ability-tags';
+import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
+import {tryGetAbility} from '@content/registry';
 
 /** Параметры исполнителя способности вида «удар по земле» (соответствуют полям шаблона kind 'groundSlam'). */
 export interface GroundSlamSkillParams {
@@ -31,24 +31,14 @@ export interface GroundSlamSkillParams {
  */
 export function createGroundSlamSkill(params: GroundSlamSkillParams): SkillExecutor {
   /**
-   * Возвращает уровень скилла у кастера.
-   */
-  function getSkillLevel(caster: Entity): number {
-    if (caster.type !== 'player') return 1;
-    return caster.abilities.find(a => a.templateId === params.id)?.level ?? 1;
-  }
-
-  /**
    * Разрешает способность в набор интентов.
    */
   function resolveGroundSlamIntents(state: GameState, caster: Entity, skillId: string): Intent[] {
     if (!isCombatEntity(caster)) return [];
 
-    const formula = damageFormulas['ground_slam'];
-    if (!formula) return [];
-
     const intents: Intent[] = [];
-    const skillLevel = getSkillLevel(caster);
+    const ability = tryGetAbility(skillId);
+    const damageTag = getSkillDamageTag(ability);
     const abilityTags = getAbilityTags(skillId);
     // Тег идентичности способности — маркер урона для контентных правил (ground_slam_daze).
     const skillTag = `skill.${skillId}` as GameplayTag;
@@ -58,21 +48,16 @@ export function createGroundSlamSkill(params: GroundSlamSkillParams): SkillExecu
       if (entity.id === caster.id) continue;
       if (!isDamageable(entity)) continue;
 
-      const damageEntries = formula({
-        caster,
-        skillLevel,
-        baseDamage: params.baseDamage,
+      const tags = damageTag
+        ? mergeDamageIntentTags([damageTag], abilityTags, [skillTag])
+        : mergeDamageIntentTags(abilityTags, [skillTag]);
+      intents.push({
+        type: 'DAMAGE',
+        entityId: entity.id,
+        sourceEntityId: caster.id,
+        damage: params.baseDamage,
+        tags,
       });
-
-      for (const entry of damageEntries) {
-        intents.push({
-          type: 'DAMAGE',
-          entityId: entity.id,
-          sourceEntityId: caster.id,
-          damage: entry.damage,
-          tags: mergeDamageIntentTags(entry.tags, abilityTags, [skillTag]),
-        });
-      }
     }
 
     return intents;

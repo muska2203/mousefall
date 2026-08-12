@@ -2,13 +2,16 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { GameSimulation } from '../../src/simulation/simulation';
 import { initRegistry, resetRegistry } from '../../src/content/registry';
 import type { ItemTemplate, AbilityTemplate, PlayerTemplate, DoorTemplate } from '../../src/content/schemas';
-import { initSkillRegistry } from '../../src/simulation/skills/index';
 import { defaultTestMapParams } from '../fixtures/gameState';
 
 function mockAbility(id: string): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 3,
     apCost: 1,
     aiPreparable: false,
@@ -45,7 +48,6 @@ function mockPlayerTemplate(id: string): PlayerTemplate {
 }
 
 beforeEach(() => {
-  initSkillRegistry();
   resetRegistry();
   initRegistry({
     entities: new Map(),

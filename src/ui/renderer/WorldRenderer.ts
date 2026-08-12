@@ -135,7 +135,7 @@ export class WorldRenderer {
 
     this.tileRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.debugMapRenderer.update(input);
-    this.targetingRenderer.update(input);
+    this.targetingRenderer.update(input, this.entityRenderer.getVisualCenter(input.displayState.player.id));
     this.tileEffectRenderer.update(input, cameraX, cameraY, viewW, viewH);
     this.entityRenderer.update(input);
     this.fogRenderer.update(input, cameraX, cameraY, viewW, viewH);
@@ -235,9 +235,9 @@ export class WorldRenderer {
   }
 
   /** Показать всплывающий текст в мировых координатах. */
-  showFloatingText(text: string, worldX: number, worldY: number, color: string, duration: number, zoom?: number): void {
+  showFloatingText(text: string, worldX: number, worldY: number, color: string, duration: number, zoom?: number, sizeScale?: number): void {
     const z = zoom ?? this.lastInput?.zoom ?? 1;
-    this.floatingTextRenderer.show(text, worldX, worldY, color, duration, z);
+    this.floatingTextRenderer.show(text, worldX, worldY, color, duration, z, sizeScale);
     // Сразу синхронизируем позицию, чтобы текст не мигал в (0,0) до следующего тика
     this.syncTextLayer();
   }
@@ -311,6 +311,14 @@ export class WorldRenderer {
     this.tileEffectStatusRenderer.updateAnimations(now);
     this.floatingTextRenderer.update(now);
     this.unitInfoRenderer.syncPositions((id) => this.entityRenderer.getSprite(id));
+    // Линия автопути следует за визуальной позицией персонажа во время анимации.
+    const playerId = this.lastInput?.displayState.player.id;
+    if (playerId) {
+      const center = this.entityRenderer.getVisualCenter(playerId);
+      if (center) {
+        this.targetingRenderer.updatePathStart(center);
+      }
+    }
     this.updateCamera(now);
     this.syncTextLayer();
   };

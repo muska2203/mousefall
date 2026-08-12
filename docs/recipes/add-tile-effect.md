@@ -111,7 +111,7 @@
 
 8. **Добавь способность или предмет для появления в игре** (опционально):
    - Например, масло появляется из расходника `oil_bottle`, а вода — из `water_ball`.
-   - Для способности: создай шаблон в `src/content/templates/abilities/<id-kebab>.ts`, `SkillExecutor` в `src/simulation/skills/executors/<id>Skill.ts` и зарегистрируй его в `src/simulation/skills/index.ts`.
+   - Для способности: создай шаблон в `src/content/templates/abilities/<id-kebab>.ts` (см. рецепт [`add-ability.md`](./add-ability.md)).
    - Для расходника: создай шаблон в `src/content/templates/items/consumables/<id-kebab>.ts` с эффектом `spawn_tile_effect`, добавь текст в `src/content/texts/{ru,en}/items.ts` и зарегистрируй шаблон в `src/content/templates/items/index.ts`.
    - Добавь анимацию/спрайт для UI.
 

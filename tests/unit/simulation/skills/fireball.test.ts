@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {makeDoor, makeEnemy, makeGameState, makePlayer} from '../../../fixtures/gameState';
-import {fireballSkill} from '../../../../src/simulation/skills/executors/fireballSkill';
+import {createFireballSkill} from '../../../../src/simulation/skills/executors/fireballSkill';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {
   AbilityTemplate,
@@ -9,7 +9,6 @@ import type {
   TileEffectTemplate
 } from '../../../../src/content/schemas';
 import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
-import {initSkillRegistry} from '../../../../src/simulation/skills/index';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 import {rngChance} from '../../../../src/utils/rng';
@@ -19,19 +18,29 @@ vi.mock('../../../../src/utils/rng', () => ({
   rngChance: vi.fn(),
 }));
 
-beforeEach(() => {
-  initSkillRegistry();
-});
-
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
     cooldown: 3,
+    damageTag: 'damage.magical.fire',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     tags: ['delivery.ability', 'attack.ranged', 'target.aoe', 'delivery.projectile', 'delivery.spell', 'effect.burn'],
     ...overrides,
   } as AbilityTemplate;
 }
+
+/** Исполнитель, собранный фабрикой с параметрами боевого шаблона fireball. */
+const fireballSkill = createFireballSkill({
+  id: 'fireball',
+  range: 5,
+  aoeRadius: 1,
+  centerDamage: 20,
+  aoeDamage: 10,
+});
 
 function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: string }): TileEffectTemplate {
   return {

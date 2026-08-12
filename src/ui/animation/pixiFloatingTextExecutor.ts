@@ -30,6 +30,8 @@ const DAMAGE_COLORS: Record<DamageFamily, string> = {
 
 const STAGGER_MS = 150;
 const CLEANUP_THRESHOLD_MS = 5000;
+/** Критическая цифра урона чуть крупнее обычной. */
+const CRIT_SIZE_SCALE = 1.25;
 
 export class PixiFloatingTextExecutor implements AnimationExecutor {
   /** Время последнего запуска floating text на клетке (ключ: "x,y"). */
@@ -44,9 +46,11 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
 
     const config = ANIMATION_CONFIG[step.type as AnimationConfigKey];
     const pos = step.type === 'DAMAGE' ? step.position : {x: step.x, y: step.y};
-    // Крит (тег 'crit' от правила core_crit_on_dazed_stunned) — число урона с восклицательным знаком.
+    // Урон — со знаком минус («-N»); крит (тег 'crit' от правила core_crit_on_dazed_stunned) —
+    // с восклицательным знаком («-N!») и отображается чуть крупнее обычной цифры урона.
+    const isCrit = step.type === 'DAMAGE' && step.tags.includes('crit');
     const text = step.type === 'DAMAGE'
-      ? String(step.amount) + (step.tags.includes('crit') ? '!' : '')
+      ? `-${step.amount}` + (isCrit ? '!' : '')
       : (step.textKey ? t(step.textKey) : step.text ?? '');
     const color = step.type === 'DAMAGE' ? DAMAGE_COLORS[getDamageFamily(step.tags)] : '#ffffff';
 
@@ -75,7 +79,7 @@ export class PixiFloatingTextExecutor implements AnimationExecutor {
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    ctx.worldRenderer.showFloatingText(text, worldX, worldY, color, config.duration, ctx.zoom);
+    ctx.worldRenderer.showFloatingText(text, worldX, worldY, color, config.duration, ctx.zoom, isCrit ? CRIT_SIZE_SCALE : undefined);
     // Floating text — non-blocking, не ждём завершения
   }
 }

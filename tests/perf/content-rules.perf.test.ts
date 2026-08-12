@@ -17,7 +17,6 @@ import { describe, test, beforeAll, afterAll } from 'vitest';
 import { performance } from 'node:perf_hooks';
 import { GameSimulation } from '../../src/simulation/simulation';
 import { initRegistry, resetRegistry } from '../../src/content/registry';
-import { initSkillRegistry } from '../../src/simulation/skills';
 import {
   setContentRulesOverride,
   setWorldContentRulesOverride,
@@ -157,6 +156,10 @@ const playerTemplate: PlayerTemplate = {
 const fireballAbility: AbilityTemplate = {
   id: 'fireball',
   kind: 'fireball',
+  range: 5,
+  aoeRadius: 1,
+  centerDamage: 20,
+  aoeDamage: 10,
   cooldown: 0,
   apCost: 1,
   aiPreparable: false,
@@ -214,6 +217,10 @@ const perfAmulet: ItemTemplate = {
 const perfAbility: AbilityTemplate = {
   id: 'perf_ability',
   kind: 'fireball',
+  range: 5,
+  aoeRadius: 1,
+  centerDamage: 20,
+  aoeDamage: 10,
   cooldown: 0,
   apCost: 1,
   aiPreparable: false,
@@ -485,7 +492,6 @@ describe('WP6.5 — Проверка производительности conten
   const results: PerfSample[] = [];
 
   beforeAll(() => {
-    initSkillRegistry();
     resetRegistry();
     initRegistry({
       entities: new Map(),

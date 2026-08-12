@@ -8,6 +8,9 @@ export const magicSlap = {
   "apCost": 1,
   "aiPreparable": true,
   "damageTag": "damage.magical.electric",
+  "range": 5,
+  "targetCount": 3,
+  "baseDamage": 12,
   "tags": [
     "delivery.ability",
     "attack.ranged",

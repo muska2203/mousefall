@@ -4,17 +4,16 @@ import {useAbilityAction} from '../../../../src/simulation/systems/actions/use-a
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate} from '../../../../src/content/schemas';
 import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
-import {initSkillRegistry} from '../../../../src/simulation/skills/index';
 import type {EntityId} from '../../../../src/simulation/types';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 3,
     apCost: 1,
     ...overrides,

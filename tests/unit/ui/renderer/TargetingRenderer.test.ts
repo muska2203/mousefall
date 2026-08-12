@@ -29,12 +29,15 @@ vi.mock('pixi.js', () => {
     y = 0;
     visible = true;
     scale = {x: 1, y: 1};
+    moves: Array<{x: number; y: number}> = [];
+    lines: Array<{x: number; y: number}> = [];
     rect() { return this; }
     fill() { return this; }
     stroke() { return this; }
     circle() { return this; }
-    moveTo() { return this; }
-    lineTo() { return this; }
+    moveTo(x: number, y: number) { this.moves.push({x, y}); return this; }
+    lineTo(x: number, y: number) { this.lines.push({x, y}); return this; }
+    clear() { this.moves = []; this.lines = []; return this; }
     destroy() {}
   }
   class MockContainer {
@@ -255,6 +258,95 @@ describe('TargetingRenderer', () => {
     expect(renderer.previewContainer.children.length).toBe(1);
   });
 
+  describe('skill hover cast line', () => {
+    it('draws a dashed line from player to hovered valid target', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(
+        {
+          valid: [{x: 1, y: 1}],
+          hover: {x: 1, y: 1},
+          affected: [],
+          selected: [],
+          previewIntents: [],
+        },
+        [],
+      );
+
+      renderer.update(input);
+
+      // Подсветка валидной клетки + подсветка hover-клетки + пунктирная линия.
+      expect(renderer.overlayContainer.children.length).toBe(3);
+    });
+
+    it('does not draw the line when hovered cell is not a valid target', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(
+        {
+          valid: [{x: 1, y: 1}],
+          hover: {x: 2, y: 2},
+          affected: [],
+          selected: [],
+          previewIntents: [],
+        },
+        [],
+      );
+
+      renderer.update(input);
+
+      // Подсветка валидной клетки + подсветка hover-клетки, без линии.
+      expect(renderer.overlayContainer.children.length).toBe(2);
+    });
+
+    it('does not draw the line without hover', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(
+        {
+          valid: [{x: 1, y: 1}],
+          hover: null,
+          affected: [],
+          selected: [],
+          previewIntents: [],
+        },
+        [],
+      );
+
+      renderer.update(input);
+
+      expect(renderer.overlayContainer.children.length).toBe(1);
+    });
+
+    it('ends the dashed line exactly at the hovered cell center', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(
+        {
+          valid: [{x: 2, y: 0}],
+          hover: {x: 2, y: 0},
+          affected: [],
+          selected: [],
+          previewIntents: [],
+        },
+        [],
+      );
+
+      renderer.update(input);
+
+      // Игрок стоит на (0,0): центр (16, 14.4); цель (2,0): центр (80, 14.4).
+      const line = renderer.overlayContainer.children.find(
+        (c: any) => c.lines?.length > 0,
+      ) as any;
+      expect(line).toBeDefined();
+      const last = line.lines[line.lines.length - 1];
+      expect(last.x).toBeCloseTo(80, 5);
+      expect(last.y).toBeCloseTo(14.4, 5);
+      // Ни одна точка линии не выходит за пределы сегмента.
+      for (const p of line.lines) {
+        expect(p.x).toBeLessThanOrEqual(80 + 1e-9);
+        expect(p.x).toBeGreaterThanOrEqual(16 - 1e-9);
+        expect(p.y).toBeCloseTo(14.4, 5);
+      }
+    });
+  });
+
   describe('autopath visualization', () => {
     it('renders only the last tile of the path, but draws a path line', () => {
       const renderer = new TargetingRenderer();
@@ -361,6 +453,32 @@ describe('TargetingRenderer', () => {
       renderer.update(input);
 
       expect(renderer.overlayContainer.children.length).toBe(2);
+    });
+
+    it('path line start follows updatePathStart (ticker-driven)', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.highlightedPath = [{x: 1, y: 0}];
+      input.highlightedPathCommitted = false;
+      input.highlightedPathTargetKind = 'move';
+
+      renderer.update(input, {x: 16, y: 14.4});
+
+      const line = renderer.overlayContainer.children.find(
+        (c: any) => c.lines?.length > 0,
+      ) as any;
+      expect(line).toBeDefined();
+      expect(line.moves[0].x).toBeCloseTo(16, 5);
+      expect(line.moves[0].y).toBeCloseTo(14.4, 5);
+
+      // Покадровое обновление: персонаж сместился — линия перерисовывается
+      // от новой точки в том же Graphics, без создания новых объектов.
+      renderer.updatePathStart({x: 40, y: 14.4});
+      expect(line.moves[0].x).toBeCloseTo(40, 5);
+      expect(line.moves[0].y).toBeCloseTo(14.4, 5);
+      expect(
+        renderer.overlayContainer.children.filter((c: any) => c.lines?.length > 0).length,
+      ).toBe(1);
     });
 
     it('renders turn-end markers starting from next turn when current AP is zero', () => {

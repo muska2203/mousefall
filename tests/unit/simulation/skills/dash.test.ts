@@ -1,26 +1,26 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import { makeDoor, makeEnemy, makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
-import {dashSkill} from '../../../../src/simulation/skills/executors/dashSkill';
+import {createDashSkill} from '../../../../src/simulation/skills/executors/dashSkill';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate} from '../../../../src/content/schemas';
 import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
-import {initSkillRegistry} from '../../../../src/simulation/skills/index';
 import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 import '@simulation/ai/hunter-strategy';
 import {ExecutionBuilder} from '@simulation/systems/actions/types';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'dash',
     cooldown: 4,
+    distance: 2,
+    bumpDamage: 5,
     ...overrides,
   } as AbilityTemplate;
 }
+
+/** Исполнитель, собранный фабрикой с параметрами боевого шаблона dash. */
+const dashSkill = createDashSkill({ id: 'dash', distance: 2, bumpDamage: 5 });
 
 function makeBuilder(entityId: string) {
   return new ExecutionBuilder({

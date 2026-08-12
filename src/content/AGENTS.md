@@ -135,13 +135,18 @@ src/content/
 
 `AbilityTemplateSchema` (`src/content/schemas.ts`) — discriminated union по полю `kind` (дискриминатор вида механики, camelCase — это не контентный id). Общая база всех членов: `id`, `spriteId`, `cooldown`, `apCost`, `aiPreparable`, `damageTag?`, `requiredWeaponTags`, `tags`, `ruleIds`.
 
-Члены union:
+Члены union (исполнитель каждого вида собирается фабрикой из `KIND_FACTORIES` в `getSkillExecutor`; регистрация исполнителей отсутствует — legacy-реестр удалён 2026-08-12):
 
-- **Параметризованные виды** несут параметры механики в шаблоне; исполнитель собирается фабрикой из `KIND_FACTORIES` в `getSkillExecutor` (регистрировать executor для них не нужно):
-  - `kind: 'selfBuff'` — `statusType`, `duration`: наложение статуса на кастера (фабрика `createSelfBuffSkill`, примеры — `counterattack`, `bulwark`). `statusType` проверяется валидацией перекрёстных ссылок (существование статуса).
-  - `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0): прыжок + площадной удар (фабрика `createSwoopSkill`, примеры — `swoop` 2/1/8, `guardian_swoop` 3/1/10).
-  - `kind: 'groundSlam'` — `radius` (≥ 1), `baseDamage` (≥ 0): площадной удар по квадрату вокруг кастера по всем существам кроме кастера; DAMAGE-интенты несут тег идентичности `skill.<id>` для контентных правил (фабрика `createGroundSlamSkill`, пример — `ground_slam` 2/12).
-- **Legacy-виды без параметров** — только `kind`: `'fireball'`, `'magicSlap'`, `'dash'`, `'cleave'`, `'suddenStrike'`; их исполнители по-прежнему регистрируются по id в `src/simulation/skills/index.ts`.
+- `kind: 'selfBuff'` — `statusType`, `duration`: наложение статуса на кастера (фабрика `createSelfBuffSkill`, примеры — `counterattack`, `bulwark`). `statusType` проверяется валидацией перекрёстных ссылок (существование статуса).
+- `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0): прыжок + площадной удар (фабрика `createSwoopSkill`, примеры — `swoop` 2/1/8, `guardian_swoop` 3/1/10).
+- `kind: 'groundSlam'` — `radius` (≥ 1), `baseDamage` (≥ 0): площадной удар по квадрату вокруг кастера по всем существам кроме кастера; DAMAGE-интенты несут тег идентичности `skill.<id>` для контентных правил (фабрика `createGroundSlamSkill`, пример — `ground_slam` 2/12).
+- `kind: 'fireball'` — `range` (≥ 1), `aoeRadius` (≥ 0), `centerDamage`, `aoeDamage`: урон по квадрату вокруг выбранной клетки, центр бьёт сильнее (фабрика `createFireballSkill`, пример — `fireball` 5/1/20/10).
+- `kind: 'magicSlap'` — `range` (≥ 1), `targetCount` (≥ 1), `baseDamage`: урон по нескольким целям (фабрика `createMagicSlapSkill`, пример — `magic_slap` 5/3/12).
+- `kind: 'dash'` — `distance` (≥ 1), `bumpDamage`: рывок с уроном и отталкиванием акторов на пути (фабрика `createDashSkill`, пример — `dash` 2/5).
+- `kind: 'suddenStrike'` — `silenceDuration` (≥ 1): удар оружием, немота цели с подготовленной способностью (фабрика `createSuddenStrikeSkill`, пример — `sudden_strike` 2).
+- `kind: 'cleave'` — без параметров: удар оружием по дуге из трёх клеток (фабрика `createCleaveSkill`).
+
+Урон способностей — фиксированные значения из шаблона (без скейлинга от характеристик и уровня; формулы `damageFormula.ts` удалены 2026-08-12). Модификаторы урона вешаются через стандартные модификаторы и контентные правила. Исключение — оружейные виды (`cleave`, `suddenStrike`): их урон — ролл экипированного оружия (`rollWeaponDamage`).
 
 Сквозные поля базы:
 
@@ -153,15 +158,19 @@ src/content/
 Примеры:
 
 ```typescript
-// Ability-based: урон от формулы + тег fire (legacy-вид, executor по id)
+// Ability-based: фиксированный урон из шаблона + тег fire
 {
   "id": "fireball",
   "kind": "fireball",
+  "range": 5,
+  "aoeRadius": 1,
+  "centerDamage": 20,
+  "aoeDamage": 10,
   "damageTag": "damage.magical.fire",
   "tags": ["attack.ranged", "target.aoe", "delivery.projectile", "delivery.spell", "effect.burn"]
 }
 
-// Параметризованный вид swoop: параметры механики в шаблоне
+// Вид swoop: параметры механики в шаблоне
 {
   "id": "guardian_swoop",
   "kind": "swoop",
@@ -172,7 +181,7 @@ src/content/
   "tags": ["delivery.ability", "delivery.movement", "attack.melee", "target.aoe", "effect.knockback"]
 }
 
-// Weapon-based: требует ближнего оружия (legacy-вид)
+// Weapon-based: требует ближнего оружия, числовых параметров нет (урон — ролл оружия)
 {
   "id": "cleave",
   "kind": "cleave",

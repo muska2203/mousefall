@@ -8,22 +8,14 @@ import {GameSession} from '../../../src/presentation/gameSession';
 import {makeGameState, makePlayer, makeEnemy} from '../../fixtures/gameState';
 import {createDefaultAIState} from '../../../src/simulation/ai/ai-state';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
-import {initSkillRegistry} from '../../../src/simulation/skills/index';
 import type {AbilityTemplate} from '../../../src/content/schemas';
 import type {Entity, EntityId} from '../../../src/simulation/types';
 import {GameSimulation, defaultActionHandlerRegistry} from '../../../src/simulation/simulation';
-import {registerSkill} from '../../../src/simulation/skills/skillExecutor';
-import {testFireballSkill} from '../../helpers/test-skills';
 import {createTestSimulation, advanceToPlayerTurn} from '../../helpers/simulation';
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
-  return {id, kind: 'fireball', cooldown: 0, apCost: 1, ...overrides} as AbilityTemplate;
+  return {id, kind: 'fireball', range: 5, aoeRadius: 1, centerDamage: 20, aoeDamage: 10, cooldown: 0, apCost: 1, ...overrides} as AbilityTemplate;
 }
-
-beforeEach(() => {
-  initSkillRegistry();
-  registerSkill(testFireballSkill);
-});
 
 describe('GameSession AI prepared intents', () => {
   beforeEach(() => {

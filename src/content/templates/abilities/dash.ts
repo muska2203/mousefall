@@ -7,6 +7,8 @@ export const dash = {
   "cooldown": 4,
   "apCost": 1,
   "damageTag": "damage.physical.blunt",
+  "distance": 2,
+  "bumpDamage": 5,
   "tags": [
     "delivery.ability",
     "delivery.movement",

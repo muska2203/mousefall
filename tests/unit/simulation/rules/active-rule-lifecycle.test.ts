@@ -45,6 +45,10 @@ function mockAbility(id: string, ruleIds: string[] = []): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 0,
     apCost: 1,
     aiPreparable: false,

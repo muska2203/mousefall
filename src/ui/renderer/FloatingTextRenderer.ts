@@ -6,7 +6,7 @@
  *
  * Правила:
  * - Координаты передаются в мировых пикселях (как у спрайтов).
- * - Анимация подъёма + fade-out через Tween.
+ * - Анимация подъёма через Tween (без затухания).
  * - Не blocking — запускается и забывается.
  */
 
@@ -27,15 +27,18 @@ export class FloatingTextRenderer {
   private activeTexts: ActiveFloatingText[] = [];
 
   /** Показать всплывающий текст в мировых координатах.
-   *  worldX/worldY — мировые пиксели (не тайлы). */
-  show(text: string, worldX: number, worldY: number, color: string, duration: number, zoom: number): void {
+   *  worldX/worldY — мировые пиксели (не тайлы).
+   *  sizeScale — множитель размера шрифта (крит чуть крупнее обычного урона). */
+  show(text: string, worldX: number, worldY: number, color: string, duration: number, zoom: number, sizeScale = 1): void {
     const textObj = new Text({
       text,
       style: new TextStyle({
         fontFamily: FONT_PANEL_TITLE,
-        fontSize: Math.round(14 * zoom),
+        fontSize: Math.round(14 * zoom * sizeScale),
         fill: color,
         fontWeight: 'bold',
+        // Обводка — как у цифр ожидаемого урона на подсветке скиллов (TargetingRenderer)
+        stroke: { width: Math.max(1, Math.round(2 * zoom)), color: '#000000' },
       }),
       resolution: window.devicePixelRatio || 1,
     });
@@ -52,8 +55,8 @@ export class FloatingTextRenderer {
       duration,
       easing: Easing.easeOutQuad,
       onUpdate: (p) => {
+        // Текст только поднимается, не растворяясь со временем
         this.textWorldCoords.set(textObj, { worldX, worldY: worldY - 24 * p });
-        textObj.alpha = 1 - p;
       },
       onComplete: () => {
         this.removeText(textObj);

@@ -23,8 +23,8 @@ describe('GameSession targeting', () => {
       players: new Map(),
       items: new Map(),
       abilities: new Map([
-        ['fireball', mockAbility('fireball')],
-        ['magic_slap', mockAbility('magic_slap', { kind: 'magicSlap' })],
+        ['fireball', mockAbility('fireball', { range: 5, aoeRadius: 1, centerDamage: 20, aoeDamage: 10 })],
+        ['magic_slap', mockAbility('magic_slap', { kind: 'magicSlap', range: 5, targetCount: 3, baseDamage: 12 })],
         ['swoop', mockAbility('swoop', { kind: 'swoop', jumpRadius: 2, aoeRadius: 1, baseDamage: 8, cooldown: 2, apCost: 2 })],
       ]),
       maps: new Map(),

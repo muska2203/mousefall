@@ -4,25 +4,21 @@ import type {EnemyEntity, Entity, EntityId} from '../../../src/simulation/types'
 import {advanceToPlayerTurn, createTestSimulation} from '../../helpers/simulation';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
 import type {AbilityTemplate} from '../../../src/content/schemas';
-import {initSkillRegistry} from '../../../src/simulation/skills/index';
 import type {ExecutionNode, GameEvent} from '../../../src/simulation/core-types';
 import {createDefaultAIState, getDerivedAIMode, isEnemyEntity} from '../../../src/simulation/ai/ai-state';
 import {registerStrategy} from '../../../src/simulation/ai/strategy-registry';
 import type {AiStrategyId} from '../../../src/content/ids';
 import {endTurn, tryPrepareAbility} from '../../../src/simulation/ai/ai-helpers';
 import {closeCombat, findVisibleAttackTarget} from '../../../src/simulation/ai/tactics';
-import {registerSkill} from '../../../src/simulation/skills/skillExecutor';
-import {testFireballSkill} from '../../helpers/test-skills';
-
-beforeEach(() => {
-  initSkillRegistry();
-  registerSkill(testFireballSkill);
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 0,
     apCost: 1,
     ...overrides,

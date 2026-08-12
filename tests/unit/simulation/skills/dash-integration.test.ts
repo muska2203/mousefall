@@ -2,12 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
 import { createTestSimulation, advanceToPlayerTurn } from '../../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
@@ -15,6 +10,8 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     kind: 'dash',
     cooldown: 4,
     apCost: 1,
+    distance: 2,
+    bumpDamage: 5,
     ...overrides,
   } as AbilityTemplate;
 }

@@ -2,18 +2,22 @@
  * Рендерер оверлеев таргетинга и превью интентов.
  *
  * Ответственность:
- * - Подсветка валидных клеток (зелёный)
- * - Подсветка выбранных клеток (синий)
- * - Подсветка клетки под мышью (жёлтый)
- * - Подсветка зоны AoE (красный)
+ * - Подсветка клеток: рамка толщиной 2 экранных пикселя с отступом 3 пикселя
+ *   внутрь клетки + полупрозрачная заливка тем же цветом
+ *   (валидные — белые, выбранные — синие, под мышью — жёлтые, AoE — красные,
+ *   подготовленные AI-скиллы — оранжевые)
+ * - Пунктирные линии (автопуть, линия от персонажа к цели каста)
  * - Отображение preview-интентов: урон (число), движение (стрелка), смерть
+ *
+ * Толщина всех рамок и линий задана в экранных пикселях и не масштабируется
+ * zoom'ом камеры (мировые значения делятся на zoom).
  */
 
 import {Container, Graphics, Text, TextStyle} from 'pixi.js';
 import {FONT_PANEL_TITLE} from './fonts';
 import type {Position, RenderInput} from '@presentation/types';
 import {TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
-import {cellCenter, cellRect} from './spritePlacement';
+import {cellCenter, cellRect, type ScreenPoint} from './spritePlacement';
 
 const COLORS = {
   valid: 0xffffff,
@@ -26,16 +30,19 @@ const COLORS = {
   pathEnemy: 0xff4444,    // красный — враг
 };
 
-const ALPHAS = {
-  valid: 0.15,
-  selected: 0.15,
-  hover: 0.15,
-  affected: 0.15,
-  aiPrepared: 0.25,
-  pathPreview: 0.35,
-  pathMove: 0.35,
-  pathEnemy: 0.35,
-};
+/** Толщина рамок и линий в экранных пикселях. */
+const STROKE_WIDTH_PX = 1;
+/** Отступ рамки подсветки внутрь клетки в экранных пикселях. */
+const CELL_INSET_PX = 2;
+/** Длина штриха и промежутка пунктирной линии в экранных пикселях. */
+const DASH_PX = 6;
+const DASH_GAP_PX = 4;
+/** Прозрачность заливки подсветки клеток — одинакова для всех видов подсветки. */
+const CELL_FILL_ALPHA = 0.15;
+/** Прозрачность рамки подсветки клеток. */
+const CELL_FRAME_ALPHA = 0.7;
+/** Прозрачность линий и штрихов: пунктирные линии, отметки концов ходов, стрелки превью. */
+const LINE_ALPHA = 0.8;
 
 export class TargetingRenderer {
   /** Оверлеи клеток — рисуются под сущностями. */
@@ -48,37 +55,64 @@ export class TargetingRenderer {
   /** Мировые координаты текстовых элементов превью (для syncTextLayer в WorldRenderer). */
   public readonly textWorldCoords = new WeakMap<any, { worldX: number; worldY: number }>();
 
+  /**
+   * Состояние линии автопути для покадрового обновления стартовой точки
+   * (линия следует за спрайтом персонажа во время анимации перемещения).
+   */
+  private pathLine: {
+    g: Graphics;
+    path: Position[];
+    color: number;
+    zoom: number;
+    start: ScreenPoint;
+  } | null = null;
+
   constructor() {
     // контейнеры управляются извне (WorldRenderer)
   }
 
-  update(input: RenderInput): void {
+  update(input: RenderInput, playerVisualCenter?: ScreenPoint): void {
     this.clearOverlays();
     this.clearPreviews();
     this.clearPreviewTexts();
 
     const overlay = input.targetingOverlay;
     const zoom = input.zoom;
+    // Стартовая точка линий от персонажа: визуальная позиция спрайта
+    // (следует за анимацией перемещения), в покое совпадает с центром клетки.
+    const player = input.displayState.player;
+    const playerCenter = playerVisualCenter ?? cellCenter(player.x, player.y);
 
     if (overlay) {
       // Оверлеи клеток
       // Порядок наложения: valid → affected → selected → hover
       for (const pos of overlay.valid) {
-        this.drawOverlay(pos, COLORS.valid, ALPHAS.valid);
+        this.drawCellHighlight(pos, COLORS.valid, zoom);
       }
       for (const pos of overlay.affected) {
-        this.drawOverlay(pos, COLORS.affected, ALPHAS.affected);
+        this.drawCellHighlight(pos, COLORS.affected, zoom);
       }
       for (const pos of overlay.selected) {
-        this.drawOverlay(pos, COLORS.selected, ALPHAS.selected);
+        this.drawCellHighlight(pos, COLORS.selected, zoom);
       }
       if (overlay.hover) {
-        this.drawOverlay(overlay.hover, COLORS.hover, ALPHAS.hover);
+        this.drawCellHighlight(overlay.hover, COLORS.hover, zoom);
+      }
+
+      // Пунктирная линия от персонажа до цели при наведении скиллом
+      // на валидную для каста клетку.
+      const hover = overlay.hover;
+      if (hover && overlay.valid.some((p) => p.x === hover.x && p.y === hover.y)) {
+        this.drawDashedLine(
+          [playerCenter, cellCenter(hover.x, hover.y)],
+          COLORS.hover,
+          zoom,
+        );
       }
     }
 
-    // Подсветка автопути: контур целевой клетки + линия пути + отметки концов ходов.
-    // Промежуточные клетки не подсвечиваются.
+    // Подсветка автопути: подсветка целевой клетки + пунктирная линия пути +
+    // отметки концов ходов. Промежуточные клетки не подсвечиваются.
     // Preview (не зафиксирован) — белый; committed к врагу — красный;
     // committed к интерактивному объекту или пустому тайлу — зелёный.
     if (input.highlightedPath && input.highlightedPath.length > 0) {
@@ -90,12 +124,8 @@ export class TargetingRenderer {
           : COLORS.pathMove;
 
       const lastPos = input.highlightedPath[input.highlightedPath.length - 1]!;
-      this.drawTileOutline(lastPos, color);
-      this.drawPathLine(
-        input.highlightedPath,
-        color,
-        { x: input.displayState.player.x, y: input.displayState.player.y },
-      );
+      this.drawCellHighlight(lastPos, color, zoom);
+      this.drawPathLine(input.highlightedPath, color, playerCenter, zoom);
 
       // Отметки тайлов, на которых закончится ход персонажа.
       const turnEndIndices = input.highlightedPathTurnEndIndices;
@@ -107,14 +137,14 @@ export class TargetingRenderer {
         const next = idx < input.highlightedPath.length - 1
           ? input.highlightedPath[idx + 1] ?? null
           : null;
-        this.drawTurnEndMarker(pos, prev, next, color);
+        this.drawTurnEndMarker(pos, prev, next, color, zoom);
       }
     }
 
     // Подсветка зон подготовленных AI-скиллов — всегда, независимо от режима таргетинга игрока
     for (const intent of input.aiPreparedIntents) {
       for (const pos of intent.affectedPositions) {
-        this.drawOverlay(pos, COLORS.aiPrepared, ALPHAS.aiPrepared);
+        this.drawCellHighlight(pos, COLORS.aiPrepared, zoom);
       }
     }
 
@@ -159,31 +189,28 @@ export class TargetingRenderer {
       this.drawDamageNumber({ x, y }, damage, zoom);
     }
     for (const move of moves) {
-      this.drawArrow(move.from, move.to, 0xffffff);
+      this.drawArrow(move.from, move.to, 0xffffff, zoom);
     }
     for (const push of pushes) {
-      this.drawArrow(push.from, push.to, 0xffaa00);
+      this.drawArrow(push.from, push.to, 0xffaa00, zoom);
     }
     for (const pos of deaths) {
       this.drawDeathMarker(pos, zoom);
     }
   }
 
-  private drawOverlay(pos: Position, color: number, alpha: number): void {
+  /**
+   * Подсветка клетки: рамка толщиной STROKE_WIDTH_PX с отступом CELL_INSET_PX
+   * внутрь клетки + полупрозрачная заливка тем же цветом.
+   * Размеры рамки заданы в экранных пикселях и не масштабируются zoom'ом.
+   */
+  private drawCellHighlight(pos: Position, color: number, zoom: number): void {
     const g = new Graphics();
     const {x, y, width, height} = cellRect(pos.x, pos.y);
-    g.rect(x, y, width, height);
-    g.fill({ color, alpha });
-    g.stroke({ width: 1, color, alpha: 0.2 });
-    this.overlayContainer.addChild(g);
-  }
-
-  /** Контур тайла без заливки — для целевой клетки автопути. */
-  private drawTileOutline(pos: Position, color: number): void {
-    const g = new Graphics();
-    const {x, y, width, height} = cellRect(pos.x, pos.y);
-    g.rect(x, y, width, height);
-    g.stroke({ width: 2, color, alpha: 0.8 });
+    const inset = CELL_INSET_PX / zoom;
+    g.rect(x + inset, y + inset, width - inset * 2, height - inset * 2);
+    g.fill({ color, alpha: CELL_FILL_ALPHA });
+    g.stroke({ width: STROKE_WIDTH_PX / zoom, color, alpha: CELL_FRAME_ALPHA });
     this.overlayContainer.addChild(g);
   }
 
@@ -207,14 +234,15 @@ export class TargetingRenderer {
     this.previewTextContainer.addChild(text);
   }
 
-  private drawArrow(from: Position, to: Position, color: number): void {
+  private drawArrow(from: Position, to: Position, color: number, zoom: number): void {
     const g = new Graphics();
     const {x: fromX, y: fromY} = cellCenter(from.x, from.y);
     const {x: toX, y: toY} = cellCenter(to.x, to.y);
 
+    const strokeWidth = STROKE_WIDTH_PX / zoom;
     g.moveTo(fromX, fromY);
     g.lineTo(toX, toY);
-    g.stroke({ width: 2, color, alpha: 0.8 });
+    g.stroke({ width: strokeWidth, color, alpha: LINE_ALPHA });
 
     // Стрелочка
     const angle = Math.atan2(toY - fromY, toX - fromX);
@@ -230,25 +258,99 @@ export class TargetingRenderer {
       toX - arrowLen * Math.cos(angle + arrowAngle),
       toY - arrowLen * Math.sin(angle + arrowAngle),
     );
-    g.stroke({ width: 2, color, alpha: 0.8 });
+    g.stroke({ width: strokeWidth, color, alpha: LINE_ALPHA });
 
     this.previewContainer.addChild(g);
   }
 
-  private drawPathLine(path: Position[], color: number, from: Position): void {
+  /** Пунктирная линия автопути от стартовой точки через все клетки пути. */
+  private drawPathLine(path: Position[], color: number, start: ScreenPoint, zoom: number): void {
     if (path.length === 0) return;
 
     const g = new Graphics();
-    let {x, y} = cellCenter(from.x, from.y);
-
-    g.moveTo(x, y);
-    for (const pos of path) {
-      ({x, y} = cellCenter(pos.x, pos.y));
-      g.lineTo(x, y);
-    }
-    g.stroke({ width: 2, color, alpha: 0.6 });
-
     this.overlayContainer.addChild(g);
+    this.pathLine = { g, path, color, zoom, start };
+    this.strokePathLine();
+  }
+
+  /**
+   * Обновить стартовую точку линии автопути (вызывается покадрово из тикера,
+   * чтобы линия следовала за спрайтом персонажа во время анимации перемещения).
+   */
+  updatePathStart(center: ScreenPoint): void {
+    if (!this.pathLine) return;
+    if (this.pathLine.start.x === center.x && this.pathLine.start.y === center.y) return;
+    this.pathLine.start = center;
+    this.strokePathLine();
+  }
+
+  /** Перерисовать линию автопути от текущей стартовой точки. */
+  private strokePathLine(): void {
+    const pl = this.pathLine;
+    if (!pl) return;
+    const points: ScreenPoint[] = [pl.start];
+    for (const pos of pl.path) {
+      points.push(cellCenter(pos.x, pos.y));
+    }
+    pl.g.clear();
+    this.strokeDashed(pl.g, points, pl.color, pl.zoom);
+  }
+
+  /**
+   * Нарисовать пунктирную ломаную по точкам в overlayContainer.
+   * Толщина линии, длина штриха и промежутка — в экранных пикселях,
+   * не масштабируются zoom'ом. Паттерн пунктира не сбрасывается на изломах.
+   */
+  private drawDashedLine(points: ScreenPoint[], color: number, zoom: number): void {
+    if (points.length < 2) return;
+
+    const g = new Graphics();
+    this.strokeDashed(g, points, color, zoom);
+    this.overlayContainer.addChild(g);
+  }
+
+  /** Отрисовать пунктирную ломаную в существующий Graphics (без добавления в контейнер). */
+  private strokeDashed(g: Graphics, points: ScreenPoint[], color: number, zoom: number): void {
+    if (points.length < 2) return;
+
+    const dash = DASH_PX / zoom;
+    const gap = DASH_GAP_PX / zoom;
+
+    let cur = points[0]!;
+    let penDown = true;
+    let phaseLeft = dash;
+    g.moveTo(cur.x, cur.y);
+
+    for (let i = 1; i < points.length; i++) {
+      const end = points[i]!;
+      const dx = end.x - cur.x;
+      const dy = end.y - cur.y;
+      let dist = Math.hypot(dx, dy);
+      if (dist === 0) continue;
+      // Единичный вектор направления сегмента — вычисляется один раз,
+      // до того как dist начнёт уменьшаться в цикле.
+      const ux = dx / dist;
+      const uy = dy / dist;
+      while (dist > 0) {
+        const step = Math.min(dist, phaseLeft);
+        const nx = cur.x + ux * step;
+        const ny = cur.y + uy * step;
+        if (penDown) {
+          g.lineTo(nx, ny);
+        } else {
+          g.moveTo(nx, ny);
+        }
+        cur = { x: nx, y: ny };
+        phaseLeft -= step;
+        dist -= step;
+        if (phaseLeft <= 0) {
+          penDown = !penDown;
+          phaseLeft = penDown ? dash : gap;
+        }
+      }
+    }
+
+    g.stroke({ width: STROKE_WIDTH_PX / zoom, color, alpha: LINE_ALPHA });
   }
 
   /** Нарисовать отметку конца хода — короткий перпендикулярный штрих на тайле. */
@@ -257,6 +359,7 @@ export class TargetingRenderer {
     prev: Position,
     next: Position | null,
     color: number,
+    zoom: number,
   ): void {
     const {x: cx, y: cy} = cellCenter(pos.x, pos.y);
 
@@ -293,7 +396,7 @@ export class TargetingRenderer {
     const g = new Graphics();
     g.moveTo(cx - perpX * markerLen, cy - perpY * markerLen);
     g.lineTo(cx + perpX * markerLen, cy + perpY * markerLen);
-    g.stroke({ width: 2, color, alpha: 0.8 });
+    g.stroke({ width: STROKE_WIDTH_PX / zoom, color, alpha: LINE_ALPHA });
 
     this.overlayContainer.addChild(g);
   }
@@ -320,6 +423,7 @@ export class TargetingRenderer {
     for (let i = this.overlayContainer.children.length - 1; i >= 0; i--) {
       this.overlayContainer.children[i]!.destroy();
     }
+    this.pathLine = null;
   }
 
   private clearPreviews(): void {

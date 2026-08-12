@@ -7,6 +7,10 @@ export const fireball = {
   "cooldown": 0,
   "apCost": 1,
   "damageTag": "damage.magical.fire",
+  "range": 5,
+  "aoeRadius": 1,
+  "centerDamage": 20,
+  "aoeDamage": 10,
   "tags": [
     "delivery.ability",
     "attack.ranged",

@@ -77,7 +77,6 @@ import {collectFixedStatModifiers} from "@simulation/systems/item-affix-roll.ts"
 import {getWeaponDamageDistribution, getWeaponWeightForTag} from "@simulation/systems/tags/weapon-tags.ts";
 import {getAbilityTags} from "@simulation/systems/tags/ability-tags.ts";
 import {meetsWeaponRequirements} from "@simulation/systems/abilities/ability-requirements.ts";
-import {initSkillRegistry} from "@simulation/skills/index.ts";
 import {getItem, tryGetAbility, tryGetItem} from "@content/registry";
 import {tickEntityStatusEffects, tickObjectStatusEffects} from "@simulation/systems/status-effect-ticker.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
@@ -1192,7 +1191,6 @@ export class ActionHandlerRegistry {
 }
 
 export function defaultActionHandlerRegistry(debugContext: DebugContext = { enabled: false }): ActionHandlerRegistry {
-    initSkillRegistry();
     const registry = new ActionHandlerRegistry();
 
     registry.register('MOVE', moveEntity);

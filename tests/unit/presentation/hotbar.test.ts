@@ -7,13 +7,16 @@ import '@i18n/config';
 import { GameSession } from '../../../src/presentation/gameSession';
 import { makeGameState, makePlayer } from '../../fixtures/gameState';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
-import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import type { AbilityTemplate, ItemTemplate } from '../../../src/content/schemas';
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 0,
     apCost: 1,
     ...overrides,
@@ -36,7 +39,6 @@ function mockItem(id: string, overrides: Partial<ItemTemplate> & Record<string, 
 describe('GameSession hotbar', () => {
   beforeEach(() => {
     resetRegistry();
-    initSkillRegistry();
     initRegistry({
       entities: new Map(),
       players: new Map(),

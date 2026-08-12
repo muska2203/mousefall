@@ -43,7 +43,7 @@
   - Единый тип `EquipmentSubtypeId` = объединение; refine проверяет, что `subtype` принадлежит набору своего `type`.
   - `unarmed` — подтип fallback-оружия; на него аффиксы не выпадают (нет модификаторов с таким `applicableSubtypes`).
 - `weapon.baseDamage` заменяется на `weapon.damage: { min: int ≥ 0, max: int ≥ min }`. Стартовый меч: `{ min: 2, max: 4 }`. Безоружный: `{ min: 1, max: 1 }`.
-- `weapon.damageFormulaId` **удаляется** вместе с `WEAPON_FORMULA_IDS` и `src/simulation/systems/stats/weapon-formulas.ts`. Статы (str/int/dex) больше не добавляют урон оружия; они остаются в формулах скиллов (`src/simulation/skills/damageFormula.ts` — не трогаем).
+- `weapon.damageFormulaId` **удаляется** вместе с `WEAPON_FORMULA_IDS` и `src/simulation/systems/stats/weapon-formulas.ts`. Статы (str/int/dex) больше не добавляют урон оружия; они остаются в формулах скиллов (`src/simulation/skills/damageFormula.ts` — не трогаем; формулы скиллов впоследствии тоже удалены 2026-08-12 — урон способностей стал фиксированными значениями из шаблона).
 - Поле `fixedModifiers: string[]` (default `[]`) — **фирменные модификаторы предмета**: ID из категории `modifiers`, детерминированные свойства шаблона (и stat-, и rule-модификаторы). Заменяет удалённые 2026-08-09 поля `equipModifiers` и `ruleIds`: единый источник свойств предмета — модификаторы. Поле только у экипировки (`weapon`/`armor`/`amulet`); расходники/ключи/золото не затронуты (у них этих полей не было).
 
 ### 3.2. Категория контента `modifiers`

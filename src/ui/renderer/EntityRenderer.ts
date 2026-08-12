@@ -11,7 +11,7 @@ import type {DisplayState} from '@presentation/displayState/types';
 import {FOG_EXPLORED_SPRITE_ALPHA, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import type {ResolvedSpritePlacement} from '@presentation/spritePlacementResolver';
 import {getSpritePlacement} from '@presentation/spritePlacementResolver';
-import {applyPlacement, placementAnchorPoint, placementSize} from './spritePlacement';
+import {applyPlacement, placementAnchorPoint, placementSize, type ScreenPoint} from './spritePlacement';
 import {getDoorSprite, getEnemySprite, getItemSprite, getPlayerSprite, getPoiSprite, getPropSprite, getStairsSprite, getTrapSprite} from './spriteRegistry';
 import {getTexture, getTextureSync} from './TextureCache';
 import {resolveEntityFrameSprite} from '@utils/assetResolver';
@@ -43,6 +43,25 @@ export class EntityRenderer {
   /** Получить спрайт сущности по id (используется внешними renderer'ами). */
   getSprite(id: string): Sprite | undefined {
     return this.sprites.get(id);
+  }
+
+  /**
+   * Текущий визуальный центр клетки сущности в мировых координатах.
+   * В отличие от логической позиции учитывает идущую анимацию перемещения:
+   * текущая позиция спрайта (его опорная точка) переводится в центр сжатой
+   * клетки — смещение «опорная точка → центр» постоянно для любой клетки.
+   */
+  getVisualCenter(id: string): ScreenPoint | undefined {
+    const sprite = this.sprites.get(id);
+    if (!sprite) return undefined;
+    const placement = this.placements.get(id)?.placement ?? getSpritePlacement(undefined, 'actor');
+    const offsetX = TILE_SIZE * (placement.anchorX - 0.5);
+    // Для «стоячих» спрайтов опорная точка — низ спрайта (anchorY),
+    // для сплющенных (flattenY) — верх спрайта, лежащего на сжатой сетке.
+    const offsetY = placement.flattenY
+      ? -TILE_HEIGHT / 2
+      : TILE_HEIGHT * (placement.anchorY - 0.5);
+    return { x: sprite.x - offsetX, y: sprite.y - offsetY };
   }
 
   /** Синхронное обновление спрайтов на основе текущего DisplayState.

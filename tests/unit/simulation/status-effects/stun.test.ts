@@ -4,7 +4,6 @@ import type { Entity, EntityId, ExecutionNode, GameEvent } from '../../../../src
 import { createTestSimulation, advanceToPlayerTurn } from '../../../helpers/simulation';
 import { getDerivedAIMode } from '../../../../src/simulation/ai/ai-state';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
 
 function findEvents(node: ExecutionNode, predicate: (event: GameEvent) => boolean): GameEvent[] {
@@ -17,16 +16,14 @@ function findEvents(node: ExecutionNode, predicate: (event: GameEvent) => boolea
   return result;
 }
 
-beforeEach(() => {
-  initSkillRegistry();
-});
-
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'dash',
     cooldown: 0,
     apCost: 1,
+    distance: 2,
+    bumpDamage: 5,
     ...overrides,
   } as AbilityTemplate;
 }

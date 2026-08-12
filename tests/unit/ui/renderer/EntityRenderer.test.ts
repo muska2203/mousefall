@@ -229,6 +229,25 @@ describe('EntityRenderer', () => {
     resetRegistry();
   });
 
+  it('getVisualCenter returns the compressed-grid cell center for a resting sprite', () => {
+    const renderer = new EntityRenderer();
+    const input = makeRenderInput();
+    renderer.update(input);
+
+    const center = renderer.getVisualCenter('player');
+
+    // Игрок стоит на (0,0): центр сжатой клетки (TILE_SIZE/2, TILE_HEIGHT/2).
+    expect(center).toBeDefined();
+    expect(center!.x).toBeCloseTo(16, 5);
+    expect(center!.y).toBeCloseTo(TILE_HEIGHT / 2, 5);
+  });
+
+  it('getVisualCenter returns undefined for unknown entity', () => {
+    const renderer = new EntityRenderer();
+
+    expect(renderer.getVisualCenter('unknown')).toBeUndefined();
+  });
+
   it('animateMove returns a Promise<void>', async () => {
     const renderer = new EntityRenderer();
     const input = makeRenderInput();

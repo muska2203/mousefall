@@ -459,7 +459,6 @@ export function nextEntityId(state: GameState, prefix: string): EntityId {
 
 /**
  * Type guard: проверяет, что сущность — игрок или враг (CombatEntity).
- * Используется в skill executors перед вызовом damageFormulas.
  */
 export function isCombatEntity(e: Entity): e is PlayerEntity | EnemyEntity {
   return e.type === 'player' || e.type === 'enemy';

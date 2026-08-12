@@ -943,6 +943,10 @@ describe('GameSession auto-path integration', () => {
       abilities: new Map([['fireball', {
         id: 'fireball',
         kind: 'fireball',
+        range: 5,
+        aoeRadius: 1,
+        centerDamage: 20,
+        aoeDamage: 10,
         cooldown: 0,
         apCost: 1,
         aiPreparable: false,
@@ -1160,7 +1164,7 @@ describe('GameSession auto-path integration', () => {
     expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([1]);
   });
 
-  it('turn end indices stop before door when only enough AP to open it', () => {
+  it('turn end indices account for next turn when AP only covers opening the door', () => {
     const player = makePlayer({ x: 5, y: 5, ap: 1, maxAp: 2 });
     const door = makeDoor({ x: 5, y: 6 });
     const item = makeFloorItemContainer({ x: 5, y: 7 });
@@ -1177,8 +1181,11 @@ describe('GameSession auto-path integration', () => {
 
     session.handleFieldClick({ x: 5, y: 7 });
 
+    // AP хватает только на открытие двери (1 из 1): во время анимации
+    // текущие AP = 0, поэтому отметка считается от очков следующего хода
+    // (maxAp=2, два шага до цели → конец хода на индексе 1).
     const vm = session.getViewModel();
-    expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([]);
+    expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([1]);
   });
 
   it('turn end indices end on door tile when AP covers open + move', () => {
@@ -1200,6 +1207,27 @@ describe('GameSession auto-path integration', () => {
 
     const vm = session.getViewModel();
     expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([0]);
+  });
+
+  it('turn end indices start from next turn when AP is zero', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 0, maxAp: 2 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player]]),
+    });
+    for (let y = 6; y <= 8; y++) {
+      state.explored[y]![5] = true;
+      state.visible[y]![5] = true;
+    }
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.setFieldHover({ x: 5, y: 8 });
+
+    // При нулевых AP отметки считаются от очков следующего хода:
+    // путь из 3 шагов, maxAp=2 → конец хода на 2-м шаге (индекс 1).
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.highlightedPathTurnEndIndices).toEqual([1]);
   });
 
   it('turn end indices for open target door mark the door tile', () => {

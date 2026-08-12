@@ -4,17 +4,16 @@ import type { Entity, EntityId } from '../../../src/simulation/types';
 import { createTestSimulation, advanceToPlayerTurn } from '../../helpers/simulation';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import type { AbilityTemplate, ItemTemplate } from '../../../src/content/schemas';
-import { initSkillRegistry } from '../../../src/simulation/skills/index';
 import { expectRejected } from '../../helpers/simulation-asserts';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 0,
     apCost: 1,
     ...overrides,

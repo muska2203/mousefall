@@ -133,13 +133,20 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 `AbilityTemplateSchema` — discriminated union по полю `kind` (дискриминатор вида механики, camelCase — не контентный id). Общая база всех членов: `id`, `spriteId`, `cooldown`, `apCost` (число или `"all"`), `aiPreparable`, `damageTag?` (тип урона ability-based скиллов), `requiredWeaponTags` (требования к оружию для weapon-based), `tags`, `ruleIds`.
 
-- **Параметризованные виды** несут параметры механики прямо в шаблоне (баланс настраивается контентом); исполнитель собирается фабрикой в `getSkillExecutor`, регистрация не нужна:
-  - `kind: 'selfBuff'` — `statusType` (валидируется: статус обязан существовать), `duration` — наложение статуса на кастера (`counterattack`, `bulwark`);
-  - `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0) — прыжок + площадной удар (`swoop` 2/1/8, `guardian_swoop` 3/1/10);
-  - `kind: 'groundSlam'` — `radius` (≥ 1), `baseDamage` (≥ 0) — площадной удар по квадрату вокруг кастера по всем существам кроме кастера; DAMAGE-интенты несут тег `skill.<id>` для контентных правил (`ground_slam` 2/12).
-- **Legacy-виды без параметров** — только `kind`: `'fireball'`, `'magicSlap'`, `'dash'`, `'cleave'`, `'suddenStrike'`; исполнители регистрируются по id в `src/simulation/skills/index.ts`, параметры механики по-прежнему в коде (параметризация — точечно, когда понадобится).
+Все виды несут параметры механики прямо в шаблоне (баланс настраивается контентом); исполнитель собирается фабрикой в `getSkillExecutor` (`KIND_FACTORIES` покрывает все виды — забытый ловится компилятором), регистрация исполнителей отсутствует (legacy-реестр удалён 2026-08-12):
 
-Новый экземпляр параметризованного вида — чистый контент (шаблон + тексты); новая механика — новый член union + фабрика в simulation. Рецепт: `docs/recipes/add-ability.md`; разрешение исполнителей — `src/simulation/AGENTS.md`.
+- `kind: 'selfBuff'` — `statusType` (валидируется: статус обязан существовать), `duration` — наложение статуса на кастера (`counterattack`, `bulwark`);
+- `kind: 'swoop'` — `jumpRadius` (≥ 1), `aoeRadius` (≥ 0), `baseDamage` (≥ 0) — прыжок + площадной удар (`swoop` 2/1/8, `guardian_swoop` 3/1/10);
+- `kind: 'groundSlam'` — `radius` (≥ 1), `baseDamage` (≥ 0) — площадной удар по квадрату вокруг кастера по всем существам кроме кастера; DAMAGE-интенты несут тег `skill.<id>` для контентных правил (`ground_slam` 2/12);
+- `kind: 'fireball'` — `range` (≥ 1), `aoeRadius` (≥ 0), `centerDamage`, `aoeDamage` — урон по квадрату вокруг выбранной клетки (`fireball` 5/1/20/10);
+- `kind: 'magicSlap'` — `range` (≥ 1), `targetCount` (≥ 1), `baseDamage` — урон по нескольким целям (`magic_slap` 5/3/12);
+- `kind: 'dash'` — `distance` (≥ 1), `bumpDamage` — рывок с уроном и отталкиванием акторов на пути (`dash` 2/5);
+- `kind: 'suddenStrike'` — `silenceDuration` (≥ 1) — удар оружием, немота цели с подготовленной способностью (`sudden_strike` 2);
+- `kind: 'cleave'` — без параметров — удар оружием по дуге из трёх клеток (`cleave`).
+
+Урон способностей — фиксированные значения из шаблона, без скейлинга от характеристик и уровня (формулы `damageFormula.ts` удалены 2026-08-12); модификаторы урона — через стандартные модификаторы и контентные правила. Исключение — оружейные виды (`cleave`, `suddenStrike`): урон — ролл экипированного оружия.
+
+Новый экземпляр существующего вида — чистый контент (шаблон + тексты); новая механика — новый член union + фабрика в simulation. Рецепт: `docs/recipes/add-ability.md`; разрешение исполнителей — `src/simulation/AGENTS.md`.
 
 ## Реестр статусов
 

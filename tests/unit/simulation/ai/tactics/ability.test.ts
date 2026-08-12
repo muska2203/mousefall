@@ -8,7 +8,6 @@
 
 import {beforeEach, describe, expect, it} from 'vitest';
 import {findCollisionLanding} from '@simulation/ai/tactics';
-import {initSkillRegistry} from '@simulation/skills';
 import {initRegistry, resetRegistry} from '@content/registry';
 import type {AbilityTemplate} from '@content/schemas';
 import {createObjectContent, makeDoor, makeEnemy, makeGameState, makePlayer, makeTestMap} from '../../../../fixtures/gameState';
@@ -31,7 +30,6 @@ function mockSwoopAbility(): AbilityTemplate {
 }
 
 beforeEach(() => {
-  initSkillRegistry();
   resetRegistry();
   initRegistry(createObjectContent({
     abilities: new Map([[TEST_SWOOP_ID, mockSwoopAbility()]]),

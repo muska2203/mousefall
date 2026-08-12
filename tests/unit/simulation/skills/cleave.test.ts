@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {
   makeDoor,
   makeEnemy,
@@ -7,17 +7,15 @@ import {
   makePlayer,
   makeStairs,
 } from '../../../fixtures/gameState';
-import {cleaveSkill} from '../../../../src/simulation/skills/executors/cleaveSkill';
+import {createCleaveSkill} from '../../../../src/simulation/skills/executors/cleaveSkill';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate, ItemTemplate} from '../../../../src/content/schemas';
 import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
-import {initSkillRegistry} from '../../../../src/simulation/skills/index';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 
-beforeEach(() => {
-  initSkillRegistry();
-});
+/** Исполнитель, собранный фабрикой для боевого шаблона cleave. */
+const cleaveSkill = createCleaveSkill({ id: 'cleave' });
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
@@ -259,7 +257,7 @@ describe('cleaveSkill', () => {
     expect(intents.some(i => i.type === 'COUNTER_ATTACK')).toBe(false);
   });
 
-  it('использует damageTag из JSON и не падает без него с fallback', () => {
+  it('без damageTag в шаблоне использует штатный fallback-тег', () => {
     resetRegistry();
     initRegistry({
       entities: new Map(),
@@ -277,8 +275,6 @@ describe('cleaveSkill', () => {
       tileEffects: new Map(),
       tileEffectStatuses: new Map(),
     });
-
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const state = makeGameState();
     const player = makePlayer({
@@ -298,8 +294,5 @@ describe('cleaveSkill', () => {
 
     expect(damageTileIntents).toHaveLength(3);
     expect(damageTileIntents[0]!.tags).toContain('damage.physical.slashing');
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('damageTag'));
-
-    warnSpy.mockRestore();
   });
 });

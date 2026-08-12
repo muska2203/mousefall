@@ -7,26 +7,25 @@ import {
   makeFloorItemContainer,
   makeStairs,
 } from '../../../fixtures/gameState';
-import { suddenStrikeSkill } from '../../../../src/simulation/skills/executors/suddenStrikeSkill';
+import { createSuddenStrikeSkill } from '../../../../src/simulation/skills/executors/suddenStrikeSkill';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import type { EntityId } from '../../../../src/simulation/types';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'suddenStrike',
     cooldown: 2,
+    silenceDuration: 2,
     tags: [],
     ...overrides,
   } as AbilityTemplate;
 }
+
+/** Исполнитель, собранный фабрикой с параметрами боевого шаблона sudden_strike. */
+const suddenStrikeSkill = createSuddenStrikeSkill({ id: 'sudden_strike', silenceDuration: 2 });
 
 describe('suddenStrikeSkill', () => {
   beforeEach(() => {

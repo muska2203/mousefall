@@ -141,12 +141,11 @@
 
 ## Разрешение исполнителей способностей
 
-`getSkillExecutor` (`skills/skillExecutor.ts`) разрешает исполнитель в два пути:
+`getSkillExecutor` (`skills/skillExecutor.ts`) собирает исполнитель фабрикой по `kind` шаблона (`AbilityTemplateSchema` — discriminated union по `kind`): карта `KIND_FACTORIES` покрывает все виды (`selfBuff`, `swoop`, `groundSlam`, `fireball`, `magicSlap`, `dash`, `suddenStrike`, `cleave`) — забытый вид ловится компилятором. Исполнитель собирается из параметров шаблона и кэшируется; регистрации исполнителей не существует (legacy-реестр `registerSkill`/`initSkillRegistry` удалён 2026-08-12).
 
-1. **Фабрика по `kind` шаблона** — для параметризованных видов (`AbilityTemplateSchema` — discriminated union по `kind`): карта `KIND_FACTORIES` (`selfBuff` → `createSelfBuffSkill`, `swoop` → `createSwoopSkill`, `groundSlam` → `createGroundSlamSkill`). Исполнитель собирается из параметров шаблона и кэшируется в реестре. У kind с фабрикой зарегистрированного исполнителя быть не должно — неоднозначность устранена.
-2. **Legacy-реестр по id** — для видов без параметров (`fireball`, `magicSlap`, `dash`, `cleave`, `suddenStrike`): исполнители регистрируются в `initSkillRegistry` (`skills/index.ts`).
+Урон способностей — фиксированные значения из параметров шаблона (без скейлинга от характеристик и уровня; реестр формул `damageFormula.ts` удалён 2026-08-12). Исключение — оружейные виды (`cleave`, `suddenStrike`): урон — ролл оружия (`rollWeaponDamage`). Модификаторы урона способностей вешаются через стандартные модификаторы и контентные правила.
 
-Новая механика = новый член union + фабрика в `KIND_FACTORIES`; новый экземпляр существующего параметризованного вида = чистый контент (шаблон + тексты).
+Новая механика = новый член union + фабрика в `KIND_FACTORIES`; новый экземпляр существующего вида = чистый контент (шаблон + тексты).
 
 ---
 

@@ -1,6 +1,6 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest';
 import { makeGameState, makePlayer, makeEnemy, makeDoor } from '../../../fixtures/gameState';
-import { magicSlapSkill } from '../../../../src/simulation/skills/executors/magicSlapSkill';
+import { createMagicSlapSkill } from '../../../../src/simulation/skills/executors/magicSlapSkill';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
 
@@ -8,10 +8,22 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
   return {
     id,
     kind: 'magicSlap',
+    damageTag: 'damage.magical.electric',
+    range: 5,
+    targetCount: 3,
+    baseDamage: 12,
     cooldown: 2,
     ...overrides,
   } as AbilityTemplate;
 }
+
+/** Исполнитель, собранный фабрикой с параметрами боевого шаблона magic_slap. */
+const magicSlapSkill = createMagicSlapSkill({
+  id: 'magic_slap',
+  range: 5,
+  targetCount: 3,
+  baseDamage: 12,
+});
 
 describe('magicSlapSkill', () => {
   beforeEach(() => {

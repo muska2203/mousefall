@@ -9,7 +9,6 @@ import type {
     PlayerTemplate,
     StatusTemplate,
 } from '../../src/content/schemas';
-import {initSkillRegistry} from '../../src/simulation/skills/index';
 import {defaultTestMapParams, makeEnemy} from '../fixtures/gameState';
 import type {EnemyEntity} from '../../src/simulation/types';
 import {
@@ -96,6 +95,10 @@ function mockAbility(id: string, ruleIds: string[] = []): AbilityTemplate {
     return {
         id,
         kind: 'fireball',
+        range: 5,
+        aoeRadius: 1,
+        centerDamage: 20,
+        aoeDamage: 10,
         cooldown: 0,
         apCost: 1,
         aiPreparable: false,
@@ -134,7 +137,6 @@ function createEnemy(
 }
 
 beforeEach(() => {
-    initSkillRegistry();
     resetRegistry();
     initRegistry({
         entities: new Map(),

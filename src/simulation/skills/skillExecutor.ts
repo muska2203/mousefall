@@ -6,6 +6,11 @@ import type {AbilityTemplate} from '@content/schemas';
 import {createSelfBuffSkill} from '@simulation/skills/executors/selfBuffSkill';
 import {createSwoopSkill} from '@simulation/skills/executors/swoopSkill';
 import {createGroundSlamSkill} from '@simulation/skills/executors/groundSlamSkill';
+import {createFireballSkill} from '@simulation/skills/executors/fireballSkill';
+import {createMagicSlapSkill} from '@simulation/skills/executors/magicSlapSkill';
+import {createDashSkill} from '@simulation/skills/executors/dashSkill';
+import {createSuddenStrikeSkill} from '@simulation/skills/executors/suddenStrikeSkill';
+import {createCleaveSkill} from '@simulation/skills/executors/cleaveSkill';
 
 export interface SkillExecutor {
   id: string;
@@ -26,20 +31,15 @@ export interface SkillExecutor {
   resolve(state: GameState, caster: Entity, targets: Position[]): Intent[];
 }
 
-/** Реестр SkillExecutor'ов */
-const skillRegistry = new Map<string, SkillExecutor>();
-
-export function registerSkill(skill: SkillExecutor): void {
-  skillRegistry.set(skill.id, skill);
-}
+/** Кэш собранных SkillExecutor'ов (по контентному id способности). */
+const executorCache = new Map<string, SkillExecutor>();
 
 /**
  * Фабрики исполнителей по виду способности (kind шаблона).
- * У kind с фабрикой зарегистрированного в реестре исполнителя быть не должно:
+ * Каждый kind union обязан иметь фабрику — забытый вид ловится компилятором:
  * исполнитель собирается из параметров шаблона и кэшируется.
- * Legacy-виды без фабрики разрешаются через реестр по id.
  */
-const KIND_FACTORIES: Partial<Record<AbilityTemplate['kind'], (template: AbilityTemplate) => SkillExecutor>> = {
+const KIND_FACTORIES: Record<AbilityTemplate['kind'], (template: AbilityTemplate) => SkillExecutor> = {
   selfBuff: (template) => {
     if (template.kind !== 'selfBuff') throw new Error(`Ожидался kind 'selfBuff', получен '${template.kind}'`);
     return createSelfBuffSkill({
@@ -65,24 +65,57 @@ const KIND_FACTORIES: Partial<Record<AbilityTemplate['kind'], (template: Ability
       baseDamage: template.baseDamage,
     });
   },
+  fireball: (template) => {
+    if (template.kind !== 'fireball') throw new Error(`Ожидался kind 'fireball', получен '${template.kind}'`);
+    return createFireballSkill({
+      id: template.id,
+      range: template.range,
+      aoeRadius: template.aoeRadius,
+      centerDamage: template.centerDamage,
+      aoeDamage: template.aoeDamage,
+    });
+  },
+  magicSlap: (template) => {
+    if (template.kind !== 'magicSlap') throw new Error(`Ожидался kind 'magicSlap', получен '${template.kind}'`);
+    return createMagicSlapSkill({
+      id: template.id,
+      range: template.range,
+      targetCount: template.targetCount,
+      baseDamage: template.baseDamage,
+    });
+  },
+  dash: (template) => {
+    if (template.kind !== 'dash') throw new Error(`Ожидался kind 'dash', получен '${template.kind}'`);
+    return createDashSkill({
+      id: template.id,
+      distance: template.distance,
+      bumpDamage: template.bumpDamage,
+    });
+  },
+  suddenStrike: (template) => {
+    if (template.kind !== 'suddenStrike') throw new Error(`Ожидался kind 'suddenStrike', получен '${template.kind}'`);
+    return createSuddenStrikeSkill({
+      id: template.id,
+      silenceDuration: template.silenceDuration,
+    });
+  },
+  cleave: (template) => {
+    if (template.kind !== 'cleave') throw new Error(`Ожидался kind 'cleave', получен '${template.kind}'`);
+    return createCleaveSkill({ id: template.id });
+  },
 };
 
 export function getSkillExecutor(abilityId: string): SkillExecutor | undefined {
-  // Шаблон с параметризованным kind: исполнитель собирается фабрикой
-  // из параметров шаблона и кэшируется в реестре.
+  // Исполнитель собирается фабрикой по kind шаблона
+  // из параметров шаблона и кэшируется.
   const template = tryGetAbility(abilityId);
-  if (template) {
-    const factory = KIND_FACTORIES[template.kind];
-    if (factory) {
-      const cached = skillRegistry.get(abilityId);
-      if (cached) return cached;
+  if (!template) return undefined;
 
-      const executor = factory(template);
-      skillRegistry.set(abilityId, executor);
-      return executor;
-    }
-  }
+  const factory = KIND_FACTORIES[template.kind];
+  const cached = executorCache.get(abilityId);
+  if (cached) return cached;
 
-  // Legacy-виды: исполнитель регистрируется по id в initSkillRegistry.
-  return skillRegistry.get(abilityId);
+  const executor = factory(template);
+  executorCache.set(abilityId, executor);
+  return executor;
 }

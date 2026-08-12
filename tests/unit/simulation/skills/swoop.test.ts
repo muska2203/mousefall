@@ -4,14 +4,9 @@ import {createSwoopSkill} from '../../../../src/simulation/skills/executors/swoo
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate} from '../../../../src/content/schemas';
 import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
-import {initSkillRegistry} from '../../../../src/simulation/skills/index';
 import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 import '@simulation/ai/hunter-strategy';
 import {ExecutionBuilder} from '@simulation/systems/actions/types';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
@@ -21,6 +16,7 @@ function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): Abil
     aoeRadius: 1,
     baseDamage: 8,
     cooldown: 2,
+    damageTag: 'damage.physical.blunt',
     tags: ['delivery.ability', 'delivery.movement', 'attack.melee', 'target.aoe', 'effect.knockback'],
     ...overrides,
   } as AbilityTemplate;
@@ -304,7 +300,7 @@ describe('guardian_swoop (босс-вариант, kind swoop с дальнос�
     expect(jumpIntents).toHaveLength(1);
     expect(jumpIntents[0]).toMatchObject({ type: 'JUMP', entityId: player.id, dx: 3, dy: 0 });
     expect(damageTileIntents).toHaveLength(9);
-    // Формула swoop_slam: round(baseDamage × (1 + str×0.12) × (1 + level×0.05)) = round(10 × 1.05) = 11.
-    expect(damageTileIntents.every(i => i.damage === 11)).toBe(true);
+    // Урон плоский: baseDamage шаблона без скейлинга от характеристик и уровня.
+    expect(damageTileIntents.every(i => i.damage === 10)).toBe(true);
   });
 });

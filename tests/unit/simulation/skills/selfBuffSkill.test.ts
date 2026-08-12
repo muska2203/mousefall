@@ -4,7 +4,7 @@
  * Проверяет:
  * - фабрику createSelfBuffSkill (target mode, цели, resolve → APPLY_STATUS на кастера);
  * - разрешение getSkillExecutor: шаблон с kind 'selfBuff' получает generic-исполнитель
- *   фабрикой по kind (с кэшированием), шаблон legacy-вида без регистрации — undefined;
+ *   фабрикой по kind (с кэшированием), неизвестная способность — undefined;
  * - интеграцию каста: статус накладывается, кулдаун выставляется.
  */
 
@@ -50,7 +50,6 @@ function initMockRegistry(): void {
         apCost: 1,
         tags: ['delivery.ability', 'target.self', 'buff'],
       })],
-      ['fireball', mockAbility('fireball', { kind: 'fireball', cooldown: 3, apCost: 2 })],
     ]),
     maps: new Map(),
     doors: new Map(),
@@ -139,8 +138,7 @@ describe('getSkillExecutor: разрешение kind selfBuff', () => {
     expect(getSkillExecutor('bulwark')).toBe(getSkillExecutor('bulwark'));
   });
 
-  it('возвращает undefined для legacy-вида без регистрации и для неизвестной способности', () => {
-    expect(getSkillExecutor('fireball')).toBeUndefined();
+  it('возвращает undefined для неизвестной способности', () => {
     expect(getSkillExecutor('unknown_ability')).toBeUndefined();
   });
 });

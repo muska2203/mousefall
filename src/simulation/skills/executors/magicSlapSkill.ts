@@ -2,49 +2,56 @@ import {Attackable, Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
-import {damageFormulas} from '@simulation/skills/damageFormula';
 import {getDamageablePositionsWithinRange} from '@simulation/skills/targeting';
-import {isCombatEntity, isDamageable} from '@simulation/state';
+import {isDamageable} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
 
-export const magicSlapSkill: SkillExecutor = {
-  id: 'magic_slap',
+/** Параметры исполнителя способности вида «магическая пощёчина» (соответствуют полям шаблона kind 'magicSlap'). */
+export interface MagicSlapSkillParams {
+  /** Контентный id способности (шаблона). */
+  id: string;
+  /** Дальность выбора целей относительно кастера. */
+  range: number;
+  /** Максимальное число целей за одно применение. */
+  targetCount: number;
+  /** Фиксированный урон по каждой цели. */
+  baseDamage: number;
+}
 
-  getTargetMode(): TargetMode {
-    return { type: 'multi', range: 5, count: 3 };
-  },
-
-  getValidTargets(state: GameState, caster: Entity): Position[] {
-    return getDamageablePositionsWithinRange(state, caster, 5);
-  },
-
-  preview(state: GameState, caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
-    const previewTargets = [...selectedTargets];
-    if (hoveredTarget && previewTargets.length < 3) {
-      previewTargets.push(hoveredTarget);
-    }
-    return this.resolve(state, caster, previewTargets);
-  },
-
-  getAffectedPositions(_state: GameState, _caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
+/**
+ * Фабрика исполнителя способности вида «магическая пощёчина»:
+ * урон по нескольким (до targetCount) выбранным целям в пределах range,
+ * одна и та же цель может быть выбрана несколько раз.
+ *
+ * Урон фиксированный (без скейлинга от характеристик и уровня) —
+ * модификаторы урона вешаются через стандартные модификаторы и контентные правила.
+ *
+ * Параметры механики приходят из шаблона способности (kind 'magicSlap'),
+ * сборку и кэширование выполняет getSkillExecutor.
+ */
+export function createMagicSlapSkill(params: MagicSlapSkillParams): SkillExecutor {
+  /**
+   * Дополняет уже выбранные цели наведённой (для превью и подсветки зоны).
+   */
+  function withHovered(selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
     const result = [...selectedTargets];
-    if (hoveredTarget && result.length < 3) {
+    if (hoveredTarget && result.length < params.targetCount) {
       result.push(hoveredTarget);
     }
     return result;
-  },
+  }
 
-  resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {
+  /**
+   * Разрешает способность в набор интентов.
+   */
+  function resolveMagicSlapIntents(state: GameState, caster: Entity, targets: Position[], skillId: string): Intent[] {
     const intents: Intent[] = [];
-    const effectiveTargets = targets.slice(0, 3);
-    const skillLevel = caster.type === 'player'
-      ? (caster.abilities.find(a => a.templateId === 'magic_slap')?.level ?? 1)
-      : 1;
-    const ability = tryGetAbility(this.id);
+    const effectiveTargets = targets.slice(0, params.targetCount);
+    const ability = tryGetAbility(skillId);
     const damageTag = getSkillDamageTag(ability);
-    const abilityTags = getAbilityTags(this.id);
+    const abilityTags = getAbilityTags(skillId);
 
     for (const targetPos of effectiveTargets) {
       const entity = Array.from(state.entities.values()).find(
@@ -52,28 +59,42 @@ export const magicSlapSkill: SkillExecutor = {
       );
       if (!entity) continue;
 
-      const formula = damageFormulas['magic_slap'];
-      if (!formula) continue;
-      if (!isCombatEntity(caster)) continue;
-      const damageEntries = formula({
-        caster,
-        target: entity,
-        skillLevel,
-        baseDamage: 12,
+      const tags = damageTag
+        ? mergeDamageIntentTags([damageTag], abilityTags)
+        : abilityTags;
+      intents.push({
+        type: 'DAMAGE',
+        entityId: entity.id,
+        sourceEntityId: caster.id,
+        damage: params.baseDamage,
+        tags,
       });
-
-      for (const entry of damageEntries) {
-        const tags = mergeDamageIntentTags(entry.tags, abilityTags);
-        intents.push({
-          type: 'DAMAGE',
-          entityId: entity.id,
-          sourceEntityId: caster.id,
-          damage: entry.damage,
-          tags: damageTag ? mergeDamageIntentTags([damageTag], tags) : tags,
-        });
-      }
     }
 
     return intents;
-  },
-};
+  }
+
+  return {
+    id: params.id,
+
+    getTargetMode(): TargetMode {
+      return { type: 'multi', range: params.range, count: params.targetCount };
+    },
+
+    getValidTargets(state: GameState, caster: Entity): Position[] {
+      return getDamageablePositionsWithinRange(state, caster, params.range);
+    },
+
+    preview(state: GameState, caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
+      return resolveMagicSlapIntents(state, caster, withHovered(selectedTargets, hoveredTarget), this.id);
+    },
+
+    getAffectedPositions(_state: GameState, _caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Position[] {
+      return withHovered(selectedTargets, hoveredTarget);
+    },
+
+    resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {
+      return resolveMagicSlapIntents(state, caster, targets, this.id);
+    },
+  };
+}

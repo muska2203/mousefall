@@ -3,16 +3,15 @@ import { makeGameState, makeEnemy } from '../../../fixtures/gameState';
 import { getPreparableAbilities } from '../../../../src/simulation/ai/cast-helpers';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate } from '../../../../src/content/schemas';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
-
-beforeEach(() => {
-  initSkillRegistry();
-});
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 2,
     apCost: 1,
     aiPreparable: true,

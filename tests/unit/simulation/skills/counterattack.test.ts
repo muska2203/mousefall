@@ -3,7 +3,6 @@ import { makeGameState, makePlayer, makeEnemy } from '../../../fixtures/gameStat
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
 import type { AbilityTemplate, ItemTemplate } from '../../../../src/content/schemas';
 import { getSkillExecutor } from '../../../../src/simulation/skills/skillExecutor';
-import { initSkillRegistry } from '../../../../src/simulation/skills/index';
 import { GameSimulation } from '../../../../src/simulation/simulation';
 import { createTestSimulation } from '../../../helpers/simulation';
 import { DefaultActionPointCostResolver } from '../../../../src/simulation/systems/action-cost-resolver';
@@ -18,14 +17,14 @@ vi.mock('../../../../src/utils/rng', () => ({
 
 import { rngChance } from '../../../../src/utils/rng';
 
-beforeEach(() => {
-  initSkillRegistry();
-});
-
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
     id,
     kind: 'fireball',
+    range: 5,
+    aoeRadius: 1,
+    centerDamage: 20,
+    aoeDamage: 10,
     cooldown: 0,
     apCost: 1,
     tags: [],
@@ -185,8 +184,8 @@ describe('counterattack combat behavior', () => {
       ]),
       abilities: new Map([
         ['counterattack', mockCounterattackAbility()],
-        ['sudden_strike', mockAbility('sudden_strike', { kind: 'suddenStrike', cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.single', 'delivery.weapon'] })],
-        ['magic_slap', mockAbility('magic_slap', { kind: 'magicSlap', cooldown: 2, apCost: 1, tags: ['attack.ranged', 'target.multi', 'delivery.spell'] })],
+        ['sudden_strike', mockAbility('sudden_strike', { kind: 'suddenStrike', silenceDuration: 2, cooldown: 2, apCost: 1, tags: ['attack.melee', 'target.single', 'delivery.weapon'] })],
+        ['magic_slap', mockAbility('magic_slap', { kind: 'magicSlap', range: 5, targetCount: 3, baseDamage: 12, cooldown: 2, apCost: 1, tags: ['attack.ranged', 'target.multi', 'delivery.spell'] })],
         ['cleave', mockAbility('cleave', { kind: 'cleave', cooldown: 2, apCost: 1, damageTag: 'damage.physical.slashing', tags: ['attack.melee', 'target.aoe', 'delivery.weapon'] })],
         ['fireball', mockAbility('fireball', { cooldown: 3, apCost: 2, tags: ['attack.ranged', 'target.aoe', 'delivery.projectile', 'delivery.spell', 'effect.burn'] })],
       ]),
