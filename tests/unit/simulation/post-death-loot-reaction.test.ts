@@ -16,6 +16,7 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
         aiSightRadius: 6,
         aiStrategyId: 'hunter',
         maxAp: 1,
+        isBoss: false,
         ...partial,
     };
 }

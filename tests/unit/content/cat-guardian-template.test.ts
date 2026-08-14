@@ -13,6 +13,8 @@ describe('Шаблон босса cat_guardian', () => {
     const parsed = EntityTemplateSchema.parse(catGuardian);
 
     expect(parsed.id).toBe('cat_guardian');
+    // Босс первого этажа — допустим в bossPool карты (roadMap 1.3).
+    expect(parsed.isBoss).toBe(true);
     expect(typeof parsed.maxAp).toBe('number');
     expect(parsed.maxAp).toBeGreaterThan(0);
     expect(typeof parsed.health.max).toBe('number');

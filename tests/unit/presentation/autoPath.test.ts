@@ -33,13 +33,15 @@ function moveTarget(x: number, y: number) {
 function makeQueries(state: ReturnType<typeof makeGameState>): AutoPathQueries {
   const simulation = GameSimulation.loadSavedGame(state, false);
   const isTileWalkable = (pos: Position) => simulation.isTileWalkableForPlayer(pos);
+  // Зеркалит isTilePassable из GameSession.getAutoPathQueries:
+  // закрытая незапертая дверь условно проходима, запертая — нет.
   const isTilePassable = (pos: Position): boolean => {
     if (isTileWalkable(pos)) return true;
     const blockers = simulation.findEntitiesAt(pos).filter((e) => e.blocksMovement);
     if (blockers.length !== 1) return false;
     const door = blockers[0];
     if (!door) return false;
-    return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+    return door.type === 'door' && door.isAlive !== false && !door.isOpen && !door.isLocked;
   };
   return {
     isTileWalkable,
@@ -797,6 +799,49 @@ describe('AutoPathController door passage', () => {
     expect(path).not.toBeNull();
     expect(path!.some((p) => p.x === 5 && p.y === 6)).toBe(false);
   });
+
+  it('does not build path through a locked door when it is the only passage', () => {
+    const player = makePlayer({ x: 5, y: 3 });
+    const door = makeDoor({ x: 5, y: 5, isOpen: false, blocksMovement: true, isLocked: true });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    // Сплошная стена на y=5, единственный проход — клетка запертой двери (5, 5).
+    for (let x = 1; x <= 8; x++) {
+      if (x !== 5) state.map.tiles[5]![x] = 'wall';
+    }
+    // Дверь видима: невидимые объекты pathfinding игнорирует.
+    state.visible[5]![5] = true;
+    state.explored[5]![5] = true;
+    const queries = makeQueries(state);
+
+    const path = queries.findPathTowards({ x: 5, y: 3 }, moveTarget(5, 7));
+
+    expect(path).toBeNull();
+  });
+
+  it('step does not emit INTERACT for a locked door target', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6, isOpen: false, blocksMovement: true, isLocked: true });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    state.explored[6]![5] = true;
+    state.visible[6]![5] = true;
+    const { controller, queries } = setupController(state);
+    controller.hover({ position: { x: 5, y: 6 }, kind: 'door', entityId: door.id }, state, queries);
+    controller.commit();
+
+    const result = controller.step(state, queries);
+
+    // Для запертой двери INTERACT не подставляется: контроллер возвращает MOVE,
+    // который Simulation отклонит как tile_blocked.
+    expect(result.kind).toBe('action');
+    if (result.kind !== 'action') return;
+    expect(result.action.type).not.toBe('INTERACT');
+  });
 });
 
 describe('GameSession auto-path integration', () => {
@@ -894,6 +939,32 @@ describe('GameSession auto-path integration', () => {
     expect(vm.renderInput?.highlightedPathTargetKind).toBe('none');
     const doorAfter = vm.renderInput?.state.entities.get(door.id) as DoorEntity | undefined;
     expect(doorAfter?.isOpen).toBe(true);
+  });
+
+  it('click on locked door does not open it and does not spend AP', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ x: 5, y: 6, isOpen: false, blocksMovement: true, isLocked: true });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [door.id, door]]),
+    });
+    state.explored[6]![5] = true;
+    state.player.ap = 1;
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.handleFieldClick({ x: 5, y: 6 });
+
+    const vm = session.getViewModel();
+    const doorAfter = vm.renderInput?.state.entities.get(door.id) as DoorEntity | undefined;
+    // Запертая дверь не открылась и не отперлась, игрок остался на месте.
+    expect(doorAfter?.isOpen).toBe(false);
+    expect(doorAfter?.isLocked).toBe(true);
+    expect(vm.renderInput?.state.player.x).toBe(5);
+    expect(vm.renderInput?.state.player.y).toBe(5);
+    expect(vm.renderInput?.state.player.ap).toBe(1);
+    // Автопуть отменён после отклонённого действия.
+    expect(vm.renderInput?.highlightedPathCommitted).toBe(false);
   });
 
   it('click on player position cancels auto-path', () => {

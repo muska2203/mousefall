@@ -14,6 +14,8 @@ export const enLogBuilder = {
   enemyNameFallback: 'Enemy',
   doorOpened: 'Door opened',
   doorClosed: 'Door closed',
+  doorLocked: 'The door is locked',
+  doorUnlocked: 'The door is unlocked',
   counterattackTriggered: '{{name}} counterattacks',
   abilityPrepared: '{{name}} is preparing {{ability}}',
   abilityPreparedCancelled: '{{name}} interrupted preparation',

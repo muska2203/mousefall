@@ -10,7 +10,21 @@ import path from 'path';
 import { buildContent } from '../../src/content/templates';
 import { validateContentRuleReferences } from '../../src/simulation/content-rules/validation';
 import { validateContentReferences, validateModifierTextPlaceholders } from '../../src/content/validate-references';
-import type { AbilityTemplate, LoadedContent, ItemTemplate, ModifierTemplate, StatusTemplate } from '../../src/content/schemas';
+import {
+  DoorTemplateSchema,
+  EntityTemplateSchema,
+  MapParamsSchema,
+} from '../../src/content/schemas';
+import type {
+  AbilityTemplate,
+  EntityTemplate,
+  ItemTemplate,
+  LoadedContent,
+  MapParams,
+  ModifierTemplate,
+  RoomTypeTemplate,
+  StatusTemplate,
+} from '../../src/content/schemas';
 import type { ContentTexts } from '../../src/content/texts/types';
 
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
@@ -278,6 +292,186 @@ describe('validateContentReferences: selfBuff.statusType', () => {
     const content = makeSyntheticContent({
       abilities: new Map([['test_buff', mockSelfBuffAbility('test_status')]]),
       statuses: new Map([['test_status', mockStatusTemplate('test_status')]]),
+    });
+
+    expect(validateContentReferences(content)).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────
+// Босс-инфраструктура: дефолты схем (roadMap 1.3)
+// ─────────────────────────────────────────────
+
+describe('Схемы босс-инфраструктуры: дефолты', () => {
+  it('EntityTemplateSchema: isBoss по умолчанию false', () => {
+    const parsed = EntityTemplateSchema.parse({ id: 'test_entity', health: { max: 1 } });
+    expect(parsed.isBoss).toBe(false);
+  });
+
+  it('DoorTemplateSchema: indestructible по умолчанию false', () => {
+    const parsed = DoorTemplateSchema.parse({ id: 'test_door', interactionKind: 'door', maxHp: 3 });
+    expect(parsed.indestructible).toBe(false);
+  });
+
+  it('MapParamsSchema: дефолты bossRoomTypeId/rewardRoomTypeId, bossPool не задан', () => {
+    const parsed = MapParamsSchema.parse({
+      id: 'test_map',
+      width: 20,
+      height: 20,
+      minRooms: 2,
+      maxRooms: 4,
+      roomTypePool: ['normal'],
+      startRoomTypeId: 'start',
+    });
+    expect(parsed.bossRoomTypeId).toBe('boss');
+    expect(parsed.rewardRoomTypeId).toBe('reward');
+    expect(parsed.bossPool).toBeUndefined();
+  });
+
+  it('MapParamsSchema: bossPool не может быть пустым массивом', () => {
+    expect(() => MapParamsSchema.parse({
+      id: 'test_map',
+      width: 20,
+      height: 20,
+      minRooms: 2,
+      maxRooms: 4,
+      roomTypePool: ['normal'],
+      startRoomTypeId: 'start',
+      bossPool: [],
+    })).toThrow();
+  });
+});
+
+// ─────────────────────────────────────────────
+// Босс-инфраструктура: валидация bossPool и типов комнат
+// ─────────────────────────────────────────────
+
+function mockMapParams(overrides: Partial<MapParams> = {}): MapParams {
+  return {
+    id: 'test_map',
+    strategy: 'tree',
+    width: 20,
+    height: 20,
+    minRooms: 2,
+    maxRooms: 4,
+    roomTypePool: ['normal'],
+    startRoomTypeId: 'start',
+    bossRoomTypeId: 'boss',
+    rewardRoomTypeId: 'reward',
+    ...overrides,
+  } as MapParams;
+}
+
+function mockEntity(id: string, isBoss: boolean): EntityTemplate {
+  return {
+    id,
+    isBoss,
+    aiSightRadius: 6,
+    health: { max: 10 },
+    baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+    equipment: {},
+    abilities: [],
+    lootTable: [],
+    lootDropTable: [],
+    maxAp: 1,
+  } as EntityTemplate;
+}
+
+function mockRoomType(id: string): RoomTypeTemplate {
+  return {
+    id,
+    kind: 'generated',
+    weight: 0,
+    minDepth: 0,
+    minSize: 4,
+    maxSize: 6,
+    fill: {
+      enemyPool: [],
+      enemyDensity: 0,
+      itemPool: [],
+      itemDensity: 0,
+      propPool: [],
+      propDensity: 0,
+      trapPool: [],
+      trapDensity: 0,
+      tileEffectPool: [],
+      tileEffectDensity: 0,
+      guaranteedPois: [],
+    },
+  } as RoomTypeTemplate;
+}
+
+/** Контент с картой bossPool и всеми существующими ссылками. */
+function makeBossContent(mapOverrides: Partial<MapParams> = {}): LoadedContent {
+  return makeSyntheticContent({
+    maps: new Map([['test_map', mockMapParams({ bossPool: ['test_boss'], ...mapOverrides })]]),
+    entities: new Map([['test_boss', mockEntity('test_boss', true)]]),
+    roomTypes: new Map([
+      ['normal', mockRoomType('normal')],
+      ['start', mockRoomType('start')],
+      ['boss', mockRoomType('boss')],
+      ['reward', mockRoomType('reward')],
+    ]),
+  });
+}
+
+describe('validateContentReferences: bossPool', () => {
+  it('находит ссылку bossPool на несуществующий шаблон сущности', () => {
+    const content = makeBossContent({ bossPool: ['nonexistent_boss'] });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'maps.test_map' &&
+      e.field === 'bossPool' &&
+      e.problem.includes('nonexistent_boss'),
+    )).toBe(true);
+  });
+
+  it('находит шаблон из bossPool без isBoss: true', () => {
+    const content = makeBossContent();
+    content.entities.set('test_boss', mockEntity('test_boss', false));
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'maps.test_map' &&
+      e.field === 'bossPool' &&
+      e.problem.includes('isBoss'),
+    )).toBe(true);
+  });
+
+  it('находит bossRoomTypeId, ссылающийся на несуществующий тип комнаты', () => {
+    const content = makeBossContent({ bossRoomTypeId: 'nonexistent_room_type' });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'maps.test_map' &&
+      e.field === 'bossRoomTypeId' &&
+      e.problem.includes('nonexistent_room_type'),
+    )).toBe(true);
+  });
+
+  it('находит rewardRoomTypeId, ссылающийся на несуществующий тип комнаты', () => {
+    const content = makeBossContent({ rewardRoomTypeId: 'nonexistent_room_type' });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'maps.test_map' &&
+      e.field === 'rewardRoomTypeId' &&
+      e.problem.includes('nonexistent_room_type'),
+    )).toBe(true);
+  });
+
+  it('пропускает валидную конфигурацию bossPool', () => {
+    expect(validateContentReferences(makeBossContent())).toEqual([]);
+  });
+
+  it('не проверяет босс-ссылки карты без bossPool', () => {
+    const content = makeSyntheticContent({
+      maps: new Map([['test_map', mockMapParams({ bossRoomTypeId: 'nonexistent_room_type' })]]),
+      roomTypes: new Map([
+        ['normal', mockRoomType('normal')],
+        ['start', mockRoomType('start')],
+      ]),
     });
 
     expect(validateContentReferences(content)).toEqual([]);

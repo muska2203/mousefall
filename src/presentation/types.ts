@@ -439,6 +439,8 @@ export type DoorPopoverViewModel = {
   hp: number;
   maxHp: number;
   armor: number;
+  /** Дверь заперта (isLocked) — показывается строкой состояния в поповере. */
+  isLocked: boolean;
 };
 
 export type PropPopoverViewModel = {

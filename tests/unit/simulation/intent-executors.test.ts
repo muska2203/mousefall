@@ -4,9 +4,11 @@ import {executeMoveIntent} from "@simulation/systems/intents/move-intent-execute
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
 import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
+import {executeLockDoorIntent, executeOpenDoorIntent, executeUnlockDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
 import {executeIntent, executeIntents} from "@simulation/systems/intents/execute-intent.ts";
 import '@simulation/ai/hunter-strategy';
 import {
+    makeDoor,
     makeEnemy,
     makeFloorItemContainer,
     makeGameState,
@@ -25,7 +27,11 @@ beforeEach(() => {
     resetRegistry();
     initRegistry({
       terrains: createTestTerrains(),
-        entities: new Map(),
+        entities: new Map([
+            // cat_king — мок-шаблон босса (isBoss: true), cat_small — обычный враг.
+            ['cat_king', { id: 'cat_king', isBoss: true } as any],
+            ['cat_small', { id: 'cat_small', isBoss: false } as any],
+        ]),
         players: new Map(),
         items: new Map([
             ['health_potion', { id: 'health_potion', name: 'Зелье здоровья', description: '', type: 'consumable', stackable: false, maxStack: 1, value: 0, abilityPool: [] } as any],
@@ -382,5 +388,126 @@ describe('executePickUpIntent', () => {
 
         expect(node).toBeNull();
         expect(state.entities.has(item.id)).toBe(true);
+    });
+});
+
+// =========================================================
+// executeLockDoorIntent / executeUnlockDoorIntent
+// =========================================================
+describe('executeOpenDoorIntent', () => {
+    it('не открывает запертую дверь и возвращает null', () => {
+        const door = makeDoor({x: 4, y: 5, isLocked: true});
+        const state = makeStateWithPlayerAndEntity(makePlayer({x: 3, y: 5}), door);
+        const builder = makeBuilder();
+
+        const node = executeOpenDoorIntent(state, {type: 'OPEN_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).toBeNull();
+        expect(door.isOpen).toBe(false);
+        expect(door.blocksMovement).toBe(true);
+        expect(door.isLocked).toBe(true);
+    });
+
+    it('открывает незапертую дверь и порождает DOOR_OPENED', () => {
+        const door = makeDoor({x: 4, y: 5});
+        const state = makeStateWithPlayerAndEntity(makePlayer({x: 3, y: 5}), door);
+        const builder = makeBuilder();
+
+        const node = executeOpenDoorIntent(state, {type: 'OPEN_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        expect(node!.event.type).toBe('DOOR_OPENED');
+        expect(door.isOpen).toBe(true);
+        expect(door.blocksMovement).toBe(false);
+    });
+});
+
+describe('executeLockDoorIntent', () => {
+    it('запирает закрытую дверь и порождает DOOR_LOCKED', () => {
+        const door = makeDoor({x: 4, y: 5});
+        const state = makeStateWithPlayerAndEntity(makePlayer({x: 3, y: 5}), door);
+        const builder = makeBuilder();
+
+        const node = executeLockDoorIntent(state, {type: 'LOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        expect(node!.event.type).toBe('DOOR_LOCKED');
+        expect(node!.event).toMatchObject({position: {x: 4, y: 5}});
+        expect(door.isLocked).toBe(true);
+        expect(door.isOpen).toBe(false);
+        expect(door.blocksMovement).toBe(true);
+    });
+
+    it('запирание открытой двери сначала закрывает её', () => {
+        const door = makeDoor({x: 4, y: 5, isOpen: true, blocksMovement: false});
+        const state = makeStateWithPlayerAndEntity(makePlayer({x: 3, y: 5}), door);
+        const builder = makeBuilder();
+
+        const node = executeLockDoorIntent(state, {type: 'LOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        expect(node!.event.type).toBe('DOOR_LOCKED');
+        expect(door.isOpen).toBe(false);
+        expect(door.blocksMovement).toBe(true);
+        expect(door.isLocked).toBe(true);
+    });
+
+    it('эмитит DOOR_LOCKED, даже если дверь уже заперта', () => {
+        const door = makeDoor({x: 4, y: 5, isLocked: true});
+        const state = makeStateWithPlayerAndEntity(makePlayer({x: 3, y: 5}), door);
+        const builder = makeBuilder();
+
+        const node = executeLockDoorIntent(state, {type: 'LOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        expect(node!.event.type).toBe('DOOR_LOCKED');
+    });
+
+    it('возвращает null, если на клетке нет двери', () => {
+        const state = makeGameState();
+        const builder = makeBuilder();
+
+        const node = executeLockDoorIntent(state, {type: 'LOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).toBeNull();
+    });
+});
+
+describe('executeUnlockDoorIntent', () => {
+    it('отпирает дверь и порождает DOOR_UNLOCKED', () => {
+        const door = makeDoor({x: 4, y: 5, isLocked: true});
+        const state = makeStateWithPlayerAndEntity(makePlayer({x: 3, y: 5}), door);
+        const builder = makeBuilder();
+
+        const node = executeUnlockDoorIntent(state, {type: 'UNLOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        expect(node!.event.type).toBe('DOOR_UNLOCKED');
+        expect(node!.event).toMatchObject({position: {x: 4, y: 5}});
+        expect(door.isLocked).toBe(false);
+        // Отпирание не открывает дверь.
+        expect(door.isOpen).toBe(false);
+        expect(door.blocksMovement).toBe(true);
+    });
+
+    it('эмитит DOOR_UNLOCKED, даже если дверь уже отперта', () => {
+        const door = makeDoor({x: 4, y: 5});
+        const state = makeStateWithPlayerAndEntity(makePlayer({x: 3, y: 5}), door);
+        const builder = makeBuilder();
+
+        const node = executeUnlockDoorIntent(state, {type: 'UNLOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).not.toBeNull();
+        expect(node!.event.type).toBe('DOOR_UNLOCKED');
+        expect(door.isLocked).toBe(false);
+    });
+
+    it('возвращает null, если на клетке нет двери', () => {
+        const state = makeGameState();
+        const builder = makeBuilder();
+
+        const node = executeUnlockDoorIntent(state, {type: 'UNLOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 5}}, builder, builder.root);
+
+        expect(node).toBeNull();
     });
 });

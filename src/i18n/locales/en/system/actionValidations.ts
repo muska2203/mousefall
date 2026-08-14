@@ -5,6 +5,7 @@ export const enActionValidations = {
   itemCannotEquip: 'Item cannot be equipped',
   onlyPlayerCanTransition: 'Only the player can transition between floors',
   cannotCloseDoorFromInside: 'Cannot close the door while standing on its tile',
+  doorLocked: 'The door is locked',
   slotEmpty: 'Slot is empty',
   itemCannotUse: 'Item cannot be used',
   itemEffectNotSupported: 'Item effect "{{effect}}" is not supported',

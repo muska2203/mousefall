@@ -24,6 +24,7 @@ import {
   PoiTemplateSchema,
   PropTemplateSchema,
   RelicTemplateSchema,
+  RoomTypeTemplateSchema,
   StairsTemplateSchema,
   StatusTemplateSchema,
   TerrainTemplateSchema,
@@ -42,6 +43,7 @@ import {playerTemplates} from './players';
 import {poiTemplates} from './pois';
 import {propTemplates} from './props';
 import {relicTemplates} from './relics';
+import {roomTypeTemplates} from './room-types';
 import {stairsTemplates} from './stairs';
 import {statusTemplates} from './statuses';
 import {terrainTemplates} from './terrains';
@@ -101,5 +103,6 @@ export function buildContent(): LoadedContent {
     traps: buildCategory('traps', trapTemplates, TrapTemplateSchema),
     relics: buildCategory('relics', relicTemplates, RelicTemplateSchema),
     modifiers: buildCategory('modifiers', modifierTemplates, ModifierTemplateSchema),
+    roomTypes: buildCategory('roomTypes', roomTypeTemplates, RoomTypeTemplateSchema),
   };
 }

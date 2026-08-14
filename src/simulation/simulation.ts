@@ -29,7 +29,6 @@ import {
     createBoolGrid,
     createInitialPlayer,
     createNewGameState,
-    createTileEffectsGrid,
     buildEntityPositionIndex,
     ensureDefeatedBossIds,
     findAllAliveActorsOfFaction,
@@ -775,8 +774,8 @@ export class GameSimulation implements Simulation {
         // так как tree-стратегия может расширять карту за пределы mapParams.width/height.
         this.state.visible = createBoolGrid(generatedMap.map.width, generatedMap.map.height, false);
         this.state.explored = createBoolGrid(generatedMap.map.width, generatedMap.map.height, false);
-        // Новая карта — тайловые эффекты сбрасываются в пустую сетку её размера.
-        this.state.tileEffects = createTileEffectsGrid(generatedMap.map.width, generatedMap.map.height);
+        // Новая карта — сетка тайловых эффектов из генерации (начальные лужи комнат).
+        this.state.tileEffects = generatedMap.tileEffects;
 
         this.state.player.x =
             generatedMap.playerStart.x;
@@ -807,6 +806,8 @@ export class GameSimulation implements Simulation {
         generatedMap.items.forEach(e => this.state.entities.set(e.id, e));
         generatedMap.doors.forEach(d => this.state.entities.set(d.id, d));
         generatedMap.pois.forEach(p => this.state.entities.set(p.id, p));
+        generatedMap.props.forEach(p => this.state.entities.set(p.id, p));
+        generatedMap.traps.forEach(t => this.state.entities.set(t.id, t));
 
         // Лестницы
         if (generatedMap.stairsDown && this.state.floor < MAX_FLOOR) {

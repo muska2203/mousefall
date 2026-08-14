@@ -28,7 +28,7 @@ import {executeGrantRelicIntent} from "@simulation/systems/intents/grant-relic-i
 import {executeRevokeAbilityIntent} from "@simulation/systems/intents/revoke-ability-intent-executor.ts";
 import {executeHealIntent} from "@simulation/systems/intents/heal-intent-executer.ts";
 import {executeRemoveItemIntent} from "@simulation/systems/intents/remove-item-intent-executer.ts";
-import {executeCloseDoorIntent, executeOpenDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
+import {executeCloseDoorIntent, executeLockDoorIntent, executeOpenDoorIntent, executeUnlockDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
 import {executeFloorTransitionIntent} from "@simulation/systems/intents/floor-transition-intent-executor.ts";
 import {executeBumpIntent} from "@simulation/systems/intents/bump-intent-executor.ts";
 import {executeSkipStunnedTurnIntent} from "@simulation/systems/intents/skip-stunned-turn-intent-executor.ts";
@@ -83,6 +83,8 @@ const intentExecutors = {
   REMOVE_ITEM: executeRemoveItemIntent,
   OPEN_DOOR: executeOpenDoorIntent,
   CLOSE_DOOR: executeCloseDoorIntent,
+  LOCK_DOOR: executeLockDoorIntent,
+  UNLOCK_DOOR: executeUnlockDoorIntent,
   FLOOR_TRANSITION: executeFloorTransitionIntent,
   BUMP: executeBumpIntent,
   SKIP_STUNNED_TURN: executeSkipStunnedTurnIntent,

@@ -83,12 +83,38 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
 
   for (const [id, map] of content.maps) {
     const path = `maps.${id}`;
-    checkRefs(errors, path, 'enemyPool', map.enemyPool, 'entities', content.entities);
-    checkRefs(errors, path, 'itemPool', map.itemPool, 'items', content.items);
-    if (map.startPoiId) {
-      checkRef(errors, path, 'startPoiId', map.startPoiId, 'pois', content.pois);
-    }
+    checkRefs(errors, path, 'roomTypePool', map.roomTypePool, 'roomTypes', content.roomTypes);
+    checkRef(errors, path, 'startRoomTypeId', map.startRoomTypeId, 'roomTypes', content.roomTypes);
     checkRefs(errors, path, 'relicPool', map.relicPool ?? [], 'relics', content.relics);
+    // Босс-инфраструктура проверяется только при заданном bossPool.
+    if (map.bossPool) {
+      checkRefs(errors, path, 'bossPool', map.bossPool, 'entities', content.entities);
+      // Каждый шаблон пула обязан быть помечен как босс (isBoss: true).
+      for (const bossId of map.bossPool) {
+        const template = content.entities.get(bossId);
+        if (template && !template.isBoss) {
+          errors.push({
+            path,
+            field: 'bossPool',
+            problem: `Шаблон "${bossId}" в bossPool не помечен как босс (isBoss: true)`,
+          });
+        }
+      }
+      checkRef(errors, path, 'bossRoomTypeId', map.bossRoomTypeId, 'roomTypes', content.roomTypes);
+      checkRef(errors, path, 'rewardRoomTypeId', map.rewardRoomTypeId, 'roomTypes', content.roomTypes);
+    }
+  }
+
+  for (const [id, roomType] of content.roomTypes ?? []) {
+    const path = `roomTypes.${id}`;
+    if (roomType.kind !== 'generated') continue;
+    const fill = roomType.fill;
+    checkRefs(errors, path, 'fill.enemyPool', fill.enemyPool, 'entities', content.entities);
+    checkRefs(errors, path, 'fill.itemPool', fill.itemPool, 'items', content.items);
+    checkRefs(errors, path, 'fill.propPool', fill.propPool, 'props', content.props);
+    checkRefs(errors, path, 'fill.trapPool', fill.trapPool, 'traps', content.traps);
+    checkRefs(errors, path, 'fill.tileEffectPool', fill.tileEffectPool, 'tileEffects', content.tileEffects);
+    checkRefs(errors, path, 'fill.guaranteedPois', fill.guaranteedPois, 'pois', content.pois);
   }
 
   for (const [id, status] of content.statuses) {

@@ -119,6 +119,8 @@ export const EntityTemplateSchema = z.object({
   placement: SpritePlacementSchema,
   maxAp: z.number().int().positive().default(1)
     .describe('Максимальное количество очков действий (AP)'),
+  isBoss: z.boolean().default(false)
+    .describe('Признак босса: такие шаблоны допустимы в bossPool карты и учитываются контроллером босс-комнаты'),
 }).describe('Шаблон врага или NPC');
 
 export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
@@ -490,19 +492,82 @@ export const MapParamsSchema = z.object({
   height:      z.number().int().min(20).max(100).describe('Высота карты в клетках'),
   minRooms:    z.number().int().positive().describe('Минимальное количество комнат'),
   maxRooms:    z.number().int().positive().describe('Максимальное количество комнат'),
-  minRoomSize: z.number().int().min(2).describe('Минимальный размер комнаты'),
-  maxRoomSize: z.number().int().max(20).describe('Максимальный размер комнаты'),
-  enemyDensity: z.number().min(0).max(1).describe('Множитель плотности врагов: 1.0 соответствует одному врагу на каждые 4×4 клеток комнаты'),
-  itemDensity:  z.number().min(0).max(1).describe('Плотность спавна предметов (0.0–1.0)'),
-  enemyPool:   z.array(z.string()).describe('ID шаблонов сущностей, допустимых к спавну'),
-  itemPool:    z.array(z.string()).describe('ID шаблонов предметов, допустимых к спавну'),
-  startPoiId:  z.string().min(1).optional()
-    .describe('ID poi, гарантированно размещаемого в стартовой комнате рядом со спавном. Временная мера до типов комнат (этап 1 roadmap, решение 2026-08-04)'),
+  roomTypePool: z.array(z.string().min(1)).min(1)
+    .describe('ID типов комнат (категория roomTypes), допустимых на этом этаже; назначение узлам дерева — взвешенный ролл по weight шаблонов'),
+  startRoomTypeId: z.string().min(1)
+    .describe('ID типа стартовой комнаты (корень дерева комнат); назначается без ролла'),
   relicPool:   z.array(z.string()).optional()
     .describe('ID шаблонов реликвий, доступных в окнах выбора реликвии (relic_choice) на этом этаже'),
+  bossPool:    z.array(z.string().min(1)).min(1).optional()
+    .describe('ID шаблонов боссов этажа (категория entities, у шаблона обязателен isBoss: true); если задан — генератор назначает босс-комнату и комнату награды и спавнит одного случайного босса из пула'),
+  bossRoomTypeId: z.string().min(1).default('boss')
+    .describe('ID типа босс-комнаты (категория roomTypes); назначается генератором напрямую самому дальнему узлу дерева комнат'),
+  rewardRoomTypeId: z.string().min(1).default('reward')
+    .describe('ID типа комнаты награды (категория roomTypes); назначается генератором напрямую exit-узлу за босс-комнатой'),
 }).describe('Параметры процедурной генерации карты');
 
 export type MapParams = z.infer<typeof MapParamsSchema>;
+
+// ─────────────────────────────────────────────
+// Шаблон типа комнаты
+// ─────────────────────────────────────────────
+
+/**
+ * Процедурное наполнение комнаты её типом.
+ * Каждая пара pool/density работает одинаково: ожидаемое число объектов =
+ * (площадь комнаты / 16) × density; целая часть гарантирована, дробная — шансом.
+ */
+export const RoomFillSchema = z.object({
+  enemyPool: z.array(z.string().min(1)).default([])
+    .describe('ID шаблонов врагов, допустимых к спавну в комнате'),
+  enemyDensity: z.number().min(0).max(4).default(0)
+    .describe('Плотность врагов: 1.0 ≈ один враг на каждые 4×4 клеток комнаты'),
+  itemPool: z.array(z.string().min(1)).default([])
+    .describe('ID шаблонов предметов, допустимых к спавну в комнате'),
+  itemDensity: z.number().min(0).max(4).default(0)
+    .describe('Плотность предметов (та же формула от площади)'),
+  propPool: z.array(z.string().min(1)).default([])
+    .describe('ID шаблонов пропов, допустимых к спавну в комнате'),
+  propDensity: z.number().min(0).max(4).default(0)
+    .describe('Плотность пропов (та же формула от площади)'),
+  trapPool: z.array(z.string().min(1)).default([])
+    .describe('ID шаблонов ловушек, допустимых к спавну в комнате'),
+  trapDensity: z.number().min(0).max(4).default(0)
+    .describe('Плотность ловушек (та же формула от площади)'),
+  tileEffectPool: z.array(z.string().min(1)).default([])
+    .describe('ID тайловых эффектов для луж/пятен на полу комнаты'),
+  tileEffectDensity: z.number().min(0).max(4).default(0)
+    .describe('Плотность пятен тайловых эффектов (та же формула от площади); пятно — 1–3 клетки'),
+  guaranteedPois: z.array(z.string().min(1)).default([])
+    .describe('ID poi, гарантированно размещаемых в комнате (например, алтарь в стартовой)'),
+}).describe('Процедурное наполнение комнаты её типом');
+
+export type RoomFill = z.output<typeof RoomFillSchema>;
+
+export const GeneratedRoomTypeSchema = z.object({
+  id: z.string().min(1).describe('Уникальный идентификатор типа комнаты (совпадает с именем файла)'),
+  kind: z.literal('generated')
+    .describe('Прямоугольная комната со случайным размером и процедурным наполнением'),
+  weight: z.number().nonnegative().default(1)
+    .describe('Вес при взвешенном назначении типа узлу дерева комнат; 0 — тип никогда не роллится (назначается генератором напрямую, как boss/reward)'),
+  minDepth: z.number().int().nonnegative().default(0)
+    .describe('Минимальная глубина узла дерева (расстояние от стартовой комнаты), с которой тип может быть назначен'),
+  maxPerFloor: z.number().int().positive().optional()
+    .describe('Максимум комнат этого типа на этаж; без значения — без ограничений'),
+  minSize: z.number().int().min(2).describe('Минимальная сторона прямоугольника комнаты'),
+  maxSize: z.number().int().max(20).describe('Максимальная сторона прямоугольника комнаты'),
+  fill: RoomFillSchema,
+}).describe('Тип комнаты с процедурной геометрией и наполнением');
+
+/**
+ * Тип комнаты — discriminated union по полю kind (по образцу AbilityTemplateSchema).
+ * Реализован только вид 'generated'. Вид 'preset' (пресет-раскладка из категории
+ * roomPresets: ASCII-сетка + легенда с doorSocket/spawnRole/randomFill) —
+ * аддитивное расширение union вместе с босс-комнатой (roadMap 1.3).
+ */
+export const RoomTypeTemplateSchema = z.discriminatedUnion('kind', [GeneratedRoomTypeSchema]);
+
+export type RoomTypeTemplate = z.output<typeof RoomTypeTemplateSchema>;
 
 // ─────────────────────────────────────────────
 // Шаблон лестницы
@@ -527,6 +592,8 @@ export const DoorTemplateSchema = z.object({
   interactionKind: z.enum(['door']).describe('Вид интерактивного объекта'),
   maxHp:           z.number().int().positive().describe('Максимальное здоровье двери'),
   armor:           z.number().int().nonnegative().default(0).describe('Броня двери'),
+  indestructible:  z.boolean().default(false)
+    .describe('Неразрушаемая дверь: движок обнуляет любой урон по ней (по образцу способности bulwark)'),
   placement:       SpritePlacementSchema,
   openSpriteId:    z.string().min(1).optional().describe('ID спрайта открытой двери. Если не указан — используется <id>_open'),
   spriteVariants: SpriteVariantsSchema,
@@ -683,6 +750,8 @@ export type LoadedContent = {
   relics?:   Map<string, RelicTemplate>;
   /** Модификаторы (аффиксы) экипировки. Опционально для обратной совместимости с тестовыми моками. */
   modifiers?: Map<string, ModifierTemplate>;
+  /** Типы комнат для генерации этажей. Опционально для обратной совместимости с тестовыми моками. */
+  roomTypes?: Map<string, RoomTypeTemplate>;
 };
 
 // ─────────────────────────────────────────────
@@ -726,3 +795,5 @@ export type TrapTemplateInput = z.input<typeof TrapTemplateSchema>;
 export type RelicTemplateInput = z.input<typeof RelicTemplateSchema>;
 /** Входная форма шаблона модификатора (аффикса): поля с дефолтами опциональны. */
 export type ModifierTemplateInput = z.input<typeof ModifierTemplateSchema>;
+/** Входная форма шаблона типа комнаты: поля с дефолтами опциональны. */
+export type RoomTypeTemplateInput = z.input<typeof RoomTypeTemplateSchema>;

@@ -105,12 +105,10 @@ describe('GameSimulation.getPlayerStats', () => {
         width: 10,
         minRooms: 2,
         maxRooms: 4,
-        minRoomSize: 3,
-        maxRoomSize: 5,
-        enemyDensity: 0,
-        itemDensity: 0,
-        enemyPool: [],
-        itemPool: [],
+        roomTypePool: ['normal'],
+        startRoomTypeId: 'start',
+        bossRoomTypeId: 'boss',
+        rewardRoomTypeId: 'reward',
       },
     );
 

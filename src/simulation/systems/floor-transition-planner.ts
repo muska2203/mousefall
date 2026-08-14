@@ -15,7 +15,7 @@
 
 import type {Entity, EntityId, GameMap, GameState, Position, StairsEntity} from '@simulation/types';
 import type {FloorTransitionPlan, TileEffects, TurnSide} from '@simulation/core-types';
-import {createBoolGrid, createTileEffectsGrid} from '@simulation/state';
+import {createBoolGrid} from '@simulation/state';
 import {createStairs, generateMap} from '@simulation/systems/mapgen';
 import {updateFOV} from '@simulation/systems/fov';
 import {MAX_FLOOR} from '@utils/constants';
@@ -64,6 +64,8 @@ export function computeFloorTransition(
       ...generated.items,
       ...generated.doors,
       ...generated.pois,
+      ...generated.props,
+      ...generated.traps,
     ];
 
     if (generated.stairsDown && to < MAX_FLOOR) {
@@ -74,8 +76,8 @@ export function computeFloorTransition(
     }
 
     targetExplored = createBoolGrid(targetMap.width, targetMap.height, false);
-    // Новый этаж — пустая сетка эффектов под фактический размер карты.
-    targetTileEffects = createTileEffectsGrid(targetMap.width, targetMap.height);
+    // Новый этаж — сетка эффектов из генерации (начальные лужи комнат).
+    targetTileEffects = generated.tileEffects;
   }
 
   // 3. Целевая коллекция сущностей всегда содержит игрока.

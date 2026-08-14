@@ -52,6 +52,10 @@ function resolveInteractContext(
 
   const interaction = resolveInteraction(state, target, actor);
   if (!interaction) {
+    // resolveInteraction возвращает null для запертой двери — даём предметный reason code.
+    if (target.type === 'door' && target.isAlive && target.isLocked) {
+      return { ok: false, reasonCode: 'door_locked' };
+    }
     return { ok: false, reasonCode: 'no_interaction_available' };
   }
 
@@ -94,6 +98,12 @@ function validateInteractionSpecifics(
       }
       if (!door.isAlive) {
         return { ok: false, reasonCode: 'door_destroyed' };
+      }
+      // Запертую дверь нельзя открыть/закрыть. Обычно отсекается раньше
+      // в resolveInteraction (запертая дверь не даёт взаимодействия) — проверка на случай
+      // прямого вызова валидации.
+      if (door.isLocked) {
+        return { ok: false, reasonCode: 'door_locked' };
       }
       const expectedOpen = interaction.interactionId === 'close_door';
       if (door.isOpen !== expectedOpen) {

@@ -21,5 +21,6 @@ export function mapDoorToPopover(door: DoorEntity, locale: Locale): DoorPopoverV
     hp: door.hp,
     maxHp: door.maxHp,
     armor: door.armor,
+    isLocked: door.isLocked,
   };
 }

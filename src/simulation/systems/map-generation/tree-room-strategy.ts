@@ -4,27 +4,36 @@
  * Алгоритм:
  * 1. Строится дерево комнат. Корень — spawn room. У каждого узла от 1 до 3 детей.
  *    Каждая комната знает глубину — расстояние до корня.
- * 2. К самому дальнему от спавна узлу добавляется дополнительная комната-выход.
- * 3. Комнаты размещаются на бесконечной сетке стен рядом с родителями.
+ * 2. Узлам назначаются типы комнат (категория roomTypes): корень получает
+ *    MapParams.startRoomTypeId без ролла, остальные — взвешенный ролл из
+ *    MapParams.roomTypePool с учётом minDepth/maxPerFloor шаблонов.
+ * 3. К самому дальнему от спавна узлу добавляется дополнительная комната-выход.
+ *    При заданном MapParams.bossPool родитель exit-узла становится босс-комнатой
+ *    (MapParams.bossRoomTypeId), а сам exit-узел — комнатой награды
+ *    (MapParams.rewardRoomTypeId); оба узла исключаются из взвешенного ролла типов.
+ * 4. Комнаты размещаются на бесконечной сетке стен рядом с родителями.
+ *    Размер комнаты роллится в диапазоне minSize/maxSize её типа.
  *    Каждая новая комната и коридор к ней:
  *    - прокладываются только по клеткам, которые ещё являются стенами;
  *    - имеют отступ в 1 тайл от любых уже существующих комнат и коридоров.
- * 4. Коридор может иметь произвольную форму (прямой, L-образный, зигзаг и т.д.),
+ * 5. Коридор может иметь произвольную форму (прямой, L-образный, зигзаг и т.д.),
  *    главное — ширина в 1 тайл и отсутствие пересечений.
- * 5. После размещения всего дерева карта нормализуется: сдвигается в положительные
+ * 6. После размещения всего дерева карта нормализуется: сдвигается в положительные
  *    координаты и обрезается по bounding box с внешней стеной толщиной 1 тайл.
  *    При этом tree не ограничивается исходными width/height из MapParams —
  *    карта расширяется настолько, насколько требуется дереву.
- * 6. Старт игрока — центр корневой комнаты, лестница вниз — центр exit-комнаты.
- *    Враги и предметы спавнятся обычной логикой.
+ * 7. Старт игрока — центр корневой комнаты, лестница вниз — центр exit-комнаты.
+ *    Комнаты наполняются своими типами (fillRooms): враги/предметы/пропы/ловушки/
+ *    лужи по пулам и плотностям шаблона, гарантированные poi.
  */
 
 import type {MapParams} from '@content/schemas';
-import type {Corridor, CorridorSegment, DoorEntity, Entity, EntityId, GameMap, GameState, PointOfInterestEntity, RNGState, Room} from '@simulation/types';
-import {rngInt, rngShuffle} from '@utils/rng';
-import {buildEntityPositionIndex, canPlaceObjectAt, createTileGrid, EntityPositionIndex} from '@simulation/state';
+import type {Corridor, CorridorSegment, DoorEntity, Entity, EntityId, GameMap, GameState, RNGState, Room} from '@simulation/types';
+import {rngFloat, rngInt, rngShuffle} from '@utils/rng';
+import {buildEntityPositionIndex, canPlaceObjectAt, createTileEffectsGrid, createTileGrid, EntityPositionIndex} from '@simulation/state';
+import {tryGetRoomType} from '@content/registry';
 import type {GeneratedMap, MapGenerationStrategy} from './types';
-import {carveHCorridor, carveRoom, carveVCorridor, createDoor, createPoi, DEFAULT_FLOOR_TERRAIN, roomCenter, spawnEnemiesAndItems,} from './shared';
+import {carveHCorridor, carveRoom, carveVCorridor, createDoor, createEnemy, DEFAULT_FLOOR_TERRAIN, fillRooms, roomCenter} from './shared';
 
 /** Узел дерева комнат. Содержит топологию и ссылку на размещённую Room. */
 type TreeNode = {
@@ -34,6 +43,8 @@ type TreeNode = {
   parent: TreeNode | null;
   children: TreeNode[];
   isExit: boolean;
+  /** ID типа комнаты (категория roomTypes), назначенный assignRoomTypes. */
+  roomTypeId: string | null;
 };
 
 /** Путь коридора как последовательность клеток шириной 1. */
@@ -45,12 +56,20 @@ type Placement = {
   corridor: CorridorPath;
 };
 
+/** Позиция двери на сетке с пометкой принадлежности к коридору босс-комнаты. */
+type DoorPosition = {
+  x: number;
+  y: number;
+  /** Коридор касается босс-узла (сам узел или его родитель): дверь ставится шаблоном boss_door. */
+  isBossRoomDoor: boolean;
+};
+
 /** Размещённое дерево: списки комнат/коридоров, отображение узел → комната и позиции дверей. */
 type Layout = {
   rooms: Room[];
   corridors: CorridorPath[];
   nodeToRoom: Map<TreeNode, Room>;
-  doorPositions: { x: number; y: number }[];
+  doorPositions: DoorPosition[];
 };
 
 const SIDE_LEFT = 0;
@@ -65,7 +84,8 @@ export const treeRoomStrategy: MapGenerationStrategy = {
     const rng = state.rng;
 
     const { root, exitNode } = buildRoomTree(params, rng);
-    const layout = buildLayout(root, params, rng);
+    assignRoomTypes(root, exitNode, params, rng);
+    const layout = buildLayout(root, rng, params.bossPool ? params.bossRoomTypeId : null);
     const { map, nodeToRoom: shiftedNodeToRoom, doorPositions: shiftedDoorPositions } = buildGameMap(layout);
 
     const rootRoom = shiftedNodeToRoom.get(root)!;
@@ -82,18 +102,29 @@ export const treeRoomStrategy: MapGenerationStrategy = {
     }
     const stairsUp = currentFloor > 1 ? playerStart : null;
 
-    const { enemies, items } = spawnEnemiesAndItems(rng, map.rooms, params, state);
-    // Индекс уже размещённых сущностей: двери (solid) не ставятся на клетки,
-    // занятые другими объектами размещения (например, лутом).
-    const spawnedEntities = new Map<EntityId, Entity>();
-    for (const entity of [...enemies, ...items] as Entity[]) {
-      spawnedEntities.set(entity.id, entity);
+    // Наполнение комнат их типами: враги/предметы/пропы/ловушки/гарантированные poi
+    // и начальные лужи тайловых эффектов.
+    const tileEffects = createTileEffectsGrid(map.width, map.height);
+    const { enemies, items, props, traps, pois } = fillRooms(rng, map, state, playerStart, tileEffects);
+
+    // Спавн босса: случайный шаблон из bossPool в центре босс-комнаты.
+    // Битая конфигурация (босс-комната не найдена) не роняет генерацию — только warn.
+    if (params.bossPool) {
+      const bossRoom = map.rooms.find(r => r.roomTypeId === params.bossRoomTypeId);
+      if (bossRoom) {
+        const templateId = params.bossPool[rngInt(rng, 0, params.bossPool.length - 1)]!;
+        const center = roomCenter(bossRoom);
+        enemies.push(createEnemy(state, templateId, center.x, center.y));
+      } else {
+        console.warn(`[treeRoomStrategy] bossPool задан, но комната типа "${params.bossRoomTypeId}" не найдена: босс не заспавнен`);
+      }
     }
-    // Гарантированный poi стартовой комнаты (например, алтарь выбора реликвии)
-    // — до дверей, чтобы они учли его в индексе занятых слотов.
-    const pois = spawnStartPoi(rng, params, state, playerStart, rootRoom, buildEntityPositionIndex(spawnedEntities));
-    for (const poi of pois) {
-      spawnedEntities.set(poi.id, poi);
+
+    // Индекс уже размещённых сущностей: двери (solid) не ставятся на клетки,
+    // занятые другими объектами размещения (например, лутом или пропом).
+    const spawnedEntities = new Map<EntityId, Entity>();
+    for (const entity of [...enemies, ...items, ...props, ...traps, ...pois] as Entity[]) {
+      spawnedEntities.set(entity.id, entity);
     }
     const doors = buildDoors(shiftedDoorPositions, state, buildEntityPositionIndex(spawnedEntities));
 
@@ -106,50 +137,92 @@ export const treeRoomStrategy: MapGenerationStrategy = {
       items,
       doors,
       pois,
+      props,
+      traps,
+      tileEffects,
     };
   },
 };
 
+// ─────────────────────────────────────────────
+// Назначение типов комнат
+// ─────────────────────────────────────────────
+
 /**
- * Размещает гарантированный poi стартовой комнаты (MapParams.startPoiId)
- * на клетке, соседней со спавном игрока (8-соседство), внутри корневой комнаты.
+ * Назначает типы узлам дерева комнат.
  *
- * Лестницы создаются потребителями после generate(), поэтому клетка спавна
- * (там stairsUp на этажах > 1) исключается из кандидатов по построению.
- * Если свободной соседней клетки нет — этаж остаётся без poi (warn, без падения).
- * Временная мера до типов комнат (этап 1 roadmap, решение 2026-08-04).
+ * Корень получает MapParams.startRoomTypeId без ролла. Остальным узлам
+ * (обход от корня, так что лимиты maxPerFloor разбирают сначала мелкие
+ * глубины) тип роллится взвешенно по weight среди допустимых шаблонов
+ * из roomTypePool (minDepth по глубине узла, maxPerFloor по уже назначенным).
+ * Если допустимых нет (конфигурационный тупик) — берётся первый тип пула.
+ *
+ * При заданном MapParams.bossPool родитель exit-узла (самый дальний узел
+ * дерева) получает bossRoomTypeId, а сам exit-узел — rewardRoomTypeId;
+ * оба узла исключаются из взвешенного ролла.
  */
-function spawnStartPoi(
-  rng: RNGState,
+function assignRoomTypes(root: TreeNode, exitNode: TreeNode | null, params: MapParams, rng: RNGState): void {
+  root.roomTypeId = params.startRoomTypeId;
+  const placedCounts = new Map<string, number>();
+
+  // Дегенеративный случай «exitParent === root» (дерево из одной комнаты)
+  // не трогаем: корень обязан остаться стартовой комнатой.
+  const bossNode =
+    params.bossPool && exitNode?.parent && exitNode.parent !== root
+      ? exitNode.parent
+      : null;
+  if (bossNode && exitNode) {
+    bossNode.roomTypeId = params.bossRoomTypeId;
+    exitNode.roomTypeId = params.rewardRoomTypeId;
+  }
+
+  for (const node of collectNodes(root).slice(1)) {
+    if (node === bossNode || (bossNode !== null && node === exitNode)) continue;
+    const typeId = rollRoomType(node.depth, params, rng, placedCounts);
+    node.roomTypeId = typeId;
+    placedCounts.set(typeId, (placedCounts.get(typeId) ?? 0) + 1);
+  }
+}
+
+/** Взвешенный ролл типа комнаты для узла заданной глубины. */
+function rollRoomType(
+  depth: number,
   params: MapParams,
-  state: GameState,
-  playerStart: { x: number; y: number },
-  rootRoom: Room,
-  index: EntityPositionIndex,
-): PointOfInterestEntity[] {
-  if (!params.startPoiId) return [];
+  rng: RNGState,
+  placedCounts: Map<string, number>,
+): string {
+  const candidates = params.roomTypePool
+    .map(id => tryGetRoomType(id))
+    .filter(t => t !== undefined)
+    .filter(t => depth >= t.minDepth && (t.maxPerFloor === undefined || (placedCounts.get(t.id) ?? 0) < t.maxPerFloor));
 
-  const candidates: { x: number; y: number }[] = [];
-  for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
-      if (dx === 0 && dy === 0) continue;
-      const x = playerStart.x + dx;
-      const y = playerStart.y + dy;
-      if (x < rootRoom.x || x >= rootRoom.x + rootRoom.width) continue;
-      if (y < rootRoom.y || y >= rootRoom.y + rootRoom.height) continue;
-      candidates.push({ x, y });
-    }
+  // Тупиковая конфигурация (все типы отфильтрованы): игнорируем лимиты,
+  // лишь бы этаж сгенерировался. Битые ссылки отсекает validate-content.
+  const pool = candidates.length > 0
+    ? candidates
+    : params.roomTypePool.map(id => tryGetRoomType(id)).filter(t => t !== undefined);
+  if (pool.length === 0) return params.roomTypePool[0]!;
+
+  const totalWeight = pool.reduce((sum, t) => sum + t.weight, 0);
+  let roll = rngFloat(rng) * totalWeight;
+  for (const t of pool) {
+    roll -= t.weight;
+    if (roll < 0) return t.id;
   }
-  rngShuffle(rng, candidates);
+  return pool[pool.length - 1]!.id;
+}
 
-  for (const pos of candidates) {
-    if (canPlaceObjectAt(state, 'solid', pos, index)) {
-      return [createPoi(state, params.startPoiId, pos.x, pos.y)];
-    }
+/**
+ * Диапазон размеров комнаты узла — из шаблона его типа.
+ * Fallback используется только при битой конфигурации (тип не найден);
+ * валидный контент сюда не попадает.
+ */
+function getNodeSizeRange(node: TreeNode): { min: number; max: number } {
+  const roomType = node.roomTypeId ? tryGetRoomType(node.roomTypeId) : undefined;
+  if (roomType && roomType.kind === 'generated') {
+    return { min: roomType.minSize, max: roomType.maxSize };
   }
-
-  console.warn(`[mapgen] Не удалось разместить startPoiId "${params.startPoiId}": нет свободной клетки рядом со спавном.`);
-  return [];
+  return { min: 3, max: 8 };
 }
 
 // ─────────────────────────────────────────────
@@ -176,6 +249,7 @@ function buildRoomTree(params: MapParams, rng: RNGState): { root: TreeNode; exit
     parent: null,
     children: [],
     isExit: false,
+    roomTypeId: null,
   };
 
   let totalNodes = 1;
@@ -195,6 +269,7 @@ function buildRoomTree(params: MapParams, rng: RNGState): { root: TreeNode; exit
         parent: node,
         children: [],
         isExit: false,
+        roomTypeId: null,
       };
       node.children.push(child);
       queue.push(child);
@@ -214,6 +289,7 @@ function buildRoomTree(params: MapParams, rng: RNGState): { root: TreeNode; exit
       parent: exitParent,
       children: [],
       isExit: true,
+      roomTypeId: null,
     };
     exitParent.children.push(exitNode);
   }
@@ -268,16 +344,17 @@ function collectNodes(root: TreeNode): TreeNode[] {
  * или отступа — ищется любая свободная позиция в радиусе searchRadius,
  * до которой можно достроить коридор по произвольному пути (BFS).
  */
-function buildLayout(root: TreeNode, params: MapParams, rng: RNGState): Layout {
+function buildLayout(root: TreeNode, rng: RNGState, bossRoomTypeId: string | null): Layout {
   const rooms: Room[] = [];
   const corridors: CorridorPath[] = [];
-  const doorPositions: { x: number; y: number }[] = [];
+  const doorPositions: DoorPosition[] = [];
   const nodeToRoom = new Map<TreeNode, Room>();
   const occupied = new Set<string>();
   const roomPadding = new Set<string>();
 
-  const rootW = rngInt(rng, params.minRoomSize, params.maxRoomSize);
-  const rootH = rngInt(rng, params.minRoomSize, params.maxRoomSize);
+  const rootRange = getNodeSizeRange(root);
+  const rootW = rngInt(rng, rootRange.min, rootRange.max);
+  const rootH = rngInt(rng, rootRange.min, rootRange.max);
   const rootRoom: Room = { x: 0, y: 0, width: rootW, height: rootH };
   rooms.push(rootRoom);
   nodeToRoom.set(root, rootRoom);
@@ -290,8 +367,9 @@ function buildLayout(root: TreeNode, params: MapParams, rng: RNGState): Layout {
     const parentRoom = node.parent ? nodeToRoom.get(node.parent) : null;
     if (!parentRoom) continue;
 
-    const childW = rngInt(rng, params.minRoomSize, params.maxRoomSize);
-    const childH = rngInt(rng, params.minRoomSize, params.maxRoomSize);
+    const childRange = getNodeSizeRange(node);
+    const childW = rngInt(rng, childRange.min, childRange.max);
+    const childH = rngInt(rng, childRange.min, childRange.max);
 
     let placement = tryPlaceChildDirect(parentRoom, childW, childH, occupied, roomPadding, rng);
     if (!placement) {
@@ -312,7 +390,12 @@ function buildLayout(root: TreeNode, params: MapParams, rng: RNGState): Layout {
 
       // Двери ставятся на обоих концах коридора. Если коридор состоит из одной
       // клетки (расстояние между комнатами 1 тайл), ставится одна дверь.
-      doorPositions.push(...collectDoorPositions(placement.corridor));
+      // Коридор, касающийся босс-комнаты (её узел — node или node.parent),
+      // помечает свои двери флагом isBossRoomDoor.
+      const isBossRoomDoor =
+        bossRoomTypeId !== null &&
+        (node.roomTypeId === bossRoomTypeId || node.parent?.roomTypeId === bossRoomTypeId);
+      doorPositions.push(...collectDoorPositions(placement.corridor).map(p => ({ ...p, isBossRoomDoor })));
     }
   }
 
@@ -709,15 +792,30 @@ function collectDoorPositions(corridor: CorridorPath): { x: number; y: number }[
  * Пропускает позицию, если в радиусе 1 клетки (включая диагонали)
  * уже есть другая дверь или если слот solid занят другим объектом
  * размещения (проверка по индексу уже заспавленных сущностей).
+ *
+ * Позиции с флагом isBossRoomDoor создаются шаблоном boss_door и ставятся
+ * всегда: пропуск «рядом уже есть дверь» для них отключён, дыра
+ * в босс-комнате недопустима. Проверка слота solid сохраняется; её фейл
+ * практически недостижим (коридоры не наполняются) — тогда warn,
+ * генерация не падает.
  */
 function buildDoors(
-  positions: { x: number; y: number }[],
+  positions: DoorPosition[],
   state: GameState,
   index?: EntityPositionIndex,
 ): DoorEntity[] {
   const doors: DoorEntity[] = [];
 
   for (const pos of positions) {
+    if (pos.isBossRoomDoor) {
+      if (canPlaceObjectAt(state, 'solid', pos, index)) {
+        doors.push(createDoor(state, 'boss_door', pos.x, pos.y));
+      } else {
+        console.warn(`[treeRoomStrategy] Босс-дверь на (${pos.x}, ${pos.y}) пропущена: слот solid занят`);
+      }
+      continue;
+    }
+
     const hasNearby = doors.some(
       d => Math.abs(d.x - pos.x) <= 1 && Math.abs(d.y - pos.y) <= 1,
     );
@@ -741,7 +839,7 @@ function buildDoors(
  * и вырезает тайлы. Размер результата определяется содержимым,
  * а не исходными width/height из MapParams.
  */
-function buildGameMap(layout: Layout): { map: GameMap; nodeToRoom: Map<TreeNode, Room>; doorPositions: { x: number; y: number }[] } {
+function buildGameMap(layout: Layout): { map: GameMap; nodeToRoom: Map<TreeNode, Room>; doorPositions: DoorPosition[] } {
   const { rooms, corridors } = layout;
 
   let minX = Infinity;
@@ -778,6 +876,7 @@ function buildGameMap(layout: Layout): { map: GameMap; nodeToRoom: Map<TreeNode,
   const shiftedDoorPositions = layout.doorPositions.map(p => ({
     x: p.x + offsetX,
     y: p.y + offsetY,
+    isBossRoomDoor: p.isBossRoomDoor,
   }));
 
   for (const [node, room] of layout.nodeToRoom) {
@@ -786,6 +885,7 @@ function buildGameMap(layout: Layout): { map: GameMap; nodeToRoom: Map<TreeNode,
       y: room.y + offsetY,
       width: room.width,
       height: room.height,
+      roomTypeId: node.roomTypeId ?? undefined,
     };
     shiftedRooms.push(shifted);
     shiftedNodeToRoom.set(node, shifted);

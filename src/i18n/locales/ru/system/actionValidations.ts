@@ -5,6 +5,7 @@ export const ruActionValidations = {
   itemCannotEquip: 'Предмет нельзя экипировать',
   onlyPlayerCanTransition: 'Только игрок может переходить между этажами',
   cannotCloseDoorFromInside: 'Нельзя закрыть дверь, стоя на её клетке',
+  doorLocked: 'Дверь заперта',
   slotEmpty: 'Слот пуст',
   itemCannotUse: 'Предмет нельзя использовать',
   itemEffectNotSupported: 'Эффект предмета "{{effect}}" не поддерживается',

@@ -44,6 +44,11 @@ export type Room = {
   y: number;
   width: number;
   height: number;
+  /**
+   * ID типа комнаты (категория roomTypes), назначенный генератором.
+   * Опционально для обратной совместимости с тестовыми моками.
+   */
+  roomTypeId?: string;
 };
 
 /** Сегмент коридора: прямой отрезок между двумя точками сетки. */
@@ -414,6 +419,8 @@ export type Intent =
   | RemoveItemIntent
   | OpenDoorIntent
   | CloseDoorIntent
+  | LockDoorIntent
+  | UnlockDoorIntent
   | FloorTransitionIntent
   | BumpIntent
   | SkipStunnedTurnIntent
@@ -466,6 +473,8 @@ export type HealIntent = { type: 'HEAL'; entityId: EntityId; amount: number; tag
 export type RemoveItemIntent = { type: 'REMOVE_ITEM'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 export type OpenDoorIntent = { type: 'OPEN_DOOR'; entityId: EntityId; targetPosition: Position };
 export type CloseDoorIntent = { type: 'CLOSE_DOOR'; entityId: EntityId; targetPosition: Position };
+export type LockDoorIntent = { type: 'LOCK_DOOR'; entityId: EntityId; targetPosition: Position };
+export type UnlockDoorIntent = { type: 'UNLOCK_DOOR'; entityId: EntityId; targetPosition: Position };
 export type FloorTransitionIntent = { type: 'FLOOR_TRANSITION'; entityId: EntityId; direction: 'down' | 'up' };
 export type BumpIntent = { type: 'BUMP'; entityId: EntityId; position: Position; dx: number; dy: number };
 export type ApplyFogEventsIntent = { type: 'APPLY_FOG_EVENTS'; events: FogUpdatedEvent[] };
@@ -538,6 +547,8 @@ export type GameEvent =
   | ItemUsedEvent
   | DoorOpenedEvent
   | DoorClosedEvent
+  | DoorLockedEvent
+  | DoorUnlockedEvent
   | FloorChangedEvent
   | MapChangedEvent
   | EntitiesReplacedEvent
@@ -612,6 +623,10 @@ export type ItemUsedEvent = GameEventBase & { type: 'ITEM_USED'; entityId: Entit
 export type DoorOpenedEvent = GameEventBase & { type: 'DOOR_OPENED'; position: Position };
 
 export type DoorClosedEvent = GameEventBase & { type: 'DOOR_CLOSED'; position: Position };
+
+export type DoorLockedEvent = GameEventBase & { type: 'DOOR_LOCKED'; position: Position };
+
+export type DoorUnlockedEvent = GameEventBase & { type: 'DOOR_UNLOCKED'; position: Position };
 
 export type FloorChangedEvent = GameEventBase & {
   type: 'FLOOR_CHANGED';

@@ -5,21 +5,15 @@ export const floor1 = {
   "strategy": "tree",
   "width": 40,
   "height": 40,
-  "minRooms": 5,
-  "maxRooms": 20,
-  "minRoomSize": 3,
-  "maxRoomSize": 8,
-  "enemyDensity": 1,
-  "itemDensity": 0.1,
-  "enemyPool": [
-    "cat_small",
-    "cat_mid",
-    "cat_big"
+  "minRooms": 10,
+  "maxRooms": 15,
+  "roomTypePool": [
+    "normal"
   ],
-  "itemPool": [
-    "health_potion"
+  "startRoomTypeId": "start",
+  "bossPool": [
+    "cat_guardian"
   ],
-  "startPoiId": "relic_altar",
   "relicPool": [
     "relic_salamander_heart",
     "relic_venom_gland",

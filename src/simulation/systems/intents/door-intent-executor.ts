@@ -1,17 +1,22 @@
 /**
- * Исполнитель интентов открытия и закрытия двери.
+ * Исполнитель интентов открытия, закрытия и запирания двери.
  *
  * Контракт:
- * - Мутирует состояние двери (isOpen, blocksMovement).
- * - Порождает событие DOOR_OPENED / DOOR_CLOSED.
+ * - Мутирует состояние двери (isOpen, blocksMovement, isLocked).
+ * - Порождает событие DOOR_OPENED / DOOR_CLOSED / DOOR_LOCKED / DOOR_UNLOCKED.
+ *   Событие эмитится всегда, даже если дверь уже находилась в целевом состоянии
+ *   (как и в исполнителях open/close).
+ * - Запирание открытой двери сначала закрывает её (как executeCloseDoorIntent),
+ *   затем выставляет isLocked.
+ * - Открытие запертой двери невозможно: executeOpenDoorIntent возвращает null.
  * - World reactions могут подцепиться к этим событиям при необходимости.
  */
 
 import type {GameState} from '@simulation/types';
-import type {CloseDoorIntent, OpenDoorIntent} from '@simulation/core-types';
+import type {CloseDoorIntent, LockDoorIntent, OpenDoorIntent, UnlockDoorIntent} from '@simulation/core-types';
 import {findDoorAt} from '@simulation/state';
 import type {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
-import type {CloseDoorIntentExecutor, OpenDoorIntentExecutor} from './types';
+import type {CloseDoorIntentExecutor, LockDoorIntentExecutor, OpenDoorIntentExecutor, UnlockDoorIntentExecutor} from './types';
 
 export const executeOpenDoorIntent: OpenDoorIntentExecutor = (
   state: GameState,
@@ -21,6 +26,9 @@ export const executeOpenDoorIntent: OpenDoorIntentExecutor = (
 ) => {
   const door = findDoorAt(state, intent.targetPosition.x, intent.targetPosition.y);
   if (!door) return null;
+
+  // Запертую дверь нельзя открыть: интент игнорируется, событие не порождается.
+  if (door.isLocked) return null;
 
   door.isOpen = true;
   door.blocksMovement = false;
@@ -45,6 +53,43 @@ export const executeCloseDoorIntent: CloseDoorIntentExecutor = (
 
   return executionBuilder.addChild(parent, {
     type: 'DOOR_CLOSED', isFieldEvent: true,
+    position: { x: door.x, y: door.y },
+  });
+};
+
+export const executeLockDoorIntent: LockDoorIntentExecutor = (
+  state: GameState,
+  intent: LockDoorIntent,
+  executionBuilder: ExecutionBuilder,
+  parent: ExecutionNode,
+) => {
+  const door = findDoorAt(state, intent.targetPosition.x, intent.targetPosition.y);
+  if (!door) return null;
+
+  // Запереть можно только закрытую дверь: открытая сначала закрывается.
+  door.isOpen = false;
+  door.blocksMovement = true;
+  door.isLocked = true;
+
+  return executionBuilder.addChild(parent, {
+    type: 'DOOR_LOCKED', isFieldEvent: true,
+    position: { x: door.x, y: door.y },
+  });
+};
+
+export const executeUnlockDoorIntent: UnlockDoorIntentExecutor = (
+  state: GameState,
+  intent: UnlockDoorIntent,
+  executionBuilder: ExecutionBuilder,
+  parent: ExecutionNode,
+) => {
+  const door = findDoorAt(state, intent.targetPosition.x, intent.targetPosition.y);
+  if (!door) return null;
+
+  door.isLocked = false;
+
+  return executionBuilder.addChild(parent, {
+    type: 'DOOR_UNLOCKED', isFieldEvent: true,
     position: { x: door.x, y: door.y },
   });
 };

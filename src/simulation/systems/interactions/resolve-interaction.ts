@@ -41,6 +41,10 @@ export function resolveInteractionForEntity(
       if (!door.isAlive) {
         return null;
       }
+      // Запертая дверь не предоставляет взаимодействий (отпирается интентом UNLOCK_DOOR).
+      if (door.isLocked) {
+        return null;
+      }
       return door.isOpen
         ? { interactionId: 'close_door', usableFromAdjacent: true }
         : { interactionId: 'open_door', usableFromAdjacent: true };

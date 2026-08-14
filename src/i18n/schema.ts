@@ -87,10 +87,6 @@ export interface ScreensEndingTranslations {
   itemsCollected: string;
   victorySubtitle: string;
   defeatSubtitle: string;
-  boss1: string;
-  boss2: string;
-  boss3: string;
-  boss4: string;
   unknownBoss: string;
   statStrength: string;
   statIntelligence: string;
@@ -217,6 +213,8 @@ export interface ComponentsFieldObjectPopoverTranslations {
   cooldownReady: string;
   possibleLootTitle: string;
   preparingTitle: string;
+  /** Строка состояния «заперта» в поповере двери. */
+  lockedLabel: string;
 }
 
 export interface ComponentsInteractionHintTranslations {
@@ -358,6 +356,8 @@ export interface SystemLogBuilderTranslations {
   enemyNameFallback: string;
   doorOpened: string;
   doorClosed: string;
+  doorLocked: string;
+  doorUnlocked: string;
   counterattackTriggered: string;
   abilityPrepared: string;
   abilityPreparedCancelled: string;
@@ -457,6 +457,7 @@ export interface SystemActionValidationsTranslations {
   itemCannotEquip: string;
   onlyPlayerCanTransition: string;
   cannotCloseDoorFromInside: string;
+  doorLocked: string;
   slotEmpty: string;
   itemCannotUse: string;
   itemEffectNotSupported: string;

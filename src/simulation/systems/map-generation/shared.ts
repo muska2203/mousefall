@@ -4,14 +4,15 @@
  * Содержит:
  * - Операции вырезания тайлов (carveRoom, carveHCorridor, carveVCorridor).
  * - Геометрические хелперы (roomCenter, randomPosInRoom).
- * - Фабрики сущностей (createEnemy, createFloorItem, createStairs, createDoor).
- * - Утилиты спавна врагов/предметов.
+ * - Наполнение комнат их типами (fillRooms, категория контента roomTypes).
+ * - Фабрики сущностей (createEnemy, createFloorItem, createStairs, createDoor и т.д.).
  */
 
 import type {
     DoorEntity,
     EnemyEntity,
     FloorItemContainerEntity,
+    GameMap,
     GameState,
     PointOfInterestEntity,
     PropEntity,
@@ -22,11 +23,12 @@ import type {
     TileType,
     TrapEntity
 } from '@simulation/types';
-import type {MapParams} from '@content/schemas';
-import {rngChance, rngInt} from '@utils/rng';
-import {buildEntityPositionIndex, canPlaceObjectAt, EntityPositionIndex, nextEntityId} from '@simulation/state';
+import type {Position, TileEffects} from '@simulation/core-types';
+import type {RoomFill} from '@content/schemas';
+import {rngChance, rngInt, rngPick, rngShuffle} from '@utils/rng';
+import {buildEntityPositionIndex, canPlaceObjectAt, EntityPositionIndex, nextEntityId, PlacementSlot, terrainHasTag} from '@simulation/state';
 import {createDefaultAIState} from '@simulation/ai/ai-state';
-import {getDoor, getEntity, getItem, getPoi, getProp, getTrap} from '@content/registry';
+import {getDoor, getEntity, getItem, getPoi, getProp, getTrap, tryGetRoomType, tryGetTileEffect} from '@content/registry';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory';
 import {createInventoryItem} from '@simulation/systems/inventory-factory';
 import {addModifier} from '@simulation/systems/stats/modifier-engine';
@@ -89,55 +91,197 @@ export function randomPosInRoom(rng: RNGState, room: Room): { x: number; y: numb
 }
 
 // ─────────────────────────────────────────────
-// Спавн врагов и предметов
+// Наполнение комнат их типами
 // ─────────────────────────────────────────────
 
-export function spawnEnemiesAndItems(
+/** Результат наполнения комнат этажа их типами (см. fillRooms). */
+export type FilledRooms = {
+  enemies: EnemyEntity[];
+  items: FloorItemContainerEntity[];
+  props: PropEntity[];
+  traps: TrapEntity[];
+  pois: PointOfInterestEntity[];
+};
+
+/**
+ * Наполняет комнаты карты по их типам (Room.roomTypeId, категория roomTypes).
+ *
+ * Порядок внутри комнаты: гарантированные poi → враги → предметы → пропы →
+ * ловушки → лужи тайловых эффектов. Количество каждого вида — от площади
+ * комнаты (ожидаемое = площадь/16 × плотность из шаблона типа). Объекты
+ * размещаются через canPlaceObjectAt (слоты solid/floorFixture/loot);
+ * клетка старта игрока исключается из размещения. Комнаты без roomTypeId
+ * (тестовые моки) и неизвестные типы пропускаются.
+ * Лужи пишутся в переданную сетку tileEffects новой карты; тайлы проверяются
+ * по map, а не по state (state.map на момент генерации ещё старый).
+ */
+export function fillRooms(
   rng: RNGState,
-  rooms: Room[],
-  params: MapParams,
+  map: GameMap,
   state: GameState,
-): { enemies: EnemyEntity[]; items: FloorItemContainerEntity[] } {
-  const enemies: EnemyEntity[] = [];
-  const items: FloorItemContainerEntity[] = [];
+  playerStart: Position,
+  tileEffects: TileEffects[][],
+): FilledRooms {
+  const result: FilledRooms = { enemies: [], items: [], props: [], traps: [], pois: [] };
   // Отслеживаем занятые тайлы, чтобы несколько врагов не спавнились в одной клетке.
   const occupied = new Set<string>();
   // Индекс уже размещённых сущностей — для проверки слотов размещения объектов.
   let placedIndex: EntityPositionIndex = new Map();
   const rebuildPlacedIndex = () => {
-    placedIndex = buildEntityPositionIndex(new Map([...enemies, ...items].map(e => [e.id, e])));
+    placedIndex = buildEntityPositionIndex(new Map(
+      [...result.enemies, ...result.items, ...result.props, ...result.traps, ...result.pois]
+        .map(e => [e.id, e]),
+    ));
   };
+  const getPlacedIndex = () => placedIndex;
 
-  for (let i = 1; i < rooms.length; i++) {
-    const room = rooms[i]!;
-
-    // Количество врагов считается от площади комнаты: 1 враг на каждые 4×4 клеток при density = 1.
+  for (const room of map.rooms) {
+    if (!room.roomTypeId) continue;
+    const roomType = tryGetRoomType(room.roomTypeId);
+    if (!roomType || roomType.kind !== 'generated') continue;
+    const fill = roomType.fill;
     const roomArea = room.width * room.height;
-    const expectedEnemies = (roomArea / 16) * params.enemyDensity;
-    const guaranteedCount = Math.floor(expectedEnemies);
-    const extraChance = expectedEnemies - guaranteedCount;
 
-    for (let j = 0; j < guaranteedCount; j++) {
-      spawnEnemyInRoom(rng, room, params, state, enemies, occupied);
+    // Гарантированные poi типа (например, алтарь выбора реликвии в стартовой комнате).
+    for (const poiId of fill.guaranteedPois) {
+      const pos = findFreeObjectCell(rng, room, state, 'solid', playerStart, getPlacedIndex, rebuildPlacedIndex);
+      if (pos) result.pois.push(createPoi(state, poiId, pos.x, pos.y));
     }
 
-    if (extraChance > 0 && rngChance(rng, extraChance * 100)) {
-      spawnEnemyInRoom(rng, room, params, state, enemies, occupied);
+    const enemyCount = rollCountFromArea(rng, roomArea, fill.enemyDensity);
+    for (let i = 0; i < enemyCount; i++) {
+      spawnEnemyInRoom(rng, room, fill.enemyPool, state, result.enemies, occupied, playerStart);
     }
 
-    if (rngChance(rng, params.itemDensity * 100)) {
-      const templateId = params.itemPool[rngInt(rng, 0, params.itemPool.length - 1)] ?? 'health_potion';
-      const pos = randomPosInRoom(rng, room);
-      rebuildPlacedIndex();
-      // Слот loot: предмет не ставится на клетку с несовместимым объектом
-      // (второй лут или solid). Акторы размещению лута не мешают.
-      if (canPlaceObjectAt(state, 'loot', pos, placedIndex)) {
-        items.push(createFloorItem(state, templateId, pos.x, pos.y));
-      }
-    }
+    spawnPooledObjects(rng, room, state, playerStart, getPlacedIndex, rebuildPlacedIndex,
+      fill.itemPool, rollCountFromArea(rng, roomArea, fill.itemDensity), 'loot',
+      (templateId, pos) => result.items.push(createFloorItem(state, templateId, pos.x, pos.y)));
+    spawnPooledObjects(rng, room, state, playerStart, getPlacedIndex, rebuildPlacedIndex,
+      fill.propPool, rollCountFromArea(rng, roomArea, fill.propDensity), 'solid',
+      (templateId, pos) => result.props.push(createProp(state, templateId, pos.x, pos.y)));
+    spawnPooledObjects(rng, room, state, playerStart, getPlacedIndex, rebuildPlacedIndex,
+      fill.trapPool, rollCountFromArea(rng, roomArea, fill.trapDensity), 'floorFixture',
+      (templateId, pos) => result.traps.push(createTrap(state, templateId, pos.x, pos.y)));
+
+    spawnTileEffectPatches(rng, room, map, fill, tileEffects);
   }
 
-  return { enemies, items };
+  return result;
+}
+
+/**
+ * Переводит плотность в количество объектов: ожидаемое число =
+ * (площадь комнаты / 16) × density; целая часть гарантирована, дробная — шансом.
+ */
+function rollCountFromArea(rng: RNGState, roomArea: number, density: number): number {
+  const expected = (roomArea / 16) * density;
+  const guaranteed = Math.floor(expected);
+  const extraChance = expected - guaranteed;
+  return guaranteed + (extraChance > 0 && rngChance(rng, extraChance * 100) ? 1 : 0);
+}
+
+/**
+ * Ищет свободную клетку для объекта размещения (до 10 попыток).
+ * Клетка старта игрока исключается. Индекс перестраивается перед каждой
+ * проверкой, чтобы учесть объекты, размещённые на прошлых итерациях.
+ */
+function findFreeObjectCell(
+  rng: RNGState,
+  room: Room,
+  state: GameState,
+  slot: PlacementSlot,
+  playerStart: Position,
+  getIndex: () => EntityPositionIndex,
+  rebuildIndex: () => void,
+): Position | null {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const pos = randomPosInRoom(rng, room);
+    if (pos.x === playerStart.x && pos.y === playerStart.y) continue;
+    rebuildIndex();
+    if (canPlaceObjectAt(state, slot, pos, getIndex())) return pos;
+  }
+  return null;
+}
+
+/**
+ * Размещает до count объектов из пула равномерным выбором на свободных клетках
+ * комнаты в заданном слоте размещения.
+ */
+function spawnPooledObjects(
+  rng: RNGState,
+  room: Room,
+  state: GameState,
+  playerStart: Position,
+  getIndex: () => EntityPositionIndex,
+  rebuildIndex: () => void,
+  pool: readonly string[],
+  count: number,
+  slot: PlacementSlot,
+  create: (templateId: string, pos: Position) => void,
+): void {
+  if (pool.length === 0) return;
+  for (let i = 0; i < count; i++) {
+    const pos = findFreeObjectCell(rng, room, state, slot, playerStart, getIndex, rebuildIndex);
+    // Комната забита — дальнейшие попытки бессмысленны.
+    if (!pos) return;
+    create(rngPick(rng, pool), pos);
+  }
+}
+
+/**
+ * Размещает пятна (лужи) тайловых эффектов из пула типа комнаты.
+ * Пятно — центральная клетка + 0–2 случайных соседних (8-соседство) внутри
+ * комнаты; ставится только на террейн с тегом 'ground' и только если слой
+ * эффекта на клетке свободен (пятна одного слоя не перекрываются).
+ */
+function spawnTileEffectPatches(
+  rng: RNGState,
+  room: Room,
+  map: GameMap,
+  fill: RoomFill,
+  tileEffects: TileEffects[][],
+): void {
+  if (fill.tileEffectPool.length === 0) return;
+  const patchCount = rollCountFromArea(rng, room.width * room.height, fill.tileEffectDensity);
+
+  for (let i = 0; i < patchCount; i++) {
+    const effectId = rngPick(rng, fill.tileEffectPool);
+    const template = tryGetTileEffect(effectId);
+    if (!template) continue;
+
+    const center = randomPosInRoom(rng, room);
+    const cells: Position[] = [center];
+
+    const neighbors: Position[] = [];
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = center.x + dx;
+        const ny = center.y + dy;
+        if (nx < room.x + 1 || nx > room.x + room.width - 2) continue;
+        if (ny < room.y + 1 || ny > room.y + room.height - 2) continue;
+        neighbors.push({ x: nx, y: ny });
+      }
+    }
+    rngShuffle(rng, neighbors);
+    const extraCells = rngInt(rng, 0, 2);
+    for (let k = 0; k < Math.min(extraCells, neighbors.length); k++) {
+      cells.push(neighbors[k]!);
+    }
+
+    for (const cell of cells) {
+      if (!terrainHasTag(map.tiles[cell.y]?.[cell.x], 'ground')) continue;
+      const cellEffects = tileEffects[cell.y]?.[cell.x];
+      if (!cellEffects || cellEffects[template.layer]) continue;
+      cellEffects[template.layer] = {
+        type: template.id,
+        duration: template.duration,
+        layer: template.layer,
+        statusEffects: [],
+        renderOrder: template.renderOrder,
+      };
+    }
+  }
 }
 
 /**
@@ -147,26 +291,26 @@ export function spawnEnemiesAndItems(
 function spawnEnemyInRoom(
   rng: RNGState,
   room: Room,
-  params: MapParams,
+  pool: readonly string[],
   state: GameState,
   enemies: EnemyEntity[],
   occupied: Set<string>,
+  playerStart: Position,
 ): void {
+  if (pool.length === 0) return;
   let pos = randomPosInRoom(rng, room);
   let key = `${pos.x},${pos.y}`;
   let attempts = 0;
-  // Если тайл занят, пробуем подобрать свободный, но не более 10 попыток.
-  while (occupied.has(key) && attempts < 10) {
+  // Если тайл занят другим врагом или это старт игрока, пробуем подобрать
+  // свободный, но не более 10 попыток.
+  while ((occupied.has(key) || (pos.x === playerStart.x && pos.y === playerStart.y)) && attempts < 10) {
     pos = randomPosInRoom(rng, room);
     key = `${pos.x},${pos.y}`;
     attempts++;
   }
 
   occupied.add(key);
-  const templateId = params.enemyPool.length > 0
-    ? params.enemyPool[rngInt(rng, 0, params.enemyPool.length - 1)]!
-    : 'cat_small';
-  enemies.push(createEnemy(state, templateId, pos.x, pos.y));
+  enemies.push(createEnemy(state, rngPick(rng, pool), pos.x, pos.y));
 }
 
 // ─────────────────────────────────────────────
@@ -300,6 +444,7 @@ export function createDoor(state: GameState, templateId: string, x: number, y: n
     blocksMovement: true,
     interactionKind: 'door',
     isOpen: false,
+    isLocked: false,
     hp: template.maxHp,
     maxHp: template.maxHp,
     armor: template.armor,

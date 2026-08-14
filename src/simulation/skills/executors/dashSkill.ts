@@ -34,7 +34,8 @@ const DIRECTIONS = [
 /**
  * Фабрика исполнителя способности вида «рывок»:
  * перемещение кастера на distance клеток в выбранном направлении с уроном
- * и отталкиванием акторов на пути; закрытые двери на пути открываются.
+ * и отталкиванием акторов на пути; закрытые двери на пути открываются
+ * (запертые — нет, они блокируют рывок как препятствие).
  *
  * Урон столкновения фиксированный (без скейлинга от характеристик и уровня) —
  * модификаторы урона вешаются через стандартные модификаторы и контентные правила.
@@ -47,6 +48,7 @@ export function createDashSkill(params: DashSkillParams): SkillExecutor {
    * Проверяет, можно ли начать рывок в заданном направлении.
    * Первая клетка пути не должна быть стеной или непроходимым объектом.
    * Закрытая дверь является исключением — рывок открывает её и проходит дальше.
+   * Запертая дверь рывком не пробивается и блокирует направление.
    */
   function isDashStartAllowed(state: GameState, caster: Entity, dx: number, dy: number): boolean {
     const x = caster.x + dx;
@@ -56,7 +58,7 @@ export function createDashSkill(params: DashSkillParams): SkillExecutor {
     if (!isTerrainWalkable(state.map.tiles[y]?.[x])) return false;
 
     const door = findDoorAt(state, x, y);
-    if (door && !door.isOpen) return true;
+    if (door && !door.isOpen) return !door.isLocked;
 
     return !isBlocked(state, x, y);
   }
@@ -183,8 +185,19 @@ export function createDashSkill(params: DashSkillParams): SkillExecutor {
       }
 
       // Закрытая дверь открывается, и кастер проходит через неё.
+      // Запертая дверь рывком не пробивается — кастер остаётся перед ней и отскакивает.
       const door = findDoorAt(state, cellX, cellY);
       if (door && !door.isOpen) {
+        if (door.isLocked) {
+          intents.push({
+            type: 'BUMP',
+            entityId: caster.id,
+            position: { x: currentX, y: currentY },
+            dx: stepX,
+            dy: stepY,
+          });
+          break;
+        }
         intents.push({
           type: 'OPEN_DOOR',
           entityId: caster.id,

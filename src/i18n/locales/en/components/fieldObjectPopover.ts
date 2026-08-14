@@ -10,4 +10,5 @@ export const enFieldObjectPopover = {
   cooldownReady: 'Ready',
   possibleLootTitle: 'Possible Loot',
   preparingTitle: 'Preparing',
+  lockedLabel: 'Locked',
 } as const satisfies ComponentsFieldObjectPopoverTranslations;

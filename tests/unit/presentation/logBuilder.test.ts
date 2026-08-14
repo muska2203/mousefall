@@ -161,6 +161,22 @@ describe('logBuilder новые события content rules', () => {
     expect(entry!.variant).toBe('info');
   });
 
+  it('DOOR_LOCKED и DOOR_UNLOCKED формируют строки на русском', () => {
+    const locked = gameEventToLog(makeBaseState(), {
+      type: 'DOOR_LOCKED', isFieldEvent: true,
+      position: { x: 4, y: 5 },
+    } as GameEvent, 'ru');
+    expect(locked!.text).toBe('Дверь заперта');
+    expect(locked!.variant).toBe('info');
+
+    const unlocked = gameEventToLog(makeBaseState(), {
+      type: 'DOOR_UNLOCKED', isFieldEvent: true,
+      position: { x: 4, y: 5 },
+    } as GameEvent, 'ru');
+    expect(unlocked!.text).toBe('Дверь отперта');
+    expect(unlocked!.variant).toBe('info');
+  });
+
   it('новые события формируют корректные строки на английском', async () => {
     await i18next.changeLanguage('en');
     const state = makeBaseState();
@@ -214,5 +230,17 @@ describe('logBuilder новые события content rules', () => {
       tags: ['damage.physical.slashing', 'crit'],
     } as GameEvent, 'en');
     expect(crit!.text).toBe('Hero took 9 damage (crit!)');
+
+    const locked = gameEventToLog(state, {
+      type: 'DOOR_LOCKED', isFieldEvent: true,
+      position: { x: 4, y: 5 },
+    } as GameEvent, 'en');
+    expect(locked!.text).toBe('The door is locked');
+
+    const unlocked = gameEventToLog(state, {
+      type: 'DOOR_UNLOCKED', isFieldEvent: true,
+      position: { x: 4, y: 5 },
+    } as GameEvent, 'en');
+    expect(unlocked!.text).toBe('The door is unlocked');
   });
 });

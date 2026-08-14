@@ -16,6 +16,10 @@ export const doors: Record<string, ContentText> = {
     name: 'Деревянная дверь',
     flavorText: 'Хрупкая, но лучше, чем ничего.',
   },
+  boss_door: {
+    name: 'Массивная дверь',
+    flavorText: 'Не взломать и не сжечь. За ней ждёт что-то большое.',
+  },
 };
 
 export const props: Record<string, ContentText> = {

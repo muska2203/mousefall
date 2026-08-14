@@ -12,12 +12,10 @@ const testMapParams: MapParams = {
   height: 50,
   minRooms: 2,
   maxRooms: 4,
-  minRoomSize: 3,
-  maxRoomSize: 5,
-  enemyDensity: 0,
-  itemDensity: 0,
-  enemyPool: [],
-  itemPool: [],
+  roomTypePool: ['normal'],
+  startRoomTypeId: 'start',
+  bossRoomTypeId: 'boss',
+  rewardRoomTypeId: 'reward',
 };
 
 function makeFloorGrid(w: number, h: number): TileType[][] {

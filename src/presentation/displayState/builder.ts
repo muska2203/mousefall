@@ -250,6 +250,14 @@ export function createPatch(event: GameEvent, state: GameState): DisplayPatch {
     case 'DOOR_CLOSED':
       return { type: 'DOOR_CLOSED', position: event.position };
 
+    case 'DOOR_LOCKED':
+      // Запирание всегда закрывает дверь (см. executeLockDoorIntent) — переиспользуем патч закрытия.
+      return { type: 'DOOR_CLOSED', position: event.position };
+
+    case 'DOOR_UNLOCKED':
+      // Отпирание не меняет визуальное состояние двери.
+      return { type: 'NO_OP' };
+
     case 'ITEM_DROPPED': {
       const container: DisplayEntity = {
         id: event.containerId,

@@ -4,6 +4,7 @@
 
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import '@i18n/config';
+import i18next from 'i18next';
 import {GameSession} from '../../../src/presentation/gameSession';
 import { makeDoor, makeEnemy, makeFloorItemContainer, makeGameState, makePlayer, makeProp, makeStairs, createTestTerrains } from '../../fixtures/gameState';
 import {initRegistry, resetRegistry} from '../../../src/content/registry';
@@ -434,6 +435,30 @@ describe('GameSession moveOrAttack with doors', () => {
     // Должна произойти атака по врагу, а не попытка шага на клетку.
     expect(updatedEnemy.hp).toBeLessThan(initialEnemyHp);
     expect(updatedDoor.hp).toBe(door.hp);
+    expect(newState.player.x).toBe(5);
+    expect(newState.player.y).toBe(5);
+    expect(newState.player.ap).toBe(2);
+  });
+
+  it('does not open a locked door and does not spend AP', () => {
+    const player = makePlayer({ x: 5, y: 5, ap: 2, maxAp: 2 });
+    const door = makeDoor({ x: 6, y: 5, isOpen: false, blocksMovement: true, isLocked: true });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player], [door.id, door]]),
+    });
+
+    const session = new GameSession();
+    session.loadGame(state);
+
+    session.moveOrAttack(1, 0);
+
+    const newState = session.getViewModel().renderInput!.state;
+    const updatedDoor = newState.entities.get(door.id) as import('../../../src/simulation/types').DoorEntity;
+    // INTERACT не порождается: дверь остаётся закрытой и запертой,
+    // MOVE в её клетку отклоняется Simulation — игрок не сдвинулся, AP не потрачены.
+    expect(updatedDoor.isOpen).toBe(false);
+    expect(updatedDoor.isLocked).toBe(true);
     expect(newState.player.x).toBe(5);
     expect(newState.player.y).toBe(5);
     expect(newState.player.ap).toBe(2);
@@ -1352,5 +1377,70 @@ describe('GameSession fieldObjectPopover', () => {
     const popover = session.getViewModel().renderInput?.fieldObjectPopover;
     expect(popover).toBeDefined();
     expect(popover?.kind).toBe('enemy');
+  });
+});
+
+describe('GameSession.getDefeatedBosses', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      terrains: createTestTerrains(),
+      entities: new Map([
+        // cat_guardian — мок-шаблон босса; имя берётся из контентных текстов.
+        ['cat_guardian', { id: 'cat_guardian', isBoss: true } as any],
+      ]),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  function makeStateWithBosses(ids: string[]) {
+    const player = makePlayer({ x: 5, y: 5 });
+    return makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+      runStats: {
+        startTime: 0,
+        enemiesKilled: 0,
+        chestsOpened: 0,
+        itemsPickedUp: 0,
+        defeatedBossIds: ids,
+      },
+    });
+  }
+
+  it('возвращает локализованные имена боссов из контента (ru), fallback — unknownBoss', async () => {
+    await i18next.changeLanguage('ru');
+    const session = new GameSession();
+    session.loadGame(makeStateWithBosses(['cat_guardian', 'missing_boss']));
+    session.setLocale('ru');
+
+    expect(session.getDefeatedBosses()).toEqual(['Кот-страж', 'Неизвестный босс']);
+  });
+
+  it('возвращает локализованные имена боссов из контента (en), fallback — unknownBoss', async () => {
+    await i18next.changeLanguage('en');
+    const session = new GameSession();
+    session.loadGame(makeStateWithBosses(['cat_guardian', 'missing_boss']));
+    session.setLocale('en');
+
+    expect(session.getDefeatedBosses()).toEqual(['Cat Guardian', 'Unknown boss']);
+  });
+
+  it('возвращает пустой список без активной симуляции', () => {
+    const session = new GameSession();
+
+    expect(session.getDefeatedBosses()).toEqual([]);
   });
 });

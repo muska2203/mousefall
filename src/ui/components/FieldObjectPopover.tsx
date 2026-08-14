@@ -153,6 +153,11 @@ export function FieldObjectPopover({ popover, visible, x, y }: Props) {
             <span className="field-popover-stat">
               {t('fieldObjectPopover.armorLabel')}<strong>{popover.data.armor}</strong>
             </span>
+            {popover.data.isLocked && (
+              <span className="field-popover-stat">
+                {t('fieldObjectPopover.lockedLabel')}
+              </span>
+            )}
           </div>
         </div>
       )}

@@ -74,6 +74,7 @@ import {
   getMapParams,
   tryGetItem,
   tryGetLocalizedAbility,
+  tryGetLocalizedEntity,
   tryGetLocalizedItem,
   tryGetLocalizedPoi,
   tryGetLocalizedRelic,
@@ -281,21 +282,15 @@ export class GameSession {
    * Список побеждённых боссов для экрана итогов.
    *
    * Источник правды — state.runStats.defeatedBossIds из Simulation.
-   * Пока в Content нет шаблонов боссов, имена маппятся на i18n-ключи.
+   * Имена берутся из локализованных шаблонов Content; если шаблон не найден —
+   * fallback на i18n-строку «неизвестный босс».
    */
   getDefeatedBosses(): string[] {
     const state = this.simulation?.getState();
     if (!state) return [];
 
-    const BOSS_NAME_KEYS: Record<string, string> = {
-      cat_king: 'ending.boss1',
-      owl_lord: 'ending.boss2',
-      rat_king: 'ending.boss3',
-      moth_queen: 'ending.boss4',
-    };
-
     return state.runStats.defeatedBossIds.map((templateId) =>
-      t(BOSS_NAME_KEYS[templateId] ?? 'ending.unknownBoss'),
+      tryGetLocalizedEntity(templateId, this.locale)?.name ?? t('screens.ending.unknownBoss'),
     );
   }
 
@@ -1648,8 +1643,9 @@ export class GameSession {
   }
 
   /**
-   * Возвращает единственную закрытую дверь на тайле.
+   * Возвращает единственную закрытую незапертую дверь на тайле.
    * Если на клетке есть другие блокираторы (враг, ещё одна дверь), возвращает null.
+   * Запертая дверь не открывается взаимодействием, поэтому не возвращается.
    */
   private findSingleClosedDoorAt(pos: Position, state: Readonly<GameState>): DoorEntity | null {
     if (!this.simulation) return null;
@@ -1657,7 +1653,7 @@ export class GameSession {
     if (blockers.length !== 1) return null;
 
     const door = blockers[0];
-    if (!door || door.type !== 'door' || door.isAlive === false || door.isOpen) return null;
+    if (!door || door.type !== 'door' || door.isAlive === false || door.isOpen || door.isLocked) return null;
     return door;
   }
 
@@ -1680,7 +1676,8 @@ export class GameSession {
     const simulation = this.simulation!;
 
     // Для построения автопути закрытая дверь считается условно проходимой:
-    // игрок подойдёт и откроет её. Если на клетке есть другой блокиратор
+    // игрок подойдёт и откроет её. Запертая дверь непроходима — открыть её
+    // взаимодействием нельзя. Если на клетке есть другой блокиратор
     // (враг, ещё одна дверь), клетка остаётся непроходимой.
     const isTilePassable = (pos: Position): boolean => {
       if (simulation.isTileWalkableForPlayer(pos)) return true;
@@ -1690,7 +1687,7 @@ export class GameSession {
 
       const door = blockers[0];
       if (!door) return false;
-      return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+      return door.type === 'door' && door.isAlive !== false && !door.isOpen && !door.isLocked;
     };
 
     return {
@@ -1707,7 +1704,7 @@ export class GameSession {
           if (blockers.length !== 1) return false;
           const door = blockers[0];
           if (!door) return false;
-          return door.type === 'door' && door.isAlive !== false && !door.isOpen;
+          return door.type === 'door' && door.isAlive !== false && !door.isOpen && !door.isLocked;
         };
         return findPathTowards(start, target, isWalkable, isPassable);
       },
@@ -2097,7 +2094,7 @@ export class GameSession {
       // Если враг стоит на клетке с открытой дверью, атака всё равно должна
       // сработать в приоритете, а не превращаться в MOVE.
       action = {type: 'ATTACK', entityId: state.player.id, dx, dy};
-    } else if (doorAtTarget && doorAtTarget.type === 'door') {
+    } else if (doorAtTarget && doorAtTarget.type === 'door' && !doorAtTarget.isLocked) {
       if (doorAtTarget.isOpen) {
         // Открытая дверь — просто заходим на её клетку.
         action = {type: 'MOVE', entityId: state.player.id, dx, dy};
@@ -2114,6 +2111,8 @@ export class GameSession {
         return;
       }
     } else {
+      // Запертая дверь попадает сюда: INTERACT не порождаем, а MOVE в её клетку
+      // будет отклонён Simulation с reason tile_blocked (как удар об стену).
       action = {type: 'MOVE', entityId: state.player.id, dx, dy};
     }
 

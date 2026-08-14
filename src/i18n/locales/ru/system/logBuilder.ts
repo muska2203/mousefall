@@ -14,6 +14,8 @@ export const ruLogBuilder = {
   enemyNameFallback: 'Враг',
   doorOpened: 'Дверь открыта',
   doorClosed: 'Дверь закрыта',
+  doorLocked: 'Дверь заперта',
+  doorUnlocked: 'Дверь отперта',
   counterattackTriggered: '{{name}} контратакует',
   abilityPrepared: '{{name}} готовит {{ability}}',
   abilityPreparedCancelled: '{{name}} прервал подготовку',

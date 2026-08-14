@@ -163,6 +163,7 @@ export function makeDoor(overrides: Partial<DoorEntity> = {}): DoorEntity {
     blocksMovement: true,
     interactionKind: 'door',
     isOpen: false,
+    isLocked: false,
     hp: 30,
     maxHp: 30,
     armor: 2,
@@ -264,8 +265,22 @@ export function mockWoodenDoorTemplate(): DoorTemplate {
     interactionKind: 'door',
     maxHp: 30,
     armor: 2,
+    indestructible: false,
     tags: ['flammable'],
     canHaveStatus: ['burning'],
+  };
+}
+
+/** Минимальный шаблон неразрушаемой двери босс-комнаты. */
+export function mockBossDoorTemplate(): DoorTemplate {
+  return {
+    id: 'boss_door',
+    interactionKind: 'door',
+    maxHp: 30,
+    armor: 2,
+    indestructible: true,
+    tags: ['boss_room'],
+    canHaveStatus: [],
   };
 }
 
@@ -332,7 +347,10 @@ export function createObjectContent(overrides: Partial<LoadedContent> = {}): Loa
     tileEffectStatuses: new Map(),
     maps: new Map(),
     stairs: new Map(),
-    doors: new Map([['wooden_door', mockWoodenDoorTemplate()]]),
+    doors: new Map([
+      ['wooden_door', mockWoodenDoorTemplate()],
+      ['boss_door', mockBossDoorTemplate()],
+    ]),
     props: new Map([['oil_barel', mockOilBarrelTemplate()]]),
     pois: new Map([['altar', mockAltarTemplate()]]),
     traps: new Map([
@@ -388,12 +406,10 @@ export const defaultTestMapParams: MapParams = {
   height: 10,
   minRooms: 2,
   maxRooms: 4,
-  minRoomSize: 3,
-  maxRoomSize: 5,
-  enemyDensity: 0,
-  itemDensity: 0,
-  enemyPool: [],
-  itemPool: [],
+  roomTypePool: ['normal'],
+  startRoomTypeId: 'start',
+  bossRoomTypeId: 'boss',
+  rewardRoomTypeId: 'reward',
 };
 
 export function makeGameState(overrides: Partial<GameState> = {}): GameState {

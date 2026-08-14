@@ -65,6 +65,16 @@ describe('resolveInteraction', () => {
     expect(result).toBeNull();
   });
 
+  it('возвращает null для запертой двери (закрытой и открытой)', () => {
+    const closedLocked = makeDoor({ isLocked: true });
+    const openLocked = makeDoor({ isLocked: true, isOpen: true, blocksMovement: false });
+    const state = makeGameState({ entities: new Map([[closedLocked.id, closedLocked], [openLocked.id, openLocked]]) });
+    const player = makePlayer();
+
+    expect(resolveInteraction(state, closedLocked, player)).toBeNull();
+    expect(resolveInteraction(state, openLocked, player)).toBeNull();
+  });
+
   it('возвращает descend для лестницы вниз', () => {
     const stairs = makeStairs('stairs_down');
     const state = makeGameState({ entities: new Map([[stairs.id, stairs]]) });
@@ -550,6 +560,21 @@ describe('interactAction.validate — дополнительные провер�
     expect((validation as any).reasonCode).toBe('no_interaction_available');
   });
 
+  it('отклоняет взаимодействие с запертой дверью с reasonCode door_locked', () => {
+    const player = makePlayer({ x: 3, y: 5 });
+    const door = makeDoor({ x: 4, y: 5, isLocked: true });
+    const state = makeStateWithPlayerAndEntity(player, door);
+
+    const validation = interactAction.validate(state, {
+      type: 'INTERACT',
+      entityId: player.id,
+      targetId: door.id,
+    });
+
+    expect(validation.ok).toBe(false);
+    expect((validation as any).reasonCode).toBe('door_locked');
+  });
+
   it('отклоняет закрытие двери, если клетка занята другой сущностью', () => {
     const player = makePlayer({ x: 3, y: 5 });
     const door = makeDoor({ x: 4, y: 5, isOpen: true, blocksMovement: false });
@@ -749,12 +774,10 @@ describe('авто-спуск по лестнице удалён', () => {
       height: 50,
       minRooms: 2,
       maxRooms: 4,
-      minRoomSize: 4,
-      maxRoomSize: 8,
-      enemyDensity: 0,
-      itemDensity: 0,
-      enemyPool: [],
-      itemPool: [],
+      roomTypePool: ['normal'],
+      startRoomTypeId: 'start',
+      bossRoomTypeId: 'boss',
+      rewardRoomTypeId: 'reward',
     });
 
     const stairs = Array.from(sim.getState().entities.values()).find(

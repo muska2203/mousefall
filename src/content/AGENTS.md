@@ -32,6 +32,7 @@ src/content/
     tile-effect-statuses/  # Статусы от тайловых эффектов
     terrains/        # Шаблоны террейнов (основа пола клетки)
     maps/            # Параметры генерации карт
+    room-types/      # Типы комнат этажа (размеры, пулы и плотности наполнения)
     stairs/          # Лестницы
     doors/           # Двери
     props/           # Пропсы
@@ -56,6 +57,7 @@ src/content/
 |--------|-----------|
 | Добавить новый шаблон сущности | `src/content/templates/entities/<id>.ts` + строка в `templates/entities/index.ts` |
 | Добавить новый террейн | `docs/recipes/add-terrain.md` → `src/content/templates/terrains/`, `texts/{ru,en}/terrain.ts` |
+| Добавить новый тип комнаты | `docs/recipes/add-room-type.md` → `src/content/templates/room-types/` + `roomTypePool` карты |
 | Добавить новую реликвию | `docs/recipes/add-relic.md` → `src/content/templates/relics/`, `texts/{ru,en}/relics.ts` |
 | Добавить новый модификатор (аффикс) | `docs/recipes/add-modifier.md` → `src/content/templates/modifiers/`, `texts/{ru,en}/modifiers.ts` |
 | Изменить схему валидации | `src/content/schemas.ts` |
@@ -154,6 +156,13 @@ src/content/
 - `requiredWeaponTags?: string[]` — требования к тегам экипированного оружия. Используется для weapon-based скиллов; скилл становится недоступен, если оружие не содержит все указанные теги.
 
 Новый экземпляр существующего параметризованного вида — чистый контент (шаблон + тексты). Новая механика — новый член union + фабрика в движке (см. `docs/recipes/add-ability.md`).
+
+### Босс-инфраструктура (2026-08-14, roadMap 1.3)
+
+- `EntityTemplateSchema.isBoss` (default `false`) — признак босса; шаблоны с `isBoss: true` допустимы в `bossPool` карт (проверяется валидацией). Пример: `cat_guardian`.
+- `MapParamsSchema`: `bossPool` (опционально, min 1 — пул боссов этажа), `bossRoomTypeId` (default `'boss'`), `rewardRoomTypeId` (default `'reward'`). Валидация ссылок на roomTypes — только при заданном `bossPool`. У `floor_1` задан `bossPool: ['cat_guardian']`.
+- `DoorTemplateSchema.indestructible` (default `false`) — неразрушаемая дверь (движок обнуляет урон). Шаблон `boss_door` (тег `boss_room`, негорючая — без `flammable` и с `canHaveStatus: []`).
+- Типы комнат `boss` и `reward` (`templates/room-types/`) — `weight: 0`, во взвешенный ролл не входят: генератор назначает их напрямую при заданном `bossPool`.
 
 Примеры:
 

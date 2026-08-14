@@ -4,10 +4,12 @@ import {
     ExecutionBuilder,
     ExecutionNode,
     Intent,
+    LockDoorIntent,
     OpenDoorIntent,
     SetEntitiesIntent,
     SetMapIntent,
     TeleportEntityIntent,
+    UnlockDoorIntent,
     UpdateFogIntent
 } from "@simulation/core-types.ts";
 
@@ -40,6 +42,8 @@ export type {
   RemoveItemIntent,
   OpenDoorIntent,
   CloseDoorIntent,
+  LockDoorIntent,
+  UnlockDoorIntent,
   FloorTransitionIntent,
   BumpIntent,
   RestoreApIntent,
@@ -60,6 +64,8 @@ export type {
 
 export type OpenDoorIntentExecutor = IntentExecutor<OpenDoorIntent>;
 export type CloseDoorIntentExecutor = IntentExecutor<CloseDoorIntent>;
+export type LockDoorIntentExecutor = IntentExecutor<LockDoorIntent>;
+export type UnlockDoorIntentExecutor = IntentExecutor<UnlockDoorIntent>;
 export type SetMapIntentExecutor = IntentExecutor<SetMapIntent>;
 export type SetEntitiesIntentExecutor = IntentExecutor<SetEntitiesIntent>;
 export type TeleportEntityIntentExecutor = IntentExecutor<TeleportEntityIntent>;

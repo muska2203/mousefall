@@ -7,20 +7,10 @@ export const floor2 = {
   "height": 60,
   "minRooms": 8,
   "maxRooms": 14,
-  "minRoomSize": 4,
-  "maxRoomSize": 12,
-  "enemyDensity": 0.7,
-  "itemDensity": 0.35,
-  "enemyPool": [
-    "cat_small",
-    "cat_mid"
+  "roomTypePool": [
+    "normal_deep"
   ],
-  "itemPool": [
-    "health_potion",
-    "common_splinter_blade",
-    "common_tin_plate"
-  ],
-  "startPoiId": "relic_altar",
+  "startRoomTypeId": "start",
   "relicPool": [
     "relic_salamander_heart",
     "relic_venom_gland",

@@ -5,7 +5,8 @@
  * (GameSimulation, floor-transition-logic и т.д.).
  */
 
-import type {DoorEntity, EnemyEntity, FloorItemContainerEntity, GameMap, GameState, PointOfInterestEntity} from '@simulation/types';
+import type {DoorEntity, EnemyEntity, FloorItemContainerEntity, GameMap, GameState, PointOfInterestEntity, PropEntity, TrapEntity} from '@simulation/types';
+import type {TileEffects} from '@simulation/core-types';
 import type {MapParams} from '@content/schemas';
 import type {MapStrategyId} from '@content/ids';
 
@@ -23,6 +24,10 @@ export type GeneratedMap = {
   items: FloorItemContainerEntity[];
   doors: DoorEntity[];
   pois: PointOfInterestEntity[];
+  props: PropEntity[];
+  traps: TrapEntity[];
+  /** Начальные тайловые эффекты этажа (лужи из наполнения комнат). */
+  tileEffects: TileEffects[][];
 };
 
 /**

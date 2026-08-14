@@ -54,6 +54,7 @@ export function attackTarget(actor: EnemyEntity, target: Position): AttackAction
 /**
  * Проверяет, может ли враг пройти клетку при поиске пути.
  * Закрытые двери считаются проходимыми — враг откроет их по пути.
+ * Запертая дверь непроходима: враг не может её открыть.
  */
 function isTilePassableForEnemy(state: GameState, pos: Position, index?: EntityPositionIndex): boolean {
   if (pos.x < 0 || pos.x >= state.map.width || pos.y < 0 || pos.y >= state.map.height) {
@@ -68,15 +69,16 @@ function isTilePassableForEnemy(state: GameState, pos: Position, index?: EntityP
   if (blockers.length !== 1) return false;
 
   const door = findDoorAt(state, pos.x, pos.y, index);
-  return door !== undefined && door.isAlive && !door.isOpen;
+  return door !== undefined && door.isAlive && !door.isOpen && !door.isLocked;
 }
 
 /**
- * Возвращает закрытую дверь на клетке или null.
+ * Возвращает закрытую незапертую дверь на клетке или null.
+ * Запертая дверь не открывается взаимодействием, поэтому не возвращается.
  */
 function findClosedDoorAt(state: GameState, x: number, y: number): DoorEntity | null {
   const door = findDoorAt(state, x, y);
-  if (door && door.isAlive && !door.isOpen) {
+  if (door && door.isAlive && !door.isOpen && !door.isLocked) {
     return door;
   }
   return null;
@@ -98,7 +100,8 @@ function openDoorAction(actor: EnemyEntity, door: DoorEntity): InteractAction {
  *
  * Использует A* с диагональным движением. Закрытые двери на пути
  * считаются проходимыми: если следующий шаг приходится на закрытую дверь,
- * возвращается действие INTERACT вместо MOVE.
+ * возвращается действие INTERACT вместо MOVE. Запертые двери непроходимы
+ * и не открываются — путь через них не строится.
  *
  * Если путь не найден — возвращает 'blocked'.
  */

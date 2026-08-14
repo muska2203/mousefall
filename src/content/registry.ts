@@ -29,6 +29,7 @@ import type {
   PropTemplate,
   PoiTemplate,
   RelicTemplate,
+  RoomTypeTemplate,
   StairsTemplate,
   StatusTemplate,
   TerrainTemplate,
@@ -867,4 +868,30 @@ export function getAllLocalizedRelics(locale: Locale): LocalizedRelicTemplate[] 
 export function tryGetModifier(id: string): ModifierTemplate | undefined {
   if (_registry === null) return undefined;
   return (_registry.modifiers ?? new Map()).get(id);
+}
+
+/**
+ * Получить шаблон типа комнаты по ID.
+ * Выбрасывает исключение, если не найден.
+ */
+export function getRoomType(id: string): RoomTypeTemplate {
+  const template = (getRegistry().roomTypes ?? new Map()).get(id);
+  if (!template) throw new Error(`Room type template not found: "${id}"`);
+  return template;
+}
+
+/**
+ * Попытаться получить шаблон типа комнаты.
+ * Возвращает undefined, если реестр не инициализирован или шаблон не найден.
+ */
+export function tryGetRoomType(id: string): RoomTypeTemplate | undefined {
+  if (_registry === null) return undefined;
+  return (_registry.roomTypes ?? new Map()).get(id);
+}
+
+/**
+ * Получить все шаблоны типов комнат.
+ */
+export function getAllRoomTypes(): RoomTypeTemplate[] {
+  return Array.from((getRegistry().roomTypes ?? new Map()).values());
 }

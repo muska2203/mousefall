@@ -2,6 +2,7 @@ import type {EntityTemplateInput} from '../../schemas';
 
 export const catGuardian = {
   "id": "cat_guardian",
+  "isBoss": true,
   "maxAp": 3,
   "aiStrategyId": "guardian-boss",
   "aiSightRadius": 8,

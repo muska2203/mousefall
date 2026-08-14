@@ -184,6 +184,55 @@ describe('moveToward', () => {
     expect(result.action.dx).toBe(1);
     expect(result.action.dy).toBe(0);
   });
+
+  it('обходит запертую дверь, не пытаясь её открыть', () => {
+    const enemy = makeEnemy({ x: 2, y: 2 });
+    const door = makeDoor({ x: 3, y: 2, isOpen: false, blocksMovement: true, isLocked: true });
+    const state = makeGameState({
+      entities: new Map<EntityId, Entity>([
+        [enemy.id, enemy],
+        [door.id, door],
+      ]),
+    });
+    const target: Position = { x: 5, y: 2 };
+
+    const result = moveToward(enemy, state, target);
+
+    // Запертая дверь непроходима: враг идёт в обход, INTERACT не подставляется.
+    expect(result.kind).toBe('move');
+    if (result.kind !== 'move') return;
+    expect(result.action.type).toBe('MOVE');
+  });
+
+  it('возвращает blocked, если единственный путь — через запертую дверь', () => {
+    const enemy = makeEnemy({ x: 2, y: 2 });
+    const door = makeDoor({ x: 3, y: 2, isOpen: false, blocksMovement: true, isLocked: true });
+    const map: GameMap = {
+      width: 7,
+      height: 7,
+      tiles: Array.from({ length: 7 }, (_, y) =>
+        Array.from({ length: 7 }, (_, x) => {
+          // Коридор (2,2) → (5,2); вокруг только стены, единственный проход — дверь.
+          if (y === 2 && x >= 2 && x <= 5) return 'floor';
+          return 'wall';
+        })
+      ),
+      rooms: [],
+      corridors: [],
+    };
+    const state = makeGameState({
+      entities: new Map<EntityId, Entity>([
+        [enemy.id, enemy],
+        [door.id, door],
+      ]),
+      map,
+    });
+    const target: Position = { x: 5, y: 2 };
+
+    const result = moveToward(enemy, state, target);
+
+    expect(result.kind).toBe('blocked');
+  });
 });
 
 describe('closeCombat', () => {
@@ -306,5 +355,35 @@ describe('closeCombat', () => {
     if (result.kind !== 'interact') return;
     expect(result.action.type).toBe('INTERACT');
     expect(result.action.targetId).toBe(door.id);
+  });
+
+  it('не открывает запертую дверь на пути к цели', () => {
+    const enemy = makeEnemy({ x: 2, y: 2 });
+    const door = makeDoor({ x: 3, y: 2, isOpen: false, blocksMovement: true, isLocked: true });
+    const map: GameMap = {
+      width: 7,
+      height: 7,
+      tiles: Array.from({ length: 7 }, (_, y) =>
+        Array.from({ length: 7 }, (_, x) => {
+          if (y === 2 && x >= 2 && x <= 5) return 'floor';
+          return 'wall';
+        })
+      ),
+      rooms: [],
+      corridors: [],
+    };
+    const state = makeGameState({
+      entities: new Map<EntityId, Entity>([
+        [enemy.id, enemy],
+        [door.id, door],
+      ]),
+      map,
+    });
+    const target: Position = { x: 5, y: 2 };
+
+    const result = closeCombat(enemy, state, target);
+
+    // Единственный путь — через запертую дверь: цель недостижима.
+    expect(result.kind).toBe('blocked');
   });
 });

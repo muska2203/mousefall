@@ -19,6 +19,7 @@ function makeEntityTemplate(partial: Partial<EntityTemplate> = {}): EntityTempla
     aiSightRadius: 6,
     aiStrategyId: 'hunter',
     maxAp: 1,
+    isBoss: false,
     ...partial,
   };
 }
@@ -75,12 +76,10 @@ function makeLootGameState(): GameState {
       height: 5,
       minRooms: 1,
       maxRooms: 1,
-      minRoomSize: 3,
-      maxRoomSize: 3,
-      enemyDensity: 0,
-      itemDensity: 0,
-      enemyPool: [],
-      itemPool: [],
+      roomTypePool: ['normal'],
+      startRoomTypeId: 'start',
+      bossRoomTypeId: 'boss',
+      rewardRoomTypeId: 'reward',
     },
     player,
     entities: new Map<EntityId, any>([

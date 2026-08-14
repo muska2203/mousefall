@@ -270,16 +270,17 @@ export class AutoPathController {
   }
 
   /**
-   * Возвращает закрытую дверь на указанном тайле, если она является
+   * Возвращает закрытую незапертую дверь на указанном тайле, если она является
    * единственным блокиратором. Если на клетке есть враг или другой объект,
    * блокирующий движение, дверь не считается проходом на пути.
+   * Запертая дверь не открывается взаимодействием и не считается проходом.
    */
   private findClosedDoorOnPath(pos: Position, queries: AutoPathQueries): DoorEntity | null {
     const blockers = queries.findEntitiesAt(pos).filter((e) => e.blocksMovement);
     if (blockers.length !== 1) return null;
 
     const door = blockers[0];
-    if (!door || door.type !== 'door' || !door.isAlive || door.isOpen) return null;
+    if (!door || door.type !== 'door' || !door.isAlive || door.isOpen || door.isLocked) return null;
     return door;
   }
 
@@ -305,6 +306,12 @@ export class AutoPathController {
         if (door.isOpen) {
           // Дверь уже открыта: заходим на её клетку.
           return { type: 'MOVE', entityId: state.player.id, dx, dy };
+        }
+        if (door.isLocked) {
+          // Запертая дверь не открывается взаимодействием — INTERACT не подставляем.
+          // Вернём null: основная логика step сделает MOVE, который Simulation
+          // отклонит как tile_blocked, и автопуть будет отменён.
+          return null;
         }
         return {
           type: 'INTERACT',

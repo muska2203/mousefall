@@ -135,6 +135,10 @@ export function gameEventToLog(
       return { text: t('system.logBuilder.doorOpened'), variant: 'info' };
     case 'DOOR_CLOSED':
       return { text: t('system.logBuilder.doorClosed'), variant: 'info' };
+    case 'DOOR_LOCKED':
+      return { text: t('system.logBuilder.doorLocked'), variant: 'info' };
+    case 'DOOR_UNLOCKED':
+      return { text: t('system.logBuilder.doorUnlocked'), variant: 'info' };
     case 'COUNTER_ATTACK_APPLIED': {
       const name = getEntityDisplayName(state, event.attackerId, locale);
       return { text: t('system.logBuilder.counterattackTriggered', { name }), variant: 'info' };

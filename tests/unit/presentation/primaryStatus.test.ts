@@ -48,6 +48,7 @@ function makeDoor(): DoorEntity {
     armor: 0,
     isAlive: true,
     isOpen: false,
+    isLocked: false,
     statusEffects: [],
   } as DoorEntity;
 }

@@ -10,6 +10,7 @@ import {tileExplosionDamageReaction} from "@simulation/systems/world-reactions/t
 import {burningOilExplosionReaction} from "@simulation/systems/world-reactions/burning-oil-explosion-reaction.ts";
 import {oilIgnitionNearBurningReaction} from "@simulation/systems/world-reactions/oil-ignition-near-burning-reaction.ts";
 import {tileEffectFovReaction} from "@simulation/systems/world-reactions/tile-effect-fov-reaction.ts";
+import {bossRoomDoorReaction, bossRoomUnlockOnBossDeathReaction} from "@simulation/systems/world-reactions/boss-room-reaction.ts";
 
 // ─────────────────────────────────────────────
 // Хранилище реакций
@@ -71,8 +72,12 @@ registerReaction('ENTITY_DAMAGED', deathReaction, 0);
 registerReaction('ENTITY_DIED', postDeathLootReaction, 0);
 registerReaction('FLOOR_CHANGED', floorTransitionReaction, 0);
 registerReaction('ENTITY_MOVED', aiPerceptionReaction, 0);
+registerReaction('ENTITY_MOVED', bossRoomDoorReaction, 0);
+registerReaction('ENTITY_DIED', bossRoomUnlockOnBossDeathReaction, 0);
 registerReaction('DOOR_OPENED', aiPerceptionReaction, 0);
 registerReaction('DOOR_CLOSED', aiPerceptionReaction, 0);
+registerReaction('DOOR_LOCKED', aiPerceptionReaction, 0);
+registerReaction('DOOR_UNLOCKED', aiPerceptionReaction, 0);
 registerReaction('TILE_EXPLODED', tileExplosionDamageReaction, 0);
 registerReaction('TILE_EFFECT_STATUS_APPLIED', burningOilExplosionReaction, 0);
 registerReaction('TILE_EFFECT_CHANGED', oilIgnitionNearBurningReaction, 0);

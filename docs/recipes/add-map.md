@@ -27,16 +27,10 @@
      height: 50,
      minRooms: 6,
      maxRooms: 10,
-     minRoomSize: 4,
-     maxRoomSize: 10,
-     enemyDensity: 0.6,
-     itemDensity: 0.3,
-     enemyPool: [
-       'cat_small',
+     roomTypePool: [
+       {templateId: 'normal', weight: 1},
      ],
-     itemPool: [
-       'health_potion',
-     ],
+     startRoomTypeId: 'start',
    } satisfies MapParamsInput;
    ```
 
@@ -47,11 +41,11 @@
    - `strategy` — алгоритм генерации из каталога `MAP_STRATEGY_IDS` (`src/content/ids.ts`). На текущем этапе поддерживается только `"tree"` (дерево комнат от спавна до выхода). Добавление нового алгоритма — задача `system_design` (плюс расширение каталога).
    - `width` / `height` — размеры карты в клетках (20–100).
    - `minRooms` / `maxRooms` — диапазон количества комнат.
-   - `minRoomSize` / `maxRoomSize` — диапазон размеров комнат.
-   - `enemyDensity` — плотность врагов (0.0–1.0). Значение 1.0 соответствует примерно одному врагу на каждые 4×4 клеток комнаты.
-   - `itemDensity` — плотность спавна предметов (0.0–1.0).
-   - `enemyPool` — ID шаблонов сущностей, которые могут появляться на этаже.
-   - `itemPool` — ID шаблонов предметов, которые могут появляться на этаже.
+   - `roomTypePool` — взвешенный пул типов комнат этажа (минимум 1). Типы комнат — отдельная контентная категория (`src/content/templates/room-types/`), задают размеры и наполнение комнат; рецепт — `docs/recipes/add-room-type.md`.
+   - `startRoomTypeId` — тип стартовой комнаты (должен присутствовать в `roomTypePool`).
+   - `relicPool` — опциональный пул реликвий для алтаря выбора реликвии на этом этаже.
+
+   Размеры комнат, пулы и плотности наполнения (враги, предметы, пропы, ловушки, лужи) больше не задаются в карте — они живут в типах комнат.
 
 2. **Зарегистрируй шаблон** в `src/content/templates/maps/index.ts` — добавь импорт и строку в массив `mapParams`:
 
@@ -78,7 +72,7 @@
 - [ ] TS-шаблон создан в `src/content/templates/maps/`.
 - [ ] `id` совпадает с именем файла в kebab-case.
 - [ ] `strategy` — `"tree"` (единственная поддерживаемая стратегия).
-- [ ] Все `enemyPool` и `itemPool` указывают на существующие шаблоны.
+- [ ] `roomTypePool` непустой, все id типов комнат существуют; `startRoomTypeId` входит в пул.
 - [ ] Шаблон зарегистрирован в `src/content/templates/maps/index.ts`.
 - [ ] `npm run validate:content` проходит.
 - [ ] `npm run typecheck` проходит.

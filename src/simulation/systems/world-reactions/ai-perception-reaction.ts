@@ -36,6 +36,14 @@ function toWorldChange(event: GameEvent): WorldChange | null {
       return { kind: 'door_opened', position: event.position };
     case 'DOOR_CLOSED':
       return { kind: 'door_closed', position: event.position };
+    case 'DOOR_LOCKED':
+      // Запирание закрывает дверь без отдельного события DOOR_CLOSED,
+      // поэтому для AI это равнозначно закрытию (дверь блокирует обзор).
+      return { kind: 'door_closed', position: event.position };
+    case 'DOOR_UNLOCKED':
+      // Отпирание не меняет ни проходимость, ни обзор (дверь остаётся закрытой) —
+      // для восприятия AI событие незначимо.
+      return null;
     default:
       return null;
   }

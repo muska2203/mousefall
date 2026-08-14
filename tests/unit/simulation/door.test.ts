@@ -18,6 +18,9 @@ import type { DoorEntity, EntityId, Entity } from '../../../src/simulation/types
 import { resetRegistry } from '../../../src/content/registry';
 import type { ItemTemplate } from '../../../src/content/schemas';
 import { makeGameState, makePlayer, makeEnemy, makeDoor, makeStateWithPlayerAndEntity, initObjectContentRegistry } from '../../fixtures/gameState';
+import { ExecutionBuilder } from '../../../src/simulation/systems/actions/types';
+import { executeIntent } from '../../../src/simulation/systems/intents/execute-intent';
+import '@simulation/ai/hunter-strategy';
 
 /** Тестовый клинок с фиксированным рейнжем урона {10,10} — ролл детерминирован. */
 const testBlade = {
@@ -230,5 +233,63 @@ describe('Door entity', () => {
       targetId: door.id,
     });
     expect(result.success).toBe(false);
+  });
+
+  it('locked door rejects INTERACT', () => {
+    const player = makePlayer({ x: 3, y: 5, maxAp: 2, ap: 2 });
+    const door = makeDoor({ x: 4, y: 5, isLocked: true });
+    const state = makeStateWithPlayerAndEntity(player, door);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    const result = sim.dispatch({
+      type: 'INTERACT',
+      entityId: player.id,
+      targetId: door.id,
+    });
+    expect(result.success).toBe(false);
+
+    const updatedDoor = sim.getState().entities.get(door.id) as DoorEntity;
+    expect(updatedDoor.isOpen).toBe(false);
+    expect(updatedDoor.isLocked).toBe(true);
+  });
+
+  it('indestructible door takes zero damage from a massive damage intent and stays alive', () => {
+    const player = makePlayer({ x: 3, y: 5 });
+    const door = makeDoor({ x: 4, y: 5, templateId: 'boss_door' });
+    const state = makeStateWithPlayerAndEntity(player, door);
+    const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: player.id } });
+
+    const node = executeIntent(state, {
+      type: 'DAMAGE',
+      entityId: door.id,
+      sourceEntityId: null,
+      damage: 999,
+      tags: ['damage.physical.blunt'],
+    }, builder, builder.root);
+
+    // Событие урона эмитится с damage 0, hp не меняется, смерти не происходит.
+    expect(node).not.toBeNull();
+    expect(node!.event.type).toBe('ENTITY_DAMAGED');
+    if (node!.event.type === 'ENTITY_DAMAGED') {
+      expect(node!.event.damage).toBe(0);
+    }
+    expect(node!.children.some((child) => child.event.type === 'ENTITY_DIED')).toBe(false);
+    expect(door.hp).toBe(30);
+    expect(door.isAlive).toBe(true);
+  });
+
+  it('indestructible door survives a melee attack via simulation', () => {
+    const player = makePlayer({ x: 3, y: 5, damage: { min: 10, max: 10 }, equippedWeaponId: 'test_blade', baseStats: { str: 9, dex: 0, int: 0, vit: 0 }, maxAp: 1, ap: 1 });
+    const door = makeDoor({ x: 4, y: 5, templateId: 'boss_door', hp: 1, maxHp: 1, armor: 0 });
+    const state = makeStateWithPlayerAndEntity(player, door);
+
+    const sim = GameSimulation.loadSavedGame(state);
+    sim.dispatch({ type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 });
+    advanceToPlayerTurn(sim);
+
+    const updatedDoor = sim.getState().entities.get(door.id) as DoorEntity;
+    expect(updatedDoor).toBeDefined();
+    expect(updatedDoor.hp).toBe(1);
+    expect(updatedDoor.isAlive).toBe(true);
   });
 });

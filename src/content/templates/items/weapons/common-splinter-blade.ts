@@ -30,7 +30,7 @@ export const commonSplinterBlade = {
     }
   ],
   "weapon": {
-    "damage": { "min": 2, "max": 4 },
+    "damage": { "min": 20, "max": 25 },
     "range": 1,
     "damageDistribution": [
       {

@@ -183,6 +183,50 @@ describe('dashSkill', () => {
     expect(player.y).toBe(5);
   });
 
+  it('does not allow dashing when first cell is a locked door', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const door = makeDoor({ x: 6, y: 5, isOpen: false, blocksMovement: true, isLocked: true });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(door.id, door);
+
+    const targets = dashSkill.getValidTargets(state, player);
+    expect(targets.some(p => p.x === 6 && p.y === 5)).toBe(false);
+    expect(targets.some(p => p.x === 7 && p.y === 5)).toBe(false);
+
+    const intents = dashSkill.resolve(state, player, [{ x: 6, y: 5 }]);
+    expect(intents).toHaveLength(0);
+  });
+
+  it('stops before a locked door on the path: door is not opened, caster bumps', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });
+    const door = makeDoor({ x: 7, y: 5, isOpen: false, blocksMovement: true, isLocked: true });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(door.id, door);
+
+    const intents = dashSkill.resolve(state, player, [{ x: 7, y: 5 }]);
+
+    // Запертая дверь не пробивается: интента OPEN_DOOR быть не должно.
+    expect(intents.some(i => i.type === 'OPEN_DOOR')).toBe(false);
+
+    const builder = makeBuilder(player.id);
+    for (const intent of intents) {
+      executeIntent(state, intent, builder, builder.root);
+    }
+
+    // Кастер останавливается на клетке перед дверью, дверь остаётся закрытой и запертой.
+    expect(player.x).toBe(6);
+    expect(player.y).toBe(5);
+    expect(door.isOpen).toBe(false);
+    expect(door.isLocked).toBe(true);
+
+    const bumpEvents = builder.root.children.flatMap(n => collectEvents(n)).filter((e: any) => e.type === 'ENTITY_BUMPED');
+    expect(bumpEvents.some((e: any) => e.entityId === player.id && e.position.x === 6 && e.position.y === 5)).toBe(true);
+  });
+
   it('damages and pushes actor on second cell while caster stops before it', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'dash', source: 'innate', level: 1, currentCooldown: 0 }] });

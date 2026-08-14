@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { makeGameState, makePlayer, defaultTestMapParams } from '../../fixtures/gameState.ts';
+import { makeGameState, makePlayer } from '../../fixtures/gameState.ts';
 import { computeFloorTransition } from '@simulation/systems/floor-transition-planner';
-import type { DoorTemplate, PoiTemplate } from '@content/schemas';
+import type { DoorTemplate, PoiTemplate, RoomTypeTemplate } from '@content/schemas';
 import { initRegistry, resetRegistry } from '@content/registry';
 import type { Entity, EntityId, PointOfInterestEntity, StairsEntity } from '@simulation/types';
 
@@ -31,6 +31,40 @@ describe('computeFloorTransition', () => {
           chargeSpentOn: 'activation',
           tags: [],
         } as PoiTemplate],
+      ]),
+      roomTypes: new Map<string, RoomTypeTemplate>([
+        ['start', {
+          id: 'start',
+          kind: 'generated',
+          weight: 1,
+          minDepth: 0,
+          minSize: 3,
+          maxSize: 5,
+          fill: {
+            enemyPool: [], enemyDensity: 0,
+            itemPool: [], itemDensity: 0,
+            propPool: [], propDensity: 0,
+            trapPool: [], trapDensity: 0,
+            tileEffectPool: [], tileEffectDensity: 0,
+            guaranteedPois: ['test_poi'],
+          },
+        } as RoomTypeTemplate],
+        ['normal', {
+          id: 'normal',
+          kind: 'generated',
+          weight: 1,
+          minDepth: 0,
+          minSize: 3,
+          maxSize: 5,
+          fill: {
+            enemyPool: [], enemyDensity: 0,
+            itemPool: [], itemDensity: 0,
+            propPool: [], propDensity: 0,
+            trapPool: [], trapDensity: 0,
+            tileEffectPool: [], tileEffectDensity: 0,
+            guaranteedPois: [],
+          },
+        } as RoomTypeTemplate],
       ]),
     statuses: new Map(),
     tileEffects: new Map(),
@@ -148,12 +182,11 @@ describe('computeFloorTransition', () => {
     expect(planUp.tileEffects[3]![3]!['cover']).toBeDefined();
   });
 
-  it('включает сгенерированный poi стартовой комнаты в сущности нового этажа', () => {
+  it('включает гарантированный poi стартовой комнаты в сущности нового этажа', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const state = makeGameState({
       player,
       floor: 1,
-      mapParams: { ...defaultTestMapParams, startPoiId: 'test_poi' },
     });
 
     const plan = computeFloorTransition(state, 'down');

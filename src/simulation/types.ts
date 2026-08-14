@@ -284,6 +284,8 @@ export interface DoorEntity extends BaseEntity, Attackable, TemplateIdHolder, St
   interactionKind: 'door';
   /** true — дверь открыта, проходима и не блокирует обзор. */
   isOpen: boolean;
+  /** true — дверь заперта: нельзя открыть/закрыть взаимодействием. Снимается интентом UNLOCK_DOOR. */
+  isLocked: boolean;
 }
 
 /** Разрушаемый объект окружения (проп). Не является актором и не ходит. */

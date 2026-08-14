@@ -11,6 +11,7 @@ function mockDoorTemplate(overrides: Partial<DoorTemplate> & { id: string }): Do
     interactionKind: 'door',
     maxHp: 30,
     armor: 0,
+    indestructible: false,
     tags: [],
     canHaveStatus: [],
     ...overrides,

@@ -25,6 +25,7 @@ src/content/templates/    # TypeScript-шаблоны: только механи
 ├── tile-effect-statuses/ # Шаблоны статусов, висящих на тайловых эффектах
 ├── terrains/             # Шаблоны террейнов
 ├── maps/                 # Параметры карт
+├── room-types/           # Типы комнат этажа (размеры, пулы и плотности наполнения)
 ├── stairs/
 ├── doors/
 ├── props/
@@ -112,7 +113,7 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 ## Валидация перекрёстных ссылок (`src/content/validate-references.ts`)
 
-`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `equipment.*`, `abilities`, `lootTable[].templateId` у сущностей; `starterEquipment` у игроков; `enemyPool`/`itemPool` у карт; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId`, `fixedModifiers` у предметов (плюс `subtype` предмета ∈ `applicableSubtypes` модификатора и запрет `perLevel` у фирменного модификатора); `statusType` у способностей вида `selfBuff` (существование статуса). Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
+`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `equipment.*`, `abilities`, `lootTable[].templateId` у сущностей; `starterEquipment` у игроков; `roomTypePool`/`startRoomTypeId`/`relicPool` у карт; `bossPool` у карт (шаблоны пула обязаны существовать и иметь `isBoss: true`) и `bossRoomTypeId`/`rewardRoomTypeId` → roomTypes (только при заданном `bossPool`); все пулы `fill` (враги/предметы/пропы/ловушки/тайловые эффекты/poi) у типов комнат; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId`, `fixedModifiers` у предметов (плюс `subtype` предмета ∈ `applicableSubtypes` модификатора и запрет `perLevel` у фирменного модификатора); `statusType` у способностей вида `selfBuff` (существование статуса). Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
 
 `validateModifierTextPlaceholders(content, textsByLocale)` проверяет, что плейсхолдер `{value}` в описании модификатора встречается только у модификаторов со `scaling: perLevel` или `fixed` (иначе в UI отрисовалась бы заглушка «—»). Вызывается только в `scripts/validate-content.ts` (тексты передаются параметром).
 
@@ -147,6 +148,13 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 Урон способностей — фиксированные значения из шаблона, без скейлинга от характеристик и уровня (формулы `damageFormula.ts` удалены 2026-08-12); модификаторы урона — через стандартные модификаторы и контентные правила. Исключение — оружейные виды (`cleave`, `suddenStrike`): урон — ролл экипированного оружия.
 
 Новый экземпляр существующего вида — чистый контент (шаблон + тексты); новая механика — новый член union + фабрика в simulation. Рецепт: `docs/recipes/add-ability.md`; разрешение исполнителей — `src/simulation/AGENTS.md`.
+
+## Босс-инфраструктура (roadMap 1.3, 2026-08-14)
+
+- `EntityTemplateSchema.isBoss` (default `false`) — признак босса; заменил удалённый захардкоженный `BOSS_TEMPLATE_IDS` (проверка — `isBossTemplate` в simulation читает реестр). Имена убитых боссов для экрана концовки берутся локализованными из контента. Пример: `cat_guardian` (`isBoss: true`).
+- `MapParamsSchema.bossPool` (опционально, min 1) — пул боссов этажа; при заданном пуле генератор назначает босс-комнату и комнату награды и спавнит одного случайного босса из пула. `bossRoomTypeId` (default `'boss'`) и `rewardRoomTypeId` (default `'reward'`) — id типов комнат, назначаемых генератором напрямую.
+- Типы комнат `boss` (weight 0, `maxPerFloor: 1`, пустой `fill` — босс спавнится отдельно) и `reward` (weight 0, `guaranteedPois: ['altar']`) — не участвуют во взвешенном ролле, шаблоны в `templates/room-types/`.
+- `DoorTemplateSchema.indestructible` (default `false`) — неразрушаемая дверь: движок обнуляет любой урон по ней. Шаблон `boss_door` (тег `boss_room`, `indestructible: true`, негорючая — без тега `flammable` и с пустым `canHaveStatus`; спрайты деревянной двери — временно) в `templates/doors/`. По тегу `boss_room` runtime-контроллер находит двери босс-комнаты.
 
 ## Реестр статусов
 

@@ -10,4 +10,5 @@ export const ruFieldObjectPopover = {
   cooldownReady: 'Готов',
   possibleLootTitle: 'Возможный лут',
   preparingTitle: 'Готовит',
+  lockedLabel: 'Заперта',
 } as const satisfies ComponentsFieldObjectPopoverTranslations;
