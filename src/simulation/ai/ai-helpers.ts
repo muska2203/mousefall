@@ -26,7 +26,8 @@ import {chebyshevDistance} from '@utils/math';
 import {getPreparableAbilities} from './cast-helpers';
 import {getSkillExecutor} from '@simulation/skills/skillExecutor';
 import type {WorldChange} from './perception-types';
-import {closeCombat, findVisibleAttackTarget, moveToward} from './tactics';
+import {closeCombat, findVisibleAttackTarget, moveToward, attackTarget} from './tactics';
+import {isRooted} from '@simulation/systems/rooted-helper';
 
 // ─────────────────────────────────────────────
 // Зрение
@@ -332,6 +333,16 @@ export function updateHunterState(enemy: EnemyEntity, state: GameState): void {
  * (защитный переход chase → return при потерянной цели), как и hunter.
  */
 export function decideHunterAction(enemy: EnemyEntity, state: GameState): GameAction {
+  // Обездвиженный актор не перемещается самостоятельно: атакует видимую цель,
+  // только если она уже в соседней клетке, иначе завершает ход.
+  if (isRooted(enemy)) {
+    const rootedTarget = findVisibleAttackTarget(enemy, state);
+    if (rootedTarget && chebyshevDistance({x: enemy.x, y: enemy.y}, rootedTarget) === 1) {
+      return attackTarget(enemy, rootedTarget);
+    }
+    return endTurn(enemy);
+  }
+
   // Приоритет 1: если видим цель — сразу идём к ней вплотную и атакуем.
   const visibleTarget = findVisibleAttackTarget(enemy, state);
   if (visibleTarget) {

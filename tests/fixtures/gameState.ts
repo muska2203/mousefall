@@ -409,6 +409,7 @@ export const defaultTestMapParams: MapParams = {
   roomTypePool: ['normal'],
   startRoomTypeId: 'start',
   bossRoomTypeId: 'boss',
+  bossDoorId: 'boss_door',
   rewardRoomTypeId: 'reward',
 };
 

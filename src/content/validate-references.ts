@@ -102,6 +102,7 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
       }
       checkRef(errors, path, 'bossRoomTypeId', map.bossRoomTypeId, 'roomTypes', content.roomTypes);
       checkRef(errors, path, 'rewardRoomTypeId', map.rewardRoomTypeId, 'roomTypes', content.roomTypes);
+      checkRef(errors, path, 'bossDoorId', map.bossDoorId, 'doors', content.doors);
     }
   }
 

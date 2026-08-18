@@ -23,12 +23,14 @@
  *    При этом tree не ограничивается исходными width/height из MapParams —
  *    карта расширяется настолько, насколько требуется дереву.
  * 7. Старт игрока — центр корневой комнаты, лестница вниз — центр exit-комнаты.
+ *    Клетка лестницы вниз и центр босс-комнаты резервируются: наполнение
+ *    комнат (fillRooms) не ставит туда врагов и объекты размещения.
  *    Комнаты наполняются своими типами (fillRooms): враги/предметы/пропы/ловушки/
  *    лужи по пулам и плотностям шаблона, гарантированные poi.
  */
 
 import type {MapParams} from '@content/schemas';
-import type {Corridor, CorridorSegment, DoorEntity, Entity, EntityId, GameMap, GameState, RNGState, Room} from '@simulation/types';
+import type {Corridor, CorridorSegment, DoorEntity, Entity, EntityId, GameMap, GameState, Position, RNGState, Room} from '@simulation/types';
 import {rngFloat, rngInt, rngShuffle} from '@utils/rng';
 import {buildEntityPositionIndex, canPlaceObjectAt, createTileEffectsGrid, createTileGrid, EntityPositionIndex} from '@simulation/state';
 import {tryGetRoomType} from '@content/registry';
@@ -60,7 +62,7 @@ type Placement = {
 type DoorPosition = {
   x: number;
   y: number;
-  /** Коридор касается босс-узла (сам узел или его родитель): дверь ставится шаблоном boss_door. */
+  /** Коридор касается босс-узла (сам узел или его родитель): дверь ставится шаблоном MapParams.bossDoorId. */
   isBossRoomDoor: boolean;
 };
 
@@ -102,15 +104,25 @@ export const treeRoomStrategy: MapGenerationStrategy = {
     }
     const stairsUp = currentFloor > 1 ? playerStart : null;
 
+    // Клетки, запрещённые для наполнения комнат: лестница вниз и центр
+    // босс-комнаты. Без резервирования fillRooms мог бы поставить туда
+    // блокирующий объект (проп/poi) или заспавнить врага.
+    const bossRoom = params.bossPool
+      ? map.rooms.find(r => r.roomTypeId === params.bossRoomTypeId)
+      : undefined;
+    const reservedCells: Position[] = [];
+    if (stairsDown) reservedCells.push(stairsDown);
+    if (bossRoom) reservedCells.push(roomCenter(bossRoom));
+
     // Наполнение комнат их типами: враги/предметы/пропы/ловушки/гарантированные poi
     // и начальные лужи тайловых эффектов.
     const tileEffects = createTileEffectsGrid(map.width, map.height);
-    const { enemies, items, props, traps, pois } = fillRooms(rng, map, state, playerStart, tileEffects);
+    const { enemies, items, props, traps, pois } = fillRooms(rng, map, state, playerStart, tileEffects, reservedCells);
 
-    // Спавн босса: случайный шаблон из bossPool в центре босс-комнаты.
+    // Спавн босса: случайный шаблон из bossPool в центре босс-комнаты
+    // (центр зарезервирован выше — он гарантированно свободен).
     // Битая конфигурация (босс-комната не найдена) не роняет генерацию — только warn.
     if (params.bossPool) {
-      const bossRoom = map.rooms.find(r => r.roomTypeId === params.bossRoomTypeId);
       if (bossRoom) {
         const templateId = params.bossPool[rngInt(rng, 0, params.bossPool.length - 1)]!;
         const center = roomCenter(bossRoom);
@@ -793,8 +805,8 @@ function collectDoorPositions(corridor: CorridorPath): { x: number; y: number }[
  * уже есть другая дверь или если слот solid занят другим объектом
  * размещения (проверка по индексу уже заспавленных сущностей).
  *
- * Позиции с флагом isBossRoomDoor создаются шаблоном boss_door и ставятся
- * всегда: пропуск «рядом уже есть дверь» для них отключён, дыра
+ * Позиции с флагом isBossRoomDoor создаются шаблоном MapParams.bossDoorId и
+ * ставятся всегда: пропуск «рядом уже есть дверь» для них отключён, дыра
  * в босс-комнате недопустима. Проверка слота solid сохраняется; её фейл
  * практически недостижим (коридоры не наполняются) — тогда warn,
  * генерация не падает.
@@ -809,7 +821,7 @@ function buildDoors(
   for (const pos of positions) {
     if (pos.isBossRoomDoor) {
       if (canPlaceObjectAt(state, 'solid', pos, index)) {
-        doors.push(createDoor(state, 'boss_door', pos.x, pos.y));
+        doors.push(createDoor(state, state.mapParams.bossDoorId, pos.x, pos.y));
       } else {
         console.warn(`[treeRoomStrategy] Босс-дверь на (${pos.x}, ${pos.y}) пропущена: слот solid занят`);
       }

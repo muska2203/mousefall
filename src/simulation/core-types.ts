@@ -114,7 +114,7 @@ export type ItemAffix = {
 };
 
 export type StatModifier = {
-  stat: 'damage' | 'armor' | 'maxHp' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit';
+  stat: 'damage' | 'armor' | 'maxHp' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit' | 'throwRange';
   value: number;
   op: StatModifierOp;
   source: string;
@@ -136,10 +136,19 @@ export type StatusEffectType =
   | 'counterattack'
   | 'bulwark'
   | 'wet'
-  | 'oiled';
+  | 'oiled'
+  | 'bleeding'
+  | 'rooted';
 
 /** Категория статуса для разрешения конфликтов между одновременно накладываемыми эффектами. */
-export type StatusCategory = 'elemental' | 'physical' | 'mental' | 'poison' | 'generic';
+export type StatusCategory =
+  | 'elemental'
+  | 'physical'
+  | 'mental'
+  | 'poison'
+  | 'wound'
+  | 'control'
+  | 'generic';
 
 /** Идентификатор фракции. */
 export type FactionId = 'player' | 'allies' | 'enemies' | 'neutrals';
@@ -451,7 +460,18 @@ export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; sourceEntityId: EntityId | null; status: StatusEffect; tags?: GameplayTag[] };
 export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][]; tileEffects?: TileEffects[][] };
 export type SetEntitiesIntent = { type: 'SET_ENTITIES'; entities: Map<EntityId, unknown> };
-export type TeleportEntityIntent = { type: 'TELEPORT_ENTITY'; entityId: EntityId; x: number; y: number };
+export type TeleportEntityIntent = {
+  type: 'TELEPORT_ENTITY';
+  entityId: EntityId;
+  x: number;
+  y: number;
+  /**
+   * Явное разрешение телепортировать обездвиженную (rooted) сущность.
+   * Используется системными телепортами (переход между этажами); игровые
+   * телепорты по умолчанию блокируются rooted (концепт этажа 1, §2).
+   */
+  ignoreRooted?: boolean;
+};
 export type UpdateFogIntent = { type: 'UPDATE_FOG' };
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };

@@ -133,6 +133,17 @@ describe('fillRooms', () => {
         })],
         ['with_poi', makeRoomType('with_poi', { guaranteedPois: ['test_poi'] })],
         ['puddles', makeRoomType('puddles', { tileEffectPool: ['oil'], tileEffectDensity: 1 })],
+        ['crowded', makeRoomType('crowded', {
+          enemyPool: ['cat_small'], enemyDensity: 8,
+          itemPool: ['test_item'], itemDensity: 8,
+          propPool: ['test_prop'], propDensity: 8,
+          trapPool: ['test_trap'], trapDensity: 8,
+          guaranteedPois: ['test_poi'],
+        })],
+        ['enemy_and_props', makeRoomType('enemy_and_props', {
+          enemyPool: ['cat_small'], enemyDensity: 8,
+          propPool: ['test_prop'], propDensity: 8,
+        })],
       ]),
     });
   });
@@ -287,5 +298,47 @@ describe('fillRooms', () => {
 
     const hasAny = tileEffects.some(row => row.some(cell => Object.keys(cell).length > 0));
     expect(hasAny).toBe(false);
+  });
+
+  it('не размещает врагов и объекты на зарезервированных клетках (лестница вниз)', () => {
+    const stairsDown = { x: 3, y: 3 };
+    for (let seed = 1; seed <= 50; seed++) {
+      const state = makeGameState({ rng: createRNG(seed) });
+      const map = makeMapWithRooms([{ x: 1, y: 1, width: 6, height: 6, roomTypeId: 'crowded' }]);
+
+      const { enemies, items, props, traps, pois } = fillRooms(
+        state.rng, map, state, OUTSIDE_ROOMS, makeEmptyTileEffects(), [stairsDown],
+      );
+
+      for (const entity of [...enemies, ...items, ...props, ...traps, ...pois]) {
+        expect(entity.x === stairsDown.x && entity.y === stairsDown.y).toBe(false);
+      }
+    }
+  });
+
+  it('не спавнит врага на клетке с solid-объектом (гарантированный poi)', () => {
+    // Комната 3×3 имеет единственную внутреннюю клетку — её занимает poi,
+    // врагу некуда встать, и он не должен появиться вовсе.
+    const state = makeGameState({ rng: createRNG(1) });
+    const map = makeMapWithRooms([{ x: 1, y: 1, width: 3, height: 3, roomTypeId: 'crowded' }]);
+
+    const { enemies, pois } = fillRooms(state.rng, map, state, OUTSIDE_ROOMS, makeEmptyTileEffects());
+
+    expect(pois.length).toBe(1);
+    expect(enemies.length).toBe(0);
+  });
+
+  it('враг не делит клетку с пропом, а при нехватке места лишние враги не спавнятся', () => {
+    // Комната 3×3: единственная внутренняя клетка. Плотность требует
+    // нескольких врагов и пропов, но место одно — один враг, без пропов.
+    for (let seed = 1; seed <= 20; seed++) {
+      const state = makeGameState({ rng: createRNG(seed) });
+      const map = makeMapWithRooms([{ x: 1, y: 1, width: 3, height: 3, roomTypeId: 'enemy_and_props' }]);
+
+      const { enemies, props } = fillRooms(state.rng, map, state, OUTSIDE_ROOMS, makeEmptyTileEffects());
+
+      expect(enemies.length).toBe(1);
+      expect(props.length).toBe(0);
+    }
   });
 });

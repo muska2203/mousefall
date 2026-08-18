@@ -26,5 +26,7 @@ export const enGameSession = {
   effectSilencedDesc: 'Cannot use skills, {{turns}} turns',
   effectWet: 'Wet',
   effectWetDesc: 'Like a dog',
+  effectBleeding: 'Bleeding',
+  effectRooted: 'Rooted',
   effectUnknown: 'Unknown effect',
 } as const satisfies SystemGameSessionTranslations;

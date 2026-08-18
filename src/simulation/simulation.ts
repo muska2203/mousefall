@@ -49,7 +49,7 @@ import {endTurnEntity} from "@simulation/systems/actions/end-turn-action.ts";
 import {useAbilityAction} from "@simulation/systems/actions/use-ability-action.ts";
 import {equipEntity} from "@simulation/systems/actions/equip-action.ts";
 import {unequipEntity} from "@simulation/systems/actions/unequip-action.ts";
-import {useItemAction} from "@simulation/systems/actions/use-item-action.ts";
+import {useItemAction, getConsumableThrowRange} from "@simulation/systems/actions/use-item-action.ts";
 import {interactAction} from "@simulation/systems/actions/interact-action.ts";
 import {resolvePoiChoiceAction} from "@simulation/systems/actions/resolve-poi-choice-action.ts";
 import {createDebugAddItemActionHandler, DebugContext} from "@simulation/systems/actions/debug-add-item-action.ts";
@@ -1030,14 +1030,14 @@ export class GameSimulation implements Simulation {
         const template = tryGetItem(templateId);
         if (!template || template.type !== 'consumable' || !template.consumable) return null;
         if (template.consumable.effect !== 'spawn_tile_effect') return null;
-        return { type: 'single', range: template.consumable.range ?? 5 };
+        return { type: 'single', range: getConsumableThrowRange(template, this.state.player) };
     }
 
     getConsumableValidTargets(templateId: string): Position[] {
         const template = tryGetItem(templateId);
         if (!template || template.type !== 'consumable' || !template.consumable) return [];
         if (template.consumable.effect !== 'spawn_tile_effect') return [];
-        const range = template.consumable.range ?? 5;
+        const range = getConsumableThrowRange(template, this.state.player);
         return getVisiblePositionsWithinRange(this.state, this.state.player, range);
     }
 

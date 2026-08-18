@@ -33,6 +33,9 @@ export const floorTransitionReaction: WorldReaction = (
       entityId: 'player',
       x: plan.playerPosition.x,
       y: plan.playerPosition.y,
+      // Системный телепорт: размещение игрока на новом этаже не должно
+      // блокироваться rooted (игрок может оказаться на лестнице через PUSH).
+      ignoreRooted: true,
     },
     { type: 'BEGIN_TURN', side: 'player', round: plan.turn.round },
     { type: 'RESTORE_AP', entityId: 'player' },

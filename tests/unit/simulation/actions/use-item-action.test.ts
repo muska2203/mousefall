@@ -42,6 +42,7 @@ beforeEach(() => {
       ['water_ball', mockConsumable('water_ball', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 5 })],
       ['oil_bottle', mockConsumable('oil_bottle', 'spawn_tile_effect', 0, { tileEffectType: 'oil', radius: 1, range: 5 })],
       ['wall_ball', mockConsumable('wall_ball', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 5 })],
+      ['pebble', mockConsumable('pebble', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 2 })],
       ['test_weapon', {
         id: 'test_weapon',
         type: 'weapon',
@@ -173,6 +174,52 @@ describe('useItemAction.validate', () => {
     if (!result.ok) {
       expect(result.reasonCode).toBe('template_id_mismatch');
     }
+  });
+
+  it('цель вне range шаблона недоступна без модификатора throwRange', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      inventory: [{ instanceId: 'pebble_1', templateId: 'pebble', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    // Цель (8,5): манхэттен 3 — за пределами range 2 шаблона pebble.
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'pebble_1',
+      targetPosition: { x: 8, y: 5 },
+    };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('invalid_target_position');
+    }
+  });
+
+  it('throwRange-модификатор увеличивает дальность броска', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      statModifiers: [{ stat: 'throwRange', value: 1, op: 'add', source: 'test_sling' }],
+      inventory: [{ instanceId: 'pebble_1', templateId: 'pebble', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    // Та же цель (8,5): range 2 + throwRange 1 = 3 — теперь достижима.
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'pebble_1',
+      targetPosition: { x: 8, y: 5 },
+    };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(true);
   });
 });
 

@@ -26,5 +26,7 @@ export const ruGameSession = {
   effectSilencedDesc: 'Нельзя использовать скиллы, {{turns}} ход',
   effectWet: 'Мокрый',
   effectWetDesc: 'Можно выжимать',
+  effectBleeding: 'Кровотечение',
+  effectRooted: 'Обездвижен',
   effectUnknown: 'Неизвестный эффект',
 } as const satisfies SystemGameSessionTranslations;

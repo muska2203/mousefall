@@ -777,6 +777,7 @@ describe('авто-спуск по лестнице удалён', () => {
       roomTypePool: ['normal'],
       startRoomTypeId: 'start',
       bossRoomTypeId: 'boss',
+      bossDoorId: 'boss_door',
       rewardRoomTypeId: 'reward',
     });
 

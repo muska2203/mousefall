@@ -204,6 +204,8 @@ function getStatusDisplayName(statusType: StatusEffectType, locale: Locale): str
     regenerating: 'system.gameSession.effectRegenerating',
     counterattack: 'system.gameSession.effectCounterattack',
     silenced: 'system.gameSession.effectSilenced',
+    bleeding: 'system.gameSession.effectBleeding',
+    rooted: 'system.gameSession.effectRooted',
   };
 
   const key = keyMap[statusType];

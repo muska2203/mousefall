@@ -12,11 +12,25 @@
 
 import {GameState, Position} from "@simulation/types.ts";
 import {getItem} from "@content/registry";
+import type {ItemTemplate} from "@content/schemas";
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
 import {terrainHasTag} from "@simulation/state.ts";
 import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";
+import {getEffectiveThrowRange} from "@simulation/systems/stats/effective-stats.ts";
+
+/**
+ * Итоговая дальность броска расходника: `range` шаблона + стат `throwRange` бросающего
+ * (фирменные свойства экипировки, реликвии, статусы).
+ */
+export function getConsumableThrowRange(
+  template: ItemTemplate,
+  entity: GameState['player'],
+): number {
+  const base = template.consumable?.range ?? 5;
+  return base + getEffectiveThrowRange(entity);
+}
 
 export const useItemAction: ActionHandler = {
 
@@ -49,7 +63,7 @@ export const useItemAction: ActionHandler = {
       if (!action.targetPosition) {
         return { ok: false, reasonCode: 'missing_target_position' };
       }
-      const range = template.consumable.range ?? 5;
+      const range = getConsumableThrowRange(template, player);
       const validTargets = getVisiblePositionsWithinRange(state, player, range);
       const isValid = validTargets.some(
         (p: Position) => p.x === action.targetPosition!.x && p.y === action.targetPosition!.y,

@@ -4,6 +4,7 @@ import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {getEntitiesInRadius} from '@simulation/skills/targeting';
 import {isBlocked, isCombatEntity, isDamageable, isTerrainWalkable} from '@simulation/state';
+import {isRooted} from '@simulation/systems/rooted-helper';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
@@ -34,6 +35,9 @@ export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
    * не стены, не занятые непроходимыми объектами, в пределах радиуса прыжка.
    */
   function getJumpTargets(state: GameState, caster: Entity): Position[] {
+    // Обездвиженный кастер не может прыгать: точек приземления для выбора нет.
+    if (isRooted(caster)) return [];
+
     const positions: Position[] = [];
 
     for (let dy = -params.jumpRadius; dy <= params.jumpRadius; dy++) {
@@ -83,6 +87,8 @@ export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
    */
   function resolveSwoopIntents(state: GameState, caster: Entity, targets: Position[], skillId: string): Intent[] {
     if (!isCombatEntity(caster)) return [];
+    // Обездвиженный кастер не может прыгать (в т.ч. подготовленной AI-способностью).
+    if (isRooted(caster)) return [];
 
     const target = targets[0];
     if (!target) return [];

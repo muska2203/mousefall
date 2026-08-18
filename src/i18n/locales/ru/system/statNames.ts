@@ -6,6 +6,7 @@ export const ruStatNames = {
   armor: 'Броня',
   maxHp: 'Макс. здоровье',
   critMultiplier: 'Множитель крита',
+  throwRange: 'Дальность броска',
   str: 'Сила',
   dex: 'Ловкость',
   int: 'Интеллект',

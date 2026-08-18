@@ -160,7 +160,7 @@ src/content/
 ### Босс-инфраструктура (2026-08-14, roadMap 1.3)
 
 - `EntityTemplateSchema.isBoss` (default `false`) — признак босса; шаблоны с `isBoss: true` допустимы в `bossPool` карт (проверяется валидацией). Пример: `cat_guardian`.
-- `MapParamsSchema`: `bossPool` (опционально, min 1 — пул боссов этажа), `bossRoomTypeId` (default `'boss'`), `rewardRoomTypeId` (default `'reward'`). Валидация ссылок на roomTypes — только при заданном `bossPool`. У `floor_1` задан `bossPool: ['cat_guardian']`.
+- `MapParamsSchema`: `bossPool` (опционально, min 1 — пул боссов этажа), `bossRoomTypeId` (default `'boss'`), `bossDoorId` (default `'boss_door'` — шаблон дверей босс-комнаты), `rewardRoomTypeId` (default `'reward'`). Валидация ссылок на roomTypes и doors — только при заданном `bossPool`. У `floor_1` задан `bossPool: ['cat_guardian']`.
 - `DoorTemplateSchema.indestructible` (default `false`) — неразрушаемая дверь (движок обнуляет урон). Шаблон `boss_door` (тег `boss_room`, негорючая — без `flammable` и с `canHaveStatus: []`).
 - Типы комнат `boss` и `reward` (`templates/room-types/`) — `weight: 0`, во взвешенный ролл не входят: генератор назначает их напрямую при заданном `bossPool`.
 

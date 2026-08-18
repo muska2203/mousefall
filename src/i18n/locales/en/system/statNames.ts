@@ -6,6 +6,7 @@ export const enStatNames = {
   armor: 'Armor',
   maxHp: 'Max HP',
   critMultiplier: 'Crit multiplier',
+  throwRange: 'Throw range',
   str: 'Strength',
   dex: 'Dexterity',
   int: 'Intelligence',

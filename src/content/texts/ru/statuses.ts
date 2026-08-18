@@ -1,6 +1,10 @@
 import type {ContentText} from '../types';
 
 export const statuses: Record<string, ContentText> = {
+  bleeding: {
+    name: 'Кровотечение',
+    description: 'Наносит физический урон каждый ход.',
+  },
   bulwark: {
     name: 'Глухая оборона',
     description: 'Неуязвим к урону и толчкам, но не может действовать. Статусы накладываются как обычно.',
@@ -44,5 +48,9 @@ export const statuses: Record<string, ContentText> = {
   oiled: {
     name: 'В масле',
     description: 'Уязвим к огню.',
+  },
+  rooted: {
+    name: 'Обездвижен',
+    description: 'Не может перемещаться, но может атаковать и использовать способности.',
   },
 };

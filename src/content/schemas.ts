@@ -171,7 +171,7 @@ const ConsumableEffectSchema = z.object({
 }).describe('Определение эффекта расходуемого предмета');
 
 /** Имена характеристик, доступных модификаторам (экипировка, реликвии, аффиксы). */
-const StatNameSchema = z.enum(['damage', 'armor', 'maxHp', 'critMultiplier', 'str', 'dex', 'int', 'vit']);
+const StatNameSchema = z.enum(['damage', 'armor', 'maxHp', 'critMultiplier', 'str', 'dex', 'int', 'vit', 'throwRange']);
 
 /** Модификатор характеристики: применяется экипировкой и реликвиями. */
 const StatModifierEntrySchema = z.object({
@@ -406,7 +406,7 @@ export type TerrainTemplate = z.output<typeof TerrainTemplateSchema>;
 export const StatusTemplateSchema = z.object({
   id: z.string().min(1).describe('Уникальный идентификатор статуса (совпадает с именем файла)'),
   ruleIds: RuleIdsSchema,
-  statusCategory: z.enum(['elemental', 'physical', 'mental', 'poison', 'generic'])
+  statusCategory: z.enum(['elemental', 'physical', 'mental', 'poison', 'wound', 'control', 'generic'])
     .default('generic')
     .describe('Категория статуса для разрешения конфликтов'),
   categoryPriority: z.number().int()
@@ -459,7 +459,7 @@ export const TileEffectStatusTemplateSchema = z.object({
   duration: z.number().int().positive()
     .describe('Базовая длительность статуса тайлового эффекта в ходах'),
   ruleIds: RuleIdsSchema,
-  statusCategory: z.enum(['elemental', 'physical', 'mental', 'poison', 'generic'])
+  statusCategory: z.enum(['elemental', 'physical', 'mental', 'poison', 'wound', 'control', 'generic'])
     .default('generic')
     .describe('Категория статуса для разрешения конфликтов'),
   categoryPriority: z.number().int()
@@ -502,6 +502,8 @@ export const MapParamsSchema = z.object({
     .describe('ID шаблонов боссов этажа (категория entities, у шаблона обязателен isBoss: true); если задан — генератор назначает босс-комнату и комнату награды и спавнит одного случайного босса из пула'),
   bossRoomTypeId: z.string().min(1).default('boss')
     .describe('ID типа босс-комнаты (категория roomTypes); назначается генератором напрямую самому дальнему узлу дерева комнат'),
+  bossDoorId: z.string().min(1).default('boss_door')
+    .describe('ID шаблона двери босс-комнаты (категория doors); ставится генератором на коридоры босс-комнаты при заданном bossPool'),
   rewardRoomTypeId: z.string().min(1).default('reward')
     .describe('ID типа комнаты награды (категория roomTypes); назначается генератором напрямую exit-узлу за босс-комнатой'),
 }).describe('Параметры процедурной генерации карты');

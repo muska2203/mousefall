@@ -399,6 +399,7 @@ export interface SystemStatNamesTranslations {
   armor: string;
   maxHp: string;
   critMultiplier: string;
+  throwRange: string;
   str: string;
   dex: string;
   int: string;
@@ -449,6 +450,8 @@ export interface SystemGameSessionTranslations {
   effectSilenced: string;
   effectSilencedDesc: string;
   effectWet: string;
+  effectBleeding: string;
+  effectRooted: string;
   effectUnknown: string;
 }
 

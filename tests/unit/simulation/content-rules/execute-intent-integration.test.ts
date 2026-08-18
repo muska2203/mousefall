@@ -149,6 +149,89 @@ describe('executeIntent + content rules integration', () => {
       expect(enemy.statusEffects.some((e) => e.type === 'burning')).toBe(false);
     });
 
+    it('копия модификатора огня у соседнего владельца не срабатывает повторно (слой radius)', () => {
+      vi.mocked(rngChance).mockReturnValue(false);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      player.activeRules.push({
+        ...getContentRule('item_fire_damage_multiplier'),
+        ownerContext: { type: 'entity', entityId: 'test_fire_item' },
+      });
+
+      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
+      // Соседний владелец того же правила: до фикса его копия из слоя radius
+      // модифицировала урон повторно (10 × 1.1 × 1.5 × 1.5 вместо × 1.5).
+      const neighbor = makeEnemy({ id: 'neighbor_fire_item', x: 6, y: 6, hp: 100, armor: 0 });
+      neighbor.activeRules.push({
+        ...getContentRule('item_fire_damage_multiplier'),
+        ownerContext: { type: 'entity', entityId: 'neighbor_fire_item' },
+      });
+
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.entities.set(neighbor.id, neighbor);
+      state.featureFlags.contentRulesEnabled = true;
+
+      const builder = new ExecutionBuilder({
+        type: 'ACTION_APPLIED', isFieldEvent: false,
+        action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
+      });
+
+      executeIntent(
+        state,
+        {
+          type: 'DAMAGE',
+          entityId: enemy.id,
+          sourceEntityId: player.id,
+          damage: 10,
+          tags: ['damage.magical.fire'],
+        },
+        builder,
+        builder.root,
+      );
+
+      const damageEvent = findNodeByEventType(builder.root, 'ENTITY_DAMAGED');
+      expect(damageEvent?.event).toMatchObject({ damage: 17 });
+      expect(enemy.hp).toBe(83);
+    });
+
+    it('копия amulet_restore_ap_on_hit у соседнего владельца не восстанавливает AP от чужого удара', () => {
+      vi.mocked(rngChance).mockReturnValue(true);
+
+      const player = makePlayer({ x: 5, y: 5 });
+      const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
+      // Соседний владелец правила с 0 AP: до фикса слой radius подхватывал
+      // его копию правила, и сосед восстанавливал AP от удара игрока.
+      const neighbor = makeEnemy({ id: 'neighbor_amulet', x: 6, y: 6, hp: 100, armor: 0, ap: 0, maxAp: 3 });
+      neighbor.activeRules.push({
+        ...getContentRule('amulet_restore_ap_on_hit'),
+        ownerContext: { type: 'entity', entityId: 'neighbor_amulet' },
+      });
+
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+      state.entities.set(neighbor.id, neighbor);
+      state.featureFlags.contentRulesEnabled = true;
+
+      const builder = new ExecutionBuilder({
+        type: 'ACTION_APPLIED', isFieldEvent: false,
+        action: { type: 'ATTACK', entityId: player.id, dx: 1, dy: 0 },
+      });
+
+      executeIntent(
+        state,
+        {
+          type: 'DAMAGE',
+          entityId: enemy.id,
+          sourceEntityId: player.id,
+          damage: 10,
+          tags: ['damage.physical.slashing', 'attack.melee', 'delivery.weapon'],
+        },
+        builder,
+        builder.root,
+      );
+
+      expect(neighbor.ap).toBe(0);
+    });
+
     it('при провале шанса реакции горение не накладывается', () => {
       vi.mocked(rngChance).mockReturnValue(false);
 

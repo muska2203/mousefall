@@ -136,6 +136,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
       roomTypePool: ['normal'],
       startRoomTypeId: 'start',
       bossRoomTypeId: 'boss',
+      bossDoorId: 'boss_door',
       rewardRoomTypeId: 'reward',
     },
     entities: new Map(),

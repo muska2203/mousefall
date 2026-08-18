@@ -212,6 +212,9 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'DAMAGE',
       tags: ['damage.magical.fire'],
     },
+    // eventRole: 'source' обязателен: иначе копия правила соседнего владельца
+    // подхватывается слоем radius и модифицирует урон повторно.
+    conditions: [{type: 'eventRole', role: 'source'}],
     effect: {
       type: 'modifyDamage',
       op: 'multiply',
@@ -285,7 +288,9 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'ENTITY_DAMAGED',
       tags: ['attack.melee', 'delivery.weapon'],
     },
-    conditions: [{type: 'chance', probability: 15}],
+    // eventRole: 'source' обязателен: иначе копия правила соседнего владельца
+    // подхватывается слоем radius и восстанавливает AP от чужого удара.
+    conditions: [{type: 'chance', probability: 15}, {type: 'eventRole', role: 'source'}],
     effect: {
       type: 'restoreAp',
     },
@@ -298,7 +303,10 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'DAMAGE',
       tags: ['damage.magical.fire'],
     },
+    // eventRole: 'source' обязателен: иначе копия правила соседнего владельца
+    // подхватывается слоем radius и модифицирует урон повторно.
     conditions: [
+      {type: 'eventRole', role: 'source'},
       {
         type: 'or',
         conditions: [
@@ -330,6 +338,24 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       type: 'dealDamage',
       amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},
       tags: ['damage.magical.poison'],
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    id: 'status_bleeding_tick_damage',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.bleeding'],
+    },
+    // eventRole: 'target' обязателен: без него копия правила соседнего
+    // кровоточащего актора подхватывалась бы слоем radius и наносила урон
+    // тикающей сущности повторно (по образцу status_poison_tick_damage).
+    conditions: [{type: 'eventRole', role: 'target'}],
+    effect: {
+      type: 'dealDamage',
+      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},
+      tags: ['damage.physical.slashing'],
     },
     target: {type: 'eventTarget'},
     priority: 0,

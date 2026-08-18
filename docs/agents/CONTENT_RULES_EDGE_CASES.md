@@ -301,6 +301,8 @@ world:   burning_tick_damage       (dealDamage при STATUS_TICKED status.burni
 `radius` — это сущности в радиусе 1 (Chebyshev distance) от `eventPosition`, исключая `source` и `target`. Используется для аур и наблюдателей.
 
 > ⚠️ Правила, привязанные к владельцу (статусы, предметы, реликвии), подхватываются слоем `radius` и от соседних акторов: если у соседа активно то же правило, оно срабатывает на событие повторно. Правило, которое должно работать только для своего владельца (например, тик урона статуса), обязано иметь условие `eventRole` (`source` или `target`) — прецедент: баг двойного тика `status_poison_tick_damage` при двух соседних отравленных акторах (исправлен 2026-08-12).
+>
+> ⚠️ Это касается и `modifyDamage`-правил: слой `radius` в `apply-intent-modifiers.ts` собирает модификаторы соседей, и условия там **оцениваются** — без `eventRole` урон модифицируется повторно (прецеденты: `item_fire_damage_multiplier`, `amulet_fire_damage_multiplier`, `amulet_restore_ap_on_hit`, исправлены 2026-08-18).
 
 ### Self vs target повторно
 

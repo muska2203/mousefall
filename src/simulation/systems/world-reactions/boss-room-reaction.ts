@@ -3,7 +3,7 @@
  *
  * Подписан на ENTITY_MOVED (перемещения игрока) и ENTITY_DIED (смерть босса):
  * - Вход игрока в босс-комнату при живом боссе внутри → двери босс-комнаты
- *   закрываются (CLOSE_DOOR, если открыта) и запираются (LOCK_DOOR).
+ *   запираются (LOCK_DOOR; открытая дверь закрывается исполнителем с DOOR_CLOSED).
  * - Выход игрока из комнаты при живом боссе → двери отпираются (UNLOCK_DOOR),
  *   босс преследует существующим hunter-FSM.
  * - Смерть последнего босса на этаже → двери отпираются насовсем:
@@ -53,10 +53,10 @@ function isAliveBoss(entity: Entity): boolean {
       && isBossTemplate(entity.templateId);
 }
 
-function makeUnlockIntents(doors: DoorEntity[], entityId: string): Intent[] {
+function makeUnlockIntents(doors: DoorEntity[]): Intent[] {
   return doors.map((door) => ({
     type: 'UNLOCK_DOOR' as const,
-    entityId,
+    entityId: PLAYER_ID,
     targetPosition: {x: door.x, y: door.y},
   }));
 }
@@ -97,15 +97,9 @@ export const bossRoomDoorReaction: WorldReaction = (
 
     const intents: Intent[] = [];
     for (const door of doors) {
-      if (door.isOpen) {
-        intents.push({
-          type: 'CLOSE_DOOR',
-          entityId: PLAYER_ID,
-          targetPosition: {x: door.x, y: door.y},
-        });
-      }
       // LOCK_DOOR эмитится безусловно: повторный вход при уже запертых
-      // дверях идемпотентен (исполнитель просто подтверждает состояние).
+      // дверях идемпотентен (исполнитель просто подтверждает состояние),
+      // а открытую дверь исполнитель закрывает сам с событием DOOR_CLOSED.
       intents.push({
         type: 'LOCK_DOOR',
         entityId: PLAYER_ID,
@@ -120,7 +114,7 @@ export const bossRoomDoorReaction: WorldReaction = (
   const hasAliveBoss = Array.from(state.entities.values()).some(isAliveBoss);
   if (!hasAliveBoss) return [];
 
-  return makeUnlockIntents(doors, PLAYER_ID);
+  return makeUnlockIntents(doors);
 };
 
 /**
@@ -144,5 +138,5 @@ export const bossRoomUnlockOnBossDeathReaction: WorldReaction = (
   const hasAliveBoss = Array.from(state.entities.values()).some(isAliveBoss);
   if (hasAliveBoss) return [];
 
-  return makeUnlockIntents(findBossRoomDoors(state), event.entityId);
+  return makeUnlockIntents(findBossRoomDoors(state));
 };

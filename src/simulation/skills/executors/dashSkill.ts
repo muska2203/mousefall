@@ -3,6 +3,7 @@ import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {findDoorAt, isActor, isBlocked, isDamageable, isTerrainWalkable} from '@simulation/state';
+import {isRooted} from '@simulation/systems/rooted-helper';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
@@ -70,6 +71,9 @@ export function createDashSkill(params: DashSkillParams): SkillExecutor {
    * клетки на расстоянии от 1 до distance.
    */
   function getDashTargetPositions(state: GameState, caster: Entity): Position[] {
+    // Обездвиженный кастер не может рвануться: направлений для выбора нет.
+    if (isRooted(caster)) return [];
+
     const positions: Position[] = [];
     for (const dir of DIRECTIONS) {
       if (!isDashStartAllowed(state, caster, dir.dx, dir.dy)) continue;
@@ -140,6 +144,9 @@ export function createDashSkill(params: DashSkillParams): SkillExecutor {
    * 5. BUMP — визуальный отскок кастера при столкновении.
    */
   function resolveDashIntents(state: GameState, caster: Entity, target: Position, skillId: string): Intent[] {
+    // Обездвиженный кастер не может рвануться (в т.ч. подготовленной AI-способностью).
+    if (isRooted(caster)) return [];
+
     const normalizedTarget = normalizeDashTarget(caster, target);
     const dx = normalizedTarget.x - caster.x;
     const dy = normalizedTarget.y - caster.y;

@@ -17,6 +17,7 @@ import {
 } from '../../src/content/schemas';
 import type {
   AbilityTemplate,
+  DoorTemplate,
   EntityTemplate,
   ItemTemplate,
   LoadedContent,
@@ -313,7 +314,7 @@ describe('Схемы босс-инфраструктуры: дефолты', () 
     expect(parsed.indestructible).toBe(false);
   });
 
-  it('MapParamsSchema: дефолты bossRoomTypeId/rewardRoomTypeId, bossPool не задан', () => {
+  it('MapParamsSchema: дефолты bossRoomTypeId/bossDoorId/rewardRoomTypeId, bossPool не задан', () => {
     const parsed = MapParamsSchema.parse({
       id: 'test_map',
       width: 20,
@@ -324,6 +325,7 @@ describe('Схемы босс-инфраструктуры: дефолты', () 
       startRoomTypeId: 'start',
     });
     expect(parsed.bossRoomTypeId).toBe('boss');
+    expect(parsed.bossDoorId).toBe('boss_door');
     expect(parsed.rewardRoomTypeId).toBe('reward');
     expect(parsed.bossPool).toBeUndefined();
   });
@@ -357,6 +359,7 @@ function mockMapParams(overrides: Partial<MapParams> = {}): MapParams {
     roomTypePool: ['normal'],
     startRoomTypeId: 'start',
     bossRoomTypeId: 'boss',
+    bossDoorId: 'boss_door',
     rewardRoomTypeId: 'reward',
     ...overrides,
   } as MapParams;
@@ -412,7 +415,20 @@ function makeBossContent(mapOverrides: Partial<MapParams> = {}): LoadedContent {
       ['boss', mockRoomType('boss')],
       ['reward', mockRoomType('reward')],
     ]),
+    doors: new Map([['boss_door', mockDoor('boss_door')]]),
   });
+}
+
+function mockDoor(id: string): DoorTemplate {
+  return {
+    id,
+    interactionKind: 'door',
+    maxHp: 3,
+    armor: 0,
+    indestructible: false,
+    tags: [],
+    canHaveStatus: [],
+  } as DoorTemplate;
 }
 
 describe('validateContentReferences: bossPool', () => {
@@ -458,6 +474,17 @@ describe('validateContentReferences: bossPool', () => {
       e.path === 'maps.test_map' &&
       e.field === 'rewardRoomTypeId' &&
       e.problem.includes('nonexistent_room_type'),
+    )).toBe(true);
+  });
+
+  it('находит bossDoorId, ссылающийся на несуществующий шаблон двери', () => {
+    const content = makeBossContent({ bossDoorId: 'nonexistent_door' });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'maps.test_map' &&
+      e.field === 'bossDoorId' &&
+      e.problem.includes('nonexistent_door'),
     )).toBe(true);
   });
 

@@ -5,12 +5,15 @@
  * - Находит сущность по `entityId`.
  * - Устанавливает `entity.x` / `entity.y` без проверок проходимости.
  * - Порождает событие ENTITY_MOVED с `movementType: 'teleport'`.
+ * - Обездвиженная (rooted) сущность не телепортируется, если интент не помечен
+ *   `ignoreRooted` (системные телепорты, напр. переход между этажами).
  */
 
 import {GameState} from '@simulation/types';
 import {ExecutionBuilder, ExecutionNode, TeleportEntityIntent} from '@simulation/core-types';
 import {IntentExecutor} from '@simulation/systems/intents/types';
 import {findEntity} from '@simulation/state';
+import {isRooted} from '@simulation/systems/rooted-helper';
 import {PLAYER_ID} from '@utils/constants';
 
 export const executeTeleportEntityIntent: IntentExecutor<TeleportEntityIntent> = (
@@ -21,6 +24,12 @@ export const executeTeleportEntityIntent: IntentExecutor<TeleportEntityIntent> =
 ) => {
   const entity = findEntity(state, intent.entityId);
   if (!entity) {
+    return null;
+  }
+
+  // Обездвиженная сущность не перемещается самостоятельно, включая телепорт
+  // (концепт этажа 1, §2). Системные телепорты проходят через ignoreRooted.
+  if (!intent.ignoreRooted && isRooted(entity)) {
     return null;
   }
 

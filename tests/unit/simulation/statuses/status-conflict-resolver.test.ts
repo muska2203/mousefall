@@ -67,6 +67,8 @@ describe('resolveStatusBatch', () => {
           blockedBy: ['stunned'],
         })],
         ['poisoned', mockStatusTemplate({ id: 'poisoned', statusCategory: 'poison', categoryPriority: 0 })],
+        ['bleeding', mockStatusTemplate({ id: 'bleeding', statusCategory: 'wound', categoryPriority: 0 })],
+        ['rooted', mockStatusTemplate({ id: 'rooted', statusCategory: 'control', categoryPriority: 0 })],
       ]),
       tileEffects: new Map(),
       tileEffectStatuses: new Map(),
@@ -115,6 +117,20 @@ describe('resolveStatusBatch', () => {
 
     expect(resolved).toHaveLength(1);
     expect((resolved[0] as Extract<Intent, { type: 'APPLY_STATUS' }>).status.type).toBe('stunned');
+  });
+
+  it('bleeding (wound) и rooted (control) в одном батче не конфликтуют — оба накладываются', () => {
+    const state = makeGameState();
+    const intents: Intent[] = [
+      makeApplyStatusIntent('bleeding'),
+      makeApplyStatusIntent('rooted'),
+    ];
+
+    const resolved = resolveStatusBatch(state, intents);
+
+    expect(resolved).toHaveLength(2);
+    const types = resolved.map((i) => (i as Extract<Intent, { type: 'APPLY_STATUS' }>).status.type);
+    expect(types).toEqual(['bleeding', 'rooted']);
   });
 
   it('сохраняет не-APPLY_STATUS интенты и их порядок', () => {

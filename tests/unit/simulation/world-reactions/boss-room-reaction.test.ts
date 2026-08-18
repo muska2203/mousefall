@@ -101,14 +101,14 @@ describe('bossRoomDoorReaction (ENTITY_MOVED)', () => {
     resetRegistry();
   });
 
-  it('вход игрока при живом боссе внутри: CLOSE_DOOR открытым + LOCK_DOOR всем босс-дверям', () => {
+  it('вход игрока при живом боссе внутри: LOCK_DOOR всем босс-дверям (открытую закрывает исполнитель)', () => {
     const {state} = makeBossRoomState();
 
     const intents = callDoorReaction(state, movedEvent('player', {x: 4, y: 4}, {x: 5, y: 4}));
 
-    // Открытая дверь door_a: закрытие + запирание; закрытая door_b: только запирание.
+    // CLOSE_DOOR отдельным интентом не эмитится: исполнитель LOCK_DOOR сам
+    // закрывает открытую дверь с событием DOOR_CLOSED.
     expect(intents).toEqual([
-      {type: 'CLOSE_DOOR', entityId: 'player', targetPosition: {x: 4, y: 4}},
       {type: 'LOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 4}},
       {type: 'LOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 6}},
     ]);
@@ -245,8 +245,8 @@ describe('bossRoomUnlockOnBossDeathReaction (ENTITY_DIED)', () => {
     const intents = callDeathReaction(state, diedEvent(boss.id, {x: boss.x, y: boss.y}));
 
     expect(intents).toEqual([
-      {type: 'UNLOCK_DOOR', entityId: boss.id, targetPosition: {x: 4, y: 4}},
-      {type: 'UNLOCK_DOOR', entityId: boss.id, targetPosition: {x: 4, y: 6}},
+      {type: 'UNLOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 4}},
+      {type: 'UNLOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 6}},
     ]);
   });
 
@@ -275,7 +275,7 @@ describe('bossRoomUnlockOnBossDeathReaction (ENTITY_DIED)', () => {
     const intents = callDeathReaction(state, diedEvent(boss.id, {x: boss.x, y: boss.y}));
 
     expect(intents).toEqual([
-      {type: 'UNLOCK_DOOR', entityId: boss.id, targetPosition: {x: 4, y: 6}},
+      {type: 'UNLOCK_DOOR', entityId: 'player', targetPosition: {x: 4, y: 6}},
     ]);
   });
 });

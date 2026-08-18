@@ -12,6 +12,7 @@
 import type {GameState} from '@simulation/types.ts';
 import {findEntity, isBlocked} from '@simulation/state.ts';
 import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
+import {isRooted} from '@simulation/systems/rooted-helper.ts';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
 import {Intent} from "@simulation/systems/intents/types.ts";
 
@@ -25,6 +26,12 @@ export const moveEntity: ActionHandler = {
         const entity = findEntity(state, action.entityId);
 
         if (!entity) return {ok: false, reasonCode: "entity_not_exists"};
+
+        // Обездвиженная сущность не перемещается самостоятельно.
+        // Внешние перемещения (PUSH) сюда не попадают — они идут через MOVE-интент.
+        if (isRooted(entity)) {
+            return {ok: false, reasonCode: "actor_rooted"};
+        }
 
         const newX = entity.x + action.dx;
         const newY = entity.y + action.dy;

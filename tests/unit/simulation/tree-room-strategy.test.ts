@@ -3,7 +3,7 @@ import { treeRoomStrategy } from '../../../src/simulation/systems/map-generation
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import { makeGameState } from '../../fixtures/gameState';
 import { createRNG } from '../../../src/utils/rng';
-import type { DoorTemplate, EntityTemplate, MapParams, PoiTemplate, RoomFill, RoomTypeTemplate } from '../../../src/content/schemas';
+import type { DoorTemplate, EntityTemplate, MapParams, PoiTemplate, PropTemplate, RoomFill, RoomTypeTemplate } from '../../../src/content/schemas';
 
 function makeParams(overrides: Partial<MapParams> = {}): MapParams {
   return {
@@ -16,6 +16,7 @@ function makeParams(overrides: Partial<MapParams> = {}): MapParams {
     roomTypePool: ['normal', 'rare'],
     startRoomTypeId: 'start',
     bossRoomTypeId: 'boss',
+    bossDoorId: 'boss_door',
     rewardRoomTypeId: 'reward',
     ...overrides,
   };
@@ -287,6 +288,113 @@ describe('treeRoomStrategy: босс-инфраструктура', () => {
       expect(result.enemies.some(e => e.templateId === 'test_boss')).toBe(false);
       for (const door of result.doors) {
         expect(door.templateId).toBe('wooden_door');
+      }
+    }
+  });
+});
+
+describe('treeRoomStrategy: зарезервированные клетки', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map<string, EntityTemplate>([
+        ['test_boss', {
+          id: 'test_boss',
+          isBoss: true,
+          maxAp: 1,
+          aiStrategyId: 'hunter',
+          aiSightRadius: 4,
+          health: { max: 30 },
+          baseStats: { str: 3, dex: 1, int: 0, vit: 2 },
+        } as EntityTemplate],
+      ]),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map<string, DoorTemplate>([
+        ['wooden_door', { id: 'wooden_door', maxHp: 30, armor: 2 } as DoorTemplate],
+        ['boss_door', { id: 'boss_door', maxHp: 100, armor: 5, indestructible: true } as DoorTemplate],
+      ]),
+      stairs: new Map(),
+      pois: new Map<string, PoiTemplate>([
+        ['test_poi', {
+          id: 'test_poi',
+          interactionKind: 'poi',
+          ruleIds: [],
+          charges: 1,
+          chargeSpentOn: 'activation',
+          tags: [],
+        } as PoiTemplate],
+      ]),
+      props: new Map([
+        ['test_prop', {
+          id: 'test_prop',
+          maxHp: 3,
+          armor: 0,
+          blocksMovement: true,
+          blocksLOS: false,
+          propKind: 'barrel',
+          tags: [],
+          canHaveStatus: [],
+        } as PropTemplate],
+      ]),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+      roomTypes: new Map<string, RoomTypeTemplate>([
+        ['start', makeRoomType('start')],
+        ['normal', makeRoomType('normal')],
+        // Высокая плотность пропов и гарантированный poi: центр exit-комнаты
+        // (лестница вниз) и центр босс-комнаты наверняка попали бы под размещение.
+        ['reward', makeRoomType('reward', {
+          weight: 0, maxPerFloor: 1,
+          fill: { propPool: ['test_prop'], propDensity: 8, guaranteedPois: ['test_poi'] },
+        })],
+        ['boss', makeRoomType('boss', {
+          weight: 0, maxPerFloor: 1,
+          fill: { propPool: ['test_prop'], propDensity: 8 },
+        })],
+      ]),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('клетка лестницы вниз свободна от врагов и объектов размещения', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const state = makeGameState({ rng: createRNG(seed) });
+      const result = treeRoomStrategy.generate(makeParams({ bossPool: ['test_boss'] }), state, 1, 5);
+
+      expect(result.stairsDown).not.toBeNull();
+      const stairs = result.stairsDown!;
+      const spawned = [
+        ...result.enemies, ...result.items, ...result.props, ...result.traps, ...result.pois,
+      ];
+      for (const entity of spawned) {
+        expect(entity.x === stairs.x && entity.y === stairs.y).toBe(false);
+      }
+    }
+  });
+
+  it('центр босс-комнаты свободен: босс спавнится в нём, объекты — нет', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const state = makeGameState({ rng: createRNG(seed) });
+      const result = treeRoomStrategy.generate(makeParams({ bossPool: ['test_boss'] }), state, 1, 5);
+
+      const bossRoom = result.map.rooms.find(r => r.roomTypeId === 'boss')!;
+      const center = {
+        x: Math.floor(bossRoom.x + bossRoom.width / 2),
+        y: Math.floor(bossRoom.y + bossRoom.height / 2),
+      };
+
+      const boss = result.enemies.find(e => e.templateId === 'test_boss')!;
+      expect({ x: boss.x, y: boss.y }).toEqual(center);
+
+      for (const prop of result.props) {
+        expect(prop.x === center.x && prop.y === center.y).toBe(false);
       }
     }
   });

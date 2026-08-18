@@ -81,3 +81,20 @@ export function getEffectiveCritMultiplier(actor: StatActor): number {
   const base = getBaseCritMultiplier(actor);
   return applyModifiers(actor, 'critMultiplier', base).total;
 }
+
+// ─────────────────────────────────────────────
+// Дальность бросков расходников
+// ─────────────────────────────────────────────
+
+/**
+ * Итоговый бонус к дальности бросков расходников (стат `throwRange`).
+ * База 0 — итоговая дальность броска = `range` шаблона + этот бонус.
+ * Округление до целого: дальность измеряется в клетках (единственный
+ * `getEffective*` с округлением — остальные статы дробные).
+ */
+export function getEffectiveThrowRange(entity: Entity): number {
+  if (isStatActor(entity)) {
+    return Math.round(applyModifiers(entity, 'throwRange', 0).total);
+  }
+  return 0;
+}

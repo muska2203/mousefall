@@ -12,12 +12,14 @@ import type {StatusEffect} from '@simulation/types';
 const STATUS_DISPLAY_ORDER: Record<string, number> = {
   stunned: 0,
   bulwark: 1,
-  burning: 2,
-  poisoned: 3,
-  frozen: 4,
-  counterattack: 5,
-  regenerating: 6,
-  silenced: 7,
+  rooted: 2,
+  burning: 3,
+  bleeding: 4,
+  poisoned: 5,
+  frozen: 6,
+  counterattack: 7,
+  regenerating: 8,
+  silenced: 9,
 };
 
 /** Сортирует эффекты по фиксированному порядку отображения. */

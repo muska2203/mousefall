@@ -6,8 +6,9 @@
  * - Порождает событие DOOR_OPENED / DOOR_CLOSED / DOOR_LOCKED / DOOR_UNLOCKED.
  *   Событие эмитится всегда, даже если дверь уже находилась в целевом состоянии
  *   (как и в исполнителях open/close).
- * - Запирание открытой двери сначала закрывает её (как executeCloseDoorIntent),
- *   затем выставляет isLocked.
+ * - Запирание открытой двери сначала закрывает её с событием DOOR_CLOSED
+ *   (как executeCloseDoorIntent), затем выставляет isLocked — эмитить
+ *   CLOSE_DOOR перед LOCK_DOOR отдельным интентом не нужно.
  * - Открытие запертой двери невозможно: executeOpenDoorIntent возвращает null.
  * - World reactions могут подцепиться к этим событиям при необходимости.
  */
@@ -66,7 +67,16 @@ export const executeLockDoorIntent: LockDoorIntentExecutor = (
   const door = findDoorAt(state, intent.targetPosition.x, intent.targetPosition.y);
   if (!door) return null;
 
-  // Запереть можно только закрытую дверь: открытая сначала закрывается.
+  // Запереть можно только закрытую дверь: открытая сначала закрывается
+  // с событием DOOR_CLOSED, чтобы presentation увидел оба изменения.
+  if (door.isOpen) {
+    door.isOpen = false;
+    door.blocksMovement = true;
+    executionBuilder.addChild(parent, {
+      type: 'DOOR_CLOSED', isFieldEvent: true,
+      position: { x: door.x, y: door.y },
+    });
+  }
   door.isOpen = false;
   door.blocksMovement = true;
   door.isLocked = true;
