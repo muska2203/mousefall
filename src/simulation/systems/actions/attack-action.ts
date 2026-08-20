@@ -9,6 +9,7 @@ import {getWeaponAttackLosRadius, getWeaponAttackRange, isInWeaponRange} from "@
 import {getPrimaryDamageTag, getWeaponTags} from "@simulation/systems/tags/weapon-tags.ts";
 import {mergeDamageIntentTags} from "@simulation/systems/tags/tag-helpers.ts";
 import {computeFOV} from "@simulation/systems/fov.ts";
+import {chebyshevDistance} from "@utils/math.ts";
 
 // ─────────────────────────────────────────────
 // Контекст атаки (устраняет дублирование поиска)
@@ -29,11 +30,6 @@ type AttackContext =
       attacker: NonNullable<ReturnType<typeof findAttacker>>;
       target: NonNullable<ReturnType<typeof findFirstAttackableEntityAt>>;
     };
-
-/** Дистанция Чебышёва между двумя позициями. */
-function chebyshevDistance(from: Position, to: Position): number {
-  return Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y));
-}
 
 /** Позиционная форма: атака конкретной клетки с проверкой дальности и LOS. */
 function resolvePositionalAttackContext(

@@ -2,7 +2,7 @@
 
 > **Статус:** **решения приняты и реализованы 2026-08-19** — выбраны варианты 1А (единый Чебышёв, включая квадратный FOV), 2Б (таргетинг throw по 8 лучам), 4Б (запрет bump для min-range оружия с тостом `too_close_for_ranged_weapon`); замечание 3 закрыто следствием 1А. Ниже — исходный анализ вариантов.
 >
-> Связанные документы: [`roadMap.md`](../../roadMap.md) (п. 1.6), [`floor-1-content-concept.md`](../game-design/floor-1-content-concept.md) (§4.3), [`ranged-basic-attack-and-throw.md`](./ranged-basic-attack-and-throw.md).
+> Связанные документы: [`roadMap.md`](../../roadMap.md) (п. 1.6), [`floor-1-content-concept.md`](../game-design/floor-1-content-concept.md) (§4.3). План `ranged-basic-attack-and-throw.md` удалён по конвенции после реализации.
 
 ---
 

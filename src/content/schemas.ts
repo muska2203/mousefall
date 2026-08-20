@@ -153,7 +153,11 @@ const WeaponStatsSchema = z.object({
   .default([{ damageTag: 'damage.physical.blunt', weight: 1.0 }])
   .describe('Распределение типов урона оружия по тегам'),
   tags: TagsSchema.describe('Теги классификации оружия (attack.melee, target.aoe и т.д.)'),
-}).describe('Характеристики оружия');
+})
+.refine(s => s.minRange <= s.range, {
+  message: 'minRange не может быть больше range (иначе зона атаки пуста)',
+})
+.describe('Характеристики оружия');
 
 const ArmorStatsSchema = z.object({
   baseArmor: z.number().int().nonnegative().describe('Плоское снижение урона при экипировке'),

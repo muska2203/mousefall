@@ -106,6 +106,7 @@ import {TargetingController} from './targetingController';
 import {AutoPathController, type AutoPathQueries, type AutoPathStepResult} from './autoPathController';
 import type {AutoPathTarget, AutoPathTargetKind} from './pathfinding';
 import {findPathTowards, isTileExplored} from './pathfinding';
+import {buildPositionalAttackAction} from './actionBuilders';
 import {getInteractionHintKey, getInteractionPriority} from './interactionUtils';
 import {sortStatusEffects} from './statusSorting';
 import {resolveAIMode} from './primaryStatus';
@@ -774,6 +775,11 @@ export class GameSession {
    * режиме (не таргетинг): зона досягаемости текущего оружия от позиции игрока
    * + клетка цели для подсветки и пунктирной линии. Показывается при hover
    * на врага независимо от того, в зоне поражения цель или нет.
+   *
+   * Точка старта линии (attackOrigin) вычисляется здесь, а не в renderer:
+   * последний шаг автопути используется, только если путь построен именно
+   * к этой цели (по entityId). Путь в клетку самого врага (fallback без
+   * атакующей клетки) линию не сдвигает — она выродилась бы в точку.
    */
   private buildEnemyHoverOverlay(state: Readonly<GameState>): RenderInput['enemyHoverOverlay'] {
     if (!this.simulation || this.mode !== 'playing' || this.isTargeting() || !this.fieldHover) {
@@ -785,11 +791,26 @@ export class GameSession {
       pos,
       (e) => e.type === 'enemy' && e.isAlive !== false,
     );
-    if (!enemy || enemy.id === state.player.id) return null;
+    if (!enemy) return null;
+
+    const inRange = this.isValidBasicAttackTarget(pos);
+    let attackOrigin: Position | null = null;
+    if (!inRange) {
+      const pathTarget = this.autoPath.getTarget();
+      const path = this.autoPath.getPath();
+      if (pathTarget?.kind === 'enemy' && pathTarget.entityId === enemy.id && path && path.length > 0) {
+        const last = path[path.length - 1]!;
+        if (last.x !== enemy.x || last.y !== enemy.y) {
+          attackOrigin = { x: last.x, y: last.y };
+        }
+      }
+    }
+
     return {
       rangeCells: this.simulation.getBasicAttackRangeCells(),
       target: { x: enemy.x, y: enemy.y },
-      inRange: this.isValidBasicAttackTarget(pos),
+      inRange,
+      attackOrigin,
     };
   }
 
@@ -1324,7 +1345,7 @@ export class GameSession {
     // targetPosition-заглушка нужна только для запроса стоимости действия.
     const action: GameAction = {
       type: 'ATTACK',
-      entityId: 'player',
+      entityId: this.simulation.getState().player.id,
       dx: 0,
       dy: 0,
       targetPosition: { x: 0, y: 0 },
@@ -1407,17 +1428,8 @@ export class GameSession {
         return;
       }
 
-      // dx/dy в позиционной форме симуляцией игнорируются, но планировщик
-      // анимаций строит выпад по ним — проставляем направление на цель.
       const player = this.simulation.getState().player;
-      const action: GameAction = {
-        type: 'ATTACK',
-        entityId: 'player',
-        dx: Math.sign(position.x - player.x),
-        dy: Math.sign(position.y - player.y),
-        targetPosition: position,
-      };
-      this.dispatch(action);
+      this.dispatch(buildPositionalAttackAction(player.id, player, position));
       return;
     }
 
@@ -1634,18 +1646,11 @@ export class GameSession {
     }
 
     // Клик по врагу в зоне поражения текущего оружия — сразу позиционная
-    // атака, без автопути. dx/dy в позиционной форме симуляцией игнорируются,
-    // но планировщик анимаций строит выпад по ним — проставляем направление.
+    // атака, без автопути.
     if (target.kind === 'enemy' && this.isValidBasicAttackTarget(target.position)) {
       this.autoPath.cancel();
       const player = state.player;
-      this.dispatch({
-        type: 'ATTACK',
-        entityId: player.id,
-        dx: Math.sign(pos.x - player.x),
-        dy: Math.sign(pos.y - player.y),
-        targetPosition: { x: pos.x, y: pos.y },
-      });
+      this.dispatch(buildPositionalAttackAction(player.id, player, pos));
       return;
     }
 
@@ -1852,6 +1857,16 @@ export class GameSession {
       isTileWalkable: (pos) => simulation.isTileWalkableForPlayer(pos),
       isTilePassable,
       findAttackPath: (target) => simulation.findNearestAttackPosition(target),
+      canBumpAttack: (target) => {
+        // Проверка через публичный preview: контроллер не знает правил оружия.
+        const player = simulation.getState().player;
+        return simulation.preview({
+          type: 'ATTACK',
+          entityId: player.id,
+          dx: Math.sign(target.x - player.x),
+          dy: Math.sign(target.y - player.y),
+        }).valid;
+      },
       findPathTowards: (start, target) => {
         // Позиционный индекс строится один раз на поиск пути:
         // проверки проходимости вызываются для каждой клетки A*.
@@ -2856,12 +2871,20 @@ export class GameSession {
 
   /** Показать toast, если автопуть отменён по причине, требующей уведомления. */
   private handleAutoPathCancel(stepResult: AutoPathStepResult): void {
-    if (stepResult.kind === 'cancelled' && stepResult.reason === 'new_enemy') {
+    if (stepResult.kind !== 'cancelled') return;
+    if (stepResult.reason === 'new_enemy') {
       this.toasts.push(
         'warning',
         t('components.toast.autoPathEnemyDetectedTitle'),
         t('components.toast.autoPathEnemyDetectedMessage'),
       );
+      return;
+    }
+    if (stepResult.reason === 'target_unreachable') {
+      // Цель-враг недосягаема текущим оружием (нет атакующей клетки,
+      // bump в упор невалиден) — показываем причину отказа атаки.
+      const toast = errorCodeToToast('too_close_for_ranged_weapon');
+      this.toasts.push(toast.kind, toast.title, toast.message, toast.duration);
     }
   }
 

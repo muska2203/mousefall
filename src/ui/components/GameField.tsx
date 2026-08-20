@@ -297,8 +297,14 @@ export function GameField({
       lastMouseRef.current = { x: mouseX, y: mouseY, over: true };
 
       const { x: tileX, y: tileY } = rendererRef.current.screenToWorld(mouseX, mouseY);
-      lastSentTileRef.current = { x: tileX, y: tileY };
-      onMouseMove?.({ x: tileX, y: tileY });
+      // Тайловые события шлём только при смене тайла: пересчёт hover-превью
+      // в Presentation (FOV, поиск атакующей клетки, A*) достаточно тяжёлый,
+      // чтобы не гонять его на каждый mousemove внутри одной клетки.
+      const prevTile = lastSentTileRef.current;
+      if (!prevTile || prevTile.x !== tileX || prevTile.y !== tileY) {
+        lastSentTileRef.current = { x: tileX, y: tileY };
+        onMouseMove?.({ x: tileX, y: tileY });
+      }
       onMouseMoveScreen?.({ screenX: e.clientX, screenY: e.clientY });
     };
 

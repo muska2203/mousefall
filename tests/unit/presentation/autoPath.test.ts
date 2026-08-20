@@ -49,6 +49,17 @@ function makeQueries(state: ReturnType<typeof makeGameState>): AutoPathQueries {
     isTilePassable,
     findPathTowards: (start, target) => findPathTowards(start, target, isTileWalkable, isTilePassable),
     findAttackPath: (target) => simulation.findNearestAttackPosition(target),
+    // Зеркалит canBumpAttack из GameSession.getAutoPathQueries:
+    // валидность bump-атаки проверяется через preview.
+    canBumpAttack: (target) => {
+      const player = simulation.getState().player;
+      return simulation.preview({
+        type: 'ATTACK',
+        entityId: player.id,
+        dx: Math.sign(target.x - player.x),
+        dy: Math.sign(target.y - player.y),
+      }).valid;
+    },
     findEntityAt: (pos, filter) => simulation.findEntityAt(pos, filter),
     findEntitiesAt: (pos, filter) => simulation.findEntitiesAt(pos, filter),
   };
@@ -1566,6 +1577,52 @@ describe('AutoPathController attack position', () => {
     // Старое поведение: путь строится в клетку врага.
     expect(path).not.toBeNull();
     expect(path![path!.length - 1]).toEqual({ x: 7, y: 2 });
+  });
+
+  it('cancels with target_unreachable when adjacent to enemy and bump is invalid (ranged weapon)', () => {
+    // Праща 5/2: игрок впритык к врагу, атакующей клетки нет (stub null),
+    // bump в упор невалиден — контроллер отменяет путь вместо обречённого ATTACK.
+    const player = makePlayerWithSling();
+    const enemy = makeEnemy({ x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [enemy.id, enemy]]),
+    });
+    state.explored[5]![6] = true;
+    state.visible[5]![6] = true;
+    const { controller, queries } = setupController(state);
+    const noAttackCell: AutoPathQueries = { ...queries, findAttackPath: () => null };
+
+    controller.hover({ position: { x: 6, y: 5 }, kind: 'enemy', entityId: enemy.id }, state, noAttackCell);
+    controller.commit();
+    const result = controller.step(state, noAttackCell);
+
+    expect(result).toEqual({ kind: 'cancelled', reason: 'target_unreachable' });
+    expect(controller.isActive()).toBe(false);
+  });
+
+  it('keeps bump ATTACK when adjacent to enemy and bump is valid (melee weapon)', () => {
+    // Безоружный игрок впритык к врагу, атакующей клетки нет (stub null) —
+    // legacy-поведение сохраняется: направленный bump.
+    const player = makePlayer({ x: 5, y: 5 });
+    const enemy = makeEnemy({ x: 6, y: 5 });
+    const state = makeGameState({
+      player,
+      entities: new Map<string, Entity>([[player.id, player], [enemy.id, enemy]]),
+    });
+    state.explored[5]![6] = true;
+    state.visible[5]![6] = true;
+    const { controller, queries } = setupController(state);
+    const noAttackCell: AutoPathQueries = { ...queries, findAttackPath: () => null };
+
+    controller.hover({ position: { x: 6, y: 5 }, kind: 'enemy', entityId: enemy.id }, state, noAttackCell);
+    controller.commit();
+    const result = controller.step(state, noAttackCell);
+
+    expect(result).toEqual({
+      kind: 'action',
+      action: { type: 'ATTACK', entityId: state.player.id, dx: 1, dy: 0 },
+    });
   });
 });
 

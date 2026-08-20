@@ -1,9 +1,9 @@
-import {Attackable, Entity, GameState, Position} from '@simulation/types';
+import {Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {getDamageablePositionsWithinRange, getVisiblePositionsWithinRange} from '@simulation/skills/targeting';
-import {isDamageable} from '@simulation/state';
+import {findFirstAttackableEntityAt} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
@@ -56,9 +56,7 @@ export function createThrowSkill(params: ThrowSkillParams): SkillExecutor {
     const target = targets[0];
     if (!target) return [];
 
-    const entity = Array.from(state.entities.values()).find(
-      (e): e is Entity & Attackable => e.x === target.x && e.y === target.y && isDamageable(e)
-    );
+    const entity = findFirstAttackableEntityAt(state, target.x, target.y);
     if (!entity) return [];
 
     const ability = tryGetAbility(skillId);

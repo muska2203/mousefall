@@ -100,6 +100,9 @@ type TurnState =
   | { phase: 'environment-turn' }
   | { phase: 'round-recovery' };
 
+/** Предел итераций A* при поиске пути для игрока (защита от разрастания open-set). */
+const MAX_PATH_STEPS = 500;
+
 export class GameSimulation implements Simulation {
 
     constructor(
@@ -1187,7 +1190,6 @@ export class GameSimulation implements Simulation {
 
     /** Ищет кратчайший путь для игрока от start до target. */
     findPathForPlayer(start: Position, target: Position): Position[] | null {
-        const MAX_PATH_STEPS = 500;
         // Позиционный индекс строится один раз на поиск пути:
         // проверка проходимости вызывается для каждой клетки A*.
         const index = buildEntityPositionIndex(this.state.entities);
@@ -1225,7 +1227,6 @@ export class GameSimulation implements Simulation {
      * но визуально далёкая от персонажа, выглядит для игрока нелогично.
      */
     findNearestAttackPosition(target: Position): { position: Position; path: Position[] } | null {
-        const MAX_PATH_STEPS = 500;
         const player = this.state.player;
         const attackRange = getWeaponAttackRange(player);
         const losRadius = getWeaponAttackLosRadius(attackRange);

@@ -19,6 +19,7 @@ import type {DoorEntity, Entity, GameAction, GameState, Position} from '@simulat
 import {chebyshevDistance, posEqual} from '@utils/math';
 import type {AutoPathTarget, AutoPathTargetKind} from './pathfinding';
 import {isTileExplored} from './pathfinding';
+import {buildPositionalAttackAction} from './actionBuilders';
 
 /** Query-зависимости, которые предоставляет Simulation через публичный API. */
 export type AutoPathQueries = {
@@ -39,6 +40,12 @@ export type AutoPathQueries = {
    * клетки нет (цель недосягаема текущим оружием).
    */
   findAttackPath: (target: Position) => { position: Position; path: Position[] } | null;
+  /**
+   * Проверяет, валидна ли сейчас направленная bump-атака по целевой клетке
+   * (через `simulation.preview`): false, например, для дальнобойного оружия
+   * (minRange > 1) в упор — такой bump Simulation гарантированно отклонит.
+   */
+  canBumpAttack: (target: Position) => boolean;
   /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
   findEntityAt: (pos: Position, filter?: (entity: Entity) => boolean) => Entity | null;
   /** Возвращает все сущности на тайле, удовлетворяющие фильтру. */
@@ -46,7 +53,7 @@ export type AutoPathQueries = {
 };
 
 /** Причина отмены автопути, которую должен обработать Presentation. */
-export type AutoPathCancelReason = 'new_enemy';
+export type AutoPathCancelReason = 'new_enemy' | 'target_unreachable';
 
 /** Результат одного шага автопути: действие или отмена пути. */
 export type AutoPathStepResult =
@@ -213,15 +220,7 @@ export class AutoPathController {
     if (this.target.kind === 'enemy') {
       const attack = queries.findAttackPath(this.target.position);
       if (attack && attack.path.length === 0) {
-        // dx/dy симуляцией игнорируются (позиционная форма), но нужны
-        // планировщику анимаций для построения выпада.
-        const action: GameAction = {
-          type: 'ATTACK',
-          entityId: state.player.id,
-          dx: Math.sign(this.target.position.x - start.x),
-          dy: Math.sign(this.target.position.y - start.y),
-          targetPosition: { x: this.target.position.x, y: this.target.position.y },
-        };
+        const action = buildPositionalAttackAction(state.player.id, start, this.target.position);
         this.cancel();
         return { kind: 'action', action };
       }
@@ -276,6 +275,13 @@ export class AutoPathController {
     // Исключение — враг с найденной атакующей клеткой: bump-форма не подставляется
     // (для оружия с minRange > 1 она невалидна), финал — позиционная атака выше.
     if (!attackPathUsed && chebyshevDistance(playerPos, this.target.position) === 1) {
+      // Враг впритык, атакующей клетки нет и bump-атака невалидна
+      // (дальнобойное оружие в упор не бьёт) — не испускаем обречённый
+      // ATTACK, а отменяем путь: Presentation покажет тост с причиной.
+      if (this.target.kind === 'enemy' && !queries.canBumpAttack(this.target.position)) {
+        this.cancel();
+        return { kind: 'cancelled', reason: 'target_unreachable' };
+      }
       const action = this.buildAdjacentAction(state, queries);
       if (action) {
         this.cancel();

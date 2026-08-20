@@ -122,26 +122,17 @@ export class TargetingRenderer {
 
     // Оверлей прицеливания по врагу под курсором (обычный режим, не таргетинг):
     // тусклая зона досягаемости оружия (стиль radiusCells), подсветка клетки
-    // цели и пунктирная линия к цели. Если цель вне зоны поражения и построен
-    // автопуть до атакующей клетки, линия идёт от последнего шага пути —
-    // оттуда будет выполнена атака. Иначе — от визуального центра игрока.
+    // цели и пунктирная линия к цели. Точку старта линии (attackOrigin)
+    // вычисляет Presentation: последний шаг автопути к этой цели либо игрок.
     const enemyHover = input.enemyHoverOverlay;
     if (enemyHover) {
       for (const pos of enemyHover.rangeCells) {
         this.drawCellHighlight(pos, COLORS.valid, zoom, PATTERN_FILL_ALPHA, PATTERN_FRAME_ALPHA);
       }
       this.drawCellHighlight(enemyHover.target, COLORS.affected, zoom);
-      const path = input.highlightedPath;
-      const lastStep =
-        !enemyHover.inRange && path && path.length > 0
-          ? path[path.length - 1]!
-          : null;
-      // В fallback-режиме автопуть ведёт в клетку самого врага — линия от неё
-      // выродилась бы в точку, поэтому остаётся линия от игрока.
-      const lineStart =
-        lastStep && (lastStep.x !== enemyHover.target.x || lastStep.y !== enemyHover.target.y)
-          ? cellCenter(lastStep.x, lastStep.y)
-          : playerCenter;
+      const lineStart = enemyHover.attackOrigin
+        ? cellCenter(enemyHover.attackOrigin.x, enemyHover.attackOrigin.y)
+        : playerCenter;
       this.drawDashedLine(
         [lineStart, cellCenter(enemyHover.target.x, enemyHover.target.y)],
         COLORS.pathEnemy,

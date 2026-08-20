@@ -1,9 +1,9 @@
-import {Attackable, Entity, GameState, Position} from '@simulation/types';
+import {Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {getDamageablePositionsWithinRange, getVisiblePositionsWithinRange} from '@simulation/skills/targeting';
-import {isDamageable} from '@simulation/state';
+import {findFirstAttackableEntityAt} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
 import {tryGetAbility} from '@content/registry';
@@ -54,9 +54,7 @@ export function createMagicSlapSkill(params: MagicSlapSkillParams): SkillExecuto
     const abilityTags = getAbilityTags(skillId);
 
     for (const targetPos of effectiveTargets) {
-      const entity = Array.from(state.entities.values()).find(
-        (e): e is Entity & Attackable => e.x === targetPos.x && e.y === targetPos.y && isDamageable(e)
-      );
+      const entity = findFirstAttackableEntityAt(state, targetPos.x, targetPos.y);
       if (!entity) continue;
 
       const tags = damageTag

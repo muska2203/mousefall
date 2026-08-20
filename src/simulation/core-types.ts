@@ -307,7 +307,7 @@ export type AttackAction = {
   dy: number;
   /**
    * Позиционная форма: атака конкретной клетки оружием с дальностью > 1.
-   * Валидируется по манхэттенской дистанции [minRange, range] оружия и LOS.
+   * Валидируется по чебышёвской дистанции ∈ [minRange, range] оружия и LOS.
    * При заданном `targetPosition` поля dx/dy игнорируются.
    */
   targetPosition?: Position;

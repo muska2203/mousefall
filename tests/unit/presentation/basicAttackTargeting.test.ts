@@ -1,5 +1,5 @@
 /**
- * Unit tests for basic attack targeting mode and weapon hotbar slot in GameSession.
+ * Тесты режима таргетинга базовой атаки и слота оружия в хотбаре (GameSession).
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';

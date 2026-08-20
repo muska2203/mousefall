@@ -1,5 +1,5 @@
 /**
- * Unit tests for GameSimulation.findNearestAttackPosition — поиск ближайшей
+ * Тесты GameSimulation.findNearestAttackPosition — поиска ближайшей
  * к игроку атакующей клетки для базовой атаки по цели.
  */
 
@@ -154,6 +154,25 @@ describe('GameSimulation.findNearestAttackPosition', () => {
 
     expect(result).not.toBeNull();
     expect(result!.position).toEqual({ x: 7, y: 5 });
+  });
+
+  it('melee: при равной визуальной дистанции выигрывает кратчайший путь', () => {
+    const player = makePlayerWithWeapon(SWORD.id);
+    const enemy = makeEnemy({ id: 'enemy_1', x: 8, y: 5 });
+    const state = makeStateWith(player, [enemy]);
+    // (7,5) выбывает из кандидатов (стена). Остаются симметричные (7,4) и (7,6)
+    // с равной евклидовой дистанцией от игрока (5,5); стены делают путь
+    // к (7,6) длиннее (3 шага через низ против 2 шагов напрямую).
+    state.map.tiles[5]![7] = 'wall';
+    state.map.tiles[5]![6] = 'wall';
+    state.map.tiles[6]![6] = 'wall';
+    const sim = createTestSimulation(state);
+
+    const result = sim.findNearestAttackPosition({ x: 8, y: 5 });
+
+    expect(result).not.toBeNull();
+    expect(result!.position).toEqual({ x: 7, y: 4 });
+    expect(result!.path).toHaveLength(2);
   });
 
   it('ranged 5/2: цель вне зоны — атакующая клетка на краю зоны от цели', () => {

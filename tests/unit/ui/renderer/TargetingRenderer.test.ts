@@ -509,6 +509,7 @@ describe('TargetingRenderer', () => {
         rangeCells: [{x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}],
         target: {x: 2, y: 0},
         inRange: true,
+        attackOrigin: null,
       };
 
       renderer.update(input);
@@ -524,6 +525,7 @@ describe('TargetingRenderer', () => {
         rangeCells: [],
         target: {x: 2, y: 0},
         inRange: false,
+        attackOrigin: null,
       };
 
       renderer.update(input);
@@ -539,22 +541,21 @@ describe('TargetingRenderer', () => {
       expect(last.y).toBeCloseTo(14.4, 5);
     });
 
-    it('starts the dashed line from the last autopath step when the target is out of range', () => {
+    it('starts the dashed line from attackOrigin when it is set (attack cell)', () => {
       const renderer = new TargetingRenderer();
       const input = makeRenderInput(null, []);
       input.enemyHoverOverlay = {
         rangeCells: [],
         target: {x: 2, y: 0},
         inRange: false,
+        // Presentation вычислил атакующую клетку (1,0) — соседнюю с целью.
+        attackOrigin: {x: 1, y: 0},
       };
-      // Автопуть до атакующей клетки (1,0) — соседней с целью.
-      input.highlightedPath = [{x: 1, y: 0}];
 
       renderer.update(input);
 
-      // Линия к цели идёт от центра последнего шага пути (1,0) → (48, 14.4),
-      // а не от персонажа (0,0) → (16, 14.4). Отличаем её от линии автопути
-      // по конечной точке — центру клетки цели (80, 14.4).
+      // Линия к цели идёт от центра attackOrigin (1,0) → (48, 14.4),
+      // а не от персонажа (0,0) → (16, 14.4).
       const lines = renderer.overlayContainer.children.filter(
         (c: any) => c.lines?.length > 0,
       ) as any[];
@@ -567,21 +568,19 @@ describe('TargetingRenderer', () => {
       expect(line.moves[0].y).toBeCloseTo(14.4, 5);
     });
 
-    it('keeps the dashed line from the player in fallback (path leads into the enemy cell)', () => {
+    it('keeps the dashed line from the player when attackOrigin is null', () => {
       const renderer = new TargetingRenderer();
       const input = makeRenderInput(null, []);
       input.enemyHoverOverlay = {
         rangeCells: [],
         target: {x: 2, y: 0},
         inRange: false,
+        attackOrigin: null,
       };
-      // Fallback: последний шаг пути — клетка самого врага.
-      input.highlightedPath = [{x: 1, y: 0}, {x: 2, y: 0}];
 
       renderer.update(input);
 
-      // Линия к цели стартует от персонажа (0,0) → (16, 14.4):
-      // от клетки врага линия выродилась бы в точку.
+      // Линия к цели стартует от персонажа (0,0) → (16, 14.4).
       const lines = renderer.overlayContainer.children.filter(
         (c: any) => c.lines?.length > 0,
       ) as any[];
