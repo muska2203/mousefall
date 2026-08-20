@@ -172,6 +172,7 @@ function makeRenderInput(
     debugEnabled: false,
     mapgenDebugEnabled: false,
     pendingWindow: null,
+    enemyHoverOverlay: null,
   };
 }
 
@@ -497,6 +498,109 @@ describe('TargetingRenderer', () => {
 
       // Контур + линия + 2 отметки конца хода.
       expect(renderer.overlayContainer.children.length).toBe(4);
+    });
+  });
+
+  describe('enemy hover overlay (attack preparation)', () => {
+    it('renders range cells, target highlight and dashed line to the target', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.enemyHoverOverlay = {
+        rangeCells: [{x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}],
+        target: {x: 2, y: 0},
+        inRange: true,
+      };
+
+      renderer.update(input);
+
+      // 3 клетки зоны + подсветка клетки цели + пунктирная линия.
+      expect(renderer.overlayContainer.children.length).toBe(5);
+    });
+
+    it('ends the dashed line exactly at the target cell center', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.enemyHoverOverlay = {
+        rangeCells: [],
+        target: {x: 2, y: 0},
+        inRange: false,
+      };
+
+      renderer.update(input);
+
+      // Подсветка цели + линия; игрок стоит на (0,0): центр (16, 14.4);
+      // цель (2,0): центр (80, 14.4).
+      const line = renderer.overlayContainer.children.find(
+        (c: any) => c.lines?.length > 0,
+      ) as any;
+      expect(line).toBeDefined();
+      const last = line.lines[line.lines.length - 1];
+      expect(last.x).toBeCloseTo(80, 5);
+      expect(last.y).toBeCloseTo(14.4, 5);
+    });
+
+    it('starts the dashed line from the last autopath step when the target is out of range', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.enemyHoverOverlay = {
+        rangeCells: [],
+        target: {x: 2, y: 0},
+        inRange: false,
+      };
+      // Автопуть до атакующей клетки (1,0) — соседней с целью.
+      input.highlightedPath = [{x: 1, y: 0}];
+
+      renderer.update(input);
+
+      // Линия к цели идёт от центра последнего шага пути (1,0) → (48, 14.4),
+      // а не от персонажа (0,0) → (16, 14.4). Отличаем её от линии автопути
+      // по конечной точке — центру клетки цели (80, 14.4).
+      const lines = renderer.overlayContainer.children.filter(
+        (c: any) => c.lines?.length > 0,
+      ) as any[];
+      const line = lines.find((c) => {
+        const last = c.lines[c.lines.length - 1];
+        return Math.abs(last.x - 80) < 1e-5 && Math.abs(last.y - 14.4) < 1e-5;
+      });
+      expect(line).toBeDefined();
+      expect(line.moves[0].x).toBeCloseTo(48, 5);
+      expect(line.moves[0].y).toBeCloseTo(14.4, 5);
+    });
+
+    it('keeps the dashed line from the player in fallback (path leads into the enemy cell)', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+      input.enemyHoverOverlay = {
+        rangeCells: [],
+        target: {x: 2, y: 0},
+        inRange: false,
+      };
+      // Fallback: последний шаг пути — клетка самого врага.
+      input.highlightedPath = [{x: 1, y: 0}, {x: 2, y: 0}];
+
+      renderer.update(input);
+
+      // Линия к цели стартует от персонажа (0,0) → (16, 14.4):
+      // от клетки врага линия выродилась бы в точку.
+      const lines = renderer.overlayContainer.children.filter(
+        (c: any) => c.lines?.length > 0,
+      ) as any[];
+      const line = lines.find((c) => {
+        const last = c.lines[c.lines.length - 1];
+        return Math.abs(last.x - 80) < 1e-5 && Math.abs(last.y - 14.4) < 1e-5;
+      });
+      expect(line).toBeDefined();
+      expect(line.moves[0].x).toBeCloseTo(16, 5);
+      expect(line.moves[0].y).toBeCloseTo(14.4, 5);
+    });
+
+    it('renders nothing when the overlay is null', () => {
+      const renderer = new TargetingRenderer();
+      const input = makeRenderInput(null, []);
+
+      renderer.update(input);
+
+      expect(renderer.overlayContainer.children.length).toBe(0);
     });
   });
 });

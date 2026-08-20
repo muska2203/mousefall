@@ -72,7 +72,9 @@ describe('GameSession hotbar', () => {
 
     const hotbar = session.getViewModel().renderInput!.hotbar;
     expect(hotbar).toHaveLength(10);
-    expect(hotbar.every(slot => slot.kind === 'empty')).toBe(true);
+    // Слот 0 закреплён за базовой атакой оружием, остальные пусты.
+    expect(hotbar[0]!.kind).toBe('weapon');
+    expect(hotbar.slice(1).every(slot => slot.kind === 'empty')).toBe(true);
   });
 
   it('auto-fills new consumable into first empty slot', () => {
@@ -86,11 +88,12 @@ describe('GameSession hotbar', () => {
     const session = new GameSession();
     session.loadGame(state);
 
+    // Слот 0 занят базовой атакой — автозаполнение начинается со слота 1.
     const hotbar = session.getViewModel().renderInput!.hotbar;
-    expect(hotbar[0]!.kind).toBe('consumable');
-    expect(hotbar[0]!.templateId).toBe('health_potion');
-    expect(hotbar[0]!.quantity).toBe(2);
-    expect(hotbar[1]!.kind).toBe('empty');
+    expect(hotbar[1]!.kind).toBe('consumable');
+    expect(hotbar[1]!.templateId).toBe('health_potion');
+    expect(hotbar[1]!.quantity).toBe(2);
+    expect(hotbar[2]!.kind).toBe('empty');
   });
 
   it('groups multiple stacks of the same consumable into a single hotbar slot', () => {
@@ -124,10 +127,10 @@ describe('GameSession hotbar', () => {
     session.loadGame(state);
 
     const hotbar = session.getViewModel().renderInput!.hotbar;
-    expect(hotbar[0]!.kind).toBe('skill');
-    expect(hotbar[0]!.abilityId).toBe('fireball');
-    expect(hotbar[1]!.kind).toBe('consumable');
-    expect(hotbar[1]!.templateId).toBe('health_potion');
+    expect(hotbar[1]!.kind).toBe('skill');
+    expect(hotbar[1]!.abilityId).toBe('fireball');
+    expect(hotbar[2]!.kind).toBe('consumable');
+    expect(hotbar[2]!.templateId).toBe('health_potion');
   });
 
   it('does not duplicate already bound consumables or skills on repeated view model builds', () => {
@@ -167,11 +170,12 @@ describe('GameSession hotbar', () => {
     session.loadGame(state);
 
     // Используем зелье — оно удалится из инвентаря.
-    session.activateHotbarSlot(0);
+    // Слот 0 — базовая атака, зелье лежит в слоте 1.
+    session.activateHotbarSlot(1);
     session.onAnimationsComplete();
 
     const hotbarAfterUse = session.getViewModel().renderInput!.hotbar;
-    const slot = hotbarAfterUse[0]!;
+    const slot = hotbarAfterUse[1]!;
     expect(slot.kind).toBe('consumable');
     expect(slot.depleted).toBe(true);
     expect(slot.quantity).toBe(0);
@@ -183,7 +187,7 @@ describe('GameSession hotbar', () => {
     // Прямая мутация состояния вне session не инвалидирует кеш ViewModel.
     (session as any).notify();
     const hotbarAfterRefill = session.getViewModel().renderInput!.hotbar;
-    const refilledSlot = hotbarAfterRefill[0]!;
+    const refilledSlot = hotbarAfterRefill[1]!;
     expect(refilledSlot.kind).toBe('consumable');
     expect(refilledSlot.templateId).toBe('health_potion');
     expect(refilledSlot.quantity).toBe(2);
@@ -199,14 +203,14 @@ describe('GameSession hotbar', () => {
     const session = new GameSession();
     session.loadGame(state);
 
-    expect(session.getViewModel().renderInput!.hotbar[0]!.abilityId).toBe('fireball');
+    expect(session.getViewModel().renderInput!.hotbar[1]!.abilityId).toBe('fireball');
 
     const playerWithoutSkill = makePlayer({ abilities: [] });
     const newState = makeGameState({ player: playerWithoutSkill, entities: new Map([[playerWithoutSkill.id, playerWithoutSkill]]) });
     session.loadGame(newState);
 
     const hotbar = session.getViewModel().renderInput!.hotbar;
-    expect(hotbar[0]!.kind).toBe('empty');
+    expect(hotbar[1]!.kind).toBe('empty');
   });
 
   it('activateHotbarSlot begins targeting for skill', () => {
@@ -224,11 +228,11 @@ describe('GameSession hotbar', () => {
     const session = new GameSession();
     session.loadGame(state);
 
-    session.activateHotbarSlot(0);
+    session.activateHotbarSlot(1);
 
     expect(session.isTargeting()).toBe(true);
     const hotbar = session.getViewModel().renderInput!.hotbar;
-    expect(hotbar[0]!.isActive).toBe(true);
+    expect(hotbar[1]!.isActive).toBe(true);
   });
 
   it('activateHotbarSlot dispatches USE_ITEM for consumable', () => {
@@ -244,7 +248,7 @@ describe('GameSession hotbar', () => {
     const session = new GameSession();
     session.loadGame(state);
 
-    session.activateHotbarSlot(0);
+    session.activateHotbarSlot(1);
     session.onAnimationsComplete();
 
     expect(session.getViewModel().renderInput!.inventory.length).toBe(0);
@@ -259,7 +263,7 @@ describe('GameSession hotbar', () => {
     const session = new GameSession();
     session.loadGame(state);
 
-    const slot = session.getViewModel().renderInput!.hotbar[0]!;
+    const slot = session.getViewModel().renderInput!.hotbar[1]!;
     expect(slot.kind).toBe('skill');
     expect(slot.cooldown).toBe(2);
     expect(slot.maxCooldown).toBe(2);
@@ -279,8 +283,8 @@ describe('GameSession hotbar', () => {
     session.loadGame(state);
 
     const hotbar = session.getViewModel().renderInput!.hotbar;
-    expect(hotbar[0]!.apCost).toBe(2);
-    expect(hotbar[1]!.apCost).toBe(1);
+    expect(hotbar[1]!.apCost).toBe(2);
+    expect(hotbar[2]!.apCost).toBe(1);
   });
 
   it('includes skill tooltip with ability details', () => {
@@ -292,7 +296,7 @@ describe('GameSession hotbar', () => {
     const session = new GameSession();
     session.loadGame(state);
 
-    const slot = session.getViewModel().renderInput!.hotbar[0]!;
+    const slot = session.getViewModel().renderInput!.hotbar[1]!;
     expect(slot.kind).toBe('skill');
     const tooltip = slot.tooltip;
     expect(tooltip?.kind).toBe('skill');
@@ -314,7 +318,7 @@ describe('GameSession hotbar', () => {
     const session = new GameSession();
     session.loadGame(state);
 
-    const slot = session.getViewModel().renderInput!.hotbar[0]!;
+    const slot = session.getViewModel().renderInput!.hotbar[1]!;
     expect(slot.kind).toBe('consumable');
     const tooltip = slot.tooltip;
     expect(tooltip?.kind).toBe('consumable');

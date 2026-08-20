@@ -42,6 +42,7 @@ const mockSword: ItemTemplate = {
   weapon: {
     damage: { min: 4, max: 4 },
     range: 1,
+    minRange: 1,
     damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
     tags: ['attack.melee', 'target.single', 'delivery.weapon'],
   },

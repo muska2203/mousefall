@@ -7,4 +7,7 @@ export const enHotbar = {
   skillTooltipApCost: 'AP: {{ap}}',
   skillTooltipCooldown: 'Cooldown: {{current}} / {{max}} turns',
   skillTooltipCastTime: 'Cast time: {{turns}} turns',
+  weaponSlotName: 'Basic attack',
+  weaponSlotUnarmed: 'Unarmed',
+  weaponSlotHint: 'Click to pick an attack target',
 } as const satisfies ComponentsHotbarTranslations;

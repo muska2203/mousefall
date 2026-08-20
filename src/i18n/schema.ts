@@ -187,6 +187,9 @@ export interface ComponentsHotbarTranslations {
   skillTooltipApCost: string;
   skillTooltipCooldown: string;
   skillTooltipCastTime: string;
+  weaponSlotName: string;
+  weaponSlotUnarmed: string;
+  weaponSlotHint: string;
 }
 
 export interface ComponentsGameFieldTranslations {
@@ -308,6 +311,8 @@ export interface ComponentsToastTranslations {
   tileBlockedMessage: string;
   noTargetAtTileTitle: string;
   noTargetAtTileMessage: string;
+  tooCloseForRangedWeaponTitle: string;
+  tooCloseForRangedWeaponMessage: string;
   genericErrorTitle: string;
   genericErrorMessage: string;
   autoPathEnemyDetectedTitle: string;

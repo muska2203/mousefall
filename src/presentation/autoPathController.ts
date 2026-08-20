@@ -6,7 +6,9 @@
  * - Фиксация автопути по клику.
  * - Пошаговое выполнение и актуализация пути после каждого хода.
  * - Отслеживание перемещения целевой сущности (враг, дверь, предмет, лестница).
- * - Замена последнего шага на атаку / открытие двери / поднятие предмета.
+ * - Путь к врагу строится до ближайшей атакующей клетки, финал — позиционная
+ *   атака по текущей позиции врага; замена последнего шага на открытие двери /
+ *   поднятие предмета.
  *
  * Правила:
  * - Не мутирует GameState.
@@ -30,6 +32,13 @@ export type AutoPathQueries = {
   isTilePassable: (pos: Position) => boolean;
   /** Ищет путь к целевой сущности. */
   findPathTowards: (start: Position, target: AutoPathTarget) => Position[] | null;
+  /**
+   * Ищет ближайшую к игроку атакующую клетку по цели-врагу и путь до неё
+   * (см. Simulation.findNearestAttackPosition). Пустой путь означает, что
+   * игрок уже может атаковать цель из текущей позиции; null — что атакующей
+   * клетки нет (цель недосягаема текущим оружием).
+   */
+  findAttackPath: (target: Position) => { position: Position; path: Position[] } | null;
   /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
   findEntityAt: (pos: Position, filter?: (entity: Entity) => boolean) => Entity | null;
   /** Возвращает все сущности на тайле, удовлетворяющие фильтру. */
@@ -72,7 +81,25 @@ export class AutoPathController {
 
     this.target = target;
     const start = { x: state.player.x, y: state.player.y };
-    this.path = queries.findPathTowards(start, target);
+    this.path = this.findPathToTarget(start, target, queries);
+  }
+
+  /**
+   * Построить путь к цели. Для врага — путь до ближайшей атакующей клетки
+   * (findAttackPath), а не в клетку врага: финальный удар выполняется
+   * позиционной атакой из атакующей клетки. Если атакующей клетки нет —
+   * fallback на старое поведение (путь в клетку врага).
+   */
+  private findPathToTarget(
+    start: Position,
+    target: AutoPathTarget,
+    queries: AutoPathQueries,
+  ): Position[] | null {
+    if (target.kind === 'enemy') {
+      const attack = queries.findAttackPath(target.position);
+      if (attack) return attack.path;
+    }
+    return queries.findPathTowards(start, target);
   }
 
   /**
@@ -176,7 +203,37 @@ export class AutoPathController {
     }
 
     const start = { x: state.player.x, y: state.player.y };
-    const newPath = queries.findPathTowards(start, this.target);
+
+    // Цель-враг: финал автопути — позиционная атака из текущей позиции игрока,
+    // если она позволяет атаковать (оружие достаёт цель и есть LOS).
+    // Проверка идёт на каждом шаге: враг отслеживается по entityId, его клетка
+    // уже актуализирована выше.
+    let attackPathUsed = false;
+    let enemyAttackPath: Position[] | null = null;
+    if (this.target.kind === 'enemy') {
+      const attack = queries.findAttackPath(this.target.position);
+      if (attack && attack.path.length === 0) {
+        // dx/dy симуляцией игнорируются (позиционная форма), но нужны
+        // планировщику анимаций для построения выпада.
+        const action: GameAction = {
+          type: 'ATTACK',
+          entityId: state.player.id,
+          dx: Math.sign(this.target.position.x - start.x),
+          dy: Math.sign(this.target.position.y - start.y),
+          targetPosition: { x: this.target.position.x, y: this.target.position.y },
+        };
+        this.cancel();
+        return { kind: 'action', action };
+      }
+      attackPathUsed = attack !== null;
+      enemyAttackPath = attack?.path ?? null;
+    }
+
+    // Для врага с найденной атакующей клеткой путь уже построен до неё;
+    // иначе — старое поведение (путь в клетку цели, допускает непроходимую).
+    const newPath = attackPathUsed
+      ? enemyAttackPath
+      : this.findPathToTarget(start, this.target, queries);
     if (newPath === null) {
       this.cancel();
       return { kind: 'cancelled' };
@@ -216,7 +273,9 @@ export class AutoPathController {
 
     // Если следующий шаг впритык к цели — заменяем ходьбу на взаимодействие.
     // Автопуть к активируемому/атакуемому объекту завершается после одного действия.
-    if (chebyshevDistance(playerPos, this.target.position) === 1) {
+    // Исключение — враг с найденной атакующей клеткой: bump-форма не подставляется
+    // (для оружия с minRange > 1 она невалидна), финал — позиционная атака выше.
+    if (!attackPathUsed && chebyshevDistance(playerPos, this.target.position) === 1) {
       const action = this.buildAdjacentAction(state, queries);
       if (action) {
         this.cancel();

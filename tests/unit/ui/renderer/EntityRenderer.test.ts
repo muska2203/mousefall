@@ -200,6 +200,7 @@ function makeRenderInput(playerOverrides?: Partial<RenderInput['state']['player'
     debugEnabled: false,
     mapgenDebugEnabled: false,
     pendingWindow: null,
+    enemyHoverOverlay: null,
   };
 }
 

@@ -214,6 +214,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
     debugEnabled,
     mapgenDebugEnabled: false,
     pendingWindow: null,
+    enemyHoverOverlay: null,
   };
 }
 

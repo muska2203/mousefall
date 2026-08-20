@@ -127,8 +127,8 @@ describe('GameSession targeting', () => {
     state.visible[5]![5] = true;
     state.visible[5]![6] = true;
     const player = makePlayer({
-      x: 5,
-      y: 5,
+      x: 1,
+      y: 1,
       abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
     });
     state.player = player;
@@ -137,7 +137,7 @@ describe('GameSession targeting', () => {
     const session = new GameSession();
     session.loadGame(state);
     session.beginTargeting('fireball');
-    // (9,9) is outside ability range, so it should not be a valid target
+    // (9,9) — чебышёвская дистанция 8 от игрока (1,1), вне дальности fireball (5)
     const preview = session.previewTarget({ x: 9, y: 9 });
 
     expect(preview.valid).toBe(false);
@@ -289,6 +289,55 @@ describe('GameSession targeting', () => {
     const vm = session.getViewModel();
     expect(vm.renderInput?.targetingOverlay).toBeNull();
     expect(vm.toasts).toHaveLength(0);
+  });
+
+  it('targeting overlay for magic_slap includes castable pattern cells even without targets', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'magic_slap', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('magic_slap');
+
+    const overlay = session.getViewModel().renderInput?.targetingOverlay;
+    expect(overlay).not.toBeNull();
+    // Валидных целей нет (на поле никого), но паттерн прицеливания заполнен.
+    expect(overlay!.valid).toHaveLength(0);
+    expect(overlay!.radiusCells!.length).toBeGreaterThan(0);
+    expect(overlay!.radiusCells!.some(p => p.x === 6 && p.y === 6)).toBe(true);
+    // Клетка кастера в паттерн не входит.
+    expect(overlay!.radiusCells!.some(p => p.x === 5 && p.y === 5)).toBe(false);
+  });
+
+  it('targeting overlay for fireball has no castable pattern (вид не задаёт паттерн)', () => {
+    const state = makeGameState();
+    state.visible[5]![5] = true;
+    state.visible[5]![6] = true;
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'fireball', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('fireball');
+
+    const overlay = session.getViewModel().renderInput?.targetingOverlay;
+    expect(overlay).not.toBeNull();
+    expect(overlay!.radiusCells).toEqual([]);
   });
 
 });

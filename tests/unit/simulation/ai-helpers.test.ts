@@ -73,9 +73,9 @@ describe('canSeePlayer', () => {
     expect(canSeePlayer(enemy, state)).toBe(true);
   });
 
-  it('использует евклидов радиус (не видит по углам ромба за пределами круга)', () => {
+  it('использует квадратный радиус Чебышёва (не видит цель за его пределами)', () => {
     const player = makePlayer({ x: 5, y: 5 });
-    const enemy = makeEnemy({ x: 2, y: 2, aiSightRadius: 4 });
+    const enemy = makeEnemy({ x: 2, y: 2, aiSightRadius: 2 });
     const state = makeGameState({
       player,
       entities: new Map<EntityId, Entity>([[player.id, player], [enemy.id, enemy]]),

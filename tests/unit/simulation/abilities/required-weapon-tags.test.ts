@@ -42,6 +42,7 @@ describe('requiredWeaponTags', () => {
           weapon: {
             damage: { min: 5, max: 5 },
             range: 1,
+            minRange: 1,
             damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
             tags: ['attack.melee', 'target.single', 'delivery.weapon'],
           },
@@ -50,6 +51,7 @@ describe('requiredWeaponTags', () => {
           weapon: {
             damage: { min: 5, max: 5 },
             range: 2,
+            minRange: 1,
             damageDistribution: [{ damageTag: 'damage.physical.piercing', weight: 1.0 }],
             tags: ['attack.ranged', 'target.single', 'delivery.weapon'],
           },

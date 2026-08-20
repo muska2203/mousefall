@@ -131,4 +131,28 @@ describe('magicSlapSkill', () => {
     const validTargets = magicSlapSkill.getValidTargets(state, player);
     expect(validTargets.some(p => p.x === 7 && p.y === 5)).toBe(false);
   });
+
+  it('getCastableCells возвращает видимые клетки радиуса без целей, клетка кастера исключена', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5 });
+    // Закрытая дверь блокирует LOS дальше по лучу.
+    const door = makeDoor({ x: 6, y: 5 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(door.id, door);
+
+    const cells = magicSlapSkill.getCastableCells!(state, player);
+
+    // Пустые видимые клетки входят в паттерн, цели не требуются.
+    expect(cells.some(p => p.x === 4 && p.y === 4)).toBe(true);
+    expect(cells.some(p => p.x === 7 && p.y === 6)).toBe(true);
+    // Клетка кастера не входит.
+    expect(cells.some(p => p.x === 5 && p.y === 5)).toBe(false);
+    // Клетка за закрытой дверью не видна — не входит.
+    expect(cells.some(p => p.x === 7 && p.y === 5)).toBe(false);
+    // Все клетки паттерна в пределах range (5).
+    for (const p of cells) {
+      expect(Math.max(Math.abs(p.x - 5), Math.abs(p.y - 5))).toBeLessThanOrEqual(5);
+    }
+  });
 });

@@ -33,7 +33,7 @@ function mockItem(id: string): ItemTemplate {
     fixedModifiers: [],
     grantedAbilities: [],
     apCost: 1,
-    weapon: { damage: { min: 5, max: 5 }, range: 2, damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }], tags: [] },
+    weapon: { damage: { min: 5, max: 5 }, range: 2, minRange: 1, damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }], tags: [] },
   };
 }
 

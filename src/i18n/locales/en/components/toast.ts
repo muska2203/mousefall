@@ -38,6 +38,8 @@ export const enToast = {
   tileBlockedMessage: 'You cannot move here.',
   noTargetAtTileTitle: 'No Target',
   noTargetAtTileMessage: 'There is no valid target on this tile.',
+  tooCloseForRangedWeaponTitle: 'Too Close',
+  tooCloseForRangedWeaponMessage: 'This weapon cannot strike point blank.',
   genericErrorTitle: 'Error',
   genericErrorMessage: 'An unexpected error occurred.',
   autoPathEnemyDetectedTitle: 'Enemy Detected',

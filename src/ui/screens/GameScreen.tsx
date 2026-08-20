@@ -234,6 +234,12 @@ export function GameScreen({session, onModeChange}: Props) {
 
       const isCommitted = session.isAutoPathCommitted();
 
+      // Правая кнопка в режиме таргетинга — отмена выбора цели.
+      if (button === 2 && session.isTargeting()) {
+        session.cancelTargeting();
+        return;
+      }
+
       // Правая кнопка отменяет только зафиксированный автопуть.
       // Preview не трогаем, чтобы случайный ПКМ не гасил превью.
       if (button === 2) {

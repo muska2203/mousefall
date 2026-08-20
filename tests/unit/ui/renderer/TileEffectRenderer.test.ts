@@ -121,6 +121,7 @@ function makeRenderInput(displayState: DisplayState): RenderInput {
     debugEnabled: false,
     mapgenDebugEnabled: false,
     pendingWindow: null,
+    enemyHoverOverlay: null,
     animationBatchId: 0,
   };
 }

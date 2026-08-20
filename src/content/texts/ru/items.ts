@@ -21,6 +21,10 @@ export const items: Record<string, ContentText> = {
     name: 'Треснувшая спица',
     description: 'Почти палочка. Почти волшебная.',
   },
+  common_sling: {
+    name: 'Праща',
+    description: 'Дальняя атака камнем на расстоянии 2–5 клеток; в упор не бьёт. Броски расходников летят на 5 клеток дальше.',
+  },
   common_flaming_sword: {
     name: 'Обгоревший короткий меч',
     description: 'Тёплый на ощупь. Лезвие трещит слабым пламенем.',

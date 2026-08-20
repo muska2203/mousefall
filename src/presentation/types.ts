@@ -337,7 +337,7 @@ export type RelicViewModel = {
   frameUrl: string;
 };
 
-export type HotbarItemKind = 'skill' | 'consumable' | 'empty';
+export type HotbarItemKind = 'skill' | 'consumable' | 'weapon' | 'empty';
 
 /** Тултип для скилла в хотбаре. */
 export type HotbarSkillTooltip = {
@@ -360,8 +360,22 @@ export type HotbarConsumableTooltip = {
   item: ItemDetailViewModel;
 };
 
+/** Тултип для слота базовой атаки (оружия) в хотбаре. */
+export type HotbarWeaponTooltip = {
+  kind: 'weapon';
+  /** Название действия (локализованное «Базовая атака»). */
+  name: string;
+  /** Имя экипированного оружия; без оружия — локализованная метка «Без оружия». */
+  weaponName: string;
+  /** Подсказка по использованию слота. */
+  hint: string;
+  icon: string | null;
+  /** Стоимость атаки в AP. */
+  apCost: number;
+};
+
 /** Тултип, привязанный к слоту хотбара. */
-export type HotbarItemTooltip = HotbarSkillTooltip | HotbarConsumableTooltip;
+export type HotbarItemTooltip = HotbarSkillTooltip | HotbarConsumableTooltip | HotbarWeaponTooltip;
 
 /** Один слот хотбара во ViewModel для UI. */
 export type HotbarItemViewModel = {
@@ -628,6 +642,19 @@ export type RenderInput = {
   highlightedPathTargetKind: HighlightedPathTargetKind;
   /** Индексы тайлов автопути, на которых заканчивается ход персонажа. */
   highlightedPathTurnEndIndices: number[];
+  /**
+   * Оверлей «прицеливания» по видимому врагу под курсором в обычном режиме
+   * (не таргетинг): зона досягаемости оружия + подсветка цели и пунктирная
+   * линия от игрока. null, если под курсором нет видимого врага.
+   */
+  enemyHoverOverlay: {
+    /** Клетки зоны досягаемости текущего оружия от позиции игрока (тусклая подсветка). */
+    rangeCells: Position[];
+    /** Клетка врага-цели (подсветка + пунктирная линия от игрока). */
+    target: Position;
+    /** True, если цель уже в зоне поражения: клик бьёт сразу, автопуть не строится. */
+    inRange: boolean;
+  } | null;
   /** Очередь анимаций в виде массива фаз. Каждая фаза привязана к стороне хода
    *  и содержит деревья анимаций; фазы между собой выполняются последовательно. */
   animations: AnimationPhase[] | null;
@@ -644,6 +671,10 @@ export type RenderInput = {
   /** Оверлеи таргетинга: валидные клетки, hover, AoE, выбранные и превью интентов. */
   targetingOverlay: {
     valid: Position[];
+    /** Подсветка паттерна прицеливания (тусклая, под валидными целями):
+     *  зона досягаемости базовой атаки — в режиме basicAttackTargeting,
+     *  кастабельные клетки скилла (getAbilityCastableCells) — в режиме таргетинга способности. */
+    radiusCells?: Position[];
     hover: Position | null;
     affected: Position[];
     selected: Position[];

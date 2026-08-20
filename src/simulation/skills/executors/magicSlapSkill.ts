@@ -2,7 +2,7 @@ import {Attackable, Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
-import {getDamageablePositionsWithinRange} from '@simulation/skills/targeting';
+import {getDamageablePositionsWithinRange, getVisiblePositionsWithinRange} from '@simulation/skills/targeting';
 import {isDamageable} from '@simulation/state';
 import {getAbilityTags, getSkillDamageTag} from '@simulation/systems/tags/ability-tags';
 import {mergeDamageIntentTags} from '@simulation/systems/tags/tag-helpers';
@@ -83,6 +83,13 @@ export function createMagicSlapSkill(params: MagicSlapSkillParams): SkillExecuto
 
     getValidTargets(state: GameState, caster: Entity): Position[] {
       return getDamageablePositionsWithinRange(state, caster, params.range);
+    },
+
+    getCastableCells(state: GameState, caster: Entity): Position[] {
+      // Паттерн прицеливания: все видимые клетки в пределах range,
+      // независимо от наличия целей; клетка кастера исключается.
+      return getVisiblePositionsWithinRange(state, caster, params.range)
+        .filter(pos => pos.x !== caster.x || pos.y !== caster.y);
     },
 
     preview(state: GameState, caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {

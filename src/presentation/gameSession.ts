@@ -162,6 +162,9 @@ const RARITY_ORDER: Record<string, number> = {
 /** Размер панели быстрого доступа (слоты 1–9, 0). */
 const HOTBAR_SIZE = 10;
 
+/** Индекс слота базовой атаки (оружия) — всегда первый слот хотбара, автозаполнению недоступен. */
+const HOTBAR_WEAPON_SLOT_INDEX = 0;
+
 /** Внутренняя привязка слота хотбара к скиллу или расходнику. */
 type HotbarAssignment =
   | { kind: 'skill'; abilityId: string }
@@ -208,6 +211,8 @@ export class GameSession {
   private targeting = new TargetingController();
   /** Состояние таргетинга для расходников (параллельно ability-таргетингу). */
   private itemTargeting: { itemInstanceId: string; templateId: string } | null = null;
+  /** Состояние таргетинга базовой атаки оружием (параллельно ability- и item-таргетингу). */
+  private basicAttackTargeting = false;
   /** Открытое окно poi (модальный выбор опции). Живёт только в Presentation. */
   private pendingWindow: { kind: 'relic_choice'; poiId: string } | null = null;
   /**
@@ -555,6 +560,7 @@ export class GameSession {
     const fieldObjectPopover = this.buildFieldObjectPopover(state);
     const interactionHint = this.buildInteractionHint(state);
     const aiPreparedIntents = this.buildAIPreparedIntents(state);
+    const enemyHoverOverlay = this.buildEnemyHoverOverlay(state);
 
     // Preview-путь (не committed) не показываем во время анимации, чтобы
     // не отвлекать игрока и не рисовать устаревший путь, пока камера/мышь
@@ -593,6 +599,7 @@ export class GameSession {
           ? 'move' // preview всегда белый, kind не влияет на цвет
           : 'none',
       highlightedPathTurnEndIndices,
+      enemyHoverOverlay,
       animations: this.lastResult ? buildAnimationTree(this.lastResult, state) : null,
       animationBatchId: this.animationBatchId,
       phase: this.animation.phase,
@@ -762,7 +769,48 @@ export class GameSession {
       : { ...fromSim, name: abilityId, description: '', tags: [] };
   }
 
+  /**
+   * Собрать оверлей «прицеливания» по видимому врагу под курсором в обычном
+   * режиме (не таргетинг): зона досягаемости текущего оружия от позиции игрока
+   * + клетка цели для подсветки и пунктирной линии. Показывается при hover
+   * на врага независимо от того, в зоне поражения цель или нет.
+   */
+  private buildEnemyHoverOverlay(state: Readonly<GameState>): RenderInput['enemyHoverOverlay'] {
+    if (!this.simulation || this.mode !== 'playing' || this.isTargeting() || !this.fieldHover) {
+      return null;
+    }
+    const pos = this.fieldHover;
+    if (!state.visible[pos.y]?.[pos.x]) return null;
+    const enemy = this.simulation.findEntityAt(
+      pos,
+      (e) => e.type === 'enemy' && e.isAlive !== false,
+    );
+    if (!enemy || enemy.id === state.player.id) return null;
+    return {
+      rangeCells: this.simulation.getBasicAttackRangeCells(),
+      target: { x: enemy.x, y: enemy.y },
+      inRange: this.isValidBasicAttackTarget(pos),
+    };
+  }
+
   private buildTargetingOverlay(state: Readonly<GameState>): RenderInput['targetingOverlay'] {
+    if (this.basicAttackTargeting && this.simulation) {
+      const valid = this.simulation.getBasicAttackValidTargets();
+      const hoverValid =
+        this.targetingHover !== null &&
+        valid.some((p) => p.x === this.targetingHover!.x && p.y === this.targetingHover!.y);
+      return {
+        valid,
+        // Вся зона досягаемости оружия — для наглядности радиуса.
+        radiusCells: this.simulation.getBasicAttackRangeCells(),
+        hover: this.targetingHover,
+        // Единственная цель под курсором подсвечивается как зона поражения.
+        affected: hoverValid && this.targetingHover ? [this.targetingHover] : [],
+        selected: [],
+        previewIntents: [],
+      };
+    }
+
     if (this.itemTargeting && this.simulation) {
       const valid = this.simulation.getConsumableValidTargets(this.itemTargeting.templateId);
       const affected = this.targetingHover
@@ -794,6 +842,9 @@ export class GameSession {
 
     return {
       valid: this.targeting.state.validTargets,
+      // Паттерн прицеливания скилла (кастабельные клетки) — тусклая подсветка
+      // под валидными целями, чтобы игрок видел форму зоны каста.
+      radiusCells: this.simulation!.getAbilityCastableCells(this.targeting.state.abilityId),
       hover: this.targetingHover,
       affected: preview?.affectedPositions ?? [],
       selected: this.targeting.state.selectedTargets,
@@ -1256,6 +1307,45 @@ export class GameSession {
   }
 
   /**
+   * Начать выбор цели базовой атаки оружием (клик по слоту оружия в хотбаре).
+   * Повторная активация отменяет режим — по образцу поведения слотов скиллов.
+   * Валидные клетки и дальность определяет Simulation (getBasicAttackValidTargets).
+   */
+  beginBasicAttackTargeting(): void {
+    if (!this.simulation || this.mode !== 'playing') return;
+    if (this.animation.phase === 'animating') return;
+
+    // Повторный клик по слоту оружия — отмена режима.
+    if (this.basicAttackTargeting) {
+      this.cancelTargeting();
+      return;
+    }
+
+    // targetPosition-заглушка нужна только для запроса стоимости действия.
+    const action: GameAction = {
+      type: 'ATTACK',
+      entityId: 'player',
+      dx: 0,
+      dy: 0,
+      targetPosition: { x: 0, y: 0 },
+    };
+    const cost = this.simulation.getActionCost(action);
+    const currentAp = this.simulation.getPlayerStats().ap;
+    if (currentAp < cost) {
+      this.pushToastFromCode('not_enough_ap');
+      return;
+    }
+
+    // Сбрасываем возможный активный таргетинг скилла/расходника, чтобы не смешивать режимы.
+    this.cancelTargeting();
+    this.basicAttackTargeting = true;
+    this.autoPath.cancel();
+    this.targetingHover = null;
+    this.fieldHover = null;
+    this.notify();
+  }
+
+  /**
    * Начать таргетинг расходника, если его эффект требует выбора клетки.
    * Иначе сразу применить предмет.
    */
@@ -1294,6 +1384,7 @@ export class GameSession {
   cancelTargeting(): void {
     this.targeting.cancelTargeting();
     this.itemTargeting = null;
+    this.basicAttackTargeting = false;
     this.targetingHover = null;
     this.notify();
   }
@@ -1301,6 +1392,34 @@ export class GameSession {
   /** Подтвердить выбор клетки цели. */
   submitTarget(position: Position): void {
     if (!this.simulation) return;
+
+    if (this.basicAttackTargeting) {
+      const validTargets = this.simulation.getBasicAttackValidTargets();
+      const isValid = validTargets.some(
+        (p) => p.x === position.x && p.y === position.y,
+      );
+
+      // Клик в любом случае завершает режим подготовки: мимо цели — отмена без атаки.
+      this.basicAttackTargeting = false;
+      this.targetingHover = null;
+      if (!isValid) {
+        this.notify();
+        return;
+      }
+
+      // dx/dy в позиционной форме симуляцией игнорируются, но планировщик
+      // анимаций строит выпад по ним — проставляем направление на цель.
+      const player = this.simulation.getState().player;
+      const action: GameAction = {
+        type: 'ATTACK',
+        entityId: 'player',
+        dx: Math.sign(position.x - player.x),
+        dy: Math.sign(position.y - player.y),
+        targetPosition: position,
+      };
+      this.dispatch(action);
+      return;
+    }
 
     if (this.itemTargeting) {
       const validTargets = this.simulation.getConsumableValidTargets(this.itemTargeting.templateId);
@@ -1346,7 +1465,11 @@ export class GameSession {
 
   /** Находимся ли сейчас в режиме таргетинга. */
   isTargeting(): boolean {
-    return this.targeting.phase === 'targeting' || this.itemTargeting !== null;
+    return (
+      this.targeting.phase === 'targeting' ||
+      this.itemTargeting !== null ||
+      this.basicAttackTargeting
+    );
   }
 
   /** Открыто ли окно poi (модальный выбор опции). Пока открыто — ввод заблокирован. */
@@ -1456,7 +1579,19 @@ export class GameSession {
     const target = this.fieldHover
       ? this.resolveAutoPathTarget(state, this.fieldHover)
       : null;
+    // Враг уже в зоне поражения текущего оружия — автопуть не строится:
+    // вместо пути показывается эмуляция подготовки атаки (enemyHoverOverlay).
+    if (target?.kind === 'enemy' && this.isValidBasicAttackTarget(target.position)) {
+      this.autoPath.hover(null, state, this.getAutoPathQueries());
+      return;
+    }
     this.autoPath.hover(target, state, this.getAutoPathQueries());
+  }
+
+  /** Проверяет, что клетка — валидная цель позиционной базовой атаки игрока. */
+  private isValidBasicAttackTarget(pos: Position): boolean {
+    return this.simulation!.getBasicAttackValidTargets()
+      .some((p) => p.x === pos.x && p.y === pos.y);
   }
 
   /** Сравнить два пути по значению. */
@@ -1495,6 +1630,22 @@ export class GameSession {
     if (!target) {
       this.autoPath.cancel();
       this.notify();
+      return;
+    }
+
+    // Клик по врагу в зоне поражения текущего оружия — сразу позиционная
+    // атака, без автопути. dx/dy в позиционной форме симуляцией игнорируются,
+    // но планировщик анимаций строит выпад по ним — проставляем направление.
+    if (target.kind === 'enemy' && this.isValidBasicAttackTarget(target.position)) {
+      this.autoPath.cancel();
+      const player = state.player;
+      this.dispatch({
+        type: 'ATTACK',
+        entityId: player.id,
+        dx: Math.sign(pos.x - player.x),
+        dy: Math.sign(pos.y - player.y),
+        targetPosition: { x: pos.x, y: pos.y },
+      });
       return;
     }
 
@@ -1553,15 +1704,22 @@ export class GameSession {
         | { type: 'attack'; pathIndex: number; action: GameAction }
       > = [];
 
-      if (target?.kind === 'enemy' && isFinalTargetTile) {
+      // Финал автопути к врагу — позиционная атака из атакующей клетки
+      // (последний тайл пути). Для fallback-пути в клетку врага атака
+      // учитывается на клетке самой цели.
+      const isEnemyAttackTile =
+        target?.kind === 'enemy' && (isFinalTargetTile || i === path.length - 1);
+
+      if (target?.kind === 'enemy' && isEnemyAttackTile) {
         actions.push({
           type: 'attack',
           pathIndex: i,
           action: {
             type: 'ATTACK',
             entityId: state.player.id,
-            dx: pos.x - state.player.x,
-            dy: pos.y - state.player.y,
+            dx: Math.sign(target.position.x - pos.x),
+            dy: Math.sign(target.position.y - pos.y),
+            targetPosition: { x: target.position.x, y: target.position.y },
           },
         });
       } else if (target?.kind === 'door' && isFinalTargetTile) {
@@ -1693,6 +1851,7 @@ export class GameSession {
     return {
       isTileWalkable: (pos) => simulation.isTileWalkableForPlayer(pos),
       isTilePassable,
+      findAttackPath: (target) => simulation.findNearestAttackPosition(target),
       findPathTowards: (start, target) => {
         // Позиционный индекс строится один раз на поиск пути:
         // проверки проходимости вызываются для каждой клетки A*.
@@ -1794,6 +1953,22 @@ export class GameSession {
     const prevHover = this.targetingHover;
     this.targetingHover = hoveredPosition;
     const state = this.simulation!.getState();
+
+    if (this.basicAttackTargeting) {
+      const validTargets = this.simulation!.getBasicAttackValidTargets();
+      const isValid = hoveredPosition
+        ? validTargets.some((p) => p.x === hoveredPosition.x && p.y === hoveredPosition.y)
+        : false;
+      const result: PresentationActionPreview = {
+        valid: isValid,
+        intents: [],
+        affectedPositions: isValid && hoveredPosition ? [hoveredPosition] : [],
+      };
+      if (hoveredPosition?.x !== prevHover?.x || hoveredPosition?.y !== prevHover?.y) {
+        this.notify();
+      }
+      return result;
+    }
 
     if (this.itemTargeting) {
       const templateId = this.itemTargeting.templateId;
@@ -2254,6 +2429,12 @@ export class GameSession {
     if (!this.simulation || this.mode !== 'playing' || this.animation.phase === 'animating') return;
     if (index < 0 || index >= HOTBAR_SIZE) return;
 
+    // Первый слот закреплён за базовой атакой оружием.
+    if (index === HOTBAR_WEAPON_SLOT_INDEX) {
+      this.beginBasicAttackTargeting();
+      return;
+    }
+
     const assignment = this.hotbarAssignments[index];
     if (!assignment) return;
 
@@ -2267,6 +2448,47 @@ export class GameSession {
     }
   }
 
+  /**
+   * Построить ViewModel слота базовой атаки (первый слот хотбара).
+   * Иконка и имя — из шаблона экипированного оружия; без оружия — fallback «⚔».
+   */
+  private buildWeaponHotbarSlot(state: Readonly<GameState>): import('./types').HotbarItemViewModel {
+    const player = state.player;
+    const weaponItem = player.equippedWeaponInstanceId
+      ? player.inventory.find(i => i.instanceId === player.equippedWeaponInstanceId) ?? null
+      : null;
+    const template = weaponItem ? tryGetLocalizedItem(weaponItem.templateId, this.locale) : null;
+    const icon = template ? resolveItemIcon(template.spriteId ?? template.id) : null;
+
+    // targetPosition-заглушка нужна только для запроса стоимости действия.
+    const apCost = this.simulation!.getActionCost({
+      type: 'ATTACK',
+      entityId: player.id,
+      dx: 0,
+      dy: 0,
+      targetPosition: { x: player.x, y: player.y },
+    });
+
+    return {
+      slotIndex: HOTBAR_WEAPON_SLOT_INDEX,
+      kind: 'weapon' as const,
+      icon,
+      fallback: template?.fallback ?? '⚔',
+      rarity: template?.rarity ?? 'common',
+      apCost,
+      isAvailable: player.ap >= apCost,
+      isActive: this.basicAttackTargeting,
+      tooltip: {
+        kind: 'weapon' as const,
+        name: t('components.hotbar.weaponSlotName'),
+        weaponName: template?.name ?? t('components.hotbar.weaponSlotUnarmed'),
+        hint: t('components.hotbar.weaponSlotHint'),
+        icon,
+        apCost,
+      },
+    };
+  }
+
   /** Построить ViewModel хотбара для UI. */
   private buildHotbar(state: Readonly<GameState>): import('./types').HotbarItemViewModel[] {
     this.synchronizeHotbarAssignments(state);
@@ -2275,6 +2497,11 @@ export class GameSession {
     const abilityById = new Map(player.abilities.map(a => [a.templateId, a]));
 
     return Array.from({ length: HOTBAR_SIZE }, (_, index) => {
+      // Слот 0 закреплён за базовой атакой оружием.
+      if (index === HOTBAR_WEAPON_SLOT_INDEX) {
+        return this.buildWeaponHotbarSlot(state);
+      }
+
       const assignment = this.hotbarAssignments[index];
       if (!assignment) {
         return {
@@ -2365,7 +2592,8 @@ export class GameSession {
     const abilityIds = new Set(player.abilities.map(a => a.templateId));
 
     // Освобождаем слоты, если привязанный скилл больше не доступен.
-    for (let i = 0; i < HOTBAR_SIZE; i++) {
+    // Слот 0 пропускаем: он закреплён за базовой атакой и не участвует в привязках.
+    for (let i = HOTBAR_WEAPON_SLOT_INDEX + 1; i < HOTBAR_SIZE; i++) {
       const assignment = this.hotbarAssignments[i];
       if (!assignment) continue;
       if (assignment.kind === 'skill' && !abilityIds.has(assignment.abilityId)) {
@@ -2415,9 +2643,10 @@ export class GameSession {
     }
   }
 
-  /** Найти первый слот, доступный для автозаполнения: пустой или с исчерпанным расходником. */
+  /** Найти первый слот, доступный для автозаполнения: пустой или с исчерпанным расходником.
+   *  Слот 0 (базовая атака) в автозаполнении не участвует. */
   private findFirstFillableHotbarSlot(state: Readonly<GameState>): number {
-    for (let i = 0; i < HOTBAR_SIZE; i++) {
+    for (let i = HOTBAR_WEAPON_SLOT_INDEX + 1; i < HOTBAR_SIZE; i++) {
       const assignment = this.hotbarAssignments[i];
       if (!assignment) return i;
       if (assignment.kind === 'consumable') {

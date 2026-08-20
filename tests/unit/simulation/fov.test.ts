@@ -79,8 +79,9 @@ describe('computeFOV', () => {
     expect(visibleSet.has('4,3')).toBe(true); // E
     expect(visibleSet.has('3,4')).toBe(true); // S
     expect(visibleSet.has('2,3')).toBe(true); // W
-    expect(visibleSet.has('2,2')).toBe(false);
-    expect(visibleSet.has('4,4')).toBe(false);
+    // Радиус квадратный (Чебышёв): диагональные соседи тоже видимы.
+    expect(visibleSet.has('2,2')).toBe(true);
+    expect(visibleSet.has('4,4')).toBe(true);
     expect(visibleSet.has('1,1')).toBe(false);
     expect(visibleSet.has('5,5')).toBe(false);
   });

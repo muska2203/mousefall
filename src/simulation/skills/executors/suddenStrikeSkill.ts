@@ -75,6 +75,25 @@ export function createSuddenStrikeSkill(params: SuddenStrikeSkillParams): SkillE
       return positions;
     },
 
+    getCastableCells(state: GameState, caster: Entity): Position[] {
+      // Паттерн прицеливания: все 8 соседних клеток в пределах карты,
+      // независимо от наличия целей.
+      const positions: Position[] = [];
+
+      for (const { ox, oy } of NEIGHBOR_OFFSETS) {
+        const x = caster.x + ox;
+        const y = caster.y + oy;
+
+        if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) {
+          continue;
+        }
+
+        positions.push({ x, y });
+      }
+
+      return positions;
+    },
+
     preview(state: GameState, caster: Entity, _selectedTargets: Position[], hoveredTarget: Position | null): Intent[] {
       if (!hoveredTarget) return [];
       return this.resolve(state, caster, [hoveredTarget]);

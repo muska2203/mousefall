@@ -58,7 +58,8 @@ describe('hunter strategy decideAction', () => {
       id: 'hunter_test',
       x: 6,
       y: 5,
-      aiSightRadius: 3,
+      // Радиус 2: игрок на чебышёвской дистанции 3 не виден — враг идёт на lastSeen.
+      aiSightRadius: 2,
       aiState: {
         strategy: 'hunter',
         mode: 'chase',
@@ -89,7 +90,8 @@ describe('hunter strategy decideAction', () => {
       id: 'hunter_test',
       x: 5,
       y: 5,
-      aiSightRadius: 3,
+      // Радиус 2: игрок на чебышёвской дистанции 3 не виден — возврат к точке спавна.
+      aiSightRadius: 2,
       aiState: {
         strategy: 'hunter',
         mode: 'chase',

@@ -13,6 +13,7 @@ import {resolveItemFrame} from '@utils/assetResolver';
 import {CircularCooldown} from './CircularCooldown';
 import {ItemDetailPopover} from './ItemDetailPopover';
 import {SkillDetailPopover} from './SkillDetailPopover';
+import {WeaponSlotPopover} from './WeaponSlotPopover';
 
 interface Props {
   /** Индекс слота (0–9). */
@@ -76,7 +77,7 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
       >
         <span className="cm-quick-slot__key">{HOTBAR_LABELS[index]}</span>
 
-        {!isEmpty && item.icon && item.kind === 'consumable' && (
+        {!isEmpty && item.icon && (item.kind === 'consumable' || item.kind === 'weapon') && (
           <span className="cm-sprite-stack cm-sprite-stack--item" aria-hidden="true">
             <img
               className="cm-sprite-stack__frame"
@@ -111,6 +112,9 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
 
         {isEmpty && <span className="cm-sprite-fallback">{item.fallback ?? ''}</span>}
 
+        {/* Занятый слот без иконки (например, безоружная атака) — показываем fallback-символ. */}
+        {!isEmpty && !item.icon && <span className="cm-sprite-fallback">{item.fallback ?? '—'}</span>}
+
         {showQty && (
           <span
             className={`cm-quick-slot__qty ${
@@ -142,6 +146,15 @@ export function HotbarSlot({ index, item, disabled, onClick }: Props) {
       {isHovered && item.tooltip?.kind === 'skill' && (
         <SkillDetailPopover
           skill={item.tooltip}
+          visible={true}
+          x={mousePos.x + 16}
+          y={mousePos.y + 16}
+        />
+      )}
+
+      {isHovered && item.tooltip?.kind === 'weapon' && (
+        <WeaponSlotPopover
+          data={item.tooltip}
           visible={true}
           x={mousePos.x + 16}
           y={mousePos.y + 16}

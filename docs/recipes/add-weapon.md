@@ -56,12 +56,13 @@
    - `icon` — путь к иконке.
    - `fallback` — эмодзи, если иконка не загрузилась.
    - `type` — всегда `"weapon"`.
-   - `subtype` — подтип из `WEAPON_SUBTYPE_IDS` (`src/content/ids.ts`): `sword`, `dagger`, `club`, `staff`, `unarmed`. Определяет пул случайных аффиксов, выпадающих на экземпляры (см. [`add-modifier.md`](./add-modifier.md)). Enum — опечатка ловится typecheck'ом. Обязателен для экипировки.
+   - `subtype` — подтип из `WEAPON_SUBTYPE_IDS` (`src/content/ids.ts`): `sword`, `dagger`, `club`, `staff`, `sling`, `unarmed`. Определяет пул случайных аффиксов, выпадающих на экземпляры (см. [`add-modifier.md`](./add-modifier.md)). Enum — опечатка ловится typecheck'ом. Обязателен для экипировки.
    - `level` — уровень шаблона (целое ≥ 1). Выбирает рейнж ролла значений аффиксов (`ranges[level-1]`); в дальнейшем — привязка дропа к этажам. Обязателен для экипировки.
    - `stackable`, `maxStack` — для оружия обычно `false` / `1`.
    - `value` — цена продажи.
    - `weapon.damage` — рейнж урона `{min, max}`; конкретное значение роллится при каждом ударе со смещением вверх от ловкости атакующего (`rollWeaponDamage`). Формулы урона (`damageFormulaId`) удалены 2026-08-08.
-   - `weapon.range` — дальность атаки.
+   - `weapon.range` — максимальная дальность базовой атаки в клетках (дистанция Чебышёва, требуется прямая видимость; int ≥ 1, default 1). При `range > 1` базовая атака становится дальней: игрок выбирает цель на клетке через режим таргетинга (слот 0 хотбара).
+   - `weapon.minRange` — минимальная дальность базовой атаки (int ≥ 1, default 1). При `minRange > 1` оружие не бьёт в упор: bump в соседнюю клетку отклоняется валидацией (`too_close_for_ranged_weapon`).
    - `weapon.damageDistribution` — распределение тегов урона.
    - `weapon.tags` — игровые теги для фильтрации правил.
    - `fixedModifiers` — ID модификаторов из категории `modifiers` (опционально) — фирменные свойства предмета (stat или rule). Заменяет удалённые 2026-08-09 `equipModifiers`/`ruleIds` предметов. Пассивный эффект подключается как rule-модификатор (`effect: {kind: 'rule', ruleId}`), обычно с `poolEligible: false`.

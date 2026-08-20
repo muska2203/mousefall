@@ -77,6 +77,10 @@ FOV-фильтр применяется **только к полевым ани�
 
 Размещение спрайта в клетке (масштаб, опора, сплющивание) решает Presentation: `getSpritePlacement(templateId, category)` из `src/presentation/spritePlacementResolver.ts` возвращает `ResolvedSpritePlacement` — дефолт категории спрайта (`actor`, `object`, `trap`, `tileEffectCover`, `tileEffectAboveGround`, `tileEffectStatus`, `terrainStanding`), скорректированный опциональным полем `placement` шаблона. UI не обращается к реестру напрямую и не содержит формул позиционирования — только применяет результат через `src/ui/renderer/spritePlacement.ts` (`applyPlacement`, `cellRect`, `cellCenter`).
 
+### 2.8. Оверлей прицеливания по врагу под курсором (`enemyHoverOverlay`)
+
+Поле `RenderInput.enemyHoverOverlay` (`src/presentation/types.ts`) — view-model «эмуляции подготовки атаки» при наведении на видимого врага в обычном режиме (не таргетинг): `rangeCells` (зона досягаемости текущего оружия от позиции игрока — `Simulation.getBasicAttackRangeCells`), `target` (клетка врага для подсветки и пунктирной линии), `inRange` (цель уже в зоне поражения — клик бьёт сразу, автопуть не строится). Отрисовка — `src/ui/renderer/TargetingRenderer.ts` (зона — стилем `targetingOverlay.radiusCells`; линия — при `inRange: true` от визуального центра спрайта игрока, при `inRange: false` — от центра последнего шага `highlightedPath`, т.е. атакующей клетки; в fallback-режиме, когда путь ведёт в клетку самого врага, — снова от игрока). Решение о том, что под курсором враг и в зоне ли он, принимает Presentation через публичный API Simulation; UI только рисует.
+
 ---
 
 ## 3. Чеклист добавления нового правила

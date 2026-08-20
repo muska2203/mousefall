@@ -109,7 +109,7 @@ export type SpritePlacement = z.output<typeof SpritePlacementFieldsSchema>;
 export const EntityTemplateSchema = z.object({
   id:       z.string().min(1).describe('Уникальный идентификатор сущности (совпадает с именем файла)'),
   aiStrategyId: z.enum(AI_STRATEGY_IDS).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
-  aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Манхэттен + LOS). По умолчанию 6.'),
+  aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Чебышёв + LOS). По умолчанию 6.'),
   health:   HealthSchema,
   baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 }).describe('Базовые характеристики врага'),
   equipment: EquipmentSchema,
@@ -139,7 +139,8 @@ const DamageRangeSchema = z.object({
 
 const WeaponStatsSchema = z.object({
   damage: DamageRangeSchema.describe('Рейнж урона оружия (роллится при каждом ударе)'),
-  range: z.number().int().positive().default(1).describe('Дальность атаки в клетках'),
+  range: z.number().int().positive().default(1).describe('Максимальная дальность базовой атаки в клетках (дистанция Чебышёва, требуется прямая видимость)'),
+  minRange: z.number().int().min(1).default(1).describe('Минимальная дальность базовой атаки в клетках (дистанция Чебышёва); при minRange > 1 оружие в упор не бьёт — bump-атака отклоняется'),
   damageDistribution: z.array(
     z.object({
       damageTag: z.string().min(1),
@@ -376,6 +377,12 @@ export const AbilityTemplateSchema = z.discriminatedUnion('kind', [
   }).describe('Способность вида «внезапный удар»: удар оружием по соседней цели, немота цели с подготовленной способностью; исполнитель собирается фабрикой createSuddenStrikeSkill'),
   AbilityTemplateBaseSchema.extend({ kind: z.literal('cleave') })
     .describe('Способность вида «рассекающий удар»: удар оружием по дуге из трёх клеток перед кастером, числовых параметров нет (урон — ролл оружия); исполнитель собирается фабрикой createCleaveSkill'),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('throw'),
+    range: z.number().int().min(1).describe('Дальность выбора цели относительно кастера (Чебышёв, только 8 лучей-направлений)'),
+    baseDamage: z.number().nonnegative().describe('Фиксированный урон по цели'),
+    pushDistance: z.number().int().nonnegative().describe('Дистанция отталкивания цели в клетках (0 — без толчка)'),
+  }).describe('Способность вида «бросок»: урон по одной цели в прямой видимости с отталкиванием от кастера; исполнитель собирается фабрикой createThrowSkill'),
 ]).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;

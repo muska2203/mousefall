@@ -38,16 +38,18 @@ export function getPositionsInRadius(state: GameState, center: Position, radius:
 /**
  * Возвращает позиции клеток, видимых кастеру в заданном радиусе с учётом LOS.
  * Использует тот же алгоритм FOV, что и основная игра, поэтому двери и стены
- * блокируют выбор целей за ними.
+ * блокируют выбор целей за ними. Радиус — дистанция Чебышёва (как у FOV).
  */
 export function getVisiblePositionsWithinRange(state: GameState, caster: Entity, range: number): Position[] {
   const visible = computeFOV(state, caster.x, caster.y, range);
-  return visible.filter(pos => Math.abs(pos.x - caster.x) + Math.abs(pos.y - caster.y) <= range);
+  return visible.filter(
+    pos => Math.max(Math.abs(pos.x - caster.x), Math.abs(pos.y - caster.y)) <= range,
+  );
 }
 
 /**
  * Возвращает позиции всех сущностей, которые могут получать урон,
- * в заданном радиусе от кастера и в прямой видимости.
+ * в заданном радиусе от кастера (дистанция Чебышёва) и в прямой видимости.
  * Кастер исключается из списка целей.
  */
 export function getDamageablePositionsWithinRange(state: GameState, caster: Entity, range: number): Position[] {
@@ -58,7 +60,7 @@ export function getDamageablePositionsWithinRange(state: GameState, caster: Enti
     if (!('hp' in entity) || !entity.isAlive) continue;
     const dx = Math.abs(entity.x - caster.x);
     const dy = Math.abs(entity.y - caster.y);
-    if (dx + dy <= range && losSet.has(`${entity.x},${entity.y}`)) {
+    if (Math.max(dx, dy) <= range && losSet.has(`${entity.x},${entity.y}`)) {
       positions.push({ x: entity.x, y: entity.y });
     }
   }
@@ -66,7 +68,8 @@ export function getDamageablePositionsWithinRange(state: GameState, caster: Enti
 }
 
 /**
- * Возвращает позиции живых врагов в заданном радиусе от кастера.
+ * Возвращает позиции живых врагов в заданном радиусе от кастера
+ * (дистанция Чебышёва).
  */
 export function getEnemyPositionsWithinRange(state: GameState, caster: Entity, range: number): Position[] {
   const positions: Position[] = [];
@@ -75,7 +78,7 @@ export function getEnemyPositionsWithinRange(state: GameState, caster: Entity, r
     if (!('isAlive' in entity) || !entity.isAlive) continue;
     const dx = Math.abs(entity.x - caster.x);
     const dy = Math.abs(entity.y - caster.y);
-    if (dx + dy <= range) {
+    if (Math.max(dx, dy) <= range) {
       positions.push({ x: entity.x, y: entity.y });
     }
   }

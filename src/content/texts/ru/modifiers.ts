@@ -41,4 +41,8 @@ export const modifiers: Record<string, ContentText> = {
     name: 'Стражникова',
     description: 'Максимум здоровья: +{value}.',
   },
+  mod_sling_throw_range: {
+    name: 'Дальнобойная',
+    description: 'Дальность броска расходников: +{value}.',
+  },
 };

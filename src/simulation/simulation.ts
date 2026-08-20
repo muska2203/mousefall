@@ -37,6 +37,7 @@ import {
     findInteractableEntitiesAround,
     findStairsAt,
     isActor,
+    isDamageable,
     isTerrainWalkable,
     terrainHasTag,
     type EntityPositionIndex
@@ -67,13 +68,14 @@ import type {DamageRange, GameplayTag, TargetMode} from "@simulation/core-types.
 import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
-import {updateFOV} from "@simulation/systems/fov.ts";
+import {computeFOV, updateFOV} from "@simulation/systems/fov.ts";
 import {applyDamageModifiers, getEffectiveWeaponDamageRange,} from "@simulation/systems/stats/effective-stats.ts";
 import {getEffectiveBaseStats} from "@simulation/systems/stats/base-resolver.ts";
 import {addModifier} from "@simulation/systems/stats/modifier-engine.ts";
 import {recalculateActorStats} from "@simulation/systems/stats/recalculate.ts";
 import {collectFixedStatModifiers} from "@simulation/systems/item-affix-roll.ts";
 import {getWeaponDamageDistribution, getWeaponWeightForTag} from "@simulation/systems/tags/weapon-tags.ts";
+import {getWeaponAttackLosRadius, getWeaponAttackRange, isInWeaponRange} from "@simulation/systems/stats/weapon-range.ts";
 import {getAbilityTags} from "@simulation/systems/tags/ability-tags.ts";
 import {meetsWeaponRequirements} from "@simulation/systems/abilities/ability-requirements.ts";
 import {getItem, tryGetAbility, tryGetItem} from "@content/registry";
@@ -965,6 +967,12 @@ export class GameSimulation implements Simulation {
         return executor.getValidTargets(this.state, this.state.player);
     }
 
+    getAbilityCastableCells(abilityId: string) {
+        const executor = getSkillExecutor(abilityId);
+        if (!executor?.getCastableCells) return [];
+        return executor.getCastableCells(this.state, this.state.player);
+    }
+
     getAbilityPreview(
         abilityId: string,
         selectedTargets: Position[],
@@ -1039,6 +1047,61 @@ export class GameSimulation implements Simulation {
         if (template.consumable.effect !== 'spawn_tile_effect') return [];
         const range = getConsumableThrowRange(template, this.state.player);
         return getVisiblePositionsWithinRange(this.state, this.state.player, range);
+    }
+
+    /**
+     * Режим таргетинга базовой атаки оружием игрока: {single, range} из шаблона
+     * экипированного оружия (для безоружной атаки — range 1).
+     */
+    getBasicAttackTargetMode(): TargetMode {
+        const { range } = getWeaponAttackRange(this.state.player);
+        return { type: 'single', range };
+    }
+
+    /**
+     * Валидные клетки позиционной базовой атаки игрока: damageable-сущности в LOS,
+     * удовлетворяющие общему предикату дальности `isInWeaponRange`
+     * (чебышёвская дистанция ∈ [minRange, range]).
+     */
+    getBasicAttackValidTargets(): Position[] {
+        const player = this.state.player;
+        const attackRange = getWeaponAttackRange(player);
+        const losSet = new Set(
+            computeFOV(this.state, player.x, player.y, getWeaponAttackLosRadius(attackRange))
+                .map(pos => `${pos.x},${pos.y}`),
+        );
+        const targets: Position[] = [];
+        for (const entity of this.state.entities.values()) {
+            if (entity.id === player.id) continue;
+            if (!isDamageable(entity)) continue;
+            if (!isInWeaponRange(attackRange, player, entity)) continue;
+            if (!losSet.has(`${entity.x},${entity.y}`)) continue;
+            targets.push({ x: entity.x, y: entity.y });
+        }
+        return targets;
+    }
+
+    /**
+     * Все клетки зоны досягаемости базовой атаки игрока по предикату `isInWeaponRange`
+     * (без LOS и без требования сущности) — для подсветки радиуса в режиме таргетинга.
+     * Клетки ближе minRange не включаются.
+     */
+    getBasicAttackRangeCells(): Position[] {
+        const player = this.state.player;
+        const attackRange = getWeaponAttackRange(player);
+        const { width, height } = this.state.map;
+        const cells: Position[] = [];
+        // Чебышёвская дистанция не превышает range ⇒ bounding box [±range] покрывает всю зону.
+        for (let dy = -attackRange.range; dy <= attackRange.range; dy++) {
+            for (let dx = -attackRange.range; dx <= attackRange.range; dx++) {
+                const pos = { x: player.x + dx, y: player.y + dy };
+                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) continue;
+                if (isInWeaponRange(attackRange, player, pos)) {
+                    cells.push(pos);
+                }
+            }
+        }
+        return cells;
     }
 
     getConsumablePreview(
@@ -1141,6 +1204,87 @@ export class GameSimulation implements Simulation {
         if (!path) return null;
         if (!this.isTileWalkableForPlayer(target, index)) return null;
         return path;
+    }
+
+    /**
+     * Ищет ближайшую к игроку «атакующую клетку» для базовой атаки по цели:
+     * проходимую для игрока клетку, с которой экипированное оружие достаёт цель
+     * (чебышёвская дистанция ∈ [minRange, range], предикат `isInWeaponRange`)
+     * и есть прямая видимость на цель.
+     *
+     * Возвращает клетку и кратчайший путь до неё (без стартовой клетки игрока).
+     * Если игрок уже стоит на атакующей клетке — возвращает её с пустым путём.
+     * Если подходящих клеток нет (цель недосягаема текущим оружием) — null.
+     *
+     * LOS проверяется из клетки-кандидата тем же FOV, что и валидация
+     * позиционной атаки: shadowcasting не гарантирует симметрию видимости,
+     * поэтому FOV от позиции цели не используется.
+     * Приоритет выбора: визуально ближайшая к игроку клетка (евклидова
+     * дистанция), при равенстве — кратчайший путь, затем координаты (y, x).
+     * Длина пути намеренно вторична: клетка с чуть более коротким путём,
+     * но визуально далёкая от персонажа, выглядит для игрока нелогично.
+     */
+    findNearestAttackPosition(target: Position): { position: Position; path: Position[] } | null {
+        const MAX_PATH_STEPS = 500;
+        const player = this.state.player;
+        const attackRange = getWeaponAttackRange(player);
+        const losRadius = getWeaponAttackLosRadius(attackRange);
+        const {width, height} = this.state.map;
+        // Позиционный индекс строится один раз на весь перебор кандидатов:
+        // проверки проходимости идут поклеточно в A*.
+        const index = buildEntityPositionIndex(this.state.entities);
+
+        // LOS из клетки на цель — тем же FOV, что при валидации позиционной атаки.
+        const hasLosToTarget = (from: Position): boolean =>
+            computeFOV(this.state, from.x, from.y, losRadius)
+                .some(pos => pos.x === target.x && pos.y === target.y);
+
+        // Игрок уже стоит на атакующей клетке — возвращаем её с пустым путём.
+        if (isInWeaponRange(attackRange, player, target) && hasLosToTarget(player)) {
+            return {position: {x: player.x, y: player.y}, path: []};
+        }
+
+        // Кандидаты: клетки квадратной окрестности цели в зоне досягаемости оружия.
+        // Порядок перебора — одновременно приоритет выбора: визуально ближние
+        // к игроку (квадрат евклидовой дистанции) первыми, далее по координатам.
+        const candidates: Position[] = [];
+        for (let dy = -attackRange.range; dy <= attackRange.range; dy++) {
+            for (let dx = -attackRange.range; dx <= attackRange.range; dx++) {
+                const pos = {x: target.x + dx, y: target.y + dy};
+                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) continue;
+                if (isInWeaponRange(attackRange, pos, target)) {
+                    candidates.push(pos);
+                }
+            }
+        }
+        const dist2FromPlayer = (pos: Position): number =>
+            (pos.x - player.x) ** 2 + (pos.y - player.y) ** 2;
+        candidates.sort((a, b) =>
+            dist2FromPlayer(a) - dist2FromPlayer(b) || a.y - b.y || a.x - b.x);
+
+        let best: { position: Position; path: Position[] } | null = null;
+        let bestDist2 = Infinity;
+        for (const pos of candidates) {
+            const dist2 = dist2FromPlayer(pos);
+            // Кандидаты отсортированы по дистанции: дальше идут только визуально
+            // более далёкие клетки, которые уже не могут улучшить результат.
+            if (best && dist2 > bestDist2) break;
+            if (!this.isTileWalkableForPlayer(pos, index)) continue;
+            if (!hasLosToTarget(pos)) continue;
+            const path = findPath(
+                player,
+                pos,
+                (p) => this.isTileWalkableForPlayer(p, index),
+                MAX_PATH_STEPS,
+                true,
+            );
+            if (!path) continue;
+            // При равной визуальной дистанции выигрывает кратчайший путь.
+            if (best && dist2 === bestDist2 && path.length >= best.path.length) continue;
+            best = {position: pos, path};
+            bestDist2 = dist2;
+        }
+        return best;
     }
 
     /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */

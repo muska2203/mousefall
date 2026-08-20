@@ -41,4 +41,8 @@ export const modifiers: Record<string, ContentText> = {
     name: 'Guardian\'s',
     description: 'Maximum health: +{value}.',
   },
+  mod_sling_throw_range: {
+    name: 'Far-reaching',
+    description: 'Consumable throw range: +{value}.',
+  },
 };

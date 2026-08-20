@@ -33,6 +33,7 @@ describe('effective weapon damage helpers', () => {
           weapon: {
             damage: { min: 5, max: 5 },
             range: 1,
+            minRange: 1,
             damageDistribution: [
               { damageTag: 'damage.physical.slashing', weight: 2.0 },
               { damageTag: 'damage.physical.piercing', weight: 1.0 },
@@ -44,6 +45,7 @@ describe('effective weapon damage helpers', () => {
           weapon: {
             damage: { min: 5, max: 5 },
             range: 2,
+            minRange: 1,
             damageDistribution: [
               { damageTag: 'damage.physical.piercing', weight: 1.0 },
             ],
@@ -54,6 +56,7 @@ describe('effective weapon damage helpers', () => {
           weapon: {
             damage: { min: 5, max: 5 },
             range: 1,
+            minRange: 1,
             damageDistribution: [
               { damageTag: 'damage.physical.slashing', weight: 1.0 },
               { damageTag: 'damage.physical.blunt', weight: 1.0 },

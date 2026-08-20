@@ -7,4 +7,7 @@ export const ruHotbar = {
   skillTooltipApCost: 'AP: {{ap}}',
   skillTooltipCooldown: 'Кулдаун: {{current}} / {{max}} ходов',
   skillTooltipCastTime: 'Подготовка: {{turns}} ходов',
+  weaponSlotName: 'Базовая атака',
+  weaponSlotUnarmed: 'Без оружия',
+  weaponSlotHint: 'Клик — выбрать цель атаки',
 } as const satisfies ComponentsHotbarTranslations;

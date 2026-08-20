@@ -121,6 +121,7 @@ src/content/
 - `weight` — неотрицательный множитель. Минимум одна запись должна иметь `weight > 0`.
 - Веса не нормализуются; максимальный вес определяет основной тип оружия.
 - Теги урона (`damage.*`) не должны дублироваться в `weapon.tags`; они описываются только через `damageDistribution`.
+- `range` (int ≥ 1, default 1) — максимальная дальность базовой атаки в клетках (дистанция Чебышёва, требуется LOS); `minRange` (int ≥ 1, default 1) — минимальная дальность: при `minRange > 1` оружие в упор не бьёт — bump в соседнюю клетку отклоняется с reason-кодом `too_close_for_ranged_weapon`. Семантика — `src/simulation/systems/stats/weapon-range.ts` и `attack-action.ts`.
 - Формулы урона оружия (`damageFormulaId`, `weapon-formulas.ts`) удалены 2026-08-08 — урон берётся только из рейнжа шаблона.
 
 ### Модификаторы экипировки: `fixedModifiers`, `poolEligible`, `scaling fixed`
@@ -147,6 +148,7 @@ src/content/
 - `kind: 'dash'` — `distance` (≥ 1), `bumpDamage`: рывок с уроном и отталкиванием акторов на пути (фабрика `createDashSkill`, пример — `dash` 2/5).
 - `kind: 'suddenStrike'` — `silenceDuration` (≥ 1): удар оружием, немота цели с подготовленной способностью (фабрика `createSuddenStrikeSkill`, пример — `sudden_strike` 2).
 - `kind: 'cleave'` — без параметров: удар оружием по дуге из трёх клеток (фабрика `createCleaveSkill`).
+- `kind: 'throw'` — `range` (≥ 1), `baseDamage` (≥ 0), `pushDistance` (≥ 0): бросок по одной цели в LOS на одном из 8 лучей-направлений от кастера (как dash) с отталкиванием на `pushDistance` клеток вдоль луча (цепочка одноклеточных PUSH; урон/daze при столкновении — глобальные правила `collision_*`) (фабрика `createThrowSkill`).
 
 Урон способностей — фиксированные значения из шаблона (без скейлинга от характеристик и уровня; формулы `damageFormula.ts` удалены 2026-08-12). Модификаторы урона вешаются через стандартные модификаторы и контентные правила. Исключение — оружейные виды (`cleave`, `suddenStrike`): их урон — ролл экипированного оружия (`rollWeaponDamage`).
 

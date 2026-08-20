@@ -99,6 +99,33 @@ describe('suddenStrikeSkill', () => {
     expect(targets[0]).toEqual({ x: 1, y: 1 });
   });
 
+  it('getCastableCells возвращает все 8 соседних клеток независимо от наличия целей', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5 });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const cells = suddenStrikeSkill.getCastableCells!(state, player);
+
+    expect(cells).toHaveLength(8);
+    expect(cells.some(p => p.x === 5 && p.y === 5)).toBe(false);
+  });
+
+  it('getCastableCells respects map boundaries in a corner', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 0, y: 0 });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const cells = suddenStrikeSkill.getCastableCells!(state, player);
+
+    expect(cells).toHaveLength(3);
+    for (const p of cells) {
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   it('resolve returns no intents when cast on empty tile', () => {
     const state = makeGameState();
     const player = makePlayer({ x: 5, y: 5, baseStats: { str: 5, dex: 0, int: 0, vit: 0 } });

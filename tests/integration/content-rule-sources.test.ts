@@ -52,6 +52,7 @@ function mockWeapon(
         weapon: {
             damage: { min: 10, max: 10 },
             range: 1,
+            minRange: 1,
             damageDistribution: [{damageTag: 'damage.physical.slashing', weight: 1.0}],
             tags: [],
         },
@@ -85,6 +86,7 @@ function mockFireStaff(id: string): ItemTemplate {
         weapon: {
             damage: { min: 10, max: 10 },
             range: 1,
+            minRange: 1,
             damageDistribution: [{damageTag: 'damage.magical.fire', weight: 1.0}],
             tags: [],
         },

@@ -105,7 +105,7 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 Часть строковых идентификаторов, на которые ссылаются шаблоны, типизирована через `z.enum` от констант в `src/content/ids.ts` — опечатка ловится typecheck'ом, а не в рантайме:
 
-- `EQUIPMENT_SUBTYPE_IDS` → `subtype` экипировки (оружие: `sword/dagger/club/staff/unarmed`, броня: `light/heavy/magic`, амулеты: `bead/charm/talisman`) и `applicableSubtypes` модификаторов;
+- `EQUIPMENT_SUBTYPE_IDS` → `subtype` экипировки (оружие: `sword/dagger/club/staff/sling/unarmed`, броня: `light/heavy/magic`, амулеты: `bead/charm/talisman`) и `applicableSubtypes` модификаторов;
 - `AI_STRATEGY_IDS` → `entities[].aiStrategyId` (реализации — `src/simulation/ai/*-strategy.ts`);
 - `MAP_STRATEGY_IDS` → `maps[].strategy` (реализации — `src/simulation/systems/map-generation/`).
 
@@ -143,7 +143,8 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 - `kind: 'magicSlap'` — `range` (≥ 1), `targetCount` (≥ 1), `baseDamage` — урон по нескольким целям (`magic_slap` 5/3/12);
 - `kind: 'dash'` — `distance` (≥ 1), `bumpDamage` — рывок с уроном и отталкиванием акторов на пути (`dash` 2/5);
 - `kind: 'suddenStrike'` — `silenceDuration` (≥ 1) — удар оружием, немота цели с подготовленной способностью (`sudden_strike` 2);
-- `kind: 'cleave'` — без параметров — удар оружием по дуге из трёх клеток (`cleave`).
+- `kind: 'cleave'` — без параметров — удар оружием по дуге из трёх клеток (`cleave`);
+- `kind: 'throw'` — `range` (≥ 1), `baseDamage` (≥ 0), `pushDistance` (≥ 0) — бросок по одной цели в прямой видимости с отталкиванием на `pushDistance` клеток (цепочка одноклеточных PUSH; урон и `dazed` при столкновении — глобальные правила `collision_*`). Контентных экземпляров пока нет («Бросок камня» пращи — концепт этажа 1, §4.3).
 
 Урон способностей — фиксированные значения из шаблона, без скейлинга от характеристик и уровня (формулы `damageFormula.ts` удалены 2026-08-12); модификаторы урона — через стандартные модификаторы и контентные правила. Исключение — оружейные виды (`cleave`, `suddenStrike`): урон — ролл экипированного оружия.
 
@@ -206,6 +207,8 @@ export const commonFlamingSword = {
 ```
 
 Здесь оружие ссылается на правило `item_fire_damage_multiplier` (умножает огненный урон на 1.5) через rule-модификатор `mod_fire_damage_multiplier` в `fixedModifiers`. Для статусов и способностей работает прямой подход: шаблон указывает `ruleIds`, а реестр разрешает их в объекты правил.
+
+Дальность базовой атаки оружия задаётся полями `weapon.range` (максимальная дистанция в клетках, Чебышёв, требуется LOS; int ≥ 1, default 1) и `weapon.minRange` (минимальная дистанция; int ≥ 1, default 1). При `range > 1` базовая атака становится дальней (позиционная форма действия ATTACK с выбором цели); при `minRange > 1` оружие в упор не бьёт — bump в соседнюю клетку отклоняется валидацией (`too_close_for_ranged_weapon`). Подробнее — `src/simulation/AGENTS.md` и рецепт `docs/recipes/add-weapon.md`.
 
 ### Связанная документация
 

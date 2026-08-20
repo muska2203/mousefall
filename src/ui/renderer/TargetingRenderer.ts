@@ -6,7 +6,8 @@
  *   внутрь клетки + полупрозрачная заливка тем же цветом
  *   (валидные — белые, выбранные — синие, под мышью — жёлтые, AoE — красные,
  *   подготовленные AI-скиллы — оранжевые)
- * - Пунктирные линии (автопуть, линия от персонажа к цели каста)
+ * - Пунктирные линии (автопуть, линия к цели каста или к врагу под курсором —
+ *   от персонажа либо от последнего шага автопути до атакующей клетки)
  * - Отображение preview-интентов: урон (число), движение (стрелка), смерть
  *
  * Толщина всех рамок и линий задана в экранных пикселях и не масштабируется
@@ -41,6 +42,9 @@ const DASH_GAP_PX = 4;
 const CELL_FILL_ALPHA = 0.15;
 /** Прозрачность рамки подсветки клеток. */
 const CELL_FRAME_ALPHA = 0.7;
+/** Прозрачность заливки и рамки паттерна прицеливания (тусклая подсветка под валидными целями). */
+const PATTERN_FILL_ALPHA = 0.06;
+const PATTERN_FRAME_ALPHA = 0.35;
 /** Прозрачность линий и штрихов: пунктирные линии, отметки концов ходов, стрелки превью. */
 const LINE_ALPHA = 0.8;
 
@@ -85,7 +89,12 @@ export class TargetingRenderer {
 
     if (overlay) {
       // Оверлеи клеток
-      // Порядок наложения: valid → affected → selected → hover
+      // Порядок наложения: radiusCells → valid → affected → selected → hover
+      // Паттерн прицеливания (radiusCells) рисуется тускло, валидные цели —
+      // поверх, ярко.
+      for (const pos of overlay.radiusCells ?? []) {
+        this.drawCellHighlight(pos, COLORS.valid, zoom, PATTERN_FILL_ALPHA, PATTERN_FRAME_ALPHA);
+      }
       for (const pos of overlay.valid) {
         this.drawCellHighlight(pos, COLORS.valid, zoom);
       }
@@ -109,6 +118,35 @@ export class TargetingRenderer {
           zoom,
         );
       }
+    }
+
+    // Оверлей прицеливания по врагу под курсором (обычный режим, не таргетинг):
+    // тусклая зона досягаемости оружия (стиль radiusCells), подсветка клетки
+    // цели и пунктирная линия к цели. Если цель вне зоны поражения и построен
+    // автопуть до атакующей клетки, линия идёт от последнего шага пути —
+    // оттуда будет выполнена атака. Иначе — от визуального центра игрока.
+    const enemyHover = input.enemyHoverOverlay;
+    if (enemyHover) {
+      for (const pos of enemyHover.rangeCells) {
+        this.drawCellHighlight(pos, COLORS.valid, zoom, PATTERN_FILL_ALPHA, PATTERN_FRAME_ALPHA);
+      }
+      this.drawCellHighlight(enemyHover.target, COLORS.affected, zoom);
+      const path = input.highlightedPath;
+      const lastStep =
+        !enemyHover.inRange && path && path.length > 0
+          ? path[path.length - 1]!
+          : null;
+      // В fallback-режиме автопуть ведёт в клетку самого врага — линия от неё
+      // выродилась бы в точку, поэтому остаётся линия от игрока.
+      const lineStart =
+        lastStep && (lastStep.x !== enemyHover.target.x || lastStep.y !== enemyHover.target.y)
+          ? cellCenter(lastStep.x, lastStep.y)
+          : playerCenter;
+      this.drawDashedLine(
+        [lineStart, cellCenter(enemyHover.target.x, enemyHover.target.y)],
+        COLORS.pathEnemy,
+        zoom,
+      );
     }
 
     // Подсветка автопути: подсветка целевой клетки + пунктирная линия пути +
@@ -203,14 +241,21 @@ export class TargetingRenderer {
    * Подсветка клетки: рамка толщиной STROKE_WIDTH_PX с отступом CELL_INSET_PX
    * внутрь клетки + полупрозрачная заливка тем же цветом.
    * Размеры рамки заданы в экранных пикселях и не масштабируются zoom'ом.
+   * Прозрачности можно переопределить (тусклая подсветка паттерна прицеливания).
    */
-  private drawCellHighlight(pos: Position, color: number, zoom: number): void {
+  private drawCellHighlight(
+    pos: Position,
+    color: number,
+    zoom: number,
+    fillAlpha: number = CELL_FILL_ALPHA,
+    frameAlpha: number = CELL_FRAME_ALPHA,
+  ): void {
     const g = new Graphics();
     const {x, y, width, height} = cellRect(pos.x, pos.y);
     const inset = CELL_INSET_PX / zoom;
     g.rect(x + inset, y + inset, width - inset * 2, height - inset * 2);
-    g.fill({ color, alpha: CELL_FILL_ALPHA });
-    g.stroke({ width: STROKE_WIDTH_PX / zoom, color, alpha: CELL_FRAME_ALPHA });
+    g.fill({ color, alpha: fillAlpha });
+    g.stroke({ width: STROKE_WIDTH_PX / zoom, color, alpha: frameAlpha });
     this.overlayContainer.addChild(g);
   }
 

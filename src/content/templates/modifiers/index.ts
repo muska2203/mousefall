@@ -9,6 +9,7 @@ import {modPoisonOnHit} from './mod-poison-on-hit';
 import {modRestoreApOnHit} from './mod-restore-ap-on-hit';
 import {modSpikedThorns} from './mod-spiked-thorns';
 import {modSturdyArmor} from './mod-sturdy-armor';
+import {modSlingThrowRange} from './mod-sling-throw-range';
 
 /** Все шаблоны категории «modifiers». Новый шаблон добавляется сюда импортом и строкой в массиве. */
 export const modifierTemplates: ModifierTemplateInput[] = [
@@ -22,4 +23,5 @@ export const modifierTemplates: ModifierTemplateInput[] = [
   modAmuletFireDamageMultiplier,
   modRestoreApOnHit,
   modGuardianVitality,
+  modSlingThrowRange,
 ];

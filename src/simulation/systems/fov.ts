@@ -2,6 +2,8 @@
  * Система поля зрения (FOV).
  *
  * Алгоритм: рекурсивное кастование теней (стандартный FOV для рогаликов).
+ * Радиус — квадратный (дистанция Чебышёва), единая метрика с движением
+ * в 8 направлений, дальностью атак и AOE.
  * Ссылка: http://www.roguebasin.com/index.php/FOV_using_recursive_shadowcasting
  *
  * Контракт:
@@ -120,10 +122,10 @@ function castRow(
     if (startSlope < rightSlope) continue;
     if (endSlope > leftSlope) break;
 
-    // Клетка в поле зрения
-    if (col * col + row * row <= radius * radius) {
-      visible.add(`${x},${y}`);
-    }
+    // Клетка в поле зрения: радиус квадратный (Чебышёв) — row уже ограничен
+    // радиусом, а col ≤ row по построению октанта, дополнительное отсечение
+    // по евклидовой дистанции не требуется.
+    visible.add(`${x},${y}`);
 
     const isWall = blocksLOS(state, x, y, index);
 

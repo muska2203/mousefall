@@ -11,6 +11,7 @@ import {createMagicSlapSkill} from '@simulation/skills/executors/magicSlapSkill'
 import {createDashSkill} from '@simulation/skills/executors/dashSkill';
 import {createSuddenStrikeSkill} from '@simulation/skills/executors/suddenStrikeSkill';
 import {createCleaveSkill} from '@simulation/skills/executors/cleaveSkill';
+import {createThrowSkill} from '@simulation/skills/executors/throwSkill';
 
 export interface SkillExecutor {
   id: string;
@@ -20,6 +21,13 @@ export interface SkillExecutor {
 
   /** Доступные клетки для выбора (для подсветки) */
   getValidTargets(state: GameState, caster: Entity): Position[];
+
+  /**
+   * Паттерн прицеливания: все клетки, куда способность в принципе может быть
+   * нацелена, независимо от наличия целей на них (для тусклой подсветки зоны
+   * каста в UI). Опционально: вид способности без метода не показывает паттерн.
+   */
+  getCastableCells?(state: GameState, caster: Entity): Position[];
 
   /** Превью интентов при наведении на клетку */
   preview(state: GameState, caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Intent[];
@@ -102,6 +110,15 @@ const KIND_FACTORIES: Record<AbilityTemplate['kind'], (template: AbilityTemplate
   cleave: (template) => {
     if (template.kind !== 'cleave') throw new Error(`Ожидался kind 'cleave', получен '${template.kind}'`);
     return createCleaveSkill({ id: template.id });
+  },
+  throw: (template) => {
+    if (template.kind !== 'throw') throw new Error(`Ожидался kind 'throw', получен '${template.kind}'`);
+    return createThrowSkill({
+      id: template.id,
+      range: template.range,
+      baseDamage: template.baseDamage,
+      pushDistance: template.pushDistance,
+    });
   },
 };
 

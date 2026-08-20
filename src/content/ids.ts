@@ -5,7 +5,7 @@
  */
 
 /** Подтипы оружия (замкнутый набор для ItemTemplate.subtype). */
-export const WEAPON_SUBTYPE_IDS = ['sword', 'dagger', 'club', 'staff', 'unarmed'] as const;
+export const WEAPON_SUBTYPE_IDS = ['sword', 'dagger', 'club', 'staff', 'sling', 'unarmed'] as const;
 export type WeaponSubtypeId = typeof WEAPON_SUBTYPE_IDS[number];
 
 /** Подтипы брони (замкнутый набор для ItemTemplate.subtype). */

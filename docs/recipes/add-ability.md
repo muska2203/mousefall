@@ -10,7 +10,7 @@
 
 - TS-шаблон способности в `src/content/templates/abilities/`.
 - Тексты в `src/content/texts/ru/abilities.ts` и `src/content/texts/en/abilities.ts`.
-- Для **нового экземпляра существующего вида** (`selfBuff`, `swoop`, `groundSlam`, `fireball`, `magicSlap`, `dash`, `suddenStrike`, `cleave`) — только шаблон и тексты: исполнитель собирается фабрикой из параметров шаблона.
+- Для **нового экземпляра существующего вида** (`selfBuff`, `swoop`, `groundSlam`, `fireball`, `magicSlap`, `dash`, `suddenStrike`, `cleave`, `throw`) — только шаблон и тексты: исполнитель собирается фабрикой из параметров шаблона.
 - Для **новой механики** — новый член union `kind` в `AbilityTemplateSchema` + фабрика в `KIND_FACTORIES` (`src/simulation/skills/skillExecutor.ts`); это уже задача системного дизайна, а не чистого контента.
 - Анимация в `src/presentation/animation/skills/<id>.ts` и импорт в `src/presentation/animation/register.ts` (если нужна визуализация).
 - Спрайт и иконка в `public/assets/skills/`.
@@ -21,7 +21,7 @@
 ## Шаги
 
 1. **Выбери `kind`** — вид механики способности (дискриминатор union, camelCase):
-   - **существующий вид** (`selfBuff`, `swoop`, `groundSlam`, `fireball`, `magicSlap`, `dash`, `suddenStrike`, `cleave`) — параметры механики задаются в шаблоне, исполнитель соберётся фабрикой автоматически;
+   - **существующий вид** (`selfBuff`, `swoop`, `groundSlam`, `fireball`, `magicSlap`, `dash`, `suddenStrike`, `cleave`, `throw`) — параметры механики задаются в шаблоне, исполнитель соберётся фабрикой автоматически;
    - нужной механики нет — это новая механика: новый член union + фабрика в движке (см. `src/simulation/AGENTS.md`), выход за рамки этого рецепта.
 
 2. **Создай TS-шаблон** в `src/content/templates/abilities/my-ability.ts`. Имя файла — `id` в kebab-case, константа — camelCase:
@@ -63,6 +63,7 @@
    - `kind: 'dash'` — `distance` (дистанция рывка, ≥ 1), `bumpDamage` (урон столкновения с актором). Пример — `dash` (2/5).
    - `kind: 'suddenStrike'` — `silenceDuration` (длительность немоты цели с подготовленной способностью, ≥ 1). Урон — ролл оружия. Пример — `sudden_strike` (2).
    - `kind: 'cleave'` — без параметров: урон — ролл оружия по дуге из трёх клеток.
+   - `kind: 'throw'` — `range` (дальность выбора цели, ≥ 1, Чебышёв), `baseDamage` (фиксированный урон по цели, ≥ 0), `pushDistance` (дистанция отталкивания цели от кастера, ≥ 0; 0 — без толчка). Цель должна быть damageable-сущностью в прямой видимости на одном из 8 лучей-направлений от кастера (ортогонали и диагонали, как у dash); толчок идёт вдоль луча. Урон и `dazed` при столкновении от толчка — глобальные правила `collision_*`, в шаблоне не задаются. Контентный пример — `stone_throw` (праща).
 
    > Урон способностей — фиксированные значения из шаблона (без скейлинга от характеристик и уровня). Модификаторы урона вешаются через стандартные модификаторы и контентные правила. Исключение — оружейные виды (`cleave`, `suddenStrike`): их урон — ролл экипированного оружия.
 

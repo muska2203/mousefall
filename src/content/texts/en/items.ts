@@ -21,6 +21,10 @@ export const items: Record<string, ContentText> = {
     name: 'Cracked Spoke',
     description: 'Almost a wand. Almost magical.',
   },
+  common_sling: {
+    name: 'Sling',
+    description: 'Ranged stone attack at 2–5 tiles; cannot strike up close. Thrown consumables fly 5 tiles farther.',
+  },
   common_flaming_sword: {
     name: 'Charred Shortsword',
     description: 'Warm to the touch. The blade sputters with weak flames.',

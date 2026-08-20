@@ -37,7 +37,7 @@
 
 - Новое поле `level: int ≥ 1` — **обязательно** для `type: 'weapon' | 'armor' | 'amulet'` (refine).
 - Новое поле `subtype` — обязательно для тех же типов. Замкнутые наборы в `src/content/ids.ts`:
-  - `WEAPON_SUBTYPE_IDS = ['sword', 'dagger', 'club', 'staff', 'unarmed']`;
+  - `WEAPON_SUBTYPE_IDS = ['sword', 'dagger', 'club', 'staff', 'sling', 'unarmed']`;
   - `ARMOR_SUBTYPE_IDS = ['light', 'heavy', 'magic']`;
   - `AMULET_SUBTYPE_IDS = ['bead', 'charm', 'talisman']`.
   - Единый тип `EquipmentSubtypeId` = объединение; refine проверяет, что `subtype` принадлежит набору своего `type`.

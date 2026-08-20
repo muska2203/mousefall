@@ -521,6 +521,13 @@ export type Simulation = {
   /** Возвращает доступные клетки для выбора целей способности. */
   getAbilityValidTargets(abilityId: string): import("@simulation/core-types.ts").Position[];
 
+  /**
+   * Возвращает паттерн прицеливания способности игрока: все клетки, куда
+   * способность в принципе может быть нацелена, независимо от наличия целей.
+   * Пустой массив, если вид способности не задаёт паттерн.
+   */
+  getAbilityCastableCells(abilityId: string): import("@simulation/core-types.ts").Position[];
+
   /** Возвращает превью интентов при наведении на клетку во время таргетинга. */
   getAbilityPreview(
     abilityId: string,
@@ -554,6 +561,23 @@ export type Simulation = {
 
   /** Возвращает доступные клетки для выбора цели расходника по шаблону. */
   getConsumableValidTargets(templateId: string): import("@simulation/core-types.ts").Position[];
+
+  /** Возвращает режим таргетинга базовой атаки оружием игрока ({single, range} из шаблона оружия). */
+  getBasicAttackTargetMode(): import("@simulation/core-types.ts").TargetMode;
+
+  /**
+   * Возвращает валидные клетки позиционной базовой атаки игрока:
+   * damageable-сущности в LOS по общему предикату дальности `isInWeaponRange`
+   * (манхэттен [minRange, range]; при minRange ≤ 1 — все 8 соседних клеток).
+   */
+  getBasicAttackValidTargets(): import("@simulation/core-types.ts").Position[];
+
+  /**
+   * Возвращает все клетки зоны досягаемости базовой атаки игрока по предикату
+   * `isInWeaponRange` (без LOS и без требования сущности) — для подсветки радиуса.
+   * Клетки ближе minRange не включаются.
+   */
+  getBasicAttackRangeCells(): import("@simulation/core-types.ts").Position[];
 
   /** Возвращает превью интентов расходника при наведении на клетку. */
   getConsumablePreview(
@@ -597,6 +621,16 @@ export type Simulation = {
 
   /** Ищет кратчайший путь для игрока от start до target. */
   findPathForPlayer(start: Position, target: Position): Position[] | null;
+
+  /**
+   * Ищет ближайшую к игроку «атакующую клетку» для базовой атаки по цели:
+   * проходимую клетку, с которой оружие игрока достаёт цель
+   * (чебышёвская дистанция ∈ [minRange, range]) и есть прямая видимость на цель.
+   * Возвращает клетку и кратчайший путь до неё (без стартовой клетки);
+   * если игрок уже на атакующей клетке — путь пустой; если кандидатов нет — null.
+   * Тай-брейк при равной длине пути: ближайшая к игроку по Чебышёву, затем по координатам.
+   */
+  findNearestAttackPosition(target: Position): { position: Position; path: Position[] } | null;
 
   /** Возвращает первую сущность на тайле, удовлетворяющую фильтру. */
   findEntityAt(pos: Position, filter?: EntityFilter, index?: import('@simulation/state.ts').EntityPositionIndex): Entity | null;

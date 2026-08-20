@@ -115,6 +115,11 @@ const ERROR_MAP: Record<string, ErrorMapping> = {
     titleKey: 'noTargetAtTileTitle',
     messageKey: 'noTargetAtTileMessage',
   },
+  too_close_for_ranged_weapon: {
+    kind: 'warning',
+    titleKey: 'tooCloseForRangedWeaponTitle',
+    messageKey: 'tooCloseForRangedWeaponMessage',
+  },
 };
 
 /** Время отображения по умолчанию для разных типов уведомлений (мс). */

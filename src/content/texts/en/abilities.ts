@@ -41,4 +41,8 @@ export const abilities: Record<string, ContentText> = {
     name: 'Ground Slam',
     description: 'Slams the ground, dealing blunt damage to all creatures in a 5×5 square around the caster and dazing survivors for 2 turns. Costs 2 AP, cooldown 4.',
   },
+  stone_throw: {
+    name: 'Stone Throw',
+    description: 'Hurl a stone at a visible target in a straight line (vertically, horizontally or diagonally) up to 5 cells away. Deals 3 blunt damage and [knocks it back](tag:effect.knockback) 1 cell. Costs 1 AP, cooldown 2.',
+  },
 };

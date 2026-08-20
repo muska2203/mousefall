@@ -41,7 +41,7 @@ describe('stats system', () => {
       items: new Map([
         ['test_sword', mockItem('test_sword', {
           type: 'weapon',
-          weapon: { damage: { min: 5, max: 5 }, range: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: [] },
+          weapon: { damage: { min: 5, max: 5 }, range: 1, minRange: 1, damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }], tags: [] },
         })],
         ['test_armor', mockItem('test_armor', {
           type: 'armor',

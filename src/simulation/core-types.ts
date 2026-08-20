@@ -298,8 +298,19 @@ export type MoveAction = {
 export type AttackAction = {
   type: 'ATTACK';
   entityId: EntityId;
+  /**
+   * Направление атаки (legacy-форма, bump-атака): бьёт соседнюю клетку
+   * (attacker.x + dx, attacker.y + dy), включая диагонали.
+   * Используется, если `targetPosition` не задан.
+   */
   dx: number;
   dy: number;
+  /**
+   * Позиционная форма: атака конкретной клетки оружием с дальностью > 1.
+   * Валидируется по манхэттенской дистанции [minRange, range] оружия и LOS.
+   * При заданном `targetPosition` поля dx/dy игнорируются.
+   */
+  targetPosition?: Position;
 };
 
 export type EndTurnAction = {

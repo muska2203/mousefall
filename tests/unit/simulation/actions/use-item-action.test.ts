@@ -133,13 +133,13 @@ describe('useItemAction.validate', () => {
   it('ошибка для spawn_tile_effect с targetPosition вне досягаемости', () => {
     const state = makeGameState();
     const player = makePlayer({
-      x: 5,
-      y: 5,
+      x: 1,
+      y: 1,
       inventory: [{ instanceId: 'ball_1', templateId: 'water_ball', quantity: 1, grantedAbilities: [], affixes: [] }],
     });
     state.player = player;
     state.entities.set(player.id, player);
-    // Цель не видна и вне радиуса 5.
+    // Цель (9,9) — чебышёвская дистанция 8, вне радиуса броска 5.
 
     const action = {
       type: 'USE_ITEM' as const,

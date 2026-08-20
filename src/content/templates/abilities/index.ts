@@ -7,6 +7,7 @@ import {fireball} from './fireball';
 import {groundSlam} from './ground-slam';
 import {guardianSwoop} from './guardian-swoop';
 import {magicSlap} from './magic-slap';
+import {stoneThrow} from './stone-throw';
 import {suddenStrike} from './sudden-strike';
 import {swoop} from './swoop';
 
@@ -20,6 +21,7 @@ export const abilityTemplates: AbilityTemplateInput[] = [
   groundSlam,
   guardianSwoop,
   magicSlap,
+  stoneThrow,
   suddenStrike,
   swoop,
 ];

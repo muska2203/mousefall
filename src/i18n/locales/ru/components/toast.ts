@@ -38,6 +38,8 @@ export const ruToast = {
   tileBlockedMessage: 'Сюда нельзя переместиться.',
   noTargetAtTileTitle: 'Нет цели',
   noTargetAtTileMessage: 'На этой клетке нет подходящей цели.',
+  tooCloseForRangedWeaponTitle: 'Слишком близко',
+  tooCloseForRangedWeaponMessage: 'Этим оружием нельзя бить в упор.',
   genericErrorTitle: 'Ошибка',
   genericErrorMessage: 'Произошла непредвиденная ошибка.',
   autoPathEnemyDetectedTitle: 'Обнаружен враг',
