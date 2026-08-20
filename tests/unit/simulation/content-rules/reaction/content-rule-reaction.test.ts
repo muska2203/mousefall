@@ -56,6 +56,7 @@ function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectT
     duration: 3,
     renderOrder: 1,
     blocksLOS: false,
+    concealsEntities: false,
     canHaveStatus: ['burning'],
     durationDecreasesWhenHasStatus: [],
   };

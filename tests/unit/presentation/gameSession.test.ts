@@ -1380,6 +1380,103 @@ describe('GameSession fieldObjectPopover', () => {
   });
 });
 
+describe('GameSession concealment (сокрытие мукой)', () => {
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      terrains: createTestTerrains(),
+      entities: new Map([
+        ['cat_small', {
+          id: 'cat_small',
+          health: {max: 20},
+          baseStats: {str: 1, dex: 1, int: 0, vit: 0},
+          aiSightRadius: 6,
+          aiStrategyId: 'hunter',
+        } as any],
+      ]),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map(),
+      stairs: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map([
+        // Concealing-эффект (аналог flour_cloud): скрывает сущностей на своей клетке.
+        ['flour_cloud', {
+          id: 'flour_cloud',
+          layer: 'aboveGround',
+          duration: 4,
+          renderOrder: 1,
+          blocksLOS: true,
+          concealsEntities: true,
+          ruleIds: [],
+          canHaveStatus: ['burning'],
+          durationDecreasesWhenHasStatus: [],
+        }],
+      ]),
+      tileEffectStatuses: new Map(),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  /** Ставит облако муки на клетку (слой aboveGround). */
+  function putFlourCloud(state: ReturnType<typeof makeGameState>, x: number, y: number): void {
+    state.tileEffects[y]![x]!.aboveGround = {
+      type: 'flour_cloud', duration: 4, layer: 'aboveGround', statusEffects: [], renderOrder: 1,
+    };
+  }
+
+  function makeStateWithEnemyAt(x: number, y: number, withCloud: boolean) {
+    const player = makePlayer({ x: 5, y: 5 });
+    const enemy = makeEnemy({ x, y });
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([
+        [player.id, player],
+        [enemy.id, enemy],
+      ]),
+    });
+    state.visible[5]![5] = true;
+    state.visible[y]![x] = true;
+    if (withCloud) putFlourCloud(state, x, y);
+    return state;
+  }
+
+  it('hover по скрытому мукой врагу (дистанция 2) не даёт popover и enemyHoverOverlay', () => {
+    const session = new GameSession();
+    session.loadGame(makeStateWithEnemyAt(7, 5, true));
+
+    session.setFieldHover({ x: 7, y: 5 });
+    const renderInput = session.getViewModel().renderInput;
+    expect(renderInput?.fieldObjectPopover).toBeNull();
+    expect(renderInput?.enemyHoverOverlay).toBeNull();
+  });
+
+  it('контроль: тот же враг без облака показывает popover и enemyHoverOverlay', () => {
+    const session = new GameSession();
+    session.loadGame(makeStateWithEnemyAt(7, 5, false));
+
+    session.setFieldHover({ x: 7, y: 5 });
+    const renderInput = session.getViewModel().renderInput;
+    expect(renderInput?.fieldObjectPopover?.kind).toBe('enemy');
+    expect(renderInput?.enemyHoverOverlay).not.toBeNull();
+  });
+
+  it('враг в облаке вплотную (дистанция 1) не скрыт: popover показывается', () => {
+    const session = new GameSession();
+    session.loadGame(makeStateWithEnemyAt(6, 5, true));
+
+    session.setFieldHover({ x: 6, y: 5 });
+    const renderInput = session.getViewModel().renderInput;
+    expect(renderInput?.fieldObjectPopover?.kind).toBe('enemy');
+    expect(renderInput?.enemyHoverOverlay).not.toBeNull();
+  });
+});
+
 describe('GameSession.getDefeatedBosses', () => {
   beforeEach(() => {
     resetRegistry();

@@ -7,7 +7,7 @@ import {displacementMoveReaction} from "@simulation/systems/world-reactions/disp
 import {floorTransitionReaction} from "@simulation/systems/world-reactions/floor-transition-reaction.ts";
 import {aiPerceptionReaction} from "@simulation/systems/world-reactions/ai-perception-reaction.ts";
 import {tileExplosionDamageReaction} from "@simulation/systems/world-reactions/tile-explosion-damage-reaction.ts";
-import {burningOilExplosionReaction} from "@simulation/systems/world-reactions/burning-oil-explosion-reaction.ts";
+import {tileEffectExplosionReaction} from "@simulation/systems/world-reactions/tile-effect-explosion-reaction.ts";
 import {oilIgnitionNearBurningReaction} from "@simulation/systems/world-reactions/oil-ignition-near-burning-reaction.ts";
 import {tileEffectFovReaction} from "@simulation/systems/world-reactions/tile-effect-fov-reaction.ts";
 import {bossRoomDoorReaction, bossRoomUnlockOnBossDeathReaction} from "@simulation/systems/world-reactions/boss-room-reaction.ts";
@@ -79,7 +79,7 @@ registerReaction('DOOR_CLOSED', aiPerceptionReaction, 0);
 registerReaction('DOOR_LOCKED', aiPerceptionReaction, 0);
 registerReaction('DOOR_UNLOCKED', aiPerceptionReaction, 0);
 registerReaction('TILE_EXPLODED', tileExplosionDamageReaction, 0);
-registerReaction('TILE_EFFECT_STATUS_APPLIED', burningOilExplosionReaction, 0);
+registerReaction('TILE_EFFECT_STATUS_APPLIED', tileEffectExplosionReaction, 0);
 registerReaction('TILE_EFFECT_CHANGED', oilIgnitionNearBurningReaction, 0);
 registerReaction('TILE_EFFECT_CHANGED', tileEffectFovReaction, 0);
 registerReaction('TILE_EFFECT_REMOVED', tileEffectFovReaction, 0);

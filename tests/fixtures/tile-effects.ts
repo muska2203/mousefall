@@ -64,6 +64,15 @@ export function createTestTileEffectTemplates(): Map<string, TileEffectTemplate>
       canHaveStatus: ['burning'],
       durationDecreasesWhenHasStatus: ['burning'],
       blocksLOS: false,
+      concealsEntities: false,
+      // Параметры взрыва повторяют реальный шаблон oil (урон 2, радиус 1).
+      explosion: {
+        triggerStatus: 'burning',
+        damage: 2,
+        radius: 1,
+        consumesEffect: false,
+        tags: ['damage.magical.fire'],
+      },
     }],
     ['water', {
       id: 'water',
@@ -74,6 +83,7 @@ export function createTestTileEffectTemplates(): Map<string, TileEffectTemplate>
       canHaveStatus: [],
       durationDecreasesWhenHasStatus: [],
       blocksLOS: false,
+      concealsEntities: false,
     }],
   ]);
 }

@@ -28,6 +28,7 @@ import {getSkillExecutor} from '@simulation/skills/skillExecutor';
 import type {WorldChange} from './perception-types';
 import {closeCombat, findVisibleAttackTarget, moveToward, attackTarget} from './tactics';
 import {isRooted} from '@simulation/systems/rooted-helper';
+import {isEntityConcealedFrom} from '@simulation/state';
 
 // ─────────────────────────────────────────────
 // Зрение
@@ -39,12 +40,15 @@ import {isRooted} from '@simulation/systems/rooted-helper';
  * с радиусом обзора врага (aiSightRadius).
  *
  * Сущности (другие враги) НЕ блокируют зрение — только стены.
+ * Правило сокрытия: позиция с concealing-эффектом (мука и т.п.) видна
+ * только с дистанции ≤ 1 — что там находится, враг издалека не различает.
  */
 export function canSeePosition(
   enemy: EnemyEntity,
   state: GameState,
   position: Position,
 ): boolean {
+  if (isEntityConcealedFrom(state, position, enemy)) return false;
   const visible = computeFOV(state, enemy.x, enemy.y, enemy.aiSightRadius);
   return visible.some((pos) => pos.x === position.x && pos.y === position.y);
 }
@@ -55,6 +59,7 @@ export function canSeePosition(
  * с радиусом обзора врага (aiSightRadius).
  *
  * Сущности (другие враги) НЕ блокируют зрение — только стены.
+ * Учитывает сокрытие: игрок на concealing-клетке виден только вплотную.
  */
 export function canSeePlayer(enemy: EnemyEntity, state: GameState): boolean {
   return canSeePosition(enemy, state, state.player);

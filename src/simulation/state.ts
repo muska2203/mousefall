@@ -349,6 +349,28 @@ export function blocksLOS(state: GameState, x: number, y: number, index?: Entity
     .some((effect) => tryGetTileEffect(effect.type)?.blocksLOS === true);
 }
 
+/**
+ * Возвращает true, если клетка в (x, y) скрывает находящихся на ней сущностей
+ * (тайловый эффект с concealsEntities — взвешанная мука и т.п.).
+ */
+export function tileConcealsEntities(state: GameState, x: number, y: number): boolean {
+  if (x < 0 || x >= state.map.width || y < 0 || y >= state.map.height) return false;
+  return Object.values(getTileEffectsAt(state, x, y))
+    .some((effect) => tryGetTileEffect(effect.type)?.concealsEntities === true);
+}
+
+/**
+ * Правило сокрытия: сущность на concealing-клетке видна наблюдателю только
+ * с дистанции ≤ 1 (Чебышёв). Симметрично для игрока и AI.
+ * Сама клетка при этом может быть видима (concealment не влияет на FOV-грид).
+ */
+export function isEntityConcealedFrom(state: GameState, entityPos: Position, observerPos: Position): boolean {
+  if (!tileConcealsEntities(state, entityPos.x, entityPos.y)) return false;
+  const dx = Math.abs(entityPos.x - observerPos.x);
+  const dy = Math.abs(entityPos.y - observerPos.y);
+  return Math.max(dx, dy) > 1;
+}
+
 
 /**
  * Возвращает текущую позицию игрока.

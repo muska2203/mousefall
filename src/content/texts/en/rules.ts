@@ -33,6 +33,14 @@ export const rules: Record<string, ContentText> = {
     name: 'Burning Barrel Explosion',
     description: 'If a burning oil barrel is destroyed, the spilled oil immediately ignites and explodes.',
   },
+  prop_contains_flour_spills_on_death: {
+    name: 'Scattered Flour',
+    description: 'When a flour-containing object is destroyed, flour scatters in a cloud within a 1-tile radius.',
+  },
+  flammable_flour_bag_explodes_on_fire_death: {
+    name: 'Burning Bag Explosion',
+    description: 'If a burning flour bag is destroyed, the scattered flour detonates immediately.',
+  },
   burning_tile_status_applied_deals_damage: {
     name: 'Flame Burst',
     description: 'When oil ignites, creatures on the tile take 3 fire damage.',

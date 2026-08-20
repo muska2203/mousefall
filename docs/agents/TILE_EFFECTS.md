@@ -41,6 +41,7 @@ export const myEffect = {
 
 - `layer` — слой эффекта: `cover` (по умолчанию) или `aboveGround`. Уникальность по слою: на клетке максимум один эффект каждого слоя — новый эффект слоя заменяет старый, поэтому вытеснение (например, вода ↔ масло на слое `cover`) настраивается выбором слоя, а не отдельными полями совместимости.
 - `blocksLOS` — блокирует ли эффект линию видимости (по умолчанию `false`), например дым на слое `aboveGround`. Движение эффекты не блокируют никогда. Появление/исчезновение такого эффекта автоматически пересчитывает FOV (мировая реакция `tileEffectFovReaction`).
+- `concealsEntities` — скрывает ли эффект сущностей на своей клетке (по умолчанию `false`), например взвешанная мука. Скрытая сущность видна наблюдателю только с дистанции ≤ 1 (Чебышёв), симметрично для игрока и AI. FOV-грид при этом не меняется: проверка выполняется в момент запроса через `isEntityConcealedFrom` (`src/simulation/state.ts`) и учитывается в восприятии AI, таргетинге и рендере врагов.
 - `duration` — базовая длительность в ходах.
 - `renderOrder` — порядок отрисовки относительно других эффектов на той же клетке (внутри своего слоя).
 - `ruleIds` — идентификаторы контентных правил, которые активируются при событии на клетке с эффектом.
@@ -173,8 +174,8 @@ export const myEffect = {
 
 Пример — взрыв горящего масла:
 
-1. Мировая реакция `burningOilExplosionReaction` (`src/simulation/systems/world-reactions/burning-oil-explosion-reaction.ts`) проверяет `effectType === 'oil'`, `statusType === 'burning'` и `isNew === true`.
-2. Реакция порождает `TILE_EXPLOSION` с параметрами урона, радиуса и тегов.
+1. Мировая реакция `tileEffectExplosionReaction` (`src/simulation/systems/world-reactions/tile-effect-explosion-reaction.ts`) читает поле `explosion` шаблона тайлового эффекта (`TileEffectTemplateSchema`) и срабатывает, когда наложенный статус совпадает с `explosion.triggerStatus` и `isNew === true`.
+2. Реакция порождает `TILE_EXPLOSION` с параметрами урона, радиуса и тегов из шаблона; при `explosion.consumesEffect: true` дополнительно порождает `REMOVE_TILE_EFFECT` (эффект расходуется взрывом).
 3. Исполнитель `executeTileExplosionIntent` эмитит событие `TILE_EXPLODED`.
 4. Мировая реакция `tileExplosionDamageReaction` (`src/simulation/systems/world-reactions/tile-explosion-damage-reaction.ts`) превращает `TILE_EXPLODED` в `DAMAGE_TILE` по всем клеткам в радиусе (включая центр).
 
@@ -182,7 +183,7 @@ export const myEffect = {
 
 Поле `isNew` в событии `TILE_EFFECT_STATUS_APPLIED` позволяет отличить первое наложение статуса от обновления длительности и избежать повторных взрывов.
 
-Добавляя новый взрыв, повторите этот паттерн: создайте реакцию, которая по условию порождает `TILE_EXPLOSION`, и используйте существующую `tileExplosionDamageReaction` для нанесения урона.
+Добавляя новый взрывающийся материал, новая реакция не нужна: задайте поле `explosion` в шаблоне тайлового эффекта (чистый контент, см. `src/content/templates/tile-effects/oil.ts`).
 
 ---
 

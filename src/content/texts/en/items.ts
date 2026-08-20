@@ -77,6 +77,18 @@ export const items: Record<string, ContentText> = {
     name: 'Smoke Bomb',
     description: 'Throws a smoke bomb into a targeted area, creating a [smoke](tag:effect.smoke) tile effect that blocks line of sight.',
   },
+  flour_pouch: {
+    name: 'Flour Pouch',
+    description: 'Throws a pouch of flour into a targeted area, creating a [flour cloud](tag:effect.flour_cloud): blocks line of sight and conceals anyone inside. Explodes when ignited.',
+  },
+  incendiary_bomb: {
+    name: 'Incendiary Bomb',
+    description: 'Throws an incendiary bomb into a targeted area. The explosion deals [fire](tag:damage.magical.fire) damage and ignites flammable materials.',
+  },
+  frag_bomb: {
+    name: 'Frag Bomb',
+    description: 'Throws a frag bomb into a targeted area. The explosion deals [piercing](tag:damage.physical.piercing) damage to everything in the area.',
+  },
   cat_guardian_plate: {
     name: 'Cat Guardian Plate',
     description: 'A heavy plate forged from the scales of feline guardians.',

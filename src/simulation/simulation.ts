@@ -38,6 +38,7 @@ import {
     findStairsAt,
     isActor,
     isDamageable,
+    isEntityConcealedFrom,
     isTerrainWalkable,
     terrainHasTag,
     type EntityPositionIndex
@@ -1040,14 +1041,14 @@ export class GameSimulation implements Simulation {
     getConsumableTargetMode(templateId: string): TargetMode | null {
         const template = tryGetItem(templateId);
         if (!template || template.type !== 'consumable' || !template.consumable) return null;
-        if (template.consumable.effect !== 'spawn_tile_effect') return null;
+        if (template.consumable.effect !== 'spawn_tile_effect' && template.consumable.effect !== 'damage') return null;
         return { type: 'single', range: getConsumableThrowRange(template, this.state.player) };
     }
 
     getConsumableValidTargets(templateId: string): Position[] {
         const template = tryGetItem(templateId);
         if (!template || template.type !== 'consumable' || !template.consumable) return [];
-        if (template.consumable.effect !== 'spawn_tile_effect') return [];
+        if (template.consumable.effect !== 'spawn_tile_effect' && template.consumable.effect !== 'damage') return [];
         const range = getConsumableThrowRange(template, this.state.player);
         return getVisiblePositionsWithinRange(this.state, this.state.player, range);
     }
@@ -1065,6 +1066,7 @@ export class GameSimulation implements Simulation {
      * Валидные клетки позиционной базовой атаки игрока: damageable-сущности в LOS,
      * удовлетворяющие общему предикату дальности `isInWeaponRange`
      * (чебышёвская дистанция ∈ [minRange, range]).
+     * Скрытые сущности (concealing-клетка, дистанция > 1) исключаются.
      */
     getBasicAttackValidTargets(): Position[] {
         const player = this.state.player;
@@ -1079,6 +1081,7 @@ export class GameSimulation implements Simulation {
             if (!isDamageable(entity)) continue;
             if (!isInWeaponRange(attackRange, player, entity)) continue;
             if (!losSet.has(`${entity.x},${entity.y}`)) continue;
+            if (isEntityConcealedFrom(this.state, entity, player)) continue;
             targets.push({ x: entity.x, y: entity.y });
         }
         return targets;

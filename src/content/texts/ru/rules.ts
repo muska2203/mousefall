@@ -33,6 +33,14 @@ export const rules: Record<string, ContentText> = {
     name: 'Взрыв горящей бочки',
     description: 'Если горящая бочка с маслом уничтожена, разлитое масло сразу загорается и взрывается.',
   },
+  prop_contains_flour_spills_on_death: {
+    name: 'Рассыпанная мука',
+    description: 'При уничтожении объекта с мукой она рассыпается вокруг облаком на 1 клетку.',
+  },
+  flammable_flour_bag_explodes_on_fire_death: {
+    name: 'Взрыв горящего мешка',
+    description: 'Если горящий мешок с мукой уничтожен, рассыпанная мука сразу детонирует.',
+  },
   burning_tile_status_applied_deals_damage: {
     name: 'Вспышка пламени',
     description: 'При появлении горения на масле сущности на клетке получают 3 огненного урона.',

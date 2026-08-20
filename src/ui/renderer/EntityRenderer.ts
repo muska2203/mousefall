@@ -8,6 +8,7 @@
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {AnimationNode, Position, RenderInput} from '@presentation/types';
 import type {DisplayState} from '@presentation/displayState/types';
+import {isEntityConcealedFromPlayer} from '@presentation/displayState/visibility';
 import {FOG_EXPLORED_SPRITE_ALPHA, TILE_HEIGHT, TILE_SIZE} from '@utils/constants';
 import type {ResolvedSpritePlacement} from '@presentation/spritePlacementResolver';
 import {getSpritePlacement} from '@presentation/spritePlacementResolver';
@@ -109,7 +110,9 @@ export class EntityRenderer {
         this.updateSticker(entity.id, path, entity.factionId ?? 'enemies', entity.hp, entity.maxHp, placement.scale);
         const sprite = this.sprites.get(entity.id);
         if (sprite && !this.activeAnimations.has(entity.id)) {
-          sprite.visible = input.debugEnabled || isCellVisible(displayState, entity.x, entity.y);
+          // Скрытие сокрытием (мука и т.п.): враг на concealing-клетке не рендерится,
+          // пока игрок дальше 1 клетки.
+          sprite.visible = input.debugEnabled || (isCellVisible(displayState, entity.x, entity.y) && !isEntityConcealedFromPlayer(displayState, entity));
         }
         existingIds.add(entity.id);
       }

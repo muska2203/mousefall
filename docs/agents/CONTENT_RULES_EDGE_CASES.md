@@ -110,7 +110,7 @@ if (reactionDepth > MAX_REACTION_DEPTH) {
 ```text
 APPLY_TILE_EFFECT_STATUS burning на oil
   → TILE_EFFECT_STATUS_APPLIED (isNew: true)
-    → WorldReaction: burningOilExplosionReaction
+    → WorldReaction: tileEffectExplosionReaction (по полю explosion шаблона)
       → TILE_EXPLOSION intent
         → executeTileExplosionIntent → TILE_EXPLODED
           → WorldReaction: tileExplosionDamageReaction

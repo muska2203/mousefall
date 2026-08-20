@@ -43,6 +43,7 @@ beforeEach(() => {
       ['oil_bottle', mockConsumable('oil_bottle', 'spawn_tile_effect', 0, { tileEffectType: 'oil', radius: 1, range: 5 })],
       ['wall_ball', mockConsumable('wall_ball', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 5 })],
       ['pebble', mockConsumable('pebble', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 2 })],
+      ['frag_bomb', mockConsumable('frag_bomb', 'damage', 6, { damageTag: 'damage.physical.piercing', radius: 1, range: 2 })],
       ['test_weapon', {
         id: 'test_weapon',
         type: 'weapon',
@@ -145,6 +146,46 @@ describe('useItemAction.validate', () => {
       type: 'USE_ITEM' as const,
       entityId: 'player',
       itemInstanceId: 'ball_1',
+      targetPosition: { x: 9, y: 9 },
+    };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('invalid_target_position');
+    }
+  });
+
+  it('ошибка для damage без targetPosition', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'bomb_1', templateId: 'frag_bomb', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'bomb_1' };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('missing_target_position');
+    }
+  });
+
+  it('ошибка для damage с targetPosition вне дальности броска', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 1,
+      y: 1,
+      inventory: [{ instanceId: 'bomb_1', templateId: 'frag_bomb', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    // Цель (9,9) — вне range 2 шаблона frag_bomb.
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'bomb_1',
       targetPosition: { x: 9, y: 9 },
     };
     const result = useItemAction.validate(state, action);
@@ -278,6 +319,38 @@ describe('useItemAction.resolve', () => {
     expect(spawnIntents).toHaveLength(9); // радиус 1: 3×3
     expect(spawnIntents.every(i => i.type === 'SPAWN_TILE_EFFECT' && i.effectType === 'water')).toBe(true);
     expect(intents.some(i => i.type === 'REMOVE_ITEM')).toBe(true);
+  });
+
+  it('для damage возвращает TILE_EXPLOSION с параметрами шаблона + REMOVE_ITEM', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      inventory: [{ instanceId: 'bomb_1', templateId: 'frag_bomb', quantity: 2, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    // Клетка (6,5) видима и в дальности броска (range 2).
+    state.visible[5]![6] = true;
+
+    const action = {
+      type: 'USE_ITEM' as const,
+      entityId: 'player',
+      itemInstanceId: 'bomb_1',
+      targetPosition: { x: 6, y: 5 },
+    };
+    const intents = useItemAction.resolve(state, action);
+
+    expect(intents).toHaveLength(2);
+    expect(intents[0]).toMatchObject({
+      type: 'TILE_EXPLOSION',
+      position: { x: 6, y: 5 },
+      sourceEntityId: 'player',
+      damage: 6,
+      radius: 1,
+      tags: ['damage.physical.piercing'],
+    });
+    expect(intents[1]!.type).toBe('REMOVE_ITEM');
   });
 
   it('для oil_bottle возвращает SPAWN_TILE_EFFECT с типом oil', () => {

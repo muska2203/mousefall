@@ -15,5 +15,12 @@ export const oil = {
   ],
   "durationDecreasesWhenHasStatus": [
     "burning"
-  ]
+  ],
+  "explosion": {
+    "triggerStatus": "burning",
+    "damage": 2,
+    "radius": 1,
+    "consumesEffect": false,
+    "tags": ["damage.magical.fire"]
+  }
 } satisfies TileEffectTemplateInput;

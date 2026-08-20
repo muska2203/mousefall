@@ -150,6 +150,15 @@
 - AI: `decideHunterAction` (`ai/ai-helpers.ts`) под rooted не делает шагов — атакует только видимую цель в соседней клетке, иначе END_TURN.
 - Длительность тикает через общий TICK_STATUS_EFFECTS.
 
+## Сокрытие сущностей (concealsEntities)
+
+Движковая семантика поля `concealsEntities` шаблона тайлового эффекта (взвешанная мука), хелперы `tileConcealsEntities` / `isEntityConcealedFrom` (`state.ts`, рядом с `blocksLOS`):
+
+- Сущность на concealing-клетке видна наблюдателю только с дистанции ≤ 1 (Чебышёв); правило симметрично для игрока и AI.
+- FOV-грид (`state.visible`) не меняется — клетки видимы, скрыта только сущность; инвалидация обзора не нужна, проверка выполняется в момент запроса.
+- Точки применения: восприятие AI (`canSeePosition`/`canSeePlayer`), валидация позиционной атаки (reason `no_line_of_sight`), `getBasicAttackValidTargets`, `getDamageablePositionsWithinRange` (таргетинг способностей обеих сторон). На стороне показа — `isEntityConcealedFromPlayer` (`presentation/displayState/visibility.ts`): рендер врагов, hover/popover, подготовленные намерения AI, автопуть.
+- Скрываются только акторы; статические объекты на concealing-клетках отображаются как обычно.
+
 ## Двери: `isLocked`, `indestructible`, контроллер босс-комнаты
 
 - `DoorEntity.isLocked` — универсальное состояние «заперта» (инициализируется `false` в `createDoor`, `map-generation/shared.ts`). Запертую дверь нельзя открыть: `resolveInteraction` возвращает `null`, `interact-action` отвечает reason-кодом `door_locked`, движковый гард стоит в `executeOpenDoorIntent`; она непроходима для AI (`ai/tactics/movement.ts` — `isTilePassableForEnemy`/`findClosedDoorAt`), рывка (`executors/dashSkill.ts` — BUMP-остановка) и автопути игрока (`gameSession.ts`). Интенты `LOCK_DOOR`/`UNLOCK_DOOR` (lock открытой двери сначала закрывает её) + события `DOOR_LOCKED`/`DOOR_UNLOCKED` (эмитятся безусловно, как open/close; `aiPerceptionReaction` на них подписана).

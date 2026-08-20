@@ -109,6 +109,50 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: { type: 'eventTileEffect', effectType: 'oil' },
     priority: 0,
   },
+  // ── Поджог взвешанной муки (копии масляных правил выше, effectType flour_cloud).
+  // Взрыв — не здесь: обобщённая мировая реакция читает explosion из шаблона.
+  {
+    id: 'fire_damage_ignites_flour',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['damage.magical.fire'],
+    },
+    conditions: [
+      { type: 'inTileEffect', effectType: 'flour_cloud' },
+      {
+        type: 'not',
+        condition: { type: 'tileEffectHasStatus', effectType: 'flour_cloud', statusType: 'burning' },
+      },
+    ],
+    effect: {
+      type: 'applyTileEffectStatus',
+      statusType: 'burning',
+      duration: 3,
+    },
+    target: { type: 'eventTileEffect', effectType: 'flour_cloud' },
+    priority: 0,
+  },
+  {
+    id: 'fire_tile_damage_ignites_flour',
+    trigger: {
+      event: 'TILE_DAMAGED',
+      tags: ['damage.magical.fire'],
+    },
+    conditions: [
+      { type: 'inTileEffect', effectType: 'flour_cloud' },
+      {
+        type: 'not',
+        condition: { type: 'tileEffectHasStatus', effectType: 'flour_cloud', statusType: 'burning' },
+      },
+    ],
+    effect: {
+      type: 'applyTileEffectStatus',
+      statusType: 'burning',
+      duration: 3,
+    },
+    target: { type: 'eventTileEffect', effectType: 'flour_cloud' },
+    priority: 0,
+  },
   {
     id: 'burning_deals_damage_on_entry',
     trigger: {

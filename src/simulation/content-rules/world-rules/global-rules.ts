@@ -211,4 +211,56 @@ export const GLOBAL_WORLD_CONTENT_RULES: readonly WorldContentRule[] = [
     ownerContext: {type: 'world'},
     worldLayer: 'global',
   },
+  // ── Разлив муки (копии масляных правил выше, тег contains.flour → flour_cloud).
+  {
+    id: 'prop_contains_flour_spills_on_death',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      { type: 'entityHasTag', subject: 'target', tag: 'contains.flour' },
+      {
+        type: 'not',
+        condition: { type: 'hasStatus', statusType: 'burning', subject: 'target' },
+      },
+    ],
+    effect: {
+      type: 'spawnTileEffect',
+      effectType: 'flour_cloud',
+    },
+    target: {
+      type: 'positionsInRadius',
+      radius: 1,
+      center: 'eventPosition',
+      includeCenter: true,
+    },
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
+  {
+    id: 'flammable_flour_bag_explodes_on_fire_death',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      { type: 'entityHasTag', subject: 'target', tag: 'contains.flour' },
+      { type: 'hasStatus', statusType: 'burning', subject: 'target' },
+    ],
+    effect: {
+      type: 'spawnTileEffect',
+      effectType: 'flour_cloud',
+      statusType: 'burning',
+      statusDuration: 3,
+    },
+    target: {
+      type: 'positionsInRadius',
+      radius: 1,
+      center: 'eventPosition',
+      includeCenter: true,
+    },
+    priority: 0,
+    ownerContext: {type: 'world'},
+    worldLayer: 'global',
+  },
 ];

@@ -8,6 +8,9 @@ import {commonPatchCloak} from './armor/common-patch-cloak';
 import {commonSpikedCloak} from './armor/common-spiked-cloak';
 import {commonTinPlate} from './armor/common-tin-plate';
 import {healthPotion} from './consumables/health-potion';
+import {flourPouch} from './consumables/flour-pouch';
+import {fragBomb} from './consumables/frag-bomb';
+import {incendiaryBomb} from './consumables/incendiary-bomb';
 import {oilBottle} from './consumables/oil-bottle';
 import {smokeBomb} from './consumables/smoke-bomb';
 import {waterBall} from './consumables/water-ball';
@@ -33,6 +36,9 @@ export const itemTemplates: ItemTemplateInput[] = [
   commonSpikedCloak,
   commonTinPlate,
   healthPotion,
+  flourPouch,
+  fragBomb,
+  incendiaryBomb,
   oilBottle,
   smokeBomb,
   waterBall,

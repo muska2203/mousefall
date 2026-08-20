@@ -27,6 +27,7 @@ function mockTileEffectTemplate(id: string, ruleIds: string[] = []): TileEffectT
     duration: 3,
     renderOrder: 1,
     blocksLOS: false,
+    concealsEntities: false,
     canHaveStatus: [],
     durationDecreasesWhenHasStatus: [],
   };
@@ -54,7 +55,8 @@ function createContent(overrides: Partial<LoadedContent> = {}): LoadedContent {
     abilities: new Map(),
     // Production-правила ссылаются на burning, dazed, poisoned, wet и oiled;
     // water_applies_wet и oil_applies_oiled ссылаются на тайловые эффекты water и oil;
-    // fire_damage_ignites_oil ссылается на тайловый эффект oil и тайловый статус burning.
+    // fire_damage_ignites_oil ссылается на тайловый эффект oil и тайловый статус burning;
+    // правила муки (fire_*_ignites_flour, prop_contains_flour_*) — на flour_cloud.
     // Включаем их по умолчанию, чтобы unit-тесты семантики не получали ложных ошибок от существующих правил.
     statuses: new Map([
       ['burning', mockStatusTemplate('burning')],
@@ -66,6 +68,7 @@ function createContent(overrides: Partial<LoadedContent> = {}): LoadedContent {
     tileEffects: new Map([
       ['water', mockTileEffectTemplate('water')],
       ['oil', mockTileEffectTemplate('oil')],
+      ['flour_cloud', mockTileEffectTemplate('flour_cloud')],
     ]),
     tileEffectStatuses: new Map([
       ['burning', mockTileEffectStatusTemplate('burning')],

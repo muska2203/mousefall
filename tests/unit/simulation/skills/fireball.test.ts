@@ -48,6 +48,7 @@ function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & { id: s
     duration: 4,
     renderOrder: 1,
     blocksLOS: false,
+    concealsEntities: false,
     ruleIds: ['fire_damage_ignites_oil', 'fire_tile_damage_ignites_oil'],
     canHaveStatus: ['burning'],
     durationDecreasesWhenHasStatus: [],

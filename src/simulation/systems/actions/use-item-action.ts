@@ -7,6 +7,7 @@
  *   heal → HEAL + REMOVE_ITEM
  *   buff → APPLY_STATUS + REMOVE_ITEM
  *   spawn_tile_effect → SPAWN_TILE_EFFECT + REMOVE_ITEM
+ *   damage → TILE_EXPLOSION + REMOVE_ITEM
  *   Прочие эффекты пока не реализованы.
  */
 
@@ -54,12 +55,13 @@ export const useItemAction: ActionHandler = {
       return { ok: false, reasonCode: 'not_consumable' };
     }
 
-    const supportedEffects = ['heal', 'buff', 'spawn_tile_effect'];
+    const supportedEffects = ['heal', 'buff', 'spawn_tile_effect', 'damage'];
     if (!supportedEffects.includes(template.consumable.effect)) {
       return { ok: false, reasonCode: 'unsupported_effect' };
     }
 
-    if (template.consumable.effect === 'spawn_tile_effect') {
+    // Эффекты с броском по клетке: выбор цели в дальности броска и в LOS.
+    if (template.consumable.effect === 'spawn_tile_effect' || template.consumable.effect === 'damage') {
       if (!action.targetPosition) {
         return { ok: false, reasonCode: 'missing_target_position' };
       }
@@ -138,8 +140,24 @@ export const useItemAction: ActionHandler = {
         }
         break;
       }
+      case 'damage': {
+        // Брошенная бомба: площадной взрыв в точке падения.
+        // Урон по клеткам раскладывает реакция на TILE_EXPLODED.
+        if (!action.targetPosition) {
+          return [];
+        }
+        intents.push({
+          type: 'TILE_EXPLOSION',
+          position: action.targetPosition,
+          sourceEntityId: action.entityId,
+          damage: effect.value ?? 0,
+          radius: effect.radius ?? 0,
+          tags: [effect.damageTag ?? 'damage.physical.blunt'],
+        });
+        break;
+      }
       default: {
-        // damage, teleport, identify — пока не реализованы
+        // teleport, identify — пока не реализованы
         return [];
       }
     }

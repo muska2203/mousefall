@@ -1,4 +1,4 @@
-import {findAttacker, findFirstAttackableEntityAt} from "@simulation/state.ts";
+import {findAttacker, findFirstAttackableEntityAt, isEntityConcealedFrom} from "@simulation/state.ts";
 import {GameState} from "@simulation/types.ts";
 import {Position} from "@simulation/core-types.ts";
 import {executeIntents} from "@simulation/systems/intents/execute-intent.ts";
@@ -55,6 +55,11 @@ function resolvePositionalAttackContext(
   const visible = computeFOV(state, attacker.x, attacker.y, getWeaponAttackLosRadius(attackRange));
   const hasLos = visible.some(pos => pos.x === targetPosition.x && pos.y === targetPosition.y);
   if (!hasLos) {
+    return { ok: false, reason: 'no_line_of_sight' };
+  }
+
+  // Сокрытие: цель на concealing-клетке (мука и т.п.) видна только с дистанции ≤ 1.
+  if (isEntityConcealedFrom(state, targetPosition, attacker)) {
     return { ok: false, reason: 'no_line_of_sight' };
   }
 

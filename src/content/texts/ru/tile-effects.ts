@@ -4,4 +4,5 @@ export const tileEffects: Record<string, ContentText> = {
   water: {name: 'Вода'},
   oil: {name: 'Масло'},
   smoke: {name: 'Дым'},
+  flour_cloud: {name: 'Взвешанная мука'},
 };

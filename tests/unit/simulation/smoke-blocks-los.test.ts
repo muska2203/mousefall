@@ -27,6 +27,7 @@ function mockTileEffectTemplate(overrides: Partial<TileEffectTemplate> & {id: st
     duration: 4,
     renderOrder: 1,
     blocksLOS: false,
+    concealsEntities: false,
     ruleIds: [],
     canHaveStatus: [],
     durationDecreasesWhenHasStatus: [],

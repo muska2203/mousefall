@@ -16,6 +16,7 @@ function mockTileEffectTemplate(
     duration: 5,
     renderOrder: 1,
     blocksLOS: false,
+    concealsEntities: false,
     ruleIds: [],
     canHaveStatus: [],
     durationDecreasesWhenHasStatus: [],
@@ -49,7 +50,17 @@ function createContentWithOilBarrel(): LoadedContent {
     stairs: new Map(),
     doors: new Map(),
     tileEffects: new Map([
-      ['oil', mockTileEffectTemplate({ id: 'oil', canHaveStatus: ['burning'] })],
+      ['oil', mockTileEffectTemplate({
+        id: 'oil',
+        canHaveStatus: ['burning'],
+        explosion: {
+          triggerStatus: 'burning',
+          damage: 2,
+          radius: 1,
+          consumesEffect: false,
+          tags: ['damage.magical.fire'],
+        },
+      })],
     ]),
     tileEffectStatuses: new Map([
       [

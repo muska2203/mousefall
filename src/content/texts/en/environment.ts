@@ -27,6 +27,10 @@ export const props: Record<string, ContentText> = {
     name: 'Oil Barrel',
     flavorText: "Wooden, cracked, and unmistakably greasy. Don't hit it with fire.",
   },
+  flour_bag: {
+    name: 'Flour Bag',
+    flavorText: 'A dusty canvas sack. Tears open into a white cloud — mind the sparks.',
+  },
 };
 
 export const pois: Record<string, ContentText> = {

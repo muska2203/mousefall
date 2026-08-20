@@ -1,5 +1,6 @@
 import {Entity, EntityId, GameState, Position} from '@simulation/types';
 import {computeFOV} from '@simulation/systems/fov';
+import {isEntityConcealedFrom} from '@simulation/state';
 
 /**
  * Возвращает все сущности в заданном радиусе от центра (включая центр).
@@ -51,6 +52,8 @@ export function getVisiblePositionsWithinRange(state: GameState, caster: Entity,
  * Возвращает позиции всех сущностей, которые могут получать урон,
  * в заданном радиусе от кастера (дистанция Чебышёва) и в прямой видимости.
  * Кастер исключается из списка целей.
+ * Скрытые сущности (concealing-клетка, дистанция от кастера > 1) исключаются —
+ * правило сокрытия симметрично для игрока и AI.
  */
 export function getDamageablePositionsWithinRange(state: GameState, caster: Entity, range: number): Position[] {
   const losSet = new Set(getVisiblePositionsWithinRange(state, caster, range).map(p => `${p.x},${p.y}`));
@@ -60,9 +63,9 @@ export function getDamageablePositionsWithinRange(state: GameState, caster: Enti
     if (!('hp' in entity) || !entity.isAlive) continue;
     const dx = Math.abs(entity.x - caster.x);
     const dy = Math.abs(entity.y - caster.y);
-    if (Math.max(dx, dy) <= range && losSet.has(`${entity.x},${entity.y}`)) {
-      positions.push({ x: entity.x, y: entity.y });
-    }
+    if (Math.max(dx, dy) > range || !losSet.has(`${entity.x},${entity.y}`)) continue;
+    if (isEntityConcealedFrom(state, entity, caster)) continue;
+    positions.push({ x: entity.x, y: entity.y });
   }
   return positions;
 }

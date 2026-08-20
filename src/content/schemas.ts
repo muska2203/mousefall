@@ -169,10 +169,21 @@ const ConsumableEffectSchema = z.object({
   duration: z.number().int().positive().optional().describe('Длительность эффекта в ходах (для buff и статусов)'),
   /** Тип тайлового эффекта для spawn_tile_effect (например, water или oil). */
   tileEffectType: z.string().min(1).optional().describe('ID тайлового эффекта, который спавнится при spawn_tile_effect'),
-  /** Радиус области действия в клетках (только для spawn_tile_effect). */
+  /** Тег урона для damage (например, damage.magical.fire). */
+  damageTag: z.string().min(1).optional().describe('Тег урона для эффекта damage'),
+  /** Радиус области действия в клетках (для spawn_tile_effect и damage). */
   radius: z.number().int().nonnegative().optional().describe('Радиус области действия в клетках'),
-  /** Дальность броска/применения в клетках (только для spawn_tile_effect). */
+  /** Дальность броска/применения в клетках (для spawn_tile_effect и damage). */
   range: z.number().int().positive().optional().describe('Дальность применения в клетках'),
+}).superRefine((effect, ctx) => {
+  if (effect.effect === 'damage') {
+    if (effect.value === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['value'], message: 'value обязателен для эффекта damage' });
+    }
+    if (effect.damageTag === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['damageTag'], message: 'damageTag обязателен для эффекта damage' });
+    }
+  }
 }).describe('Определение эффекта расходуемого предмета');
 
 /** Имена характеристик, доступных модификаторам (экипировка, реликвии, аффиксы). */
@@ -450,6 +461,9 @@ export const TileEffectTemplateSchema = z.object({
   blocksLOS: z.boolean()
     .default(false)
     .describe('Блокирует ли эффект линию видимости (дым и т.п.). Движение не блокируется никогда'),
+  concealsEntities: z.boolean()
+    .default(false)
+    .describe('Скрывает ли эффект сущностей на своей клетке (мука и т.п.): такая сущность видна наблюдателю только с дистанции ≤ 1 (Чебышёв), симметрично для игрока и AI'),
   ruleIds: RuleIdsSchema,
   canHaveStatus: z.array(z.string().min(1))
     .default([])
@@ -457,6 +471,20 @@ export const TileEffectTemplateSchema = z.object({
   durationDecreasesWhenHasStatus: z.array(z.string().min(1))
     .default([])
     .describe('Статусы тайловых эффектов, при наличии которых уменьшается длительность эффекта. Если пусто — длительность уменьшается каждый тик.'),
+  explosion: z.object({
+    triggerStatus: z.string().min(1)
+      .describe('Статус-триггер взрыва (например, burning): взрыв происходит при первом наложении этого статуса на эффект'),
+    damage: z.number().int().nonnegative()
+      .describe('Урон взрыва по каждой клетке радиуса'),
+    radius: z.number().int().nonnegative()
+      .describe('Радиус взрыва в клетках (квадрат, дистанция Чебышёва)'),
+    consumesEffect: z.boolean()
+      .default(false)
+      .describe('Удалять ли эффект взрывом (мука расходуется; масло — нет, продолжает гореть)'),
+    tags: TagsSchema
+      .describe('Теги урона взрыва (например, damage.magical.fire)'),
+  }).optional()
+    .describe('Параметры взрыва эффекта при наложении статуса-триггера. Без поля эффект не взрывается'),
 }).describe('Шаблон тайлового эффекта (материала)');
 
 export type TileEffectTemplate = z.output<typeof TileEffectTemplateSchema>;

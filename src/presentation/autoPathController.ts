@@ -16,6 +16,7 @@
  */
 
 import type {DoorEntity, Entity, GameAction, GameState, Position} from '@simulation/types';
+import {isEntityConcealedFrom} from '@simulation/state';
 import {chebyshevDistance, posEqual} from '@utils/math';
 import type {AutoPathTarget, AutoPathTargetKind} from './pathfinding';
 import {isTileExplored} from './pathfinding';
@@ -303,14 +304,15 @@ export class AutoPathController {
     };
   }
 
-  /** Возвращает ID видимых живых врагов в текущем состоянии. */
+  /** Возвращает ID видимых живых врагов в текущем состоянии (сокрытие мукой скрывает врага). */
   private getVisibleEnemyIds(state: GameState): Set<string> {
     const ids = new Set<string>();
     for (const entity of state.entities.values()) {
       if (
         entity.type === 'enemy' &&
         entity.isAlive &&
-        state.visible[entity.y]?.[entity.x]
+        state.visible[entity.y]?.[entity.x] &&
+        !isEntityConcealedFrom(state, entity, state.player)
       ) {
         ids.add(entity.id);
       }

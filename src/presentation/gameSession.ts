@@ -33,6 +33,7 @@ import type {
   TrapEntity
 } from '@simulation/types';
 import {GameSimulation, buildEntityPositionIndex} from '@simulation/simulation';
+import {isEntityConcealedFrom} from '@simulation/state';
 import {MAX_ABILITY_ALL_AP_COST} from '@utils/constants';
 import type {CharacterConfig} from '@simulation/characterCreation';
 import {CHARACTER_CREATION_ATTRIBUTE_POINTS_BUDGET} from '@simulation/characterCreation';
@@ -792,6 +793,8 @@ export class GameSession {
       (e) => e.type === 'enemy' && e.isAlive !== false,
     );
     if (!enemy) return null;
+    // Скрытый сокрытием враг (мука и т.п.) не показывает hover-оверлей.
+    if (isEntityConcealedFrom(state, enemy, state.player)) return null;
 
     const inRange = this.isValidBasicAttackTarget(pos);
     let attackOrigin: Position | null = null;
@@ -892,8 +895,9 @@ export class GameSession {
       const prepared = entity.aiState.preparedAbility;
       if (!prepared) continue;
 
-      // Показываем только видимых врагов
+      // Показываем только видимых врагов (сокрытие мукой скрывает и намерения)
       if (!state.visible[entity.y]?.[entity.x]) continue;
+      if (isEntityConcealedFrom(state, entity, state.player)) continue;
 
       const abilityTemplate = this.getAbilityTemplate(prepared.abilityId, this.locale);
 
@@ -943,7 +947,8 @@ export class GameSession {
 
     for (const entity of state.entities.values()) {
       if (entity.x !== x || entity.y !== y) continue;
-      if (entity.type === 'enemy') {
+      // Скрытый сокрытием враг (мука и т.п.) не попадает в popover.
+      if (entity.type === 'enemy' && !isEntityConcealedFrom(state, entity, state.player)) {
         enemy = entity;
         break; // приоритет врагам
       }
@@ -1901,7 +1906,7 @@ export class GameSession {
       pos,
       (e) => e.type === 'enemy' && e.isAlive !== false,
     );
-    if (enemy && enemy.id !== state.player.id && state.visible[pos.y]?.[pos.x]) {
+    if (enemy && enemy.id !== state.player.id && state.visible[pos.y]?.[pos.x] && !isEntityConcealedFrom(state, enemy, state.player)) {
       return { position: pos, kind: 'enemy', entityId: enemy.id };
     }
 
