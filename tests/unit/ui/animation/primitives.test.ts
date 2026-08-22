@@ -17,6 +17,7 @@ import {
   runParticleBurst,
   runTweenedGraphics,
 } from '../../../../src/ui/animation/primitives';
+import {ANIMATION_SPEED_SCALE} from '../../../../src/utils/tween';
 
 vi.mock('pixi.js', () => createMockPixiModule());
 
@@ -87,8 +88,8 @@ describe('animation primitives', () => {
         update: (_, p) => progressValues.push(p),
       });
 
-      tick(nowRef, ticker, 50);
-      // Linear easing: progress should equal normalized time (≈0.5).
+      tick(nowRef, ticker, 50 / ANIMATION_SPEED_SCALE);
+      // Linear easing: прогресс равен нормализованному времени (≈0.5) с учётом глобального скейлера скорости.
       expect(progressValues[progressValues.length - 1]).toBeCloseTo(0.5, 1);
     });
   });
@@ -114,7 +115,8 @@ describe('animation primitives', () => {
         expect(g.commands.some((c) => c.method === 'fill')).toBe(true);
       }
 
-      tick(nowRef, ticker, 100);
+      // Фактическая длительность с учётом глобального скейлера скорости: duration / ANIMATION_SPEED_SCALE.
+      tick(nowRef, ticker, 100 / ANIMATION_SPEED_SCALE + 1);
       return promise.then(() => {
         expect(parent.children.length).toBe(0);
       });

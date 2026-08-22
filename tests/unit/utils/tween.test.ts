@@ -3,7 +3,10 @@
  */
 
 import {describe, expect, it, vi} from 'vitest';
-import {lerp, clamp01, Easing, Tween, ScalarTween, Vec2Tween, runTickerTween} from '../../../src/utils/tween';
+import {lerp, clamp01, Easing, Tween, ScalarTween, Vec2Tween, runTickerTween, ANIMATION_SPEED_SCALE} from '../../../src/utils/tween';
+
+// Переводит «логическое» время анимации в реальное с учётом глобального скейлера скорости.
+const scaledMs = (ms: number): number => ms / ANIMATION_SPEED_SCALE;
 
 describe('lerp', () => {
   it('returns start at t=0', () => {
@@ -67,10 +70,10 @@ describe('Tween', () => {
     expect(onUpdate).toHaveBeenLastCalledWith(0);
     expect(onComplete).not.toHaveBeenCalled();
 
-    expect(tween.update(50)).toBe(false);
-    expect(onUpdate).toHaveBeenLastCalledWith(0.5);
+    expect(tween.update(scaledMs(50))).toBe(false);
+    expect(onUpdate).toHaveBeenLastCalledWith(expect.closeTo(0.5, 5));
 
-    expect(tween.update(100)).toBe(true);
+    expect(tween.update(scaledMs(100) + 1)).toBe(true);
     expect(onUpdate).toHaveBeenLastCalledWith(1);
     expect(onComplete).toHaveBeenCalledOnce();
   });
@@ -78,8 +81,8 @@ describe('Tween', () => {
   it('returns true for subsequent updates after finish', () => {
     const tween = new Tween({ duration: 10, onUpdate: () => {} });
     tween.start(0);
-    expect(tween.update(10)).toBe(true);
-    expect(tween.update(20)).toBe(true);
+    expect(tween.update(scaledMs(10) + 1)).toBe(true);
+    expect(tween.update(scaledMs(20) + 1)).toBe(true);
   });
 });
 
@@ -89,9 +92,12 @@ describe('ScalarTween', () => {
     const tween = new ScalarTween({ from: 0, to: 10, duration: 100, onUpdate: (v) => values.push(v) });
     tween.start(0);
     tween.update(0);
-    tween.update(50);
-    tween.update(100);
-    expect(values).toEqual([0, 5, 10]);
+    tween.update(scaledMs(50));
+    tween.update(scaledMs(100) + 1);
+    expect(values.length).toBe(3);
+    expect(values[0]).toBe(0);
+    expect(values[1]).toBeCloseTo(5, 5);
+    expect(values[2]).toBe(10);
   });
 });
 
@@ -106,9 +112,13 @@ describe('Vec2Tween', () => {
     });
     tween.start(0);
     tween.update(0);
-    tween.update(50);
-    tween.update(100);
-    expect(points).toEqual([{ x: 0, y: 0 }, { x: 5, y: 10 }, { x: 10, y: 20 }]);
+    tween.update(scaledMs(50));
+    tween.update(scaledMs(100) + 1);
+    expect(points.length).toBe(3);
+    expect(points[0]).toEqual({ x: 0, y: 0 });
+    expect(points[1]!.x).toBeCloseTo(5, 5);
+    expect(points[1]!.y).toBeCloseTo(10, 5);
+    expect(points[2]).toEqual({ x: 10, y: 20 });
   });
 });
 

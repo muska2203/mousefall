@@ -5,7 +5,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import {WorldRenderer} from '../../../../src/ui/renderer/WorldRenderer';
-import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
+import {ANIMATION_CONFIG, ANIMATION_SPEED_SCALE} from '../../../../src/utils/animationConfig';
 import type {RenderInput} from '../../../../src/presentation/types';
 import {buildDisplayState} from '../../../../src/presentation/displayState/builder';
 import type {GameState} from '../../../../src/simulation/types';
@@ -293,8 +293,8 @@ describe('WorldRenderer camera', () => {
       ANIMATION_CONFIG.MOVE,
     );
 
-    // Завершаем анимацию камеры
-    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration + 10);
+    // Завершаем анимацию камеры (фактическая длительность: duration / ANIMATION_SPEED_SCALE).
+    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration / ANIMATION_SPEED_SCALE + 10);
     await cameraPromise;
 
     const expectedToX = -(1 * TILE_SIZE + TILE_SIZE / 2 - 800 / 2);
@@ -380,13 +380,14 @@ describe('WorldRenderer camera', () => {
     expect(startTile).toEqual({x: 0, y: 0});
 
     // Промежуточное обновление: камера сдвинулась, под тем же экранным пикселем
-    // теперь другой тайл.
-    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration / 2);
+    // теперь другой тайл. Фактическая длительность с учётом скейлера скорости:
+    // duration / ANIMATION_SPEED_SCALE.
+    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration / 2 / ANIMATION_SPEED_SCALE + 1);
     const midTile = renderer.screenToWorld(screenPos.x, screenPos.y);
     expect(midTile).toEqual({x: 1, y: 0});
 
     // После завершения камера у конечной клетки.
-    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration + 10);
+    (renderer as any).updateCamera(performance.now() + ANIMATION_CONFIG.MOVE.duration / ANIMATION_SPEED_SCALE + 10);
     const endTile = renderer.screenToWorld(screenPos.x, screenPos.y);
     expect(endTile).toEqual({x: 1, y: 0});
   });

@@ -13,6 +13,7 @@ import {Container, Ticker} from 'pixi.js';
 import {MeteorFallAnimationExecutor} from '../../../../src/ui/animation/meteorFallExecutor';
 import type {AnimationContext} from '../../../../src/ui/animation/types';
 import type {AnimationStep} from '../../../../src/presentation/types';
+import {ANIMATION_CONFIG, ANIMATION_SPEED_SCALE} from '../../../../src/utils/animationConfig';
 
 vi.mock('pixi.js', () => createMockPixiModule());
 
@@ -71,12 +72,13 @@ describe('MeteorFallAnimationExecutor', () => {
     expect(g.commands.some((c) => c.method === 'circle')).toBe(true);
     expect(g.commands.some((c) => c.method === 'fill')).toBe(true);
 
-    // Завершаем падение метеорита (400 мс всего).
-    tick(nowRef, ticker, 200);
+    // Завершаем падение метеорита. Фактическая длительность с учётом глобального
+    // скейлера скорости: duration / ANIMATION_SPEED_SCALE.
+    tick(nowRef, ticker, ANIMATION_CONFIG.METEOR_FALL.duration / ANIMATION_SPEED_SCALE - 200 + 1);
     await Promise.resolve();
 
-    // Даём executor'у запустить вспышку частиц, затем завершаем её (250 мс).
-    tick(nowRef, ticker, 250);
+    // Даём executor'у запустить вспышку частиц, затем завершаем её (250 мс / скейлер).
+    tick(nowRef, ticker, 250 / ANIMATION_SPEED_SCALE + 1);
     await promise;
   });
 

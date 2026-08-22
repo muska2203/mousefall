@@ -5,7 +5,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import {EntityRenderer} from '../../../../src/ui/renderer/EntityRenderer';
-import {ANIMATION_CONFIG} from '../../../../src/utils/animationConfig';
+import {ANIMATION_CONFIG, ANIMATION_SPEED_SCALE} from '../../../../src/utils/animationConfig';
 import {TILE_HEIGHT} from '@utils/constants.ts';
 import type {RenderInput} from '../../../../src/presentation/types';
 import {buildDisplayState} from '../../../../src/presentation/displayState/builder';
@@ -263,7 +263,8 @@ describe('EntityRenderer', () => {
     expect(p).toBeInstanceOf(Promise);
 
     // Завершаем анимацию вручную через ticker
-    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.MOVE.duration + 10);
+    // (фактическая длительность с учётом скейлера скорости: duration / ANIMATION_SPEED_SCALE).
+    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.MOVE.duration / ANIMATION_SPEED_SCALE + 10);
     await p;
   });
 
@@ -291,7 +292,7 @@ describe('EntityRenderer', () => {
     await firstPromise;
 
     // Завершаем вторую анимацию через ticker вручную
-    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.MOVE.duration + 10);
+    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.MOVE.duration / ANIMATION_SPEED_SCALE + 10);
     await secondPromise;
 
     const sprite = (renderer as any).sprites.get('player');
@@ -530,7 +531,7 @@ describe('EntityRenderer', () => {
     expect(sprite.alpha).toBe(0);
 
     // Завершаем анимацию вручную
-    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.ITEM_DROP.duration + 10);
+    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.ITEM_DROP.duration / ANIMATION_SPEED_SCALE + 10);
     await p;
 
     // По завершении спрайт должен быть на to
@@ -579,7 +580,7 @@ describe('EntityRenderer', () => {
     expect((renderer as any).sprites.has('enemy1')).toBe(true);
 
     // Завершаем анимацию.
-    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.DEATH.duration + 10);
+    renderer.updateAnimations(performance.now() + ANIMATION_CONFIG.DEATH.duration / ANIMATION_SPEED_SCALE + 10);
     await p;
 
     // После завершения анимации спрайт должен быть удалён.
