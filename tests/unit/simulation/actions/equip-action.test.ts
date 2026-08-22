@@ -34,6 +34,7 @@ beforeEach(() => {
       ['test_armor', mockItem('test_armor', 'armor')],
       ['test_amulet', mockItem('test_amulet', 'amulet')],
       ['test_potion', mockItem('test_potion', 'consumable')],
+      ['unarmed', mockItem('unarmed', 'weapon')],
     ]),
     abilities: new Map(),
     maps: new Map(),
@@ -202,5 +203,53 @@ describe('equipEntity.execute', () => {
     expect(player.equippedWeaponInstanceId).toBe('staff_1');
     expect(player.abilities).toHaveLength(1);
     expect(player.abilities[0]!.templateId).toBe('fireball');
+  });
+
+  it('при замене unarmed его экземпляр удаляется из инвентаря', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [
+        { instanceId: 'unarmed_1', templateId: 'unarmed', quantity: 1, grantedAbilities: [], affixes: [] },
+        { instanceId: 'staff_1', templateId: 'test_staff', quantity: 1, grantedAbilities: [], affixes: [] },
+      ],
+      equippedWeaponId: 'unarmed',
+      equippedWeaponInstanceId: 'unarmed_1',
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'EQUIP' as const, entityId: 'player', itemInstanceId: 'staff_1' };
+    const intents = equipEntity.resolve(state, action);
+    const builder = makeBuilder();
+    equipEntity.execute(state, action, intents, builder, builder.root);
+
+    expect(player.equippedWeaponId).toBe('test_staff');
+    expect(player.equippedWeaponInstanceId).toBe('staff_1');
+    // unarmed не оседает в инвентаре
+    expect(player.inventory.some(i => i.instanceId === 'unarmed_1')).toBe(false);
+    expect(player.inventory).toHaveLength(1);
+  });
+
+  it('экипировка брони не трогает unarmed в слоте оружия', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [
+        { instanceId: 'unarmed_1', templateId: 'unarmed', quantity: 1, grantedAbilities: [], affixes: [] },
+        { instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbilities: [], affixes: [] },
+      ],
+      equippedWeaponId: 'unarmed',
+      equippedWeaponInstanceId: 'unarmed_1',
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'EQUIP' as const, entityId: 'player', itemInstanceId: 'armor_1' };
+    const intents = equipEntity.resolve(state, action);
+    const builder = makeBuilder();
+    equipEntity.execute(state, action, intents, builder, builder.root);
+
+    expect(player.equippedArmorInstanceId).toBe('armor_1');
+    expect(player.equippedWeaponId).toBe('unarmed');
+    expect(player.inventory.some(i => i.instanceId === 'unarmed_1')).toBe(true);
   });
 });

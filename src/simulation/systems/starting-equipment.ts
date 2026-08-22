@@ -14,6 +14,9 @@ import {getItemAbilityEntries} from './ability-grant';
  * Экипировка и выдача скиллов происходят через стандартные интенты
  * EQUIP_ITEM и GRANT_ABILITY, чтобы правила предметов корректно попадали
  * в activeRules.
+ *
+ * Если стартовый набор не содержит оружия, автоматически экипируется
+ * «безоружная» атака (unarmed) — слот оружия никогда не пустует.
  */
 export function createStartingEquipment(
   state: GameState,
@@ -75,5 +78,29 @@ export function createStartingEquipment(
         builder.root,
       );
     }
+  }
+
+  // Оружие по умолчанию: если стартовый набор не содержит оружия,
+  // экипируем «безоружную» атаку — слот оружия никогда не пустует.
+  if (!player.equippedWeaponInstanceId) {
+    const item = createInventoryItem(state, 'unarmed');
+    player.inventory.push(item);
+
+    const builder = new ExecutionBuilder({
+      type: 'ACTION_APPLIED', isFieldEvent: false,
+      action: { type: 'END_TURN', entityId: player.id },
+    });
+
+    executeIntent(
+      state,
+      {
+        type: 'EQUIP_ITEM',
+        entityId: player.id,
+        itemInstanceId: item.instanceId,
+        slot: 'weapon',
+      },
+      builder,
+      builder.root,
+    );
   }
 }

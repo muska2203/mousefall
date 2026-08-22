@@ -37,6 +37,22 @@ function mockItem(id: string): ItemTemplate {
   };
 }
 
+function mockUnarmed(): ItemTemplate {
+  return {
+    id: 'unarmed',
+    type: 'weapon',
+    stackable: false,
+    maxStack: 1,
+    value: 0,
+    rarity: 'common',
+    abilityPool: [],
+    fixedModifiers: [],
+    grantedAbilities: [],
+    apCost: 1,
+    weapon: { damage: { min: 1, max: 1 }, range: 1, minRange: 1, damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }], tags: [] },
+  };
+}
+
 function mockPlayerTemplate(id: string): PlayerTemplate {
   return {
     id,
@@ -56,6 +72,7 @@ beforeEach(() => {
     ]),
     items: new Map([
       ['test_staff', mockItem('test_staff')],
+      ['unarmed', mockUnarmed()],
     ]),
     abilities: new Map([
       ['fireball', mockAbility('fireball')],
@@ -109,8 +126,10 @@ describe('Полный цикл экипировки и скилла', () => {
     // 4. Проверить: player.abilities не содержит скилл
     expect(state.player.abilities.some(a => a.source === 'equipment')).toBe(false);
 
-    // 5. Проверить: equippedWeaponInstanceId === null
-    expect(state.player.equippedWeaponInstanceId).toBeNull();
+    // 5. Проверить: слот оружия не пуст — автоматически экипирован unarmed
+    expect(state.player.equippedWeaponId).toBe('unarmed');
+    expect(state.player.equippedWeaponInstanceId).not.toBeNull();
+    expect(state.player.inventory.some(i => i.templateId === 'unarmed')).toBe(true);
 
     // 6. Выполнить EQUIP того же посоха
     const staffInstanceId = state.player.inventory[0]!.instanceId;
@@ -123,5 +142,8 @@ describe('Полный цикл экипировки и скилла', () => {
     const reEquippedAbility = state.player.abilities.find(a => a.source === 'equipment');
     expect(reEquippedAbility).toBeDefined();
     expect(reEquippedAbility!.templateId).toBe('fireball');
+
+    // 8. Проверить: экземпляр unarmed удалён из инвентаря при замене
+    expect(state.player.inventory.some(i => i.templateId === 'unarmed')).toBe(false);
   });
 });

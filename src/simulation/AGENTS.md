@@ -78,6 +78,7 @@
 - Канонический способ классифицировать урон, доставку и эффекты — **теги**. Тип урона задаётся только через иерархические теги (`damage.physical.*`, `damage.magical.*`).
 - Основные хелперы: `hasTag`, `hasAllTags`, `hasAnyTag`, `mergeDamageIntentTags` (`systems/tags/tag-helpers.ts`); `expandTag`, `expandTags` (`systems/tags/tag-hierarchy.ts`). `mergeDamageIntentTags` объединяет теги, гарантируя ровно один damage.*-тег, — используется для формирования DAMAGE-интентов; приоритет у первого встреченного damage-тега. Исключение — `addTags` правил-модификаторов в `content-rules/modifiers/apply-intent-modifiers.ts`: правило может добавить вторую «школу» урона (например, `relic_salamander_heart` делает урон оружия огненным), поэтому после модификаторов damage.*-тегов может быть несколько (roadmap 0.6).
 - Теги оружия возвращает `getWeaponTags` (`systems/tags/weapon-tags.ts`). Безоружная атака имеет теги `attack.melee`, `target.single`, `delivery.weapon`, `delivery.unarmed`; её единственный тип урона — `damage.physical.blunt` (через `UNARMED_DAMAGE_DISTRIBUTION`).
+- Слот оружия у игрока никогда не пустует: `unarmed` — реальный экземпляр предмета, экипируемый по умолчанию (при создании персонажа без стартового оружия — `systems/starting-equipment.ts`; при снятии оружия — `systems/actions/unequip-action.ts`). Снять `unarmed` нельзя (валидация UNEQUIP отклоняет с reason-кодом `cannot_unequip_unarmed`); при экипировке другого оружия поверх `unarmed` его экземпляр удаляется из инвентаря (`systems/actions/equip-action.ts`).
 
 ### Распределение урона по оружию
 

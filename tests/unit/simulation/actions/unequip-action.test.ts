@@ -32,6 +32,7 @@ beforeEach(() => {
     items: new Map([
       ['test_staff', mockItem('test_staff', 'weapon')],
       ['test_armor', mockItem('test_armor', 'armor')],
+      ['unarmed', mockItem('unarmed', 'weapon')],
     ]),
     abilities: new Map(),
     maps: new Map(),
@@ -73,6 +74,26 @@ describe('unequipEntity.validate', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reasonCode).toBe('slot_empty');
+    }
+  });
+
+  it('ошибка при попытке снять unarmed — оружие по умолчанию несъёмно', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      equippedWeaponId: 'unarmed',
+      equippedWeaponInstanceId: 'unarmed_1',
+      inventory: [
+        { instanceId: 'unarmed_1', templateId: 'unarmed', quantity: 1, grantedAbilities: [], affixes: [] },
+      ],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'UNEQUIP' as const, entityId: 'player', slot: 'weapon' as const };
+    const result = unequipEntity.validate(state, action);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasonCode).toBe('cannot_unequip_unarmed');
     }
   });
 });
@@ -122,7 +143,7 @@ describe('unequipEntity.resolve', () => {
 });
 
 describe('unequipEntity.execute', () => {
-  it('снимает предмет и отзывает скилл', () => {
+  it('снимает предмет, отзывает скилл и автоматически экипирует unarmed', () => {
     const state = makeGameState();
     const player = makePlayer({
       equippedWeaponId: 'test_staff',
@@ -142,8 +163,38 @@ describe('unequipEntity.execute', () => {
     const builder = makeBuilder();
     unequipEntity.execute(state, action, intents, builder, builder.root);
 
-    expect(player.equippedWeaponId).toBeNull();
-    expect(player.equippedWeaponInstanceId).toBeNull();
+    // Скилл снятого предмета отозван
     expect(player.abilities).toHaveLength(0);
+
+    // Слот оружия не пустует: экипирован свежий экземпляр unarmed
+    expect(player.equippedWeaponId).toBe('unarmed');
+    expect(player.equippedWeaponInstanceId).not.toBeNull();
+    const unarmedItem = player.inventory.find(i => i.instanceId === player.equippedWeaponInstanceId);
+    expect(unarmedItem?.templateId).toBe('unarmed');
+
+    // Снятый посох остался в инвентаре
+    expect(player.inventory.some(i => i.instanceId === 'staff_1')).toBe(true);
+  });
+
+  it('снятие брони не экипирует unarmed', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      equippedArmorId: 'test_armor',
+      equippedArmorInstanceId: 'armor_1',
+      inventory: [
+        { instanceId: 'armor_1', templateId: 'test_armor', quantity: 1, grantedAbilities: [], affixes: [] },
+      ],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'UNEQUIP' as const, entityId: 'player', slot: 'armor' as const };
+    const intents = unequipEntity.resolve(state, action);
+    const builder = makeBuilder();
+    unequipEntity.execute(state, action, intents, builder, builder.root);
+
+    expect(player.equippedArmorInstanceId).toBeNull();
+    expect(player.equippedWeaponInstanceId).toBeNull();
+    expect(player.inventory).toHaveLength(1);
   });
 });

@@ -40,6 +40,8 @@ export const enToast = {
   noTargetAtTileMessage: 'There is no valid target on this tile.',
   tooCloseForRangedWeaponTitle: 'Too Close',
   tooCloseForRangedWeaponMessage: 'This weapon cannot strike point blank.',
+  cannotUnequipUnarmedTitle: 'Cannot Unequip',
+  cannotUnequipUnarmedMessage: 'Unarmed combat is the default weapon and cannot be unequipped.',
   genericErrorTitle: 'Error',
   genericErrorMessage: 'An unexpected error occurred.',
   autoPathEnemyDetectedTitle: 'Enemy Detected',

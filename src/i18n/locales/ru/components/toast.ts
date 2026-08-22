@@ -40,6 +40,8 @@ export const ruToast = {
   noTargetAtTileMessage: 'На этой клетке нет подходящей цели.',
   tooCloseForRangedWeaponTitle: 'Слишком близко',
   tooCloseForRangedWeaponMessage: 'Этим оружием нельзя бить в упор.',
+  cannotUnequipUnarmedTitle: 'Нельзя снять',
+  cannotUnequipUnarmedMessage: 'Безоружный бой — это оружие по умолчанию, его нельзя снять.',
   genericErrorTitle: 'Ошибка',
   genericErrorMessage: 'Произошла непредвиденная ошибка.',
   autoPathEnemyDetectedTitle: 'Обнаружен враг',

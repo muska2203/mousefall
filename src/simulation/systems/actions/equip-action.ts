@@ -88,6 +88,21 @@ export const equipEntity: ActionHandler = {
   },
 
   execute(state: GameState, action, intents: Intent[], executionBuilder: ExecutionBuilder, parentNode: ExecutionNode) {
+    // Если экипировка заменяет «безоружную» атаку (unarmed), её экземпляр
+    // не должен оседать в инвентаре — удаляем его после исполнения интентов.
+    const player = state.player;
+    const equipsWeapon = intents.some(i => i.type === 'EQUIP_ITEM' && i.slot === 'weapon');
+    const replacedUnarmedId = equipsWeapon && player.equippedWeaponId === 'unarmed'
+      ? player.equippedWeaponInstanceId
+      : null;
+
     executeIntents(state, intents, executionBuilder, parentNode);
+
+    if (replacedUnarmedId) {
+      const index = player.inventory.findIndex(i => i.instanceId === replacedUnarmedId);
+      if (index !== -1) {
+        player.inventory.splice(index, 1);
+      }
+    }
   },
 };

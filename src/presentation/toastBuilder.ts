@@ -120,6 +120,11 @@ const ERROR_MAP: Record<string, ErrorMapping> = {
     titleKey: 'tooCloseForRangedWeaponTitle',
     messageKey: 'tooCloseForRangedWeaponMessage',
   },
+  cannot_unequip_unarmed: {
+    kind: 'warning',
+    titleKey: 'cannotUnequipUnarmedTitle',
+    messageKey: 'cannotUnequipUnarmedMessage',
+  },
 };
 
 /** Время отображения по умолчанию для разных типов уведомлений (мс). */

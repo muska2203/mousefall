@@ -313,6 +313,8 @@ export interface ComponentsToastTranslations {
   noTargetAtTileMessage: string;
   tooCloseForRangedWeaponTitle: string;
   tooCloseForRangedWeaponMessage: string;
+  cannotUnequipUnarmedTitle: string;
+  cannotUnequipUnarmedMessage: string;
   genericErrorTitle: string;
   genericErrorMessage: string;
   autoPathEnemyDetectedTitle: string;
