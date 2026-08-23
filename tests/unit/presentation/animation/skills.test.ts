@@ -128,7 +128,7 @@ describe('dashComposer', () => {
 });
 
 describe('swoopComposer', () => {
-  it('builds JUMP with EXPLOSION and TILE_SHAKE on landing', () => {
+  it('builds JUMP with EXPLOSION on landing (тряска приходит от планировщика по affectedPositions)', () => {
     const event: AbilityUsedEvent = {
       type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
@@ -148,9 +148,10 @@ describe('swoopComposer', () => {
 
     const childTypes = nodes![0]!.children.map((c) => c.step.type);
     expect(childTypes).toContain('EXPLOSION');
-    expect(childTypes).toContain('TILE_SHAKE');
     expect(childTypes).toContain('DAMAGE');
     expect(childTypes).toContain('MOVE');
+    // Ручная тряска удалена: её добавляет планировщик по affectedPositions события.
+    expect(childTypes).not.toContain('TILE_SHAKE');
   });
 
   it('returns landing effects without caster jump', () => {
@@ -165,7 +166,7 @@ describe('swoopComposer', () => {
 
     const types = nodes!.map((n) => n.step.type);
     expect(types).toContain('EXPLOSION');
-    expect(types).toContain('TILE_SHAKE');
+    expect(types).not.toContain('TILE_SHAKE');
   });
 });
 

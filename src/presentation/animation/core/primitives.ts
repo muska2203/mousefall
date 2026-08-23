@@ -275,6 +275,18 @@ export function tileShakeNode(
   };
 }
 
+/** Создать узел тряски явно заданных клеток (общая реакция на «тронутые» клетки). */
+export function tileShakeCellsNode(
+  positions: Position[],
+  children: AnimationNode[] = [],
+): AnimationNode {
+  return {
+    // center/radius в режиме positions не используются — заполняем для полноты типа.
+    step: { type: 'TILE_SHAKE', center: positions[0] ?? { x: 0, y: 0 }, radius: 0, positions },
+    children,
+  };
+}
+
 /** Создать узел статус-эффекта. */
 export function statusBurstNode(
   entityId: string,

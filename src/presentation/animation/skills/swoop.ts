@@ -3,7 +3,7 @@
  */
 
 import type {AnimationNode} from '@presentation/types';
-import {explosionNode, tileShakeNode} from '../core/primitives';
+import {explosionNode} from '../core/primitives';
 import type {SkillComposer} from './registry';
 import {registerSkillComposer} from './registry';
 
@@ -12,7 +12,12 @@ import {registerSkillComposer} from './registry';
  * - Пропускает анимацию каста.
  * - Запускает прыжок кастера.
  * - После приземления параллельно запускаются:
- *   взрыв/удар по земле, тряска соседних тайлов, урон, отталкивание целей. */
+ *   взрыв/удар по земле, урон, отталкивание целей.
+ *
+ * Тряска зоны прилёта в композере не нужна: её добавляет планировщик
+ * по событию TILES_AFFECTED (дочерний узел ABILITY_USED от интента TOUCH_TILES);
+ * узел-тряска попадает в childNodes и уносится в landingEffects — после приземления
+ * (см. PRESENTATION_CONTRACT §2.9). */
 function buildSwoopAnimationNodes(
   casterId: string,
   targets: Array<{ x: number; y: number }>,
@@ -28,9 +33,6 @@ function buildSwoopAnimationNodes(
 
   // Удар по земле — визуальный взрыв в точке приземления.
   landingEffects.push(explosionNode(target, 1, []));
-
-  // Тряска соседних тайлов (8 клеток вокруг точки приземления).
-  landingEffects.push(tileShakeNode(target, 1, []));
 
   landingEffects.push(...effectNodes);
 

@@ -81,6 +81,20 @@ FOV-фильтр применяется **только к полевым ани�
 
 Поле `RenderInput.enemyHoverOverlay` (`src/presentation/types.ts`) — view-model «эмуляции подготовки атаки» при наведении на видимого врага в обычном режиме (не таргетинг): `rangeCells` (зона досягаемости текущего оружия от позиции игрока — `Simulation.getBasicAttackRangeCells`), `target` (клетка врага для подсветки и пунктирной линии), `inRange` (цель уже в зоне поражения — клик бьёт сразу, автопуть не строится). Отрисовка — `src/ui/renderer/TargetingRenderer.ts` (зона — стилем `targetingOverlay.radiusCells`; линия — при `inRange: true` от визуального центра спрайта игрока, при `inRange: false` — от центра последнего шага `highlightedPath`, т.е. атакующей клетки; в fallback-режиме, когда путь ведёт в клетку самого врага, — снова от игрока). Решение о том, что под курсором враг и в зоне ли он, принимает Presentation через публичный API Simulation; UI только рисует.
 
+### 2.9. Затронутые клетки (`affectedPositions`, `TILES_AFFECTED`) и общая тряска тайлов
+
+Опциональное поле `affectedPositions?: Position[]` в `GameEventBase` (`src/simulation/core-types.ts`) — доменные данные «эти клетки были затронуты действием» (зона поиска, зона взрыва и т.п.). Simulation заполняет его, не зная об анимации; Presentation реагирует автоматически:
+
+- Планировщик (`src/presentation/displayState/planner.ts`) для **любого** видимого события с непустым `affectedPositions` добавляет узел `TILE_SHAKE` с явным списком клеток (примитив `tileShakeCellsNode`) — без правок конкретных builders. Момент тряски определяется позицией этого события в дереве исполнения: узел-тряска всплывает в `childRoots` родителя, и builder/composer родителя размещает его по своим правилам.
+- Шаг `TILE_SHAKE` поддерживает два режима: `center + radius` (квадрат Чебышёва, исторический) и `positions` (явный список; приоритетен, если задан). UI: `TileRenderer.shakeCells` / `WorldRenderer.animateTileShakeCells`.
+- Для способностей зона заполняется централизованно: опциональный метод `SkillExecutor.getTouchedPositions(state, caster, targets)` читает `use-ability-action`, который добавляет интент `TOUCH_TILES` **последним** в пачку интентов способности. Исполнитель интента (`touch-tiles-intent-executor.ts`) порождает полевое событие `TILES_AFFECTED` — последнего ребёнка `ABILITY_USED`. Благодаря этому тряска идёт не в момент каста, а в момент касания: у `swoop`/`guardian_swoop` композер уносит её в эффекты приземления (после прыжка), у `search` (без композера) — после каста.
+- Носители `getTouchedPositions`: `search` (вся прочёсанная зона: видимые клетки радиуса, LOS — включая пустые клетки, у которых нет событий) и `swoop`/`guardian_swoop` (derive из резолв-интентов `DAMAGE_TILE`, чтобы зона не расходилась с механикой).
+- Интент-исполнители могут заполнять `affectedPositions` прямо на своих событиях или эмитить интент `TOUCH_TILES` — тряска подключится без каких-либо изменений в Presentation/UI.
+- FOV-фильтрация: `TILES_AFFECTED` видимо, если видна хотя бы одна затронутая клетка (`fogFilter.isEventVisible`); для остальных событий с `affectedPositions` — как обычно.
+- Стены не трясутся: `TileRenderer` исключает клетки со «стоячим» террейном (`standing`, т.е. стены) из любой тряски — и по явному списку, и по `center + radius`.
+
+Конвенция: если builder/composer события уже добавляет тряску вручную (например, swoop до перехода), при подключении `affectedPositions` ручную тряску из builder'а нужно убрать, чтобы не дублировать.
+
 ---
 
 ## 3. Чеклист добавления нового правила
@@ -89,6 +103,7 @@ FOV-фильтр применяется **только к полевым ани�
 
 - [ ] Добавить/обновить `GameEvent` в `src/simulation/core-types.ts` (и реэкспорт в `src/simulation/types.ts`).
 - [ ] Добавить эмиссию события в соответствующий `IntentExecutor` (`src/simulation/systems/intents/`).
+- [ ] Если действие «трогает» клетки — для способностей реализовать `SkillExecutor.getTouchedPositions` (`use-ability-action` сам добавит интент `TOUCH_TILES` последним), для прочих источников — эмитить интент `TOUCH_TILES` или заполнить `affectedPositions` на событии (см. §2.9); Presentation добавит тряску автоматически.
 - [ ] Если событие может быть триггером контентных правил, обновить `RuleContext` в `src/simulation/content-rules/rule-context.ts`.
 
 ### Presentation

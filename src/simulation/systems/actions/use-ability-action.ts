@@ -92,6 +92,12 @@ export const useAbilityAction: ActionHandler = {
     const actor = state.entities.get(action.entityId);
     if (!actor || !('abilities' in actor)) return;
 
+    // Клетки, которых коснулась способность (опциональный метод исполнителя),
+    // исполняются интентом TOUCH_TILES ПОСЛЕДНИМ — событием TILES_AFFECTED,
+    // дочерним к ABILITY_USED. Его позиция в дереве исполнения фиксирует момент
+    // касания (у swoop — после приземления), Presentation строит по нему тряску.
+    const touched = getSkillExecutor(action.abilityId)?.getTouchedPositions?.(state, actor, action.targets);
+
     const node = executionBuilder.addChild(parentNode, {
       type: 'ABILITY_USED', isFieldEvent: true,
       entityId: action.entityId,
@@ -102,7 +108,10 @@ export const useAbilityAction: ActionHandler = {
 
     // Исполняем интенты как детей события способности,
     // чтобы анимации скилла шли последовательно.
-    executeIntents(state, intents, executionBuilder, node);
+    const allIntents: Intent[] = touched && touched.length > 0
+      ? [...intents, { type: 'TOUCH_TILES', positions: touched }]
+      : intents;
+    executeIntents(state, allIntents, executionBuilder, node);
 
     // Если это подготовленная AI-способность — сбрасываем её после успешного применения.
     if (isEnemyEntity(actor) && actor.aiState.preparedAbility) {

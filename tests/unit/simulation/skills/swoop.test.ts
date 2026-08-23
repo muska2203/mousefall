@@ -1,12 +1,33 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import { makeDoor, makeEnemy, makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
+import {createTestSimulation} from '../../../helpers/simulation';
 import {createSwoopSkill} from '../../../../src/simulation/skills/executors/swoopSkill';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
 import type {AbilityTemplate} from '../../../../src/content/schemas';
+import type {GameEvent} from '../../../../src/simulation/core-types';
 import {getSkillExecutor} from '../../../../src/simulation/skills/skillExecutor';
 import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 import '@simulation/ai/hunter-strategy';
 import {ExecutionBuilder} from '@simulation/systems/actions/types';
+import type {ExecutionNode} from '@simulation/systems/actions/types';
+
+/** Рекурсивно собирает события из дерева исполнения. */
+function collectEvents(node: ExecutionNode, out: GameEvent[] = []): GameEvent[] {
+  out.push(node.event);
+  for (const child of node.children) {
+    collectEvents(child, out);
+  }
+  return out;
+}
+
+/** Рекурсивно собирает узлы дерева исполнения. */
+function collectNodes(node: ExecutionNode, out: ExecutionNode[] = []): ExecutionNode[] {
+  out.push(node);
+  for (const child of node.children) {
+    collectNodes(child, out);
+  }
+  return out;
+}
 
 function mockAbility(id: string, overrides: Partial<AbilityTemplate> = {}): AbilityTemplate {
   return {
@@ -231,6 +252,71 @@ describe('swoopSkill', () => {
     expect(enemy.y).toBe(6);
     expect(enemy.hp).toBeLessThan(50);
     expect(enemy.statusEffects.some(e => e.type === 'dazed')).toBe(true);
+  });
+
+  it('getTouchedPositions возвращает квадрат удара вокруг точки приземления', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'swoop', source: 'innate', level: 1, currentCooldown: 0 }] });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const touched = swoopSkill.getTouchedPositions!(state, player, [{ x: 7, y: 5 }]);
+
+    // Квадрат (2·aoeRadius+1)² = 9 клеток вокруг (7,5), включая центр.
+    expect(touched).toHaveLength(9);
+    expect(touched).toContainEqual({ x: 7, y: 5 });
+    expect(touched).toContainEqual({ x: 6, y: 4 });
+    expect(touched).toContainEqual({ x: 8, y: 6 });
+  });
+
+  it('getTouchedPositions пуст для недостижимой цели и без цели (derive из интентов)', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5, abilities: [{ templateId: 'swoop', source: 'innate', level: 1, currentCooldown: 0 }] });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    // (0,0) — стена за пределами радиуса прыжка: интентов нет, затронутых клеток нет.
+    expect(swoopSkill.getTouchedPositions!(state, player, [{ x: 0, y: 0 }])).toHaveLength(0);
+    expect(swoopSkill.getTouchedPositions!(state, player, [])).toHaveLength(0);
+  });
+
+  it('полный цикл через dispatch: зона прилёта приходит дочерним событием TILES_AFFECTED', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      maxAp: 2,
+      abilities: [{ templateId: 'swoop', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const sim = createTestSimulation(state);
+    const result = sim.dispatch({
+      type: 'USE_ABILITY',
+      entityId: player.id,
+      abilityId: 'swoop',
+      targets: [{ x: 7, y: 5 }],
+    });
+
+    expect(result.success).toBe(true);
+
+    // На событии ABILITY_USED зоны больше нет — её несёт дочерний узел TILES_AFFECTED,
+    // идущий ПОСЛЕДНИМ среди детей (после прыжка и урона): позиция в дереве
+    // фиксирует момент касания для анимации.
+    const abilityNode = result.phases
+      .flatMap((phase) => phase.actions.flatMap((action) => collectNodes(action)))
+      .find((node) => node.event.type === 'ABILITY_USED' && node.event.abilityId === 'swoop');
+    expect(abilityNode).toBeDefined();
+    expect(abilityNode!.event.affectedPositions).toBeUndefined();
+
+    const childTypes = abilityNode!.children.map((node) => node.event.type);
+    expect(childTypes[childTypes.length - 1]).toBe('TILES_AFFECTED');
+
+    const tilesAffected = abilityNode!.children[childTypes.length - 1]!;
+    expect(tilesAffected.event.affectedPositions).toHaveLength(9);
+    expect(tilesAffected.event.affectedPositions).toContainEqual({ x: 7, y: 5 });
   });
 });
 

@@ -36,6 +36,15 @@ export interface SkillExecutor {
   /** Все клетки, попадающие в зону действия при касте на выбранные + hovered цели */
   getAffectedPositions(state: GameState, caster: Entity, selectedTargets: Position[], hoveredTarget: Position | null): Position[];
 
+  /**
+   * Клетки, которых реально коснулось применение способности (заполняют поле
+   * affectedPositions события ABILITY_USED — общая визуальная реакция на клетках).
+   * Опционально: вид без метода не сообщает затронутые клетки.
+   * В отличие от getAffectedPositions (зона для подсветки таргетинга), вызывается
+   * при фактическом исполнении и описывает факт касания, а не превью.
+   */
+  getTouchedPositions?(state: GameState, caster: Entity, targets: Position[]): Position[];
+
   /** Резолв в интенты для исполнения */
   resolve(state: GameState, caster: Entity, targets: Position[]): Intent[];
 }

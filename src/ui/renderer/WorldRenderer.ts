@@ -165,6 +165,11 @@ export class WorldRenderer {
     return this.tileRenderer.shakeTiles(center, radius, config.duration, ticker);
   }
 
+  /** Анимировать тряску явно заданных клеток. */
+  animateTileShakeCells(positions: Position[], config: AnimationConfigEntry, ticker: TickerLike): Promise<void> {
+    return this.tileRenderer.shakeCells(positions, config.duration, ticker);
+  }
+
   /** Анимировать перемещение сущности. Если followCamera — камера следует за ней. */
   animateMove(entityId: string, from: Position, to: Position, config: AnimationConfigEntry, followCamera: boolean, sway: boolean = true): Promise<void> {
     const promises: Promise<void>[] = [

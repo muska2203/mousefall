@@ -359,8 +359,16 @@ describe('buildAnimationTree', () => {
     expect(tree[0]!.nodes[0]!.step.type).toBe('JUMP');
   });
 
-  it('builds swoop animation tree with JUMP, EXPLOSION and TILE_SHAKE', () => {
+  it('builds swoop animation tree with JUMP, EXPLOSION and TILE_SHAKE after landing', () => {
     const target = { x: 7, y: 5 };
+    // Зона прилёта — как её заполняет getTouchedPositions исполнителя swoop;
+    // в дереве исполнения её несёт дочерний узел TILES_AFFECTED (интент TOUCH_TILES).
+    const landingZone: { x: number; y: number }[] = [];
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        landingZone.push({ x: target.x + dx, y: target.y + dy });
+      }
+    }
     const swoopAction = makeExecNode({
       type: 'ABILITY_USED', isFieldEvent: true,
       entityId: 'player',
@@ -371,18 +379,27 @@ describe('buildAnimationTree', () => {
       makeExecNode({ type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'jump', entityId: 'player', from: { x: 5, y: 5 }, to: target }),
       makeExecNode({ type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 8, position: { x: 7, y: 6 } }),
       makeExecNode({ type: 'ENTITY_MOVED', isFieldEvent: true, movementType: 'walk', entityId: 'enemy1', from: { x: 7, y: 6 }, to: { x: 7, y: 7 } }),
+      makeExecNode({ type: 'TILES_AFFECTED', isFieldEvent: true, affectedPositions: landingZone }),
     ]);
 
     const result = makeResult([swoopAction]);
     const tree = buildAnimationTree(result, makeMockState());
 
     expect(tree).toHaveLength(1);
+    // Единственный корень — прыжок; тряска зоны прилёта — его ребёнок,
+    // т.е. играет ПОСЛЕ приземления, а не в момент каста.
+    expect(tree[0]!.nodes).toHaveLength(1);
     const root = tree[0]!.nodes[0]!;
     expect(root.step.type).toBe('JUMP');
     expect(root.children.some((c) => c.step.type === 'EXPLOSION')).toBe(true);
-    expect(root.children.some((c) => c.step.type === 'TILE_SHAKE')).toBe(true);
     expect(root.children.some((c) => c.step.type === 'DAMAGE')).toBe(true);
     expect(root.children.some((c) => c.step.type === 'MOVE')).toBe(true);
+
+    const shake = root.children.find((c) => c.step.type === 'TILE_SHAKE');
+    expect(shake).toBeDefined();
+    if (shake?.step.type === 'TILE_SHAKE') {
+      expect(shake.step.positions).toEqual(landingZone);
+    }
   });
 
   it('keeps STATUS_TICK as separate phase after ENVIRONMENT', () => {
@@ -406,5 +423,58 @@ describe('buildAnimationTree', () => {
     expect(tree[2]!.side).toBe('status_tick');
     expect(tree[2]!.nodes).toHaveLength(1);
     expect(tree[2]!.nodes[0]!.step.type).toBe('DAMAGE');
+  });
+
+  it('adds TILE_SHAKE with explicit positions for events carrying affectedPositions', () => {
+    const node = makeExecNode({
+      type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null,
+      tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 },
+      affectedPositions: [{ x: 3, y: 3 }, { x: 4, y: 3 }],
+    });
+    const result = makeResult([node]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    const steps = tree[0]!.nodes.map((n) => n.step);
+    const shake = steps.find((s) => s.type === 'TILE_SHAKE');
+
+    expect(shake).toBeDefined();
+    if (shake?.type === 'TILE_SHAKE') {
+      expect(shake.positions).toEqual([{ x: 3, y: 3 }, { x: 4, y: 3 }]);
+    }
+    // Собственная анимация события сохраняется — тряска идёт параллельным сиблингом.
+    expect(steps.some((s) => s.type === 'DAMAGE')).toBe(true);
+  });
+
+  it('adds TILE_SHAKE even for events without an animation builder', () => {
+    // У OBJECT_REVEALED нет builder: событие «растворилось» бы, но affectedPositions
+    // даёт ему корневой узел тряски.
+    const node = makeExecNode({
+      type: 'OBJECT_REVEALED', isFieldEvent: true, entityId: 'trap_1', objectType: 'trap',
+      position: { x: 2, y: 2 },
+      affectedPositions: [{ x: 2, y: 2 }],
+    });
+    const result = makeResult([node]);
+    const tree = buildAnimationTree(result, makeMockState());
+
+    expect(tree[0]!.nodes).toHaveLength(1);
+    expect(tree[0]!.nodes[0]!.step.type).toBe('TILE_SHAKE');
+  });
+
+  it('does not add TILE_SHAKE when affectedPositions is absent or empty', () => {
+    const without = makeExecNode({
+      type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null,
+      tags: ['damage.physical.blunt'], damage: 5, position: { x: 3, y: 3 },
+    });
+    const withEmpty = makeExecNode({
+      type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null,
+      tags: ['damage.physical.blunt'], damage: 5, position: { x: 5, y: 5 },
+      affectedPositions: [],
+    });
+
+    for (const node of [without, withEmpty]) {
+      const tree = buildAnimationTree(makeResult([node]), makeMockState());
+      const steps = tree[0]!.nodes.map((n) => n.step);
+      expect(steps.some((s) => s.type === 'TILE_SHAKE')).toBe(false);
+    }
   });
 });

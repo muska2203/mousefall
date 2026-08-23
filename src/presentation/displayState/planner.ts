@@ -14,6 +14,7 @@ import '../animation/register';
 import type {DisplayPatch, PresentationNode} from './types';
 import {createPatch} from './builder';
 import {getAnimationBuilder} from '../animation/core/registry';
+import {tileShakeCellsNode} from '../animation/core/primitives';
 import {isEventVisible} from '../fogFilter';
 import {buildAnimationTree as buildAnimationPhases} from '../animation/core/treeBuilder';
 
@@ -113,6 +114,14 @@ function visitExecutionNode(
     // Невидимый полевой узел "растворяется": его видимые потомки становятся
     // его анимациями, чтобы не потерять их, а собственный патч переносится на них.
     ownRoots = childRoots.length > 0 ? childRoots : null;
+  }
+
+  // Общая визуальная реакция: событие, «тронувшее» клетки (affectedPositions),
+  // получает параллельный корневой узел тряски этих клеток — для любых событий,
+  // без правок конкретных builders (см. docs/agents/PRESENTATION_CONTRACT.md).
+  if (visible && node.event.affectedPositions && node.event.affectedPositions.length > 0) {
+    const shakeRoot = tileShakeCellsNode(node.event.affectedPositions);
+    ownRoots = ownRoots ? [shakeRoot, ...ownRoots] : [shakeRoot];
   }
 
   if (ownRoots) {

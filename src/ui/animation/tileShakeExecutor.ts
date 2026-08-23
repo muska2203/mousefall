@@ -15,6 +15,11 @@ export class TileShakeExecutor implements AnimationExecutor {
   async execute(step: AnimationStep, ctx: AnimationContext): Promise<void> {
     if (step.type !== 'TILE_SHAKE') return;
     const config = ANIMATION_CONFIG.TILE_SHAKE;
+    // Режим явного списка клеток приоритетнее режима center+radius.
+    if (step.positions && step.positions.length > 0) {
+      await ctx.worldRenderer.animateTileShakeCells(step.positions, config, ctx.ticker);
+      return;
+    }
     await ctx.worldRenderer.animateTileShake(step.center, step.radius, config, ctx.ticker);
   }
 }

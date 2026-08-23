@@ -65,6 +65,14 @@ export function createSearchSkill(params: SearchSkillParams): SkillExecutor {
       return [{ x: caster.x, y: caster.y }];
     },
 
+    /**
+     * Затронутые клетки — вся зона поиска (видимые клетки радиуса, LOS):
+     * ровно те клетки, которые «прочёсываются», включая пустые.
+     */
+    getTouchedPositions(state: GameState, caster: Entity, _targets: Position[]): Position[] {
+      return getVisiblePositionsWithinRange(state, caster, params.radius);
+    },
+
     resolve(state: GameState, caster: Entity, _targets: Position[]): Intent[] {
       return findHiddenTrapsInSight(state, caster).map(trap => ({
         type: 'REVEAL_OBJECT' as const,

@@ -33,6 +33,15 @@ function collectEvents(node: ExecutionNode, out: GameEvent[] = []): GameEvent[] 
   return out;
 }
 
+/** Рекурсивно собирает узлы дерева исполнения. */
+function collectNodes(node: ExecutionNode, out: ExecutionNode[] = []): ExecutionNode[] {
+  out.push(node);
+  for (const child of node.children) {
+    collectNodes(child, out);
+  }
+  return out;
+}
+
 describe('searchSkill', () => {
   beforeEach(() => {
     resetRegistry();
@@ -201,5 +210,72 @@ describe('searchSkill', () => {
     const events = result.phases.flatMap((phase) =>
       phase.actions.flatMap((action) => collectEvents(action)));
     expect(events.some((e) => e.type === 'OBJECT_REVEALED')).toBe(false);
+  });
+
+  it('getTouchedPositions возвращает видимые клетки радиуса поиска, включая пустые', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5 });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const touched = searchSkill.getTouchedPositions!(state, player, []);
+
+    // Квадрат Чебышёва радиуса 3 вокруг (5,5) целиком внутри карты и видим.
+    expect(touched).toHaveLength(49);
+    expect(touched).toContainEqual({ x: 5, y: 5 });
+    expect(touched).toContainEqual({ x: 8, y: 8 });
+    expect(touched).not.toContainEqual({ x: 9, y: 5 });
+  });
+
+  it('getTouchedPositions исключает клетки без прямой видимости (за закрытой дверью)', () => {
+    const state = makeGameState();
+    const player = makePlayer({ x: 5, y: 5 });
+    const door = makeDoor({ id: 'door_1', x: 6, y: 5 });
+    state.player = player;
+    state.entities.set(player.id, player);
+    state.entities.set(door.id, door);
+
+    const touched = searchSkill.getTouchedPositions!(state, player, []);
+
+    expect(touched).toContainEqual({ x: 6, y: 5 });
+    expect(touched).not.toContainEqual({ x: 7, y: 5 });
+    expect(touched).not.toContainEqual({ x: 8, y: 5 });
+  });
+
+  it('полный цикл через dispatch: зона поиска приходит дочерним событием TILES_AFFECTED', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      maxAp: 2,
+      abilities: [{ templateId: 'search', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const sim = createTestSimulation(state);
+    const result = sim.dispatch({
+      type: 'USE_ABILITY',
+      entityId: player.id,
+      abilityId: 'search',
+      targets: [],
+    });
+
+    expect(result.success).toBe(true);
+
+    // На событии ABILITY_USED зоны больше нет — её несёт дочерний узел TILES_AFFECTED,
+    // чтобы момент тряски определялся позицией в дереве исполнения.
+    const abilityNode = result.phases
+      .flatMap((phase) => phase.actions.flatMap((action) => collectNodes(action)))
+      .find((node) => node.event.type === 'ABILITY_USED' && node.event.abilityId === 'search');
+    expect(abilityNode).toBeDefined();
+    expect(abilityNode!.event.affectedPositions).toBeUndefined();
+
+    const tilesAffected = abilityNode!.children.find((node) => node.event.type === 'TILES_AFFECTED');
+    expect(tilesAffected).toBeDefined();
+    expect(tilesAffected!.event.affectedPositions).toHaveLength(49);
+    expect(tilesAffected!.event.affectedPositions).toContainEqual({ x: 7, y: 7 });
+    expect(tilesAffected!.event.affectedPositions).not.toContainEqual({ x: 9, y: 5 });
   });
 });

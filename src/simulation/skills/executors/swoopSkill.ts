@@ -1,6 +1,7 @@
 import {Entity, GameState, Position} from '@simulation/types';
 import {Intent} from '@simulation/systems/intents/types';
 import {TargetMode} from '@simulation/core-types';
+import type {DamageTileIntent} from '@simulation/core-types';
 import {SkillExecutor} from '@simulation/skills/skillExecutor';
 import {getEntitiesInRadius} from '@simulation/skills/targeting';
 import {isBlocked, isCombatEntity, isDamageable, isTerrainWalkable} from '@simulation/state';
@@ -177,6 +178,18 @@ export function createSwoopSkill(params: SwoopSkillParams): SkillExecutor {
         }
       }
       return positions;
+    },
+
+    /**
+     * Затронутые клетки — ровно те, что получают DAMAGE_TILE при резолве
+     * (квадрат удара вокруг точки приземления, обрезанный границами карты).
+     * Деривируется из интентов, чтобы зона касания не расходилась с механикой;
+     * для невалидной цели/обездвиженного кастера интентов нет — клеток нет.
+     */
+    getTouchedPositions(state: GameState, caster: Entity, targets: Position[]): Position[] {
+      return resolveSwoopIntents(state, caster, targets, this.id)
+        .filter((intent): intent is DamageTileIntent => intent.type === 'DAMAGE_TILE')
+        .map((intent) => intent.position);
     },
 
     resolve(state: GameState, caster: Entity, targets: Position[]): Intent[] {

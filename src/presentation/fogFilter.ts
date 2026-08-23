@@ -98,6 +98,10 @@ export function isEventVisible(event: GameEvent, state: GameState): boolean {
     case 'ABILITY_PREPARED_CANCELLED': {
       return isPosVisible(event.from, state);
     }
+    case 'TILES_AFFECTED': {
+      // Видно, если видна хотя бы одна затронутая клетка.
+      return (event.affectedPositions ?? []).some((pos) => isPosVisible(pos, state));
+    }
     default:
       return true;
   }

@@ -17,6 +17,8 @@ import {runTickerTween, type TickerLike} from '@utils/tween';
 export class TileRenderer {
   public readonly container = new Container();
   private sprites = new Map<string, Sprite>();
+  /** Клетки со «стоячим» террейном (стены) — они не участвуют в тряске. */
+  private standingCells = new Set<string>();
 
   update(input: RenderInput, cameraX: number, cameraY: number, viewportWidth: number, viewportHeight: number): void {
     const map = input.displayState.map;
@@ -62,9 +64,11 @@ export class TileRenderer {
 
       if (tile.standing) {
         // «Стоячий» террейн (стена): полный размер, низ спрайта — к низу сжатой клетки.
+        this.standingCells.add(key);
         applyPlacement(sprite, x, y, getSpritePlacement(undefined, 'terrainStanding'));
       } else {
         // Плоскость пола: клетка сжата по вертикали.
+        this.standingCells.delete(key);
         sprite.anchor.set(0, 0);
         sprite.x = x * TILE_SIZE;
         sprite.y = y * TILE_HEIGHT;
@@ -92,20 +96,28 @@ export class TileRenderer {
     }
   }
 
-  /** Анимировать тряску тайлов вокруг центра в заданном радиусе (Чебышёв). */
+  /** Анимировать тряску тайлов вокруг центра в заданном радиусе (Чебышёв, без центра). */
   shakeTiles(center: Position, radius: number, duration: number, ticker: TickerLike): Promise<void> {
-    const targets: { sprite: Sprite; baseX: number; baseY: number }[] = [];
-
+    const positions: Position[] = [];
     for (let dy = -radius; dy <= radius; dy++) {
       for (let dx = -radius; dx <= radius; dx++) {
         if (dx === 0 && dy === 0) continue;
-        const x = center.x + dx;
-        const y = center.y + dy;
-        const key = `${x},${y}`;
-        const sprite = this.sprites.get(key);
-        if (sprite && sprite.visible) {
-          targets.push({ sprite, baseX: sprite.x, baseY: sprite.y });
-        }
+        positions.push({ x: center.x + dx, y: center.y + dy });
+      }
+    }
+    return this.shakeCells(positions, duration, ticker);
+  }
+
+  /** Анимировать тряску явно заданных клеток. Стены (standing-террейн) не трясутся. */
+  shakeCells(positions: Position[], duration: number, ticker: TickerLike): Promise<void> {
+    const targets: { sprite: Sprite; baseX: number; baseY: number }[] = [];
+
+    for (const pos of positions) {
+      const key = `${pos.x},${pos.y}`;
+      if (this.standingCells.has(key)) continue;
+      const sprite = this.sprites.get(key);
+      if (sprite && sprite.visible) {
+        targets.push({ sprite, baseX: sprite.x, baseY: sprite.y });
       }
     }
 

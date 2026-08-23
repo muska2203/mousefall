@@ -460,7 +460,8 @@ export type Intent =
   | ActivatePoiIntent
   | ResolvePoiChoiceIntent
   | DestroyObjectIntent
-  | RevealObjectIntent;
+  | RevealObjectIntent
+  | TouchTilesIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
 export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
@@ -555,6 +556,13 @@ export type ActivatePoiIntent = { type: 'ACTIVATE_POI'; entityId: EntityId; targ
 export type ResolvePoiChoiceIntent = { type: 'RESOLVE_POI_CHOICE'; entityId: EntityId; poiId: EntityId; optionId: string };
 export type DestroyObjectIntent = { type: 'DESTROY_OBJECT'; entityId: EntityId };
 export type RevealObjectIntent = { type: 'REVEAL_OBJECT'; entityId: EntityId };
+/**
+ * Отметить клетки как затронутые действием (зона поиска, зона удара и т.п.).
+ * Не меняет состояние: порождает событие TILES_AFFECTED — узел в дереве исполнения,
+ * фиксирующий момент касания; Presentation по нему строит общую визуальную реакцию
+ * (тряска тайлов), см. docs/agents/PRESENTATION_CONTRACT.md.
+ */
+export type TouchTilesIntent = { type: 'TOUCH_TILES'; positions: Position[] };
 
 // ─────────────────────────────────────────────
 // Доменные события (Events)
@@ -564,6 +572,15 @@ export type RevealObjectIntent = { type: 'REVEAL_OBJECT'; entityId: EntityId };
 type GameEventBase = {
   /** True, если событие происходит на игровом поле и подлежит FOV-фильтрации. */
   isFieldEvent: boolean;
+  /**
+   * Клетки, которых коснулось действие (опционально). Доменные данные:
+   * «эти клетки были затронуты» (зона поиска, зона взрыва и т.п.).
+   * Presentation использует поле для общей визуальной реакции (тряска тайлов),
+   * см. docs/agents/PRESENTATION_CONTRACT.md. Для способностей заполняется
+   * на событии TILES_AFFECTED (интент TOUCH_TILES), чтобы момент касания
+   * определялся позицией узла в дереве исполнения.
+   */
+  affectedPositions?: Position[];
 };
 
 export type GameEvent =
@@ -621,7 +638,8 @@ export type GameEvent =
   | TileExplodedEvent
   | PoiUsedEvent
   | ObjectDestroyedEvent
-  | ObjectRevealedEvent;
+  | ObjectRevealedEvent
+  | TilesAffectedEvent;
 
 export type ActionAppliedEvent = GameEventBase & { type: 'ACTION_APPLIED'; action: GameAction };
 
@@ -914,4 +932,15 @@ export type ObjectRevealedEvent = GameEventBase & {
   /** ID шаблона сущности (если был). */
   objectType?: string;
   position: Position;
+};
+
+/**
+ * Событие «действие коснулось этих клеток» (зона поиска, зона удара и т.п.).
+ * Порождается интентом TOUCH_TILES; состояние не меняет. Собственных полей нет:
+ * список клеток — в базовом поле affectedPositions. Позиция узла в дереве
+ * исполнения фиксирует момент касания (например, у swoop — после приземления),
+ * Presentation строит по нему общую тряску тайлов (см. PRESENTATION_CONTRACT §2.9).
+ */
+export type TilesAffectedEvent = GameEventBase & {
+  type: 'TILES_AFFECTED';
 };

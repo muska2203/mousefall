@@ -114,6 +114,11 @@ export type AnimationStep = AnimationStepBase & (
       type: 'TILE_SHAKE';
       center: Position;
       radius: number;
+      /**
+       * Явный список клеток для тряски. Если задан — трясутся ровно эти клетки
+       * (включая центральную), center/radius игнорируются.
+       */
+      positions?: Position[];
     }
   | {
       type: 'ATTACK';
