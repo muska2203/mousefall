@@ -45,4 +45,8 @@ export const abilities: Record<string, ContentText> = {
     name: 'Stone Throw',
     description: 'Hurl a stone at a visible target in a straight line (vertically, horizontally or diagonally) up to 5 cells away. Deals 3 blunt damage and [knocks it back](tag:effect.knockback) 1 cell. Costs 1 AP, cooldown 2.',
   },
+  search: {
+    name: 'Search',
+    description: 'Survey the surroundings: reveals hidden traps within 3 cells in line of sight. Costs 1 AP even if nothing is found.',
+  },
 };

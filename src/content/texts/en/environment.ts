@@ -49,4 +49,8 @@ export const traps: Record<string, ContentText> = {
     name: 'Spikes',
     flavorText: 'Rusty spikes hidden in the floor. Too late now.',
   },
+  mousetrap: {
+    name: 'Mousetrap',
+    flavorText: 'A cunning spring trap set by the feline guard. Snap — your paw is caught and the wound is bleeding.',
+  },
 };

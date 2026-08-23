@@ -987,6 +987,32 @@ export class GameSimulation implements Simulation {
         return executor.preview(this.state, this.state.player, selectedTargets, hoveredTarget);
     }
 
+    /**
+     * Клетка для мгновенного применения способности без выбора цели, либо null.
+     * Правило: единственная валидная цель — клетка самого игрока, и способность
+     * не задевает ничего, кроме этой клетки (небоевые self-скиллы: поиск, бафы
+     * на себя). Self-скиллы с зоной поражения (groundSlam) сюда не попадают.
+     * Будущие скиллы «на себя/союзника» подчиняются тому же правилу: без
+     * союзников в радиусе валидная цель одна — каст на себя мгновенный.
+     */
+    getAbilityAutoSelfTarget(abilityId: string): Position | null {
+        const executor = getSkillExecutor(abilityId);
+        if (!executor) return null;
+        const player = this.state.player;
+        const selfPos: Position = { x: player.x, y: player.y };
+        const isSelfCell = (p: Position) => p.x === selfPos.x && p.y === selfPos.y;
+
+        const validTargets = executor.getValidTargets(this.state, player);
+        const target = validTargets[0];
+        if (validTargets.length !== 1 || !target || !isSelfCell(target)) return null;
+
+        const affected = executor.getAffectedPositions(this.state, player, [selfPos], null);
+        const affectedCell = affected[0];
+        if (affected.length !== 1 || !affectedCell || !isSelfCell(affectedCell)) return null;
+
+        return selfPos;
+    }
+
     getAbilityAffectedPositions(
         abilityId: string,
         entityId: string,

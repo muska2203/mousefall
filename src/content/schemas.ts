@@ -398,6 +398,10 @@ export const AbilityTemplateSchema = z.discriminatedUnion('kind', [
     baseDamage: z.number().nonnegative().describe('Фиксированный урон по цели'),
     pushDistance: z.number().int().nonnegative().describe('Дистанция отталкивания цели в клетках (0 — без толчка)'),
   }).describe('Способность вида «бросок»: урон по одной цели в прямой видимости с отталкиванием от кастера; исполнитель собирается фабрикой createThrowSkill'),
+  AbilityTemplateBaseSchema.extend({
+    kind: z.literal('search'),
+    radius: z.number().int().min(1).describe('Радиус поиска скрытых ловушек вокруг кастера (квадрат по Чебышёву)'),
+  }).describe('Способность вида «поиск»: раскрывает скрытые ловушки в радиусе вокруг кастера, только в прямой видимости; исполнитель собирается фабрикой createSearchSkill'),
 ]).describe('Шаблон активной способности');
 
 export type AbilityTemplate = z.infer<typeof AbilityTemplateSchema>;
@@ -759,6 +763,8 @@ export const PlayerTemplateSchema = z.object({
     .describe('Является ли шаблон выбранным по умолчанию в экране создания персонажа'),
   starterEquipment: z.array(z.string().min(1)).optional()
     .describe('Список ID стартового снаряжения, доступного при создании персонажа по этому шаблону'),
+  innateAbilities: z.array(z.string().min(1)).default([])
+    .describe('Врождённые способности шаблона: выдаются при создании персонажа (source: innate), не зависят от экипировки'),
 }).describe('Шаблон класса/внешности игрока');
 
 export type PlayerTemplate = z.output<typeof PlayerTemplateSchema>;

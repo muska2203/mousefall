@@ -42,6 +42,8 @@ export const ruToast = {
   tooCloseForRangedWeaponMessage: 'Этим оружием нельзя бить в упор.',
   cannotUnequipUnarmedTitle: 'Нельзя снять',
   cannotUnequipUnarmedMessage: 'Безоружный бой — это оружие по умолчанию, его нельзя снять.',
+  searchNothingFoundTitle: 'Ничего не найдено',
+  searchNothingFoundMessage: 'Поиск не выявил скрытых ловушек поблизости.',
   genericErrorTitle: 'Ошибка',
   genericErrorMessage: 'Произошла непредвиденная ошибка.',
   autoPathEnemyDetectedTitle: 'Обнаружен враг',

@@ -24,4 +24,5 @@ export const ruLogBuilder = {
   entityCollided: '{{name}} врезался',
   entityDisplaced: '{{name}} оттолкнут',
   relicGranted: '{{name}} получил реликвию «{{relic}}»',
+  objectRevealed: 'Обнаружена ловушка: {{name}}',
 } as const satisfies SystemLogBuilderTranslations;

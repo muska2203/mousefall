@@ -441,6 +441,49 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: {type: 'eventSource'},
     priority: 0,
   },
+  // Мышеловка (концепт этажа 1, §4.7): урон + кровотечение + обездвиживание
+  // одним срабатыванием. Статусы разнесены по категориям (bleeding — wound,
+  // rooted — control), чтобы оба прошли одним батчем без конфликтов
+  // в resolveStatusBatch. Числа черновые — балансный проход roadMap 1.4.
+  {
+    id: 'mousetrap_deal_damage',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    effect: {
+      type: 'dealDamage',
+      amount: 8,
+      tags: ['damage.physical.piercing'],
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
+  {
+    id: 'mousetrap_apply_bleeding',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    effect: {
+      type: 'applyStatus',
+      statusType: 'bleeding',
+      duration: 3,
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
+  {
+    id: 'mousetrap_apply_rooted',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    effect: {
+      type: 'applyStatus',
+      statusType: 'rooted',
+      duration: 2,
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
   // ── Правила реликвий стартового пула (roadmap 0.6) ─────────────────────────
   // Владелец правила — экземпляр реликвии в коллекции игрока (ownerContext
   // {type: 'entity', entityId: instanceId}, регистрация в rebuildActiveRules).

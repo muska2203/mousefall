@@ -522,6 +522,13 @@ export type Simulation = {
   getAbilityValidTargets(abilityId: string): import("@simulation/core-types.ts").Position[];
 
   /**
+   * Клетка для мгновенного применения способности без выбора цели, либо null.
+   * Не-null только для небоевых self-способностей (поиск, бафы на себя):
+   * единственная валидная цель и вся зона действия — клетка самого игрока.
+   */
+  getAbilityAutoSelfTarget(abilityId: string): import("@simulation/core-types.ts").Position | null;
+
+  /**
    * Возвращает паттерн прицеливания способности игрока: все клетки, куда
    * способность в принципе может быть нацелена, независимо от наличия целей.
    * Пустой массив, если вид способности не задаёт паттерн.

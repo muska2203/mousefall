@@ -125,6 +125,11 @@ const ERROR_MAP: Record<string, ErrorMapping> = {
     titleKey: 'cannotUnequipUnarmedTitle',
     messageKey: 'cannotUnequipUnarmedMessage',
   },
+  search_nothing_found: {
+    kind: 'info',
+    titleKey: 'searchNothingFoundTitle',
+    messageKey: 'searchNothingFoundMessage',
+  },
 };
 
 /** Время отображения по умолчанию для разных типов уведомлений (мс). */

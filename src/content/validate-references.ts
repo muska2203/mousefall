@@ -79,6 +79,7 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
 
   for (const [id, player] of content.players) {
     checkRefs(errors, `players.${id}`, 'starterEquipment', player.starterEquipment ?? [], 'items', content.items);
+    checkRefs(errors, `players.${id}`, 'innateAbilities', player.innateAbilities, 'abilities', content.abilities);
   }
 
   for (const [id, map] of content.maps) {

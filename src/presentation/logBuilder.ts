@@ -24,7 +24,8 @@ import {
     getLocalizedItem,
     getLocalizedPlayerTemplate,
     tryGetLocalizedAbility,
-    tryGetLocalizedRelic
+    tryGetLocalizedRelic,
+    tryGetLocalizedTrap
 } from '@content/registry';
 import type {Locale} from '@content/texts/lookup';
 
@@ -125,6 +126,12 @@ export function gameEventToLog(
       const relic = tryGetLocalizedRelic(event.relicId, locale);
       const relicName = relic?.name ?? event.relicId;
       return { text: t('system.logBuilder.relicGranted', { name, relic: relicName }), variant: 'good' };
+    }
+    case 'OBJECT_REVEALED': {
+      // Раскрытие скрытого объекта (поиск ловушек): имя берём из шаблона ловушки.
+      const trap = event.objectType ? tryGetLocalizedTrap(event.objectType, locale) : undefined;
+      const objectName = trap?.name ?? event.objectType ?? getEntityDisplayName(state, event.entityId, locale);
+      return { text: t('system.logBuilder.objectRevealed', { name: objectName }), variant: 'info' };
     }
     case 'ITEM_USED': {
       const template = getLocalizedItem(event.templateId, locale);

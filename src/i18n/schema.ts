@@ -315,6 +315,8 @@ export interface ComponentsToastTranslations {
   tooCloseForRangedWeaponMessage: string;
   cannotUnequipUnarmedTitle: string;
   cannotUnequipUnarmedMessage: string;
+  searchNothingFoundTitle: string;
+  searchNothingFoundMessage: string;
   genericErrorTitle: string;
   genericErrorMessage: string;
   autoPathEnemyDetectedTitle: string;
@@ -373,6 +375,7 @@ export interface SystemLogBuilderTranslations {
   entityCollided: string;
   entityDisplaced: string;
   relicGranted: string;
+  objectRevealed: string;
 }
 
 export interface SystemItemMapperTranslations {

@@ -12,6 +12,8 @@
 
 import type {PlayerEntity} from './types';
 import {recalculateActorStats} from './systems/stats/recalculate.ts';
+import {tryGetPlayerTemplate} from '@content/registry';
+import {addActiveRulesForAbility} from './systems/rules/active-rule-lifecycle.ts';
 
 export type CharacterAttributes = {
   strength: number;
@@ -70,6 +72,20 @@ export function applyCharacterConfig(
   // Восстанавливаем текущие ресурсы до новых максимумов после пересчёта
   player.hp = player.maxHp;
 
-  // Начальные способности (пока пустой массив, будут заполняться из экипировки)
+  // Начальные способности: врождённые — из шаблона игрока (innateAbilities),
+  // остальные будут добавлены из экипировки при выдаче стартового снаряжения.
   player.abilities = [];
+  const playerTemplate = tryGetPlayerTemplate(config.templateId);
+  for (const abilityId of playerTemplate?.innateAbilities ?? []) {
+    const ability = {
+      templateId: abilityId,
+      source: 'innate' as const,
+      level: 1,
+      currentCooldown: 0,
+    };
+    player.abilities.push(ability);
+    // Правила врождённой способности (ruleIds) попадают в activeRules,
+    // как у способностей от экипировки через GRANT_ABILITY.
+    addActiveRulesForAbility(player, ability);
+  }
 }

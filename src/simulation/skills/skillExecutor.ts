@@ -12,6 +12,7 @@ import {createDashSkill} from '@simulation/skills/executors/dashSkill';
 import {createSuddenStrikeSkill} from '@simulation/skills/executors/suddenStrikeSkill';
 import {createCleaveSkill} from '@simulation/skills/executors/cleaveSkill';
 import {createThrowSkill} from '@simulation/skills/executors/throwSkill';
+import {createSearchSkill} from '@simulation/skills/executors/searchSkill';
 
 export interface SkillExecutor {
   id: string;
@@ -118,6 +119,13 @@ const KIND_FACTORIES: Record<AbilityTemplate['kind'], (template: AbilityTemplate
       range: template.range,
       baseDamage: template.baseDamage,
       pushDistance: template.pushDistance,
+    });
+  },
+  search: (template) => {
+    if (template.kind !== 'search') throw new Error(`Ожидался kind 'search', получен '${template.kind}'`);
+    return createSearchSkill({
+      id: template.id,
+      radius: template.radius,
     });
   },
 };

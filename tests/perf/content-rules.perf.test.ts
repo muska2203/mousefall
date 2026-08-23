@@ -151,6 +151,7 @@ const playerTemplate: PlayerTemplate = {
   maxAp: 2,
   baseStats: { str: 1, dex: 1, int: 10, vit: 1 },
   isDefault: false,
+  innateAbilities: [],
 };
 
 const fireballAbility: AbilityTemplate = {

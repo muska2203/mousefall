@@ -18,5 +18,6 @@ export const witcher = {
     "common_patch_cloak",
     "common_knotted_fang",
     "common_glass_bead"
-  ]
+  ],
+  "innateAbilities": ["search"]
 } satisfies PlayerTemplateInput;

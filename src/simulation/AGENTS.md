@@ -180,13 +180,17 @@
 
 ## Разрешение исполнителей способностей
 
-`getSkillExecutor` (`skills/skillExecutor.ts`) собирает исполнитель фабрикой по `kind` шаблона (`AbilityTemplateSchema` — discriminated union по `kind`): карта `KIND_FACTORIES` покрывает все виды (`selfBuff`, `swoop`, `groundSlam`, `fireball`, `magicSlap`, `dash`, `suddenStrike`, `cleave`, `throw`) — забытый вид ловится компилятором. Исполнитель собирается из параметров шаблона и кэшируется; регистрации исполнителей не существует (legacy-реестр `registerSkill`/`initSkillRegistry` удалён 2026-08-12).
+`getSkillExecutor` (`skills/skillExecutor.ts`) собирает исполнитель фабрикой по `kind` шаблона (`AbilityTemplateSchema` — discriminated union по `kind`): карта `KIND_FACTORIES` покрывает все виды (`selfBuff`, `swoop`, `groundSlam`, `fireball`, `magicSlap`, `dash`, `suddenStrike`, `cleave`, `throw`, `search`) — забытый вид ловится компилятором. Исполнитель собирается из параметров шаблона и кэшируется; регистрации исполнителей не существует (legacy-реестр `registerSkill`/`initSkillRegistry` удалён 2026-08-12).
+
+Вид `search` (2026-08-23, концепт этажа 1, п.5 §3): раскрытие скрытых ловушек в радиусе из шаблона (Чебышёв, только LOS) через интент `REVEAL_OBJECT`; targetMode `self`, урон отсутствует. Способность `search` выдаётся игроку врождённой — поле `innateAbilities` в `PlayerTemplateSchema`, применяется в `applyCharacterConfig` (пуш в `player.abilities` с `source: 'innate'` + `addActiveRulesForAbility`, по образцу innate-способностей врагов в `createEnemy`).
 
 Урон способностей — фиксированные значения из параметров шаблона (без скейлинга от характеристик и уровня; реестр формул `damageFormula.ts` удалён 2026-08-12). Исключение — оружейные виды (`cleave`, `suddenStrike`): урон — ролл оружия (`rollWeaponDamage`). Модификаторы урона способностей вешаются через стандартные модификаторы и контентные правила.
 
 Новая механика = новый член union + фабрика в `KIND_FACTORIES`; новый экземпляр существующего вида = чистый контент (шаблон + тексты).
 
 Паттерн прицеливания: опциональный метод `SkillExecutor.getCastableCells` возвращает все клетки, куда способность в принципе может быть нацелена (независимо от наличия целей); query — `getAbilityCastableCells(abilityId)`. Реализован для `throw` (видимые клетки 8 лучей), `magicSlap` (видимые клетки радиуса) и `suddenStrike` (8 соседних клеток); у видов, где валидные цели уже совпадают с зоной каста (`fireball`, `dash`, `swoop`, `cleave`), паттерна нет. Presentation передаёт паттерн в `targetingOverlay.radiusCells` — рендерится тускло под яркой подсветкой валидных целей.
+
+Мгновенное применение без выбора клетки: query `getAbilityAutoSelfTarget(abilityId)` (`simulation.ts`) возвращает клетку игрока, если единственная валидная цель и вся зона действия (`getAffectedPositions`) — клетка самого игрока (небоевые self-скиллы: `search`, `selfBuff`), иначе `null` (боевые self-AoE вроде `groundSlam` требуют подтверждения клеткой). Presentation в `GameSession.beginTargeting` при не-null результате диспатчит `USE_ABILITY` сразу, не включая режим таргетинга. Правило универсально: будущие скиллы «на себя/союзника» без союзников в радиусе получат авто-каст на себя тем же путём.
 
 ---
 

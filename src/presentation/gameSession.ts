@@ -73,6 +73,7 @@ import {
   getAllLocalizedTileEffects,
   getAllLocalizedTraps,
   getMapParams,
+  tryGetAbility,
   tryGetItem,
   tryGetLocalizedAbility,
   tryGetLocalizedEntity,
@@ -87,7 +88,7 @@ import type {Locale} from '@content/texts/lookup';
 import {getTagText} from '@content/texts/lookup';
 
 import {buildAnimationTree} from './animation';
-import {extractEventsFromPlan} from './logBuilder';
+import {extractEvents, extractEventsFromPlan} from './logBuilder';
 import {errorCodeToToast, extractToasts} from './toastBuilder';
 import {ToastBuffer} from './toastBuffer';
 import {mapItemTemplateToDetail} from './itemDetailMapper';
@@ -1321,6 +1322,19 @@ export class GameSession {
       return;
     }
 
+    // Небоевые self-способности (поиск, бафы на себя) применяются мгновенно:
+    // единственная валидная цель — клетка игрока, выбор клетки церемониален.
+    const autoTarget = this.simulation.getAbilityAutoSelfTarget(abilityId);
+    if (autoTarget) {
+      this.dispatch({
+        type: 'USE_ABILITY',
+        entityId: 'player',
+        abilityId,
+        targets: [autoTarget],
+      });
+      return;
+    }
+
     const ok = this.targeting.beginTargeting(abilityId, this.simulation);
     if (!ok) {
       this.pushToastFromCode('ability_not_found');
@@ -2041,6 +2055,16 @@ export class GameSession {
 
     const mainResult = this.dispatchAction(action);
     let combinedResult = mainResult;
+
+    // Пустой поиск: способность вида 'search' применена успешно, но ничего не
+    // раскрыла — информируем игрока тостом (AP уже списан, это цена решения).
+    if (mainResult.success && action.type === 'USE_ABILITY') {
+      const abilityTemplate = tryGetAbility(action.abilityId);
+      if (abilityTemplate?.kind === 'search'
+        && !extractEvents(mainResult).some((event) => event.type === 'OBJECT_REVEALED')) {
+        this.pushToastFromCode('search_nothing_found');
+      }
+    }
 
     // Если AP игрока закончилось, автоматически завершаем ход.
     // Не делаем этого, если игрок уже явно завершил ход (action.type === 'END_TURN').

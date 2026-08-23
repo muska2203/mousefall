@@ -26,6 +26,8 @@ describe('GameSession targeting', () => {
         ['fireball', mockAbility('fireball', { range: 5, aoeRadius: 1, centerDamage: 20, aoeDamage: 10 })],
         ['magic_slap', mockAbility('magic_slap', { kind: 'magicSlap', range: 5, targetCount: 3, baseDamage: 12 })],
         ['swoop', mockAbility('swoop', { kind: 'swoop', jumpRadius: 2, aoeRadius: 1, baseDamage: 8, cooldown: 2, apCost: 2 })],
+        ['search', mockAbility('search', { kind: 'search', radius: 3 })],
+        ['ground_slam', mockAbility('ground_slam', { kind: 'groundSlam', radius: 1, baseDamage: 10 })],
       ]),
       maps: new Map(),
       doors: new Map(),
@@ -289,6 +291,69 @@ describe('GameSession targeting', () => {
     const vm = session.getViewModel();
     expect(vm.renderInput?.targetingOverlay).toBeNull();
     expect(vm.toasts).toHaveLength(0);
+  });
+
+  it('beginTargeting мгновенно применяет небоевую self-способность без выбора клетки', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'search', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('search');
+
+    const vm = session.getViewModel();
+    // Режим таргетинга не включился, способность применилась сразу (AP списаны).
+    expect(vm.renderInput?.targetingOverlay).toBeNull();
+    // Допустим info-тост «поиск ничего не нашёл» — ошибок и предупреждений быть не должно.
+    expect(vm.toasts.every(t => t.kind === 'info')).toBe(true);
+    expect(vm.renderInput?.playerStats.ap).toBe(1);
+  });
+
+  it('beginTargeting не применяет мгновенно боевой self-скилл с зоной поражения', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'ground_slam', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.beginTargeting('ground_slam');
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.targetingOverlay).not.toBeNull();
+    expect(vm.renderInput?.playerStats.ap).toBe(2);
+  });
+
+  it('activateHotbarSlot мгновенно применяет небоевую self-способность', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      x: 5,
+      y: 5,
+      ap: 2,
+      abilities: [{ templateId: 'search', source: 'innate', level: 1, currentCooldown: 0 }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const session = new GameSession();
+    session.loadGame(state);
+    session.activateHotbarSlot(1);
+
+    const vm = session.getViewModel();
+    expect(vm.renderInput?.targetingOverlay).toBeNull();
+    expect(vm.renderInput?.playerStats.ap).toBe(1);
   });
 
   it('targeting overlay for magic_slap includes castable pattern cells even without targets', () => {

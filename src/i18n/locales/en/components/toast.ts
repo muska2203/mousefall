@@ -42,6 +42,8 @@ export const enToast = {
   tooCloseForRangedWeaponMessage: 'This weapon cannot strike point blank.',
   cannotUnequipUnarmedTitle: 'Cannot Unequip',
   cannotUnequipUnarmedMessage: 'Unarmed combat is the default weapon and cannot be unequipped.',
+  searchNothingFoundTitle: 'Nothing Found',
+  searchNothingFoundMessage: 'The search revealed no hidden traps nearby.',
   genericErrorTitle: 'Error',
   genericErrorMessage: 'An unexpected error occurred.',
   autoPathEnemyDetectedTitle: 'Enemy Detected',
