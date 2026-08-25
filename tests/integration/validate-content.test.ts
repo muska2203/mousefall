@@ -314,7 +314,7 @@ describe('Схемы босс-инфраструктуры: дефолты', () 
     expect(parsed.indestructible).toBe(false);
   });
 
-  it('MapParamsSchema: дефолты bossRoomTypeId/bossDoorId/rewardRoomTypeId, bossPool не задан', () => {
+  it('MapParamsSchema: дефолты bossRoomTypeId/bossDoorId/rewardRoomTypeId/finalFloor, bossPool не задан', () => {
     const parsed = MapParamsSchema.parse({
       id: 'test_map',
       width: 20,
@@ -327,6 +327,7 @@ describe('Схемы босс-инфраструктуры: дефолты', () 
     expect(parsed.bossRoomTypeId).toBe('boss');
     expect(parsed.bossDoorId).toBe('boss_door');
     expect(parsed.rewardRoomTypeId).toBe('reward');
+    expect(parsed.finalFloor).toBe(10);
     expect(parsed.bossPool).toBeUndefined();
   });
 

@@ -52,6 +52,7 @@ import {executeResolvePoiChoiceIntent} from "@simulation/systems/intents/resolve
 import {executeDestroyObjectIntent} from "@simulation/systems/intents/destroy-object-intent-executor.ts";
 import {executeRevealObjectIntent} from "@simulation/systems/intents/reveal-object-intent-executor.ts";
 import {executeTouchTilesIntent} from "@simulation/systems/intents/touch-tiles-intent-executor.ts";
+import {executeCompleteRunIntent} from "@simulation/systems/intents/complete-run-intent-executor.ts";
 import {buildRuleContext} from "@simulation/content-rules/rule-context.ts";
 import {applyIntentModifiersIfEnabled} from "@simulation/content-rules/intent-modifiers.ts";
 import {runContentRuleReactionsIfEnabled} from "@simulation/content-rules/event-reactions.ts";
@@ -107,6 +108,7 @@ const intentExecutors = {
   DESTROY_OBJECT: executeDestroyObjectIntent,
   REVEAL_OBJECT: executeRevealObjectIntent,
   TOUCH_TILES: executeTouchTilesIntent,
+  COMPLETE_RUN: executeCompleteRunIntent,
 };
 
 /** Максимальное количество волн реакций защиты от бесконечного цикла. */

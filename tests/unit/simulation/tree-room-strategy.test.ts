@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { treeRoomStrategy } from '../../../src/simulation/systems/map-generation/tree-room-strategy';
+import { treeRoomStrategy, MAX_BFS_CORRIDOR_LENGTH } from '../../../src/simulation/systems/map-generation/tree-room-strategy';
 import { initRegistry, resetRegistry } from '../../../src/content/registry';
 import { makeGameState } from '../../fixtures/gameState';
 import { createRNG } from '../../../src/utils/rng';
@@ -18,6 +18,7 @@ function makeParams(overrides: Partial<MapParams> = {}): MapParams {
     bossRoomTypeId: 'boss',
     bossDoorId: 'boss_door',
     rewardRoomTypeId: 'reward',
+    finalFloor: 10,
     ...overrides,
   };
 }
@@ -396,6 +397,106 @@ describe('treeRoomStrategy: зарезервированные клетки', ()
       for (const prop of result.props) {
         expect(prop.x === center.x && prop.y === center.y).toBe(false);
       }
+    }
+  });
+});
+
+describe('treeRoomStrategy: компактность раскладки (BFS-фолбэк)', () => {
+  // Параметры и размеры типов повторяют floor_1: 10–15 комнат,
+  // normal 7–12, start 4–6, boss 7–10, reward 4–6.
+  function makeDenseParams(): MapParams {
+    return makeParams({
+      minRooms: 10,
+      maxRooms: 15,
+      roomTypePool: ['normal'],
+      bossPool: ['test_boss'],
+    });
+  }
+
+  function corridorLength(segments: { x1: number; y1: number; x2: number; y2: number }[]): number {
+    let len = 0;
+    for (const s of segments) len += Math.abs(s.x2 - s.x1) + Math.abs(s.y2 - s.y1);
+    return Math.max(len, 1);
+  }
+
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry({
+      entities: new Map<string, EntityTemplate>([
+        ['test_boss', {
+          id: 'test_boss',
+          isBoss: true,
+          maxAp: 1,
+          aiStrategyId: 'hunter',
+          aiSightRadius: 4,
+          health: { max: 30 },
+          baseStats: { str: 3, dex: 1, int: 0, vit: 2 },
+        } as EntityTemplate],
+      ]),
+      players: new Map(),
+      items: new Map(),
+      abilities: new Map(),
+      maps: new Map(),
+      doors: new Map<string, DoorTemplate>([
+        ['wooden_door', { id: 'wooden_door', maxHp: 30, armor: 2 } as DoorTemplate],
+        ['boss_door', { id: 'boss_door', maxHp: 100, armor: 5, indestructible: true } as DoorTemplate],
+      ]),
+      stairs: new Map(),
+      pois: new Map(),
+      statuses: new Map(),
+      tileEffects: new Map(),
+      tileEffectStatuses: new Map(),
+      roomTypes: new Map<string, RoomTypeTemplate>([
+        ['start', makeRoomType('start', { minSize: 4, maxSize: 6 })],
+        ['normal', makeRoomType('normal', { minSize: 7, maxSize: 12 })],
+        ['boss', makeRoomType('boss', { weight: 0, maxPerFloor: 1, minSize: 7, maxSize: 10 })],
+        ['reward', makeRoomType('reward', { weight: 0, maxPerFloor: 1, minSize: 4, maxSize: 6 })],
+      ]),
+    });
+  });
+
+  afterEach(() => {
+    resetRegistry();
+  });
+
+  it('BFS-фолбэк не выбрасывает комнату далеко: все коридоры не длиннее MAX_BFS_CORRIDOR_LENGTH', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const state = makeGameState({ rng: createRNG(seed) });
+      const result = treeRoomStrategy.generate(makeDenseParams(), state, 1, 5);
+
+      for (const corridor of result.map.corridors) {
+        expect(corridorLength(corridor.segments)).toBeLessThanOrEqual(MAX_BFS_CORRIDOR_LENGTH);
+      }
+    }
+  });
+
+  it('комнаты не пересекаются друг с другом', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const state = makeGameState({ rng: createRNG(seed) });
+      const result = treeRoomStrategy.generate(makeDenseParams(), state, 1, 5);
+
+      const rooms = result.map.rooms;
+      for (let i = 0; i < rooms.length; i++) {
+        for (let j = i + 1; j < rooms.length; j++) {
+          const a = rooms[i]!;
+          const b = rooms[j]!;
+          const overlap =
+            a.x < b.x + b.width && b.x < a.x + a.width &&
+            a.y < b.y + b.height && b.y < a.y + a.height;
+          expect(overlap).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('босс-комната и босс размещаются на каждом сиде плотного этажа', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const state = makeGameState({ rng: createRNG(seed) });
+      const result = treeRoomStrategy.generate(makeDenseParams(), state, 1, 5);
+
+      expect(result.map.rooms.filter(r => r.roomTypeId === 'boss').length).toBe(1);
+      expect(result.map.rooms.filter(r => r.roomTypeId === 'reward').length).toBe(1);
+      expect(result.enemies.filter(e => e.templateId === 'test_boss').length).toBe(1);
     }
   });
 });

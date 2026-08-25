@@ -26,8 +26,6 @@ export const enToast = {
   slotEmptyMessage: 'There is no equipped item in this slot.',
   bottomFloorReachedTitle: 'Bottom Floor',
   bottomFloorReachedMessage: 'You have reached the bottom of the dungeon.',
-  maxFloorReachedTitle: 'Top Floor',
-  maxFloorReachedMessage: 'You cannot climb any higher.',
   noStairsDownTitle: 'No Descent',
   noStairsDownMessage: 'There is no stairs going down here.',
   noStairsUpTitle: 'No Ascent',

@@ -133,6 +133,7 @@ function makeRenderInput(debugEnabled: boolean): RenderInput {
       bossRoomTypeId: 'boss',
       bossDoorId: 'boss_door',
       rewardRoomTypeId: 'reward',
+      finalFloor: 10,
     },
     entities: new Map(),
     player,

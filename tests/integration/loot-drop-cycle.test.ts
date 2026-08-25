@@ -81,6 +81,7 @@ function makeLootGameState(): GameState {
       bossRoomTypeId: 'boss',
       bossDoorId: 'boss_door',
       rewardRoomTypeId: 'reward',
+      finalFloor: 10,
     },
     player,
     entities: new Map<EntityId, any>([

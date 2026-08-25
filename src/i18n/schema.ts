@@ -299,8 +299,6 @@ export interface ComponentsToastTranslations {
   slotEmptyMessage: string;
   bottomFloorReachedTitle: string;
   bottomFloorReachedMessage: string;
-  maxFloorReachedTitle: string;
-  maxFloorReachedMessage: string;
   noStairsDownTitle: string;
   noStairsDownMessage: string;
   noStairsUpTitle: string;

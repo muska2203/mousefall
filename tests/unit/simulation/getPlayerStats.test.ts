@@ -110,6 +110,7 @@ describe('GameSimulation.getPlayerStats', () => {
         bossRoomTypeId: 'boss',
         bossDoorId: 'boss_door',
         rewardRoomTypeId: 'reward',
+        finalFloor: 10,
       },
     );
 

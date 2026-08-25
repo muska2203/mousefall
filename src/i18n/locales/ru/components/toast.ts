@@ -26,8 +26,6 @@ export const ruToast = {
   slotEmptyMessage: 'В этом слоте нет экипированного предмета.',
   bottomFloorReachedTitle: 'Нижний этаж',
   bottomFloorReachedMessage: 'Вы достигли самого низа подземелья.',
-  maxFloorReachedTitle: 'Верхний этаж',
-  maxFloorReachedMessage: 'Выше некуда подниматься.',
   noStairsDownTitle: 'Нет спуска',
   noStairsDownMessage: 'Здесь нет лестницы вниз.',
   noStairsUpTitle: 'Нет подъёма',

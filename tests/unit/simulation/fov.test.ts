@@ -17,6 +17,7 @@ const testMapParams: MapParams = {
   bossRoomTypeId: 'boss',
   bossDoorId: 'boss_door',
   rewardRoomTypeId: 'reward',
+  finalFloor: 10,
 };
 
 function makeFloorGrid(w: number, h: number): TileType[][] {

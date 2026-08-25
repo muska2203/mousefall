@@ -11,6 +11,7 @@ export const floor1 = {
     "normal"
   ],
   "startRoomTypeId": "start",
+  "finalFloor": 1,
   "bossPool": [
     "cat_guardian"
   ],

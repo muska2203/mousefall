@@ -45,6 +45,7 @@ export type {
   LockDoorIntent,
   UnlockDoorIntent,
   FloorTransitionIntent,
+  CompleteRunIntent,
   BumpIntent,
   RestoreApIntent,
   TickCooldownIntent,

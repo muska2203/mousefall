@@ -17,7 +17,6 @@ import {executeIntents} from '@simulation/systems/intents/execute-intent.ts';
 import {resolveInteraction} from '@simulation/systems/interactions/resolve-interaction.ts';
 import {POI_WINDOW_MECHANICS} from '@simulation/systems/poi-windows';
 import {tryGetPoi} from '@content/registry';
-import {MAX_FLOOR} from '@utils/constants';
 
 function isAdjacent(a: Position, b: Position): boolean {
   return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= 1;
@@ -72,10 +71,9 @@ function resolveInteractContext(
     }
   }
 
-  // Для лестниц дополнительно проверяем границы этажей.
-  if (interaction.interactionId === 'descend' && state.floor >= MAX_FLOOR) {
-    return { ok: false, reasonCode: 'max_floor_reached' };
-  }
+  // Границы этажей проверяем только для подъёма. Спуск с финального этажа
+  // (state.mapParams.finalFloor) не отклоняется: он завершает забег победой —
+  // resolve порождает COMPLETE_RUN вместо FLOOR_TRANSITION (roadMap 1.5).
   if (interaction.interactionId === 'ascend' && state.floor <= 1) {
     return { ok: false, reasonCode: 'min_floor_reached' };
   }
@@ -220,11 +218,24 @@ export const interactAction: ActionHandler = {
       }
 
       case 'descend':
+        // Спуск с финального этажа завершает забег победой (roadMap 1.5).
+        if (state.floor >= state.mapParams.finalFloor) {
+          return [{
+            type: 'COMPLETE_RUN',
+            entityId: action.entityId,
+          }];
+        }
+        return [{
+          type: 'FLOOR_TRANSITION',
+          entityId: action.entityId,
+          direction: 'down',
+        }];
+
       case 'ascend':
         return [{
           type: 'FLOOR_TRANSITION',
           entityId: action.entityId,
-          direction: interaction.interactionId === 'descend' ? 'down' : 'up',
+          direction: 'up',
         }];
 
       case 'use_poi':

@@ -6,7 +6,7 @@
  * - Валидация action (`validate`): тип action, расстояние, состояние цели,
  *   границы этажей, специфичные ограничения (закрытие двери).
  * - Порождение intent'ов (`resolve`): OPEN_DOOR, CLOSE_DOOR, PICK_UP,
- *   FLOOR_TRANSITION.
+ *   FLOOR_TRANSITION, COMPLETE_RUN (спуск с финального этажа — roadMap 1.5).
  * - Полные flow через `GameSimulation.dispatch`, включая исполнение intent'ов
  *   и порождённых событий.
  */
@@ -265,11 +265,11 @@ describe('interactAction.validate', () => {
     expect((validation as any).reasonCode).toBe('actor_not_on_target');
   });
 
-  it('отклоняет спуск на последнем этаже', () => {
+  it('разрешает спуск с финального этажа (завершение забега победой)', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
     const state = makeStateWithPlayerAndEntity(player, stairs);
-    state.floor = MAX_FLOOR;
+    state.floor = state.mapParams.finalFloor;
 
     const validation = interactAction.validate(state, {
       type: 'INTERACT',
@@ -277,8 +277,7 @@ describe('interactAction.validate', () => {
       targetId: stairs.id,
     });
 
-    expect(validation.ok).toBe(false);
-    expect((validation as any).reasonCode).toBe('max_floor_reached');
+    expect(validation.ok).toBe(true);
   });
 
   it('отклоняет подъём на первом этаже', () => {
@@ -500,6 +499,24 @@ describe('interactAction.resolve', () => {
     }]);
   });
 
+  it('порождает COMPLETE_RUN при спуске с финального этажа', () => {
+    const player = makePlayer({ x: 5, y: 5 });
+    const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
+    const state = makeStateWithPlayerAndEntity(player, stairs);
+    state.floor = state.mapParams.finalFloor;
+
+    const intents = interactAction.resolve(state, {
+      type: 'INTERACT',
+      entityId: player.id,
+      targetId: stairs.id,
+    });
+
+    expect(intents).toEqual([{
+      type: 'COMPLETE_RUN',
+      entityId: player.id,
+    }]);
+  });
+
   it('порождает FLOOR_TRANSITION с подъёмом для лестницы вверх', () => {
     const player = makePlayer({ x: 5, y: 5 });
     const stairs = makeStairs('stairs_up', { x: 5, y: 5 });
@@ -694,6 +711,27 @@ describe('INTERACT — полные flow', () => {
     expect(sim.getState().floor).toBe(2);
     expect(sim.getState().map).not.toBe(oldMap);
   });
+
+  it('завершает забег победой при спуске с финального этажа', () => {
+    const player = makePlayer({ x: 5, y: 5, maxAp: 2, ap: 2 });
+    const stairs = makeStairs('stairs_down', { x: 5, y: 5 });
+    const state = makeStateWithPlayerAndEntity(player, stairs);
+    state.floor = state.mapParams.finalFloor;
+    const oldMap = state.map;
+
+    const sim = GameSimulation.loadSavedGame(state);
+    const result = sim.dispatch({
+      type: 'INTERACT',
+      entityId: player.id,
+      targetId: stairs.id,
+    });
+
+    expect(result.success).toBe(true);
+    expect(sim.getState().phase).toBe('victory');
+    // Новый этаж не генерируется: карта и номер этажа не меняются.
+    expect(sim.getState().floor).toBe(state.mapParams.finalFloor);
+    expect(sim.getState().map).toBe(oldMap);
+  });
 });
 
 describe('INTERACT AP cost', () => {
@@ -779,6 +817,7 @@ describe('авто-спуск по лестнице удалён', () => {
       bossRoomTypeId: 'boss',
       bossDoorId: 'boss_door',
       rewardRoomTypeId: 'reward',
+      finalFloor: MAX_FLOOR,
     });
 
     const stairs = Array.from(sim.getState().entities.values()).find(

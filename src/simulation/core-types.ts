@@ -442,6 +442,7 @@ export type Intent =
   | LockDoorIntent
   | UnlockDoorIntent
   | FloorTransitionIntent
+  | CompleteRunIntent
   | BumpIntent
   | SkipStunnedTurnIntent
   | RestoreApIntent
@@ -508,6 +509,8 @@ export type CloseDoorIntent = { type: 'CLOSE_DOOR'; entityId: EntityId; targetPo
 export type LockDoorIntent = { type: 'LOCK_DOOR'; entityId: EntityId; targetPosition: Position };
 export type UnlockDoorIntent = { type: 'UNLOCK_DOOR'; entityId: EntityId; targetPosition: Position };
 export type FloorTransitionIntent = { type: 'FLOOR_TRANSITION'; entityId: EntityId; direction: 'down' | 'up' };
+/** Завершение забега победой: порождается спуском с финального этажа (`MapParams.finalFloor`, roadMap 1.5). */
+export type CompleteRunIntent = { type: 'COMPLETE_RUN'; entityId: EntityId };
 export type BumpIntent = { type: 'BUMP'; entityId: EntityId; position: Position; dx: number; dy: number };
 export type ApplyFogEventsIntent = { type: 'APPLY_FOG_EVENTS'; events: FogUpdatedEvent[] };
 export type SkipStunnedTurnIntent = { type: 'SKIP_STUNNED_TURN'; entityId: EntityId };
@@ -602,6 +605,7 @@ export type GameEvent =
   | EntitiesReplacedEvent
   | TurnEndedEvent
   | PlayerDiedEvent
+  | RunCompletedEvent
   | FogUpdatedEvent
   | StatusAppliedEvent
   | StatusRemovedEvent
@@ -715,6 +719,9 @@ export type EntitiesReplacedEvent = GameEventBase & { type: 'ENTITIES_REPLACED';
 export type TurnEndedEvent = GameEventBase & { type: 'TURN_ENDED'; turnNumber: number };
 
 export type PlayerDiedEvent = GameEventBase & { type: 'PLAYER_DIED' };
+
+/** Забег завершён победой (спуск с финального этажа, roadMap 1.5). */
+export type RunCompletedEvent = GameEventBase & { type: 'RUN_COMPLETED' };
 
 export type FogUpdatedEvent = GameEventBase & { type: 'FOG_UPDATED'; newlyVisible: Position[] };
 

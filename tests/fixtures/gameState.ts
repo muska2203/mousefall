@@ -27,6 +27,7 @@ import type {
 import type {DoorTemplate, LoadedContent, MapParams, PoiTemplate, PropTemplate, TerrainTemplate, TrapTemplate} from '../../src/content/schemas';
 import type {TileEffects} from '../../src/simulation/core-types';
 import {createRNG} from '../../src/utils/rng';
+import {MAX_FLOOR} from '../../src/utils/constants';
 import {createDefaultAIState} from '../../src/simulation/ai/ai-state';
 import {PLAYER_ID} from '../../src/utils/constants';
 import {initRegistry, resetRegistry} from '../../src/content/registry';
@@ -411,6 +412,8 @@ export const defaultTestMapParams: MapParams = {
   bossRoomTypeId: 'boss',
   bossDoorId: 'boss_door',
   rewardRoomTypeId: 'reward',
+  // Финальный этаж по умолчанию — дно подземелья (как default в MapParamsSchema).
+  finalFloor: MAX_FLOOR,
 };
 
 export function makeGameState(overrides: Partial<GameState> = {}): GameState {

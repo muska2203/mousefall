@@ -85,11 +85,6 @@ const ERROR_MAP: Record<string, ErrorMapping> = {
     titleKey: 'bottomFloorReachedTitle',
     messageKey: 'bottomFloorReachedMessage',
   },
-  max_floor_reached: {
-    kind: 'info',
-    titleKey: 'maxFloorReachedTitle',
-    messageKey: 'maxFloorReachedMessage',
-  },
   no_stairs_down: {
     kind: 'warning',
     titleKey: 'noStairsDownTitle',

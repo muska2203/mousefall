@@ -16,8 +16,14 @@
  *    Каждая новая комната и коридор к ней:
  *    - прокладываются только по клеткам, которые ещё являются стенами;
  *    - имеют отступ в 1 тайл от любых уже существующих комнат и коридоров.
- * 5. Коридор может иметь произвольную форму (прямой, L-образный, зигзаг и т.д.),
- *    главное — ширина в 1 тайл и отсутствие пересечений.
+ *    Если разместить узел от родителя не удалось (родитель заперт или не
+ *    размещён), размещение повторяется от ближайших размещённых предков —
+ *    узел не должен теряться вместе с поддеревом.
+ * 5. Если прямой коридор не поместился, позиция ищется BFS-фолбэком: кандидаты
+ *    перебираются от ближних к дальним, коридор может иметь произвольную форму
+ *    (прямой, L-образный, зигзаг и т.д.), главное — ширина в 1 тайл, отсутствие
+ *    пересечений и длина не более MAX_BFS_CORRIDOR_LENGTH (ограничение снимается
+ *    запасным проходом, только чтобы комната не потерялась вовсе).
  * 6. После размещения всего дерева карта нормализуется: сдвигается в положительные
  *    координаты и обрезается по bounding box с внешней стеной толщиной 1 тайл.
  *    При этом tree не ограничивается исходными width/height из MapParams —
@@ -78,6 +84,16 @@ const SIDE_LEFT = 0;
 const SIDE_RIGHT = 1;
 const SIDE_TOP = 2;
 const SIDE_BOTTOM = 3;
+
+/**
+ * Максимальная длина коридора, проложенного BFS-фолбэком.
+ * Прямые коридоры короче (1 или 3–6 тайлов), поэтому фолбэк не должен
+ * уводить следующую комнату далеко от родителя.
+ */
+export const MAX_BFS_CORRIDOR_LENGTH = 24;
+
+/** Сколько позиций-кандидатов перебирает основной проход BFS-фолбэка. */
+const MAX_BFS_CANDIDATES = 40;
 
 export const treeRoomStrategy: MapGenerationStrategy = {
   id: 'tree',
@@ -376,20 +392,29 @@ function buildLayout(root: TreeNode, rng: RNGState, bossRoomTypeId: string | nul
   const nodes = collectNodes(root).slice(1);
 
   for (const node of nodes) {
-    const parentRoom = node.parent ? nodeToRoom.get(node.parent) : null;
-    if (!parentRoom) continue;
+    // Якоря размещения: родитель, затем ближайшие размещённые предки.
+    // Если родитель не размещён (или заперт — для его коридора не осталось
+    // свободного пути), узел пробует разместиться от предка; иначе узел
+    // теряется вместе со всем поддеревом, вплоть до потери босс-комнаты.
+    // Пустая цепочка недостижима на практике: корень размещён всегда.
+    const anchorChain: Room[] = [];
+    for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
+      const anchorRoom = nodeToRoom.get(ancestor);
+      if (anchorRoom) anchorChain.push(anchorRoom);
+    }
+    if (anchorChain.length === 0) continue;
 
     const childRange = getNodeSizeRange(node);
     const childW = rngInt(rng, childRange.min, childRange.max);
     const childH = rngInt(rng, childRange.min, childRange.max);
 
-    let placement = tryPlaceChildDirect(parentRoom, childW, childH, occupied, roomPadding, rng);
-    if (!placement) {
-      placement = tryPlaceChildWithBFS(parentRoom, childW, childH, occupied, roomPadding, rng, 25);
-    }
-    if (!placement && node.isExit) {
-      // Для exit-комнаты ищем место в более широком радиусе.
-      placement = tryPlaceChildWithBFS(parentRoom, childW, childH, occupied, roomPadding, rng, 60);
+    let placement: Placement | null = null;
+    for (const anchorRoom of anchorChain) {
+      placement = tryPlaceChildDirect(anchorRoom, childW, childH, occupied, roomPadding, rng)
+        ?? tryPlaceChildWithBFS(anchorRoom, childW, childH, occupied, roomPadding, rng, 25)
+        // Запасной поиск в более широком радиусе — для любого узла.
+        ?? tryPlaceChildWithBFS(anchorRoom, childW, childH, occupied, roomPadding, rng, 60);
+      if (placement) break;
     }
 
     if (placement) {
@@ -532,6 +557,19 @@ function computeDirectPlacement(
 /**
  * Ищет место для дочерней комнаты в заданном радиусе от родителя
  * и прокладывает к ней коридор произвольной формы через BFS.
+ *
+ * Кандидаты перебираются от ближних к дальним (чебышёвская дистанция между
+ * прямоугольниками комнат); внутри одной дистанции порядок случайный.
+ * Без этого дальняя позиция из радиуса поиска была бы столь же вероятна,
+ * как ближняя, и следующая комната могла оказаться в десятках тайлов
+ * от родителя при свободном месте рядом.
+ *
+ * Первый проход отклоняет коридоры длиннее MAX_BFS_CORRIDOR_LENGTH и
+ * перебирает ограниченное число ближайших кандидатов. Если ни один не
+ * прошёл, запасной проход снимает ограничение длины и перебирает всех
+ * кандидатов: комната не должна молча теряться (иначе, например,
+ * пропадает босс-комната), а длинный коридор здесь означает, что ближе
+ * места действительно нет.
  */
 function tryPlaceChildWithBFS(
   parent: Room,
@@ -544,7 +582,7 @@ function tryPlaceChildWithBFS(
 ): Placement | null {
   const parentCells = getRoomCells(parent);
   const parentPadding = getRoomPadding(parent);
-  const candidates: Room[] = [];
+  const candidatesByDistance = new Map<number, Room[]>();
 
   for (let y = parent.y - searchRadius; y <= parent.y + parent.height + searchRadius; y++) {
     for (let x = parent.x - searchRadius; x <= parent.x + parent.width + searchRadius; x++) {
@@ -552,40 +590,64 @@ function tryPlaceChildWithBFS(
       const roomCells = getRoomCells(room);
       const allowed = unionSets(parentCells, roomCells);
       if (canPlaceRoom(room, occupied, roomPadding, allowed, parentPadding)) {
-        candidates.push(room);
+        const distance = roomDistance(parent, room);
+        const bucket = candidatesByDistance.get(distance);
+        if (bucket) {
+          bucket.push(room);
+        } else {
+          candidatesByDistance.set(distance, [room]);
+        }
       }
     }
   }
 
-  if (candidates.length === 0) return null;
+  if (candidatesByDistance.size === 0) return null;
+  const distances = [...candidatesByDistance.keys()].sort((a, b) => a - b);
 
-  rngShuffle(rng, candidates);
+  for (const enforceLengthCap of [true, false]) {
+    let tried = 0;
+    outer:
+    for (const distance of distances) {
+      const bucket = candidatesByDistance.get(distance)!;
+      rngShuffle(rng, bucket);
 
-  for (let i = 0; i < Math.min(candidates.length, 40); i++) {
-    const room = candidates[i]!;
-    const roomCells = getRoomCells(room);
-    const allowed = unionSets(parentCells, roomCells);
-    const forbidden = unionSets(parentCells, roomCells);
+      for (const room of bucket) {
+        // Основной проход перебирает ограниченное число ближайших кандидатов;
+        // запасной (без капа длины) — всех, иначе комната может потеряться.
+        if (enforceLengthCap && tried >= MAX_BFS_CANDIDATES) break outer;
+        tried++;
 
-    const starts = getWallExitCells(parent, occupied, forbidden, parentCells);
-    const goals = getWallExitCells(room, occupied, forbidden, roomCells);
+        const roomCells = getRoomCells(room);
+        const forbidden = unionSets(parentCells, roomCells);
 
-    // canPlaceRoom уже проверена для этой позиции, но оставим её здесь для ясности.
-    if (!canPlaceRoom(room, occupied, roomPadding, allowed, parentPadding)) continue;
-    if (starts.length === 0 || goals.length === 0) continue;
+        const starts = getWallExitCells(parent, occupied, forbidden, parentCells);
+        const goals = getWallExitCells(room, occupied, forbidden, roomCells);
+        if (starts.length === 0 || goals.length === 0) continue;
 
-    for (let sAttempt = 0; sAttempt < 8; sAttempt++) {
-      const start = starts[rngInt(rng, 0, starts.length - 1)]!;
-      const goal = goals[rngInt(rng, 0, goals.length - 1)]!;
-      const corridor = bfsCorridor(start, goal, occupied, forbidden, roomCells, rng);
-      // Коридор длины 2 запрещён, так как в него не влезают две двери.
-      if (corridor && corridor.length !== 2) {
-        return { room, corridor };
+        for (let sAttempt = 0; sAttempt < 8; sAttempt++) {
+          const start = starts[rngInt(rng, 0, starts.length - 1)]!;
+          const goal = goals[rngInt(rng, 0, goals.length - 1)]!;
+          const corridor = bfsCorridor(start, goal, occupied, forbidden, roomCells, rng);
+          // Коридор длины 2 запрещён, так как в него не влезают две двери.
+          if (!corridor || corridor.length === 2) continue;
+          if (enforceLengthCap && corridor.length > MAX_BFS_CORRIDOR_LENGTH) continue;
+          return { room, corridor };
+        }
       }
     }
   }
 
   return null;
+}
+
+/**
+ * Чебышёвская дистанция между прямоугольниками комнат:
+ * 0 при пересечении, 1 при касании границ, далее — зазор между краями.
+ */
+function roomDistance(a: Room, b: Room): number {
+  const dx = Math.max(0, a.x - (b.x + b.width - 1), b.x - (a.x + a.width - 1));
+  const dy = Math.max(0, a.y - (b.y + b.height - 1), b.y - (a.y + a.height - 1));
+  return Math.max(dx, dy);
 }
 
 /**
@@ -684,10 +746,13 @@ function bfsCorridor(
 /**
  * Проверяет, что прямоугольник комнаты вместе с отступом в 1 тайл
  * не пересекается с уже размещёнными комнатами/коридорами.
+ * - Внутренность новой комнаты не должна накрывать существующие комнаты
+ *   и коридоры — без исключений.
+ * - Кольцо отступа не должно накрывать чужие комнаты и их отступы, кроме
+ *   клеток родителя (allowed / allowedPadding) — это разрешает размещение
+ *   вплотную к родителю (gap = 1).
  * - roomPadding — клетки вокруг комнат (padding 1 тайл).
  * - occupied — полы комнат и коридоры.
- * - allowed / allowedPadding — клетки родительской и новой комнат,
- *   которые можно игнорировать (чтобы разрешить gap = 1 между ними).
  */
 function canPlaceRoom(
   room: Room,
@@ -699,6 +764,9 @@ function canPlaceRoom(
   for (let y = room.y - 1; y < room.y + room.height + 1; y++) {
     for (let x = room.x - 1; x < room.x + room.width + 1; x++) {
       const k = keyOf(x, y);
+      const isInterior =
+        x >= room.x && x < room.x + room.width && y >= room.y && y < room.y + room.height;
+      if (isInterior && occupied.has(k)) return false;
       if (!allowedPadding.has(k) && roomPadding.has(k)) return false;
       if (!allowed.has(k) && occupied.has(k)) return false;
     }

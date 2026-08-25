@@ -549,6 +549,8 @@ export const MapParamsSchema = z.object({
     .describe('ID шаблона двери босс-комнаты (категория doors); ставится генератором на коридоры босс-комнаты при заданном bossPool'),
   rewardRoomTypeId: z.string().min(1).default('reward')
     .describe('ID типа комнаты награды (категория roomTypes); назначается генератором напрямую exit-узлу за босс-комнатой'),
+  finalFloor: z.number().int().min(1).default(10)
+    .describe('Номер финального этажа забега: спуск по лестнице вниз с этого этажа завершает забег победой вместо перехода на следующий этаж (roadMap 1.5); default совпадает с MAX_FLOOR'),
 }).describe('Параметры процедурной генерации карты');
 
 export type MapParams = z.infer<typeof MapParamsSchema>;
