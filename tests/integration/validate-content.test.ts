@@ -23,6 +23,7 @@ import type {
   LoadedContent,
   MapParams,
   ModifierTemplate,
+  PlayerTemplate,
   RoomTypeTemplate,
   StatusTemplate,
 } from '../../src/content/schemas';
@@ -293,6 +294,47 @@ describe('validateContentReferences: selfBuff.statusType', () => {
     const content = makeSyntheticContent({
       abilities: new Map([['test_buff', mockSelfBuffAbility('test_status')]]),
       statuses: new Map([['test_status', mockStatusTemplate('test_status')]]),
+    });
+
+    expect(validateContentReferences(content)).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────
+// Шаблон игрока: ссылки starterRelicPool на реликвии
+// ─────────────────────────────────────────────
+
+function mockPlayerTemplate(starterRelicPool: string[]): PlayerTemplate {
+  return {
+    id: 'test_hero',
+    portraitImg: '',
+    maxAp: 2,
+    baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+    isDefault: false,
+    innateAbilities: [],
+    starterRelicPool,
+  } as PlayerTemplate;
+}
+
+describe('validateContentReferences: players.starterRelicPool', () => {
+  it('находит ссылку на несуществующую реликвию в starterRelicPool', () => {
+    const content = makeSyntheticContent({
+      players: new Map([['test_hero', mockPlayerTemplate(['nonexistent_relic'])]]),
+      relics: new Map(),
+    });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'players.test_hero' &&
+      e.field === 'starterRelicPool' &&
+      e.problem.includes('nonexistent_relic'),
+    )).toBe(true);
+  });
+
+  it('пропускает корректный starterRelicPool', () => {
+    const content = makeSyntheticContent({
+      players: new Map([['test_hero', mockPlayerTemplate(['relic_a'])]]),
+      relics: new Map([['relic_a', { id: 'relic_a', grantedAbilities: [] } as never]]),
     });
 
     expect(validateContentReferences(content)).toEqual([]);

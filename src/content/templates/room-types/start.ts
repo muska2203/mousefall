@@ -5,7 +5,5 @@ export const startRoom = {
   kind: 'generated',
   minSize: 4,
   maxSize: 6,
-  fill: {
-    guaranteedPois: ['relic_altar'],
-  },
+  fill: {},
 } satisfies RoomTypeTemplateInput;

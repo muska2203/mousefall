@@ -12,6 +12,7 @@ function mockPlayerTemplate(id: string, innateAbilities: string[] = []): PlayerT
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
     isDefault: false,
     innateAbilities,
+    starterRelicPool: [],
   };
 }
 

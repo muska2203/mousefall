@@ -1085,6 +1085,29 @@ export class GameSession {
   }
 
   /**
+   * Возвращает реликвии стартового пула шаблона игрока для экрана создания персонажа.
+   * Пустой пул — пустой список (UI в этом случае не показывает блок выбора).
+   * Статический метод — не требует активной симуляции.
+   */
+  static getStarterRelics(templateId: string, locale: Locale): RelicViewModel[] {
+    const pool = tryGetPlayerTemplate(templateId)?.starterRelicPool ?? [];
+    return pool
+      .map((id) => tryGetLocalizedRelic(id, locale))
+      .filter((relic): relic is NonNullable<typeof relic> => relic !== undefined)
+      .map((relic) => ({
+        templateId: relic.id,
+        count: 1,
+        name: relic.name,
+        effects: buildRelicEffects(relic, locale),
+        flavorText: relic.flavorText,
+        icon: relic.icon,
+        fallback: relic.fallback,
+        rarity: relic.rarity,
+        frameUrl: resolveItemFrame(relic.rarity),
+      }));
+  }
+
+  /**
    * Возвращает бюджет очков характеристик при создании персонажа.
    * Статический метод — не требует активной симуляции.
    */

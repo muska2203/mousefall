@@ -6,10 +6,11 @@
 
 import {useState} from 'react';
 import {useTranslation} from '@i18n/hooks';
-import type {DamageRange, ItemDetailViewModel} from '@presentation/types';
+import type {DamageRange, ItemDetailViewModel, RelicViewModel} from '@presentation/types';
 import {Panel} from './Panel';
 import {ItemButton} from './ItemButton';
 import {ItemDetailPopover} from './ItemDetailPopover';
+import {RelicDetailPopover} from './RelicDetailPopover';
 
 export type StarterItem = {
   id: string;
@@ -18,6 +19,8 @@ export type StarterItem = {
   fallback: string;
   damage?: DamageRange;
   detail?: ItemDetailViewModel;
+  /** Детали реликвии для поповера (только для слота стартовой реликвии). */
+  relicDetail?: RelicViewModel;
 };
 
 export type StarterSlot = {
@@ -78,6 +81,15 @@ export function StarterEquipmentPanel({title, slots}: Props) {
       {hoveredItem?.detail && (
         <ItemDetailPopover
           item={hoveredItem.detail}
+          visible={true}
+          x={mousePos.x}
+          y={mousePos.y}
+        />
+      )}
+
+      {hoveredItem?.relicDetail && (
+        <RelicDetailPopover
+          relic={hoveredItem.relicDetail}
           visible={true}
           x={mousePos.x}
           y={mousePos.y}

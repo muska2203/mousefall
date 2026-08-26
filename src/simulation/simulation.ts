@@ -69,6 +69,7 @@ import type {DamageRange, GameplayTag, TargetMode} from "@simulation/core-types.
 import {getVisiblePositionsWithinRange, getPositionsInRadius} from "@simulation/skills/targeting";
 import {applyCharacterConfig, type CharacterConfig} from "@simulation/characterCreation.ts";
 import {createStartingEquipment} from "@simulation/systems/starting-equipment.ts";
+import {grantStarterRelic} from "@simulation/systems/starting-relic.ts";
 import {computeFOV, updateFOV} from "@simulation/systems/fov.ts";
 import {applyDamageModifiers, getEffectiveWeaponDamageRange,} from "@simulation/systems/stats/effective-stats.ts";
 import {getEffectiveBaseStats} from "@simulation/systems/stats/base-resolver.ts";
@@ -79,7 +80,7 @@ import {getWeaponDamageDistribution, getWeaponWeightForTag} from "@simulation/sy
 import {getWeaponAttackLosRadius, getWeaponAttackRange, isInWeaponRange} from "@simulation/systems/stats/weapon-range.ts";
 import {getAbilityTags} from "@simulation/systems/tags/ability-tags.ts";
 import {meetsWeaponRequirements} from "@simulation/systems/abilities/ability-requirements.ts";
-import {getItem, tryGetAbility, tryGetItem} from "@content/registry";
+import {getItem, tryGetAbility, tryGetItem, tryGetPlayerTemplate, tryGetRelic} from "@content/registry";
 import {tickEntityStatusEffects, tickObjectStatusEffects} from "@simulation/systems/status-effect-ticker.ts";
 import {executeIntent} from "@simulation/systems/intents/execute-intent.ts";
 import {resolveInteraction} from "@simulation/systems/interactions/resolve-interaction.ts";
@@ -228,6 +229,8 @@ export class GameSimulation implements Simulation {
         const state = createNewGameState(seed, mapParams, config.templateId);
         applyCharacterConfig(state.player, config);
         createStartingEquipment(state, state.player, config.startingEquipment);
+        // Стартовая реликвия выдаётся после applyCharacterConfig — тот сбрасывает player.relics.
+        grantStarterRelic(state, state.player, config);
         const debugContext: DebugContext = { enabled: debugEnabled };
         const simulation = new GameSimulation(state, defaultActionHandlerRegistry(debugContext), new DefaultActionPointCostResolver(), debugContext);
         simulation.generateMap(mapParams);
@@ -282,6 +285,18 @@ export class GameSimulation implements Simulation {
             // Фирменные stat-модификаторы предмета (из fixedModifiers шаблона).
             for (const mod of collectFixedStatModifiers(template)) {
                 addModifier(player, { ...mod, source: `preview_${templateId}` });
+            }
+        }
+
+        // Стартовая реликвия: учитываем постоянные модификаторы шаблона в превью,
+        // если выбранный ID входит в starterRelicPool шаблона игрока.
+        if (config.starterRelicId) {
+            const pool = tryGetPlayerTemplate(config.templateId)?.starterRelicPool ?? [];
+            const relic = pool.includes(config.starterRelicId) ? tryGetRelic(config.starterRelicId) : undefined;
+            if (relic) {
+                for (const mod of relic.statModifiers) {
+                    addModifier(player, { ...mod, source: `preview_relic_${relic.id}` });
+                }
             }
         }
 

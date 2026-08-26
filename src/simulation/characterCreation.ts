@@ -30,6 +30,8 @@ export type CharacterConfig = {
   attributes: CharacterAttributes;
   /** ID шаблонов начального снаряжения (оружие, броня, амулет и т.д.) */
   startingEquipment: string[];
+  /** ID стартовой реликвии, выбранной из starterRelicPool шаблона (если пул непуст) */
+  starterRelicId?: string;
 };
 
 /** Базовый бюджет очков характеристик, доступных при создании персонажа. */

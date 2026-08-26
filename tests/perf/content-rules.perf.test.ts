@@ -152,6 +152,7 @@ const playerTemplate: PlayerTemplate = {
   baseStats: { str: 1, dex: 1, int: 10, vit: 1 },
   isDefault: false,
   innateAbilities: [],
+  starterRelicPool: [],
 };
 
 const fireballAbility: AbilityTemplate = {

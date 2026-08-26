@@ -37,5 +37,6 @@ export const ruCharacterCreation = {
   slotWeapon: 'Оружие',
   slotArmor: 'Броня',
   slotAmulet: 'Амулет',
+  slotRelic: 'Реликвия',
   portraitAlt: 'Герой',
 } as const satisfies ScreensCharacterCreationTranslations;

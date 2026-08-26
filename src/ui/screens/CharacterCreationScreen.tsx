@@ -2,9 +2,9 @@
  * Экран создания персонажа.
  *
  * Состоит из трёх колонок через ThreeColumnLayout.
- * Левая: HeroPanel с распределением очков.
+ * Левая: HeroPanel с распределением очков, информация.
  * Центральная: PortraitGallery.
- * Правая: StarterEquipmentPanel, информация, кнопка старта.
+ * Правая: StarterEquipmentPanel, настройки забега, кнопка старта.
  */
 
 import {useCallback, useEffect, useMemo, useState} from 'react';
@@ -79,9 +79,16 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     [selectedTemplateId],
   );
 
+  // Стартовые реликвии выбранного шаблона (пустой пул — блок выбора не показывается)
+  const starterRelics = useMemo(
+    () => GameSession.getStarterRelics(selectedTemplateId, locale),
+    [selectedTemplateId, locale],
+  );
+
   const [weaponId, setWeaponId] = useState(starterEquipment.weapon[0] ?? '');
   const [armorId, setArmorId] = useState(starterEquipment.armor[0] ?? '');
   const [amuletId, setAmuletId] = useState(starterEquipment.amulet[0] ?? '');
+  const [relicId, setRelicId] = useState(starterRelics[0]?.templateId ?? '');
   const [seedInput, setSeedInput] = useState('');
 
   // Сбрасываем выбранное снаряжение на первое доступное при смене шаблона
@@ -90,6 +97,11 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     setArmorId(starterEquipment.armor[0] ?? '');
     setAmuletId(starterEquipment.amulet[0] ?? '');
   }, [starterEquipment]);
+
+  // Сбрасываем выбранную реликвию на первую из пула при смене шаблона
+  useEffect(() => {
+    setRelicId(starterRelics[0]?.templateId ?? '');
+  }, [starterRelics]);
 
   const currentSum = strength + intelligence + agility + vitality;
   const remaining = GameSession.getAttributePointsBudget() - currentSum;
@@ -103,11 +115,12 @@ export function CharacterCreationScreen({onStartGame}: Props) {
         templateId: selectedTemplateId,
         attributes: {strength, agility, vitality, intelligence, luck: 0},
         startingEquipment: [weaponId, armorId, amuletId],
+        starterRelicId: relicId || undefined,
       });
     } catch {
       return null;
     }
-  }, [selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId]);
+  }, [selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, relicId]);
 
   const handleStart = useCallback(() => {
     if (!isValid) return;
@@ -116,12 +129,13 @@ export function CharacterCreationScreen({onStartGame}: Props) {
       templateId: selectedTemplateId,
       attributes: {strength, agility, vitality, intelligence, luck: 0},
       startingEquipment: [weaponId, armorId, amuletId],
+      starterRelicId: relicId || undefined,
     };
 
     const parsedSeed = parseInt(seedInput, 10);
     const seed = seedInput && !Number.isNaN(parsedSeed) ? parsedSeed : Date.now() & 0xffffffff;
     onStartGame(config, seed);
-  }, [isValid, selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, seedInput, onStartGame]);
+  }, [isValid, selectedTemplateId, strength, agility, vitality, intelligence, weaponId, armorId, amuletId, relicId, seedInput, onStartGame]);
 
   const showInfoToast = useCallback(
     (message: string) => {
@@ -247,18 +261,51 @@ export function CharacterCreationScreen({onStartGame}: Props) {
     },
   ];
 
+  // Слот стартовой реликвии показывается только при непустом пуле шаблона
+  if (starterRelics.length > 0) {
+    starterSlots.push({
+      label: t('characterCreation.slotRelic'),
+      selectedId: relicId,
+      onSelect: setRelicId,
+      items: starterRelics.map((relic) => ({
+        id: relic.templateId,
+        name: relic.name,
+        icon: relic.icon ?? '',
+        fallback: relic.fallback ?? '❔',
+        relicDetail: relic,
+      })),
+    });
+  }
+
+  const infoPanel = (
+    <Panel title={t('characterCreation.infoTitle')} titleId="info-title">
+      <div className="cm-welcome-info-body">
+        <button className="cm-btn cm-btn--secondary" type="button" onClick={() => showInfoToast(t('characterCreation.hintsAlert'))}>
+          {t('characterCreation.hintsButton')}
+        </button>
+        <button className="cm-btn cm-btn--secondary" type="button" onClick={() => showInfoToast(t('characterCreation.devlogAlert'))}>
+          {t('characterCreation.devlogButton')}
+        </button>
+      </div>
+    </Panel>
+  );
+
   const leftColumn = (
-    <HeroPanel
-      portraitSrc={GameSession.getPlayerPortraitSrc(selectedTemplateId)}
-      portraitAlt={selectedPortrait?.name ?? t('characterCreation.portraitAlt')}
-      hp={previewStats?.hp ?? 100}
-      maxHp={previewStats?.maxHp ?? 100}
-      ap={previewStats?.ap}
-      maxAp={previewStats?.maxAp}
-      stats={heroStats}
-    >
-      {statAllocHeader}
-    </HeroPanel>
+    <>
+      <HeroPanel
+        portraitSrc={GameSession.getPlayerPortraitSrc(selectedTemplateId)}
+        portraitAlt={selectedPortrait?.name ?? t('characterCreation.portraitAlt')}
+        hp={previewStats?.hp ?? 100}
+        maxHp={previewStats?.maxHp ?? 100}
+        ap={previewStats?.ap}
+        maxAp={previewStats?.maxAp}
+        stats={heroStats}
+      >
+        {statAllocHeader}
+      </HeroPanel>
+
+      {infoPanel}
+    </>
   );
 
   const centerColumn = (
@@ -285,17 +332,6 @@ export function CharacterCreationScreen({onStartGame}: Props) {
               aria-label={t('characterCreation.seedAriaLabel')}
             />
           </label>
-        </div>
-      </Panel>
-
-      <Panel title={t('characterCreation.infoTitle')} titleId="info-title">
-        <div className="cm-welcome-info-body">
-          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => showInfoToast(t('characterCreation.hintsAlert'))}>
-            {t('characterCreation.hintsButton')}
-          </button>
-          <button className="cm-btn cm-btn--secondary" type="button" onClick={() => showInfoToast(t('characterCreation.devlogAlert'))}>
-            {t('characterCreation.devlogButton')}
-          </button>
         </div>
       </Panel>
 

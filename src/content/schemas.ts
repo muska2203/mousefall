@@ -586,7 +586,7 @@ export const RoomFillSchema = z.object({
   tileEffectDensity: z.number().min(0).max(4).default(0)
     .describe('Плотность пятен тайловых эффектов (та же формула от площади); пятно — 1–3 клетки'),
   guaranteedPois: z.array(z.string().min(1)).default([])
-    .describe('ID poi, гарантированно размещаемых в комнате (например, алтарь в стартовой)'),
+    .describe('ID poi, гарантированно размещаемых в комнате'),
 }).describe('Процедурное наполнение комнаты её типом');
 
 export type RoomFill = z.output<typeof RoomFillSchema>;
@@ -767,6 +767,8 @@ export const PlayerTemplateSchema = z.object({
     .describe('Список ID стартового снаряжения, доступного при создании персонажа по этому шаблону'),
   innateAbilities: z.array(z.string().min(1)).default([])
     .describe('Врождённые способности шаблона: выдаются при создании персонажа (source: innate), не зависят от экипировки'),
+  starterRelicPool: z.array(z.string().min(1)).default([])
+    .describe('Пул реликвий, из которых игрок выбирает одну стартовую на экране создания персонажа'),
 }).describe('Шаблон класса/внешности игрока');
 
 export type PlayerTemplate = z.output<typeof PlayerTemplateSchema>;

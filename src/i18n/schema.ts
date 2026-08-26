@@ -69,6 +69,7 @@ export interface ScreensCharacterCreationTranslations {
   slotWeapon: string;
   slotArmor: string;
   slotAmulet: string;
+  slotRelic: string;
   portraitAlt: string;
 }
 

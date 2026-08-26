@@ -19,5 +19,6 @@ export const witcher = {
     "common_knotted_fang",
     "common_glass_bead"
   ],
-  "innateAbilities": ["search"]
+  "innateAbilities": ["search"],
+  "starterRelicPool": ["relic_blood_pact"]
 } satisfies PlayerTemplateInput;

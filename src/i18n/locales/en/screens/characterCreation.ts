@@ -37,5 +37,6 @@ export const enCharacterCreation = {
   slotWeapon: 'Weapon',
   slotArmor: 'Armor',
   slotAmulet: 'Amulet',
+  slotRelic: 'Relic',
   portraitAlt: 'Hero',
 } as const satisfies ScreensCharacterCreationTranslations;

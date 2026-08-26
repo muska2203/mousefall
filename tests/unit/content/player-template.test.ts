@@ -31,4 +31,23 @@ describe('Шаблоны игрока', () => {
     expect(parsed.baseStats).toEqual({ str: 0, dex: 0, int: 0, vit: 0 });
     expect(parsed.isDefault).toBe(false);
   });
+
+  it('шаблон без starterRelicPool получает пустой пул по умолчанию', () => {
+    const parsed = PlayerTemplateSchema.parse({
+      id: 'test_hero',
+      portraitImg: '/assets/portraits/test-ready.png',
+    });
+
+    expect(parsed.starterRelicPool).toEqual([]);
+  });
+
+  it('шаблон с непустым starterRelicPool парсится и сохраняет порядок пула', () => {
+    const parsed = PlayerTemplateSchema.parse({
+      id: 'test_hero',
+      portraitImg: '/assets/portraits/test-ready.png',
+      starterRelicPool: ['relic_a', 'relic_b'],
+    });
+
+    expect(parsed.starterRelicPool).toEqual(['relic_a', 'relic_b']);
+  });
 });
