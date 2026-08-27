@@ -316,7 +316,10 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       event: 'ENTITY_DAMAGED',
       tags: ['attack.melee'],
     },
-    conditions: [{type: 'eventRole', role: 'target'}],
+    // notSelfHit обязателен: самоурон владельца (например, собственный Налёт
+    // до исправления excludeEntityId и любые будущие self-hit'ы с attack.melee)
+    // не должен разворачивать шипы против самого владельца.
+    conditions: [{type: 'eventRole', role: 'target'}, {type: 'notSelfHit'}],
     effect: {
       type: 'dealDamage',
       amount: 2,

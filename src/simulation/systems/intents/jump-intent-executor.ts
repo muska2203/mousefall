@@ -8,7 +8,8 @@ import {emitEntityMoved} from '@simulation/systems/intents/move-intent-executer'
  *
  * Логика совпадает с обычным движением, но событие ENTITY_MOVED помечается
  * movementType: 'jump', чтобы уровень презентации мог воспроизвести
- * специальную анимацию прыжка.
+ * специальную анимацию прыжка. Поле ignoreBlockedByEntityId пробрасывается
+ * в общую логику перемещения (подставка Налёта).
  */
 export const executeJumpIntent: IntentExecutor<JumpIntent> = (
   state: GameState,
@@ -16,5 +17,5 @@ export const executeJumpIntent: IntentExecutor<JumpIntent> = (
   builder: ExecutionBuilder,
   parent: ExecutionNode,
 ) => {
-  return emitEntityMoved(state, intent.entityId, intent.dx, intent.dy, builder, parent, 'jump');
+  return emitEntityMoved(state, intent.entityId, intent.dx, intent.dy, builder, parent, 'jump', intent.ignoreBlockedByEntityId);
 };

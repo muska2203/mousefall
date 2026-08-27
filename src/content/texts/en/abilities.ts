@@ -31,11 +31,11 @@ export const abilities: Record<string, ContentText> = {
   },
   swoop: {
     name: 'Swoop',
-    description: 'A [movement](tag:delivery.movement) leap to a free cell within radius 2. The ground slam wounds all enemies around the landing point, dealing blunt damage (scales with STR), and [knocks them back](tag:effect.knockback). Costs 2 AP, cooldown 2.',
+    description: 'A [movement](tag:delivery.movement) leap to a cell within radius 2. The ground slam deals blunt damage to everyone around the landing cell and [knocks them back](tag:effect.knockback) (the landing cell itself is spared). Targeting a cell with a creature deals it double damage, [shoves](tag:effect.knockback) it to the nearest free cell, and you land in its place; if it cannot be shoved, you are thrown back instead. Costs 2 AP, cooldown 2.',
   },
   guardian_swoop: {
     name: 'Swoop',
-    description: 'A [movement](tag:delivery.movement) leap to a free cell within radius 3. The ground slam wounds all enemies around the landing point, dealing blunt damage, and [knocks them back](tag:effect.knockback). Costs 2 AP, cooldown 2.',
+    description: 'A [movement](tag:delivery.movement) leap to a cell within radius 3. The ground slam deals blunt damage to everyone around the landing cell and [knocks them back](tag:effect.knockback) (the landing cell itself is spared). Targeting a cell with a creature deals it double damage, [shoves](tag:effect.knockback) it to the nearest free cell, and you land in its place; if it cannot be shoved, you are thrown back instead. Costs 2 AP, cooldown 2.',
   },
   ground_slam: {
     name: 'Ground Slam',

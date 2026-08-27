@@ -1260,6 +1260,77 @@ describe('runContentRuleReactions', () => {
         tags: ['damage.physical.piercing'],
       });
     });
+
+    it('не срабатывает на самоурон владельца (notSelfHit): собственный Налёт не бьёт шипами', () => {
+      const player = makePlayer({
+        id: 'player',
+        x: 5,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'armor_spiked_thorns',
+            trigger: {event: 'ENTITY_DAMAGED', tags: ['attack.melee']},
+            conditions: [{type: 'eventRole', role: 'target'}, {type: 'notSelfHit'}],
+            effect: {type: 'dealDamage', amount: 2, tags: ['damage.physical.piercing']},
+            target: {type: 'eventSource'},
+          }),
+        ],
+      });
+      const state = makeStateWithPlayer(player);
+
+      // Самоурон: источник и цель совпадают (собственный Налёт с тегом attack.melee).
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
+        targetId: player.id,
+        sourceEntityId: player.id,
+        damage: 8,
+        position: {x: 5, y: 5},
+        tags: ['attack.melee'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents.filter((intent) => intent.type === 'DAMAGE')).toHaveLength(0);
+    });
+
+    it('срабатывает на урон от другого источника при notSelfHit', () => {
+      const player = makePlayer({id: 'player', x: 5, y: 5});
+      const enemy = makeEnemy({
+        id: 'enemy_test_1',
+        x: 6,
+        y: 5,
+        activeRules: [
+          makeActiveRule({
+            id: 'armor_spiked_thorns',
+            trigger: {event: 'ENTITY_DAMAGED', tags: ['attack.melee']},
+            conditions: [{type: 'eventRole', role: 'target'}, {type: 'notSelfHit'}],
+            effect: {type: 'dealDamage', amount: 2, tags: ['damage.physical.piercing']},
+            target: {type: 'eventSource'},
+          }),
+        ],
+      });
+      const state = makeStateWithPlayerAndEntity(player, enemy);
+
+      const event: GameEvent = {
+        type: 'ENTITY_DAMAGED', isFieldEvent: true,
+        targetId: enemy.id,
+        sourceEntityId: player.id,
+        damage: 5,
+        position: {x: 6, y: 5},
+        tags: ['attack.melee'],
+      };
+
+      const intents = runReactions(state, event);
+
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({
+        type: 'DAMAGE',
+        entityId: player.id,
+        sourceEntityId: enemy.id,
+        damage: 2,
+        tags: ['damage.physical.piercing'],
+      });
+    });
   });
 
   describe('контратака', () => {

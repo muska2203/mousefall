@@ -29,6 +29,8 @@ export const executeDamageTileIntent: IntentExecutor<DamageTileIntent> = (
   for (const entity of entitiesAtTile) {
     // Предметы на полу и лестницы не получают урон.
     if (entity.type === 'floor_item_container' || entity.type === 'stairs') continue;
+    // Явное исключение (кастер прыжка в момент приземления и т.п.).
+    if (entity.id === intent.excludeEntityId) continue;
     if (!isDamageable(entity)) continue;
 
     applyDamageToEntity(

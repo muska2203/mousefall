@@ -53,6 +53,7 @@ function mockStatus(id: string, statusCategory: string): StatusTemplate {
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
   } as StatusTemplate;
 }
 

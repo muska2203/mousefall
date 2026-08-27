@@ -186,8 +186,8 @@ const ConsumableEffectSchema = z.object({
   }
 }).describe('Определение эффекта расходуемого предмета');
 
-/** Имена характеристик, доступных модификаторам (экипировка, реликвии, аффиксы). */
-const StatNameSchema = z.enum(['damage', 'armor', 'maxHp', 'critMultiplier', 'str', 'dex', 'int', 'vit', 'throwRange']);
+/** Имена характеристик, доступных модификаторам (экипировка, реликвии, аффиксы, статусы). */
+const StatNameSchema = z.enum(['damage', 'armor', 'maxHp', 'maxAp', 'critMultiplier', 'str', 'dex', 'int', 'vit', 'throwRange']);
 
 /** Модификатор характеристики: применяется экипировкой и реликвиями. */
 const StatModifierEntrySchema = z.object({
@@ -444,6 +444,9 @@ export const StatusTemplateSchema = z.object({
   blockedBy: z.array(z.string().min(1))
     .default([])
     .describe('Статусы, блокирующие наложение этого статуса'),
+  statModifiers: z.array(StatModifierEntrySchema)
+    .default([])
+    .describe('Модификаторы характеристик, действующие, пока статус активен (применяются при наложении, снимаются при удалении статуса)'),
 }).describe('Шаблон статусного эффекта');
 
 export type StatusTemplate = z.output<typeof StatusTemplateSchema>;

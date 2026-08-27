@@ -40,7 +40,14 @@ describe('executeRestoreApIntent', () => {
   });
 
   it('статус dazed снижает восстановление AP на 1, но не ниже 0', () => {
-    const player = makePlayer({ ap: 0, maxAp: 3, statusEffects: [{ type: 'dazed', duration: 1, value: 0, statModifiers: null }] });
+    // Штраф dazed реализован stat-модификатором шаблона: он попадает к актору
+    // при наложении статуса (source — instanceId экземпляра статуса).
+    const player = makePlayer({
+      ap: 0,
+      maxAp: 3,
+      statusEffects: [{ type: 'dazed', duration: 1, value: 0, statModifiers: null, instanceId: 'status_1' }],
+      statModifiers: [{ stat: 'maxAp', value: -1, op: 'add', source: 'status_1' }],
+    });
     const state = makeGameState({ player, entities: new Map([[player.id, player]]) });
 
     const builder = new ExecutionBuilder({ type: 'TURN_BEGAN', isFieldEvent: false, side: 'player', round: 1, actorId: player.id });

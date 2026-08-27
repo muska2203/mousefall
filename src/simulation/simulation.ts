@@ -73,6 +73,7 @@ import {grantStarterRelic} from "@simulation/systems/starting-relic.ts";
 import {computeFOV, updateFOV} from "@simulation/systems/fov.ts";
 import {applyDamageModifiers, getEffectiveWeaponDamageRange,} from "@simulation/systems/stats/effective-stats.ts";
 import {getEffectiveBaseStats} from "@simulation/systems/stats/base-resolver.ts";
+import {getEffectiveMaxAp} from "@simulation/systems/stats/effective-stats.ts";
 import {addModifier} from "@simulation/systems/stats/modifier-engine.ts";
 import {recalculateActorStats} from "@simulation/systems/stats/recalculate.ts";
 import {collectFixedStatModifiers} from "@simulation/systems/item-affix-roll.ts";
@@ -965,7 +966,7 @@ export class GameSimulation implements Simulation {
             hp: p.hp,
             maxHp: p.maxHp,
             ap: p.ap,
-            maxAp: p.maxAp,
+            maxAp: getEffectiveMaxAp(p),
             baseStats: p.baseStats,
             effectiveStats: effective,
             damage: p.damage,

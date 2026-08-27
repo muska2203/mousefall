@@ -24,6 +24,7 @@ function mockBurningStatus(): StatusTemplate {
     categoryPriority: 1,
     mutuallyExclusiveWith: ['frozen'],
     blockedBy: [],
+    statModifiers: [],
   };
 }
 

@@ -272,6 +272,7 @@ function mockStatusTemplate(id: string): StatusTemplate {
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
   };
 }
 

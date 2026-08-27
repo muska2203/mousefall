@@ -114,7 +114,7 @@ export type ItemAffix = {
 };
 
 export type StatModifier = {
-  stat: 'damage' | 'armor' | 'maxHp' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit' | 'throwRange';
+  stat: 'damage' | 'armor' | 'maxHp' | 'maxAp' | 'critMultiplier' | 'str' | 'dex' | 'int' | 'vit' | 'throwRange';
   value: number;
   op: StatModifierOp;
   source: string;
@@ -465,10 +465,29 @@ export type Intent =
   | TouchTilesIntent;
 
 export type MoveIntent = { type: 'MOVE'; entityId: EntityId; dx: number; dy: number; tags?: GameplayTag[] };
-export type JumpIntent = { type: 'JUMP'; entityId: EntityId; dx: number; dy: number };
+export type JumpIntent = {
+  type: 'JUMP';
+  entityId: EntityId;
+  dx: number;
+  dy: number;
+  /**
+   * Сущность, чья блокировка целевой клетки игнорируется: она сдвигается
+   * толчком из той же пачки интентов, но её перемещение исполняется волной
+   * реакций позже прыжка (подставка Налёта: жертва на клетке приземления).
+   */
+  ignoreBlockedByEntityId?: EntityId;
+};
 export type PushIntent = { type: 'PUSH'; entityId: EntityId; dx: number; dy: number; sourceEntityId: EntityId | null; tags?: GameplayTag[] };
 export type DamageIntent = { type: 'DAMAGE'; entityId: EntityId; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
-export type DamageTileIntent = { type: 'DAMAGE_TILE'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
+export type DamageTileIntent = {
+  type: 'DAMAGE_TILE';
+  position: Position;
+  sourceEntityId: EntityId | null;
+  damage: number;
+  tags: GameplayTag[];
+  /** Сущность, которую удар по клетке не задевает (например, кастер прыжка в момент приземления). */
+  excludeEntityId?: EntityId;
+};
 export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; sourceEntityId: EntityId | null; status: StatusEffect; tags?: GameplayTag[] };
 export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][]; tileEffects?: TileEffects[][] };

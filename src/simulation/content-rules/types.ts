@@ -94,6 +94,8 @@ export type RuleCondition =
   | { type: 'tileEffectHasStatus'; effectType: string; statusType: string }
   | { type: 'eventFieldEquals'; field: string; value: unknown }
   | { type: 'eventRole'; role: 'source' | 'target' }
+  /** Событие не является самоуроном: источник и цель — разные сущности (или источника нет). */
+  | { type: 'notSelfHit' }
   | { type: 'entityHasTag'; tag: GameplayTag; subject: 'self' | 'target' | 'source' | 'candidate' }
   | { type: 'and'; conditions: RuleCondition[] }
   | { type: 'or'; conditions: RuleCondition[] }

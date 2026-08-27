@@ -1,9 +1,10 @@
-import {EnemyEntity, Entity, GameState, StatusEffectHolder} from '@simulation/types';
+import {EnemyEntity, Entity, GameState, StatActor, StatusEffectHolder} from '@simulation/types';
 import {ApplyStatusIntent, IntentExecutor} from '@simulation/systems/intents/types';
 import {ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types';
 import {findEntity, isActor, nextEntityId} from '@simulation/state';
 import {isEnemyEntity} from '@simulation/ai/ai-state';
 import {addActiveRulesForStatus, removeActiveRulesForStatus} from '@simulation/systems/rules/active-rule-lifecycle';
+import {applyStatusStatModifiers, removeStatusStatModifiers} from '@simulation/systems/statuses/status-stat-modifiers';
 import {cancelPreparedAbility} from '@simulation/ai/ai-helpers';
 import {getStatusTemplate} from '@simulation/systems/statuses/status-template';
 import {resolveStatusConflicts} from '@simulation/systems/statuses/resolve-status-conflicts';
@@ -49,6 +50,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
       const [removed] = holder.statusEffects.splice(index, 1);
       if (removed && isActor(target)) {
         removeActiveRulesForStatus(target, removed.instanceId ?? removed.type);
+        removeStatusStatModifiers(target as unknown as StatActor, removed);
       }
       builder.addChild(parent, {
         type: 'STATUS_REMOVED', isFieldEvent: true,
@@ -79,6 +81,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
 
     if (isActor(target)) {
       addActiveRulesForStatus(target, intent.status.instanceId, intent.status.type);
+      applyStatusStatModifiers(target as unknown as StatActor, intent.status.instanceId, template);
     }
   }
 

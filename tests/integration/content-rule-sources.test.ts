@@ -120,6 +120,7 @@ function mockStatus(id: string, ruleIds: string[] = []): StatusTemplate {
         categoryPriority: 0,
         mutuallyExclusiveWith: [],
         blockedBy: [],
+        statModifiers: [],
     };
 }
 

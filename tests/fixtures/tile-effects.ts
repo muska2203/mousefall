@@ -128,6 +128,7 @@ export function createTestStatusTemplates(): Map<string, StatusTemplate> {
       categoryPriority: 0,
       mutuallyExclusiveWith: ['wet'],
       blockedBy: [],
+      statModifiers: [],
     }],
     ['wet', {
       id: 'wet',
@@ -136,6 +137,7 @@ export function createTestStatusTemplates(): Map<string, StatusTemplate> {
       categoryPriority: 0,
       mutuallyExclusiveWith: ['burning', 'oiled'],
       blockedBy: [],
+      statModifiers: [],
     }],
     ['burning', {
       id: 'burning',
@@ -144,6 +146,7 @@ export function createTestStatusTemplates(): Map<string, StatusTemplate> {
       categoryPriority: 1,
       mutuallyExclusiveWith: ['frozen'],
       blockedBy: [],
+      statModifiers: [],
     }],
   ]);
 }

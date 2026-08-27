@@ -69,6 +69,12 @@ export function findCollisionLanding(
   });
 
   for (const landing of landings) {
+    // Клетка с живым актором — подставка: толчка и столкновения не будет,
+    // а кастер может ударить союзника — такую точку не выбираем.
+    if (findAllEntitiesAt(state, landing.x, landing.y).some(e => isActor(e) && 'hp' in e && e.isAlive)) {
+      continue;
+    }
+
     // Цель должна попадать в зону действия способности при выборе этой точки.
     const affected = executor.getAffectedPositions(state, caster, [landing], landing);
     if (!affected.some(p => p.x === target.x && p.y === target.y)) {

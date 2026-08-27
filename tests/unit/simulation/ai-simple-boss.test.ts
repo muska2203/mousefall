@@ -138,21 +138,40 @@ describe('AI: simple-boss', () => {
 
     const sim = createTestSimulation(state);
 
-    // Первый ход: подготовка.
+    // Первый ход: подготовка. Цель — клетка игрока: с механикой подставки
+    // клетка с живым актором — валидная и приоритетная цель Налёта.
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
     advanceToPlayerTurn(sim);
     const preparedTarget = getEnemy(sim.getState()).aiState.preparedAbility!.targets[0]!;
-    expect(preparedTarget).toBeDefined();
+    expect(preparedTarget).toEqual({ x: player.x, y: player.y });
 
-    // Второй ход: выполнение скилла — босс прыгает в подготовленную точку.
+    // Второй ход: выполнение скилла — подставка: игрок получает двойной урон,
+    // его отпихивает на ближайшую свободную клетку прочь от босса,
+    // а босс приземляется на клетку игрока.
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
-    advanceToPlayerTurn(sim);
+    const results = advanceToPlayerTurn(sim);
 
     const enemyAfter = getEnemy(sim.getState());
-    expect(enemyAfter.x).toBe(preparedTarget.x);
-    expect(enemyAfter.y).toBe(preparedTarget.y);
     expect(getDerivedAIMode(enemyAfter)).toBe('idle');
-    expect(chebyshevDistance(enemyAfter, { x: player.x, y: player.y })).toBeLessThanOrEqual(2);
+    // Босс приземляется на клетку игрока (5,5).
+    expect(enemyAfter.x).toBe(5);
+    expect(enemyAfter.y).toBe(5);
+    // Игрока отпихнуло прочь от начала прыжка (7,5): среди соседних клеток
+    // максимальная дистанция у (4,4) и (4,6), тай-брейк по y → (4,4).
+    expect(player.x).toBe(4);
+    expect(player.y).toBe(4);
+    // Подставка: двойной урон (baseDamage 8 × 2) без ошеломления игрока.
+    expect(player.hp).toBe(100 - 16);
+    // Жертва подставки dazed не получает — события STATUS_APPLIED с dazed нет.
+    const statusApplied = results
+      .flatMap(r => r.phases)
+      .flatMap(p => p.actions)
+      .flatMap(a => findEvents(a, 'STATUS_APPLIED'));
+    expect(statusApplied.some(n =>
+      n.event.type === 'STATUS_APPLIED' &&
+      n.event.entityId === player.id &&
+      n.event.effect.type === 'dazed',
+    )).toBe(false);
   });
 
   it('не готовит скилл, если ни одна валидная клетка не достаёт до игрока', () => {

@@ -33,6 +33,7 @@ const mockBulwarkStatus: StatusTemplate = {
   categoryPriority: 0,
   mutuallyExclusiveWith: [],
   blockedBy: [],
+  statModifiers: [],
 };
 
 function initMockRegistry(): void {

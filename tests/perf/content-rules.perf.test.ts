@@ -101,6 +101,9 @@ const poisonOnDamageRule: ContentRule = {
 const thornsRule: ContentRule = {
   id: 'perf_thorns',
   trigger: { event: 'ENTITY_DAMAGED' },
+  // eventRole + notSelfHit — как у реального armor_spiked_thorns: без этого
+  // ответный урон по eventSource зацикливает шипы (self-hit владельца).
+  conditions: [{ type: 'eventRole', role: 'target' }, { type: 'notSelfHit' }],
   effect: {
     type: 'dealDamage',
     amount: 3,
@@ -240,6 +243,7 @@ const perfStatusTemplates: StatusTemplate[] = [
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
   },
   {
     id: 'poisoned',
@@ -248,6 +252,7 @@ const perfStatusTemplates: StatusTemplate[] = [
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
   },
   {
     id: 'frozen',
@@ -256,6 +261,7 @@ const perfStatusTemplates: StatusTemplate[] = [
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
   },
   {
     id: 'stunned',
@@ -264,6 +270,7 @@ const perfStatusTemplates: StatusTemplate[] = [
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
   },
   {
     id: 'dazed',
@@ -272,6 +279,7 @@ const perfStatusTemplates: StatusTemplate[] = [
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
   },
 ];
 

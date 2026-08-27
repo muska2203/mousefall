@@ -70,6 +70,11 @@ export function evaluateCondition(
       if (condition.role === 'target') return selfId === ctx.targetEntityId;
       return false;
     }
+    case 'notSelfHit': {
+      // Самоурон — это когда источник и цель совпадают; мировой урон
+      // без источника самоуроном не считается.
+      return ctx.sourceEntityId === null || ctx.sourceEntityId !== ctx.targetEntityId;
+    }
     case 'entityHasTag': {
       const subjectId = resolveSubjectId(condition.subject, selfId, ctx, candidateId);
       if (subjectId === null) return false;

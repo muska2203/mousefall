@@ -1,8 +1,9 @@
-import {GameState, StatusEffect} from '@simulation/types';
+import {GameState, StatActor, StatusEffect} from '@simulation/types';
 import {ExecutionBuilder, ExecutionNode, SkipStunnedTurnIntent} from '@simulation/core-types';
 import {IntentExecutor} from '@simulation/systems/intents/types';
 import {findEntity, isActor} from '@simulation/state';
 import {removeActiveRulesForStatus} from '@simulation/systems/rules/active-rule-lifecycle';
+import {removeStatusStatModifiers} from '@simulation/systems/statuses/status-stat-modifiers';
 
 /**
  * Исполняет интент пропуска хода оглушённым актором.
@@ -39,6 +40,7 @@ export const executeSkipStunnedTurnIntent: IntentExecutor<SkipStunnedTurnIntent>
   if (effect.duration <= 0) {
     if (isActor(entity)) {
       removeActiveRulesForStatus(entity, effect.instanceId ?? effect.type);
+      removeStatusStatModifiers(entity as unknown as StatActor, effect);
     }
     holder.statusEffects.splice(index, 1);
     builder.addChild(tickNode, {

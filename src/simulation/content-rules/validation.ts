@@ -486,6 +486,9 @@ function validateCondition(
         });
       }
       break;
+    case 'notSelfHit':
+      // Условие без параметров — проверять нечего.
+      break;
     case 'and':
     case 'or':
       validateRuleConditions(rule, condition.conditions, knownTileEffectIds, knownTileEffectStatusIds, errors);

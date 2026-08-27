@@ -133,4 +133,16 @@ describe('findCollisionLanding', () => {
 
     expect(landing).toBeNull();
   });
+
+  it('не выбирает точку приземления, занятую актором (там подставка, а не столкновение)', () => {
+    // Союзник босса занимает (6,5) — единственную точку, дающую столкновение
+    // игрока со стеной (8,5). Приземление туда — подставка по союзнику.
+    const occupant = makeEnemy({id: 'ally_6_5', x: 6, y: 5});
+    const {state, boss, player} = setup({x: 4, y: 5}, {x: 7, y: 5}, [occupant]);
+    state.map.tiles[5]![8] = 'wall';
+
+    const landing = findCollisionLanding(state, boss, TEST_SWOOP_ID, player);
+
+    expect(landing).toBeNull();
+  });
 });

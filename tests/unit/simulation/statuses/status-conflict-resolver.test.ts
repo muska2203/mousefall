@@ -12,6 +12,7 @@ function mockStatusTemplate(overrides: Partial<StatusTemplate> & { id: string })
     categoryPriority: 0,
     mutuallyExclusiveWith: [],
     blockedBy: [],
+    statModifiers: [],
     ...overrides,
   };
 }
