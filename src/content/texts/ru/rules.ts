@@ -13,6 +13,14 @@ export const rules: Record<string, ContentText> = {
     name: 'Оглушающий удар',
     description: 'Атаки тупым уроном оглушают цель на 1 ход.',
   },
+  weapon_bleeding_on_hit: {
+    name: 'Кровопускание',
+    description: 'Рубящие удары открывают кровотечение на 3 хода.',
+  },
+  weapon_bleeding_execute: {
+    name: 'Добивание',
+    description: 'Урон оружия по кровоточащим целям увеличен на 3.',
+  },
   armor_spiked_thorns: {
     name: 'Шипы',
     description: 'При получении урона в ближнем бою отражает 2 колющего урона атакующему.',
@@ -97,11 +105,11 @@ export const rules: Record<string, ContentText> = {
   },
   relic_blood_pact_power: {
     name: 'Сила договора',
-    description: 'Весь твой урон увеличен на 4.',
+    description: 'Прямой исходящий урон от [оружия](tag:delivery.weapon) увеличен на 2.',
   },
   relic_blood_pact_price: {
     name: 'Цена договора',
-    description: 'Входящий по тебе урон увеличен на 25%.',
+    description: 'Прямой входящий урон от [оружия](tag:delivery.weapon) увеличен на 1.',
   },
   relic_scavenger_heal_on_pickup: {
     name: 'Радость находки',

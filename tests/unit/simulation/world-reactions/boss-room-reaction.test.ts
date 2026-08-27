@@ -76,7 +76,7 @@ function movedEvent(
 }
 
 function diedEvent(entityId: string, position: {x: number; y: number}): EntityDiedEvent {
-  return {type: 'ENTITY_DIED', isFieldEvent: true, entityId, position};
+  return {type: 'ENTITY_DIED', isFieldEvent: true, entityId, position, sourceEntityId: null};
 }
 
 function callDoorReaction(state: GameState, event: EntityMovedEvent) {

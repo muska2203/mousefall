@@ -2,7 +2,7 @@ import type {GameState, PlayerEntity} from '@simulation/types';
 import {getItem} from '@content/registry';
 import {ExecutionBuilder} from '@simulation/systems/actions/types';
 import {executeIntent} from '@simulation/systems/intents/execute-intent';
-import {createInventoryItem} from './inventory-factory';
+import {createInventoryItem, addItemToInventory} from './inventory-factory';
 import {getItemAbilityEntries} from './ability-grant';
 
 /**
@@ -25,7 +25,8 @@ export function createStartingEquipment(
 ): void {
   for (const templateId of templateIds) {
     const item = createInventoryItem(state, templateId);
-    player.inventory.push(item);
+    // Общий хелпер: стакаемые расходники стартового набора сливаются в одну стопку.
+    addItemToInventory(player, item);
 
     const template = getItem(templateId);
     let slot: 'weapon' | 'armor' | 'amulet' | null = null;
@@ -84,7 +85,7 @@ export function createStartingEquipment(
   // экипируем «безоружную» атаку — слот оружия никогда не пустует.
   if (!player.equippedWeaponInstanceId) {
     const item = createInventoryItem(state, 'unarmed');
-    player.inventory.push(item);
+    addItemToInventory(player, item);
 
     const builder = new ExecutionBuilder({
       type: 'ACTION_APPLIED', isFieldEvent: false,

@@ -246,7 +246,7 @@ describe('entityDamagedBuilder', () => {
 
 describe('entityDiedBuilder', () => {
   it('creates DEATH step', () => {
-    const event: GameEvent = { type: 'ENTITY_DIED', isFieldEvent: true, entityId: 'enemy1', position: { x: 3, y: 3 } };
+    const event: GameEvent = { type: 'ENTITY_DIED', isFieldEvent: true, entityId: 'enemy1', position: { x: 3, y: 3 }, sourceEntityId: null };
     const nodes = entityDiedBuilder(event, [], makeMockState());
 
     expect(nodes).toHaveLength(1);

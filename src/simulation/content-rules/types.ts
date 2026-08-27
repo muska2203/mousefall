@@ -137,6 +137,11 @@ export type RuleEffect =
     }
   | {
       type: 'restoreAp';
+      /**
+       * Если задано — восстановить ровно столько AP (с клампом к эффективному maxAp).
+       * Без amount — полное восстановление до maxAp.
+       */
+      amount?: number | ParametrizedValue;
     }
   | {
       type: 'consumeAp';

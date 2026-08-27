@@ -259,6 +259,11 @@ export const ItemTemplateSchema = z.object({
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['subtype'], message: `subtype недопустим для предметов типа "${template.type}"` });
     }
   }
+  // Стакаемый предмет не может иметь пул роллимых способностей:
+  // экземпляры с ролленными способностями не сливаются в стопки.
+  if (template.stackable && template.abilityPool.length > 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['abilityPool'], message: 'stackable несовместим с abilityPool: экземпляры с ролленными способностями не сливаются в стопки' });
+  }
 }).describe('Шаблон предмета');
 
 export type ItemTemplate = z.output<typeof ItemTemplateSchema>;

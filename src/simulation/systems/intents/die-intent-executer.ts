@@ -37,6 +37,7 @@ export const executeDieIntent: IntentExecutor<DieIntent> = (
                 type: 'ENTITY_DIED', isFieldEvent: true,
                 entityId: intent.entityId,
                 position: intent.position,
+                sourceEntityId: intent.sourceEntityId,
             });
         }
     }

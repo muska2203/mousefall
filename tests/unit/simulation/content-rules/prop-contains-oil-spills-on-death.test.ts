@@ -121,6 +121,7 @@ describe('prop_contains_oil_spills_on_death', () => {
       type: 'ENTITY_DIED',
       isFieldEvent: true,
       entityId: prop.id,
+      sourceEntityId: null,
       position: { x: 4, y: 5 },
     };
     const builder = new ExecutionBuilder(event);
@@ -158,6 +159,7 @@ describe('prop_contains_oil_spills_on_death', () => {
       type: 'ENTITY_DIED',
       isFieldEvent: true,
       entityId: prop.id,
+      sourceEntityId: null,
       position: { x: 4, y: 5 },
     };
     const builder = new ExecutionBuilder(event);
@@ -179,6 +181,7 @@ describe('prop_contains_oil_spills_on_death', () => {
       type: 'ENTITY_DIED',
       isFieldEvent: true,
       entityId: prop.id,
+      sourceEntityId: null,
       position: { x: 0, y: 0 },
     };
     const builder = new ExecutionBuilder(event);
@@ -204,6 +207,7 @@ describe('prop_contains_oil_spills_on_death', () => {
       type: 'ENTITY_DIED',
       isFieldEvent: true,
       entityId: prop.id,
+      sourceEntityId: null,
       position: { x: 4, y: 5 },
     };
     const builder = new ExecutionBuilder(event);
@@ -241,6 +245,7 @@ describe('prop_contains_oil_spills_on_death', () => {
       type: 'ENTITY_DIED',
       isFieldEvent: true,
       entityId: prop.id,
+      sourceEntityId: null,
       position: { x: 4, y: 5 },
     };
     const builder = new ExecutionBuilder(event);
@@ -269,6 +274,7 @@ describe('prop_contains_oil_spills_on_death', () => {
       type: 'ENTITY_DIED',
       isFieldEvent: true,
       entityId: prop.id,
+      sourceEntityId: null,
       position: { x: 4, y: 5 },
     };
     const builder = new ExecutionBuilder(event);

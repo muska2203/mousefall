@@ -93,6 +93,14 @@ export const tags: Record<string, ContentText> = {
     name: 'Magical Damage',
     description: 'Magical class damage',
   },
+  'damage.internal': {
+    name: 'Internal Damage',
+    description: 'Internal class damage: not reduced by armor',
+  },
+  'damage.internal.bleeding': {
+    name: 'Bleeding',
+    description: 'Internal bleeding damage: not reduced by armor',
+  },
   'damage': {
     name: 'Damage',
     description: 'Damage classification tags',

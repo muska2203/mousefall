@@ -21,6 +21,14 @@ export const modifiers: Record<string, ContentText> = {
     name: 'Оглушающая',
     description: 'Атаки тупым уроном оглушают цель на 1 ход.',
   },
+  mod_bleeding_on_hit: {
+    name: 'Режущая',
+    description: 'Рубящие удары этим оружием открывают кровотечение на 3 хода.',
+  },
+  mod_bleeding_execute: {
+    name: 'Добивающая',
+    description: 'Удары этим оружием по кровоточащим целям наносят на 3 урона больше.',
+  },
   mod_fire_damage_multiplier: {
     name: 'Пылающая',
     description: 'Урон огнём увеличивается на 50%.',

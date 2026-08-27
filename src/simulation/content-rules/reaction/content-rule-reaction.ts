@@ -628,9 +628,13 @@ function buildIntents(
       }));
     }
     case 'restoreAp': {
+      const amount = effect.amount !== undefined
+        ? resolveParametrizedValue(effect.amount, ctx, ownerParamValue)
+        : undefined;
       return targetIds.map((entityId) => ({
         type: 'RESTORE_AP',
         entityId,
+        amount,
       }));
     }
     case 'consumeAp': {

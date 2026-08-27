@@ -30,6 +30,8 @@ export const deathReaction: WorldReaction = (
             type: 'DIE',
             entityId: entity.id,
             position: deathPos,
+            // Убийца — источник последнего урона (может быть null при смерти от среды).
+            sourceEntityId: event.sourceEntityId,
         },
     ];
 };

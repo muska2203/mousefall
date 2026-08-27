@@ -65,10 +65,27 @@ describe('buildRuleContext', () => {
         type: 'ENTITY_DIED', isFieldEvent: true,
         entityId: enemy.id,
         position: { x: 6, y: 5 },
+        sourceEntityId: null,
       };
 
       expectContext(buildRuleContext(state, event), {
         sourceEntityId: null,
+        targetEntityId: enemy.id,
+        eventPosition: { x: 6, y: 5 },
+        eventTags: [],
+      });
+    });
+
+    it('ENTITY_DIED: заполняет source убийцей (источником последнего урона)', () => {
+      const event: GameEvent = {
+        type: 'ENTITY_DIED', isFieldEvent: true,
+        entityId: enemy.id,
+        position: { x: 6, y: 5 },
+        sourceEntityId: player.id,
+      };
+
+      expectContext(buildRuleContext(state, event), {
+        sourceEntityId: player.id,
         targetEntityId: enemy.id,
         eventPosition: { x: 6, y: 5 },
         eventTags: [],

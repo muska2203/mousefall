@@ -18,7 +18,7 @@ describe('Deferred Deletion', () => {
     const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: enemy.id } });
     const result = executeDieIntent(
       state,
-      { type: 'DIE', entityId: enemy.id, position: { x: 3, y: 3 } },
+      { type: 'DIE', sourceEntityId: null, entityId: enemy.id, position: { x: 3, y: 3 } },
       builder,
       builder.root,
     );
@@ -34,7 +34,7 @@ describe('Deferred Deletion', () => {
     const builder = new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: PLAYER_ID } });
     const result = executeDieIntent(
       state,
-      { type: 'DIE', entityId: PLAYER_ID, position: { x: 5, y: 5 } },
+      { type: 'DIE', sourceEntityId: null, entityId: PLAYER_ID, position: { x: 5, y: 5 } },
       builder,
       builder.root,
     );
@@ -105,7 +105,7 @@ describe('Deferred Deletion', () => {
     );
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual({ type: 'DIE', entityId: enemy.id, position: { x: 3, y: 3 } });
+    expect(result[0]).toEqual({ type: 'DIE', sourceEntityId: null, entityId: enemy.id, position: { x: 3, y: 3 } });
   });
 
   it('мёртвая сущность не блокирует проход (blocksMovement=false)', () => {

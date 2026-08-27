@@ -64,7 +64,7 @@
   `relic_scavenger` (`maxHp add -5`).
 - **Второе правило с условиями-ограничителями** — второй id в `ruleIds`. Приёмы:
   - `eventRole: 'target'` — минус срабатывает на входящий урон по владельцу
-    (`relic_blood_pact_price`: входящий урон ×1.25);
+    (`relic_blood_pact_price`: прямой входящий урон оружия +1);
   - `not(hasStatus ...)` / `not(hasTag ...)` — штраф в «холостом» случае
     (`relic_venom_gland_ramp_up`: -1 по неотравленным; `relic_thunderhead_clumsy`: -1 недробящим);
   - тот же триггер плюса с `target: { type: 'self' }` — откат на владельца

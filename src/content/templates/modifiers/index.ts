@@ -6,6 +6,8 @@ import {modFireDamageMultiplier} from './mod-fire-damage-multiplier';
 import {modFragile} from './mod-fragile';
 import {modGuardianVitality} from './mod-guardian-vitality';
 import {modPoisonOnHit} from './mod-poison-on-hit';
+import {modBleedingOnHit} from './mod-bleeding-on-hit';
+import {modBleedingExecute} from './mod-bleeding-execute';
 import {modRestoreApOnHit} from './mod-restore-ap-on-hit';
 import {modSpikedThorns} from './mod-spiked-thorns';
 import {modSturdyArmor} from './mod-sturdy-armor';
@@ -24,4 +26,6 @@ export const modifierTemplates: ModifierTemplateInput[] = [
   modRestoreApOnHit,
   modGuardianVitality,
   modSlingThrowRange,
+  modBleedingOnHit,
+  modBleedingExecute,
 ];

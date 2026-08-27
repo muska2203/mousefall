@@ -75,7 +75,7 @@ describe('buildAnimationTree', () => {
   });
 
   it('preserves parent-child structure', () => {
-    const child = makeExecNode({ type: 'ENTITY_DIED', isFieldEvent: true, entityId: 'enemy1', position: { x: 2, y: 2 } });
+    const child = makeExecNode({ type: 'ENTITY_DIED', isFieldEvent: true, entityId: 'enemy1', position: { x: 2, y: 2 }, sourceEntityId: null });
     const parent = makeExecNode({ type: 'ENTITY_DAMAGED', isFieldEvent: true, targetId: 'enemy1', sourceEntityId: null, tags: ['damage.physical.blunt'], damage: 5, position: { x: 2, y: 2 } }, [child]);
     const result = makeResult([parent]);
     const tree = buildAnimationTree(result, makeMockState());

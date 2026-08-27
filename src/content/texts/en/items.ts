@@ -14,8 +14,12 @@ export const items: Record<string, ContentText> = {
     description: 'A heavy claw capable of scratching armor.',
   },
   common_splinter_blade: {
-    name: 'Rusty Cheesecutter',
-    description: 'A small blunt blade that smells of cheese.',
+    name: 'Jagged Cheesecutter',
+    description: 'A serrated cheese knife. The cuts are shallow but bleed for a long time.',
+  },
+  common_hat_pin: {
+    name: 'Hat Pin',
+    description: "A long needle from the master's hat. In precise paws — a duelist's rapier.",
   },
   common_school_wand: {
     name: 'Cracked Spoke',

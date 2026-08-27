@@ -488,7 +488,13 @@ export type DamageTileIntent = {
   /** Сущность, которую удар по клетке не задевает (например, кастер прыжка в момент приземления). */
   excludeEntityId?: EntityId;
 };
-export type DieIntent = { type: 'DIE'; entityId: EntityId; position: Position };
+export type DieIntent = {
+  type: 'DIE';
+  entityId: EntityId;
+  position: Position;
+  /** Убийца — источник последнего урона; null, если смерть без источника (среда, мировой урон). */
+  sourceEntityId: EntityId | null;
+};
 export type ApplyStatusIntent = { type: 'APPLY_STATUS'; entityId: EntityId; sourceEntityId: EntityId | null; status: StatusEffect; tags?: GameplayTag[] };
 export type SetMapIntent = { type: 'SET_MAP'; map: GameMap; explored?: boolean[][]; tileEffects?: TileEffects[][] };
 export type SetEntitiesIntent = { type: 'SET_ENTITIES'; entities: Map<EntityId, unknown> };
@@ -533,7 +539,12 @@ export type CompleteRunIntent = { type: 'COMPLETE_RUN'; entityId: EntityId };
 export type BumpIntent = { type: 'BUMP'; entityId: EntityId; position: Position; dx: number; dy: number };
 export type ApplyFogEventsIntent = { type: 'APPLY_FOG_EVENTS'; events: FogUpdatedEvent[] };
 export type SkipStunnedTurnIntent = { type: 'SKIP_STUNNED_TURN'; entityId: EntityId };
-export type RestoreApIntent = { type: 'RESTORE_AP'; entityId: EntityId };
+export type RestoreApIntent = {
+  type: 'RESTORE_AP';
+  entityId: EntityId;
+  /** Если задано — восстановить ровно amount AP (с клампом к эффективному maxAp); иначе — полное восстановление. */
+  amount?: number;
+};
 export type TickCooldownIntent = { type: 'TICK_COOLDOWN'; entityId: EntityId; abilityId: string };
 export type BeginTurnIntent = { type: 'BEGIN_TURN'; side: TurnSide; round?: number };
 export type CleanupDeadEntitiesIntent = { type: 'CLEANUP_DEAD_ENTITIES' };
@@ -674,7 +685,13 @@ export type EntityDamagedEvent = GameEventBase & { type: 'ENTITY_DAMAGED'; targe
 
 export type TileDamagedEvent = GameEventBase & { type: 'TILE_DAMAGED'; position: Position; sourceEntityId: EntityId | null; damage: number; tags: GameplayTag[] };
 
-export type EntityDiedEvent = GameEventBase & { type: 'ENTITY_DIED'; entityId: EntityId; position: Position };
+export type EntityDiedEvent = GameEventBase & {
+  type: 'ENTITY_DIED';
+  entityId: EntityId;
+  position: Position;
+  /** Убийца — источник последнего урона; null, если смерть без источника (среда, мировой урон). */
+  sourceEntityId: EntityId | null;
+};
 
 export type ItemPickedUpEvent = GameEventBase & { type: 'ITEM_PICKED_UP'; entityId: EntityId; itemInstanceId: ItemInstanceId; templateId: string };
 

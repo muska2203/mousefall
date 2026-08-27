@@ -1,5 +1,5 @@
-import type {GameState, InventoryItem} from '@simulation/types';
-import {getItem} from '@content/registry';
+import type {GameState, InventoryItem, PlayerEntity} from '@simulation/types';
+import {getItem, tryGetItem} from '@content/registry';
 import {nextEntityId} from '@simulation/state';
 import {rollItemAbility} from './item-ability-roll';
 import {createItemAffixes} from './item-affix-roll';
@@ -34,4 +34,40 @@ export function createInventoryItem(
     grantedAbilities,
     affixes: createItemAffixes(state.rng, template),
   };
+}
+
+/**
+ * Добавляет экземпляр предмета в инвентарь игрока со слиянием стопок.
+ *
+ * Стакаемый предмет (шаблон с `stackable: true`) доливается в неполные стеки
+ * того же `templateId` по очереди (каждый до `maxStack`); не влезший остаток
+ * кладётся новой ячейкой. Нестакаемые предметы всегда занимают новую ячейку.
+ * Разделение стопок и частичный перенос — этап 2.3.
+ *
+ * Шаблон не найден (тесты без контентного реестра) — предмет считается нестакаемым.
+ */
+export function addItemToInventory(player: PlayerEntity, item: InventoryItem): void {
+  const template = tryGetItem(item.templateId);
+  if (template?.stackable) {
+    let remaining = item.quantity;
+    for (const stack of player.inventory) {
+      if (stack.templateId !== item.templateId) {
+        continue;
+      }
+      const moved = Math.min(template.maxStack - stack.quantity, remaining);
+      if (moved <= 0) {
+        continue;
+      }
+      stack.quantity += moved;
+      remaining -= moved;
+      if (remaining === 0) {
+        break;
+      }
+    }
+    item.quantity = remaining;
+  }
+
+  if (item.quantity > 0) {
+    player.inventory.push(item);
+  }
 }

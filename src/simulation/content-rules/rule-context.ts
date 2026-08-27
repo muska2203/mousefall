@@ -107,6 +107,10 @@ export function buildRuleContext(state: GameState, event: GameEvent | Intent): R
     }
 
     case 'ENTITY_DIED': {
+      // sourceEntityId — убийца (источник последнего урона); null — смерть без источника
+      // (среда, мировой урон). Тик статуса принадлежит жертве, поэтому дот-килл
+      // засчитывается самой жертве: правила «при убийстве» посторонних не срабатывают.
+      base.sourceEntityId = event.sourceEntityId;
       base.targetEntityId = event.entityId;
       base.eventPosition = event.position;
       break;

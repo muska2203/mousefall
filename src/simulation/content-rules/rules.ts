@@ -309,6 +309,45 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: {type: 'eventTarget'},
     priority: 0,
   },
+  {
+    // Кровотечение при ударе — фирменное свойство мечей (концепт этажа 1, §4.3).
+    id: 'weapon_bleeding_on_hit',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['delivery.weapon', 'damage.physical.slashing'],
+    },
+    // eventRole: 'source' обязателен: иначе владелец рубящего оружия
+    // открывал бы кровотечение у самого себя при ударе по нему.
+    conditions: [{type: 'eventRole', role: 'source'}],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'bleeding',
+      duration: 3,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // Добивание по кровоточащим — pool-аффикс мечей (roadmap этажа 1, п. 2.1).
+    id: 'weapon_bleeding_execute',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['delivery.weapon'],
+    },
+    // eventRole: 'source' обязателен: иначе копия правила соседнего владельца
+    // подхватывается слоем radius и модифицирует урон повторно.
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'target'},
+    ],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: 3,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
   // ── Стартовые правила брони/щита (WP6.3) ───────────────────────────────────
   {
     id: 'armor_spiked_thorns',
@@ -401,8 +440,13 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     conditions: [{type: 'eventRole', role: 'target'}],
     effect: {
       type: 'dealDamage',
-      amount: {type: 'context', field: 'eventMaxHp', multiply: 0.08, min: 1, round: true},
-      tags: ['damage.physical.slashing'],
+      // Плоские 2 HP за тик (решение 2026-08-27, смена с 8% maxHp —
+      // процент от maxHp был слишком силён против толстых целей/босса).
+      // Число черновое — балансный проход roadMap 1.4.
+      amount: 2,
+      // Кровотечение — внутренний урон (damage.internal.*): броня его не режет,
+      // она защищает только от внешнего физического урона (damage.physical.*).
+      tags: ['damage.internal.bleeding'],
     },
     target: {type: 'eventTarget'},
     priority: 0,
@@ -718,32 +762,34 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     priority: 0,
   },
   {
-    // Плюс «Договора с подвалом»: больше весь исходящий урон (без фильтра тегов).
+    // Плюс «Договора с подвалом»: прямой исходящий урон оружия +2.
     id: 'relic_blood_pact_power',
     trigger: {
       event: 'DAMAGE',
+      tags: ['delivery.weapon'],
     },
     conditions: [{type: 'eventRole', role: 'source'}],
     effect: {
       type: 'modifyDamage',
       op: 'add',
-      value: 4,
+      value: 2,
     },
     target: {type: 'eventTarget'},
     priority: 0,
   },
   {
-    // Минус: больше и входящий урон по владельцу.
+    // Минус: прямой входящий урон оружия по владельцу +1.
     id: 'relic_blood_pact_price',
     polarity: 'negative',
     trigger: {
       event: 'DAMAGE',
+      tags: ['delivery.weapon'],
     },
     conditions: [{type: 'eventRole', role: 'target'}],
     effect: {
       type: 'modifyDamage',
-      op: 'multiply',
-      value: 1.25,
+      op: 'add',
+      value: 1,
     },
     target: {type: 'eventTarget'},
     priority: 0,

@@ -13,6 +13,14 @@ export const rules: Record<string, ContentText> = {
     name: 'Dazing Blow',
     description: 'Blunt attacks daze the target for 1 turn.',
   },
+  weapon_bleeding_on_hit: {
+    name: 'Bloodletting',
+    description: 'Slashing attacks open bleeding wounds for 3 turns.',
+  },
+  weapon_bleeding_execute: {
+    name: 'Execution',
+    description: 'Weapon damage against bleeding targets is increased by 3.',
+  },
   armor_spiked_thorns: {
     name: 'Thorns',
     description: 'When hit by a melee attack, reflects 2 piercing damage back to the attacker.',
@@ -97,11 +105,11 @@ export const rules: Record<string, ContentText> = {
   },
   relic_blood_pact_power: {
     name: 'Pact Power',
-    description: 'All damage you deal is increased by 4.',
+    description: 'Direct outgoing damage from your [weapon](tag:delivery.weapon) is increased by 2.',
   },
   relic_blood_pact_price: {
     name: 'Pact Price',
-    description: 'Incoming damage against you is increased by 25%.',
+    description: 'Direct incoming damage from [weapons](tag:delivery.weapon) is increased by 1.',
   },
   relic_scavenger_heal_on_pickup: {
     name: 'Thrill of the Find',

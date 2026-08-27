@@ -30,6 +30,15 @@ beforeEach(() => {
         abilityPool: [],
         grantedAbilities: [],
       } as any],
+      ['stackable_potion', {
+        id: 'stackable_potion',
+        type: 'consumable',
+        stackable: true,
+        maxStack: 3,
+        value: 0,
+        abilityPool: [],
+        grantedAbilities: [],
+      } as any],
     ]),
     abilities: new Map(),
     maps: new Map(),
@@ -98,5 +107,18 @@ describe('createDebugAddItemActionHandler', () => {
     const action = {type: 'DEBUG_ADD_ITEM' as const, entityId: 'player', templateId: 'health_potion'};
 
     expect(handler.resolve(state, action)).toEqual([]);
+  });
+
+  it('сливает стакаемый предмет в существующую стопку до maxStack', () => {
+    const state = makeGameState();
+    const handler = createDebugAddItemActionHandler(makeContext(true));
+    const action = {type: 'DEBUG_ADD_ITEM' as const, entityId: 'player', templateId: 'stackable_potion'};
+    const builder = makeBuilder();
+
+    handler.execute(state, action, [], builder, builder.root);
+    handler.execute(state, action, [], builder, builder.root);
+
+    expect(state.player.inventory.length).toBe(1);
+    expect(state.player.inventory[0]?.quantity).toBe(2);
   });
 });

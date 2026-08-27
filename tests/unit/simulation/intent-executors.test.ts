@@ -3,6 +3,7 @@ import {ExecutionBuilder} from "@simulation/systems/actions/types.ts";
 import {executeMoveIntent} from "@simulation/systems/intents/move-intent-executer.ts";
 import {executeDamageIntent} from "@simulation/systems/intents/attack-intent-executer.ts";
 import {executeDieIntent} from "@simulation/systems/intents/die-intent-executer.ts";
+import {executeRestoreApIntent} from "@simulation/systems/intents/restore-ap-intent-executer.ts";
 import {executePickUpIntent} from "@simulation/systems/intents/pick-up-intent-executor.ts";
 import {executeLockDoorIntent, executeOpenDoorIntent, executeUnlockDoorIntent} from "@simulation/systems/intents/door-intent-executor.ts";
 import {executeIntent, executeIntents} from "@simulation/systems/intents/execute-intent.ts";
@@ -165,7 +166,7 @@ describe('executeDieIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        const node = executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: 3, y: 4}}, builder, builder.root);
+        const node = executeDieIntent(state, {type: 'DIE', sourceEntityId: null, entityId: enemy.id, position: {x: 3, y: 4}}, builder, builder.root);
 
         expect(state.entities.has(enemy.id)).toBe(true);
         expect(enemy.isAlive).toBe(false);
@@ -180,7 +181,7 @@ describe('executeDieIntent', () => {
         const state = makeStateWithPlayerAndEntity(player, makeEnemy());
         const builder = makeBuilder();
 
-        const node = executeDieIntent(state, {type: 'DIE', entityId: PLAYER_ID, position: {x: player.x, y: player.y}}, builder, builder.root);
+        const node = executeDieIntent(state, {type: 'DIE', sourceEntityId: null, entityId: PLAYER_ID, position: {x: player.x, y: player.y}}, builder, builder.root);
 
         expect(state.phase).toBe('dead');
         expect(player.hp).toBe(0);
@@ -192,7 +193,7 @@ describe('executeDieIntent', () => {
         const state = makeGameState();
         const builder = makeBuilder();
 
-        const node = executeDieIntent(state, {type: 'DIE', entityId: 'missing', position: {x: 0, y: 0}}, builder, builder.root);
+        const node = executeDieIntent(state, {type: 'DIE', sourceEntityId: null, entityId: 'missing', position: {x: 0, y: 0}}, builder, builder.root);
 
         expect(node).toBeNull();
     });
@@ -202,7 +203,7 @@ describe('executeDieIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
+        executeDieIntent(state, {type: 'DIE', sourceEntityId: null, entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
 
         expect(state.runStats.defeatedBossIds).toEqual(['cat_king']);
     });
@@ -212,7 +213,7 @@ describe('executeDieIntent', () => {
         const state = makeStateWithPlayerAndEntity(makePlayer(), enemy);
         const builder = makeBuilder();
 
-        executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
+        executeDieIntent(state, {type: 'DIE', sourceEntityId: null, entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
 
         expect(state.runStats.defeatedBossIds).toEqual([]);
     });
@@ -223,9 +224,58 @@ describe('executeDieIntent', () => {
         state.runStats.defeatedBossIds = ['cat_king'];
         const builder = makeBuilder();
 
-        executeDieIntent(state, {type: 'DIE', entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
+        executeDieIntent(state, {type: 'DIE', sourceEntityId: null, entityId: enemy.id, position: {x: enemy.x, y: enemy.y}}, builder, builder.root);
 
         expect(state.runStats.defeatedBossIds).toEqual(['cat_king']);
+    });
+});
+
+// =========================================================
+// executeRestoreApIntent
+// =========================================================
+describe('executeRestoreApIntent', () => {
+    it('без amount — полное восстановление AP до maxAp', () => {
+        const player = makePlayer({ap: 1, maxAp: 3});
+        const state = makeStateWithPlayerAndEntity(player, makeEnemy());
+        const builder = makeBuilder();
+
+        const node = executeRestoreApIntent(state, {type: 'RESTORE_AP', entityId: player.id}, builder, builder.root);
+
+        expect(player.ap).toBe(3);
+        expect(node!.event).toMatchObject({type: 'AP_RESTORED', entityId: player.id, amount: 2, remaining: 3});
+    });
+
+    it('с amount — восстанавливает ровно amount AP', () => {
+        const player = makePlayer({ap: 1, maxAp: 3});
+        const state = makeStateWithPlayerAndEntity(player, makeEnemy());
+        const builder = makeBuilder();
+
+        const node = executeRestoreApIntent(state, {type: 'RESTORE_AP', entityId: player.id, amount: 1}, builder, builder.root);
+
+        expect(player.ap).toBe(2);
+        expect(node!.event).toMatchObject({type: 'AP_RESTORED', entityId: player.id, amount: 1, remaining: 2});
+    });
+
+    it('с amount — клампит к эффективному maxAp', () => {
+        const player = makePlayer({ap: 1, maxAp: 3});
+        const state = makeStateWithPlayerAndEntity(player, makeEnemy());
+        const builder = makeBuilder();
+
+        const node = executeRestoreApIntent(state, {type: 'RESTORE_AP', entityId: player.id, amount: 10}, builder, builder.root);
+
+        expect(player.ap).toBe(3);
+        expect(node!.event).toMatchObject({type: 'AP_RESTORED', entityId: player.id, amount: 2, remaining: 3});
+    });
+
+    it('с amount при полных AP — дельта 0', () => {
+        const player = makePlayer({ap: 3, maxAp: 3});
+        const state = makeStateWithPlayerAndEntity(player, makeEnemy());
+        const builder = makeBuilder();
+
+        const node = executeRestoreApIntent(state, {type: 'RESTORE_AP', entityId: player.id, amount: 1}, builder, builder.root);
+
+        expect(player.ap).toBe(3);
+        expect(node!.event).toMatchObject({type: 'AP_RESTORED', entityId: player.id, amount: 0, remaining: 3});
     });
 });
 

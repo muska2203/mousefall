@@ -177,6 +177,7 @@ describe('createPatch', () => {
       type: 'ENTITY_DIED', isFieldEvent: true,
       entityId: 'enemy_test_1',
       position: { x: 3, y: 3 },
+      sourceEntityId: null,
     };
     const patch = createPatch(event, makeMinimalState());
     expect(patch).toEqual({ type: 'ENTITY_DIED', entityId: 'enemy_test_1' });

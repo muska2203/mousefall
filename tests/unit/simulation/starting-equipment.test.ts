@@ -27,6 +27,19 @@ beforeEach(() => {
     items: new Map([
       ['test_staff', mockWeapon('test_staff')],
       ['unarmed', mockWeapon('unarmed')],
+      ['test_potion', {
+        id: 'test_potion',
+        type: 'consumable',
+        stackable: true,
+        maxStack: 5,
+        value: 0,
+        rarity: 'common',
+        consumable: { effect: 'heal', value: 5 },
+        abilityPool: [],
+        fixedModifiers: [],
+        grantedAbilities: [],
+        apCost: 1,
+      } as ItemTemplate],
     ]),
     abilities: new Map(),
     maps: new Map(),
@@ -61,5 +74,15 @@ describe('createStartingEquipment', () => {
 
     expect(state.player.equippedWeaponId).toBe('test_staff');
     expect(state.player.inventory.some(i => i.templateId === 'unarmed')).toBe(false);
+  });
+
+  it('одинаковые стакаемые расходники стартового набора сливаются в одну стопку', () => {
+    const state = makeGameState();
+
+    createStartingEquipment(state, state.player, ['test_potion', 'test_potion']);
+
+    const potions = state.player.inventory.filter(i => i.templateId === 'test_potion');
+    expect(potions).toHaveLength(1);
+    expect(potions[0]?.quantity).toBe(2);
   });
 });

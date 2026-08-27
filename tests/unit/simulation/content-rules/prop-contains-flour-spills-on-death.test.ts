@@ -123,6 +123,7 @@ function makeDeathSetup(propOverrides: Parameters<typeof makeProp>[0]) {
     isFieldEvent: true,
     entityId: prop.id,
     position: { x: prop.x, y: prop.y },
+    sourceEntityId: null,
   };
   const builder = new ExecutionBuilder(event);
   return { state, event, builder };

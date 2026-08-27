@@ -14,8 +14,12 @@ export const items: Record<string, ContentText> = {
     description: 'Тяжёлый коготь, способный царапать броню.',
   },
   common_splinter_blade: {
-    name: 'Ржавый сырорез',
-    description: 'Небольшой тупой клинок, от которого пахнет сыром.',
+    name: 'Зазубренный сырорез',
+    description: 'Зубчатый нож для сыра. Раны от него неглубокие, но долго кровоточат.',
+  },
+  common_hat_pin: {
+    name: 'Шляпная булавка',
+    description: 'Длинная игла от хозяйской шляпы. В точных лапах — шпага дуэлянта.',
   },
   common_school_wand: {
     name: 'Треснувшая спица',

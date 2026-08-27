@@ -19,6 +19,7 @@ import {catClawMid} from './weapons/cat-claw-mid';
 import {catClawSmall} from './weapons/cat-claw-small';
 import {catGuardianMaul} from './weapons/cat-guardian-maul';
 import {commonFlamingSword} from './weapons/common-flaming-sword';
+import {commonHatPin} from './weapons/common-hat-pin';
 import {commonSchoolWand} from './weapons/common-school-wand';
 import {commonSling} from './weapons/common-sling';
 import {commonSplinterBlade} from './weapons/common-splinter-blade';
@@ -47,6 +48,7 @@ export const itemTemplates: ItemTemplateInput[] = [
   catClawSmall,
   catGuardianMaul,
   commonFlamingSword,
+  commonHatPin,
   commonSchoolWand,
   commonSling,
   commonSplinterBlade,

@@ -21,6 +21,14 @@ export const modifiers: Record<string, ContentText> = {
     name: 'Dazing',
     description: 'Blunt attacks daze the target for 1 turn.',
   },
+  mod_bleeding_on_hit: {
+    name: 'Rending',
+    description: 'Slashing hits with this weapon open bleeding wounds for 3 turns.',
+  },
+  mod_bleeding_execute: {
+    name: 'Executing',
+    description: 'Hits with this weapon deal 3 additional damage to bleeding targets.',
+  },
   mod_fire_damage_multiplier: {
     name: 'Flaming',
     description: 'Fire damage is increased by 50%.',

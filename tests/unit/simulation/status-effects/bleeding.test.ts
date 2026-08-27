@@ -3,10 +3,10 @@
  *
  * Проверяет:
  * - тик длительности через общий TICK_STATUS_EFFECTS;
- * - правило `status_bleeding_tick_damage`: физический урон от maxHp ровно один раз
+ * - правило `status_bleeding_tick_damage`: плоский внутренний урон 2 HP ровно один раз
  *   на сущность (регрессионный паттерн «соседний носитель не дублирует урон»,
- *   как у status_poison_tick_damage);
- * - физическая природа тика: броня цели снижает урон.
+ *   как у status_poison_tick_damage); с 2026-08-27 — плоское значение, ранее 8% maxHp;
+ * - внутренняя природа тика (damage.internal.bleeding): броня цели урон НЕ снижает.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -106,13 +106,13 @@ describe('bleeding', () => {
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
     advanceToPlayerTurn(sim);
 
-    // Тик кровотечения: round(maxHp * 0.08) = 8 при maxHp 100, ровно один раз на сущность.
-    expect(sim.getState().player.hp).toBe(92);
+    // Тик кровотечения: плоские 2 HP, ровно один раз на сущность.
+    expect(sim.getState().player.hp).toBe(98);
     const updatedEnemy = sim.getState().entities.get(enemy.id);
-    expect(updatedEnemy && 'hp' in updatedEnemy ? updatedEnemy.hp : null).toBe(92);
+    expect(updatedEnemy && 'hp' in updatedEnemy ? updatedEnemy.hp : null).toBe(98);
   });
 
-  it('броня цели снижает физический урон тика кровотечения', () => {
+  it('броня цели НЕ снижает внутренний урон тика кровотечения', () => {
     const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({
       id: 'armored_bleeding_enemy', x: 6, y: 5, hp: 100, maxHp: 100, maxAp: 0, ap: 0,
@@ -136,8 +136,9 @@ describe('bleeding', () => {
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
     advanceToPlayerTurn(sim);
 
-    // round(100 * 0.08) − armor 3 = 5 физического урона.
+    // Тик кровотечения — внутренний урон (damage.internal.bleeding):
+    // броня защищает только от внешнего физического урона, поэтому 2 HP проходят полностью.
     const updatedEnemy = sim.getState().entities.get(enemy.id);
-    expect(updatedEnemy && 'hp' in updatedEnemy ? updatedEnemy.hp : null).toBe(95);
+    expect(updatedEnemy && 'hp' in updatedEnemy ? updatedEnemy.hp : null).toBe(98);
   });
 });

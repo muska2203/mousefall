@@ -7,7 +7,7 @@
 
 import {GameState} from '@simulation/types.ts';
 import {tryGetItem} from '@content/registry';
-import {createInventoryItem} from '@simulation/systems/inventory-factory.ts';
+import {createInventoryItem, addItemToInventory} from '@simulation/systems/inventory-factory.ts';
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from '@simulation/systems/actions/types.ts';
 import {Intent} from '@simulation/systems/intents/types.ts';
 
@@ -53,7 +53,8 @@ export function createDebugAddItemActionHandler(context: DebugContext): ActionHa
       }
 
       const item = createInventoryItem(state, action.templateId);
-      state.player.inventory.push(item);
+      // Общий хелпер: стакаемые предметы сливаются в существующие стеки до maxStack.
+      addItemToInventory(state.player, item);
     },
   };
 }

@@ -93,6 +93,14 @@ export const tags: Record<string, ContentText> = {
     name: 'Магический урон',
     description: 'Урон магического класса',
   },
+  'damage.internal': {
+    name: 'Внутренний урон',
+    description: 'Урон внутреннего класса: не снижается бронёй',
+  },
+  'damage.internal.bleeding': {
+    name: 'Кровотечение',
+    description: 'Внутренний урон от кровотечения: не снижается бронёй',
+  },
   'damage': {
     name: 'Урон',
     description: 'Теги классификации урона',
