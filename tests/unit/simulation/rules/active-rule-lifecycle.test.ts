@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
-import {makeGameState, makePlayer} from '../../../fixtures/gameState';
+import {makeGameState, makePlayer, makeEnemy} from '../../../fixtures/gameState';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
-import type {AbilityTemplate, ItemTemplate, ModifierTemplate, StatusTemplate} from '../../../../src/content/schemas';
+import type {AbilityTemplate, EntityTemplate, ItemTemplate, ModifierTemplate, StatusTemplate} from '../../../../src/content/schemas';
 import type {RuntimeAbility} from '../../../../src/simulation/core-types';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
 import {executeApplyStatusIntent} from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
@@ -40,6 +40,42 @@ const testIgniteModifier: ModifierTemplate = {
   poolEligible: false,
   weight: 1,
 };
+
+/** Stat-модификатор без правила (для проверки, что stat-эффекты не дают activeRules). */
+const testStatModifier: ModifierTemplate = {
+  id: 'test_mod_stat',
+  effect: { kind: 'stat', stat: 'maxHp', op: 'add' },
+  scaling: { kind: 'fixed', value: 10 },
+  applicableSubtypes: ['sword'],
+  polarity: 'positive',
+  poolEligible: false,
+  weight: 1,
+};
+
+/** Минимальный шаблон врага с заданным списком модификаторов. */
+function mockEntityTemplate(id: string, modifiers: string[] = []): EntityTemplate {
+  return {
+    id,
+    health: { max: 10 },
+    baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
+    attack: {
+      damage: { min: 1, max: 1 },
+      range: 1,
+      minRange: 1,
+      damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }],
+      tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+    },
+    armor: 0,
+    modifiers,
+    abilities: [],
+    lootTable: [],
+    lootDropTable: [],
+    aiSightRadius: 6,
+    aiStrategyId: 'hunter',
+    maxAp: 1,
+    isBoss: false,
+  } as EntityTemplate;
+}
 
 function mockAbility(id: string, ruleIds: string[] = []): AbilityTemplate {
   return {
@@ -80,13 +116,17 @@ function makeBuilder() {
 beforeEach(() => {
   resetRegistry();
   initRegistry({
-    entities: new Map(),
+    entities: new Map([
+      ['test_enemy', mockEntityTemplate('test_enemy', ['test_mod_ignite'])],
+      ['test_enemy_stat', mockEntityTemplate('test_enemy_stat', ['test_mod_stat'])],
+    ]),
     players: new Map(),
     items: new Map([
       ['test_item', mockItem('test_item')],
     ]),
     modifiers: new Map([
       ['test_mod_ignite', testIgniteModifier],
+      ['test_mod_stat', testStatModifier],
     ]),
     abilities: new Map([
       ['test_ability', mockAbility('test_ability', ['item_fire_damage_multiplier'])],
@@ -320,5 +360,36 @@ describe('active-rule-lifecycle', () => {
       entityId: instanceId,
       statusInstanceId: instanceId,
     });
+  });
+
+  // ── Вражеская ветка rebuildActiveRules (модификаторы шаблона сущности) ─────
+
+  it('rebuildActiveRules врага собирает ruleIds из modifiers шаблона', () => {
+    const enemy = makeEnemy({ templateId: 'test_enemy' });
+
+    rebuildActiveRules(enemy);
+
+    expect(enemy.activeRules).toHaveLength(1);
+    expect(enemy.activeRules[0]!.id).toBe('fire_damage_ignites');
+    expect(enemy.activeRules[0]!.ownerContext).toEqual({
+      type: 'entity',
+      entityId: 'modifier:test_mod_ignite',
+    });
+  });
+
+  it('rebuildActiveRules врага не добавляет правила от stat-модификаторов шаблона', () => {
+    const enemy = makeEnemy({ templateId: 'test_enemy_stat' });
+
+    rebuildActiveRules(enemy);
+
+    expect(enemy.activeRules).toHaveLength(0);
+  });
+
+  it('rebuildActiveRules врага без шаблона в реестре не падает и не добавляет правил', () => {
+    const enemy = makeEnemy({ templateId: 'unknown_enemy' });
+
+    rebuildActiveRules(enemy);
+
+    expect(enemy.activeRules).toHaveLength(0);
   });
 });

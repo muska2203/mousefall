@@ -16,10 +16,23 @@ export const catGuardian = {
     "int": 2,
     "vit": 6
   },
-  "equipment": {
-    "weapon": "common_splinter_blade",
-    "armor": "cat_guardian_plate"
+  "attack": {
+    "damage": { "min": 1, "max": 2 },
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.physical.slashing",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
   },
+  "armor": 6,
+  "modifiers": ["mod_bleeding_on_hit", "mod_guardian_vitality"],
   "abilities": [
     "guardian_swoop",
     "ground_slam",

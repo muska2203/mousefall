@@ -246,6 +246,51 @@ describe('validateContentReferences: fixedModifiers', () => {
 });
 
 // ─────────────────────────────────────────────
+// Модификаторы сущности (прямые статы врагов)
+// ─────────────────────────────────────────────
+
+describe('validateContentReferences: modifiers сущности', () => {
+  it('находит ссылку на несуществующий модификатор в modifiers сущности', () => {
+    const content = makeSyntheticContent({
+      entities: new Map([['test_enemy', { ...mockEntity('test_enemy', false), modifiers: ['nonexistent_mod'] }]]),
+      modifiers: new Map(),
+    });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'entities.test_enemy' &&
+      e.field === 'modifiers' &&
+      e.problem.includes('nonexistent_mod'),
+    )).toBe(true);
+  });
+
+  it('находит модификатор со scaling perLevel в modifiers сущности', () => {
+    const content = makeSyntheticContent({
+      entities: new Map([['test_enemy', { ...mockEntity('test_enemy', false), modifiers: ['mod_test'] }]]),
+      modifiers: new Map([['mod_test', mockModifier({
+        scaling: { kind: 'perLevel', ranges: [{ min: 1, max: 2 }] },
+      })]]),
+    });
+
+    const errors = validateContentReferences(content);
+    expect(errors.some((e) =>
+      e.path === 'entities.test_enemy' &&
+      e.field === 'modifiers' &&
+      e.problem.includes('perLevel'),
+    )).toBe(true);
+  });
+
+  it('пропускает детерминированный модификатор (fixed/none) в modifiers сущности', () => {
+    const content = makeSyntheticContent({
+      entities: new Map([['test_enemy', { ...mockEntity('test_enemy', false), modifiers: ['mod_test'] }]]),
+      modifiers: new Map([['mod_test', mockModifier()]]),
+    });
+
+    expect(validateContentReferences(content)).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────
 // Self-buff способности: ссылка statusType на шаблон статуса
 // ─────────────────────────────────────────────
 
@@ -347,9 +392,19 @@ describe('validateContentReferences: players.starterRelicPool', () => {
 // ─────────────────────────────────────────────
 
 describe('Схемы босс-инфраструктуры: дефолты', () => {
-  it('EntityTemplateSchema: isBoss по умолчанию false', () => {
-    const parsed = EntityTemplateSchema.parse({ id: 'test_entity', health: { max: 1 } });
+  it('EntityTemplateSchema: isBoss по умолчанию false, armor/modifiers — дефолты', () => {
+    const parsed = EntityTemplateSchema.parse({
+      id: 'test_entity',
+      health: { max: 1 },
+      // attack — обязательное поле (fail fast): минимальный профиль.
+      attack: {
+        damage: { min: 1, max: 1 },
+        tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+      },
+    });
     expect(parsed.isBoss).toBe(false);
+    expect(parsed.armor).toBe(0);
+    expect(parsed.modifiers).toEqual([]);
   });
 
   it('DoorTemplateSchema: indestructible по умолчанию false', () => {
@@ -416,7 +471,15 @@ function mockEntity(id: string, isBoss: boolean): EntityTemplate {
     aiSightRadius: 6,
     health: { max: 10 },
     baseStats: { str: 0, dex: 0, int: 0, vit: 0 },
-    equipment: {},
+    attack: {
+      damage: { min: 1, max: 1 },
+      range: 1,
+      minRange: 1,
+      damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }],
+      tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+    },
+    armor: 0,
+    modifiers: [],
     abilities: [],
     lootTable: [],
     lootDropTable: [],

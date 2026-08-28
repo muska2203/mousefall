@@ -53,7 +53,14 @@ function createRat(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     maxAp: 2,
     baseStats: { str: 1, dex: 3, int: 0, vit: 0 },
     aiSightRadius: 4,
-    equippedWeaponId: 'common_splinter_blade',
+    // Профиль атаки копирует бывший common_splinter_blade: {1,2} режущий.
+    attack: {
+      damage: { min: 1, max: 2 },
+      range: 1,
+      minRange: 1,
+      damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+      tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+    },
     ...overrides,
   });
 }
@@ -157,8 +164,14 @@ describe('Poison + counterattack scenario', () => {
 
     createStartingEquipment(state, player, ['common_venom_dagger']);
 
-    // Враг с колющим оружием БЕЗ правила отравления.
-    const rat = createRat({ x: 6, y: 5, equippedWeaponId: 'cat_claw_small' });
+    // Враг с колющей атакой БЕЗ правила отравления (профиль бывшего cat_claw_small).
+    const rat = createRat({ x: 6, y: 5, attack: {
+      damage: { min: 1, max: 2 },
+      range: 1,
+      minRange: 1,
+      damageDistribution: [{ damageTag: 'damage.physical.piercing', weight: 1.0 }],
+      tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+    } });
     rebuildActiveRules(rat);
     state.entities.set(rat.id, rat);
 
@@ -175,7 +188,7 @@ describe('Poison + counterattack scenario', () => {
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
     advanceToPlayerTurn(sim);
 
-    // Убеждаемся, что враг реально атаковал колющим оружием.
+    // Убеждаемся, что враг реально атаковал колющей атакой.
     expect(player.hp).toBeLessThan(playerHpStart);
     expect(player.statusEffects.some((s) => s.type === 'poisoned')).toBe(false);
   });

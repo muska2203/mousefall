@@ -13,12 +13,12 @@
  * - при обновлении длительности статуса его правила не пересоздаются.
  */
 
-import type {Actor, StatusEffectHolder} from '@simulation/types.ts';
+import type {Actor, StatusEffectHolder, TemplateIdHolder} from '@simulation/types.ts';
 import type {ItemAffix, RuntimeAbility} from '@simulation/core-types.ts';
 import type {OwnerContext} from '@simulation/content-rules/types.ts';
 import {tryGetContentRule} from '@simulation/content-rules/registry.ts';
-import {getRegistry} from '@content/registry.ts';
-import {collectFixedRuleIds} from '@simulation/systems/item-affix-roll.ts';
+import {getRegistry, tryGetEntity} from '@content/registry.ts';
+import {collectRuleIdsFromIds} from '@simulation/systems/item-affix-roll.ts';
 import type {LoadedContent} from '@content/schemas';
 
 /**
@@ -276,21 +276,18 @@ export function rebuildActiveRules(actor: Actor): void {
       addActiveRulesForItem(actor, instanceId, affixRules.ruleIds, affixRules.paramValues);
     }
   } else {
-    // Враг: экипировка задана только шаблоном, экземпляра предмета нет.
-    // Фирменные правила предмета собираются из fixedModifiers шаблона.
-    const enemyEquipmentIds = {
-      weapon: (actor as Actor & { equippedWeaponId?: string | null }).equippedWeaponId,
-      armor: (actor as Actor & { equippedArmorId?: string | null }).equippedArmorId,
-      amulet: (actor as Actor & { equippedAmuletId?: string | null }).equippedAmuletId,
-    };
-
-    for (const [slot, templateId] of Object.entries(enemyEquipmentIds)) {
-      if (!templateId) continue;
-      const registry = getContentRegistrySafe();
-      const template = registry?.items.get(templateId);
-      if (!template) continue;
-
-      addActiveRules(actor, { type: 'entity', entityId: `equipment:${slot}:${templateId}` }, collectFixedRuleIds(template));
+    // Враг: экипировки нет — фирменные правила задаются модификаторами
+    // шаблона сущности. Шаблон читается из реестра по templateId
+    // (fail-safe tryGetEntity — прецедент isBossTemplate).
+    const templateId = (actor as Actor & Partial<TemplateIdHolder>).templateId;
+    const template = templateId ? tryGetEntity(templateId) : undefined;
+    if (template) {
+      // По одному вызову на модификатор с rule-эффектом — ownerContext точный.
+      for (const modifierId of template.modifiers) {
+        const ruleIds = collectRuleIdsFromIds([modifierId]);
+        if (ruleIds.length === 0) continue;
+        addActiveRules(actor, { type: 'entity', entityId: `modifier:${modifierId}` }, ruleIds);
+      }
     }
   }
 

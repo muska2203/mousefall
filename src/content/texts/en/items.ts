@@ -1,18 +1,6 @@
 import type {ContentText} from '../types';
 
 export const items: Record<string, ContentText> = {
-  cat_claw_small: {
-    name: 'Tiny Claw',
-    description: 'Sharp but small. Just like its owner.',
-  },
-  cat_claw_mid: {
-    name: 'Street Claw',
-    description: 'A jagged claw with asphalt residue.',
-  },
-  cat_claw_big: {
-    name: 'Boss Claw',
-    description: 'A heavy claw capable of scratching armor.',
-  },
   common_splinter_blade: {
     name: 'Jagged Cheesecutter',
     description: 'A serrated cheese knife. The cuts are shallow but bleed for a long time.',

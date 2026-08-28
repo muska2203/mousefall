@@ -14,8 +14,20 @@ export const catMid = {
     "int": 0,
     "vit": 1
   },
-  "equipment": {
-    "weapon": "cat_claw_mid"
+  "attack": {
+    "damage": { "min": 2, "max": 4 },
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.physical.slashing",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
   },
   "abilities": [
     "swoop"

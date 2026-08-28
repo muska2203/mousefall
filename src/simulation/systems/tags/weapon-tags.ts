@@ -1,11 +1,11 @@
 /**
- * Хелперы для получения тегов экипированного оружия сущности.
+ * Хелперы для получения тегов и распределения урона базовой атаки сущности.
+ * Враг читается из профиля `attack`, игрок — из экипированного оружия.
  */
 
 import type {Entity} from '@simulation/types.ts';
 import {tryGetItem} from '@content/registry';
 import type {GameplayTag} from '@simulation/core-types.ts';
-import {isStatActor} from '@simulation/systems/stats/effective-stats';
 
 /** Распределение урона безоружной атаки по умолчанию. */
 export const UNARMED_DAMAGE_DISTRIBUTION: Array<{ damageTag: GameplayTag; weight: number }> = [
@@ -21,14 +21,17 @@ const UNARMED_TAGS: GameplayTag[] = [
 ];
 
 /**
- * Возвращает теги оружия, экипированного сущностью.
- * Если сущность — StatActor без экипированного оружия, загружает unarmed.json
- * из реестра. Константы UNARMED_TAGS используются как fallback, если реестр
- * недоступен или unarmed.json отсутствует.
- * Для не-StatActor возвращает пустой массив.
+ * Возвращает теги атаки сущности.
+ * Враг — теги из профиля `attack` (прямые статы вместо экипировки).
+ * Игрок без экипированного оружия — теги из шаблона unarmed; константа
+ * UNARMED_TAGS — fallback, если реестр недоступен или unarmed отсутствует.
+ * Для не-акторов возвращает пустой массив.
  */
 export function getWeaponTags(entity: Entity): GameplayTag[] {
-  if (!isStatActor(entity)) {
+  if (entity.type === 'enemy') {
+    return entity.attack.tags.slice();
+  }
+  if (entity.type !== 'player') {
     return [];
   }
 
@@ -40,13 +43,17 @@ export function getWeaponTags(entity: Entity): GameplayTag[] {
 }
 
 /**
- * Возвращает распределение типов урона экипированного оружия сущности.
- * Для не-StatActor или при отсутствии оружия загружает распределение из unarmed.json.
- * Константы UNARMED_DAMAGE_DISTRIBUTION используются как fallback, если реестр
- * недоступен или unarmed.json отсутствует.
+ * Возвращает распределение типов урона базовой атаки сущности.
+ * Враг — из профиля `attack`; игрок — из экипированного оружия,
+ * при его отсутствии — из шаблона unarmed.
+ * Константа UNARMED_DAMAGE_DISTRIBUTION — fallback, если реестр
+ * недоступен или unarmed отсутствует.
  */
 export function getWeaponDamageDistribution(entity: Entity): Array<{ damageTag: GameplayTag; weight: number }> {
-  if (!isStatActor(entity)) {
+  if (entity.type === 'enemy') {
+    return entity.attack.damageDistribution.map(entry => ({ ...entry }));
+  }
+  if (entity.type !== 'player') {
     return UNARMED_DAMAGE_DISTRIBUTION.slice();
   }
 

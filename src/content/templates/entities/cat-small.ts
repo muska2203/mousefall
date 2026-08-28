@@ -14,9 +14,22 @@ export const catSmall = {
     "int": 0,
     "vit": 0
   },
-  "equipment": {
-    "weapon": "common_splinter_blade"
+  "attack": {
+    "damage": { "min": 1, "max": 2 },
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.physical.slashing",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
   },
+  "modifiers": ["mod_bleeding_on_hit"],
   "lootTable": [
     {
       "templateId": "health_potion",

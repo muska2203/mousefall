@@ -41,12 +41,6 @@ const BaseStatsSchema = z.object({
   vit: z.number().int().default(0).describe('Живучесть'),
 }).describe('Базовые характеристики');
 
-const EquipmentSchema = z.object({
-  weapon: z.string().min(1).optional().describe('ID шаблона экипированного оружия'),
-  armor: z.string().min(1).optional().describe('ID шаблона экипированной брони'),
-  amulet: z.string().min(1).optional().describe('ID шаблона экипированного амулета'),
-}).default({}).describe('Снаряжение врага');
-
 const LootEntrySchema = z.object({
   templateId: z.string().min(1).describe('ID шаблона предмета'),
   weight: z.number().int().nonnegative().describe('Вес выпадения'),
@@ -103,30 +97,7 @@ export const SpritePlacementSchema = SpritePlacementFieldsSchema
 export type SpritePlacement = z.output<typeof SpritePlacementFieldsSchema>;
 
 // ─────────────────────────────────────────────
-// Шаблон сущности
-// ─────────────────────────────────────────────
-
-export const EntityTemplateSchema = z.object({
-  id:       z.string().min(1).describe('Уникальный идентификатор сущности (совпадает с именем файла)'),
-  aiStrategyId: z.enum(AI_STRATEGY_IDS).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
-  aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Чебышёв + LOS). По умолчанию 6.'),
-  health:   HealthSchema,
-  baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 }).describe('Базовые характеристики врага'),
-  equipment: EquipmentSchema,
-  abilities: z.array(z.string().min(1)).default([]).describe('Innate-способности врага (ID шаблонов)'),
-  lootTable:  z.array(LootEntrySchema).default([]).describe('Таблица выпадения предметов при смерти'),
-  lootDropTable: z.array(LootDropTableEntrySchema).default([]).describe('Взвешенная таблица количества выпадаемых предметов'),
-  placement: SpritePlacementSchema,
-  maxAp: z.number().int().positive().default(1)
-    .describe('Максимальное количество очков действий (AP)'),
-  isBoss: z.boolean().default(false)
-    .describe('Признак босса: такие шаблоны допустимы в bossPool карты и учитываются контроллером босс-комнаты'),
-}).describe('Шаблон врага или NPC');
-
-export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
-
-// ─────────────────────────────────────────────
-// Шаблон предмета
+// Профиль атаки (переиспользуется оружием и врагами)
 // ─────────────────────────────────────────────
 
 /** Рейнж урона оружия: целые границы, max ≥ min. */
@@ -137,7 +108,7 @@ const DamageRangeSchema = z.object({
   message: 'damage.max не может быть меньше damage.min',
 }).describe('Рейнж урона {min, max}');
 
-const WeaponStatsSchema = z.object({
+export const AttackProfileSchema = z.object({
   damage: DamageRangeSchema.describe('Рейнж урона оружия (роллится при каждом ударе)'),
   range: z.number().int().positive().default(1).describe('Максимальная дальность базовой атаки в клетках (дистанция Чебышёва, требуется прямая видимость)'),
   minRange: z.number().int().min(1).default(1).describe('Минимальная дальность базовой атаки в клетках (дистанция Чебышёва); при minRange > 1 оружие в упор не бьёт — bump-атака отклоняется'),
@@ -157,7 +128,44 @@ const WeaponStatsSchema = z.object({
 .refine(s => s.minRange <= s.range, {
   message: 'minRange не может быть больше range (иначе зона атаки пуста)',
 })
-.describe('Характеристики оружия');
+.describe('Профиль атаки: характеристики оружия или прямая базовая атака врага');
+
+/** Профиль базовой атаки (урон, дальность, распределение типов, теги). */
+export type AttackProfile = z.output<typeof AttackProfileSchema>;
+
+// ─────────────────────────────────────────────
+// Шаблон сущности
+// ─────────────────────────────────────────────
+
+export const EntityTemplateSchema = z.object({
+  id:       z.string().min(1).describe('Уникальный идентификатор сущности (совпадает с именем файла)'),
+  aiStrategyId: z.enum(AI_STRATEGY_IDS).optional().describe('ID runtime-стратегии ИИ (регистрируется в strategy-registry). Обязателен для врагов, не нужен для игрока.'),
+  aiSightRadius: z.number().int().positive().default(6).describe('Радиус обзора врага в клетках (Чебышёв + LOS). По умолчанию 6.'),
+  health:   HealthSchema,
+  baseStats: BaseStatsSchema.default({ str: 0, dex: 0, int: 0, vit: 0 }).describe('Базовые характеристики врага'),
+  attack: AttackProfileSchema.describe('Профиль базовой атаки врага (прямые статы вместо экипировки)'),
+  armor: z.number().int().nonnegative().default(0).describe('Базовая броня врага (плоское снижение входящего урона)'),
+  modifiers: z.array(z.string().min(1))
+    .default([])
+    .refine(ids => new Set(ids).size === ids.length, {
+      message: 'modifiers не должны содержать дубликатов',
+    })
+    .describe('ID модификаторов (категория modifiers) — фирменные свойства врага без предметов-прокладок'),
+  abilities: z.array(z.string().min(1)).default([]).describe('Innate-способности врага (ID шаблонов)'),
+  lootTable:  z.array(LootEntrySchema).default([]).describe('Таблица выпадения предметов при смерти'),
+  lootDropTable: z.array(LootDropTableEntrySchema).default([]).describe('Взвешенная таблица количества выпадаемых предметов'),
+  placement: SpritePlacementSchema,
+  maxAp: z.number().int().positive().default(1)
+    .describe('Максимальное количество очков действий (AP)'),
+  isBoss: z.boolean().default(false)
+    .describe('Признак босса: такие шаблоны допустимы в bossPool карты и учитываются контроллером босс-комнаты'),
+}).describe('Шаблон врага или NPC');
+
+export type EntityTemplate = z.output<typeof EntityTemplateSchema>;
+
+// ─────────────────────────────────────────────
+// Шаблон предмета
+// ─────────────────────────────────────────────
 
 const ArmorStatsSchema = z.object({
   baseArmor: z.number().int().nonnegative().describe('Плоское снижение урона при экипировке'),
@@ -217,7 +225,7 @@ export const ItemTemplateSchema = z.object({
   stackable:   z.boolean().default(false).describe('Можно ли складывать несколько в одну ячейку инвентаря'),
   maxStack:    z.number().int().positive().default(1).describe('Максимальный размер стопки'),
   value:       z.number().int().nonnegative().default(0).describe('Цена в золоте для продажи'),
-  weapon:      WeaponStatsSchema.optional(),
+  weapon:      AttackProfileSchema.optional(),
   armor:       ArmorStatsSchema.optional(),
   consumable:  ConsumableEffectSchema.optional(),
   abilityPool: z.array(

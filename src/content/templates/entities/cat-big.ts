@@ -14,10 +14,23 @@ export const catBig = {
     "int": 0,
     "vit": 2
   },
-  "equipment": {
-    "weapon": "cat_claw_big",
-    "armor": "common_tin_plate"
+  "attack": {
+    "damage": { "min": 3, "max": 5 },
+    "range": 1,
+    "damageDistribution": [
+      {
+        "damageTag": "damage.physical.slashing",
+        "weight": 1
+      }
+    ],
+    "tags": [
+      "attack.melee",
+      "target.single",
+      "delivery.weapon"
+    ]
   },
+  "armor": 2,
+  "modifiers": ["mod_spiked_thorns"],
   "abilities": [
     "magic_slap"
   ],

@@ -19,6 +19,8 @@ import {
   getEffectiveArmor,
   getEffectiveMaxHp,
 } from '@simulation/systems/stats/effective-stats.ts';
+import { getWeaponTags, getWeaponDamageDistribution } from '@simulation/systems/tags/weapon-tags.ts';
+import { getWeaponAttackRange } from '@simulation/systems/stats/weapon-range.ts';
 import { recalculateActorStats } from '@simulation/systems/stats/recalculate.ts';
 
 function mockItem(id: string, template: Partial<ItemTemplate>): ItemTemplate {
@@ -98,6 +100,53 @@ describe('stats system', () => {
     it('returns base critMultiplier', () => {
       const player = makePlayer();
       expect(getBaseCritMultiplier(player)).toBe(1.5);
+    });
+  });
+
+  // ─────────────────────────────────────────────
+  // Резолверы врага (прямые статы: attack / baseArmor)
+  // ─────────────────────────────────────────────
+
+  describe('enemy profile resolvers', () => {
+    const enemyAttack = {
+      damage: { min: 3, max: 5 },
+      range: 2,
+      minRange: 1,
+      damageDistribution: [
+        { damageTag: 'damage.physical.slashing', weight: 2.0 },
+        { damageTag: 'damage.physical.piercing', weight: 1.0 },
+      ],
+      tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+    };
+
+    it('getBaseDamageRange читает attack.damage врага', () => {
+      const enemy = makeEnemy({ attack: enemyAttack });
+      expect(getBaseDamageRange(enemy)).toEqual({ min: 3, max: 5 });
+    });
+
+    it('getBaseArmor читает baseArmor врага', () => {
+      const enemy = makeEnemy({ baseArmor: 4 });
+      expect(getBaseArmor(enemy)).toBe(4);
+    });
+
+    it('getWeaponTags возвращает теги из attack.tags врага (копия, без мутации профиля)', () => {
+      const enemy = makeEnemy({ attack: enemyAttack });
+      const tags = getWeaponTags(enemy);
+      expect(tags).toEqual(['attack.melee', 'target.single', 'delivery.weapon']);
+      expect(tags).not.toBe(enemy.attack.tags);
+    });
+
+    it('getWeaponDamageDistribution возвращает распределение из attack врага', () => {
+      const enemy = makeEnemy({ attack: enemyAttack });
+      expect(getWeaponDamageDistribution(enemy)).toEqual([
+        { damageTag: 'damage.physical.slashing', weight: 2.0 },
+        { damageTag: 'damage.physical.piercing', weight: 1.0 },
+      ]);
+    });
+
+    it('getWeaponAttackRange читает range/minRange из attack врага', () => {
+      const enemy = makeEnemy({ attack: enemyAttack });
+      expect(getWeaponAttackRange(enemy)).toEqual({ minRange: 1, range: 2 });
     });
   });
 
@@ -202,9 +251,18 @@ describe('stats system', () => {
       expect(getEffectiveWeaponDamageRange(player)).toEqual({ min: 5, max: 5 });
     });
 
-    it('returns unarmed damage range for enemies with baseStats', () => {
-      const enemy = makeEnemy({ baseStats: { str: 2, dex: 0, int: 0, vit: 0 }, equippedWeaponId: null });
-      expect(getEffectiveWeaponDamageRange(enemy)).toEqual({ min: 1, max: 1 });
+    it('returns damage range from enemy attack profile', () => {
+      // Прямые статы врага: рейнж читается из профиля attack сущности (без реестра).
+      const enemy = makeEnemy({
+        attack: {
+          damage: { min: 2, max: 4 },
+          range: 1,
+          minRange: 1,
+          damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+          tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+        },
+      });
+      expect(getEffectiveWeaponDamageRange(enemy)).toEqual({ min: 2, max: 4 });
     });
 
     it('returns base armor + modifiers for player', () => {
@@ -213,9 +271,9 @@ describe('stats system', () => {
       expect(getEffectiveArmor(player)).toBe(6);
     });
 
-    it('returns derived armor for enemies with baseStats', () => {
-      const enemy = makeEnemy({ equippedArmorId: null, statModifiers: [{ stat: 'armor', value: 3, op: 'add', source: 'test' }] });
-      expect(getEffectiveArmor(enemy)).toBe(3);
+    it('returns baseArmor + modifiers for enemies', () => {
+      const enemy = makeEnemy({ baseArmor: 2, statModifiers: [{ stat: 'armor', value: 3, op: 'add', source: 'test' }] });
+      expect(getEffectiveArmor(enemy)).toBe(5);
     });
 
     it('effective maxHp includes modifiers', () => {

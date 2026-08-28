@@ -49,4 +49,16 @@ export const abilities: Record<string, ContentText> = {
     name: 'Search',
     description: 'Survey the surroundings: reveals hidden traps within 3 cells in line of sight. Costs 1 AP even if nothing is found.',
   },
+  brace_stance: {
+    name: 'Brace Stance',
+    description: 'Defensive stance: +2 armor for 2 turns.',
+  },
+  swiftness: {
+    name: 'Swiftness',
+    description: 'Speed up: +1 to max action points for 2 turns.',
+  },
+  battle_rage: {
+    name: 'Battle Rage',
+    description: 'Battle trance: +2 damage for 2 turns.',
+  },
 };

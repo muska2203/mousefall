@@ -59,6 +59,16 @@ import type {EntityTemplateInput} from '../../schemas';
 
 export const catBig = {
   id: 'cat_big',
+  attack: {
+    damage: { min: 3, max: 5 },
+    range: 1,
+    damageDistribution: [
+      { damageTag: 'damage.physical.slashing', weight: 1.0 },
+    ],
+    tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+  },
+  armor: 2,
+  modifiers: ['mod_spiked_thorns'],
   // ...
 } satisfies EntityTemplateInput;
 ```
@@ -113,7 +123,7 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 
 ## Валидация перекрёстных ссылок (`src/content/validate-references.ts`)
 
-`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `equipment.*`, `abilities`, `lootTable[].templateId` у сущностей; `starterEquipment` у игроков; `roomTypePool`/`startRoomTypeId`/`relicPool` у карт; `bossPool` у карт (шаблоны пула обязаны существовать и иметь `isBoss: true`) и `bossRoomTypeId`/`rewardRoomTypeId` → roomTypes (только при заданном `bossPool`); все пулы `fill` (враги/предметы/пропы/ловушки/тайловые эффекты/poi) у типов комнат; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId`, `fixedModifiers` у предметов (плюс `subtype` предмета ∈ `applicableSubtypes` модификатора и запрет `perLevel` у фирменного модификатора); `statusType` у способностей вида `selfBuff` (существование статуса). Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
+`validateContentReferences(content)` проверяет, что id, на которые шаблоны ссылаются друг на друга, существуют: `abilities`, `lootTable[].templateId` и `modifiers` у сущностей (существование модификатора + запрет `scaling: perLevel` — свойства врага детерминированы); `starterEquipment` у игроков; `roomTypePool`/`startRoomTypeId`/`relicPool` у карт; `bossPool` у карт (шаблоны пула обязаны существовать и иметь `isBoss: true`) и `bossRoomTypeId`/`rewardRoomTypeId` → roomTypes (только при заданном `bossPool`); все пулы `fill` (враги/предметы/пропы/ловушки/тайловые эффекты/poi) у типов комнат; `mutuallyExclusiveWith`/`blockedBy` у статусов; `canHaveStatus`/`durationDecreasesWhenHasStatus` у тайловых эффектов; `canHaveStatus` у дверей и пропов; `consumable.tileEffectType`, `grantedAbilities`, `abilityPool[].abilityId`, `fixedModifiers` у предметов (плюс `subtype` предмета ∈ `applicableSubtypes` модификатора и запрет `perLevel` у фирменного модификатора); `statusType` у способностей вида `selfBuff` (существование статуса). Вызывается в `scripts/validate-content.ts` и `src/bootstrap.ts` (fail-fast при старте).
 
 `validateModifierTextPlaceholders(content, textsByLocale)` проверяет, что плейсхолдер `{value}` в описании модификатора встречается только у модификаторов со `scaling: perLevel` или `fixed` (иначе в UI отрисовалась бы заглушка «—»). Вызывается только в `scripts/validate-content.ts` (тексты передаются параметром).
 
@@ -128,7 +138,7 @@ Input-типы (`EntityTemplateInput`, `PlayerTemplateInput`, `ItemTemplateInput
 - `poolEligible` — участвует ли в случайном ролле (default `true`; `false` — только фирменное свойство конкретных предметов);
 - `weight` — вес в пуле ролла (default 1, игнорируется при `poolEligible: false`).
 
-Фирменные свойства предмета задаются полем `fixedModifiers: string[]` шаблона экипировки (ID модификаторов; заменяет удалённые 2026-08-09 `equipModifiers` и `ruleIds` предметов). Экземпляр несёт единый список `InventoryItem.affixes` — фирменные аффиксы (`origin: 'fixed'`, детерминированы) + до 2 случайных (`origin: 'rolled'`, ролл один раз при создании через `state.rng` в `src/simulation/systems/item-affix-roll.ts`; пул фильтруется по `poolEligible`/`applicableSubtypes` и исключает фирменные модификаторы и конфликтующие с ними ruleId). Инварианты (проверяются в `validateContentRuleSemantics` и `scripts/validate-content.ts`): stat-модификатор обязан иметь `scaling: perLevel` или `fixed` (иначе модификатор применился бы со значением 0); rule-модификатор со `scaling: perLevel` — эффект правила обязан содержать `{type: 'ownerParam'}`; плейсхолдер `{value}` в описании — только при `scaling: perLevel` или `fixed`. Ссылки `fixedModifiers` (существование модификатора, `subtype` предмета ∈ `applicableSubtypes`, запрет `perLevel` у фирменного) проверяются в `validateContentReferences`, сами `ruleId` модификаторов — в `validateContentRuleReferences`. Рецепт: `docs/recipes/add-modifier.md`; дизайн — `docs/game-design/equipment-modifiers-concept.md`.
+Фирменные свойства предмета задаются полем `fixedModifiers: string[]` шаблона экипировки (ID модификаторов; заменяет удалённые 2026-08-09 `equipModifiers` и `ruleIds` предметов). Свойства врага задаются полем `modifiers: string[]` шаблона сущности (экипировки у врагов нет с 2026-08-28; допустимы только детерминированные модификаторы — `scaling: fixed`/`none`, дубликаты запрещены). Экземпляр несёт единый список `InventoryItem.affixes` — фирменные аффиксы (`origin: 'fixed'`, детерминированы) + до 2 случайных (`origin: 'rolled'`, ролл один раз при создании через `state.rng` в `src/simulation/systems/item-affix-roll.ts`; пул фильтруется по `poolEligible`/`applicableSubtypes` и исключает фирменные модификаторы и конфликтующие с ними ruleId). Инварианты (проверяются в `validateContentRuleSemantics` и `scripts/validate-content.ts`): stat-модификатор обязан иметь `scaling: perLevel` или `fixed` (иначе модификатор применился бы со значением 0); rule-модификатор со `scaling: perLevel` — эффект правила обязан содержать `{type: 'ownerParam'}`; плейсхолдер `{value}` в описании — только при `scaling: perLevel` или `fixed`. Ссылки `fixedModifiers` (существование модификатора, `subtype` предмета ∈ `applicableSubtypes`, запрет `perLevel` у фирменного) проверяются в `validateContentReferences`, сами `ruleId` модификаторов — в `validateContentRuleReferences`. Рецепт: `docs/recipes/add-modifier.md`; дизайн — `docs/game-design/equipment-modifiers-concept.md`.
 
 ## Шаблоны способностей (union `kind`)
 

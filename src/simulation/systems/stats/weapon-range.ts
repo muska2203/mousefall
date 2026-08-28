@@ -1,15 +1,15 @@
 /**
- * Дальности базовой атаки оружия (minRange/range).
+ * Дальности базовой атаки (minRange/range).
  *
- * Читаются из шаблона экипированного оружия через реестр контента.
- * Безоружная атака и сущности без StatActor считаются рукопашными (1..1).
- * Модификаторы на дальность атаки не существуют — значения плоские из шаблона.
+ * Враг — из профиля `attack` (копия шаблона при спавне).
+ * Игрок — из шаблона экипированного оружия через реестр контента;
+ * безоружная атака и не-акторы считаются рукопашными (1..1).
+ * Модификаторы на дальность атаки не существуют — значения плоские.
  */
 
 import type {Entity} from '@simulation/types.ts';
 import type {Position} from '@simulation/core-types.ts';
 import {tryGetItem} from '@content/registry';
-import {isStatActor} from './effective-stats.ts';
 
 /** Дальности базовой атаки: [minRange, range] в клетках (дистанция Чебышёва). */
 export interface WeaponAttackRange {
@@ -21,12 +21,19 @@ export interface WeaponAttackRange {
 const UNARMED_ATTACK_RANGE: WeaponAttackRange = { minRange: 1, range: 1 };
 
 /**
- * Возвращает дальности базовой атаки актора из шаблона экипированного оружия.
- * Без оружия читает шаблон unarmed; при недоступности реестра — fallback {1, 1}.
- * Для не-StatActor всегда возвращает рукопашные дальности {1, 1}.
+ * Возвращает дальности базовой атаки сущности.
+ * Враг — из профиля `attack`. Игрок — из шаблона экипированного оружия;
+ * без оружия читает шаблон unarmed; при недоступности реестра — fallback {1, 1}.
+ * Для не-акторов всегда возвращает рукопашные дальности {1, 1}.
  */
 export function getWeaponAttackRange(entity: Entity): WeaponAttackRange {
-  if (!isStatActor(entity)) {
+  if (entity.type === 'enemy') {
+    return {
+      minRange: entity.attack.minRange,
+      range: entity.attack.range,
+    };
+  }
+  if (entity.type !== 'player') {
     return { ...UNARMED_ATTACK_RANGE };
   }
 

@@ -19,7 +19,7 @@
 src/content/
   ids.ts             # Замкнутые наборы ID (EQUIPMENT_SUBTYPE_IDS, AI_STRATEGY_IDS, MAP_STRATEGY_IDS) — источник истины для z.enum и реестров simulation
   schemas.ts         # Zod-схемы и типы шаблонов; в конце — Input-типы для авторства
-  validate-references.ts  # Валидация перекрёстных ссылок между шаблонами (equipment, lootTable, пулы карт и т.д.)
+  validate-references.ts  # Валидация перекрёстных ссылок между шаблонами (modifiers и lootTable сущностей, пулы карт и т.д.)
   registry.ts        # In-memory реестр загруженного контента
   templates/         # Шаблоны контента как TypeScript-модули
     index.ts         # buildContent(): парс через Zod (дефолты, инварианты, дубли id) → LoadedContent
@@ -64,7 +64,7 @@ src/content/
 | Добавить поле в реестр | `src/content/registry.ts` + `templates/index.ts` |
 | Добавить/изменить текст врага/предмета/способности | `src/content/texts/{ru,en}.ts` |
 | Добавить/изменить игровой тег | `src/content/schemas.ts` (`TagsSchema`) + `src/content/texts/{ru,en}.ts` |
-| Добавить/изменить тип урона | `src/content/schemas.ts` (`WeaponStatsSchema` / `AbilityTemplateSchema`) + `src/simulation/systems/damage/damage-handlers.ts` + `src/simulation/systems/tags/weapon-tags.ts` |
+| Добавить/изменить тип урона | `src/content/schemas.ts` (`AttackProfileSchema` / `AbilityTemplateSchema`) + `src/simulation/systems/damage/damage-handlers.ts` + `src/simulation/systems/tags/weapon-tags.ts` |
 
 ---
 
@@ -90,6 +90,8 @@ src/content/
 >
 > Предпочтительный способ классифицировать урон и эффекты — иерархические теги (`damage.physical.slashing`, `damage.magical.fire`, `attack.melee` и т.д.).
 
+Боевые статы врага — прямые поля шаблона сущности (экипировки у врагов нет с 2026-08-28): `attack` (профиль базовой атаки, `AttackProfileSchema` — та же структура, что `weapon` у предметов), `armor` (int ≥ 0, default 0), `modifiers` (ID модификаторов, только `scaling: fixed`/`none`; ссылки проверяются в `validate-references.ts`). Рецепт: `docs/recipes/add-enemy.md`.
+
 ### Террейны: `src/content/templates/terrains/`
 
 Террейн — структурная основа клетки (стена — тоже террейн с `walkable: false`).
@@ -99,7 +101,7 @@ src/content/
 
 ### Оружие: `damage`, `subtype`, `level` и `damageDistribution`
 
-В `WeaponStatsSchema` (`src/content/schemas.ts`) урон оружия задаётся рейнжем `damage: {min, max}` (роллится при каждом ударе, смещение вверх от dex атакующего — `src/simulation/systems/stats/weapon-damage-roll.ts`), а распределение типов урона — массивом `damageDistribution`. У каждого шаблона экипировки обязательны `subtype` (подтип из `EQUIPMENT_SUBTYPE_IDS`, определяет пул аффиксов) и `level` (уровень ≥ 1, выбирает рейнж ролла аффиксов):
+В `AttackProfileSchema` (`src/content/schemas.ts`) урон оружия задаётся рейнжем `damage: {min, max}` (роллится при каждом ударе, смещение вверх от dex атакующего — `src/simulation/systems/stats/weapon-damage-roll.ts`), а распределение типов урона — массивом `damageDistribution`. У каждого шаблона экипировки обязательны `subtype` (подтип из `EQUIPMENT_SUBTYPE_IDS`, определяет пул аффиксов) и `level` (уровень ≥ 1, выбирает рейнж ролла аффиксов):
 
 ```typescript
 {

@@ -8,10 +8,12 @@
  *
  * Правила:
  * - Все функции чистые (детерминированы, без мутаций).
- * - Для врагов не используется (у них плоские значения).
+ * - Источник базового урона/брони зависит от вида актора: у игрока — экипировка
+ *   (equipped*Id, без оружия — unarmed), у врага — прямой профиль attack/baseArmor,
+ *   скопированный из шаблона при спавне.
  */
 
-import type {StatActor} from '@simulation/types.ts';
+import type {Entity, StatActor} from '@simulation/types.ts';
 import type {DamageRange} from '@simulation/core-types.ts';
 import {getItem, tryGetItem} from '@content/registry';
 import {BASE_CRIT_MULTIPLIER, PLAYER_BASE_MAX_HP} from '@utils/constants.ts';
@@ -44,27 +46,36 @@ export function getBaseMaxHp(actor: StatActor): number {
 const UNARMED_DAMAGE_RANGE: DamageRange = { min: 1, max: 1 };
 
 /**
- * Возвращает базовый рейнж урона оружия актора.
- * Берётся из шаблона экипированного оружия; без оружия — из шаблона unarmed
- * (fallback {1,1}, если реестр недоступен).
+ * Возвращает базовый рейнж урона актора.
+ * Враг — из профиля `attack` (копия шаблона при спавне).
+ * Игрок — из шаблона экипированного оружия; без оружия — из шаблона unarmed
+ * (fallback {1,1}, если реестр недоступен). Для не-акторов — {1,1}.
  */
-export function getBaseDamageRange(actor: StatActor): DamageRange {
-  if (actor.equippedWeaponId) {
-    const weaponTemplate = getItem(actor.equippedWeaponId);
-    if (weaponTemplate.type === 'weapon' && weaponTemplate.weapon) {
-      return { ...weaponTemplate.weapon.damage };
-    }
+export function getBaseDamageRange(actor: Entity): DamageRange {
+  if (actor.type === 'enemy') {
+    return { ...actor.attack.damage };
   }
-  // Без оружия — рейнж безоружной атаки.
-  const unarmed = tryGetItem('unarmed');
-  if (unarmed?.type === 'weapon' && unarmed.weapon) {
-    return { ...unarmed.weapon.damage };
+  if (actor.type === 'player') {
+    if (actor.equippedWeaponId) {
+      const weaponTemplate = getItem(actor.equippedWeaponId);
+      if (weaponTemplate.type === 'weapon' && weaponTemplate.weapon) {
+        return { ...weaponTemplate.weapon.damage };
+      }
+    }
+    // Без оружия — рейнж безоружной атаки.
+    const unarmed = tryGetItem('unarmed');
+    if (unarmed?.type === 'weapon' && unarmed.weapon) {
+      return { ...unarmed.weapon.damage };
+    }
   }
   return { ...UNARMED_DAMAGE_RANGE };
 }
 
-export function getBaseArmor(actor: StatActor): number {
-  if (actor.equippedArmorId) {
+export function getBaseArmor(actor: Entity): number {
+  if (actor.type === 'enemy') {
+    return actor.baseArmor;
+  }
+  if (actor.type === 'player' && actor.equippedArmorId) {
     const armorTemplate = getItem(actor.equippedArmorId);
     if (armorTemplate.type === 'armor' && armorTemplate.armor) {
       return armorTemplate.armor.baseArmor;

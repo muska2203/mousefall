@@ -234,13 +234,14 @@ describe('cat_guardian из шаблона (ручное размещение)',
     const boss = createEnemy(state, 'cat_guardian', 6, 5);
     state.entities.set(boss.id, boss);
 
-    // Контент шаблона: стратегия guardian-boss и три способности босса
-    // (дополнительные — из grantedAbilities оружия, это допустимо).
+    // Контент шаблона: стратегия guardian-boss и три innate-способности босса.
     expect(boss.aiStrategyId).toBe('guardian-boss');
     expect(boss.abilities.map((a) => a.templateId)).toEqual(
       expect.arrayContaining(['guardian_swoop', 'ground_slam', 'bulwark']),
     );
-    expect(boss.maxHp).toBeGreaterThanOrEqual(90);
+    // maxHp: 90 (health.max) + 60 (vit 6) + 10 (mod_guardian_vitality из modifiers шаблона).
+    // Точное значение — регрессионная проверка, что stat-модификаторы шаблона применяются в createEnemy.
+    expect(boss.maxHp).toBe(160);
 
     const sim = GameSimulation.loadSavedGame(state);
     sim.initializeTestTurnState('enemies', boss.id);

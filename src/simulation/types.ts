@@ -9,7 +9,7 @@
  */
 
 
-import type {ItemTemplate, MapParams} from "@content/schemas";
+import type {AttackProfile, ItemTemplate, MapParams} from "@content/schemas";
 import {
   BaseStats,
   Corridor,
@@ -153,15 +153,14 @@ export interface AiActor extends Actor {
 }
 
 /**
- * Актор с derived-статами, базовыми характеристиками и экипировкой.
+ * Актор с derived-статами, базовыми характеристиками и модификаторами.
  * Общий интерфейс для игрока и врагов, участвующих в формулах урона/брони.
+ * Источник базового урона/брони в интерфейс не входит: у игрока это экипировка
+ * (поля equipped*Id в PlayerEntity), у врага — прямой профиль `attack`/`baseArmor`.
  */
 export interface StatActor {
   baseStats: BaseStats;
   statModifiers: StatModifier[];
-  equippedWeaponId: string | null;
-  equippedArmorId: string | null;
-  equippedAmuletId: string | null;
   /** Базовое значение maxHp (для врагов — из шаблона; для игрока не используется). */
   baseMaxHp?: number;
   critMultiplier: number;
@@ -210,17 +209,15 @@ export interface EnemyEntity extends AiActor, StatusEffectHolder, TemplateIdHold
   baseStats: BaseStats;
   /** Базовое значение maxHp (из шаблона; для пересчёта через vit). */
   baseMaxHp?: number;
-  /** Активные модификаторы (баффы, дебаффы, эффекты экипировки). */
+  /** Активные модификаторы (баффы, дебаффы, модификаторы шаблона). */
   statModifiers: StatModifier[];
-  /** ID экипированного шаблона оружия или null. */
-  equippedWeaponId: string | null;
-  /** ID экипированного шаблона брони или null. */
-  equippedArmorId: string | null;
-  /** ID экипированного амулета или null. */
-  equippedAmuletId: string | null;
+  /** Профиль базовой атаки (урон, дальность, теги). Копия из шаблона при спавне. */
+  attack: AttackProfile;
+  /** Базовая броня (из шаблона; итог пересчитывается через модификаторы). */
+  baseArmor: number;
   /** Множитель критического урона (derived-кэш). */
   critMultiplier: number;
-  /** Активные способности врага (innate + от экипировки). */
+  /** Активные способности врага (innate). */
   abilities: RuntimeAbility[];
   /** Состояние конечного автомата ИИ (сохраняется вместе с сущностью). */
   aiState: AIState;

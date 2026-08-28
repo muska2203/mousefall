@@ -37,9 +37,16 @@
        int: 0,
        vit: 0,
      },
-     equipment: {
-       weapon: 'common_splinter_blade',
+     attack: {
+       damage: { min: 1, max: 2 },
+       range: 1,
+       damageDistribution: [
+         { damageTag: 'damage.physical.slashing', weight: 1.0 },
+       ],
+       tags: ['attack.melee', 'target.single', 'delivery.weapon'],
      },
+     armor: 0, // опционально: дефолт — 0
+     modifiers: ['mod_bleeding_on_hit'], // опционально: дефолт — []
      lootTable: [
        {
          templateId: 'health_potion',
@@ -69,7 +76,9 @@
    - `aiSightRadius` — радиус обнаружения.
    - `health.max` — максимальное HP.
    - `baseStats` — базовые характеристики (`str`, `dex`, `int`, `vit`).
-   - `equipment.weapon` — ID оружия из `src/content/templates/items/weapons/`.
+   - `attack` — профиль базовой атаки врага (`AttackProfileSchema`, та же структура, что `weapon` у предметов): `damage {min,max}`, `range`/`minRange` (int ≥ 1, default 1), `damageDistribution`, `tags`. Экипировки у врагов нет — урон и дальность задаются напрямую здесь.
+   - `armor` — базовая броня врага (int ≥ 0, default 0).
+   - `modifiers` — ID модификаторов из категории `modifiers` (фирменные свойства врага без предметов-прокладок; допустимы только `scaling: fixed`/`none`, дубликаты запрещены).
    - `lootTable` — предметы, которые может нести в инвентаре.
    - `lootDropTable` — сколько предметов из `lootTable` выпадет при смерти.
    - `placement` — опциональное переопределение размещения спрайта в клетке

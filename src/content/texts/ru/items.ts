@@ -1,18 +1,6 @@
 import type {ContentText} from '../types';
 
 export const items: Record<string, ContentText> = {
-  cat_claw_small: {
-    name: 'Коготок',
-    description: 'Острый, но маленький. Как и его хозяин.',
-  },
-  cat_claw_mid: {
-    name: 'Уличный коготь',
-    description: 'Зазубренный коготь с остатками асфальта.',
-  },
-  cat_claw_big: {
-    name: 'Босс-коготь',
-    description: 'Тяжёлый коготь, способный царапать броню.',
-  },
   common_splinter_blade: {
     name: 'Зазубренный сырорез',
     description: 'Зубчатый нож для сыра. Раны от него неглубокие, но долго кровоточат.',

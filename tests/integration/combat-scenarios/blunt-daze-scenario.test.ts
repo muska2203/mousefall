@@ -40,8 +40,15 @@ function createRat(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     maxAp: 2,
     baseStats: { str: 1, dex: 3, int: 0, vit: 0 },
     aiSightRadius: 4,
-    // Без оружия: безоружная атака несёт теги damage.physical.blunt + delivery.weapon.
-    equippedWeaponId: null,
+    // Прямой профиль атаки: дробящий урон с delivery.weapon
+    // (сохраняет семантику бывшей безоружной атаки врага).
+    attack: {
+      damage: { min: 1, max: 1 },
+      range: 1,
+      minRange: 1,
+      damageDistribution: [{ damageTag: 'damage.physical.blunt', weight: 1.0 }],
+      tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+    },
     ...overrides,
   });
 }
@@ -91,7 +98,7 @@ describe('Blunt daze scenario', () => {
     sim.dispatch({ type: 'END_TURN', entityId: player.id });
     advanceToPlayerTurn(sim);
 
-    // Убеждаемся, что крыса реально атаковала (безоружная атака — дробящая).
+    // Убеждаемся, что крыса реально атаковала (её атака — дробящая).
     expect(player.hp).toBeLessThan(playerHpStart);
     // Правило владельца сработало бы на цель события (самого владельца),
     // если бы не условие eventRole: 'source'.

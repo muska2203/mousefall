@@ -19,7 +19,7 @@
  */
 
 import type {ItemTemplate, ModifierTemplate} from '@content/schemas';
-import {getRegistry} from '@content/registry';
+import {getRegistry, tryGetModifier} from '@content/registry';
 import type {ItemAffix, RNGState, StatModifier} from '@simulation/types';
 import {NEGATIVE_AFFIX_CHANCE} from '@utils/constants';
 import {rngFloat, rngInt} from '@utils/rng';
@@ -148,15 +148,14 @@ export function createItemAffixes(rng: RNGState, template: ItemTemplate): ItemAf
 }
 
 /**
- * Stat-модификаторы из фирменных модификаторов шаблона (без экземпляра).
- * Используется там, где предмет существует только как шаблон (враги, превью характеристик).
+ * Stat-модификаторы из списка ID модификаторов (без привязки к предмету).
+ * Используется для врагов: stat-свойства читаются из modifiers шаблона сущности.
  */
-export function collectFixedStatModifiers(template: ItemTemplate): Array<Omit<StatModifier, 'source'>> {
-  const modifiers = getModifiersSafe();
+export function collectStatModifiersFromIds(ids: readonly string[]): Array<Omit<StatModifier, 'source'>> {
   const result: Array<Omit<StatModifier, 'source'>> = [];
 
-  for (const modifierId of template.fixedModifiers ?? []) {
-    const modifier = modifiers.get(modifierId);
+  for (const modifierId of ids) {
+    const modifier = tryGetModifier(modifierId);
     if (!modifier || modifier.effect.kind !== 'stat') continue;
     result.push({
       stat: modifier.effect.stat,
@@ -169,19 +168,33 @@ export function collectFixedStatModifiers(template: ItemTemplate): Array<Omit<St
 }
 
 /**
- * ID правил из фирменных модификаторов шаблона (без экземпляра).
+ * ID правил из списка ID модификаторов (без привязки к предмету).
  * Используется при пересборке activeRules врагов.
  */
-export function collectFixedRuleIds(template: ItemTemplate): string[] {
-  const modifiers = getModifiersSafe();
+export function collectRuleIdsFromIds(ids: readonly string[]): string[] {
   const ruleIds: string[] = [];
 
-  for (const modifierId of template.fixedModifiers ?? []) {
-    const modifier = modifiers.get(modifierId);
+  for (const modifierId of ids) {
+    const modifier = tryGetModifier(modifierId);
     if (modifier?.effect.kind === 'rule') {
       ruleIds.push(modifier.effect.ruleId);
     }
   }
 
   return ruleIds;
+}
+
+/**
+ * Stat-модификаторы из фирменных модификаторов шаблона (без экземпляра).
+ * Используется там, где предмет существует только как шаблон (превью характеристик).
+ */
+export function collectFixedStatModifiers(template: ItemTemplate): Array<Omit<StatModifier, 'source'>> {
+  return collectStatModifiersFromIds(template.fixedModifiers ?? []);
+}
+
+/**
+ * ID правил из фирменных модификаторов шаблона (без экземпляра).
+ */
+export function collectFixedRuleIds(template: ItemTemplate): string[] {
+  return collectRuleIdsFromIds(template.fixedModifiers ?? []);
 }

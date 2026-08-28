@@ -53,4 +53,16 @@ export const statuses: Record<string, ContentText> = {
     name: 'Rooted',
     description: 'Cannot move, but can still attack and use abilities.',
   },
+  braced: {
+    name: 'Braced',
+    description: '+2 armor while active.',
+  },
+  swift: {
+    name: 'Swift',
+    description: '+1 to max action points while active.',
+  },
+  empowered: {
+    name: 'Empowered',
+    description: '+2 damage while active.',
+  },
 };

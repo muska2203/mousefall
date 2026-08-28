@@ -1,4 +1,6 @@
 import type {AbilityTemplateInput} from '../../schemas';
+import {battleRage} from './battle-rage';
+import {braceStance} from './brace-stance';
 import {bulwark} from './bulwark';
 import {cleave} from './cleave';
 import {counterattack} from './counterattack';
@@ -10,10 +12,13 @@ import {magicSlap} from './magic-slap';
 import {search} from './search';
 import {stoneThrow} from './stone-throw';
 import {suddenStrike} from './sudden-strike';
+import {swiftness} from './swiftness';
 import {swoop} from './swoop';
 
 /** Все шаблоны категории «abilities». Новый шаблон добавляется сюда импортом и строкой в массиве. */
 export const abilityTemplates: AbilityTemplateInput[] = [
+  battleRage,
+  braceStance,
   bulwark,
   cleave,
   counterattack,
@@ -25,5 +30,6 @@ export const abilityTemplates: AbilityTemplateInput[] = [
   search,
   stoneThrow,
   suddenStrike,
+  swiftness,
   swoop,
 ];

@@ -14,9 +14,6 @@ import {incendiaryBomb} from './consumables/incendiary-bomb';
 import {oilBottle} from './consumables/oil-bottle';
 import {smokeBomb} from './consumables/smoke-bomb';
 import {waterBall} from './consumables/water-ball';
-import {catClawBig} from './weapons/cat-claw-big';
-import {catClawMid} from './weapons/cat-claw-mid';
-import {catClawSmall} from './weapons/cat-claw-small';
 import {catGuardianMaul} from './weapons/cat-guardian-maul';
 import {commonFlamingSword} from './weapons/common-flaming-sword';
 import {commonHatPin} from './weapons/common-hat-pin';
@@ -43,9 +40,6 @@ export const itemTemplates: ItemTemplateInput[] = [
   oilBottle,
   smokeBomb,
   waterBall,
-  catClawBig,
-  catClawMid,
-  catClawSmall,
   catGuardianMaul,
   commonFlamingSword,
   commonHatPin,

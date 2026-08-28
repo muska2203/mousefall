@@ -15,7 +15,7 @@ import type {ContentTexts} from './texts/types';
 
 /** Ошибка ссылки между шаблонами контента. */
 export type ContentReferenceError = {
-  /** Путь к шаблону-источнику (например, entities.cat_small.equipment). */
+  /** Путь к шаблону-источнику (например, entities.cat_small.modifiers). */
   path: string;
   /** Поле с битой ссылкой. */
   field: string;
@@ -62,14 +62,17 @@ export function validateContentReferences(content: LoadedContent): ContentRefere
 
   for (const [id, entity] of content.entities) {
     const path = `entities.${id}`;
-    if (entity.equipment.weapon) {
-      checkRef(errors, path, 'equipment.weapon', entity.equipment.weapon, 'items', content.items);
-    }
-    if (entity.equipment.armor) {
-      checkRef(errors, path, 'equipment.armor', entity.equipment.armor, 'items', content.items);
-    }
-    if (entity.equipment.amulet) {
-      checkRef(errors, path, 'equipment.amulet', entity.equipment.amulet, 'items', content.items);
+    // Модификаторы сущности: ссылка существует и детерминирована (без scaling perLevel).
+    for (const modifierId of entity.modifiers) {
+      checkRef(errors, path, 'modifiers', modifierId, 'modifiers', content.modifiers);
+      const modifier = content.modifiers?.get(modifierId);
+      if (modifier && modifier.scaling.kind === 'perLevel') {
+        errors.push({
+          path,
+          field: 'modifiers',
+          problem: `Модификатор "${modifierId}" не может иметь scaling perLevel: свойства врага детерминированы (fixed/none)`,
+        });
+      }
     }
     checkRefs(errors, path, 'abilities', entity.abilities, 'abilities', content.abilities);
     for (const entry of entity.lootTable) {

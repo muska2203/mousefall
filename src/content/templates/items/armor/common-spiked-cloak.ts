@@ -15,5 +15,15 @@ export const commonSpikedCloak = {
     "baseArmor": 1
   },
   "grantedAbilities": [],
+  "abilityPool": [
+    {
+      "abilityId": "swiftness",
+      "weight": 1
+    },
+    {
+      "abilityId": "battle_rage",
+      "weight": 1
+    }
+  ],
   "fixedModifiers": ["mod_spiked_thorns"]
 } satisfies ItemTemplateInput;

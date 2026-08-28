@@ -28,13 +28,13 @@ import type {RoomFill} from '@content/schemas';
 import {rngChance, rngInt, rngPick, rngShuffle} from '@utils/rng';
 import {buildEntityPositionIndex, canPlaceObjectAt, EntityPositionIndex, findAllEntitiesAt, isCombatEntity, nextEntityId, PlacementSlot, terrainHasTag} from '@simulation/state';
 import {createDefaultAIState} from '@simulation/ai/ai-state';
-import {getDoor, getEntity, getItem, getPoi, getProp, getTrap, tryGetRoomType, tryGetTileEffect} from '@content/registry';
+import {getDoor, getEntity, getPoi, getProp, getTrap, tryGetRoomType, tryGetTileEffect} from '@content/registry';
 import {createFloorItemContainer} from '@simulation/systems/item-entity-factory';
 import {createInventoryItem} from '@simulation/systems/inventory-factory';
 import {addModifier} from '@simulation/systems/stats/modifier-engine';
 import {recalculateActorStats} from '@simulation/systems/stats/recalculate';
 import {rebuildActiveRules} from '@simulation/systems/rules/active-rule-lifecycle';
-import {collectFixedStatModifiers} from '@simulation/systems/item-affix-roll';
+import {collectStatModifiersFromIds} from '@simulation/systems/item-affix-roll';
 
 // ─────────────────────────────────────────────
 // Террейны по умолчанию
@@ -359,7 +359,7 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     hp: template.health.max,
     maxHp: template.health.max,
     // Нейтральные значения: derived-кэш сразу пересчитывается
-    // recalculateActorStats ниже (урон — из шаблона оружия, броня — из шаблона брони).
+    // recalculateActorStats ниже (урон — из профиля attack, броня — из baseArmor).
     damage: { min: 0, max: 0 },
     armor: 0,
     templateId,
@@ -375,41 +375,17 @@ export function createEnemy(state: GameState, templateId: string, x: number, y: 
     baseStats: template.baseStats,
     baseMaxHp: template.health.max,
     statModifiers: [],
-    equippedWeaponId: null,
-    equippedArmorId: null,
-    equippedAmuletId: null,
+    attack: template.attack,
+    baseArmor: template.armor,
     critMultiplier: 1.5,
     abilities,
     activeRules: [],
   };
 
-  const equipSlots = [
-    { slot: 'weapon' as const, id: template.equipment?.weapon },
-    { slot: 'armor' as const, id: template.equipment?.armor },
-    { slot: 'amulet' as const, id: template.equipment?.amulet },
-  ];
-
-  for (const { slot, id } of equipSlots) {
-    if (!id) continue;
-    const itemTemplate = getItem(id);
-    if (!itemTemplate) continue;
-
-    if (slot === 'weapon') enemy.equippedWeaponId = id;
-    else if (slot === 'armor') enemy.equippedArmorId = id;
-    else enemy.equippedAmuletId = id;
-
-    // Фирменные stat-модификаторы предмета (из fixedModifiers шаблона).
-    for (const mod of collectFixedStatModifiers(itemTemplate)) {
-      addModifier(enemy, { ...mod, source: `equipment_${slot}` });
-    }
-
-    for (const abilityId of itemTemplate.grantedAbilities ?? []) {
-      enemy.abilities.push({
-        templateId: abilityId,
-        source: 'equipment',
-        level: 1,
-        currentCooldown: 0,
-      });
+  // Фирменные stat-модификаторы врага — из списка modifiers шаблона сущности.
+  for (const modifierId of template.modifiers) {
+    for (const mod of collectStatModifiersFromIds([modifierId])) {
+      addModifier(enemy, { ...mod, source: `modifier:${modifierId}` });
     }
   }
 

@@ -14,5 +14,15 @@ export const commonPatchCloak = {
   "armor": {
     "baseArmor": 1
   },
-  "grantedAbilities": []
+  "grantedAbilities": [],
+  "abilityPool": [
+    {
+      "abilityId": "swiftness",
+      "weight": 1
+    },
+    {
+      "abilityId": "battle_rage",
+      "weight": 1
+    }
+  ]
 } satisfies ItemTemplateInput;

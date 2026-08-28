@@ -110,9 +110,15 @@ export function makeEnemy(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
     templateId: 'cat_small',
     baseStats: { str: 1, dex: 1, int: 0, vit: 0 },
     statModifiers: [],
-    equippedWeaponId: null,
-    equippedArmorId: null,
-    equippedAmuletId: null,
+    // Прямые статы вместо экипировки: профиль базовой атаки и базовая броня.
+    attack: {
+      damage: { min: 1, max: 2 },
+      range: 1,
+      minRange: 1,
+      damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1.0 }],
+      tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+    },
+    baseArmor: 0,
     critMultiplier: 1.5,
     statusEffects: [],
     blocksMovement: true,

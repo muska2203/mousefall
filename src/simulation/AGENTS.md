@@ -82,7 +82,7 @@
 
 ### Распределение урона по оружию
 
-Каждое оружие описывает распределение типов урона через массив `damageDistribution` в `WeaponStatsSchema`. Каждая запись содержит:
+Каждое оружие описывает распределение типов урона через массив `damageDistribution` в `AttackProfileSchema` (бывшая `WeaponStatsSchema`). Каждая запись содержит:
 
 ```ts
 { damageTag: GameplayTag; weight: number }
@@ -102,6 +102,8 @@
 - `getPrimaryDamageTag(entity: Entity): GameplayTag` — основной тег урона оружия, запись с максимальным `weight`.
 - `getWeaponWeightForTag(entity: Entity, tag: GameplayTag): number` — вес указанного тега урона для экипированного оружия; если тег отсутствует — возвращает 0.
 
+У врагов (`type === 'enemy'`) экипировки нет: перечисленные хелперы читают профиль атаки напрямую с сущности (`enemy.attack` — копируется из шаблона при спавне), ветка по `entity.type`.
+
 ### Физический и магический урон
 
 - Физический урон — `damage.physical.{piercing,slashing,blunt}`.
@@ -118,7 +120,7 @@
 
 ### Аффиксы экипировки
 
-Экземпляр предмета экипировки несёт единый список `InventoryItem.affixes` (`ItemAffix {modifierId, value, origin}`): сначала фирменные аффиксы (`origin: 'fixed'`, из `fixedModifiers` шаблона, детерминированы), затем до 2 случайных (`origin: 'rolled'`): 1 положительный + до 1 отрицательного с шансом `NEGATIVE_AFFIX_CHANCE`. Сборка — один раз при создании экземпляра (`systems/item-affix-roll.ts`, `createItemAffixes(state.rng, template)`; фирменные — `buildFixedAffixes`, ролл — `rollItemAffixes`). Пул ролла фильтруется по `poolEligible` и `applicableSubtypes` и исключает модификаторы из `fixedModifiers` предмета и rule-модификаторы с ruleId, конфликтующим с фирменными; значение — из рейнжа уровня шаблона (`ranges[level-1]`, clamp к последнему; `scaling: fixed` → детерминированное `value`, `scaling: none` → `value = null`). При экипировке stat-аффиксы и правила применяются единым проходом только из `item.affixes`: stat превращаются в модификаторы с источником `item_{instanceId}` (снятие — общий `removeModifiersBySource`), rule добавляются в `activeRules` с `paramValue` экземпляра (доступно правилу через `ParametrizedValue {type: 'ownerParam'}`). У врагов экземпляров нет — их фирменные свойства читаются из шаблона: `collectFixedStatModifiers(template)` (спавн в `map-generation/shared.ts`, превью в `simulation.ts`) и `collectFixedRuleIds(template)` (в `rebuildActiveRules`).
+Экземпляр предмета экипировки несёт единый список `InventoryItem.affixes` (`ItemAffix {modifierId, value, origin}`): сначала фирменные аффиксы (`origin: 'fixed'`, из `fixedModifiers` шаблона, детерминированы), затем до 2 случайных (`origin: 'rolled'`): 1 положительный + до 1 отрицательного с шансом `NEGATIVE_AFFIX_CHANCE`. Сборка — один раз при создании экземпляра (`systems/item-affix-roll.ts`, `createItemAffixes(state.rng, template)`; фирменные — `buildFixedAffixes`, ролл — `rollItemAffixes`). Пул ролла фильтруется по `poolEligible` и `applicableSubtypes` и исключает модификаторы из `fixedModifiers` предмета и rule-модификаторы с ruleId, конфликтующим с фирменными; значение — из рейнжа уровня шаблона (`ranges[level-1]`, clamp к последнему; `scaling: fixed` → детерминированное `value`, `scaling: none` → `value = null`). При экипировке stat-аффиксы и правила применяются единым проходом только из `item.affixes`: stat превращаются в модификаторы с источником `item_{instanceId}` (снятие — общий `removeModifiersBySource`), rule добавляются в `activeRules` с `paramValue` экземпляра (доступно правилу через `ParametrizedValue {type: 'ownerParam'}`). У врагов экипировки нет (2026-08-28): профиль атаки и броня копируются из шаблона сущности при спавне (`enemy.attack`/`enemy.baseArmor` в `createEnemy`), свойства — поле `modifiers` шаблона сущности: stat-модификаторы применяются при спавне с источником `modifier:{id}`, rule-модификаторы добавляются в `rebuildActiveRules` с ownerContext `modifier:{id}` (список читается из реестра по `templateId`).
 
 ---
 
@@ -178,11 +180,11 @@
 ## Базовая атака: позиционная и направленная формы
 
 - `AttackAction` (`core-types.ts`) — две формы: направленная (dx, dy — legacy bump-attack по соседней клетке) и позиционная (`targetPosition?: Position` — выбор цели на клетке).
-- Дальность оружия — хелпер `getWeaponAttackRange(entity): {minRange, range}` (`systems/stats/weapon-range.ts`) читает `weapon.range`/`weapon.minRange` шаблона (оба default 1; без оружия — 1/1).
+- Дальность оружия — хелпер `getWeaponAttackRange(entity): {minRange, range}` (`systems/stats/weapon-range.ts`) читает `weapon.range`/`weapon.minRange` шаблона экипированного оружия игрока (оба default 1; без оружия — 1/1); у врага — `attack.range`/`attack.minRange` с сущности.
 - **Метрика дистанций в бою — Чебышёв (квадрат)**, единая с 8-направленным движением, AOE и FOV (радиус FOV квадратный — `systems/fov.ts`, без евклидова отсечения). Общий предикат дальности `isInWeaponRange(attackRange, from, to)` (там же): чебышёвская дистанция ∈ [minRange, range] — рукопашное оружие (1/1) бьёт все 8 соседних клеток, оружие с minRange 2 не бьёт ни по одной из них. `getWeaponAttackLosRadius` = `range` (квадратный FOV покрывает всю зону).
 - Валидация позиционной формы (`systems/actions/attack-action.ts`): на клетке должна быть damageable-цель, предикат `isInWeaponRange`, LOS через `computeFOV` с радиусом `getWeaponAttackLosRadius`; reason-коды `no_target_at_tile`/`target_out_of_range`/`target_too_close`/`no_line_of_sight`.
 - Дальнобойное оружие (minRange > 1) в упор не бьёт вообще: направленный bump отклоняется с reason-кодом `too_close_for_ranged_weapon` (деградации в unarmed нет; игрок видит тост, presentation по-прежнему может пытаться атаковать — решение на валидации).
-- Известное ограничение: AI строит только направленный bump (`ai/tactics/movement.ts` — `attackTarget`), позиционной формы у него нет. Сейчас безопасно (враги не экипируют оружие), но враг с оружием `minRange > 1` не сможет атаковать вовсе — позиционную форму в AI добавлять вместе с первым дальнобойным врагом.
+- Известное ограничение: AI строит только направленный bump (`ai/tactics/movement.ts` — `attackTarget`), позиционной формы у него нет. Сейчас безопасно (у всех врагов `attack.range`/`attack.minRange` = 1/1), но враг с `attack.minRange > 1` не сможет атаковать вовсе — позиционную форму в AI добавлять вместе с первым дальнобойным врагом.
 - API для UI: `getBasicAttackTargetMode()`/`getBasicAttackValidTargets()`/`getBasicAttackRangeCells()` в `GameSimulation`. Валидные цели — damageable-сущности в LOS по предикату `isInWeaponRange`; `getBasicAttackRangeCells` — ВСЕ клетки зоны (без LOS и без требования сущности, клетки ближе minRange не включаются) для подсветки радиуса.
 - `findNearestAttackPosition(target)` — query автопути к врагу: ближайшая к игроку атакующая клетка (проходимая, `isInWeaponRange`, LOS из клетки-кандидата тем же FOV, что валидация атаки) + кратчайший путь до неё; пустой путь = игрок уже в позиции, null = кандидатов нет. Приоритет выбора: визуально ближайшая к игроку клетка (евклидова дистанция), при равенстве — кратчайший путь, затем координаты (y, x); длина пути намеренно вторична.
 

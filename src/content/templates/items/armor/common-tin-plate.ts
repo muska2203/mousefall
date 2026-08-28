@@ -14,6 +14,6 @@ export const commonTinPlate = {
   "armor": {
     "baseArmor": 2
   },
-  "grantedAbilities": [],
+  "grantedAbilities": ["brace_stance"],
   "fixedModifiers": ["mod_spiked_thorns"]
 } satisfies ItemTemplateInput;

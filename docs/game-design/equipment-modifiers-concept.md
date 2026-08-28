@@ -91,7 +91,7 @@ ModifierTemplate = {
   4. отрицательный — с шансом `NEGATIVE_AFFIX_CHANCE = 0.5`, взвешенный выбор 1;
   5. `value = rngInt(state.rng, min, max)` из `ranges[level-1]` (с clamp к последнему рейнжу).
 - Ролл через **`state.rng`** (детерминирован, воспроизводим); значения сериализуются в составе `InventoryItem` и **не переролливаются** ни при экипировке, ни при загрузке сейва.
-- Враги экземпляров предметов не имеют — аффиксов у них нет (урон по рейнжу темплейта); их фирменные свойства читаются напрямую из шаблона: stat — `collectFixedStatModifiers(template)` (спавн в `map-generation/shared.ts`, превью в `simulation.ts`), правила — `collectFixedRuleIds(template)` (в `rebuildActiveRules`).
+- У врагов нет экипировки (2026-08-28, план `docs/plans/enemy-direct-stats.md`): экземпляров и аффиксов у них нет. Урон/броня — прямые поля шаблона сущности (`attack`/`armor`), свойства — поле `modifiers` шаблона сущности (ID модификаторов, только `scaling: fixed`/`none`): stat-модификаторы применяются при спавне (source `modifier:{id}`, спавн в `map-generation/shared.ts`), правила — в `rebuildActiveRules` (ownerContext `modifier:{id}`).
 
 ---
 
@@ -139,7 +139,7 @@ ModifierTemplate = {
   - `mod_spiked_thorns` (common_tin_plate, common_spiked_cloak);
   - `mod_amulet_fire_damage_multiplier` (common_ember_amulet);
   - `mod_restore_ap_on_hit` (common_energized_bead, common_knotted_fang);
-  - `mod_guardian_vitality` (cat_guardian_plate, stat maxHp +10, `scaling: fixed`).
+  - `mod_guardian_vitality` (cat_guardian_plate, stat maxHp +10, `scaling: fixed`; с 2026-08-28 также в `modifiers` шаблона `cat_guardian`).
 - `mod_poison_on_hit` стал фирменным у common_splinter_blade и common_venom_dagger и остался в пуле ролла (`poolEligible: true`) — на эти два предмета он больше не выпадает (фильтр ролла).
 - Стартовые модификаторы для проверки системы:
   - `mod_sturdy_armor` (positive, stat armor add, perLevel `[{1,2},{1,3},{2,4}]`, подтипы брони);

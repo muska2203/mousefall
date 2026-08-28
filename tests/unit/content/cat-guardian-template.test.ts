@@ -25,10 +25,17 @@ describe('Шаблон босса cat_guardian', () => {
       int: expect.any(Number),
       vit: expect.any(Number),
     });
-    expect(parsed.equipment).toMatchObject({
-      weapon: expect.any(String),
-      armor: expect.any(String),
+    // Прямые статы вместо экипировки: профиль атаки, броня и модификаторы шаблона.
+    expect(parsed.attack.damage).toMatchObject({
+      min: expect.any(Number),
+      max: expect.any(Number),
     });
+    expect(parsed.attack.damageDistribution.length).toBeGreaterThan(0);
+    expect(parsed.attack.tags).toContain('attack.melee');
+    expect(typeof parsed.armor).toBe('number');
+    expect(parsed.armor).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(parsed.modifiers)).toBe(true);
+    expect(parsed.modifiers.every((id) => typeof id === 'string')).toBe(true);
     expect(Array.isArray(parsed.abilities)).toBe(true);
   });
 
