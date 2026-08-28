@@ -584,6 +584,12 @@ export class GameSimulation implements Simulation {
             for (const intent of intents) {
                 executeIntent(this.state, intent, builder, root);
             }
+            // Снятие истёкших — отдельным интентом ПОСЛЕ реакций на STATUS_TICKED
+            // (см. executeRemoveExpiredStatusEffectsIntent): иначе правила ruleIds
+            // статуса вырезаются из activeRules до срабатывания последнего тика.
+            if (intents.length > 0) {
+                executeIntent(this.state, { type: 'REMOVE_EXPIRED_STATUS_EFFECTS', entityId: actor.id }, builder, root);
+            }
         }
 
         for (const actor of actors) {
@@ -627,6 +633,11 @@ export class GameSimulation implements Simulation {
         for (const { entity, intents } of tickObjectStatusEffects(this.state, 'environment')) {
             for (const intent of intents) {
                 executeIntent(this.state, intent, builder, root);
+            }
+            // Снятие истёкших — отдельным интентом после реакций на STATUS_TICKED,
+            // как и для акторов в runFactionSetup.
+            if (intents.length > 0) {
+                executeIntent(this.state, { type: 'REMOVE_EXPIRED_STATUS_EFFECTS', entityId: entity.id }, builder, root);
             }
         }
 

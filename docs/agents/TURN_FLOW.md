@@ -183,7 +183,8 @@ switch (turnState.phase)
 1. Выполняется `runFactionSetup(factionId)`:
    - `BEGIN_TURN { side: factionId }` — устанавливает `state.turn.activeSide`, для `player` увеличивает `state.turn.round`, порождает событие `TURN_BEGAN`;
    - восстанавливается AP (`RESTORE_AP`);
-   - тикают статусы всех живых акторов фракции (`TICK_STATUS_EFFECTS`);
+   - тикают статусы всех живых акторов фракции (`TICK_STATUS_EFFECTS` — только декремент длительности и событие `STATUS_TICKED`);
+   - снимаются статусы с истёкшей длительностью (`REMOVE_EXPIRED_STATUS_EFFECTS` — отдельным интентом ПОСЛЕ реакций на `STATUS_TICKED`, чтобы правила из `ruleIds` статуса срабатывали на последнем тике; реакции читают `activeRules` в момент обработки события);
    - тикают кулдауны способностей (`TICK_COOLDOWN`).
 2. Если в фракции есть живые акторы — переход в `actor-turn` первого актора.
 3. Если акторов нет — переход к следующей фракции через `advanceFaction()`.
@@ -199,7 +200,8 @@ switch (turnState.phase)
 
 1. Выполняется `runEnvironmentTurn()`:
    - `BEGIN_TURN { side: 'environment' }` — устанавливает `state.turn.activeSide`, порождает событие `TURN_BEGAN`;
-   - выполняется `TICK_TILE_EFFECTS` — тикают тайловые эффекты (уменьшение длительности, удаление истёкших).
+   - выполняется `TICK_TILE_EFFECTS` — тикают тайловые эффекты (уменьшение длительности, удаление истёкших);
+   - тикают статусы живых не-акторов (дверей, пропов) — `TICK_STATUS_EFFECTS` + снятие истёкших `REMOVE_EXPIRED_STATUS_EFFECTS` (тот же порядок, что у акторов).
 2. `turnState` переводится в `round-recovery`.
 3. Возвращается фаза с `hasMoreSteps: true`.
 
@@ -226,7 +228,8 @@ switch (turnState.phase)
 | `TURN_BEGAN` | Начало фазы фракции. |
 | `BEGIN_TURN` | Установка `activeSide`, для `player` — увеличение `round`. |
 | `RESTORE_AP` | Восстановление AP для каждого актора фракции. |
-| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых акторов фракции. Intent несёт `phase: FactionId` (идентификатор фракции). |
+| `TICK_STATUS_EFFECTS` | Тикают статусы всех живых акторов фракции. Intent несёт `phase: FactionId` (идентификатор фракции). Только декремент длительности. |
+| `REMOVE_EXPIRED_STATUS_EFFECTS` | Снятие статусов с истёкшей длительностью (события `STATUS_REMOVED`). Исполняется после реакций на `STATUS_TICKED`, чтобы правила статуса срабатывали на последнем тике. |
 | `TICK_COOLDOWN` | Уменьшение кулдаунов способностей. |
 
 ### actor-turn
@@ -243,6 +246,8 @@ switch (turnState.phase)
 | `TURN_BEGAN` | Начало хода окружения. |
 | `BEGIN_TURN` | Установка `activeSide` в `'environment'`. |
 | `TICK_TILE_EFFECTS` | Тикают тайловые эффекты. |
+| `TICK_STATUS_EFFECTS` | Тикают статусы живых не-акторов (дверей, пропов). |
+| `REMOVE_EXPIRED_STATUS_EFFECTS` | Снятие истёкших статусов не-акторов, после реакций на `STATUS_TICKED`. |
 
 ### round-recovery
 
@@ -416,6 +421,7 @@ faction-setup 'allies' / 'enemies' / 'neutrals'
   ├─ BEGIN_TURN
   ├─ RESTORE_AP
   ├─ TICK_STATUS_EFFECTS
+  ├─ REMOVE_EXPIRED_STATUS_EFFECTS
   └─ TICK_COOLDOWN
     │
     ▼
@@ -430,7 +436,9 @@ actor-turn AI → step() → runAiAction
 environment-turn
   ┌─ TURN_BEGAN
   ├─ BEGIN_TURN
-  └─ TICK_TILE_EFFECTS
+  ├─ TICK_TILE_EFFECTS
+  ├─ TICK_STATUS_EFFECTS       ← статусы не-акторов (двери, пропы)
+  └─ REMOVE_EXPIRED_STATUS_EFFECTS
     │
     ▼
 round-recovery
@@ -442,6 +450,7 @@ faction-setup 'player' (следующий раунд)
   ├─ BEGIN_TURN          ← round += 1
   ├─ RESTORE_AP
   ├─ TICK_STATUS_EFFECTS
+  ├─ REMOVE_EXPIRED_STATUS_EFFECTS
   └─ TICK_COOLDOWN
     │
     ▼
@@ -454,7 +463,7 @@ actor-turn 'player' — ожидание ввода
 
 | Механика | Фаза | Примечание |
 |----------|------|------------|
-| Статусы | `faction-setup` | Для каждой фракции отдельно. |
+| Статусы | `faction-setup` | Для каждой фракции отдельно. Тик (`TICK_STATUS_EFFECTS`) и снятие истёкших (`REMOVE_EXPIRED_STATUS_EFFECTS`) — раздельные интенты: снятие идёт после реакций на `STATUS_TICKED`. |
 | Восстановление AP | `faction-setup` | В начале хода фракции, перед тиком статусов. |
 | Тик кулдаунов | `faction-setup` | В начале хода фракции, после тика статусов. |
 | Удаление мёртвых сущностей | `round-recovery` | В конце раунда. |

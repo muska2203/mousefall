@@ -112,6 +112,37 @@ describe('bleeding', () => {
     expect(updatedEnemy && 'hp' in updatedEnemy ? updatedEnemy.hp : null).toBe(98);
   });
 
+  it('последний тик кровотечения наносит урон: duration 2 = 2 тика по 2 HP', () => {
+    // Регрессия (2026-08-28): снятие истёкшего статуса происходило внутри
+    // TICK_STATUS_EFFECTS до разрешения реакций на STATUS_TICKED — правило
+    // status_bleeding_tick_damage вырезалось из activeRules до срабатывания,
+    // и последний тик не наносил урон. Снятие вынесено в отдельный интент
+    // REMOVE_EXPIRED_STATUS_EFFECTS после реакций.
+    const player = makePlayer({
+      x: 5, y: 5, hp: 100, maxHp: 100, maxAp: 1, ap: 1,
+      statusEffects: [makeEffect('bleeding', 2)],
+    });
+    rebuildActiveRules(player);
+
+    const state = makeGameState({
+      player,
+      entities: new Map<EntityId, Entity>([[player.id, player]]),
+    });
+
+    const sim = GameSimulation.loadSavedGame(state);
+
+    // Первый тик: duration 2 → 1, урон 2 HP.
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
+    expect(sim.getState().player.hp).toBe(98);
+
+    // Последний тик: duration 1 → 0, урон 2 HP и статус снят.
+    sim.dispatch({ type: 'END_TURN', entityId: player.id });
+    advanceToPlayerTurn(sim);
+    expect(sim.getState().player.hp).toBe(96);
+    expect(sim.getState().player.statusEffects).toHaveLength(0);
+  });
+
   it('броня цели НЕ снижает внутренний урон тика кровотечения', () => {
     const player = makePlayer({ x: 5, y: 5, hp: 100, maxHp: 100, maxAp: 1, ap: 1 });
     const enemy = makeEnemy({

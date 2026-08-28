@@ -427,6 +427,7 @@ export type Intent =
   | SetCooldownIntent
   | ConsumeApIntent
   | TickStatusEffectsIntent
+  | RemoveExpiredStatusEffectsIntent
   | AdjustStatusStacksIntent
   | SpawnItemIntent
   | PickUpIntent
@@ -514,6 +515,13 @@ export type UpdateFogIntent = { type: 'UPDATE_FOG' };
 export type SetCooldownIntent = { type: 'SET_COOLDOWN'; entityId: EntityId; abilityId: string; turns: number };
 export type ConsumeApIntent = { type: 'CONSUME_AP'; entityId: EntityId; amount: number };
 export type TickStatusEffectsIntent = { type: 'TICK_STATUS_EFFECTS'; entityId: EntityId; phase: TurnSide };
+/**
+ * Снятие статусов с истёкшей длительностью (duration <= 0 после тика).
+ * Исполняется отдельным интентом ПОСЛЕ реакций на STATUS_TICKED, чтобы правила
+ * из ruleIds статуса (тик урона и т.п.) успели сработать на последнем тике —
+ * реакции собирают activeRules в момент обработки события (волновая модель).
+ */
+export type RemoveExpiredStatusEffectsIntent = { type: 'REMOVE_EXPIRED_STATUS_EFFECTS'; entityId: EntityId };
 export type AdjustStatusStacksIntent = {
   type: 'ADJUST_STATUS_STACKS';
   entityId: EntityId;

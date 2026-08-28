@@ -4,6 +4,9 @@ import {tickEntityStatusEffects} from '../../../../src/simulation/systems/status
 import {
   executeTickStatusEffectsIntent
 } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
+import {
+  executeRemoveExpiredStatusEffectsIntent
+} from '../../../../src/simulation/systems/intents/remove-expired-status-effects-intent-executer';
 import {executeIntent} from '../../../../src/simulation/systems/intents/execute-intent';
 import type {EntityDamagedEvent} from '../../../../src/simulation/core-types';
 import {ExecutionBuilder} from '../../../../src/simulation/core-types';
@@ -57,26 +60,36 @@ describe('burning status effect', () => {
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
-    const builder1 = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
-    executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder1, builder1.root);
+    // Снятие истёкших — отдельный интент REMOVE_EXPIRED_STATUS_EFFECTS,
+    // исполняемый после реакций на STATUS_TICKED (с 2026-08-28).
+    const tickAndSweep = () => {
+      const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
+      executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
+      executeRemoveExpiredStatusEffectsIntent(state, { type: 'REMOVE_EXPIRED_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
+    };
+
+    tickAndSweep();
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder2 = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
-    executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder2, builder2.root);
+    tickAndSweep();
     expect(enemy.statusEffects).toHaveLength(1);
 
-    const builder3 = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
-    executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder3, builder3.root);
+    tickAndSweep();
     expect(enemy.statusEffects).toHaveLength(0);
   });
 
-  it('removes effect after duration expires through executor', () => {
+  it('tick не снимает истёкший статус — снятие делает REMOVE_EXPIRED_STATUS_EFFECTS', () => {
     const enemy = makeEnemy({ hp: 100, maxHp: 100, statusEffects: [{ type: 'burning', duration: 1, value: 10, statModifiers: null }] });
     const state = makeGameState();
     state.entities.set(enemy.id, enemy);
 
     const builder = new ExecutionBuilder({ type: 'STATUS_TICKED', isFieldEvent: true, entityId: enemy.id, effectTypes: [], tags: [] });
     executeTickStatusEffectsIntent(state, { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' }, builder, builder.root);
+    // Тик только декрементит: статус с duration 0 ещё на месте,
+    // чтобы реакции на STATUS_TICKED видели его правила в activeRules.
+    expect(enemy.statusEffects).toHaveLength(1);
+
+    executeRemoveExpiredStatusEffectsIntent(state, { type: 'REMOVE_EXPIRED_STATUS_EFFECTS', entityId: enemy.id }, builder, builder.root);
     expect(enemy.statusEffects).toHaveLength(0);
   });
 

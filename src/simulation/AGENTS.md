@@ -145,7 +145,7 @@
 
 Движковая семантика поля `statModifiers` шаблона статуса (`StatusTemplateSchema`), хелпер `systems/statuses/status-stat-modifiers.ts`:
 
-- Модификаторы применяются к актору при наложении **нового** статуса (source = `instanceId` экземпляра; при обновлении длительности существующего не переприменяются — как activeRules) и снимаются (`removeModifiersBySource`) на всех путях удаления: expire в TICK_STATUS_EFFECTS, вытеснение mutuallyExclusive, стеки → 0, конец `stunned`.
+- Модификаторы применяются к актору при наложении **нового** статуса (source = `instanceId` экземпляра; при обновлении длительности существующего не переприменяются — как activeRules) и снимаются (`removeModifiersBySource`) на всех путях удаления: expire в REMOVE_EXPIRED_STATUS_EFFECTS (отдельный интент после реакций на TICK_STATUS_EFFECTS, с 2026-08-28), вытеснение mutuallyExclusive, стеки → 0, конец `stunned`.
 - Статы — общий набор `StatNameSchema`, включая `maxAp`: восстановление AP (`restore-ap-intent-executer`) и снапшот `getPlayerStats` читают эффективный maxAp (`getEffectiveMaxAp`, округление, ≥ 0). Пример контента — шаблон `dazed` (штраф −1 к maxAp).
 - `ap` не клампится при спадании бафа: может временно превышать базовый maxAp до конца хода.
 

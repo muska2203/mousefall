@@ -4,8 +4,8 @@
  * Проверяет:
  * - применение модификатора при наложении статуса (RESTORE_AP до maxAp+1);
  * - снятие модификатора на всех путях удаления статуса:
- *   expire через TICK_STATUS_EFFECTS, вытеснение mutuallyExclusiveWith,
- *   обнуление стаков через ADJUST_STATUS_STACKS;
+ *   expire через REMOVE_EXPIRED_STATUS_EFFECTS (после TICK_STATUS_EFFECTS),
+ *   вытеснение mutuallyExclusiveWith, обнуление стаков через ADJUST_STATUS_STACKS;
  * - регрессию реального шаблона dazed (штраф −1 maxAp, не ниже 0);
  * - эффективный maxAp в снапшоте getPlayerStats().
  */
@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { makeEnemy, makeGameState, makePlayer, makeStateWithPlayer } from '../../../fixtures/gameState';
 import { executeApplyStatusIntent } from '../../../../src/simulation/systems/intents/apply-status-intent-executer';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
+import { executeRemoveExpiredStatusEffectsIntent } from '../../../../src/simulation/systems/intents/remove-expired-status-effects-intent-executer';
 import { executeAdjustStatusStacksIntent } from '../../../../src/simulation/systems/intents/adjust-status-stacks-intent-executer';
 import { executeRestoreApIntent } from '../../../../src/simulation/systems/intents/restore-ap-intent-executer';
 import type { StatusEffect } from '../../../../src/simulation/core-types';
@@ -131,6 +132,13 @@ describe('status stat modifiers', () => {
     executeTickStatusEffectsIntent(
       state,
       { type: 'TICK_STATUS_EFFECTS', entityId: enemy.id, phase: 'enemies' },
+      builder,
+      builder.root,
+    );
+    // Снятие истёкших — отдельный интент после реакций на STATUS_TICKED (с 2026-08-28).
+    executeRemoveExpiredStatusEffectsIntent(
+      state,
+      { type: 'REMOVE_EXPIRED_STATUS_EFFECTS', entityId: enemy.id },
       builder,
       builder.root,
     );

@@ -1,10 +1,17 @@
-import {StatActor, StatusEffect, StatusEffectType} from '@simulation/types';
+import {StatusEffect, StatusEffectType} from '@simulation/types';
 import {TickStatusEffectsIntent} from '@simulation/core-types';
 import {IntentExecutor} from '@simulation/systems/intents/types';
-import {isActor} from '@simulation/state';
-import {removeActiveRulesForStatus} from '@simulation/systems/rules/active-rule-lifecycle';
-import {removeStatusStatModifiers} from '@simulation/systems/statuses/status-stat-modifiers';
 
+/**
+ * Тикает длительность статус-эффектов (duration -= 1) и порождает STATUS_TICKED.
+ *
+ * Снятия истёкших статусов здесь НЕТ: оно выполняется отдельным интентом
+ * REMOVE_EXPIRED_STATUS_EFFECTS после разрешения реакций на STATUS_TICKED.
+ * Иначе правила из ruleIds статуса вырезались бы из activeRules до обработки
+ * события (реакции читают activeRules в момент реакции, волновая модель) —
+ * и последний тик терял бы эффект (прецедент: status_bleeding_tick_damage,
+ * исправлено 2026-08-28).
+ */
 export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsIntent> = (
   state,
   intent,
@@ -39,31 +46,12 @@ export const executeTickStatusEffectsIntent: IntentExecutor<TickStatusEffectsInt
     }
   }
 
-  const expired = holder.statusEffects.filter(e => e.duration <= 0);
-
-  if (isActor(entity)) {
-    for (const effect of expired) {
-      removeActiveRulesForStatus(entity, effect.instanceId ?? effect.type);
-      removeStatusStatModifiers(entity as unknown as StatActor, effect);
-    }
-  }
-
-  holder.statusEffects = holder.statusEffects.filter(e => e.duration > 0);
-
   const node = builder.addChild(parent, {
     type: 'STATUS_TICKED', isFieldEvent: true,
     entityId: entity.id,
     effectTypes: tickedEffectTypes,
     tags: tickedEffectTypes.map((t) => `status.${t}`),
   });
-
-  for (const effect of expired) {
-    builder.addChild(node, {
-      type: 'STATUS_REMOVED', isFieldEvent: true,
-      entityId: entity.id,
-      effectType: effect.type,
-    });
-  }
 
   return node;
 };

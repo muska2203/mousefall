@@ -19,6 +19,7 @@ import { moveEntity } from '../../../../src/simulation/systems/actions/movement-
 import { executePushIntent } from '../../../../src/simulation/systems/intents/push-intent-executer';
 import { executeTeleportEntityIntent } from '../../../../src/simulation/systems/intents/teleport-entity-intent-executor';
 import { executeTickStatusEffectsIntent } from '../../../../src/simulation/systems/intents/tick-status-effects-intent-executer';
+import { executeRemoveExpiredStatusEffectsIntent } from '../../../../src/simulation/systems/intents/remove-expired-status-effects-intent-executer';
 import { createDashSkill } from '../../../../src/simulation/skills/executors/dashSkill';
 import { createSwoopSkill } from '../../../../src/simulation/skills/executors/swoopSkill';
 import { decideHunterAction } from '../../../../src/simulation/ai/ai-helpers';
@@ -152,11 +153,20 @@ describe('тик rooted', () => {
       builder,
       builder.root,
     );
+    // Тик только декрементит: rooted с duration 0 ещё на месте до sweep-интента.
+    expect(enemy.statusEffects.some((e) => e.type === 'rooted')).toBe(true);
+
+    // Снятие истёкших — отдельный интент после реакций на STATUS_TICKED (с 2026-08-28).
+    executeRemoveExpiredStatusEffectsIntent(
+      state,
+      { type: 'REMOVE_EXPIRED_STATUS_EFFECTS', entityId: enemy.id },
+      builder,
+      builder.root,
+    );
     expect(enemy.statusEffects.some((e) => e.type === 'rooted')).toBe(false);
     expect(isRooted(enemy)).toBe(false);
 
     const removed = builder.root.children
-      .flatMap((node) => node.children)
       .find((node) => node.event.type === 'STATUS_REMOVED');
     expect(removed?.event).toMatchObject({ type: 'STATUS_REMOVED', effectType: 'rooted' });
   });
