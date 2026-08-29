@@ -14,8 +14,10 @@ import { createStartingEquipment } from '../../../src/simulation/systems/startin
 import { rebuildActiveRules } from '../../../src/simulation/systems/rules/active-rule-lifecycle';
 import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixtures/gameState';
 import type { PlayerEntity, EnemyEntity } from '../../../src/simulation/types';
-import { loadTestContent, setupCombatScenario } from './helpers';
+import { loadTestContent, registerLegacyTemplates, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
+import { commonVenomDagger } from '../../../src/content/templates/legacy/items/weapons/common-venom-dagger';
+import { modPoisonOnHit } from '../../../src/content/templates/legacy/modifiers/mod-poison-on-hit';
 import { rngChance } from '../../../src/utils/rng';
 import { buildPresentationPlan } from '../../../src/presentation/displayState/planner';
 import { buildAnimationTree } from '../../../src/presentation/animation';
@@ -84,6 +86,8 @@ describe('Poison + counterattack scenario', () => {
     setupCombatScenario();
     vi.mocked(rngChance).mockReturnValue(true);
     await loadTestContent();
+    // Ядовитый кинжал и его модификатор архивированы — регистрируем из legacy.
+    registerLegacyTemplates({ items: [commonVenomDagger], modifiers: [modPoisonOnHit] });
   });
 
   afterEach(() => {

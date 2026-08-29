@@ -13,8 +13,10 @@ import { GameSimulation } from '../../../src/simulation/simulation';
 import { createStartingEquipment } from '../../../src/simulation/systems/starting-equipment';
 import { makeGameState, makePlayer, makeEnemy, makeDoor, makeTestMap } from '../../fixtures/gameState';
 import type { PlayerEntity, EnemyEntity, Entity, EntityId } from '../../../src/simulation/types';
-import { loadTestContent, setupCombatScenario } from './helpers';
+import { loadTestContent, registerLegacyTemplates, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
+import { commonFlamingSword } from '../../../src/content/templates/legacy/items/weapons/common-flaming-sword';
+import { modFireDamageMultiplier } from '../../../src/content/templates/legacy/modifiers/mod-fire-damage-multiplier';
 import { rngChance } from '../../../src/utils/rng';
 import { buildPresentationPlan } from '../../../src/presentation/displayState/planner';
 import { buildAnimationTree } from '../../../src/presentation/animation';
@@ -81,6 +83,8 @@ describe('Fire scenario', () => {
     setupCombatScenario();
     vi.mocked(rngChance).mockReturnValue(true);
     await loadTestContent();
+    // Огненный меч и его модификатор архивированы — регистрируем из legacy.
+    registerLegacyTemplates({ items: [commonFlamingSword], modifiers: [modFireDamageMultiplier] });
   });
 
   afterEach(() => {

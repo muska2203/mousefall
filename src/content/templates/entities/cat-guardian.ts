@@ -32,7 +32,6 @@ export const catGuardian = {
     ]
   },
   "armor": 6,
-  "modifiers": ["mod_bleeding_on_hit", "mod_guardian_vitality"],
   "abilities": [
     "guardian_swoop",
     "ground_slam",
@@ -42,18 +41,6 @@ export const catGuardian = {
     {
       "templateId": "health_potion",
       "weight": 5
-    },
-    {
-      "templateId": "common_splinter_blade",
-      "weight": 2
-    },
-    {
-      "templateId": "cat_guardian_maul",
-      "weight": 1
-    },
-    {
-      "templateId": "cat_guardian_plate",
-      "weight": 1
     }
   ],
   "lootDropTable": [

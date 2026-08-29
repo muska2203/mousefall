@@ -15,7 +15,9 @@ import {executeGrantRelicIntent} from '../../../src/simulation/systems/intents/g
 import {createStartingEquipment} from '../../../src/simulation/systems/starting-equipment';
 import {makeEnemy, makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
 import type {GameState} from '../../../src/simulation/types';
-import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {loadTestContent, registerLegacyTemplates, setupCombatScenario} from '../combat-scenarios/helpers';
+import {relicSalamanderHeart} from '../../../src/content/templates/legacy/relics/relic-salamander-heart';
+import {commonSplinterBlade} from '../../../src/content/templates/legacy/items/weapons/common-splinter-blade';
 
 function getOilAt(state: GameState, x: number, y: number) {
   return state.tileEffects[y]?.[x]?.['cover'];
@@ -25,6 +27,8 @@ describe('relic_salamander_heart — огненный урон оружия по
   beforeEach(() => {
     setupCombatScenario();
     loadTestContent();
+    // Реликвия и меч архивированы — регистрируем из legacy.
+    registerLegacyTemplates({ relics: [relicSalamanderHeart], items: [commonSplinterBlade] });
   });
 
   afterEach(() => {

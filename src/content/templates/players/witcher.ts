@@ -11,14 +11,5 @@ export const witcher = {
     "int": 0,
     "vit": 4
   },
-  "starterEquipment": [
-    "common_splinter_blade",
-    "common_school_wand",
-    "common_tin_plate",
-    "common_patch_cloak",
-    "common_knotted_fang",
-    "common_glass_bead"
-  ],
-  "innateAbilities": ["search"],
-  "starterRelicPool": ["relic_blood_pact"]
+  "innateAbilities": ["search"]
 } satisfies PlayerTemplateInput;

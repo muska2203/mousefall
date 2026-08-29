@@ -36,14 +36,6 @@ export const catMid = {
     {
       "templateId": "health_potion",
       "weight": 4
-    },
-    {
-      "templateId": "common_splinter_blade",
-      "weight": 2
-    },
-    {
-      "templateId": "common_tin_plate",
-      "weight": 11
     }
   ],
   "lootDropTable": [

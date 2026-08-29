@@ -92,32 +92,39 @@ describe('validate-content script', () => {
   });
 
   it('находит плейсхолдер {value} в описании аффикса со scaling none', () => {
-    const content = buildContent();
-    // mod_poison_on_hit — rule-аффикс со scaling 'none' (ролленного значения нет).
-    expect(content.modifiers?.get('mod_poison_on_hit')?.scaling.kind).toBe('none');
+    // rule-аффикс со scaling 'none' (ролленного значения нет).
+    const content = makeSyntheticContent({
+      modifiers: new Map([['mod_test', mockModifier({
+        effect: { kind: 'rule', ruleId: 'test_rule' },
+        scaling: { kind: 'none' },
+      })]]),
+    });
 
     const texts = {
       modifiers: {
-        mod_poison_on_hit: { name: 'Тест', description: 'Отравление на {value} ходов' },
+        mod_test: { name: 'Тест', description: 'Отравление на {value} ходов' },
       },
     } as unknown as ContentTexts;
 
     const errors = validateModifierTextPlaceholders(content, { ru: texts, en: texts });
     expect(errors.some((e) =>
-      e.path === 'modifiers.mod_poison_on_hit' &&
+      e.path === 'modifiers.mod_test' &&
       e.field === 'description' &&
       e.problem.includes('{value}'),
     )).toBe(true);
   });
 
   it('пропускает плейсхолдер {value} в описании аффикса со scaling perLevel', () => {
-    const content = buildContent();
-    // mod_sturdy_armor — stat-аффикс со scaling 'perLevel' (значение роллится).
-    expect(content.modifiers?.get('mod_sturdy_armor')?.scaling.kind).toBe('perLevel');
+    // stat-аффикс со scaling 'perLevel' (значение роллится).
+    const content = makeSyntheticContent({
+      modifiers: new Map([['mod_test', mockModifier({
+        scaling: { kind: 'perLevel', ranges: [{ min: 1, max: 2 }] },
+      })]]),
+    });
 
     const texts = {
       modifiers: {
-        mod_sturdy_armor: { name: 'Тест', description: '+{value} к броне' },
+        mod_test: { name: 'Тест', description: '+{value} к броне' },
       },
     } as unknown as ContentTexts;
 
@@ -125,13 +132,14 @@ describe('validate-content script', () => {
   });
 
   it('пропускает плейсхолдер {value} в описании аффикса со scaling fixed', () => {
-    const content = buildContent();
-    // mod_guardian_vitality — stat-аффикс со scaling 'fixed' (детерминированное значение).
-    expect(content.modifiers?.get('mod_guardian_vitality')?.scaling.kind).toBe('fixed');
+    // stat-аффикс со scaling 'fixed' (детерминированное значение).
+    const content = makeSyntheticContent({
+      modifiers: new Map([['mod_test', mockModifier()]]),
+    });
 
     const texts = {
       modifiers: {
-        mod_guardian_vitality: { name: 'Тест', description: 'Максимум здоровья: +{value}.' },
+        mod_test: { name: 'Тест', description: 'Максимум здоровья: +{value}.' },
       },
     } as unknown as ContentTexts;
 

@@ -12,8 +12,10 @@ import { GameSimulation } from '../../../src/simulation/simulation';
 import { createStartingEquipment } from '../../../src/simulation/systems/starting-equipment';
 import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixtures/gameState';
 import type { PlayerEntity, EnemyEntity } from '../../../src/simulation/types';
-import { loadTestContent, setupCombatScenario } from './helpers';
+import { loadTestContent, registerLegacyTemplates, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
+import { catGuardianMaul } from '../../../src/content/templates/legacy/items/weapons/cat-guardian-maul';
+import { modBluntDaze } from '../../../src/content/templates/legacy/modifiers/mod-blunt-daze';
 
 function createPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
   return makePlayer({
@@ -57,6 +59,8 @@ describe('Blunt daze scenario', () => {
   beforeEach(() => {
     setupCombatScenario();
     loadTestContent();
+    // Булава стражника и её модификатор архивированы — регистрируем из legacy.
+    registerLegacyTemplates({ items: [catGuardianMaul], modifiers: [modBluntDaze] });
   });
 
   it('удар владельца cat_guardian_maul всегда накладывает dazed на цель', () => {

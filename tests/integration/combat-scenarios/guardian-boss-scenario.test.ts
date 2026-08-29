@@ -239,9 +239,9 @@ describe('cat_guardian из шаблона (ручное размещение)',
     expect(boss.abilities.map((a) => a.templateId)).toEqual(
       expect.arrayContaining(['guardian_swoop', 'ground_slam', 'bulwark']),
     );
-    // maxHp: 90 (health.max) + 60 (vit 6) + 10 (mod_guardian_vitality из modifiers шаблона).
-    // Точное значение — регрессионная проверка, что stat-модификаторы шаблона применяются в createEnemy.
-    expect(boss.maxHp).toBe(160);
+    // maxHp: 90 (health.max) + 60 (vit 6). Модификатор mod_guardian_vitality
+    // архивирован вместе со снаряжением (2026-09-01) и больше не применяется.
+    expect(boss.maxHp).toBe(150);
 
     const sim = GameSimulation.loadSavedGame(state);
     sim.initializeTestTurnState('enemies', boss.id);

@@ -15,10 +15,12 @@ import { GameSimulation } from '../../../src/simulation/simulation';
 import { createStartingEquipment } from '../../../src/simulation/systems/starting-equipment';
 import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixtures/gameState';
 import type { EnemyEntity, GameState, PlayerEntity } from '../../../src/simulation/types';
-import { loadTestContent, setupCombatScenario } from './helpers';
+import { loadTestContent, registerLegacyTemplates, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
 import { extractEvents } from '../../../src/presentation/logBuilder';
 import { rngChance } from '../../../src/utils/rng';
+import { catGuardianMaul } from '../../../src/content/templates/legacy/items/weapons/cat-guardian-maul';
+import { modBluntDaze } from '../../../src/content/templates/legacy/modifiers/mod-blunt-daze';
 
 vi.mock('@utils/rng', () => ({
   createRNG: vi.fn((seed: number) => ({ seed, state: seed >>> 0 })),
@@ -75,6 +77,8 @@ describe('Bulwark scenario', () => {
     setupCombatScenario();
     vi.mocked(rngChance).mockReturnValue(true);
     loadTestContent();
+    // Булава стражника и её модификатор архивированы — регистрируем из legacy.
+    registerLegacyTemplates({ items: [catGuardianMaul], modifiers: [modBluntDaze] });
   });
 
   afterEach(() => {

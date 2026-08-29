@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { EntityTemplateSchema, ItemTemplateSchema } from '../../../src/content/schemas';
 import { catGuardian } from '../../../src/content/templates/entities/cat-guardian';
-import { catGuardianMaul } from '../../../src/content/templates/items/weapons/cat-guardian-maul';
-import { catGuardianPlate } from '../../../src/content/templates/items/armor/cat-guardian-plate';
+import { catGuardianMaul } from '../../../src/content/templates/legacy/items/weapons/cat-guardian-maul';
+import { catGuardianPlate } from '../../../src/content/templates/legacy/items/armor/cat-guardian-plate';
 
 // Тест проверяет только структуру шаблонов (Zod-валидация и форма полей).
 // Конкретные значения полей (масштаб спрайта, статы, размеры PNG) здесь не

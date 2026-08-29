@@ -29,15 +29,10 @@ export const catSmall = {
       "delivery.weapon"
     ]
   },
-  "modifiers": ["mod_bleeding_on_hit"],
   "lootTable": [
     {
       "templateId": "health_potion",
       "weight": 3
-    },
-    {
-      "templateId": "common_splinter_blade",
-      "weight": 1
     }
   ],
   "lootDropTable": [

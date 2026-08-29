@@ -25,7 +25,8 @@ src/content/
     index.ts         # buildContent(): парс через Zod (дефолты, инварианты, дубли id) → LoadedContent
     entities/        # Шаблоны врагов
     players/         # Шаблоны игрока
-    items/           # Оружие, броня, амулеты, расходники (weapons/, armor/, amulet/, consumables/)
+    items/           # Активные предметы: расходники (consumables/) и unarmed (weapons/)
+    legacy/          # Архив первой итерации (2026-09-01): снаряжение, модификаторы, реликвии — НЕ регистрируются в buildContent(), ждут переработки под билды (docs/plans/legacy-content-archival.md)
     abilities/       # Шаблоны способностей
     statuses/        # Шаблоны статусов
     tile-effects/    # Тайловые эффекты
@@ -38,8 +39,8 @@ src/content/
     props/           # Пропсы
     pois/            # POI
     traps/           # Ловушки
-    relics/          # Реликвии (постоянные пассивные бонусы забега)
-    modifiers/       # Модификаторы экипировки: stat/rule, аффиксы ролла и фирменные свойства (fixedModifiers)
+    relics/          # Реликвии (постоянные пассивные бонусы забега); реестр пуст — контент в legacy/relics/
+    modifiers/       # Модификаторы экипировки: stat/rule, аффиксы ролла и фирменные свойства (fixedModifiers); реестр пуст — контент в legacy/modifiers/
   texts/             # Локализованные тексты врагов, предметов, способностей
     types.ts         # Типы игровых текстов
     ru/              # Русские тексты по категориям (items.ts, modifiers.ts, ...)

@@ -12,7 +12,7 @@ export const normalDeepRoom = {
   fill: {
     enemyPool: ['cat_small', 'cat_mid'],
     enemyDensity: 0.7,
-    itemPool: ['health_potion', 'common_splinter_blade', 'common_tin_plate'],
+    itemPool: ['health_potion'],
     itemDensity: 0.2,
   },
 } satisfies RoomTypeTemplateInput;

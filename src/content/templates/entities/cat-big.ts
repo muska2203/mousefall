@@ -30,7 +30,6 @@ export const catBig = {
     ]
   },
   "armor": 2,
-  "modifiers": ["mod_spiked_thorns"],
   "abilities": [
     "magic_slap"
   ],
@@ -38,14 +37,6 @@ export const catBig = {
     {
       "templateId": "health_potion",
       "weight": 5
-    },
-    {
-      "templateId": "common_splinter_blade",
-      "weight": 3
-    },
-    {
-      "templateId": "common_tin_plate",
-      "weight": 2
     }
   ],
   "lootDropTable": [
