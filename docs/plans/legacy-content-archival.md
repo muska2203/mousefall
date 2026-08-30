@@ -65,3 +65,41 @@
   тексты (`texts/{ru,en}/`), правила в `simulation/content-rules/rules.ts`
   (без источников они не активируются — мёртвый, но безопасный код).
 - Не меняем схемы и движок.
+
+## Возврат предметов (2026-09-01)
+
+7 предметов со скиллами и спрайтами возвращены из legacy в активный контент
+с новыми id по схеме `{type}_{subtype}_{name}`:
+
+| Старый id | Новый id |
+|---|---|
+| `common_hat_pin` | `weapon_sword_hat_pin` |
+| `common_splinter_blade` | `weapon_sword_splinter_blade` |
+| `common_school_wand` | `weapon_staff_school_wand` |
+| `common_sling` | `weapon_sling` |
+| `common_patch_cloak` | `armor_light_patch_cloak` |
+| `common_spiked_cloak` | `armor_light_spiked_cloak` |
+| `common_tin_plate` | `armor_heavy_tin_plate` |
+
+`fixedModifiers` сняты (модификаторы не возвращаются — ждут переработки
+под билды). Предметы не добавлялись в дроп/спавн (`lootTable`, `itemPool`,
+`starterEquipment`).
+
+Там же 2026-09-01 возвращены оставшиеся 6 предметов со спрайтами (без
+скиллов, `fixedModifiers` сняты):
+
+| Старый id | Новый id |
+|---|---|
+| `common_flaming_sword` | `weapon_sword_flaming` |
+| `common_venom_dagger` | `weapon_dagger_venom` |
+| `common_ember_amulet` | `amulet_charm_ember` |
+| `common_energized_bead` | `amulet_bead_energized` |
+| `common_glass_bead` | `amulet_bead_glass` |
+| `common_knotted_fang` | `amulet_talisman_knotted_fang` |
+
+Боевые сценарии механик (огонь ×1.5, яд) регистрируют в тестах копии
+активных шаблонов с восстановленным `fixedModifiers` поверх реестра,
+модификаторы — из legacy как раньше.
+
+В legacy остались только: `cat_guardian_maul`, `cat_guardian_plate`
+(спрайтов нет), все модификаторы, все реликвии.

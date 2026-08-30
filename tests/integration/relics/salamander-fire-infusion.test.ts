@@ -17,7 +17,6 @@ import {makeEnemy, makeGameState, makePlayer, makeTestMap} from '../../fixtures/
 import type {GameState} from '../../../src/simulation/types';
 import {loadTestContent, registerLegacyTemplates, setupCombatScenario} from '../combat-scenarios/helpers';
 import {relicSalamanderHeart} from '../../../src/content/templates/legacy/relics/relic-salamander-heart';
-import {commonSplinterBlade} from '../../../src/content/templates/legacy/items/weapons/common-splinter-blade';
 
 function getOilAt(state: GameState, x: number, y: number) {
   return state.tileEffects[y]?.[x]?.['cover'];
@@ -27,8 +26,8 @@ describe('relic_salamander_heart — огненный урон оружия по
   beforeEach(() => {
     setupCombatScenario();
     loadTestContent();
-    // Реликвия и меч архивированы — регистрируем из legacy.
-    registerLegacyTemplates({ relics: [relicSalamanderHeart], items: [commonSplinterBlade] });
+    // Реликвия архивирована — регистрируем из legacy; клинок активен.
+    registerLegacyTemplates({ relics: [relicSalamanderHeart] });
   });
 
   afterEach(() => {
@@ -47,7 +46,7 @@ describe('relic_salamander_heart — огненный урон оружия по
     state.entities.set(player.id, player);
 
     // Физическое оружие — без огненного тега изначально.
-    createStartingEquipment(state, player, ['common_splinter_blade']);
+    createStartingEquipment(state, player, ['weapon_sword_splinter_blade']);
 
     // Выдаём реликвию напрямую через интент (алтарный путь покрыт тестами фазы 0.5).
     const builder = new ExecutionBuilder({

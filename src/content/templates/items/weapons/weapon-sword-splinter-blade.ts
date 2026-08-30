@@ -1,16 +1,17 @@
-import type {ItemTemplateInput} from '../../../../schemas';
+import type {ItemTemplateInput} from '../../../schemas';
 
 /**
- * «Зазубренный сырорез» — меч раздачи кровотечений (линия Бойца,
- * концепт этажа 1, §4.3): фирменный модификатор mod_bleeding_on_hit,
- * пул скиллов — рывок/взмах (мобильность и AoE-раздача bleeding;
+ * «Зазубренный сырорез» — меч линии Бойца (концепт этажа 1, §4.3):
+ * пул скиллов — рывок/взмах (мобильность и AoE;
  * swoop убран — прыжки зарезервированы для молотов, решение 2026-08-13).
+ * Фирменный модификатор mod_bleeding_on_hit снят при архивации модификаторов
+ * (2026-09-01) — вернётся с их переработкой.
  * Числа черновые — балансный проход roadMap 1.4.
  */
-export const commonSplinterBlade = {
-  "id": "common_splinter_blade",
-  "spriteId": "common_splinter_blade",
-  "icon": "/assets/items/common_splinter_blade.png",
+export const weaponSwordSplinterBlade = {
+  "id": "weapon_sword_splinter_blade",
+  "spriteId": "weapon_sword_splinter_blade",
+  "icon": "/assets/items/weapon_sword_splinter_blade.png",
   "fallback": "🗡",
   "type": "weapon",
   "level": 1,
@@ -43,6 +44,5 @@ export const commonSplinterBlade = {
       "delivery.weapon"
     ]
   },
-  "grantedAbilities": [],
-  "fixedModifiers": ["mod_bleeding_on_hit"]
+  "grantedAbilities": []
 } satisfies ItemTemplateInput;

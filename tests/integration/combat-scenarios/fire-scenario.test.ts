@@ -15,7 +15,7 @@ import { makeGameState, makePlayer, makeEnemy, makeDoor, makeTestMap } from '../
 import type { PlayerEntity, EnemyEntity, Entity, EntityId } from '../../../src/simulation/types';
 import { loadTestContent, registerLegacyTemplates, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
-import { commonFlamingSword } from '../../../src/content/templates/legacy/items/weapons/common-flaming-sword';
+import { weaponSwordFlaming } from '../../../src/content/templates/items/weapons/weapon-sword-flaming';
 import { modFireDamageMultiplier } from '../../../src/content/templates/legacy/modifiers/mod-fire-damage-multiplier';
 import { rngChance } from '../../../src/utils/rng';
 import { buildPresentationPlan } from '../../../src/presentation/displayState/planner';
@@ -83,8 +83,14 @@ describe('Fire scenario', () => {
     setupCombatScenario();
     vi.mocked(rngChance).mockReturnValue(true);
     await loadTestContent();
-    // Огненный меч и его модификатор архивированы — регистрируем из legacy.
-    registerLegacyTemplates({ items: [commonFlamingSword], modifiers: [modFireDamageMultiplier] });
+    // Огненный меч возвращён в активный контент без fixedModifiers; сценарий
+    // проверяет правило ×1.5 огня, поэтому регистрируем поверх активного
+    // шаблона копию с восстановленным фирменным модификатором, а сам
+    // модификатор — из legacy как раньше.
+    registerLegacyTemplates({
+      items: [{ ...weaponSwordFlaming, fixedModifiers: ['mod_fire_damage_multiplier'] }],
+      modifiers: [modFireDamageMultiplier],
+    });
   });
 
   afterEach(() => {
@@ -97,7 +103,7 @@ describe('Fire scenario', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    createStartingEquipment(state, player, ['common_flaming_sword']);
+    createStartingEquipment(state, player, ['weapon_sword_flaming']);
 
     const door = makeDoor({ id: 'door_1', x: 6, y: 5 });
     const rat = createRat({ x: 5, y: 6 });
@@ -161,7 +167,7 @@ describe('Fire scenario', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    createStartingEquipment(state, player, ['common_flaming_sword']);
+    createStartingEquipment(state, player, ['weapon_sword_flaming']);
 
     const door = makeDoor({ id: 'door_1', x: 6, y: 5 });
     state.entities.set(door.id, door);

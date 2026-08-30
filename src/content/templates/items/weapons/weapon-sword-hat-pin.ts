@@ -1,4 +1,4 @@
-import type {ItemTemplateInput} from '../../../../schemas';
+import type {ItemTemplateInput} from '../../../schemas';
 
 /**
  * «Шляпная булавка» — дуэльный меч (линия Бойца, концепт этажа 1, §4.3):
@@ -6,10 +6,10 @@ import type {ItemTemplateInput} from '../../../../schemas';
  * способности цели — анти-босс/анти-кастер), пул скиллов —
  * контратака/рывок. Числа черновые — балансный проход roadMap 1.4.
  */
-export const commonHatPin = {
-  "id": "common_hat_pin",
-  "spriteId": "common_hat_pin",
-  "icon": "/assets/items/common_hat_pin.png",
+export const weaponSwordHatPin = {
+  "id": "weapon_sword_hat_pin",
+  "spriteId": "weapon_sword_hat_pin",
+  "icon": "/assets/items/weapon_sword_hat_pin.png",
   "fallback": "📌",
   "type": "weapon",
   "level": 1,

@@ -16,7 +16,7 @@ import { makeGameState, makePlayer, makeEnemy, makeTestMap } from '../../fixture
 import type { PlayerEntity, EnemyEntity } from '../../../src/simulation/types';
 import { loadTestContent, registerLegacyTemplates, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
-import { commonVenomDagger } from '../../../src/content/templates/legacy/items/weapons/common-venom-dagger';
+import { weaponDaggerVenom } from '../../../src/content/templates/items/weapons/weapon-dagger-venom';
 import { modPoisonOnHit } from '../../../src/content/templates/legacy/modifiers/mod-poison-on-hit';
 import { rngChance } from '../../../src/utils/rng';
 import { buildPresentationPlan } from '../../../src/presentation/displayState/planner';
@@ -86,8 +86,14 @@ describe('Poison + counterattack scenario', () => {
     setupCombatScenario();
     vi.mocked(rngChance).mockReturnValue(true);
     await loadTestContent();
-    // Ядовитый кинжал и его модификатор архивированы — регистрируем из legacy.
-    registerLegacyTemplates({ items: [commonVenomDagger], modifiers: [modPoisonOnHit] });
+    // Ядовитый кинжал возвращён в активный контент без fixedModifiers; сценарий
+    // проверяет правило отравления, поэтому регистрируем поверх активного
+    // шаблона копию с восстановленным фирменным модификатором, а сам
+    // модификатор — из legacy как раньше.
+    registerLegacyTemplates({
+      items: [{ ...weaponDaggerVenom, fixedModifiers: ['mod_poison_on_hit'] }],
+      modifiers: [modPoisonOnHit],
+    });
   });
 
   afterEach(() => {
@@ -100,7 +106,7 @@ describe('Poison + counterattack scenario', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    createStartingEquipment(state, player, ['common_venom_dagger']);
+    createStartingEquipment(state, player, ['weapon_dagger_venom']);
 
     // HP занижено: сценарий про комбо яд + контратака, а не про рейнж урона кинжала.
     const rat = createRat({ x: 6, y: 5, hp: 8, maxHp: 8 });
@@ -166,7 +172,7 @@ describe('Poison + counterattack scenario', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    createStartingEquipment(state, player, ['common_venom_dagger']);
+    createStartingEquipment(state, player, ['weapon_dagger_venom']);
 
     // Враг с колющей атакой БЕЗ правила отравления (профиль бывшего cat_claw_small).
     const rat = createRat({ x: 6, y: 5, attack: {
@@ -203,7 +209,7 @@ describe('Poison + counterattack scenario', () => {
     state.player = player;
     state.entities.set(player.id, player);
 
-    createStartingEquipment(state, player, ['common_venom_dagger']);
+    createStartingEquipment(state, player, ['weapon_dagger_venom']);
 
     const rat = createRat({ x: 6, y: 5 });
     rat.statusEffects.push({

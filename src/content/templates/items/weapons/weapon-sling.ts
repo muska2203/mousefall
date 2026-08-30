@@ -1,18 +1,20 @@
-import type {ItemTemplateInput} from '../../../../schemas';
+import type {ItemTemplateInput} from '../../../schemas';
 
 /**
  * Праща — основное оружие линии Алхимика первого этажа (концепт §4.3).
  * Не «лук», а инструмент дистанции и доставки алхимии:
  * дальняя базовая атака (range 5, min-range 2 — в упор не бьёт: bump-атака
- * отклоняется с тостом, деградации в безоружный удар нет), фирменная
- * способность «Бросок камня» и фирменный
- * модификатор +5 к дальности броска расходников. Второй активный скилл
- * (roadMap 1.1) — «Рывок» через abilityPool. Числа черновые, до балансного прохода.
+ * отклоняется с тостом, деградации в безоружный удар нет) и фирменная
+ * способность «Бросок камня». Второй активный скилл
+ * (roadMap 1.1) — «Рывок» через abilityPool.
+ * Фирменный модификатор +5 к дальности броска расходников снят при архивации
+ * модификаторов (2026-09-01) — вернётся с их переработкой.
+ * Числа черновые, до балансного прохода.
  */
-export const commonSling = {
-  "id": "common_sling",
-  "spriteId": "common_sling",
-  "icon": "/assets/items/common_sling.png",
+export const weaponSling = {
+  "id": "weapon_sling",
+  "spriteId": "weapon_sling",
+  "icon": "/assets/items/weapon_sling.png",
   "fallback": "🎯",
   "type": "weapon",
   "level": 1,
@@ -28,9 +30,6 @@ export const commonSling = {
   ],
   "grantedAbilities": [
     "stone_throw"
-  ],
-  "fixedModifiers": [
-    "mod_sling_throw_range"
   ],
   "weapon": {
     "damage": { "min": 2, "max": 3 },

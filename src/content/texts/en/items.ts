@@ -1,55 +1,55 @@
 import type {ContentText} from '../types';
 
 export const items: Record<string, ContentText> = {
-  common_splinter_blade: {
+  weapon_sword_splinter_blade: {
     name: 'Jagged Cheesecutter',
     description: 'A serrated cheese knife. The cuts are shallow but bleed for a long time.',
   },
-  common_hat_pin: {
+  weapon_sword_hat_pin: {
     name: 'Hat Pin',
     description: "A long needle from the master's hat. In precise paws — a duelist's rapier.",
   },
-  common_school_wand: {
+  weapon_staff_school_wand: {
     name: 'Cracked Spoke',
     description: 'Almost a wand. Almost magical.',
   },
-  common_sling: {
+  weapon_sling: {
     name: 'Sling',
-    description: 'Ranged stone attack at 2–5 tiles; cannot strike up close. Thrown consumables fly 5 tiles farther.',
+    description: 'Ranged stone attack at 2–5 tiles; cannot strike up close.',
   },
-  common_flaming_sword: {
+  weapon_sword_flaming: {
     name: 'Charred Shortsword',
     description: 'Warm to the touch. The blade sputters with weak flames.',
   },
-  common_venom_dagger: {
+  weapon_dagger_venom: {
     name: 'Stinger Dagger',
-    description: 'A narrow blade with a faint greenish residue.',
+    description: 'A narrow blade, good for quick jabs.',
   },
-  common_spiked_cloak: {
+  armor_light_spiked_cloak: {
     name: 'Bramble Cloak',
     description: 'Woven from thorny vines. Hurts anyone who gets too close.',
   },
-  common_ember_amulet: {
+  amulet_charm_ember: {
     name: 'Dull Ember Amulet',
-    description: 'Holds a dying spark. Fire feels a little hotter around it.',
+    description: 'Holds a dying spark.',
   },
-  common_energized_bead: {
+  amulet_bead_energized: {
     name: 'Restless Bead',
-    description: 'Tingles in your hand. Sometimes it gives a second wind mid-fight.',
+    description: 'Tingles in your hand.',
   },
-  common_patch_cloak: {
+  armor_light_patch_cloak: {
     name: 'Worn Dust Cloak',
     description: 'Smells of dust and secrets.',
   },
-  common_tin_plate: {
+  armor_heavy_tin_plate: {
     name: 'Tin Breastplate',
     description: 'Clanks when walking, but better than nothing.',
   },
-  common_glass_bead: {
+  amulet_bead_glass: {
     name: 'Dull Bead',
     description: 'It seems there was once light in it.',
   },
-  common_knotted_fang: {
+  amulet_talisman_knotted_fang: {
     name: 'Crooked Fang',
     description: 'Someone wore it around their neck. Now you do.',
   },

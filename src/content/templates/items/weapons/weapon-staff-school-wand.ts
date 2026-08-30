@@ -1,9 +1,9 @@
-import type {ItemTemplateInput} from '../../../../schemas';
+import type {ItemTemplateInput} from '../../../schemas';
 
-export const commonSchoolWand = {
-  "id": "common_school_wand",
-  "spriteId": "common_school_wand",
-  "icon": "/assets/items/common_school_wand.png",
+export const weaponStaffSchoolWand = {
+  "id": "weapon_staff_school_wand",
+  "spriteId": "weapon_staff_school_wand",
+  "icon": "/assets/items/weapon_staff_school_wand.png",
   "fallback": "🪄",
   "type": "weapon",
   "level": 1,

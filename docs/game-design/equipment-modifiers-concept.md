@@ -135,12 +135,12 @@ ModifierTemplate = {
 - Все шаблоны `items/weapons|armor|amulet` (+ оружие котов-врагов): `+subtype`, `+level`, `baseDamage` → `damage{min,max}`, `−damageFormulaId` (выполнено 2026-08-08).
 - Унификация свойств (выполнено 2026-08-09): `equipModifiers` и `ruleIds` шаблонов экипировки мигрированы в `fixedModifiers`; добавлены 6 фирменных модификаторов (`poolEligible: false`):
   - `mod_blunt_daze` (cat_guardian_maul);
-  - `mod_fire_damage_multiplier` (common_flaming_sword);
-  - `mod_spiked_thorns` (common_tin_plate, common_spiked_cloak);
-  - `mod_amulet_fire_damage_multiplier` (common_ember_amulet);
-  - `mod_restore_ap_on_hit` (common_energized_bead, common_knotted_fang);
+  - `mod_fire_damage_multiplier` (weapon_sword_flaming);
+  - `mod_spiked_thorns` (armor_heavy_tin_plate, armor_light_spiked_cloak);
+  - `mod_amulet_fire_damage_multiplier` (amulet_charm_ember);
+  - `mod_restore_ap_on_hit` (amulet_bead_energized, amulet_talisman_knotted_fang);
   - `mod_guardian_vitality` (cat_guardian_plate, stat maxHp +10, `scaling: fixed`; с 2026-08-28 также в `modifiers` шаблона `cat_guardian`).
-- `mod_poison_on_hit` стал фирменным у common_splinter_blade и common_venom_dagger и остался в пуле ролла (`poolEligible: true`) — на эти два предмета он больше не выпадает (фильтр ролла).
+- `mod_poison_on_hit` стал фирменным у weapon_sword_splinter_blade и weapon_dagger_venom и остался в пуле ролла (`poolEligible: true`) — на эти два предмета он больше не выпадает (фильтр ролла).
 - Стартовые модификаторы для проверки системы:
   - `mod_sturdy_armor` (positive, stat armor add, perLevel `[{1,2},{1,3},{2,4}]`, подтипы брони);
   - `mod_poison_on_hit` (positive, rule `weapon_poison_on_hit`, scaling none, подтипы оружия);

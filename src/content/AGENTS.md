@@ -25,7 +25,7 @@ src/content/
     index.ts         # buildContent(): парс через Zod (дефолты, инварианты, дубли id) → LoadedContent
     entities/        # Шаблоны врагов
     players/         # Шаблоны игрока
-    items/           # Активные предметы: расходники (consumables/) и unarmed (weapons/)
+    items/           # Активные предметы: расходники (consumables/), оружие и броня со скиллами (weapons/, armor/), амулеты без скиллов (amulet/); экипировка возвращена из legacy 2026-09-01 с новыми id по схеме {type}_{subtype}_{name}
     legacy/          # Архив первой итерации (2026-09-01): снаряжение, модификаторы, реликвии — НЕ регистрируются в buildContent(), ждут переработки под билды (docs/plans/legacy-content-archival.md)
     abilities/       # Шаблоны способностей
     statuses/        # Шаблоны статусов
@@ -71,7 +71,7 @@ src/content/
 
 ## Добавление контента
 
-1. Создать файл `src/content/templates/<категория>/<id>.ts` (имя файла = id в kebab-case, константа — camelCase):
+1. Создать файл `src/content/templates/<категория>/<id>.ts` (имя файла = id в kebab-case, константа — camelCase; id экипировки — по схеме `{type}_{subtype}_{name}`, например `weapon_sword_hat_pin` → `items/weapons/weapon-sword-hat-pin.ts`):
 
    ```typescript
    import type {EntityTemplateInput} from '../../schemas';

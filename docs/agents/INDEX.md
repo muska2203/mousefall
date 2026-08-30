@@ -31,6 +31,7 @@
 | Как устроены подтипы, уровни и аффиксы экипировки, рейнж урона? | [`../game-design/equipment-modifiers-concept.md`](../game-design/equipment-modifiers-concept.md) |
 | Концепт первого босса (Кот-Страж): способности, стадии, контрплей? | [`../game-design/first-boss-concept.md`](../game-design/first-boss-concept.md) |
 | Концепт контента первого этажа: линии сборки, сетап врагов/предметов/объектов? | [`../game-design/floor-1-content-concept.md`](../game-design/floor-1-content-concept.md) |
+| Кровавая ветка билдов этажа 1 вокруг «Зазубренного сырореза» и `bleeding`? | [`../game-design/bleed-builds-concept.md`](../game-design/bleed-builds-concept.md) |
 | Архитектура тайловых эффектов | [`../architecture/TILE_EFFECTS.md`](../architecture/TILE_EFFECTS.md) |
 | Как добавить тайловый эффект? | [`TILE_EFFECTS.md`](./TILE_EFFECTS.md) |
 | Как работают сохранения и загрузки? | [`SAVES.md`](./SAVES.md) |

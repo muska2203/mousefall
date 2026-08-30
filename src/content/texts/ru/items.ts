@@ -1,55 +1,55 @@
 import type {ContentText} from '../types';
 
 export const items: Record<string, ContentText> = {
-  common_splinter_blade: {
+  weapon_sword_splinter_blade: {
     name: 'Зазубренный сырорез',
     description: 'Зубчатый нож для сыра. Раны от него неглубокие, но долго кровоточат.',
   },
-  common_hat_pin: {
+  weapon_sword_hat_pin: {
     name: 'Шляпная булавка',
     description: 'Длинная игла от хозяйской шляпы. В точных лапах — шпага дуэлянта.',
   },
-  common_school_wand: {
+  weapon_staff_school_wand: {
     name: 'Треснувшая спица',
     description: 'Почти палочка. Почти волшебная.',
   },
-  common_sling: {
+  weapon_sling: {
     name: 'Праща',
-    description: 'Дальняя атака камнем на расстоянии 2–5 клеток; в упор не бьёт. Броски расходников летят на 5 клеток дальше.',
+    description: 'Дальняя атака камнем на расстоянии 2–5 клеток; в упор не бьёт.',
   },
-  common_flaming_sword: {
+  weapon_sword_flaming: {
     name: 'Обгоревший короткий меч',
     description: 'Тёплый на ощупь. Лезвие трещит слабым пламенем.',
   },
-  common_venom_dagger: {
+  weapon_dagger_venom: {
     name: 'Жалящий кинжал',
-    description: 'Узкое лезвие с едва заметным зеленоватым налётом.',
+    description: 'Узкое лезвие, удобное для быстрых уколов.',
   },
-  common_spiked_cloak: {
+  armor_light_spiked_cloak: {
     name: 'Плащ из колючего вьюнка',
     description: 'Сплетён из колючих лоз. Больно тем, кто подходит слишком близко.',
   },
-  common_ember_amulet: {
+  amulet_charm_ember: {
     name: 'Тусклый угольный амулет',
-    description: 'Хранит угасающую искру. Огонь вокруг кажется чуть горячее.',
+    description: 'Хранит угасающую искру.',
   },
-  common_energized_bead: {
+  amulet_bead_energized: {
     name: 'Беспокойная бусина',
-    description: 'Покалывает в ладони. Порой дарует второе дыхание прямо в бою.',
+    description: 'Покалывает в ладони.',
   },
-  common_patch_cloak: {
+  armor_light_patch_cloak: {
     name: 'Потёртый плащ пыльника',
     description: 'Пахнет пылью и тайнами.',
   },
-  common_tin_plate: {
+  armor_heavy_tin_plate: {
     name: 'Жестяная кираса',
     description: 'Гремит при ходьбе, но лучше чем ничего.',
   },
-  common_glass_bead: {
+  amulet_bead_glass: {
     name: 'Тусклая бусина',
     description: 'Кажется, в ней когда-то был свет.',
   },
-  common_knotted_fang: {
+  amulet_talisman_knotted_fang: {
     name: 'Кривой клык',
     description: 'Кто-то носил его на шее. Теперь — вы.',
   },
