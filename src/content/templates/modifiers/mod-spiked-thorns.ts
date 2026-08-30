@@ -1,4 +1,4 @@
-import type {ModifierTemplateInput} from '../../../schemas';
+import type {ModifierTemplateInput} from '../../schemas';
 
 /**
  * «Шипастая»: фирменный rule-модификатор брони с шипами

@@ -21,11 +21,11 @@ export const modifiers: Record<string, ContentText> = {
     name: 'Оглушающая',
     description: 'Атаки тупым уроном оглушают цель на 1 ход.',
   },
-  mod_bleeding_on_hit: {
+  mod_blood_on_hit: {
     name: 'Режущая',
     description: 'Рубящие удары этим оружием открывают кровотечение на 3 хода.',
   },
-  mod_bleeding_execute: {
+  mod_blood_execute: {
     name: 'Добивающая',
     description: 'Удары этим оружием по кровоточащим целям наносят на 3 урона больше.',
   },

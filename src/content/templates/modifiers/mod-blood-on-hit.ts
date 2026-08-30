@@ -1,4 +1,4 @@
-import type {ModifierTemplateInput} from '../../../schemas';
+import type {ModifierTemplateInput} from '../../schemas';
 
 /**
  * «Режущая»: положительный rule-аффикс мечей, добавляет правило
@@ -6,8 +6,8 @@ import type {ModifierTemplateInput} from '../../../schemas';
  * Фирменное свойство «Зазубренного сырореза»; также участвует в ролле
  * аффиксов мечей. Уровне-независимый (scaling: none, value = null).
  */
-export const modBleedingOnHit = {
-  "id": "mod_bleeding_on_hit",
+export const modBloodOnHit = {
+  "id": "mod_blood_on_hit",
   "polarity": "positive",
   "effect": {
     "kind": "rule",

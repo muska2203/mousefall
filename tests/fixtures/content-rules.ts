@@ -103,6 +103,47 @@ export const testAbilityFireMultiplier: ContentRule = {
 };
 
 /**
+ * Тестовое правило предмета: удваивает огненный урон владельца.
+ * Замена реального `item_fire_damage_multiplier` в тестах: та же форма
+ * (modifyDamage multiply + обязательный eventRole 'source' против слоя radius),
+ * но значение задано здесь, а не в `src/simulation/content-rules/rules.ts`.
+ */
+export const testItemFireDamageMultiplier: ContentRule = {
+  id: 'test_item_fire_damage_multiplier',
+  trigger: {
+    event: 'DAMAGE',
+    tags: ['damage.magical.fire'],
+  },
+  conditions: [{type: 'eventRole', role: 'source'}],
+  effect: {
+    type: 'modifyDamage',
+    op: 'multiply',
+    value: 2,
+  },
+  target: {type: 'eventTarget'},
+  priority: 0,
+};
+
+/**
+ * Тестовое правило амулета: владелец восстанавливает AP при своём ударе.
+ * Замена реального `amulet_restore_ap_on_hit` в тестах: шанс 100%
+ * (детерминированность), eventRole 'source' сохранён — он под тестом.
+ */
+export const testRestoreApOnHit: ContentRule = {
+  id: 'test_restore_ap_on_hit',
+  trigger: {
+    event: 'ENTITY_DAMAGED',
+    tags: ['attack.melee', 'delivery.weapon'],
+  },
+  conditions: [{type: 'chance', probability: 100}, {type: 'eventRole', role: 'source'}],
+  effect: {
+    type: 'restoreAp',
+  },
+  target: {type: 'self'},
+  priority: 0,
+};
+
+/**
  * Временно расширяет набор мировых контентных правил для выполнения колбэка.
  *
  * После выполнения восстанавливает исходный набор правил. Гарантирует,

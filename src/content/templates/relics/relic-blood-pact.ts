@@ -1,4 +1,4 @@
-import type {RelicTemplateInput} from '../../../schemas';
+import type {RelicTemplateInput} from '../../schemas';
 
 export const relicBloodPact = {
   "id": "relic_blood_pact",

@@ -1,7 +1,9 @@
 /**
  * Интеграционный сценарий: AI-стратегия первого босса (guardian-boss).
  *
- * Проверяет сквозное поведение на реальном контенте через GameSimulation:
+ * Проверяет сквозное поведение через GameSimulation на мок-контенте
+ * (способности и босс — моки с собственными числами; id способностей
+ * сохранены как носители механики — стратегия guardian-boss ссылается на них):
  * - переход на стадию 2 по порогу 50% HP: немедленное комбо
  *   «Удар по земле (подготовка) + Глухая оборона (каст)», одноразовость;
  * - подготовка не сбрасывается «Глухой обороной», а срывается оглушением;
@@ -17,6 +19,15 @@ import { loadTestContent, setupCombatScenario } from './helpers';
 import { advanceToPlayerTurn } from '../../helpers/simulation';
 import { rebuildActiveRules } from '../../../src/simulation/systems/rules/active-rule-lifecycle';
 import { createEnemy } from '../../../src/simulation/systems/map-generation/shared';
+import { getRegistry } from '../../../src/content/registry';
+import {
+  AbilityTemplateSchema,
+  EntityTemplateSchema,
+  type AbilityTemplateInput,
+  type EntityTemplateInput,
+} from '../../../src/content/schemas';
+import type { ContentRule } from '../../../src/simulation/content-rules/types';
+import { getAllContentRules, setContentRulesOverride } from '../../fixtures/content-rules';
 import type { ExecutionNode, GameEvent } from '../../../src/simulation/core-types';
 import type { SimulationResult } from '../../../src/simulation/types';
 
@@ -42,6 +53,98 @@ vi.mock('@utils/rng', () => ({
   rngFloat: vi.fn(() => 0.5),
 }));
 
+/** Тестовые числа мок-контента (не из src/content). */
+const TEST_SLAM_DAMAGE = 7;
+const TEST_SLAM_DAZE_DURATION = 3;
+const TEST_BULWARK_COOLDOWN = 3;
+const TEST_BOSS_MAX_HP = 40;
+const TEST_BOSS_VIT = 3;
+
+/** Мок «Удара по земле»: вид groundSlam, зона 3×3, урон 7. */
+const testGroundSlam = {
+  id: 'ground_slam',
+  kind: 'groundSlam',
+  spriteId: 'ground_slam',
+  cooldown: 5,
+  apCost: 2,
+  aiPreparable: true,
+  damageTag: 'damage.physical.blunt',
+  radius: 1,
+  baseDamage: TEST_SLAM_DAMAGE,
+  tags: ['delivery.ability', 'attack.melee', 'target.aoe'],
+  ruleIds: ['test_ground_slam_daze'],
+} satisfies AbilityTemplateInput;
+
+/** Мок «Глухой обороны»: self-buff статусом bulwark на 1 ход, свой кулдаун. */
+const testBulwark = {
+  id: 'bulwark',
+  kind: 'selfBuff',
+  spriteId: 'bulwark',
+  cooldown: TEST_BULWARK_COOLDOWN,
+  apCost: 1,
+  statusType: 'bulwark',
+  duration: 1,
+  tags: ['delivery.ability', 'target.self', 'buff'],
+} satisfies AbilityTemplateInput;
+
+/** Мок «Налёта»: вид swoop со своими параметрами прыжка и урона. */
+const testGuardianSwoop = {
+  id: 'guardian_swoop',
+  kind: 'swoop',
+  spriteId: 'swoop',
+  cooldown: 2,
+  apCost: 2,
+  aiPreparable: true,
+  damageTag: 'damage.physical.blunt',
+  jumpRadius: 2,
+  aoeRadius: 1,
+  baseDamage: 6,
+  tags: ['delivery.ability', 'delivery.movement', 'attack.melee', 'target.aoe', 'effect.knockback'],
+} satisfies AbilityTemplateInput;
+
+/** Мок-правило оглушения выживших после Удара (форма повторяет ground_slam_daze). */
+const testGroundSlamDazeRule: ContentRule = {
+  id: 'test_ground_slam_daze',
+  trigger: { event: 'ENTITY_DAMAGED', tags: ['skill.ground_slam'] },
+  // eventRole 'source' обязателен: иначе владелец способности оглушал бы сам себя.
+  conditions: [{ type: 'eventRole', role: 'source' }],
+  effect: { type: 'applyStatus', statusType: 'dazed', duration: TEST_SLAM_DAZE_DURATION },
+  target: { type: 'eventTarget' },
+  priority: 0,
+};
+
+/** Мок-шаблон босса: isBoss, стратегия guardian-boss, три innate-способности. */
+const testGuardianBossTemplate = {
+  id: 'test_guardian_boss',
+  isBoss: true,
+  maxAp: 3,
+  aiStrategyId: 'guardian-boss',
+  aiSightRadius: 8,
+  health: { max: TEST_BOSS_MAX_HP },
+  baseStats: { str: 6, dex: 2, int: 2, vit: TEST_BOSS_VIT },
+  attack: {
+    damage: { min: 1, max: 2 },
+    range: 1,
+    damageDistribution: [{ damageTag: 'damage.physical.slashing', weight: 1 }],
+    tags: ['attack.melee', 'target.single', 'delivery.weapon'],
+  },
+  armor: 4,
+  abilities: ['guardian_swoop', 'ground_slam', 'bulwark'],
+} satisfies EntityTemplateInput;
+
+/** Регистрирует мок-контент босса поверх реестра после loadTestContent(). */
+function registerBossMockContent(): void {
+  const registry = getRegistry();
+  for (const ability of [testGroundSlam, testBulwark, testGuardianSwoop]) {
+    registry.abilities.set(ability.id, AbilityTemplateSchema.parse(ability));
+  }
+  registry.entities.set(
+    testGuardianBossTemplate.id,
+    EntityTemplateSchema.parse(testGuardianBossTemplate),
+  );
+  setContentRulesOverride([...getAllContentRules(), testGroundSlamDazeRule]);
+}
+
 function createPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
   return makePlayer({
     x: 5,
@@ -55,13 +158,13 @@ function createPlayer(overrides: Partial<PlayerEntity> = {}): PlayerEntity {
   });
 }
 
-/** Босс со стратегией guardian-boss и полным набором способностей (кулдауны 0). */
+/** Босс со стратегией guardian-boss и полным набором мок-способностей (кулдауны 0). */
 function createBoss(overrides: Partial<EnemyEntity> = {}): EnemyEntity {
   const x = overrides.x ?? 6;
   const y = overrides.y ?? 5;
   return makeEnemy({
     id: `boss_${x}_${y}`,
-    templateId: 'cat_guardian',
+    templateId: 'test_guardian_boss',
     x,
     y,
     hp: 90,
@@ -93,7 +196,7 @@ function createSim(state: GameState, player: PlayerEntity, boss: EnemyEntity): G
   state.player = player;
   state.entities.set(player.id, player);
   state.entities.set(boss.id, boss);
-  // Активные правила из ruleIds способностей (ground_slam_daze) — как при спавне врага.
+  // Активные правила из ruleIds способностей (test_ground_slam_daze) — как при спавне врага.
   rebuildActiveRules(boss);
   const sim = GameSimulation.loadSavedGame(state);
   sim.initializeTestTurnState('enemies', boss.id);
@@ -104,9 +207,11 @@ describe('Guardian boss scenario', () => {
   beforeEach(() => {
     setupCombatScenario();
     loadTestContent();
+    registerBossMockContent();
   });
 
   afterEach(() => {
+    setContentRulesOverride(null);
     vi.clearAllMocks();
   });
 
@@ -127,7 +232,7 @@ describe('Guardian boss scenario', () => {
       targets: [{ x: boss.x, y: boss.y }],
     });
     expect(boss.statusEffects.some((s) => s.type === 'bulwark')).toBe(true);
-    expect(boss.abilities.find((a) => a.templateId === 'bulwark')?.currentCooldown).toBe(4);
+    expect(boss.abilities.find((a) => a.templateId === 'bulwark')?.currentCooldown).toBe(TEST_BULWARK_COOLDOWN);
     const events = findResultEvents(combo, (e) => e.type === 'ABILITY_PREPARED' || e.type === 'ABILITY_USED');
     expect(events.some((e) => e.type === 'ABILITY_PREPARED' && e.abilityId === 'ground_slam')).toBe(true);
     expect(events.some((e) => e.type === 'ABILITY_USED' && e.abilityId === 'bulwark')).toBe(true);
@@ -169,9 +274,9 @@ describe('Guardian boss scenario', () => {
     expect(slamResult).not.toBeNull();
     expect(boss.statusEffects.some((s) => s.type === 'bulwark')).toBe(false);
 
-    // Удар исполнился по игроку в зоне 5×5: урон 12 (blunt, броня 0) и dazed на 2 хода.
-    expect(player.hp).toBe(88);
-    expect(player.statusEffects.some((s) => s.type === 'dazed' && s.duration === 2)).toBe(true);
+    // Удар исполнился по игроку в зоне 3×3: урон 7 (blunt, броня 0) и dazed на 3 хода.
+    expect(player.hp).toBe(100 - TEST_SLAM_DAMAGE);
+    expect(player.statusEffects.some((s) => s.type === 'dazed' && s.duration === TEST_SLAM_DAZE_DURATION)).toBe(true);
     expect(boss.aiState.preparedAbility).toBeNull();
   });
 
@@ -215,13 +320,15 @@ describe('Guardian boss scenario', () => {
   });
 });
 
-describe('cat_guardian из шаблона (ручное размещение)', () => {
+describe('босс из шаблона (ручное размещение, мок-шаблон)', () => {
   beforeEach(() => {
     setupCombatScenario();
     loadTestContent();
+    registerBossMockContent();
   });
 
   afterEach(() => {
+    setContentRulesOverride(null);
     vi.clearAllMocks();
   });
 
@@ -230,8 +337,8 @@ describe('cat_guardian из шаблона (ручное размещение)',
     const player = createPlayer();
     state.player = player;
     state.entities.set(player.id, player);
-    // Ручное размещение босса из реального шаблона cat_guardian.
-    const boss = createEnemy(state, 'cat_guardian', 6, 5);
+    // Ручное размещение босса из мок-шаблона test_guardian_boss.
+    const boss = createEnemy(state, 'test_guardian_boss', 6, 5);
     state.entities.set(boss.id, boss);
 
     // Контент шаблона: стратегия guardian-boss и три innate-способности босса.
@@ -239,9 +346,8 @@ describe('cat_guardian из шаблона (ручное размещение)',
     expect(boss.abilities.map((a) => a.templateId)).toEqual(
       expect.arrayContaining(['guardian_swoop', 'ground_slam', 'bulwark']),
     );
-    // maxHp: 90 (health.max) + 60 (vit 6). Модификатор mod_guardian_vitality
-    // архивирован вместе со снаряжением (2026-09-01) и больше не применяется.
-    expect(boss.maxHp).toBe(150);
+    // maxHp: health.max мок-шаблона + vit × HP за единицу (40 + 3 × 10).
+    expect(boss.maxHp).toBe(TEST_BOSS_MAX_HP + TEST_BOSS_VIT * 10);
 
     const sim = GameSimulation.loadSavedGame(state);
     sim.initializeTestTurnState('enemies', boss.id);

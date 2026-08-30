@@ -1,4 +1,4 @@
-import type {ModifierTemplateInput} from '../../../schemas';
+import type {ModifierTemplateInput} from '../../schemas';
 
 /**
  * «Добивающая»: положительный rule-аффикс мечей, добавляет правило
@@ -6,8 +6,8 @@ import type {ModifierTemplateInput} from '../../../schemas';
  * Только ролл аффиксов (концепт этажа 1, §4.3 — «на втором мече или в пуле
  * аффиксов»; решено — в пуле). Уровне-независимый (scaling: none, value = null).
  */
-export const modBleedingExecute = {
-  "id": "mod_bleeding_execute",
+export const modBloodExecute = {
+  "id": "mod_blood_execute",
   "polarity": "positive",
   "effect": {
     "kind": "rule",

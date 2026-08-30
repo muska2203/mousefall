@@ -1,6 +1,9 @@
 /**
  * Интеграционные тесты новых правил поджога масла.
  *
+ * Работают на синтетических фикстурах (`tests/fixtures/tile-effects.ts`):
+ * механика реальная, числа — из фикстур, не из src/content.
+ *
  * 1. Свежее масло, появившееся в радиусе 1 от горящего масла, сразу поджигается.
  * 2. При появлении статуса горения на масле сущности на клетке получают урон
  *    и статус горения (аналогично входу на горящую клетку).
@@ -11,7 +14,12 @@ import {GameSimulation} from '../../../src/simulation/simulation';
 import {ExecutionBuilder} from '../../../src/simulation/core-types';
 import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
 import {makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
-import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {
+  initTileEffectTestContent,
+  resetTileEffectTestContent,
+  TEST_BURNING_APPLIED_DAMAGE,
+  TEST_OIL_EXPLOSION_DAMAGE,
+} from '../../fixtures/tile-effects';
 import type {GameState} from '../../../src/simulation/types';
 
 function createTestPlayer() {
@@ -31,13 +39,12 @@ function getOilAt(state: GameState, x: number, y: number) {
 }
 
 describe('Правила поджога масла', () => {
-  beforeEach(async () => {
-    setupCombatScenario();
-    await loadTestContent();
+  beforeEach(() => {
+    initTileEffectTestContent();
   });
 
   afterEach(() => {
-    // Реестр контента сбрасывается внутри loadTestContent через resetRegistry().
+    resetTileEffectTestContent();
   });
 
   it('свежее масло поджигается, если появилось рядом с горящим', () => {
@@ -130,9 +137,10 @@ describe('Правила поджога масла', () => {
 
     expect(getOilAt(state, 2, 2)?.statusEffects.some((s) => s.type === 'burning')).toBe(true);
     // Игрок стоит на клетке с маслом, поэтому получает:
-    // 1 от DAMAGE_TILE + 3 от burning_tile_status_applied_deals_damage + 2 от взрыва масла.
-    expect(player.hp).toBe(hpBefore - 6);
-    // Правило burning_tile_status_applied_applies_burning накладывает статус горения.
+    // 1 от DAMAGE_TILE + TEST_BURNING_APPLIED_DAMAGE от тестового правила
+    // burning-on-applied + TEST_OIL_EXPLOSION_DAMAGE от взрыва масла.
+    expect(player.hp).toBe(hpBefore - 1 - TEST_BURNING_APPLIED_DAMAGE - TEST_OIL_EXPLOSION_DAMAGE);
+    // Правило burning-on-applied накладывает статус горения.
     expect(player.statusEffects.some((s) => s.type === 'burning')).toBe(true);
   });
 });

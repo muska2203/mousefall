@@ -1,12 +1,12 @@
 /**
  * Тесты stat-модификаторов статусов (StatusTemplate.statModifiers).
  *
- * Проверяет:
+ * Проверяет на мок-статусах (числа из фикстур теста, не из src/content):
  * - применение модификатора при наложении статуса (RESTORE_AP до maxAp+1);
  * - снятие модификатора на всех путях удаления статуса:
  *   expire через REMOVE_EXPIRED_STATUS_EFFECTS (после TICK_STATUS_EFFECTS),
  *   вытеснение mutuallyExclusiveWith, обнуление стаков через ADJUST_STATUS_STACKS;
- * - регрессию реального шаблона dazed (штраф −1 maxAp, не ниже 0);
+ * - штраф −1 maxAp от мок-статуса (не ниже 0);
  * - эффективный maxAp в снапшоте getPlayerStats().
  */
 
@@ -21,8 +21,7 @@ import type { StatusEffect } from '../../../../src/simulation/core-types';
 import { ExecutionBuilder } from '../../../../src/simulation/core-types';
 import type { GameState } from '../../../../src/simulation/types';
 import { initRegistry, resetRegistry } from '../../../../src/content/registry';
-import { StatusTemplateSchema, type StatusTemplate } from '../../../../src/content/schemas';
-import { dazed as dazedTemplate } from '../../../../src/content/templates/statuses/dazed';
+import type { StatusTemplate } from '../../../../src/content/schemas';
 import { createTestSimulation } from '../../../helpers/simulation';
 
 function mockStatus(id: string, overrides: Partial<StatusTemplate> = {}): StatusTemplate {
@@ -92,8 +91,11 @@ describe('status stat modifiers', () => {
         ['bleeding', mockStatus('bleeding', {
           statModifiers: [{ stat: 'maxAp', value: 1, op: 'add' }],
         })],
-        // Реальный шаблон dazed (штраф −1 к maxAp) — через Zod-парс для дефолтов.
-        ['dazed', StatusTemplateSchema.parse(dazedTemplate)],
+        // Мок-статус со штрафом −1 к maxAp (форма повторяет реальный dazed,
+        // значение задано здесь — не из src/content/templates/statuses).
+        ['dazed', mockStatus('dazed', {
+          statModifiers: [{ stat: 'maxAp', value: -1, op: 'add' }],
+        })],
       ]),
       tileEffects: new Map(),
       tileEffectStatuses: new Map(),
@@ -192,7 +194,7 @@ describe('status stat modifiers', () => {
     expect(enemy.ap).toBe(2);
   });
 
-  it('регрессия dazed: RESTORE_AP при активном dazed даёт maxAp − 1', () => {
+  it('штраф maxAp от статуса: RESTORE_AP при активном dazed даёт maxAp − 1', () => {
     const player = makePlayer({ ap: 0, maxAp: 3 });
     const state = makeStateWithPlayer(player);
 
@@ -202,7 +204,7 @@ describe('status stat modifiers', () => {
     expect(player.ap).toBe(2);
   });
 
-  it('регрессия dazed: восстановление AP не опускается ниже 0', () => {
+  it('штраф maxAp от статуса: восстановление AP не опускается ниже 0', () => {
     const player = makePlayer({ ap: 0, maxAp: 1 });
     const state = makeStateWithPlayer(player);
 

@@ -4,8 +4,8 @@ import type {ItemTemplateInput} from '../../../schemas';
  * «Зазубренный сырорез» — меч линии Бойца (концепт этажа 1, §4.3):
  * пул скиллов — рывок/взмах (мобильность и AoE;
  * swoop убран — прыжки зарезервированы для молотов, решение 2026-08-13).
- * Фирменный модификатор mod_bleeding_on_hit снят при архивации модификаторов
- * (2026-09-01) — вернётся с их переработкой.
+ * Фирменный модификатор mod_blood_on_hit возвращён вместе с модификаторами
+ * кровавой ветки билдов (этап 0 плана docs/plans/bleed-builds-implementation.md).
  * Числа черновые — балансный проход roadMap 1.4.
  */
 export const weaponSwordSplinterBlade = {
@@ -30,7 +30,7 @@ export const weaponSwordSplinterBlade = {
     }
   ],
   "weapon": {
-    "damage": { "min": 1, "max": 2 },
+    "damage": { "min": 4, "max": 6 },
     "range": 1,
     "damageDistribution": [
       {
@@ -44,5 +44,6 @@ export const weaponSwordSplinterBlade = {
       "delivery.weapon"
     ]
   },
-  "grantedAbilities": []
+  "grantedAbilities": [],
+  "fixedModifiers": ["mod_blood_on_hit"]
 } satisfies ItemTemplateInput;

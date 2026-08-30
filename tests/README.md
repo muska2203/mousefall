@@ -97,6 +97,7 @@ const state: GameState = {
 4. **Descriptive names** — test name describes the expected behavior
 5. **No timeouts** — all tests complete synchronously and instantly
 6. **No browser APIs** — if a test needs `window` or `document`, it's in the wrong layer
+7. **Независимость от значений контента** — механика проверяется на мок-шаблонах и тестовых правилах, числа в assert'ах — только из фикстур самого теста, не из `src/content/**`; подробности и запрещённые паттерны — `docs/agents/TESTING.md`, правило 7
 
 ---
 

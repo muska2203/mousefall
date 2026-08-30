@@ -43,12 +43,25 @@ export const TEST_BURNING_APPLIED_STATUS_DURATION = 2;
 export const TEST_OILED_DURATION = 2;
 /** Длительность статуса wet. */
 export const TEST_WET_DURATION = 2;
+/** Урон взрыва масла (шаблон oil). */
+export const TEST_OIL_EXPLOSION_DAMAGE = 2;
+/** Радиус взрыва масла (шаблон oil). */
+export const TEST_OIL_EXPLOSION_RADIUS = 1;
+/** Базовая длительность облака муки из шаблона. */
+export const TEST_FLOUR_CLOUD_DURATION = 6;
+/** Урон взрыва облака муки (шаблон flour_cloud). */
+export const TEST_FLOUR_EXPLOSION_DAMAGE = 7;
+/** Радиус взрыва облака муки (шаблон flour_cloud). */
+export const TEST_FLOUR_EXPLOSION_RADIUS = 1;
+/** Дальность броска мешочка муки (расходник flour_pouch). */
+export const TEST_FLOUR_POUCH_RANGE = 3;
 
 // ─────────────────────────────────────────────
 // Синтетические шаблоны
 // ─────────────────────────────────────────────
 
-/** Шаблоны тайловых эффектов: масло (горит, гасит себя) и вода (тушит). */
+/** Шаблоны тайловых эффектов: масло (горит, гасит себя), вода (тушит),
+ * облако муки (блокирует обзор, скрывает сущностей, взрывается и расходуется). */
 export function createTestTileEffectTemplates(): Map<string, TileEffectTemplate> {
   return new Map([
     ['oil', {
@@ -65,12 +78,32 @@ export function createTestTileEffectTemplates(): Map<string, TileEffectTemplate>
       durationDecreasesWhenHasStatus: ['burning'],
       blocksLOS: false,
       concealsEntities: false,
-      // Параметры взрыва повторяют реальный шаблон oil (урон 2, радиус 1).
       explosion: {
         triggerStatus: 'burning',
-        damage: 2,
-        radius: 1,
+        damage: TEST_OIL_EXPLOSION_DAMAGE,
+        radius: TEST_OIL_EXPLOSION_RADIUS,
         consumesEffect: false,
+        tags: ['damage.magical.fire'],
+      },
+    }],
+    ['flour_cloud', {
+      id: 'flour_cloud',
+      layer: 'aboveGround',
+      duration: TEST_FLOUR_CLOUD_DURATION,
+      renderOrder: 1,
+      ruleIds: [
+        'test_fire_damage_ignites_flour',
+        'test_fire_tile_damage_ignites_flour',
+      ],
+      canHaveStatus: ['burning'],
+      durationDecreasesWhenHasStatus: [],
+      blocksLOS: true,
+      concealsEntities: true,
+      explosion: {
+        triggerStatus: 'burning',
+        damage: TEST_FLOUR_EXPLOSION_DAMAGE,
+        radius: TEST_FLOUR_EXPLOSION_RADIUS,
+        consumesEffect: true,
         tags: ['damage.magical.fire'],
       },
     }],
@@ -151,11 +184,12 @@ export function createTestStatusTemplates(): Map<string, StatusTemplate> {
   ]);
 }
 
-/** Расходники water_ball / oil_bottle с механикой spawn_tile_effect. */
+/** Расходники water_ball / oil_bottle / flour_pouch с механикой spawn_tile_effect. */
 export function createTestConsumableTemplates(): Map<string, ItemTemplate> {
   const consumable = (
     id: string,
     tileEffectType: string,
+    range = 5,
   ): ItemTemplate => ({
     id,
     type: 'consumable',
@@ -163,7 +197,7 @@ export function createTestConsumableTemplates(): Map<string, ItemTemplate> {
     stackable: true,
     maxStack: 5,
     value: 0,
-    consumable: {effect: 'spawn_tile_effect', tileEffectType, radius: 1, range: 5},
+    consumable: {effect: 'spawn_tile_effect', tileEffectType, radius: 1, range},
     fixedModifiers: [],
     abilityPool: [],
     grantedAbilities: [],
@@ -172,6 +206,7 @@ export function createTestConsumableTemplates(): Map<string, ItemTemplate> {
   return new Map([
     ['water_ball', consumable('water_ball', 'water')],
     ['oil_bottle', consumable('oil_bottle', 'oil')],
+    ['flour_pouch', consumable('flour_pouch', 'flour_cloud', TEST_FLOUR_POUCH_RANGE)],
   ]);
 }
 
@@ -235,6 +270,32 @@ const testFireTileDamageIgnitesOil: ContentRule = {
   ],
   effect: {type: 'applyTileEffectStatus', statusType: 'burning', duration: TEST_IGNITE_DURATION},
   target: {type: 'eventTileEffect', effectType: 'oil'},
+  priority: 0,
+};
+
+/** Огненный урон по сущности в облаке муки поджигает муку. */
+const testFireDamageIgnitesFlour: ContentRule = {
+  id: 'test_fire_damage_ignites_flour',
+  trigger: {event: 'ENTITY_DAMAGED', tags: ['damage.magical.fire']},
+  conditions: [
+    {type: 'inTileEffect', effectType: 'flour_cloud'},
+    {type: 'not', condition: {type: 'tileEffectHasStatus', effectType: 'flour_cloud', statusType: 'burning'}},
+  ],
+  effect: {type: 'applyTileEffectStatus', statusType: 'burning', duration: TEST_IGNITE_DURATION},
+  target: {type: 'eventTileEffect', effectType: 'flour_cloud'},
+  priority: 0,
+};
+
+/** Площадной огненный урон по клетке поджигает муку. */
+const testFireTileDamageIgnitesFlour: ContentRule = {
+  id: 'test_fire_tile_damage_ignites_flour',
+  trigger: {event: 'TILE_DAMAGED', tags: ['damage.magical.fire']},
+  conditions: [
+    {type: 'inTileEffect', effectType: 'flour_cloud'},
+    {type: 'not', condition: {type: 'tileEffectHasStatus', effectType: 'flour_cloud', statusType: 'burning'}},
+  ],
+  effect: {type: 'applyTileEffectStatus', statusType: 'burning', duration: TEST_IGNITE_DURATION},
+  target: {type: 'eventTileEffect', effectType: 'flour_cloud'},
   priority: 0,
 };
 
@@ -310,6 +371,8 @@ export const testTileEffectRules: readonly ContentRule[] = [
   testWaterAppliesWetOnSpawn,
   testFireDamageIgnitesOil,
   testFireTileDamageIgnitesOil,
+  testFireDamageIgnitesFlour,
+  testFireTileDamageIgnitesFlour,
   testBurningDealsDamageOnEntry,
   testBurningAppliesBurning,
   testBurningSpreadsToFlammable,

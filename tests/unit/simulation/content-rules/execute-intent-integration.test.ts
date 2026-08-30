@@ -6,12 +6,13 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
   getWorldContentRules,
   setWorldContentRulesOverride,
+  testItemFireDamageMultiplier,
+  testRestoreApOnHit,
   testWorldDamageMultiplier,
 } from '../../../fixtures/content-rules';
 import {ExecutionBuilder, ExecutionNode} from '@simulation/core-types.ts';
 import type {GameEvent} from '@simulation/types.ts';
 import {executeIntent} from '@simulation/systems/intents/execute-intent.ts';
-import {getContentRule} from '../../../../src/simulation/content-rules/registry';
 import * as randomModule from '../../../../src/utils/random';
 import {
   initObjectContentRegistry,
@@ -112,12 +113,12 @@ describe('executeIntent + content rules integration', () => {
       expect(burning!.duration).toBe(3);
     });
 
-    it('модификатор огня ×1.5 комбинируется с мировым модификатором', () => {
+    it('тестовый модификатор огня ×2 комбинируется с мировым модификатором', () => {
       vi.mocked(rngChance).mockReturnValue(false);
 
       const player = makePlayer({ x: 5, y: 5 });
       player.activeRules.push({
-        ...getContentRule('item_fire_damage_multiplier'),
+        ...testItemFireDamageMultiplier,
         ownerContext: { type: 'entity', entityId: 'test_fire_item' },
       });
 
@@ -143,9 +144,10 @@ describe('executeIntent + content rules integration', () => {
         builder.root,
       );
 
+      // 10 × 1.1 (мировой тестовый) × 2 (тестовый огненный) = 22.
       const damageEvent = findNodeByEventType(builder.root, 'ENTITY_DAMAGED');
-      expect(damageEvent?.event).toMatchObject({ damage: 17 });
-      expect(enemy.hp).toBe(83);
+      expect(damageEvent?.event).toMatchObject({ damage: 22 });
+      expect(enemy.hp).toBe(78);
       expect(enemy.statusEffects.some((e) => e.type === 'burning')).toBe(false);
     });
 
@@ -154,16 +156,16 @@ describe('executeIntent + content rules integration', () => {
 
       const player = makePlayer({ x: 5, y: 5 });
       player.activeRules.push({
-        ...getContentRule('item_fire_damage_multiplier'),
+        ...testItemFireDamageMultiplier,
         ownerContext: { type: 'entity', entityId: 'test_fire_item' },
       });
 
       const enemy = makeEnemy({ x: 6, y: 5, hp: 100, armor: 0 });
       // Соседний владелец того же правила: до фикса его копия из слоя radius
-      // модифицировала урон повторно (10 × 1.1 × 1.5 × 1.5 вместо × 1.5).
+      // модифицировала урон повторно (10 × 1.1 × 2 × 2 вместо × 2).
       const neighbor = makeEnemy({ id: 'neighbor_fire_item', x: 6, y: 6, hp: 100, armor: 0 });
       neighbor.activeRules.push({
-        ...getContentRule('item_fire_damage_multiplier'),
+        ...testItemFireDamageMultiplier,
         ownerContext: { type: 'entity', entityId: 'neighbor_fire_item' },
       });
 
@@ -190,11 +192,11 @@ describe('executeIntent + content rules integration', () => {
       );
 
       const damageEvent = findNodeByEventType(builder.root, 'ENTITY_DAMAGED');
-      expect(damageEvent?.event).toMatchObject({ damage: 17 });
-      expect(enemy.hp).toBe(83);
+      expect(damageEvent?.event).toMatchObject({ damage: 22 });
+      expect(enemy.hp).toBe(78);
     });
 
-    it('копия amulet_restore_ap_on_hit у соседнего владельца не восстанавливает AP от чужого удара', () => {
+    it('копия правила восстановления AP у соседнего владельца не восстанавливает AP от чужого удара', () => {
       vi.mocked(rngChance).mockReturnValue(true);
 
       const player = makePlayer({ x: 5, y: 5 });
@@ -203,7 +205,7 @@ describe('executeIntent + content rules integration', () => {
       // его копию правила, и сосед восстанавливал AP от удара игрока.
       const neighbor = makeEnemy({ id: 'neighbor_amulet', x: 6, y: 6, hp: 100, armor: 0, ap: 0, maxAp: 3 });
       neighbor.activeRules.push({
-        ...getContentRule('amulet_restore_ap_on_hit'),
+        ...testRestoreApOnHit,
         ownerContext: { type: 'entity', entityId: 'neighbor_amulet' },
       });
 
@@ -341,7 +343,7 @@ describe('executeIntent + content rules integration', () => {
 
       const player = makePlayer({ x: 5, y: 5 });
       player.activeRules.push({
-        ...getContentRule('item_fire_damage_multiplier'),
+        ...testItemFireDamageMultiplier,
         ownerContext: { type: 'entity', entityId: 'test_fire_item' },
       });
 

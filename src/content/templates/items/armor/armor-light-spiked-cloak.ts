@@ -2,7 +2,8 @@ import type {ItemTemplateInput} from '../../../schemas';
 
 /**
  * Шипастый плащ (линия Бойца). Фирменный модификатор mod_spiked_thorns
- * снят при архивации модификаторов (2026-09-01) — вернётся с их переработкой.
+ * возвращён вместе с модификаторами кровавой ветки билдов
+ * (этап 0 плана docs/plans/bleed-builds-implementation.md).
  */
 export const armorLightSpikedCloak = {
   "id": "armor_light_spiked_cloak",
@@ -19,6 +20,7 @@ export const armorLightSpikedCloak = {
     "baseArmor": 1
   },
   "grantedAbilities": [],
+  "fixedModifiers": ["mod_spiked_thorns"],
   "abilityPool": [
     {
       "abilityId": "swiftness",

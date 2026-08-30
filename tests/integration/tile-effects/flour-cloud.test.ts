@@ -1,19 +1,21 @@
 /**
  * Интеграционные тесты облака взвешанной муки (flour_cloud).
  *
- * Проверяет сквозной цикл на реальном контенте:
+ * Проверяет сквозной цикл на синтетических фикстурах
+ * (`tests/fixtures/tile-effects.ts`): механика реальная, числа — из фикстур,
+ * не из src/content:
  * 1. Бросок flour_pouch (USE_ITEM) создаёт облако радиуса 1 на слое aboveGround;
  *    blocksLOS — мировая реакция TILE_EFFECT_CHANGED → UPDATE_FOG пересчитывает
  *    FOV в том же исполнении.
  * 2. Сокрытие (concealsEntities): враг внутри облака не виден игроку
  *    с дистанции > 1 (isEntityConcealedFrom), и симметрично игрок в облаке
  *    не виден врагу (canSeePlayer); вплотную (дистанция 1) видимость есть.
- * 3. Огненный урон по клетке облака поджигает муку (правило
- *    fire_tile_damage_ignites_flour) → взрыв (TILE_EXPLODED, урон 5, радиус 1)
- *    → эффект расходуется (consumesEffect, REMOVE_TILE_EFFECT).
+ * 3. Огненный урон по клетке облака поджигает муку (тестовое правило
+ *    test_fire_tile_damage_ignites_flour) → взрыв (TILE_EXPLODED, урон и радиус
+ *    из фикстуры) → эффект расходуется (consumesEffect, REMOVE_TILE_EFFECT).
  */
 
-import {beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {GameSimulation} from '../../../src/simulation/simulation';
 import {updateFOV} from '../../../src/simulation/systems/fov';
 import {isEntityConcealedFrom} from '../../../src/simulation/state';
@@ -21,7 +23,11 @@ import {canSeePlayer} from '../../../src/simulation/ai/ai-helpers';
 import {ExecutionBuilder} from '../../../src/simulation/core-types';
 import {executeIntent} from '../../../src/simulation/systems/intents/execute-intent';
 import {makeEnemy, makeGameState, makePlayer, makeTestMap} from '../../fixtures/gameState';
-import {loadTestContent, setupCombatScenario} from '../combat-scenarios/helpers';
+import {
+  initTileEffectTestContent,
+  resetTileEffectTestContent,
+  TEST_FLOUR_EXPLOSION_DAMAGE,
+} from '../../fixtures/tile-effects';
 import type {GameEvent, GameState} from '../../../src/simulation/types';
 import type {EntityId, ExecutionNode} from '../../../src/simulation/core-types';
 import type {Entity} from '../../../src/simulation/types';
@@ -72,9 +78,12 @@ function collectEventTypes(node: ExecutionNode): string[] {
 }
 
 describe('Облако взвешанной муки (flour_cloud)', () => {
-  beforeEach(async () => {
-    setupCombatScenario();
-    await loadTestContent();
+  beforeEach(() => {
+    initTileEffectTestContent({withConsumables: true});
+  });
+
+  afterEach(() => {
+    resetTileEffectTestContent();
   });
 
   it('бросок flour_pouch создаёт облако радиуса 1 и сразу пересчитывает FOV (blocksLOS)', () => {
@@ -151,7 +160,7 @@ describe('Облако взвешанной муки (flour_cloud)', () => {
     expect(canSeePlayer(enemy, state)).toBe(true);
   });
 
-  it('огненный урон по клетке облака поджигает муку: взрыв (урон 5, радиус 1) расходует эффект', () => {
+  it('огненный урон по клетке облака поджигает муку: взрыв расходует эффект', () => {
     const player = createTestPlayer();
     const enemy = makeEnemy({ id: 'enemy_near_cloud', x: 4, y: 5, hp: 20, maxHp: 20 });
     const state = makeStateWith([player, enemy]);
@@ -184,7 +193,7 @@ describe('Облако взвешанной муки (flour_cloud)', () => {
       igniteBuilder.root,
     );
 
-    // Мука подожжена (fire_tile_damage_ignites_flour) и детонировала.
+    // Мука подожжена (test_fire_tile_damage_ignites_flour) и детонировала.
     const eventTypes = collectEventTypes(igniteBuilder.root);
     expect(eventTypes).toContain('TILE_EXPLODED');
     expect(eventTypes).toContain('TILE_EFFECT_REMOVED');
@@ -192,7 +201,8 @@ describe('Облако взвешанной муки (flour_cloud)', () => {
     // consumesEffect: эффект расходован взрывом.
     expect(state.tileEffects[5]![5]!.aboveGround).toBeUndefined();
 
-    // Враг на соседней клетке (4,5) в радиусе взрыва получил урон 5 (магический огонь).
-    expect(enemy.hp).toBe(15);
+    // Враг на соседней клетке (4,5) в радиусе взрыва получил урон из фикстуры
+    // (магический огонь).
+    expect(enemy.hp).toBe(20 - TEST_FLOUR_EXPLOSION_DAMAGE);
   });
 });

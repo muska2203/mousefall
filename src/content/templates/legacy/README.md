@@ -14,12 +14,18 @@
 - Тесты механик используют эти шаблоны через хелпер `registerLegacyTemplates()`
   (`tests/integration/combat-scenarios/helpers.ts`).
 
-Текущий состав архива (2026-09-01, после возврата всех предметов со спрайтами):
+Текущий состав архива (после возврата 4 единиц кровавой ветки билдов,
+этап 0 плана [`docs/plans/bleed-builds-implementation.md`](../../../docs/plans/bleed-builds-implementation.md)):
 
 - `items/weapons/cat-guardian-maul.ts`, `items/armor/cat-guardian-plate.ts` —
   экипировка босса (спрайтов нет);
-- `modifiers/` — все модификаторы первой итерации;
-- `relics/` — все реликвии первой итерации.
+- `modifiers/` — 10 модификаторов первой итерации;
+- `relics/` — 7 реликвий первой итерации.
+
+Возвращены в активный контент (перенос + регистрация в `index.ts` категории):
+модификаторы `mod_blood_on_hit`, `mod_blood_execute`, `mod_spiked_thorns`
+и реликвия `relic_blood_pact`; `weapon_sword_splinter_blade` и
+`armor_light_spiked_cloak` получили обратно свои `fixedModifiers`.
 
 Остальное снаряжение возвращено в активный контент с новыми id по схеме
 `{type}_{subtype}_{name}` (маппинг — раздел «Возврат предметов» в плане
