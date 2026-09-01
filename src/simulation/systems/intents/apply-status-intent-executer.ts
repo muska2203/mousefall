@@ -40,6 +40,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
       entityId: intent.entityId,
       sourceEntityId: intent.sourceEntityId ?? null,
       statusType: intent.status.type,
+      // blockedBy из схемы — произвольные строки, каст нужен.
       blockedBy: conflictResult.blockedBy as StatusEffectType,
     });
   }
@@ -55,6 +56,7 @@ export const executeApplyStatusIntent: IntentExecutor<ApplyStatusIntent> = (
       builder.addChild(parent, {
         type: 'STATUS_REMOVED', isFieldEvent: true,
         entityId: intent.entityId,
+        // mutuallyExclusiveWith из схемы — произвольные строки, каст нужен.
         effectType: exclusiveType as StatusEffectType,
       });
     }

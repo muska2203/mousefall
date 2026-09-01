@@ -7,10 +7,12 @@ import {armorHeavyTinPlate} from './armor/armor-heavy-tin-plate';
 import {armorLightPatchCloak} from './armor/armor-light-patch-cloak';
 import {armorLightSpikedCloak} from './armor/armor-light-spiked-cloak';
 import {healthPotion} from './consumables/health-potion';
+import {bloodFlask} from './consumables/blood-flask';
 import {flourPouch} from './consumables/flour-pouch';
 import {fragBomb} from './consumables/frag-bomb';
 import {incendiaryBomb} from './consumables/incendiary-bomb';
 import {oilBottle} from './consumables/oil-bottle';
+import {ritualCut} from './consumables/ritual-cut';
 import {smokeBomb} from './consumables/smoke-bomb';
 import {waterBall} from './consumables/water-ball';
 import {unarmed} from './weapons/unarmed';
@@ -44,10 +46,12 @@ export const itemTemplates: ItemTemplateInput[] = [
   armorLightPatchCloak,
   armorLightSpikedCloak,
   healthPotion,
+  bloodFlask,
   flourPouch,
   fragBomb,
   incendiaryBomb,
   oilBottle,
+  ritualCut,
   smokeBomb,
   waterBall,
   unarmed,

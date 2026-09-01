@@ -6,11 +6,11 @@ export const catSmall = {
   "aiStrategyId": "hunter",
   "aiSightRadius": 4,
   "health": {
-    "max": 15
+    "max": 5
   },
   "baseStats": {
-    "str": 1,
-    "dex": 3,
+    "str": 0,
+    "dex": 0,
     "int": 0,
     "vit": 0
   },
@@ -32,7 +32,19 @@ export const catSmall = {
   "lootTable": [
     {
       "templateId": "health_potion",
-      "weight": 3
+      "weight": 1
+    },
+    {
+      "templateId": "armor_light_spiked_cloak",
+      "weight": 1
+    },
+    {
+      "templateId": "armor_light_patch_cloak",
+      "weight": 1
+    },
+    {
+      "templateId": "weapon_sword_splinter_blade",
+      "weight": 1
     }
   ],
   "lootDropTable": [

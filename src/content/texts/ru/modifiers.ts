@@ -29,6 +29,18 @@ export const modifiers: Record<string, ContentText> = {
     name: 'Добивающая',
     description: 'Удары этим оружием по кровоточащим целям наносят на 3 урона больше.',
   },
+  mod_blood_widening_wound: {
+    name: 'Рваные края',
+    description: 'Удар по уже кровоточащей цели продлевает кровотечение до 5 ходов.',
+  },
+  mod_blood_thorns: {
+    name: 'Кровавые шипы',
+    description: 'При получении урона в ближнем бою открывает кровотечение у нападающего на 2 хода.',
+  },
+  mod_blood_frenzy: {
+    name: 'Берсерк',
+    description: 'Урон оружием увеличен на {value}, пока ты кровоточишь.',
+  },
   mod_fire_damage_multiplier: {
     name: 'Пылающая',
     description: 'Урон огнём увеличивается на 50%.',

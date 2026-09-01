@@ -57,6 +57,7 @@ function createContent(overrides: Partial<LoadedContent> = {}): LoadedContent {
     // Production-правила ссылаются на burning, dazed, poisoned, wet и oiled;
     // правила мышеловки (mousetrap_apply_*) — на bleeding и rooted;
     // water_applies_wet и oil_applies_oiled ссылаются на тайловые эффекты water и oil;
+    // правила кровавой лужи (blood_puddle_applies_*) — на blood_puddle;
     // fire_damage_ignites_oil ссылается на тайловый эффект oil и тайловый статус burning;
     // правила муки (fire_*_ignites_flour, prop_contains_flour_*) — на flour_cloud.
     // Включаем их по умолчанию, чтобы unit-тесты семантики не получали ложных ошибок от существующих правил.
@@ -73,6 +74,7 @@ function createContent(overrides: Partial<LoadedContent> = {}): LoadedContent {
       ['water', mockTileEffectTemplate('water')],
       ['oil', mockTileEffectTemplate('oil')],
       ['flour_cloud', mockTileEffectTemplate('flour_cloud')],
+      ['blood_puddle', mockTileEffectTemplate('blood_puddle')],
     ]),
     tileEffectStatuses: new Map([
       ['burning', mockTileEffectStatusTemplate('burning')],

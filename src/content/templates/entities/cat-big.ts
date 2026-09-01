@@ -2,17 +2,17 @@ import type {EntityTemplateInput} from '../../schemas';
 
 export const catBig = {
   "id": "cat_big",
-  "maxAp": 3,
+  "maxAp": 2,
   "aiStrategyId": "hunter",
-  "aiSightRadius": 6,
+  "aiSightRadius": 4,
   "health": {
-    "max": 30
+    "max": 10
   },
   "baseStats": {
-    "str": 4,
-    "dex": 3,
+    "str": 0,
+    "dex": 0,
     "int": 0,
-    "vit": 2
+    "vit": 0
   },
   "attack": {
     "damage": { "min": 3, "max": 5 },

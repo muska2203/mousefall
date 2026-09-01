@@ -172,9 +172,14 @@ const ArmorStatsSchema = z.object({
 }).describe('Характеристики брони');
 
 const ConsumableEffectSchema = z.object({
-  effect: z.enum(['heal', 'damage', 'teleport', 'identify', 'buff', 'spawn_tile_effect']).describe('Тип эффекта'),
+  effect: z.enum(['heal', 'damage', 'teleport', 'identify', 'buff', 'spawn_tile_effect', 'applyStatus']).describe('Тип эффекта'),
   value:  z.number().optional().describe('Величина эффекта (восстановлено HP, нанесён урон и т.д.)'),
   duration: z.number().int().positive().optional().describe('Длительность эффекта в ходах (для buff и статусов)'),
+  /** Список накладываемых на себя статусов для эффекта applyStatus. */
+  statuses: z.array(z.object({
+    statusType: z.string().min(1).describe('ID статуса из реестра статусов (src/content/templates/statuses/)'),
+    duration: z.number().int().min(1).describe('Длительность статуса в ходах (≥ 1)'),
+  })).optional().describe('Статусы, накладываемые эффектом applyStatus (обязателен и непуст для него)'),
   /** Тип тайлового эффекта для spawn_tile_effect (например, water или oil). */
   tileEffectType: z.string().min(1).optional().describe('ID тайлового эффекта, который спавнится при spawn_tile_effect'),
   /** Тег урона для damage (например, damage.magical.fire). */
@@ -190,6 +195,11 @@ const ConsumableEffectSchema = z.object({
     }
     if (effect.damageTag === undefined) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['damageTag'], message: 'damageTag обязателен для эффекта damage' });
+    }
+  }
+  if (effect.effect === 'applyStatus') {
+    if (!effect.statuses || effect.statuses.length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['statuses'], message: 'statuses обязателен и непуст для эффекта applyStatus' });
     }
   }
 }).describe('Определение эффекта расходуемого предмета');

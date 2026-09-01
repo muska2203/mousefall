@@ -12,7 +12,7 @@ export const armorLightPatchCloak = {
   "maxStack": 1,
   "value": 8,
   "armor": {
-    "baseArmor": 1
+    "baseArmor": 0
   },
   "grantedAbilities": [],
   "abilityPool": [

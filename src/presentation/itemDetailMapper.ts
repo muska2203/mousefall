@@ -119,6 +119,11 @@ export function mapItemTemplateToDetail(
         ...(template.consumable.value !== undefined
           ? [{ label: t('system.itemMapper.effectValueLabel'), value: template.consumable.value }]
           : []),
+        // Накладываемые статусы эффекта applyStatus: локализованное имя + длительность.
+        ...(template.consumable.statuses ?? []).map((statusEntry) => ({
+          label: getContentText('statuses', statusEntry.statusType, currentLocale).name,
+          value: statusEntry.duration,
+        })),
       ],
     });
   }

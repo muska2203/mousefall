@@ -73,6 +73,14 @@ export const items: Record<string, ContentText> = {
     name: 'Flour Pouch',
     description: 'Throws a pouch of flour into a targeted area, creating a [flour cloud](tag:effect.flour_cloud): blocks line of sight and conceals anyone inside. Explodes when ignited.',
   },
+  blood_flask: {
+    name: 'Blood Flask',
+    description: 'Throws a flask of blood into a targeted area. It shatters into a [blood puddle](tag:effect.blood_puddle): anyone standing in it or stepping into it bleeds for 2 turns.',
+  },
+  ritual_cut: {
+    name: 'Ritual Cut',
+    description: 'Deals yourself a ritual wound: bleeding for 3 turns, but the battle trance grants +2 damage for 2 turns.',
+  },
   incendiary_bomb: {
     name: 'Incendiary Bomb',
     description: 'Throws an incendiary bomb into a targeted area. The explosion deals [fire](tag:damage.magical.fire) damage and ignites flammable materials.',

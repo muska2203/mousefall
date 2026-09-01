@@ -2,20 +2,20 @@ import type {EntityTemplateInput} from '../../schemas';
 
 export const catMid = {
   "id": "cat_mid",
-  "maxAp": 3,
+  "maxAp": 2,
   "aiStrategyId": "hunter",
   "aiSightRadius": 5,
   "health": {
-    "max": 20
+    "max": 7
   },
   "baseStats": {
-    "str": 2,
-    "dex": 4,
+    "str": 0,
+    "dex": 0,
     "int": 0,
-    "vit": 1
+    "vit": 0
   },
   "attack": {
-    "damage": { "min": 2, "max": 4 },
+    "damage": { "min": 1, "max": 3 },
     "range": 1,
     "damageDistribution": [
       {
@@ -35,7 +35,11 @@ export const catMid = {
   "lootTable": [
     {
       "templateId": "health_potion",
-      "weight": 4
+      "weight": 1
+    },
+    {
+      "templateId": "armor_heavy_tin_plate",
+      "weight": 1
     }
   ],
   "lootDropTable": [

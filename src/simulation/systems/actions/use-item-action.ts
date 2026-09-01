@@ -6,12 +6,14 @@
  * - Разрешает эффект в зависимости от consumable.effect:
  *   heal → HEAL + REMOVE_ITEM
  *   buff → APPLY_STATUS + REMOVE_ITEM
+ *   applyStatus → APPLY_STATUS на себя по каждому статусу из consumable.statuses + REMOVE_ITEM
  *   spawn_tile_effect → SPAWN_TILE_EFFECT + REMOVE_ITEM
  *   damage → TILE_EXPLOSION + REMOVE_ITEM
- *   Прочие эффекты пока не реализованы.
+ *   Прочие эффекты (teleport, identify) пока не реализованы.
  */
 
 import {GameState, Position} from "@simulation/types.ts";
+import type {StatusEffectType} from "@simulation/core-types.ts";
 import {getItem} from "@content/registry";
 import type {ItemTemplate} from "@content/schemas";
 import {ActionHandler, ExecutionBuilder, ExecutionNode} from "@simulation/systems/actions/types.ts";
@@ -55,7 +57,7 @@ export const useItemAction: ActionHandler = {
       return { ok: false, reasonCode: 'not_consumable' };
     }
 
-    const supportedEffects = ['heal', 'buff', 'spawn_tile_effect', 'damage'];
+    const supportedEffects = ['heal', 'buff', 'applyStatus', 'spawn_tile_effect', 'damage'];
     if (!supportedEffects.includes(template.consumable.effect)) {
       return { ok: false, reasonCode: 'unsupported_effect' };
     }
@@ -118,6 +120,26 @@ export const useItemAction: ActionHandler = {
             statModifiers: null,
           },
         });
+        break;
+      }
+      case 'applyStatus': {
+        // Наложение списка статусов на себя (ритуальные расходники кровавой ветки).
+        // Схема гарантирует непустой statuses для этого эффекта.
+        for (const statusEntry of effect.statuses ?? []) {
+          intents.push({
+            type: 'APPLY_STATUS',
+            entityId: action.entityId,
+            sourceEntityId: action.entityId,
+            status: {
+              // statusType в схеме — произвольная строка; существование статуса
+              // в реестре проверяет scripts/validate-content.ts, поэтому каст нужен.
+              type: statusEntry.statusType as StatusEffectType,
+              duration: statusEntry.duration,
+              value: 0,
+              statModifiers: null,
+            },
+          });
+        }
         break;
       }
       case 'spawn_tile_effect': {

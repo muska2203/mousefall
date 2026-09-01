@@ -35,7 +35,7 @@ export function getBaseMaxHp(actor: StatActor): number {
   const s = getEffectiveBaseStats(actor);
   // Для врагов baseMaxHp может быть задан в шаблоне; для игрока — фиксированная база.
   const base = actor.baseMaxHp ?? PLAYER_BASE_MAX_HP;
-  return base + s.vit * 10;
+  return base + s.vit * 5;
 }
 
 // ─────────────────────────────────────────────

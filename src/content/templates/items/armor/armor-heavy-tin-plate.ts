@@ -17,7 +17,7 @@ export const armorHeavyTinPlate = {
   "maxStack": 1,
   "value": 10,
   "armor": {
-    "baseArmor": 2
+    "baseArmor": 1
   },
   "grantedAbilities": []
 } satisfies ItemTemplateInput;

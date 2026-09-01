@@ -31,7 +31,7 @@ import {evaluateConditions} from '../condition-evaluator.ts';
 import type {ActiveRule, ContentRule, OwnerContext, RuleEffect, TargetSelector} from '../types.ts';
 
 /** Слой происхождения правила. Определяет порядок обработки. */
-type RuleLayer = 'source' | 'target' | 'world' | 'radius';
+type RuleLayer = 'source' | 'target' | 'world' | 'radius' | 'global';
 
 /** Правило вместе со слоем и ID сущности-владельца (`selfId`). */
 type LayeredRule = {
@@ -51,6 +51,7 @@ const LAYER_ORDER: Record<RuleLayer, number> = {
   target: 1,
   world: 2,
   radius: 3,
+  global: 4,
 };
 
 /** Порядок подтипов внутри слоя `world`: global → tileEffect → tileEffectStatus → object → tileIntrinsic. */
@@ -157,6 +158,7 @@ function buildTrapLifecycleIntents(state: GameState, trapId: EntityId): Intent[]
  * - target: activeRules сущности-цели события.
  * - world: все глобальные мировые правила.
  * - radius: activeRules живых акторов в радиусе от позиции события.
+ * - global: правила с `reach: 'global'` всех живых акторов независимо от дистанции.
  */
 function collectRules(ctx: RuleContext): LayeredRule[] {
   const result: LayeredRule[] = [];
@@ -294,6 +296,27 @@ function collectRules(ctx: RuleContext): LayeredRule[] {
           result.push({ layer: 'radius', rule, selfId: entity.id });
         }
       }
+    }
+  }
+
+  // ── Слой global ───────────────────────────────────────────────────────────
+  // Правила с reach: 'global' собираются от всех живых акторов независимо
+  // от дистанции до события. Дедупликация по (rule.id, selfId) против слоёв
+  // source/target/radius: уже собранная копия не добавляется повторно.
+  const collectedKeys = new Set(
+    result
+      .filter((entry) => entry.selfId !== null)
+      .map((entry) => `${entry.rule.id}${entry.selfId}`),
+  );
+  for (const entity of state.entities.values()) {
+    if (!isActor(entity) || !entity.isAlive) continue;
+    for (const rule of entity.activeRules) {
+      if (rule.reach !== 'global') continue;
+
+      const key = `${rule.id}${entity.id}`;
+      if (collectedKeys.has(key)) continue;
+      collectedKeys.add(key);
+      result.push({ layer: 'global', rule, selfId: entity.id });
     }
   }
 

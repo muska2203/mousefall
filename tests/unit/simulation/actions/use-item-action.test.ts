@@ -2,7 +2,10 @@ import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import { makeGameState, makePlayer, createTestTerrains } from '../../../fixtures/gameState';
 import {useItemAction} from '../../../../src/simulation/systems/actions/use-item-action';
 import {initRegistry, resetRegistry} from '../../../../src/content/registry';
-import type {ItemTemplate} from '../../../../src/content/schemas';
+import type {ItemTemplate, StatusTemplate} from '../../../../src/content/schemas';
+import {ItemTemplateSchema} from '../../../../src/content/schemas';
+import {buildContent} from '../../../../src/content/templates';
+import {GameSimulation, defaultActionHandlerRegistry} from '../../../../src/simulation/simulation';
 import {ExecutionBuilder} from '../../../../src/simulation/systems/actions/types';
 
 function mockConsumable(
@@ -26,6 +29,19 @@ function mockConsumable(
   };
 }
 
+/** Минимальный мок шаблона статуса для исполнения APPLY_STATUS. */
+function mockStatusTemplate(id: string): StatusTemplate {
+  return {
+    id,
+    ruleIds: [],
+    statusCategory: 'generic',
+    categoryPriority: 0,
+    mutuallyExclusiveWith: [],
+    blockedBy: [],
+    statModifiers: [],
+  } as StatusTemplate;
+}
+
 function makeBuilder() {
   return new ExecutionBuilder({ type: 'ACTION_APPLIED', isFieldEvent: false, action: { type: 'END_TURN', entityId: 'any' } });
 }
@@ -44,6 +60,12 @@ beforeEach(() => {
       ['wall_ball', mockConsumable('wall_ball', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 5 })],
       ['pebble', mockConsumable('pebble', 'spawn_tile_effect', 0, { tileEffectType: 'water', radius: 1, range: 2 })],
       ['frag_bomb', mockConsumable('frag_bomb', 'damage', 6, { damageTag: 'damage.physical.piercing', radius: 1, range: 2 })],
+      ['blood_ritual', mockConsumable('blood_ritual', 'applyStatus', undefined, {
+        statuses: [
+          { statusType: 'bleeding', duration: 3 },
+          { statusType: 'regenerating', duration: 2 },
+        ],
+      })],
       ['test_weapon', {
         id: 'test_weapon',
         type: 'weapon',
@@ -61,7 +83,10 @@ beforeEach(() => {
     maps: new Map(),
     doors: new Map(),
     stairs: new Map(),
-    statuses: new Map(),
+    statuses: new Map([
+      ['bleeding', mockStatusTemplate('bleeding')],
+      ['regenerating', mockStatusTemplate('regenerating')],
+    ]),
     tileEffects: new Map(),
     tileEffectStatuses: new Map(),
 });
@@ -462,5 +487,172 @@ describe('useItemAction.execute', () => {
     useItemAction.execute(state, action, intents, builder, builder.root);
 
     expect(player.inventory).toHaveLength(0);
+  });
+});
+
+describe('эффект applyStatus (план bleed-builds, этап 1.3)', () => {
+  it('validate: успех без targetPosition (self-эффект, таргетинг по клетке не требуется)', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'ritual_1', templateId: 'blood_ritual', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'ritual_1' };
+    const result = useItemAction.validate(state, action);
+    expect(result.ok).toBe(true);
+  });
+
+  it('resolve: APPLY_STATUS на себя по каждому статусу из statuses + REMOVE_ITEM', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'ritual_1', templateId: 'blood_ritual', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'ritual_1' };
+    const intents = useItemAction.resolve(state, action);
+
+    expect(intents).toHaveLength(3);
+    expect(intents[0]).toMatchObject({
+      type: 'APPLY_STATUS',
+      entityId: 'player',
+      sourceEntityId: 'player',
+      status: { type: 'bleeding', duration: 3, value: 0, statModifiers: null },
+    });
+    expect(intents[1]).toMatchObject({
+      type: 'APPLY_STATUS',
+      entityId: 'player',
+      sourceEntityId: 'player',
+      status: { type: 'regenerating', duration: 2, value: 0, statModifiers: null },
+    });
+    expect(intents[2]!.type).toBe('REMOVE_ITEM');
+  });
+
+  it('execute: оба статуса накладываются на игрока', () => {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'ritual_1', templateId: 'blood_ritual', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+
+    const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'ritual_1' };
+    const intents = useItemAction.resolve(state, action);
+    const builder = makeBuilder();
+    useItemAction.execute(state, action, intents, builder, builder.root);
+
+    expect(player.statusEffects).toContainEqual(
+      expect.objectContaining({ type: 'bleeding', duration: 3 }),
+    );
+    expect(player.statusEffects).toContainEqual(
+      expect.objectContaining({ type: 'regenerating', duration: 2 }),
+    );
+    expect(player.inventory).toHaveLength(0);
+  });
+
+  it('таргетинг: getConsumableTargetMode возвращает null (выбор клетки не требуется)', () => {
+    const state = makeGameState();
+    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+
+    expect(sim.getConsumableTargetMode('blood_ritual')).toBeNull();
+  });
+});
+
+describe('ConsumableEffectSchema: applyStatus', () => {
+  const baseItem = { id: 'test_apply_status_item', type: 'consumable' };
+
+  it('отклоняет applyStatus без поля statuses', () => {
+    expect(() => ItemTemplateSchema.parse({
+      ...baseItem,
+      consumable: { effect: 'applyStatus' },
+    })).toThrow();
+  });
+
+  it('отклоняет applyStatus с пустым statuses', () => {
+    expect(() => ItemTemplateSchema.parse({
+      ...baseItem,
+      consumable: { effect: 'applyStatus', statuses: [] },
+    })).toThrow();
+  });
+
+  it('отклоняет статус с duration < 1', () => {
+    expect(() => ItemTemplateSchema.parse({
+      ...baseItem,
+      consumable: { effect: 'applyStatus', statuses: [{ statusType: 'bleeding', duration: 0 }] },
+    })).toThrow();
+  });
+
+  it('принимает applyStatus с непустым statuses', () => {
+    const parsed = ItemTemplateSchema.parse({
+      ...baseItem,
+      consumable: {
+        effect: 'applyStatus',
+        statuses: [
+          { statusType: 'bleeding', duration: 3 },
+          { statusType: 'regenerating', duration: 2 },
+        ],
+      },
+    });
+
+    expect(parsed.consumable?.statuses).toHaveLength(2);
+  });
+});
+
+describe('ritual_cut — реальный контент (план bleed-builds, этап 5)', () => {
+  // Переопределяем мок-реестр файла настоящим контентом из src/content/templates.
+  beforeEach(() => {
+    resetRegistry();
+    initRegistry(buildContent());
+  });
+
+  function makeStateWithRitualCut() {
+    const state = makeGameState();
+    const player = makePlayer({
+      inventory: [{ instanceId: 'cut_1', templateId: 'ritual_cut', quantity: 1, grantedAbilities: [], affixes: [] }],
+    });
+    state.player = player;
+    state.entities.set(player.id, player);
+    return { state, player };
+  }
+
+  it('execute: вешает на игрока bleeding (3 хода) и empowered (2 хода), предмет расходуется', () => {
+    const { state, player } = makeStateWithRitualCut();
+
+    const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'cut_1' };
+    expect(useItemAction.validate(state, action).ok).toBe(true);
+    const intents = useItemAction.resolve(state, action);
+    const builder = makeBuilder();
+    useItemAction.execute(state, action, intents, builder, builder.root);
+
+    expect(player.statusEffects).toContainEqual(
+      expect.objectContaining({ type: 'bleeding', duration: 3 }),
+    );
+    expect(player.statusEffects).toContainEqual(
+      expect.objectContaining({ type: 'empowered', duration: 2 }),
+    );
+    expect(player.inventory).toHaveLength(0);
+  });
+
+  it('execute: statModifiers шаблона empowered реально дают +2 к урону', () => {
+    const { state, player } = makeStateWithRitualCut();
+
+    const action = { type: 'USE_ITEM' as const, entityId: 'player', itemInstanceId: 'cut_1' };
+    const intents = useItemAction.resolve(state, action);
+    const builder = makeBuilder();
+    useItemAction.execute(state, action, intents, builder, builder.root);
+
+    expect(player.statModifiers).toContainEqual(
+      expect.objectContaining({ stat: 'damage', value: 2, op: 'add' }),
+    );
+  });
+
+  it('таргетинг: getConsumableTargetMode возвращает null (выбор клетки не требуется)', () => {
+    const state = makeGameState();
+    const sim = new GameSimulation(state, defaultActionHandlerRegistry());
+
+    expect(sim.getConsumableTargetMode('ritual_cut')).toBeNull();
   });
 });

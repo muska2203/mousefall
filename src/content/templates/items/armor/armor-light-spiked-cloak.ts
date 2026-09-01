@@ -17,7 +17,7 @@ export const armorLightSpikedCloak = {
   "maxStack": 1,
   "value": 8,
   "armor": {
-    "baseArmor": 1
+    "baseArmor": 0
   },
   "grantedAbilities": [],
   "fixedModifiers": ["mod_spiked_thorns"],

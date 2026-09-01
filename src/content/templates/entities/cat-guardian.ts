@@ -8,16 +8,16 @@ export const catGuardian = {
   "aiSightRadius": 8,
   "health": {
     // Черновое значение (было 80) — финальный баланс в проходе roadMap 1.4.
-    "max": 90
+    "max": 40
   },
   "baseStats": {
-    "str": 6,
-    "dex": 2,
-    "int": 2,
-    "vit": 6
+    "str": 0,
+    "dex": 0,
+    "int": 0,
+    "vit": 0
   },
   "attack": {
-    "damage": { "min": 1, "max": 2 },
+    "damage": { "min": 1, "max": 4 },
     "range": 1,
     "damageDistribution": [
       {
@@ -31,7 +31,7 @@ export const catGuardian = {
       "delivery.weapon"
     ]
   },
-  "armor": 6,
+  "armor": 1,
   "abilities": [
     "guardian_swoop",
     "ground_slam",

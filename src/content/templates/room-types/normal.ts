@@ -2,7 +2,9 @@ import type {RoomTypeTemplateInput} from '../../schemas';
 
 /**
  * Обычная комната первого этажа (концепт floor-1-content-concept.md):
- * коты small/mid, редкое зелье и мешочек муки, бочки с маслом и мешки с мукой,
+ * коты small/mid, редкое зелье и метательные расходники (мешочек муки,
+ * флакон крови, ритуальный надрез — кровавая ветка, этап 6 плана
+ * bleed-builds-implementation.md), бочки с маслом и мешки с мукой,
  * скрытые колючки и мышеловки, лужи масла/воды.
  * Числа черновые — баланс отдельным проходом (roadMap 1.4).
  */
@@ -14,7 +16,7 @@ export const normalRoom = {
   fill: {
     enemyPool: ['cat_small', 'cat_mid'],
     enemyDensity: 1,
-    itemPool: ['health_potion', 'flour_pouch'],
+    itemPool: ['health_potion', 'flour_pouch', 'blood_flask', 'ritual_cut'],
     itemDensity: 0.1,
     propPool: ['oil_barel', 'flour_bag'],
     propDensity: 0.15,

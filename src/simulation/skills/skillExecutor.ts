@@ -62,6 +62,8 @@ const KIND_FACTORIES: Record<AbilityTemplate['kind'], (template: AbilityTemplate
     if (template.kind !== 'selfBuff') throw new Error(`Ожидался kind 'selfBuff', получен '${template.kind}'`);
     return createSelfBuffSkill({
       id: template.id,
+      // statusType в схеме — произвольная строка; существование статуса
+      // в реестре проверяет валидация перекрёстных ссылок, поэтому каст нужен.
       statusType: template.statusType as StatusEffectType,
       duration: template.duration,
     });

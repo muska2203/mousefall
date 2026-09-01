@@ -21,6 +21,18 @@ export const rules: Record<string, ContentText> = {
     name: 'Добивание',
     description: 'Урон оружия по кровоточащим целям увеличен на 3.',
   },
+  weapon_bleeding_widening: {
+    name: 'Рваные края',
+    description: 'Удар по уже кровоточащей цели продлевает кровотечение до 5 ходов.',
+  },
+  armor_bleeding_thorns: {
+    name: 'Кровавые шипы',
+    description: 'При получении урона в ближнем бою открывает кровотечение у нападающего на 2 хода.',
+  },
+  amulet_blood_frenzy: {
+    name: 'Берсерк',
+    description: 'Урон [оружия](tag:delivery.weapon) увеличен, пока ты кровоточишь.',
+  },
   armor_spiked_thorns: {
     name: 'Шипы',
     description: 'При получении урона в ближнем бою отражает 2 колющего урона атакующему.',
@@ -114,5 +126,50 @@ export const rules: Record<string, ContentText> = {
   relic_scavenger_heal_on_pickup: {
     name: 'Радость находки',
     description: 'Поднятие предмета восстанавливает 5 HP.',
+  },
+  // Правила реликвий кровавой ветки (этап 3 плана docs/plans/bleed-builds-implementation.md).
+  relic_blood_leech_tick_heal: {
+    name: 'Кровососание',
+    description: 'Каждый тик кровотечения у существа рядом восстанавливает 1 HP.',
+  },
+  relic_blood_echo_heal_on_bleed_kill: {
+    name: 'Эхо довольства',
+    description: 'Добивание кровоточащего врага своим ударом восстанавливает 2 HP.',
+  },
+  relic_blood_echo_bleed_faded: {
+    name: 'Эхо жаждет крови',
+    description: 'Когда у кого-либо спадает кровотечение, ты получаешь 1 внутреннего урона.',
+  },
+  relic_blood_reaper_harvest: {
+    name: 'Свой урожай',
+    description: 'Добивание кровоточащего врага своим ударом возвращает 1 AP.',
+  },
+  relic_blood_reaper_foreign_harvest: {
+    name: 'Чужой урожай',
+    description: 'Кровоточащий враг умирает не от твоей руки — ты теряешь 1 AP.',
+  },
+  relic_blood_fuel_self_tick: {
+    name: 'Кровь вместо топлива',
+    description: 'Каждый тик твоего кровотечения возвращает 1 AP.',
+  },
+  relic_blood_fuel_exsanguinated: {
+    name: 'Обескровлен',
+    description: 'Когда твоё кровотечение спадает, ты теряешь 1 AP.',
+  },
+  relic_blood_rupture_detonation: {
+    name: 'Разрыв',
+    description: 'Кровоточащий при смерти разрывается: 4 внутреннего урона всем в радиусе 1, включая тебя.',
+  },
+  relic_blood_rupture_bleed_splash: {
+    name: 'Кровавые брызги',
+    description: 'Выжившие в радиусе разрыва получают кровотечение на 2 хода.',
+  },
+  blood_puddle_applies_bleeding: {
+    name: 'Кровавая лужа',
+    description: 'Вошедший в кровавую лужу получает кровотечение на 2 хода.',
+  },
+  blood_puddle_applies_bleeding_on_spawn: {
+    name: 'Кровавая лужа',
+    description: 'Появившаяся под существом кровавая лужа открывает ему кровотечение на 2 хода.',
   },
 };

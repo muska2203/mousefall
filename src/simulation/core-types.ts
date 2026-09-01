@@ -138,7 +138,10 @@ export type StatusEffectType =
   | 'wet'
   | 'oiled'
   | 'bleeding'
-  | 'rooted';
+  | 'rooted'
+  | 'empowered'
+  | 'swift'
+  | 'braced';
 
 /** Категория статуса для разрешения конфликтов между одновременно накладываемыми эффектами. */
 export type StatusCategory =
@@ -888,7 +891,7 @@ export type CounterAttackAppliedEvent = GameEventBase & {
 export type RuleTriggeredEvent = GameEventBase & {
   type: 'RULE_TRIGGERED';
   ruleId: string;
-  layer: 'source' | 'target' | 'world' | 'radius';
+  layer: 'source' | 'target' | 'world' | 'radius' | 'global';
   ownerEntityId: EntityId | null;
   triggerEventType: string;
   triggerTags: GameplayTag[];

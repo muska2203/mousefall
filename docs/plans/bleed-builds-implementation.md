@@ -1,7 +1,7 @@
 # План реализации кровавой ветки билдов (этап 1 этажа 1)
 
 > Реализация концепта [`docs/game-design/bleed-builds-concept.md`](../game-design/bleed-builds-concept.md).
-> Статус: план утверждён в части архитектурных решений (см. §1). Этап 0 выполнен (2026-08-30).
+> Статус: **все этапы (0–6) выполнены 2026-08-30.** Архитектурные решения — §1.
 
 ---
 
@@ -34,7 +34,13 @@
 - Переименование по решению 7: `mod_bleeding_on_hit` → `mod_blood_on_hit`, `mod_bleeding_execute` → `mod_blood_execute` (файлы, id, ключи текстов).
 - Проверки: `validate:content`, `validate:i18n`, `typecheck`, полный прогон — 1936 тестов, зелёные.
 
-### Этап 1 — движок
+### Этап 1 — движок — ✅ выполнен 2026-08-30
+
+> **Итог.** 1951 тест (+15), все зелёные; `typecheck`/`validate:content` OK.
+> - 1.1: `tests/unit/simulation/content-rules/death-order-model.test.ts` (3 теста); EDGE_CASES — раздел «Порядок смерти (модель 1)» + уточнён «Mid-chain статусы». Код не менялся.
+> - 1.2: поле `reach?: 'global'` в `ContentRule` (`types.ts`), слой `global` в `collectRules` (последний, дедуп по `(rule.id, selfId)`), `RuleTriggeredEvent.layer` + `'global'`; тесты `global-reach-rules.test.ts` (4). **Отклонение:** валидацию «global без eventRole» не добавляли — в validation.ts нет предупреждений, а минус «Жатвы» легально использует `not eventRole`; предостережение задокументировано. **Ограничение:** слой global собирается только в реакциях на события, не в `apply-intent-modifiers.ts` (для этапа 3 не нужно).
+> - 1.3: `applyStatus` в `ConsumableEffectSchema` (список `statuses`), resolve в `use-item-action.ts`, `validateConsumableApplyStatuses()` в `validate-content.ts`, отображение в `itemDetailMapper.ts`; 8 тестов в `use-item-action.test.ts`.
+> - **Найдено:** union `StatusEffectType` (`core-types.ts:128`) устарел — нет `empowered`/`swift`/`braced`, код кастует (`skillExecutor.ts:65`). Расширить union — задача этапа 5.
 
 **1.1. Фиксация модели 1 (без изменения кода).**
 - Unit-тесты: «on-hit bleed, наложенный смертельным ударом, виден реакциям на `ENTITY_DIED`» (ваншот); «труп не собирается как актор в последующих волнах».
@@ -53,14 +59,18 @@
 - Тесты по образцу `tests/unit/simulation/actions/use-item-action.test.ts`.
 - Открытый вопрос (не блокер): хардкод `buff` → `regenerating` (`use-item-action.ts`) оставляем как есть — минимальные изменения.
 
-### Этап 2 — модификаторы (чистый контент, §4.1 концепта)
+### Этап 2 — модификаторы (чистый контент, §4.1 концепта) — ✅ выполнен 2026-08-30
+
+> **Итог.** 1962 теста (+11), все зелёные. Созданы `mod-blood-widening-wound.ts`, `mod-blood-thorns.ts`, `mod-blood-frenzy.ts` + правила `weapon_bleeding_widening` (priority 1 — гарантированно после `weapon_bleeding_on_hit`, итоговая длительность 5), `armor_bleeding_thorns`, `amulet_blood_frenzy` (perLevel, ownerParam, рейнж `{2,2}` клампится на все уровни — расширить при балансе). Тесты `blood-branch-modifiers.test.ts` (11). Тексты ru/en модификаторов и правил добавлены.
 
 - `mod_blood_widening_wound` «Рваные края» (sword): правило `ENTITY_DAMAGED` (weapon, slashing) + `eventRole: source` + `hasStatus bleeding (target)` → `applyStatus bleeding` длительность 5 (решение 6). `scaling: none`.
 - `mod_blood_thorns` «Кровавые шипы» (light, heavy): по образцу `armor_spiked_thorns` — `ENTITY_DAMAGED` (`attack.melee`) + `eventRole: target` + `notSelfHit` → `applyStatus bleeding` 2 хода на `eventSource`.
 - `mod_blood_frenzy` «Берсерк» (talisman): `modifyDamage add` (значение `ownerParam`, `scaling: perLevel`) на `DAMAGE` (`delivery.weapon`) + `eventRole: source` + `hasStatus bleeding (subject: source)`.
 - Новые правила — в `rules.ts`; тексты ru/en (`texts/*/modifiers.ts`, `rules.ts`); unit-тесты по образцу `weapon-sword-rules.test.ts`.
 
-### Этап 3 — реликвии (чистый контент поверх этапов 1.2, §4.2 концепта)
+### Этап 3 — реликвии (чистый контент поверх этапов 1.2, §4.2 концепта) — ✅ выполнен 2026-08-30
+
+> **Итог.** 1993 теста (+25 unit +6 интеграционных), все зелёные. Шаблоны `relic-blood-{leech,echo,reaper,fuel,rupture}.ts` зарегистрированы; 9 новых правил в `rules.ts` (секция «Правила реликвий кровавой ветки»): `relic_blood_leech_tick_heal`, `relic_blood_echo_heal_on_bleed_kill` + `relic_blood_echo_bleed_faded` (negative, global), `relic_blood_reaper_harvest` + `relic_blood_reaper_foreign_harvest` (negative, global, гард `not eventRole:target`), `relic_blood_fuel_self_tick` + `relic_blood_fuel_exsanguinated` (negative), `relic_blood_rupture_detonation` (negative, global) + `relic_blood_rupture_bleed_splash` (priority 1 — после детонации). Тесты: `blood-branch-relics.test.ts` (25), интеграция `blood-relics-scenario.test.ts` (6). Проверенные края: DoT-килл активирует только минус Жатвы; смерть ≠ STATUS_REMOVED; `allInRadius` пропускает труп. **Открытое:** иконки реликвий не добавлены (нет ассетов, fallback-emoji) — этап 6.
 
 - `relic_blood_leech` «Пиявка»: плюс — `STATUS_TICKED bleeding` у врага в радиусе (слой `radius`, «рядом» = радиус 1 — соответствует концепту) → `heal 1` владельцу; минус `polarity: 'negative'` — `statModifiers` −5 maxHp.
 - `relic_blood_echo` «Кровавое эхо»: плюс — `ENTITY_DIED` + `eventRole: source` + `hasStatus bleeding (target)` → `heal 2`; минус (решение 3) — `STATUS_REMOVED` по `bleeding` у любой сущности (`reach: global`) → `dealDamage 1 internal` владельцу.
@@ -69,17 +79,23 @@
 - `relic_blood_rupture` «Разрыватель»: два правила на `ENTITY_DIED` + `hasStatus bleeding (target)` — `dealDamage 4 internal` по `allInRadius 1` БЕЗ `excludeSelf` (минус: задевает владельца) и `applyStatus bleeding 2` выжившим в радиусе.
 - У всех новых реликвий минусы помечаются `polarity: 'negative'`. Тексты ru/en, unit-тесты правил, интеграционный сценарий пары «плюс/минус» для «Эха» и «Жатвы».
 
-### Этап 4 — `blood_puddle` + `blood_flask` (чистый контент, §4.3)
+### Этап 4 — `blood_puddle` + `blood_flask` (чистый контент, §4.3) — ✅ выполнен 2026-08-30
+
+> **Итог.** 2001 тест (+5 unit +3 интеграционных), все зелёные. `tile-effects/blood-puddle.ts` (cover, duration 4) + правила `blood_puddle_applies_bleeding` / `blood_puddle_applies_bleeding_on_spawn`; `items/consumables/blood-flask.ts` (форма flour_pouch, fallback 🩸). Тесты: `blood-puddle-applies-bleeding.test.ts` (5), интеграция `blood-puddle.test.ts` (3). Рендер: спрайт строится конвенционно (`/assets/tile-effects/blood_puddle.png`), отсутствие файла — штатный fallback без краша. **Открытое:** спрайт лужи — этап 6.
 
 - `tile-effects/blood-puddle.ts` (слой `cover`): правила по образцу `water_applies_wet(_on_spawn)` — `ENTITY_MOVED` + `inTileEffect` и `TILE_EFFECT_CHANGED` + `isNew` → `applyStatus bleeding 2`. Статус-маркер не нужен — bleed вешается напрямую.
 - `items/consumables/blood-flask.ts`: копия формы `flour_pouch` с `tileEffectType: 'blood_puddle'`.
 - Тексты, спрайт/рендер лужи (presentation-маппинг тайловых эффектов; при отсутствии ассета — placeholder по `scripts/`), тесты по образцу `water-applies-wet.test.ts`.
 
-### Этап 5 — `ritual_cut` (после 1.3)
+### Этап 5 — `ritual_cut` (после 1.3) — ✅ выполнен 2026-08-30
+
+> **Итог.** 2005 тестов (+3 unit +1 интеграционный), все зелёные. `items/consumables/ritual-cut.ts` (`applyStatus` self: bleeding 3 + empowered 2; apCost 1, value 20, stackable maxStack 2, fallback 🔪). Union `StatusEffectType` расширен (`empowered`/`swift`/`braced` — все 16 активных шаблонов покрыты); касты `as StatusEffectType` оставлены осознанно (схемы типизируют id статусов как string, существование проверяет validate-content) и прокомментированы. Тесты: describe в `use-item-action.test.ts` на реальном контенте (оба статуса, +2 урона от empowered), интеграция `ritual-cut-scenario.test.ts`.
 
 - Расходник `applyStatus` self: `statuses: [{bleeding, 3}, {empowered, 2}]`. Тексты ru/en, тесты use-item.
 
-### Этап 6 — пулы, тексты, финал
+### Этап 6 — пулы, тексты, финал — ✅ выполнен 2026-08-30
+
+> **Итог.** 2005 тестов, все зелёные (состав пулов тестами не фиксируется). `blood_flask` и `ritual_cut` добавлены в `itemPool` типа комнаты `normal` рядом с `flour_pouch` (в `normal-deep` расходников кроме health_potion нет — не добавлялись); `relicPool` добавлен в `maps/floor-1.ts` (6 реликвий ветки + `relic_blood_pact`). Placeholder-ассеты сгенерированы `scripts/gen-placeholder-sprite.py` (иконки 5 реликвий + 2 расходников, спрайт `blood_puddle.png`), манифест регенерирован. Документация обновлена координатором: SYNC_STATUS (строка концепта → `[STABLE]`), mechanics-overview (§4 слой global, §5 расходники/именование, §6.3 лужа, §10.4, история), src/content/AGENTS.md (конвенция именования), концепт (статус `[STABLE]`, история).
 
 - Пулы: расходники в `itemPool` типов комнат (`normal`) рядом с `flour_pouch`; реликвии в общий `relicPool`; `starterRelicPool` шаблона «Боец» — если шаблон ещё не существует, отметить отложенным (floor-1 §4.10). Снаряжение в дроп/спавн — по floor-1-концепту (сейчас возвращённые предметы в пулах отсутствуют — отдельное решение контентного прохода).
 - `npm run validate:content`, `npm run typecheck`, полный прогон `npm test`.
@@ -92,7 +108,9 @@
 
 ## 4. Отложенные / открытые вопросы
 
-- Баланс всех чисел — roadMap 1.4 (плейтест).
+- Баланс всех чисел — roadMap 1.4 (плейтест). В т.ч. `mod_blood_frenzy`: единственный рейнж `{2,2}` клампится на все уровни — расширить `ranges` при балансном проходе.
 - Мёртвый аффикс на piercing-мечах (`weapon_sword_hat_pin`) — §7 концепта, не в этом плане.
 - Хардкод `buff` → `regenerating` в `use-item-action.ts` — не трогаем.
 - Пул амулетов этажа и носитель `mod_blood_frenzy` (`amulet_talisman_knotted_fang`) — финализируется контентным проходом (§7 концепта).
+- `starterRelicPool` шаблона «Боец» (floor-1 §4.10) — шаблона пока нет; реликвии доступны через `relicPool` карты (алтарь выбора).
+- Placeholder-ассеты (иконки реликвий/расходников, спрайт `blood_puddle`) — заменить на финальные при арт-проходе.

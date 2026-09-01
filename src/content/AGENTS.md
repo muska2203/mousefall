@@ -71,7 +71,7 @@ src/content/
 
 ## Добавление контента
 
-1. Создать файл `src/content/templates/<категория>/<id>.ts` (имя файла = id в kebab-case, константа — camelCase; id экипировки — по схеме `{type}_{subtype}_{name}`, например `weapon_sword_hat_pin` → `items/weapons/weapon-sword-hat-pin.ts`):
+1. Создать файл `src/content/templates/<категория>/<id>.ts` (имя файла = id в kebab-case, константа — camelCase; id экипировки — по схеме `{type}_{subtype}_{name}`, например `weapon_sword_hat_pin` → `items/weapons/weapon-sword-hat-pin.ts`; id модификаторов и реликвий, созданных под ветку билда, — по схеме `mod_{ветка}_{имя}` / `relic_{ветка}_{имя}`, кровавая ветка — `blood`; универсальные — без слова ветки, конвенция 2026-08-30):
 
    ```typescript
    import type {EntityTemplateInput} from '../../schemas';

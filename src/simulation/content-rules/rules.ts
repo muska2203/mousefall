@@ -53,6 +53,39 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: { type: 'allInRadius', radius: 0, center: 'eventPosition' },
     priority: 0,
   },
+  // Кровавая лужа (кровавая ветка, §4.3): bleed вешается напрямую,
+  // без статуса-маркера — повторный заход просто обновит длительность до 2.
+  {
+    id: 'blood_puddle_applies_bleeding',
+    trigger: {
+      event: 'ENTITY_MOVED',
+    },
+    conditions: [{ type: 'inTileEffect', effectType: 'blood_puddle' }],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'bleeding',
+      duration: 2,
+    },
+    target: { type: 'eventSource' },
+    priority: 0,
+  },
+  {
+    id: 'blood_puddle_applies_bleeding_on_spawn',
+    trigger: {
+      event: 'TILE_EFFECT_CHANGED',
+    },
+    conditions: [
+      { type: 'eventFieldEquals', field: 'effectType', value: 'blood_puddle' },
+      { type: 'eventFieldEquals', field: 'isNew', value: true },
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'bleeding',
+      duration: 2,
+    },
+    target: { type: 'allInRadius', radius: 0, center: 'eventPosition' },
+    priority: 0,
+  },
   {
     id: 'oil_applies_oiled',
     trigger: {
@@ -348,6 +381,32 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     target: {type: 'eventTarget'},
     priority: 0,
   },
+  {
+    // «Рваные края»: удар по уже кровоточащей цели продлевает рану до 5 ходов
+    // (план docs/plans/bleed-builds-implementation.md, этап 2, решение §1 п. 6).
+    // Условие hasStatus отсекает свежие цели, чтобы не дублировать
+    // weapon_bleeding_on_hit. eventRole: 'source' обязателен — защита от
+    // повторного срабатывания копии правила из слоёв target/radius.
+    id: 'weapon_bleeding_widening',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['delivery.weapon', 'damage.physical.slashing'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'target'},
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'bleeding',
+      duration: 5,
+    },
+    target: {type: 'eventTarget'},
+    // priority выше, чем у weapon_bleeding_on_hit (0): applyStatus на висящем
+    // статусе перезаписывает duration, поэтому «Рваные края» обязаны исполниться
+    // ПОСЛЕДНИМИ — иначе on-hit перезаписал бы продление до 5 обратно на 3.
+    priority: 1,
+  },
   // ── Стартовые правила брони/щита (WP6.3) ───────────────────────────────────
   {
     id: 'armor_spiked_thorns',
@@ -363,6 +422,25 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       type: 'dealDamage',
       amount: 2,
       tags: ['damage.physical.piercing'],
+    },
+    target: {type: 'eventSource'},
+    priority: 0,
+  },
+  {
+    // «Кровавые шипы»: при получении урона в ближнем бою открывает кровотечение
+    // у нападающего (план docs/plans/bleed-builds-implementation.md, этап 2).
+    // notSelfHit обязателен по образцу armor_spiked_thorns: самоурон владельца
+    // с тегом attack.melee не должен вешать кровотечение на самого владельца.
+    id: 'armor_bleeding_thorns',
+    trigger: {
+      event: 'ENTITY_DAMAGED',
+      tags: ['attack.melee'],
+    },
+    conditions: [{type: 'eventRole', role: 'target'}, {type: 'notSelfHit'}],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'bleeding',
+      duration: 2,
     },
     target: {type: 'eventSource'},
     priority: 0,
@@ -405,6 +483,29 @@ export const CONTENT_RULES: readonly ContentRule[] = [
       type: 'modifyDamage',
       op: 'add',
       value: 2,
+    },
+    target: {type: 'eventTarget'},
+    priority: 0,
+  },
+  {
+    // «Берсерк»: владелец, сам истекающий кровью, наносит больше урона оружием
+    // (план docs/plans/bleed-builds-implementation.md, этап 2). Величина —
+    // ролленное значение аффикса (ownerParam, scaling: perLevel у модификатора).
+    // eventRole: 'source' обязателен: иначе копия правила соседнего владельца
+    // подхватывается слоем radius и модифицирует урон повторно.
+    id: 'amulet_blood_frenzy',
+    trigger: {
+      event: 'DAMAGE',
+      tags: ['delivery.weapon'],
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'self'},
+    ],
+    effect: {
+      type: 'modifyDamage',
+      op: 'add',
+      value: {type: 'ownerParam'},
     },
     target: {type: 'eventTarget'},
     priority: 0,
@@ -809,6 +910,199 @@ export const CONTENT_RULES: readonly ContentRule[] = [
     },
     target: {type: 'self'},
     priority: 0,
+  },
+  // ── Правила реликвий кровавой ветки (этап 3 плана bleed-builds) ────────────
+  // docs/plans/bleed-builds-implementation.md, §4.2 концепта: у каждой реликвии
+  // плюс + равнозначный минус (polarity: 'negative'). Числа черновые —
+  // балансный проход roadMap 1.4.
+  {
+    // Плюс «Пиявки»: тик чужого кровотечения рядом лечит владельца.
+    // «Рядом» — слой radius (радиус 1 от позиции тика). Условие
+    // not eventRole: 'target' отсекает собственный тик владельца
+    // (тогда владелец — цель события и собирается слоем target):
+    // своя кровь Пиявку не кормит (анти-синергия с «Кровавым топливом» — задумано).
+    id: 'relic_blood_leech_tick_heal',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.bleeding'],
+    },
+    conditions: [
+      {type: 'not', condition: {type: 'eventRole', role: 'target'}},
+    ],
+    effect: {
+      type: 'heal',
+      amount: 1,
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
+  {
+    // Плюс «Кровавого эха»: владелец своим ударом добивает кровоточащего —
+    // лечится на 2 HP. eventRole: 'source' отсекает дот-киллы (тик кровотечения
+    // принадлежит жертве — источник смерти она сама) и чужие убийства.
+    id: 'relic_blood_echo_heal_on_bleed_kill',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'target'},
+    ],
+    effect: {
+      type: 'heal',
+      amount: 2,
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
+  {
+    // Минус «Кровавого эха» (решение §1 п. 3 плана): когда у любой сущности
+    // спадает кровотечение (естественное спадание, вытеснение, стеки → 0),
+    // владелец получает 1 внутренний урон. Смерть STATUS_REMOVED не порождает
+    // (статусы остаются на трупе), поэтому добивание кровоточащего не штрафуется.
+    // reach: 'global' — спадание может произойти вне радиуса владельца;
+    // eventRole не нужен: штрафует спадание у ЛЮБОЙ сущности, включая владельца.
+    id: 'relic_blood_echo_bleed_faded',
+    polarity: 'negative',
+    trigger: {
+      event: 'STATUS_REMOVED',
+    },
+    conditions: [
+      {type: 'eventFieldEquals', field: 'effectType', value: 'bleeding'},
+    ],
+    effect: {
+      type: 'dealDamage',
+      amount: 1,
+      tags: ['damage.internal.bleeding'],
+    },
+    target: {type: 'self'},
+    priority: 0,
+    reach: 'global',
+  },
+  {
+    // Плюс «Жатвы»: владелец своим ударом добивает кровоточащего — возвращается
+    // 1 AP. Реакции на смерть разрешаются до списания стоимости действия,
+    // поэтому при полных AP дельта 0 (кламп к эффективному maxAp).
+    id: 'relic_blood_reaper_harvest',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      {type: 'eventRole', role: 'source'},
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'target'},
+    ],
+    effect: {
+      type: 'restoreAp',
+      amount: 1,
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
+  {
+    // Минус «Жатвы» («Чужой урожай»): кровоточащий умер не от руки владельца
+    // (дот-килл — источник сама жертва, мышеловка, взрыв, среда без источника) —
+    // владелец теряет 1 AP. not eventRole: 'target' отсекает смерть самого
+    // владельца. reach: 'global' — смерть может произойти вне радиуса владельца.
+    id: 'relic_blood_reaper_foreign_harvest',
+    polarity: 'negative',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'target'},
+      {type: 'not', condition: {type: 'eventRole', role: 'source'}},
+      {type: 'not', condition: {type: 'eventRole', role: 'target'}},
+    ],
+    effect: {
+      type: 'consumeAp',
+      amount: 1,
+    },
+    target: {type: 'self'},
+    priority: 0,
+    reach: 'global',
+  },
+  {
+    // Плюс «Кровавого топлива»: тик собственного кровотечения возвращает 1 AP.
+    // eventRole: 'target' обязателен — иначе копия правила из слоя radius
+    // срабатывала бы на чужие тики рядом.
+    id: 'relic_blood_fuel_self_tick',
+    trigger: {
+      event: 'STATUS_TICKED',
+      tags: ['status.bleeding'],
+    },
+    conditions: [{type: 'eventRole', role: 'target'}],
+    effect: {
+      type: 'restoreAp',
+      amount: 1,
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
+  {
+    // Минус «Кровавого топлива» («Обескровлен»): спадание кровотечения
+    // владельца отнимает 1 AP. reach не нужен: владелец — цель события
+    // и собирается слоем target.
+    id: 'relic_blood_fuel_exsanguinated',
+    polarity: 'negative',
+    trigger: {
+      event: 'STATUS_REMOVED',
+    },
+    conditions: [
+      {type: 'eventFieldEquals', field: 'effectType', value: 'bleeding'},
+      {type: 'eventRole', role: 'target'},
+    ],
+    effect: {
+      type: 'consumeAp',
+      amount: 1,
+    },
+    target: {type: 'self'},
+    priority: 0,
+  },
+  {
+    // Детонация «Разрывателя» (минус реликвии): смерть кровоточащего бьёт
+    // всех живых в радиусе 1 от позиции смерти — селектор без excludeSelf,
+    // поэтому владелец рядом получает те же 4 внутреннего урона
+    // (позиционная игра: провоцировать разрыв на дистанции). Труп исключён:
+    // allInRadius работает только по живым акторам. reach: 'global' —
+    // владелец может стоять далеко от детонации (позиционная фича).
+    id: 'relic_blood_rupture_detonation',
+    polarity: 'negative',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'target'},
+    ],
+    effect: {
+      type: 'dealDamage',
+      amount: 4,
+      tags: ['damage.internal.bleeding'],
+    },
+    target: {type: 'allInRadius', radius: 1, center: 'eventPosition'},
+    priority: 0,
+    reach: 'global',
+  },
+  {
+    // Плюс «Разрывателя»: выжившие в радиусе детонации подхватывают
+    // кровотечение на 2 хода. priority 1 — исполняется после детонации:
+    // убитые взрывом (мёртвые к моменту волны) кровотечение не получают.
+    // По модели 1 детонирует и ваншот рубящим: смертельный удар успевает
+    // наложить кровотечение до ENTITY_DIED.
+    id: 'relic_blood_rupture_bleed_splash',
+    trigger: {
+      event: 'ENTITY_DIED',
+    },
+    conditions: [
+      {type: 'hasStatus', statusType: 'bleeding', subject: 'target'},
+    ],
+    effect: {
+      type: 'applyStatus',
+      statusType: 'bleeding',
+      duration: 2,
+    },
+    target: {type: 'allInRadius', radius: 1, center: 'eventPosition'},
+    priority: 1,
+    reach: 'global',
   },
 ];
 

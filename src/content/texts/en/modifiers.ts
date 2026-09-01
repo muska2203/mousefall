@@ -29,6 +29,18 @@ export const modifiers: Record<string, ContentText> = {
     name: 'Executing',
     description: 'Hits with this weapon deal 3 additional damage to bleeding targets.',
   },
+  mod_blood_widening_wound: {
+    name: 'Jagged Edges',
+    description: 'Striking an already bleeding target extends its bleeding to 5 turns.',
+  },
+  mod_blood_thorns: {
+    name: 'Blood Thorns',
+    description: 'When hit by a melee attack, opens a bleeding wound on the attacker for 2 turns.',
+  },
+  mod_blood_frenzy: {
+    name: 'Frenzy',
+    description: 'Weapon damage is increased by {value} while you are bleeding.',
+  },
   mod_fire_damage_multiplier: {
     name: 'Flaming',
     description: 'Fire damage is increased by 50%.',

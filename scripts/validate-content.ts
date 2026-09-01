@@ -6,6 +6,7 @@
  * - ссылки ruleIds в шаблонах (validateContentRuleReferences),
  * - семантику декларативных правил (validateContentRuleSemantics),
  * - перекрёстные ссылки между шаблонами (validateContentReferences),
+ * - ссылки consumable.statuses[*].statusType эффекта applyStatus на реестр статусов,
  * - плейсхолдеры {value} в текстах модификаторов (validateModifierTextPlaceholders),
  * - наличие переводов для каждого content ID в ru и en.
  *
@@ -90,6 +91,30 @@ function printRuleErrors(errors: ContentRuleValidationError[]): void {
   }
 }
 
+/**
+ * Проверяет, что все statusType в списках statuses расходников с эффектом
+ * applyStatus существуют в реестре статусов (по образцу проверки
+ * knownStatusIds в validateContentRuleSemantics).
+ */
+function validateConsumableApplyStatuses(): string[] {
+  const registry = getRegistry();
+  const knownStatusIds = new Set(registry.statuses.keys());
+  const errors: string[] = [];
+
+  for (const [id, item] of registry.items) {
+    const consumable = item.consumable;
+    if (!consumable || consumable.effect !== 'applyStatus' || !consumable.statuses) continue;
+
+    for (const statusEntry of consumable.statuses) {
+      if (!knownStatusIds.has(statusEntry.statusType)) {
+        errors.push(`items.${id}: статус "${statusEntry.statusType}" не найден в реестре статусов`);
+      }
+    }
+  }
+
+  return errors;
+}
+
 async function main(): Promise<number> {
   console.log('[validate-content] Сборка контента...');
 
@@ -132,6 +157,17 @@ async function main(): Promise<number> {
     }
   } else {
     console.log('[validate-content] Ссылки между шаблонами в порядке.');
+  }
+
+  const consumableStatusErrors = validateConsumableApplyStatuses();
+  if (consumableStatusErrors.length > 0) {
+    hasErrors = true;
+    console.error('[validate-content] Ошибки ссылок на статусы в расходниках (applyStatus):');
+    for (const error of consumableStatusErrors) {
+      console.error(`  ${error}`);
+    }
+  } else {
+    console.log('[validate-content] Ссылки на статусы в расходниках (applyStatus) в порядке.');
   }
 
   const placeholderErrors = validateModifierTextPlaceholders(getRegistry(), {

@@ -11,6 +11,14 @@ export const floor1 = {
     "normal"
   ],
   "startRoomTypeId": "start",
+  "relicPool": [
+    "relic_blood_leech",
+    "relic_blood_echo",
+    "relic_blood_reaper",
+    "relic_blood_fuel",
+    "relic_blood_rupture",
+    "relic_blood_pact"
+  ],
   "finalFloor": 1,
   "bossPool": [
     "cat_guardian"

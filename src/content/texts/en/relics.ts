@@ -38,4 +38,25 @@ export const relics: Record<string, ContentText> = {
     name: 'Scrapyard Thrill',
     flavorText: 'One mouse throws it away, another carries it across the whole basement with its tail held high.',
   },
+  // Blood-branch relics (stage 3 of docs/plans/bleed-builds-implementation.md).
+  relic_blood_leech: {
+    name: 'Leech',
+    flavorText: 'It latched on long ago and has no plans to let go. At least it shares.',
+  },
+  relic_blood_echo: {
+    name: 'Blood Echo',
+    flavorText: 'Every spilled drop comes back. The only question is — to whom.',
+  },
+  relic_blood_reaper: {
+    name: 'Reaper',
+    flavorText: 'The basement loves those who clean up after themselves. And frowns at those who leave meals unfinished.',
+  },
+  relic_blood_fuel: {
+    name: 'Blood Fuel',
+    flavorText: 'The heart beats faster as the blood runs low. A strange economy.',
+  },
+  relic_blood_rupture: {
+    name: 'Rupturer',
+    flavorText: 'Fill a foe with blood to the brim — and it will share with everyone around. Everyone.',
+  },
 };
